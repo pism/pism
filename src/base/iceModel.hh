@@ -361,6 +361,7 @@ protected:
   virtual PetscErrorCode dumpToFile(std::string filename);
   virtual PetscErrorCode regrid(int dimensions);
   virtual PetscErrorCode regrid_variables(std::string filename, std::set<std::string> regrid_vars, int ndims);
+  virtual PetscErrorCode init_enthalpy(std::string filename, bool regrid, int last_record);
 
   // see iMfractures.cc
   virtual PetscErrorCode calculateFractureDensity();

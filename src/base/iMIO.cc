@@ -478,51 +478,7 @@ PetscErrorCode IceModel::initFromFile(std::string filename) {
   // Initialize the enthalpy field by reading from a file or by using
   // temperature and liquid water fraction, or by using temperature
   // and assuming that the ice is cold.
-  {
-    bool enthalpy_exists, liqfrac_exists, temperature_exists;
-    ierr = nc.inq_var("enthalpy", enthalpy_exists);    CHKERRQ(ierr);
-    ierr = nc.inq_var("liqfrac",  liqfrac_exists);     CHKERRQ(ierr);
-    ierr = nc.inq_var("temp",     temperature_exists); CHKERRQ(ierr);
-
-    if (enthalpy_exists) {
-      ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
-    } else if (temperature_exists) {
-      IceModelVec3 temperature;
-
-      ierr = temperature.create(grid, "temp", false); CHKERRQ(ierr);
-      ierr = temperature.set_attrs("internal",
-                                   "ice temperature; temporary storage during initialization",
-                                   "K", "land_ice_temperature"); CHKERRQ(ierr);
-      ierr = temperature.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-
-      ierr = temperature.read(filename, last_record); CHKERRQ(ierr);
-
-      if (liqfrac_exists) {
-        ierr = verbPrintf(2, grid.com,
-                          "* Computing enthalpy using ice temperature,"
-                          "  liquid water fraction and thickness...\n"); CHKERRQ(ierr);
-
-        // use vWork3d as already-allocated space
-        ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
-        ierr = vWork3d.set_attrs("internal", "liqfrac; temporary use during initialization",
-                                 "1", ""); CHKERRQ(ierr);
-        ierr = vWork3d.read(filename, last_record); CHKERRQ(ierr);
-
-        ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
-      } else {
-        ierr = verbPrintf(2, grid.com,
-                          "* Computing enthalpy using ice temperature and thickness...\n");
-        CHKERRQ(ierr);
-
-        ierr = compute_enthalpy_cold(temperature, Enth3); CHKERRQ(ierr);
-      }
-    } else {
-      PetscPrintf(grid.com, "PISM ERROR: neither %s nor %s was found in the input file %s.\n",
-                  "enthalpy", "temperature", filename.c_str());
-      PISMEnd();
-    }
-      
-  } // end of enthalpy initialization
+  ierr = init_enthalpy(filename, false, last_record); CHKERRQ(ierr);
 
   std::string history;
   ierr = nc.get_att_text("PISM_GLOBAL", "history", history); CHKERRQ(ierr);
@@ -620,12 +576,94 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
       continue;
     }
 
+    if (*i == "enthalpy") {
+      ierr = init_enthalpy(filename, true, 0); CHKERRQ(ierr);
+      continue;
+    }
+
     ierr = v->regrid(filename, true); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
+/**
+ * Initialize enthalpy from a file that does not contain it using "temp" and "liqfrac".
+ *
+ * @param filename input file name
+ *
+ * @param regrid use regridding if 'true', otherwise assume that the
+ *               input file has the same grid
+ * @param last_record the record to use when 'regrid==false'.
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceModel::init_enthalpy(std::string filename,
+                                       bool regrid, int last_record) {
+  PetscErrorCode ierr;
+  bool temp_exists  = false,
+    liqfrac_exists  = false,
+    enthalpy_exists = false;
+
+  PIO nc(grid, "guess_mode");
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_var("enthalpy", enthalpy_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("temp", temp_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("liqfrac", liqfrac_exists); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  if (enthalpy_exists == true) {
+    if (regrid) {
+      ierr = Enth3.regrid(filename, true); CHKERRQ(ierr);
+    } else {
+      ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
+    }
+  } else if (temp_exists == true) {
+    IceModelVec3 temp = vWork3d,
+      liqfrac         = Enth3;
+
+    NCSpatialVariable enthalpy_metadata = Enth3.get_metadata();
+    ierr = temp.set_name("temp"); CHKERRQ(ierr);
+    ierr = temp.set_attrs("temporary", "ice temperature", "Kelvin",
+                          "land_ice_temperature"); CHKERRQ(ierr);
+
+    if (regrid) {
+      ierr = temp.regrid(filename, true); CHKERRQ(ierr);
+    } else {
+      ierr = temp.read(filename, last_record); CHKERRQ(ierr);
+    }
+
+    if (liqfrac_exists == true) {
+      ierr = liqfrac.set_name("liqfrac"); CHKERRQ(ierr);
+      ierr = liqfrac.set_attrs("temporary", "ice liquid water fraction",
+                               "1", ""); CHKERRQ(ierr);
+
+      if (regrid) {
+        ierr = liqfrac.regrid(filename, true); CHKERRQ(ierr);
+      } else {
+        ierr = liqfrac.read(filename, last_record); CHKERRQ(ierr);
+      }
+
+      ierr = verbPrintf(2, grid.com,
+                        "* Computing enthalpy using ice temperature,"
+                        "  liquid water fraction and thickness...\n"); CHKERRQ(ierr);
+      ierr = compute_enthalpy(temp, liqfrac, Enth3); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com,
+                        "* Computing enthalpy using ice temperature and thickness...\n");
+      CHKERRQ(ierr);
+      ierr = compute_enthalpy_cold(temp, Enth3); CHKERRQ(ierr);
+    }
+
+    ierr = Enth3.set_metadata(enthalpy_metadata, 0); CHKERRQ(ierr);
+  } else {
+    PetscPrintf(grid.com, "PISM ERROR: neither %s nor %s was found in '%s'.\n",
+                "enthalpy", "temperature", filename.c_str());
+    PISMEnd();
+  }
+
+  return 0;
+}
 
 //! Initializes the snapshot-saving mechanism.
 PetscErrorCode IceModel::init_snapshots() {
