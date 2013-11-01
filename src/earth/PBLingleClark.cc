@@ -225,8 +225,8 @@ PetscErrorCode PBLingleClark::correct_topg() {
                             "m", "bedrock_altitude"); CHKERRQ(ierr);
 
   // Get topg and topg_initial from the regridding file.
-  ierr = topg_initial.regrid(regrid_filename.c_str(), true); CHKERRQ(ierr);
-  ierr =     topg_tmp.regrid(regrid_filename.c_str(), true); CHKERRQ(ierr);
+  ierr = topg_initial.regrid(regrid_filename, true); CHKERRQ(ierr);
+  ierr =     topg_tmp.regrid(regrid_filename, true); CHKERRQ(ierr);
 
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.

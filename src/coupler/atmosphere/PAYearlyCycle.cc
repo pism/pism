@@ -92,9 +92,9 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 		    "      from %s ... \n",
 		    precip_filename.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precipitation.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.regrid(precip_filename, true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = precipitation.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.read(precip_filename, start); CHKERRQ(ierr); // fails if not found!
   }
 
   return 0;

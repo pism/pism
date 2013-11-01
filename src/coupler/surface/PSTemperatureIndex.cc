@@ -213,7 +213,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
 		    "    reading snow depth (ice equivalent meters) from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr);
-  ierr = snow_depth.regrid(input_file.c_str(), 0.0); CHKERRQ(ierr);
+  ierr = snow_depth.regrid(input_file, 0.0); CHKERRQ(ierr);
 
   m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
 

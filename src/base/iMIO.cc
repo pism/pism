@@ -330,7 +330,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
     ierr = verbPrintf(threshold, grid.com,
                       "PISM WARNING: the following variables were *not* written by PISM core (IceModel): "); CHKERRQ(ierr);
     for (i = vars.begin(); i != vars.end(); ++i) {
-      ierr = verbPrintf(threshold, grid.com, "%s ", (*i).c_str()); CHKERRQ(ierr);
+      ierr = verbPrintf(threshold, grid.com, "%s ", i->c_str()); CHKERRQ(ierr);
     }
     ierr = verbPrintf(threshold, grid.com, "\n"); CHKERRQ(ierr);
   }
@@ -616,7 +616,7 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
     std::string pism_intent = v->string_attr("pism_intent");
     if (pism_intent != "model_state") {
       ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
-                        (*i).c_str()); CHKERRQ(ierr);
+                        i->c_str()); CHKERRQ(ierr);
       continue;
     }
 

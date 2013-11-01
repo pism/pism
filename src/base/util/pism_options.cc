@@ -55,32 +55,32 @@ PetscErrorCode verbosityLevelFromOptions() {
 }
 
 //! Print a warning telling the user that an option was ignored.
-PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
+PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
-		      name); CHKERRQ(ierr);
+		      name.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
 //! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
-PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]) {
+PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std::string new_name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, old_name, tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is deprecated. Please use '%s' instead.\n",
-		       old_name, new_name); CHKERRQ(ierr);
+		       old_name.c_str(), new_name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -88,16 +88,16 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], co
 }
 
 //!Stop if an option `name` is set.
-PetscErrorCode stop_if_set(MPI_Comm com, const char name[]) {
+PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is not allowed.\n",
-		       name); CHKERRQ(ierr);
+		       name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -119,13 +119,12 @@ PetscErrorCode stop_on_version_option() {
 }
 
 //! \brief Print a usage message.
-PetscErrorCode just_show_usage(
-    MPI_Comm com, const char execname[], const char usage[]) {
+PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string usage) {
   PetscErrorCode ierr;
   ierr = verbPrintf(1,com,
       "%s is a PISM (http://www.pism-docs.org) executable.\nOptions cheat-sheet:\n",
-      execname); CHKERRQ(ierr);
-  ierr = verbPrintf(1,com,usage); CHKERRQ(ierr);
+      execname.c_str()); CHKERRQ(ierr);
+  ierr = verbPrintf(1,com,usage.c_str()); CHKERRQ(ierr);
   ierr = verbPrintf(1,com,
       "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
       "For more help with PISM:\n"
@@ -136,14 +135,13 @@ PetscErrorCode just_show_usage(
       "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
       "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
       "  5. email for help:  help@pism-docs.org\n", 
-      execname,execname);  CHKERRQ(ierr);
+      execname.c_str(), execname.c_str());  CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Show provided usage message and quit.  (Consider using show_usage_check_req_opts() in preference to this one.)
-PetscErrorCode show_usage_and_quit(
-    MPI_Comm com, const char execname[], const char usage[]) {
+PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage) {
   PetscErrorCode ierr;
 
   ierr = stop_on_version_option(); CHKERRQ(ierr);
@@ -156,9 +154,9 @@ PetscErrorCode show_usage_and_quit(
 
 
 //! In a single call a driver program can provide a usage string to the user and check if required options are given, and if not, end.
-PetscErrorCode show_usage_check_req_opts(
-    MPI_Comm com, const char execname[], std::vector<std::string> required_options,
-    const char usage[]) {
+PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
+                                         std::vector<std::string> required_options,
+                                         std::string usage) {
   PetscErrorCode ierr;
 
   ierr = stop_on_version_option(); CHKERRQ(ierr);
@@ -563,10 +561,10 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  ierr = config.read(alt_config.c_str()); CHKERRQ(ierr);
+  ierr = config.read(alt_config); CHKERRQ(ierr);
 
   if (use_override_config) {
-    ierr = overrides.read(override_config.c_str()); CHKERRQ(ierr);
+    ierr = overrides.read(override_config); CHKERRQ(ierr);
     config.import_from(overrides);
     ierr = verbPrintf(2, com, "CONFIG OVERRIDES read from file '%s'.\n",
 		      override_config.c_str()); CHKERRQ(ierr);

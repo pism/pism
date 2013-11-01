@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
     std::vector<std::string> required;
     required.push_back("-i");
-    ierr = show_usage_check_req_opts(com, "pismmerge", required, usage.c_str()); CHKERRQ(ierr);
+    ierr = show_usage_check_req_opts(com, "pismmerge", required, usage); CHKERRQ(ierr);
 
     check_input_files(i_name);
 

@@ -77,7 +77,7 @@ public:
       " Available modifiers: " + modifier_list;
 
     // Get the command-line option:
-    ierr = PISMOptionsStringArray("-" + option, descr, default_type.c_str(), choices, flag); CHKERRQ(ierr);
+    ierr = PISMOptionsStringArray("-" + option, descr, default_type, choices, flag); CHKERRQ(ierr);
 
     if (choices.empty()) {
       if (flag) {

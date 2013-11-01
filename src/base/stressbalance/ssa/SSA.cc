@@ -117,7 +117,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
         (! dont_read_initial_guess)) {
       ierr = verbPrintf(3,grid.com,"Reading u_ssa and v_ssa...\n"); CHKERRQ(ierr);
 
-      ierr = m_velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
+      ierr = m_velocity.read(filename, start); CHKERRQ(ierr);
     }
 
   } else {

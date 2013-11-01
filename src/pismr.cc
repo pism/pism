@@ -66,10 +66,10 @@ int main(int argc, char *argv[]) {
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismr", usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pismr", usage); CHKERRQ(ierr);
     } else {
       std::vector<std::string> required;  required.clear();
-      ierr = show_usage_check_req_opts(com, "pismr", required, usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_check_req_opts(com, "pismr", required, usage); CHKERRQ(ierr);
     }
 
     PISMUnitSystem unit_system(NULL);

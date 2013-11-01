@@ -179,9 +179,9 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
 		    "    from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precipitation.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = precipitation.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }
 
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));

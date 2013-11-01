@@ -48,7 +48,7 @@ static PISMNCFile* create_backend(MPI_Comm com, int rank, std::string mode) {
     int compression_level = 0;
 
     if (n != std::string::npos) {
-      mode.replace(0, 6, "");
+      mode.replace(0, 6, "");   // 6 is the length of "quilt:"
       char *endptr;
       compression_level = strtol(mode.c_str(), &endptr, 10);
       if ((*endptr != '\0') || (compression_level < 0) || (compression_level > 9)) {

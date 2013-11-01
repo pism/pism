@@ -85,9 +85,9 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
     "    reading ice-equivalent surface mass balance rate 'climatic_mass_balance' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
   if (regrid) {
-    ierr = climatic_mass_balance.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = climatic_mass_balance.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = climatic_mass_balance.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = climatic_mass_balance.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }
 
   // parameterizing the ice surface temperature 'ice_surface_temp'

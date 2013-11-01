@@ -40,7 +40,7 @@ PetscErrorCode SIA_Sliding::allocate() {
   {
     IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
-    ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
+    ierr = ice_factory.setType(config.get_string("sia_flow_law")); CHKERRQ(ierr);
 
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
     ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);

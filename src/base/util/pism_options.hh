@@ -51,18 +51,18 @@ PetscErrorCode PISMOptionsIsSet(std::string option, std::string descr, bool &res
 
 PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result);
 
-PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
-PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]);
-PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);
+PetscErrorCode ignore_option(MPI_Comm com, std::string name);
+PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std::string new_name);
+PetscErrorCode stop_if_set(MPI_Comm com, std::string name);
 
 // usage message and required options; drivers use these
 PetscErrorCode stop_on_version_option();
 
-PetscErrorCode show_usage_and_quit(MPI_Comm com, const char execname[], const char usage[]);
+PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage);
 
-PetscErrorCode show_usage_check_req_opts(MPI_Comm com, const char execname[],
+PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
                                          std::vector<std::string> required_options,
-                                         const char usage[]);
+                                         std::string usage);
 
 // config file initialization:
 PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,

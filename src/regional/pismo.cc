@@ -496,11 +496,11 @@ int main(int argc, char *argv[]) {
     if ((!iset) && (!bfset)) {
       ierr = PetscPrintf(com,
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismo", usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pismo", usage); CHKERRQ(ierr);
     } else {
       std::vector<std::string> required;
       required.clear();
-      ierr = show_usage_check_req_opts(com, "pismo", required, usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_check_req_opts(com, "pismo", required, usage); CHKERRQ(ierr);
     }
 
     PISMUnitSystem unit_system(NULL);

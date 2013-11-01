@@ -498,7 +498,7 @@ PetscErrorCode IceModel::model_state_setup() {
                            filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    ierr = initFromFile(filename.c_str()); CHKERRQ(ierr);
+    ierr = initFromFile(filename); CHKERRQ(ierr);
 
     ierr = regrid(0); CHKERRQ(ierr);
     // Check consistency of geometry after initialization:
@@ -670,7 +670,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
 			   filename, boot_file_set); CHKERRQ(ierr);
 
   if (boot_file_set) {
-    ierr = bootstrapFromFile(filename.c_str()); CHKERRQ(ierr);
+    ierr = bootstrapFromFile(filename); CHKERRQ(ierr);
   } else {
     ierr = PetscPrintf(grid.com, "PISM ERROR: No input file specified.\n"); CHKERRQ(ierr);
     PISMEnd();
