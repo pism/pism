@@ -556,8 +556,8 @@ PetscErrorCode IceModel::createVecs() {
       ierr = flux_divergence.create(grid, "flux_divergence", false); CHKERRQ(ierr);
       ierr = flux_divergence.set_attrs("diagnostic",
                                        "flux divergence",
-                                       "s-1", ""); CHKERRQ(ierr);
-      ierr = flux_divergence.set_glaciological_units("year-1"); CHKERRQ(ierr);
+                                       "m s-1", ""); CHKERRQ(ierr);
+      ierr = flux_divergence.set_glaciological_units("m year-1"); CHKERRQ(ierr);
       flux_divergence.write_in_glaciological_units = true;
     }
 
