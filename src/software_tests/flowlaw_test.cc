@@ -61,10 +61,6 @@ int main(int argc, char *argv[]) {
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
     ice_factory.create(&flow_law);
 
-    bool dummy;
-    ierr = PISMOptionsString("-flow_law", "Selects the flow law",
-                             flow_law_name, dummy); CHKERRQ(ierr);
-
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C
                depth   = 2000.0,
                gs      = 1.0e-3, // some laws use grain size; fixed
@@ -74,7 +70,7 @@ int main(int argc, char *argv[]) {
     double     p       = EC.getPressureFromDepth(depth),
                Tm      = EC.getMeltingTemp(p);
 
-    printf("flow law:   \"%s\"\n", flow_law_name.c_str());
+    printf("flow law:   \"%s\"\n", flow_law->name().c_str());
     printf("pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)\n",
            p,depth);
     printf("flowtable:\n");

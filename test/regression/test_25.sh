@@ -13,7 +13,7 @@ rm -f $files
 $PISM_PATH/flowlaw_test -flow_law gk > flowtable-25.txt
 # compare results
 diff flowtable-25.txt - > diff-25.txt <<END-OF-OUTPUT
-flow law:   "gk"
+flow law:   "Goldsby-Kohlstedt / Paterson-Budd (hybrid)"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:
   (dev stress)   (abs temp) (liq frac) =   (flow)
