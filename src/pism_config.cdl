@@ -28,6 +28,9 @@ netcdf pism_config {
     pism_config:do_blatter = "no";
     pism_config:do_blatter_doc = "Use the Blatter/Pattyn hydrostatic stress balance.";
 
+    pism_config:do_stressbalance_constant = "no";
+    pism_config:do_stressbalance_constant_doc = "Use the 'constant' stress balance (reads u,v from a file).";
+
     pism_config:do_sia = "yes";
     pism_config:do_sia_doc = "Use the SIA stress balance (possibly as a part of a hybrid).";
 

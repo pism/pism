@@ -681,7 +681,6 @@ PetscErrorCode IceModel::set_vars_from_options() {
 
 //! \brief Decide which ice flow law to use by default.
 PetscErrorCode IceModel::set_default_flowlaw() {
-  PetscErrorCode ierr;
   std::string sia_flow_law = config.get_string("sia_flow_law"),
     ssa_flow_law = config.get_string("ssa_flow_law");
 
@@ -731,7 +730,8 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   bool
     use_ssa_velocity = config.get_flag("use_ssa_velocity"),
     do_blatter = config.get_flag("do_blatter"),
-    do_sia = config.get_flag("do_sia");
+    do_sia = config.get_flag("do_sia"),
+    do_stressbalance_constant = config.get_flag("do_stressbalance_constant");
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
@@ -752,7 +752,10 @@ PetscErrorCode IceModel::allocate_stressbalance() {
           SETERRQ(grid.com, 1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
         }
       } else {
-        my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
+        if (do_stressbalance_constant)
+          my_stress_balance = new SSB_Constant(grid, *basal, *EC, config);
+        else
+          my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
       }
       SSB_Modifier *my_modifier;
       if (do_sia) {

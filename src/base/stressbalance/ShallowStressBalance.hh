@@ -179,4 +179,13 @@ public:
   { return 0; }
 };
 
+class SSB_Constant : public SSB_Trivial {
+public:
+  SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
+               EnthalpyConverter &e, const NCConfigVariable &conf);
+  virtual ~SSB_Constant();
+  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode init(PISMVars &vars);
+};
+
 #endif /* _SHALLOWSTRESSBALANCE_H_ */

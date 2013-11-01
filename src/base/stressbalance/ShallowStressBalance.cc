@@ -21,6 +21,7 @@
 #include "PISMVars.hh"
 #include "flowlaws.hh"
 #include "basal_resistance.hh"
+#include "pism_options.hh"
 
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
@@ -49,7 +50,8 @@ PetscErrorCode ShallowStressBalance::allocate() {
 //! \brief Update the trivial shallow stress balance object.
 PetscErrorCode SSB_Trivial::update(bool fast) {
   PetscErrorCode ierr;
-  if (fast) return 0;
+  if (fast)
+    return 0;
 
   ierr = m_velocity.set(0.0); CHKERRQ(ierr);
 
@@ -400,3 +402,47 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+
+/**
+ * Shallow stress balance class that reads =u= and =v= fields from a
+ * file and holds them constant.
+ *
+ * The only use I can think of right now is testing.
+ */
+SSB_Constant::SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
+                           EnthalpyConverter &e, const NCConfigVariable &conf)
+  : SSB_Trivial(g, b, e, conf) {
+  // empty
+}
+
+SSB_Constant::~SSB_Constant() {
+  // empty
+}
+
+PetscErrorCode SSB_Constant::update(bool fast) {
+  PetscErrorCode ierr;
+  if (fast == true)
+    return 0;
+
+  ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSB_Constant::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
+
+  bool flag;
+  std::string input_filename;
+  ierr = PISMOptionsString("-ssb_constant_file", "name of the file to read velocity fields from",
+                           input_filename, flag); CHKERRQ(ierr);
+  if (flag == false) {
+    PetscPrintf(grid.com, "PISM ERROR: option -ssb_constant_file is required.\n");
+    PISMEnd();
+  }
+
+  ierr = m_velocity.regrid(input_filename, true); CHKERRQ(ierr);
+
+  return 0;
+}
+
