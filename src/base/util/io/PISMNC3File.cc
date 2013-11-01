@@ -783,7 +783,7 @@ int PISMNC3File::get_att_text(std::string variable_name, std::string att_name, s
   }
   MPI_Bcast(&len, 1, MPI_INT, 0, com);
 
-  // Allocate some memory or set result to NULL and return:
+  // Allocate some memory or clear result and return:
   if (len == 0) {
     result.clear();
     return 0;

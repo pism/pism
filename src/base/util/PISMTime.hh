@@ -58,7 +58,8 @@ inline bool pism_is_valid_calendar_name(std::string name) {
 class PISMTime
 {
 public:
-  PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem units_system);
+  PISMTime(MPI_Comm c, const NCConfigVariable &conf, std::string calendar,
+           PISMUnitSystem units_system);
   virtual ~PISMTime();
 
   //! \brief Sets the current time (in seconds since the reference time).
@@ -89,6 +90,8 @@ public:
   //! \brief Intialize using command-line options.
   virtual PetscErrorCode init();
 
+  void init_calendar(std::string calendar);
+
   PetscErrorCode parse_times(std::string spec, std::vector<double> &result);
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
@@ -116,7 +119,7 @@ public:
 
   //! \brief Convert the day number to the year fraction.
   virtual double day_of_the_year_to_day_fraction(unsigned int day);
-  
+
   //! \brief Returns the model time in seconds corresponding to the
   //! beginning of the year `T` falls into.
   virtual double calendar_year_start(double T);
@@ -144,6 +147,10 @@ public:
   //! Date corresponding to the end of the run.
   virtual std::string end_date();
 
+  //! @brief Convert time interval from seconds to given units. Handle
+  //! 'years' using the year length corresponding to the calendar.
+  virtual double convert_time_interval(double T, std::string units);
+
 protected:
   PetscErrorCode parse_list(std::string spec, std::vector<double> &result);
 
@@ -162,9 +169,9 @@ protected:
 
   virtual PetscErrorCode parse_date(std::string spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(std::string spec, std::string &keyword, double *result);
+  virtual PetscErrorCode parse_interval_length(std::string spec, std::string &keyword,
+                                               double *result);
 
-private:
   double years_to_seconds(double input);
   double seconds_to_years(double input);
 

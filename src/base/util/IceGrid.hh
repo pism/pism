@@ -200,6 +200,7 @@ protected:
   void destroy_dms();
 
   int dm_key(int, int);
+  PetscErrorCode init_calendar(std::string &result);
 private:
   // Hide copy constructor / assignment operator.
   IceGrid(IceGrid const &);

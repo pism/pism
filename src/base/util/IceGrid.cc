@@ -23,7 +23,7 @@
 #include "PISMTime_Calendar.hh"
 #include "PISMProf.hh"
 #include "NCVariable.hh"
-
+#include "pism_options.hh"
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
                  const NCConfigVariable &conf)
@@ -84,16 +84,64 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   profiler = new PISMProf(com, rank, size);
 
-  std::string calendar = config.get_string("calendar");
+  std::string calendar;
+  PetscErrorCode ierr = init_calendar(calendar);
+  if (ierr != 0) {
+    PetscPrintf(com, "PISM ERROR: Calendar initialization failed.\n");
+    PISMEnd();
+  }
+
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
-    time = new PISMTime(com, config, m_unit_system);
+    time = new PISMTime(com, config, calendar, m_unit_system);
   } else {
-    time = new PISMTime_Calendar(com, config, m_unit_system);
+    time = new PISMTime_Calendar(com, config, calendar, m_unit_system);
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
 }
 
+/**
+ * Select a calendar using the "calendar" configuration parameter, the
+ * "-calendar" command-line option, or the "calendar" attribute of the
+ * "time" variable in the file specified using "-time_file".
+ *
+ * @param[out] result selected calendar string
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceGrid::init_calendar(std::string &result) {
+  PetscErrorCode ierr;
+
+  // Set the default calendar using the config. parameter or the
+  // "-calendar" option:
+  result = config.get_string("calendar");
+
+  // Check if -time_file was set and override the setting above if the
+  // "calendar" attribute is found.
+  std::string time_file_name;
+  bool time_file_set;
+  ierr = PISMOptionsString("-time_file", "name of the file specifying the run duration",
+                           time_file_name, time_file_set); CHKERRQ(ierr);
+  if (time_file_set) {
+    PIO nc(*this, "netcdf3");    // OK to use netcdf3
+    std::string tmp;
+
+    ierr = nc.open(time_file_name, PISM_NOWRITE); CHKERRQ(ierr);
+    {
+      bool time_exists;
+      std::string time_name = config.get_string("time_dimension_name");
+      ierr = nc.inq_var(time_name, time_exists); CHKERRQ(ierr);
+      if (time_exists) {
+        ierr = nc.get_att_text(time_name, "calendar", tmp); CHKERRQ(ierr);
+        if (tmp.empty() == false)
+          result = tmp;
+      }
+    }
+    ierr = nc.close();
+  }
+
+  return 0;
+}
 
 IceGrid::~IceGrid() {
   destroy_dms();
@@ -580,10 +628,11 @@ PetscErrorCode IceGrid::report_parameters() {
   // report on time axis
   //   FIXME:  this could use pism_config:summary_time_unit_name instead of fixed "years"
   ierr = verbPrintf(2, com,
-           "   time interval (length)   [%s, %s]  (%s years)\n",
+           "   time interval (length)   [%s, %s]  (%s years, using the '%s' calendar)\n",
                     time->start_date().c_str(),
                     time->end_date().c_str(),
-                    time->run_length().c_str()); CHKERRQ(ierr);
+                    time->run_length().c_str(),
+                    time->calendar().c_str()); CHKERRQ(ierr);
 
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   ierr = printInfo(3); CHKERRQ(ierr);

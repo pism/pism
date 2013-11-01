@@ -26,6 +26,7 @@ class PISMTime_Calendar : public PISMTime
 {
 public:
   PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
+                    std::string calendar,
                     PISMUnitSystem units_system);
   virtual ~PISMTime_Calendar();
 

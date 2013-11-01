@@ -38,21 +38,14 @@ double PISMTime::seconds_to_years(double input) {
 }
 
 
-PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit_system)
+PISMTime::PISMTime(MPI_Comm c,
+                   const NCConfigVariable &conf,
+                   std::string calendar,
+                   PISMUnitSystem unit_system)
   : m_com(c), m_config(conf), m_unit_system(unit_system),
     m_time_units(m_unit_system) {
 
-  m_calendar_string = m_config.get_string("calendar");
-
-  double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
-  if (calendar() == "360_day") {
-    m_year_length = 360 * seconds_per_day;
-  } else if (calendar() == "365_day" || calendar() == "noleap") {
-    m_year_length = 365 * seconds_per_day;
-  } else {
-    // use the ~365.2524-day year
-    m_year_length = m_unit_system.convert(1.0, "year", "seconds");
-  }
+  init_calendar(calendar);
 
   m_run_start = years_to_seconds(m_config.get("start_year"));
   m_run_end   = increment_date(m_run_start, (int)m_config.get("run_length_years"));
@@ -63,6 +56,20 @@ PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit
 }
 
 PISMTime::~PISMTime() {
+}
+
+void PISMTime::init_calendar(std::string calendar) {
+  m_calendar_string = calendar;
+
+  double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
+  if (calendar == "360_day") {
+    m_year_length = 360 * seconds_per_day;
+  } else if (calendar == "365_day" || calendar == "noleap") {
+    m_year_length = 365 * seconds_per_day;
+  } else {
+    // use the ~365.2524-day year
+    m_year_length = m_unit_system.convert(1.0, "year", "seconds");
+  }
 }
 
 //! \brief Sets the current time (in seconds since the reference time).
@@ -171,6 +178,11 @@ PetscErrorCode PISMTime::init() {
   PetscErrorCode ierr;
   bool y_set, ys_set, ye_set;
   PetscReal y_seconds, ys_seconds, ye_seconds;
+
+  // At this point the calendar and the year length are set (in the
+  // constructor). The PISMTime_Calendar class will (potentially)
+  // override all this by using settings from -time_file, so that is
+  // fine, too.
 
   ierr = PetscOptionsBegin(m_com, "", "PISM model time options", ""); CHKERRQ(ierr);
   {
@@ -530,4 +542,11 @@ PetscErrorCode PISMTime::compute_times(double time_start, double delta, double t
   }
 
   return compute_times_simple(time_start, delta, time_end, result);
+}
+
+double PISMTime::convert_time_interval(double T, std::string units) {
+  if (units == "year" || units == "years" || units == "yr" || units == "a") {
+    return this->seconds_to_years(T); // uses year length here
+  }
+  return m_unit_system.convert(T, "seconds", units);
 }

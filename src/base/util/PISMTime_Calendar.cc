@@ -47,10 +47,11 @@ static inline std::string string_strip(std::string input) {
   for more details about supported calendars.
  */
 PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
+                                     std::string calendar,
                                      PISMUnitSystem units_system)
-  : PISMTime(c, conf, units_system) {
+  : PISMTime(c, conf, calendar, units_system) {
 
-  m_calendar_string = m_config.get_string("calendar");
+  // init_calendar() was called by the constructor of PISMTime.
   if (pism_is_valid_calendar_name(m_calendar_string) == false) {
     PetscPrintf(m_com, "PISM ERROR: unsupported calendar: %s\n", m_calendar_string.c_str());
     PISMEnd();
@@ -108,11 +109,12 @@ PetscErrorCode PISMTime_Calendar::process_y(double &result, bool &flag) {
   ierr = PISMOptionsInt("-y", "Run length, in years (integer)", tmp, flag); CHKERRQ(ierr);
 
   if (flag) {
-    result = m_unit_system.convert(tmp, "years", "seconds");
+    result = years_to_seconds(tmp);
   }
 
   return 0;
 }
+
 
 PetscErrorCode PISMTime_Calendar::process_ye(double &result, bool &flag) {
   PetscErrorCode ierr;
@@ -196,7 +198,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
                   new_calendar.c_str(), filename.c_str());
       PISMEnd();
     }
-    m_calendar_string = new_calendar;
+    init_calendar(new_calendar);
   }
 
   if (time_bounds_name.empty() == false) {
@@ -246,8 +248,8 @@ PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
     ierr = time_axis.read(nc, this, time); CHKERRQ(ierr);
   }
 
-  m_run_start = time.front();
-  m_run_end = time.back();
+  m_run_start       = time.front();
+  m_run_end         = time.back();
   m_time_in_seconds = m_run_start;
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -463,6 +465,10 @@ int PISMTime_Calendar::parse_interval_length(std::string spec, std::string &keyw
   if (ierr != 0)
     return 1;
 
+  // This is called *only* if the 'spec' is *not* one of "monthly",
+  // "yearly", "daily", "hourly", so we don't need to worry about
+  // spec.find("...") finding "year" in "yearly".
+
   // do not allow intervals specified in terms of "fuzzy" units
   if (spec.find("year") != std::string::npos || spec.find("month") != std::string::npos) {
     PetscPrintf(m_com, "PISM ERROR: interval length '%s' with the calendar '%s' is not supported.\n",
@@ -532,7 +538,7 @@ PetscErrorCode PISMTime_Calendar::compute_times_yearly(std::vector<double> &resu
   result.clear();
   while (true) {
     // find the time corresponding to the beginning of the current
-    // month
+    // year
     errcode = utInvCalendar2_cal(year, 1, 1, // year, month, day
                                  0, 0, 0.0,  // hour, minute, second
                                  m_time_units.get(), &time,
