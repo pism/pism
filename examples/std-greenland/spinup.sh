@@ -65,8 +65,8 @@ else
   SCRIPTNAME="#(spinup.sh)"
 fi
 
-if [ $# -gt 6 ] ; then
-  echo "$SCRIPTNAME WARNING: ignoring arguments after argument 6 ..."
+if [ $# -gt 7 ] ; then
+  echo "$SCRIPTNAME WARNING: ignoring arguments after argument 7 ..."
 fi
 
 NN="$1" # first arg is number of processes
@@ -128,12 +128,12 @@ else
 fi
 
 # set stress balance from argument 5
-CALVING="-ocean_kill $PISM_DATANAME"
+PHYS="-ocean_kill $PISM_DATANAME -sia_e 3.0"
 if [ "$5" = "sia" ]; then
-  PHYS="${CALVING}"
+  PHYS=$PHYS
 elif [ "$5" = "hybrid" ]; then
   TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
-  PHYS="${CALVING} -ssa_sliding ${TILLPHI} -pseudo_plastic -pseudo_plastic_q 0.23 -sia_e 3.0 -till_effective_fraction_overburden 0.01 -tauc_slippery_grounding_lines"
+  PHYS="${PHYS} -ssa_sliding ${TILLPHI} -pseudo_plastic -pseudo_plastic_q 0.23 -till_effective_fraction_overburden 0.01 -tauc_slippery_grounding_lines"
 else
   echo "invalid fifth argument; must be in $DYNALIST"
   exit
@@ -156,9 +156,10 @@ fi
 # now we know enough to assemble command ...
 
 echo
-echo "# =================================================================================="
-echo "# PISM std Greenland spinup: $NN processors, $dx km grid, $climname, $5 dynamics"
-echo "# =================================================================================="
+echo "# ======================================================================="
+echo "# PISM std Greenland spinup:"
+echo "#    $NN processors, $DURATION a run, $dx km grid, $climname, $5 dynamics"
+echo "# ======================================================================="
 
 echo "$SCRIPTNAME              NN = $NN"
 
@@ -216,18 +217,16 @@ echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"
 
 
-cmd="$PISM_MPIDO $NN $PISM -Mx $myMx -My $myMy $vgrid -boot_file $INNAME $RUNSTARTEND -o $OUTNAME $COUPLER $PHYS"
-echo "CMD SO FAR (FIXME):"
-echo $cmd
-$cmd
+cmd="$PISM_MPIDO $NN $PISM -Mx $myMx -My $myMy $vgrid -boot_file $INNAME $RUNSTARTEND $COUPLER $PHYS -o $OUTNAME"
+echo
+$PISM_DO $cmd
 
 exit
 
+# FIXME FROM HERE!!!
+
 # run lengths and starting time for paleo
 PALEOSTARTYEAR=-125000
-
-# FIXME grids changed!
-
 
 # bootstrap and do smoothing run to 100 years
 PRE0NAME=g${CS}km_pre100.nc
