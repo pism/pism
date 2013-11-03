@@ -3,8 +3,7 @@
 # Copyright (C) 2009-2013 The PISM Authors
 
 # Downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts
-# metadata, and saves under new name ready for PISM.  Also converts .cdl for
-# configuration parameters to .nc form.  See README.md.
+# metadata, and saves under new name ready for PISM.  See README.md.
 
 # depends on wget and NCO (ncrename, ncap, ncatted, ncpdq, ncks; see
 # http://nco.sourceforge.net/)
@@ -82,13 +81,6 @@ ncpdq -O --rdr=-time $SLSERIES $SLSERIES
 ncap2 -O -s "time=-time" $SLSERIES $SLSERIES
 ncatted -O -a units,time,m,c,"years since 1-1-1" $SLSERIES
 ncatted -O -a calendar,time,c,c,"365_day" $SLSERIES
-echo "done."
-echo
-
-# generate config file
-CONFIG=std_config
-echo -n "generating config file $CONFIG.nc from ascii file $CONFIG.cdl ... "
-ncgen -o ${CONFIG}.nc ${CONFIG}.cdl
 echo "done."
 echo
 

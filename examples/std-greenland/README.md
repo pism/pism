@@ -27,29 +27,15 @@ First do
 
 This downloads the file `Greenland_5km_v1.1.nc` from the SeaRISE site and it
 builds PISM-readable NetCDF file `pism_Greenland_5km_v1.1.nc`.  It also
-generates additional climate-forcing files `pism_dT.nc` and `pism_dSL.nc`
-and it converts the configuration overrides file `std_config.cdl` to get
-`std_config.nc`.
+generates additional climate-forcing files `pism_dT.nc` and `pism_dSL.nc`.
 
-FIXME
+Then do
 
-To run the spinup in the default (coarsest) grid resolution on 8 processes, for
-example, and run it in the background and keep a copy of the stdout information
-on the run in the file `out.spinup`, do
+    $ ./spinup.sh
 
-    $ ./spinup.sh 8 &> out.spinup &
-
-It might be wise to see what will run as the spinup first; for that do
-
-    $ PISM_DO=echo ./spinup.sh 8
-
-There are also experiment and post-processing scripts which serve as examples,
-but without maintained documentation.
-
-## Changing configuration constants
-
-Edit `std_config.cdl` to set your preferred value and rerun `preprocess.sh`
-and then `spinup.sh` as desired.
+*In fact this does no run of PISM*, but provides a usage message which you can
+refer back to at any time.  It shows two basic usages, the first of which can
+be run in a few minutes of computer time, so as to get started.
 
 # SeaRISE Greenland background information
 
