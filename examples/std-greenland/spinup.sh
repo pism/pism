@@ -30,9 +30,7 @@ if [ $# -lt 5 ] ; then
   echo "  where:"
   echo "    PROCS     = 1,2,3,... is number of MPI processes"
   echo "    CLIMATE   in $CLIMLIST"
-  echo "    DURATION  = model run time in years"
-  echo "                 for paleo runs does '-ys -DURATION -ye 0'"
-  echo "                 for const runs does '-y DURATION'"
+  echo "    DURATION  = model run time in years; does '-ys -DURATION -ye 0'"
   echo "    GRID      in $GRIDLIST (km)"
   echo "    DYNAMICS  in $DYNALIST; sia is non-sliding"
   echo "    OUTFILE   optional name of output file; default = unnamed.nc"
@@ -71,20 +69,19 @@ fi
 
 NN="$1" # first arg is number of processes
 DURATION=$3
+RUNSTARTEND="-ys -$DURATION -ye 0"
 
 # set coupler from argument 2
 if [ "$2" = "const" ]; then
   climname="constant-climate"
   INLIST="$PISM_DATANAME"
   COUPLER="-surface given -surface_given_file $PISM_DATANAME"
-  RUNSTARTEND="-y $DURATION"
 elif [ "$2" = "paleo" ]; then
   climname="paleo-climate"
   INLIST="$PISM_DATANAME $PISM_TEMPSERIES $PISM_SLSERIES"
-  COUPLER="-atmosphere searise_greenland,delta_T,paleo_precip -surface pdd -atmosphere_paleo_precip_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES"
-  RUNSTARTEND="-ye -$DURATION -ye 0"
+  COUPLER=" -bed_def lc -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd -atmosphere_paleo_precip_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES"
 else
-  echo "invalid second argument; must be in $TYPELIST"
+  echo "invalid second argument; must be in $CLIMLIST"
   exit
 fi
 
@@ -93,9 +90,9 @@ COARSESKIP=10
 FINESKIP=50
 FINESTSKIP=200
 VDIMS="-Lz 4000 -Lbz 2000 -skip -skip_max "
-COARSEVGRID="${VDIMS} ${COARSESKIP} -Mz 101 -Mbz 11 -z_spacing equal"
-FINEVGRID="${VDIMS} ${FINESKIP} -Mz 201 -Mbz 21 -z_spacing equal"
-FINESTVGRID="${VDIMS} ${FINESTSKIP} -Mz 401 -Mbz 41 -z_spacing equal"
+COARSEVGRID="-Mz 101 -Mbz 11 -z_spacing equal ${VDIMS} ${COARSESKIP}"
+FINEVGRID="-Mz 201 -Mbz 21 -z_spacing equal ${VDIMS} ${FINESKIP}"
+FINESTVGRID="-Mz 401 -Mbz 41 -z_spacing equal ${VDIMS} ${FINESTSKIP}"
 if [ "$4" -eq "20" ]; then
   dx=20
   myMx=76
@@ -153,8 +150,7 @@ else
   INNAME=$7
 fi
 
-# now we know enough to assemble command ...
-
+# now we have read options ... we know enough to report to user ...
 echo
 echo "# ======================================================================="
 echo "# PISM std Greenland spinup:"
@@ -209,85 +205,35 @@ for INPUT in $INLIST $INNAME; do
   fi
 done
 
-# cat prefix and exec together
+# show remaining setup options:
 PISM="${PISM_PREFIX}${PISM_EXEC}"
-
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"
 
+# set up diagnostics
+TSNAME=ts_$OUTNAME
+TSTIMES=-$DURATION:yearly:0
+EXNAME=ex_$OUTNAME
+EXSTEP=100  # FIXME: should be set-able?
+EXTIMES=-$DURATION:$EXSTEP:0
+# check_stationarity.py can be applied to $EXNAME
+EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf"
+if [ "$5" = "hybrid" ]; then
+  EXVARS="${EXVARS},hardav,cbase,tauc"
+fi
+DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
 
-cmd="$PISM_MPIDO $NN $PISM -Mx $myMx -My $myMy $vgrid -boot_file $INNAME $RUNSTARTEND $COUPLER $PHYS -o $OUTNAME"
+# construct command
+cmd="$PISM_MPIDO $NN $PISM -boot_file $INNAME -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
 echo
 $PISM_DO $cmd
 
 exit
 
-# FIXME FROM HERE!!!
-
-# run lengths and starting time for paleo
-PALEOSTARTYEAR=-125000
-
-# bootstrap and do smoothing run to 100 years
-PRE0NAME=g${CS}km_pre100.nc
-echo
-echo "$SCRIPTNAME  bootstrapping plus short smoothing run (for ${SMOOTHRUNLENGTH}a)"
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $COARSESKIP -boot_file $INNAME $COARSEGRID \
-  $COUPLER_SIMPLE -y ${SMOOTHRUNLENGTH} -o $PRE0NAME"
-$PISM_DO $cmd
 
 
-exit  #FIXME:  check short run before proceeding
-
-
-
-# run with -no_mass (no surface change) for 50ka
-PRE1NAME=g${CS}km_steady.nc
-TS1NAME=ts_${PRE1NAME}
-TS1TIMES=0:100:${NOMASSSIARUNLENGTH}
-EX1NAME=ex_${PRE1NAME}
-EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
-echo
-echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM -i $PRE0NAME $COUPLER_SIMPLE \
-  -no_mass -ys 0 -y ${NOMASSSIARUNLENGTH} \
-  -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES \
-  -ts_file $TS1NAME -ts_times $TS1TIMES -o $PRE1NAME"
-$PISM_DO $cmd
-
-
-# pre-spinup done; ready to use paleoclimate forcing for real spinup ...
-
-EXSTEP=500
-EXFSTEP=10
-TSSTEP=1
-
-STARTTIME=$PALEOSTARTYEAR
-
-ENDTIME=$COARSEENDTIME
-
-ET=$(($ENDTIME/-1))
-OUTNAME=g${CS}km_m${ET}a.nc
-TSNAME=ts_$OUTNAME
-TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
-EXNAME=ex_$OUTNAME
-EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,hardav,mask,dHdt,cbase,tauc,thk,topg,usurf,climatic_mass_balance_cumulative"
-echo
-echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $COARSESKIP -i $PRE1NAME $FULLPHYS -bed_def lc $COUPLER_FORCING \
-     -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
-     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
-$PISM_DO $cmd
-
-# exit    # uncomment to stop here
-
-STARTTIME=$ENDTIME
-ENDTIME=0 # BP
-STARTNAME=$OUTNAME
+# FIXME: anything needed from below?
 
 # ######################################
 # "regular" run

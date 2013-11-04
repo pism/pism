@@ -1,18 +1,16 @@
 ## "Standard" Greenland spinup examples
 
 This directory contains scripts for standard Greenland ice dynamics simulations.
-The first section of the PISM _User's Manual_ documents these examples.  There
-is one major run script `spinup.sh` but it takes options to determine major (and
-minor) spinup choices.
+The first section of the PISM _User's Manual_ documents these examples.
 
-These runs are motivated primarily by the "constant-climate" and "paleo-climate"
-runs which are evaluated in
+These runs are motivated by (but not identical to) the "constant-climate" and
+"paleo-climate" initial states which are evaluated in
 
   * A. Aschwanden, G. Adalgeirsdottir, and C. Khroulev (2013). _Hindcasting to_
     _measure ice sheet model sensitivity to initial states._ The Cryosphere 7,
     doi:10.5194/tc-7-1083-2013, 1083--1093.
 
-However, the runs here use 5km SeaRISE data including present-day bedrock
+The runs here use 5km SeaRISE data including present-day bedrock
 topography, ice thickness, and basal heat flux; see references at bottom.  Also,
 in contrast to the above _Hindcasting_ paper, runs here use publicly-available
 RACMO atmospheric/ocean circulation model outputs, including modeled present-day
@@ -33,15 +31,17 @@ Then do
 
     $ ./spinup.sh
 
-*In fact this does no run of PISM*, but provides a usage message which you can
-refer back to at any time.  It shows two basic usages, the first of which can
-be run in a few minutes of computer time, so as to get started.
+*In fact this does no actual simulation.*  Instead it provides a usage/help
+message.  Specifically, it shows two basic usages, one with constant-climate
+and SIA-only choices, and one with paleo-climate and SIA/SSA-hybrid choices.
+The first of these examples can be run in a few minutes of computer time,
+which should help you get started.
 
 # SeaRISE Greenland background information
 
-The SeaRISE assessment process included PISM Greenland simulations.  These runs
-are described in these papers, which evaluate and compare all SeaRISE
-simulations:
+The SeaRISE assessment process included PISM Greenland simulations among many
+ice sheet model results.  These runs are described in the following papers,
+which evaluate and compare all SeaRISE simulations:
 
   * S. Nowicki and others (2013). _Insights into spatial sensitivities of ice_
     _mass response to environmental change from the SeaRISE ice sheet modeling_
@@ -59,8 +59,15 @@ The reference for RACMO model outputs is:
     _of the Greenland ice sheet revealed by high-resolution climate modeling._
     Geophys. Res. Lett. 36 (L12501), doi:10.1029/2009GL038110.
 
-Scripts for the actual PISM submitted runs to SeaRISE can be found in the
-`stable0.5` branch of PISM.  See
+For further references on the SeaRISE data, run
+
+    $ ncdump -h Greenland_5km_v1.1.nc |less
+
+after running `preprocess.sh` above, and look at the `source` attributes of
+various fields.
+
+Scripts for the actual PISM submitted runs to SeaRISE are more complex than
+the runs shown here.  They can be found in the `stable0.5` branch of PISM.  See
 
     https://github.com/pism/pism/tree/stable0.5/examples/searise-greenland
 
