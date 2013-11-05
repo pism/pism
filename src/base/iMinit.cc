@@ -934,6 +934,7 @@ PetscErrorCode IceModel::allocate_submodels() {
  */
 PetscErrorCode IceModel::attach_ocean_model(PISMOceanModel *input) {
 
+  assert(ocean == NULL);
   external_ocean_model = true;
   ocean = input;
 
@@ -954,6 +955,7 @@ PetscErrorCode IceModel::attach_ocean_model(PISMOceanModel *input) {
  */
 PetscErrorCode IceModel::attach_surface_model(PISMSurfaceModel *input) {
 
+  assert(surface == NULL);
   external_surface_model = true;
   surface = input;
 
