@@ -37,7 +37,14 @@ if [ $# -lt 5 ] ; then
   echo "    BOOTFILE  optional name of input file; default = $PISM_DATANAME"
   echo
   echo "consider setting optional environment variables (see script for meaning):"
-  echo "  PISM_DO, PISM_MPIDO, PISM_PREFIX, PISM_EXEC, SCRIPTNAME"
+  echo "    EXSTEP       spacing in years between -extra_files outputs; defaults to 100"
+  echo "    PISM_DO      set to 'echo' if no run desired; defaults to empty"
+  echo "    PISM_MPIDO   defaults to 'mpiexec -n'"
+  echo "    PISM_PREFIX  set to path to pismr executable if desired; defaults to empty"
+  echo "    PISM_EXEC    defaults to 'pismr'"
+  echo "    REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)"
+  echo "    REGRIDVARS   set to vars to regrid *if* REGRIDFILE set;"
+  echo "                 defaults to 'bmelt,enthalpy,litho_temp,thk,tillwat'"
   echo
   echo "example usage 1:"
   echo "    $ ./spinup.sh 4 const 1000 20 sia"
@@ -87,8 +94,8 @@ fi
 
 # decide on grid and skip from argument 4
 COARSESKIP=10
-FINESKIP=50
-FINESTSKIP=200
+FINESKIP=20
+FINESTSKIP=50
 VDIMS="-Lz 4000 -Lbz 2000 -skip -skip_max "
 COARSEVGRID="-Mz 101 -Mbz 11 -z_spacing equal ${VDIMS} ${COARSESKIP}"
 FINEVGRID="-Mz 201 -Mbz 21 -z_spacing equal ${VDIMS} ${FINESKIP}"
@@ -192,6 +199,32 @@ else
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
 
+# set EXSTEP to default if not set
+if [ -n "${EXSTEP:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME          EXSTEP = $EXSTEP  (already set)"
+else
+  EXSTEP="100"
+  echo "$SCRIPTNAME          EXSTEP = $EXSTEP"
+fi
+
+# if REGRIDFILE set then form regridcommand
+if [ -n "${REGRIDFILE:+1}" ] ; then  # check if env var is already set
+  if [ -n "${REGRIDVARS:+1}" ] ; then  # check if env var is already set
+    echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS  (already set)"
+  else
+    REGRIDVARS='litho_temp,thk,enthalpy,tillwat,bmelt'
+  fi
+  # note: other vars which are "state":  Href, dbdt, shelfbtemp, shelfbmassflux
+  echo "$SCRIPTNAME      REGRIDFILE = $REGRIDFILE; we will regrid these vars:"
+  echo "$SCRIPTNAME                     $REGRIDVARS"
+  regridcommand="-regrid_file $REGRIDFILE -regrid_vars $REGRIDVARS"
+  if [ "$2" = "paleo" ]; then
+    regridcommand="$regridcommand -regrid_bed_special"
+  fi
+else
+  regridcommand=""
+fi
+
 # actually check for input files
 for INPUT in $INLIST $INNAME; do
   if [ -e "$INPUT" ] ; then  # check if file exist
@@ -215,7 +248,6 @@ echo "$SCRIPTNAME        dynamics = '$PHYS'"
 TSNAME=ts_$OUTNAME
 TSTIMES=-$DURATION:yearly:0
 EXNAME=ex_$OUTNAME
-EXSTEP=100  # FIXME: should be set-able?
 EXTIMES=-$DURATION:$EXSTEP:0
 # check_stationarity.py can be applied to $EXNAME
 EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf"
@@ -225,35 +257,7 @@ fi
 DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
 
 # construct command
-cmd="$PISM_MPIDO $NN $PISM -boot_file $INNAME -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
+cmd="$PISM_MPIDO $NN $PISM -boot_file $INNAME -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $regridcommand $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
 echo
-$PISM_DO $cmd
-
-exit
-
-
-
-# FIXME: anything needed from below?
-
-# ######################################
-# "regular" run
-# ######################################
-
-OUTNAME=g${FS}km_0.nc
-TSNAME=ts_$OUTNAME
-TSTIMES=$STARTTIME:$TSSTEP:$ENDTIME
-EXNAME=ex_$OUTNAME
-EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
-echo
-echo "$SCRIPTNAME  regular run"
-echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation,"
-echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max  $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
-     -bed_def lc $COUPLER_FORCING \
-     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt -regrid_bed_special  \
-     -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
-     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
