@@ -847,14 +847,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 /*!
 This procedure is the main time-stepping loop.
  */
-PetscErrorCode IceModel::run() {
+PetscErrorCode IceModel::init_run() {
   PetscErrorCode  ierr;
 
-  bool do_mass_conserve = config.get_flag("do_mass_conserve"),
-    do_energy = config.get_flag("do_energy"),
-    do_age = config.get_flag("do_age"),
-    do_skip = config.get_flag("do_skip");
-  int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
+  bool do_mass_conserve = config.get_flag("do_mass_conserve");
+  bool do_energy = config.get_flag("do_energy");
+  bool do_age = config.get_flag("do_age");
+  bool do_skip = config.get_flag("do_skip");
 
   // do a one-step diagnostic run:
   dt_TempAge = config.get("preliminary_time_step_duration");
@@ -913,6 +912,47 @@ PetscErrorCode IceModel::run() {
   ierr = summaryPrintLine(PETSC_TRUE, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
+
+  return 0;
+}
+
+/** Backwards compatibility */
+PetscErrorCode IceModel::run()
+{
+  PetscErrorCode  ierr;
+
+  ierr = init_run(); CHKERRQ(ierr);
+
+  ierr = continue_run(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/** Backwards compatibility */
+PetscErrorCode IceModel::run_to(double time)
+{
+  PetscErrorCode  ierr;
+
+  //grid.time->set_end(3155692.597470);
+  grid.time->set_end(time);
+
+  ierr = continue_run(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+/**Internal */
+PetscErrorCode IceModel::continue_run()
+{
+  PetscErrorCode  ierr;
+
+  bool do_mass_conserve = config.get_flag("do_mass_conserve");
+  bool do_energy = config.get_flag("do_energy");
+  bool do_age = config.get_flag("do_age");
+  bool do_skip = config.get_flag("do_skip");
+
+  int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
 
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop

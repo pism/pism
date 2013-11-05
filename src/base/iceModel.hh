@@ -158,7 +158,18 @@ public:
 
   // see iceModel.cc
   PetscErrorCode init();
+
+
+  /**Backwards compatibility with stand-alone PISM */
   virtual PetscErrorCode run();
+  /**Initialize a PISM run */
+  virtual PetscErrorCode init_run();
+  /**Advance the current PISM run to a specific time */
+  virtual PetscErrorCode run_to(double time);
+protected:
+  /**Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
+  virtual PetscErrorCode continue_run();
+public:
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
   virtual PetscErrorCode setExecName(std::string my_executable_short_name);
   virtual void reset_counters();
