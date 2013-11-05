@@ -38,27 +38,43 @@ if [ $# -lt 5 ] ; then
   echo
   echo "consider setting optional environment variables (see script for meaning):"
   echo "    EXSTEP       spacing in years between -extra_files outputs; defaults to 100"
+  echo "    EXVARS       desired -extra_vars; defaults to 'diffusivity,temppabase,"
+  echo "                   tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf'"
+  echo "                   plus ',hardav,cbase,tauc' if DYNAMICS=hybrid"
   echo "    PISM_DO      set to 'echo' if no run desired; defaults to empty"
   echo "    PISM_MPIDO   defaults to 'mpiexec -n'"
   echo "    PISM_PREFIX  set to path to pismr executable if desired; defaults to empty"
   echo "    PISM_EXEC    defaults to 'pismr'"
   echo "    REGRIDFILE   set to file name to regrid from; defaults to empty (no regrid)"
-  echo "    REGRIDVARS   set to vars to regrid *if* REGRIDFILE set;"
-  echo "                 defaults to 'bmelt,enthalpy,litho_temp,thk,tillwat'"
+  echo "    REGRIDVARS   desired -regrid_vars; applies *if* REGRIDFILE set;"
+  echo "                   defaults to 'bmelt,enthalpy,litho_temp,thk,tillwat'"
   echo
   echo "example usage 1:"
+  echo
   echo "    $ ./spinup.sh 4 const 1000 20 sia"
-  echo "  does spinup with 4 processors, constant-climate, 1000 year run, 20 km"
-  echo "  grid, and non-sliding SIA stress balance, and which bootstraps and"
-  echo "  outputs to default files"
+  echo
+  echo "  Does spinup with 4 processors, constant-climate, 1000 year run, 20 km"
+  echo "  grid, and non-sliding SIA stress balance.  Bootstraps from and outputs to"
+  echo "  default files."
   echo
   echo "example usage 2:"
+  echo
   echo "    $ PISM_DO=echo ./spinup.sh 128 paleo 100.0 5 hybrid out.nc boot.nc &> foo.sh"
-  echo "  creates a script foo.sh that will do spinup with 128 processors,"
-  echo "  simulated paleo-climate, '-ys -100 -ye 0' run, 5 km grid, sliding with"
-  echo "  SSA stress balance, outputs to out.nc, and which bootstraps from NetCDF"
-  echo "  file boot.nc (which might come from previous PISM run, even at a"
-  echo "  different grid spacing)"
+  echo
+  echo "  Creates a script foo.sh for spinup with 128 processors, simulated paleo-climate,"
+  echo "  5 km grid, sliding with SIA+SSA hybrid, output to {out.nc,ts_out.nc,ex_out.nc},"
+  echo "  and bootstrapping from boot.nc."
+  echo
+  echo "example usage 3:"
+  echo
+  echo "    $ ./spinup.sh 4 const 5000 20 hybrid g20km.nc"
+  echo "    $ REGRIDFILE=g20km.nc EXSTEP=10 ./spinup.sh 4 const 500 10 hybrid g10km.nc"
+  echo "    $ REGRIDFILE=g10km.nc EXSTEP=1 ./spinup.sh 4 const 10 5 hybrid g5km.nc"
+  echo
+  echo "  A basic way to do grid sequencing  20km -> 10km -> 5 km,  for constant-climate"
+  echo "  and SIA+SSA dynamics simulations.  Note that bootstrapping is from default"
+  echo "  file $PISM_DATANAME in all runs, so the later runs use higher-res. bed data."
+  echo "  (Run duration should generally be increased in practice.)"
   echo
   exit
 fi
@@ -81,11 +97,11 @@ RUNSTARTEND="-ys -$DURATION -ye 0"
 # set coupler from argument 2
 if [ "$2" = "const" ]; then
   climname="constant-climate"
-  INLIST="$PISM_DATANAME"
+  INLIST=""
   COUPLER="-surface given -surface_given_file $PISM_DATANAME"
 elif [ "$2" = "paleo" ]; then
   climname="paleo-climate"
-  INLIST="$PISM_DATANAME $PISM_TEMPSERIES $PISM_SLSERIES"
+  INLIST="$PISM_TEMPSERIES $PISM_SLSERIES"
   COUPLER=" -bed_def lc -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd -atmosphere_paleo_precip_file $PISM_TEMPSERIES -atmosphere_delta_T_file $PISM_TEMPSERIES -ocean constant,delta_SL -ocean_delta_SL_file $PISM_SLSERIES"
 else
   echo "invalid second argument; must be in $CLIMLIST"
@@ -156,6 +172,7 @@ if [ -z "$7" ]; then
 else
   INNAME=$7
 fi
+INLIST="${INLIST} $INNAME $REGRIDFILE"
 
 # now we have read options ... we know enough to report to user ...
 echo
@@ -163,6 +180,19 @@ echo "# ======================================================================="
 echo "# PISM std Greenland spinup:"
 echo "#    $NN processors, $DURATION a run, $dx km grid, $climname, $5 dynamics"
 echo "# ======================================================================="
+
+# actually check for input files
+for INPUT in $INLIST; do
+  if [ -e "$INPUT" ] ; then  # check if file exist
+    echo "$SCRIPTNAME           input   $INPUT (found)"
+  else
+    echo "$SCRIPTNAME           input   $INPUT (MISSING!!)"
+    echo
+    echo "$SCRIPTNAME           please run ./preprocess.sh, exiting"
+    echo
+    exit
+  fi
+done
 
 echo "$SCRIPTNAME              NN = $NN"
 
@@ -207,6 +237,17 @@ else
   echo "$SCRIPTNAME          EXSTEP = $EXSTEP"
 fi
 
+# set EXVARS list to defaults if not set
+if [ -n "${EXVARS:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME          EXVARS = $EXVARS  (already set)"
+else
+  EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf"
+  if [ "$5" = "hybrid" ]; then
+    EXVARS="${EXVARS},hardav,cbase,tauc"
+  fi
+  echo "$SCRIPTNAME          EXVARS = $EXVARS"
+fi
+
 # if REGRIDFILE set then form regridcommand
 if [ -n "${REGRIDFILE:+1}" ] ; then  # check if env var is already set
   if [ -n "${REGRIDVARS:+1}" ] ; then  # check if env var is already set
@@ -215,8 +256,8 @@ if [ -n "${REGRIDFILE:+1}" ] ; then  # check if env var is already set
     REGRIDVARS='litho_temp,thk,enthalpy,tillwat,bmelt'
   fi
   # note: other vars which are "state":  Href, dbdt, shelfbtemp, shelfbmassflux
-  echo "$SCRIPTNAME      REGRIDFILE = $REGRIDFILE; we will regrid these vars:"
-  echo "$SCRIPTNAME                     $REGRIDVARS"
+  echo "$SCRIPTNAME      REGRIDFILE = $REGRIDFILE"
+  echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS"
   regridcommand="-regrid_file $REGRIDFILE -regrid_vars $REGRIDVARS"
   if [ "$2" = "paleo" ]; then
     regridcommand="$regridcommand -regrid_bed_special"
@@ -224,19 +265,6 @@ if [ -n "${REGRIDFILE:+1}" ] ; then  # check if env var is already set
 else
   regridcommand=""
 fi
-
-# actually check for input files
-for INPUT in $INLIST $INNAME; do
-  if [ -e "$INPUT" ] ; then  # check if file exist
-    echo "$SCRIPTNAME           input   $INPUT (found)"
-  else
-    echo "$SCRIPTNAME           input   $INPUT (MISSING!!)"
-    echo
-    echo "$SCRIPTNAME           please run ./preprocess.sh, exiting"
-    echo
-    exit
-  fi
-done
 
 # show remaining setup options:
 PISM="${PISM_PREFIX}${PISM_EXEC}"
@@ -250,10 +278,6 @@ TSTIMES=-$DURATION:yearly:0
 EXNAME=ex_$OUTNAME
 EXTIMES=-$DURATION:$EXSTEP:0
 # check_stationarity.py can be applied to $EXNAME
-EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf"
-if [ "$5" = "hybrid" ]; then
-  EXVARS="${EXVARS},hardav,cbase,tauc"
-fi
 DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
 
 # construct command
