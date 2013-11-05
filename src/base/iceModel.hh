@@ -382,11 +382,10 @@ protected:
                        PetscScalar iarea,PetscScalar &gmeltfrac);
   virtual PetscErrorCode ageStats(PetscScalar ivol, PetscScalar &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
-  virtual PetscErrorCode summaryPrintLine(
-              PetscBool printPrototype, bool tempAndAge,
-              PISMTime* date, PetscScalar delta_t,
-              PetscScalar volume, PetscScalar area,
-              PetscScalar meltfrac, PetscScalar max_diffusivity);
+  virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
+                                          PetscScalar delta_t,
+                                          PetscScalar volume, PetscScalar area,
+                                          PetscScalar meltfrac, PetscScalar max_diffusivity);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:

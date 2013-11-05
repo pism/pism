@@ -198,7 +198,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   ierr = stress_balance->get_max_diffusivity(max_diffusivity); CHKERRQ(ierr);
 
   // main report: 'S' line
-  ierr = summaryPrintLine(PETSC_FALSE, tempAndAge, grid.time, dt,
+  ierr = summaryPrintLine(PETSC_FALSE, tempAndAge, dt,
                           gvolume,garea,meltfrac,max_diffusivity); CHKERRQ(ierr);
 
   return 0;
@@ -243,7 +243,7 @@ Derived classes of IceModel may redefine this method and print alternate
 information.
  */
 PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAndAge,
-                                          PISMTime* /*date*/,  PetscScalar delta_t,
+                                          PetscScalar delta_t,
                                           PetscScalar volume,  PetscScalar area,
                                           PetscScalar /* meltfrac */,  PetscScalar max_diffusivity) {
 
@@ -311,7 +311,6 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
 
     ierr = verbPrintf(2,grid.com,
                       "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",
-                      //"S %8.3f:   %8.5f  %9.5f     %12.5f %12.5f\n",
                       grid.time->date().c_str(),
                       volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
                       max_diffusivity, maxvel); CHKERRQ(ierr);
