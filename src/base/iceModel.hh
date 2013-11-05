@@ -163,14 +163,14 @@ public:
   PetscErrorCode init();
 
 
-  /**Backwards compatibility with stand-alone PISM */
+  /** Run PISM in the "standalone" mode. */
   virtual PetscErrorCode run();
-  /**Initialize a PISM run */
-  virtual PetscErrorCode init_run();
-  /**Advance the current PISM run to a specific time */
+  /** Advance the current PISM run to a specific time */
   virtual PetscErrorCode run_to(double time);
 protected:
-  /**Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
+  /** Do the "preliminary" time-step. */
+  virtual PetscErrorCode init_run();
+  /** Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
   virtual PetscErrorCode continue_run();
 public:
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
@@ -319,7 +319,6 @@ protected:
 protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode deallocate_internal_objects();
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMax3DVelocities();

@@ -140,8 +140,6 @@ void IceModel::reset_counters() {
 
 IceModel::~IceModel() {
 
-  deallocate_internal_objects();
-
   // de-allocate time-series diagnostics
   std::map<std::string,PISMTSDiagnostic*>::iterator i = ts_diagnostics.begin();
   while (i != ts_diagnostics.end()) delete (i++)->second;
@@ -614,21 +612,12 @@ PetscErrorCode IceModel::createVecs() {
   return 0;
 }
 
-
-//! De-allocate internal objects.
-/*! This includes Vecs that are not in an IceModelVec, SSA tools and the bed
-  deformation model.
- */
-PetscErrorCode IceModel::deallocate_internal_objects() {
-  return 0;
-}
-
 PetscErrorCode IceModel::setExecName(std::string my_executable_short_name) {
   executable_short_name = my_executable_short_name;
   return 0;
 }
 
-//! Do the contents of the main PISM time-step.
+//! The contents of the main PISM time-step.
 /*!
 During the time-step we perform the following actions:
  */
@@ -850,10 +839,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 }
 
 
-//! Do the time-stepping for an evolution run.
-/*!
-This procedure is the main time-stepping loop.
- */
+//! Do the preliminary time-step and re-initialize the model.
 PetscErrorCode IceModel::init_run() {
   PetscErrorCode  ierr;
 
@@ -903,6 +889,7 @@ PetscErrorCode IceModel::init_run() {
   t_TempAge = grid.time->start();
   dt_TempAge = 0.0;
   grid.time->set_end(run_end);
+
   ierr = model_state_setup(); CHKERRQ(ierr);
 
   // restore verbosity:
@@ -923,9 +910,17 @@ PetscErrorCode IceModel::init_run() {
   return 0;
 }
 
-/** Backwards compatibility */
-PetscErrorCode IceModel::run()
-{
+/**
+ * The time-stepping method used by PISM in the "standalone" mode.
+ *
+ * 1. Do a 1-second-long "preliminary" time-step to compute
+ *    "rate-of-change" quantities at the beginning of the run.
+ * 2. Re-initialize the model.
+ * 3. Run the main time-stepping loop.
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
   ierr = init_run(); CHKERRQ(ierr);
@@ -935,13 +930,20 @@ PetscErrorCode IceModel::run()
   return 0;
 }
 
-/** Backwards compatibility */
-PetscErrorCode IceModel::run_to(double time)
-{
+/**
+ * Run the time-stepping loop from the current model time to `time`.
+ *
+ * This should be called by the coupler controlling PISM when it is
+ * running alongside a GCM.
+ *
+ * @param run_end model time (in seconds) to run to
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceModel::run_to(double run_end) {
   PetscErrorCode  ierr;
 
-  //grid.time->set_end(3155692.597470);
-  grid.time->set_end(time);
+  grid.time->set_end(run_end);
 
   ierr = continue_run(); CHKERRQ(ierr);
 
@@ -949,9 +951,15 @@ PetscErrorCode IceModel::run_to(double time)
 }
 
 
-/**Internal */
-PetscErrorCode IceModel::continue_run()
-{
+/**
+ * Run the time-stepping loop from the current time until the time
+ * specified by the IceModel::grid::time object.
+ *
+ * This is the method used by PISM in the "standalone" mode.
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceModel::continue_run() {
   PetscErrorCode  ierr;
 
   bool do_mass_conserve = config.get_flag("do_mass_conserve");
@@ -959,7 +967,7 @@ PetscErrorCode IceModel::continue_run()
   bool do_age = config.get_flag("do_age");
   bool do_skip = config.get_flag("do_skip");
 
-  int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
+  int stepcount = config.get_flag("count_time_steps") ? 0 : -1;
 
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
@@ -973,10 +981,10 @@ PetscErrorCode IceModel::continue_run()
     ierr = step(do_mass_conserve, do_energy, do_age, do_skip); CHKERRQ(ierr);
 
     // report a summary for major steps or the last one
-    bool updateAtDepth = (skipCountDown == 0);
-    bool tempAgeStep = ( updateAtDepth && ((do_energy) || (do_age)) );
+    bool updateAtDepth = skipCountDown == 0;
+    bool tempAgeStep = updateAtDepth && (do_energy || do_age);
 
-    const bool show_step = tempAgeStep || (adaptReasonFlag == 'e');
+    const bool show_step = tempAgeStep || adaptReasonFlag == 'e';
     ierr = summary(show_step); CHKERRQ(ierr);
 
     // writing these fields here ensures that we do it after the last time-step
