@@ -144,6 +144,9 @@ public:
   virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode allocate_iceberg_remover();
 
+  virtual PetscErrorCode attach_surface_model(PISMSurfaceModel *input);
+  virtual PetscErrorCode attach_ocean_model(PISMOceanModel *input);
+
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode set_grid_defaults();
@@ -227,6 +230,7 @@ protected:
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
   PISMBedDef       *beddef;
+  bool external_surface_model, external_ocean_model;
 
   //! \brief A dictionary with pointers to IceModelVecs below, for passing them
   //! from the IceModel core to other components (such as surface and ocean models)

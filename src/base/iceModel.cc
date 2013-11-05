@@ -67,6 +67,9 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   stress_balance = NULL;
 
+  external_surface_model = false;
+  external_ocean_model   = false;
+
   surface = NULL;
   ocean   = NULL;
   beddef  = NULL;
@@ -159,8 +162,12 @@ IceModel::~IceModel() {
 
   delete stress_balance;
 
-  delete ocean;
-  delete surface;
+  if (external_ocean_model == false)
+    delete ocean;
+
+  if (external_surface_model == false)
+    delete surface;
+
   delete beddef;
 
   delete subglacial_hydrology;

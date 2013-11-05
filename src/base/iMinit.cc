@@ -920,6 +920,46 @@ PetscErrorCode IceModel::allocate_submodels() {
   return 0;
 }
 
+/**
+ * Attach an external PISMOceanModel instance to this IceModel.
+ *
+ * Call this *before* calling IceModel::init().
+ *
+ * IceModel will *not* de-allocate the pointer to the PISMOceanModel
+ * instance passed in.
+ *
+ * @param input the model to attach
+ *
+ * @return 0
+ */
+PetscErrorCode IceModel::attach_ocean_model(PISMOceanModel *input) {
+
+  external_ocean_model = true;
+  ocean = input;
+
+  return 0;
+}
+
+/**
+ * Attach an external PISMSurfaceModel instance to this IceModel.
+ *
+ * Call this *before* calling IceModel::init().
+ *
+ * IceModel will *not* de-allocate the pointer to the PISMSurfaceModel
+ * instance passed in.
+ *
+ * @param input the model to attach
+ *
+ * @return 0
+ */
+PetscErrorCode IceModel::attach_surface_model(PISMSurfaceModel *input) {
+
+  external_surface_model = true;
+  surface = input;
+
+  return 0;
+}
+
 PetscErrorCode IceModel::allocate_couplers() {
   PetscErrorCode ierr;
   // Initialize boundary models:
@@ -929,12 +969,20 @@ PetscErrorCode IceModel::allocate_couplers() {
   PISMAtmosphereModel *atmosphere;
 
   ierr = PetscOptionsBegin(grid.com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
-  pa.create(atmosphere);
-  ps.create(surface);
-  po.create(ocean);
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  surface->attach_atmosphere_model(atmosphere);
+  if (surface == NULL) {
+    ps.create(surface);
+    external_surface_model = false;
+
+    pa.create(atmosphere);
+    surface->attach_atmosphere_model(atmosphere);
+  }
+
+  if (ocean == NULL) {
+    po.create(ocean);
+    external_ocean_model = false;
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   return 0;
 }
