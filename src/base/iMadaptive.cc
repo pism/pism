@@ -147,16 +147,10 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
     const PetscReal adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
     const PetscReal
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-    dt_from_diffus = adaptTimeStepRatio
-                       * 2 / (gDmax * gridfactor);
-    if (dt_from_diffus < dt) {
-      dt = dt_from_diffus;
-      adaptReasonFlag = 'd';
-    }
+    dt_from_diffus = adaptTimeStepRatio * 2 / (gDmax * gridfactor);
   }
 
-  bool do_skip = config.get_flag("do_skip");
-  if (do_skip && (skipCountDown == 0)) {
+  if (config.get_flag("do_skip") && skipCountDown == 0) {
     const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
     if (dt_from_diffus > 0.0) {
       const PetscReal  conservativeFactor = 0.95;
@@ -167,6 +161,11 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
       skipCountDown = ( skipCountDown >  skip_max) ?  skip_max :  skipCountDown;
     } else
       skipCountDown = skip_max;
+  }
+
+  if (dt_from_diffus > 0.0 && dt_from_diffus < dt) {
+    dt = dt_from_diffus;
+      adaptReasonFlag = 'd';
   }
 
   return 0;
