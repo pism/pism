@@ -165,7 +165,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
   if (dt_from_diffus > 0.0 && dt_from_diffus < dt) {
     dt = dt_from_diffus;
-      adaptReasonFlag = 'd';
+    adaptReasonFlag = 'd';
   }
 
   return 0;
