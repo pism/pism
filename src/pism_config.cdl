@@ -61,6 +61,9 @@ netcdf pism_config {
     pism_config:part_redist = "no";
     pism_config:part_redist_doc = "for partially filled grid cell scheme, redistribute residuals Hresidual";
 
+    pism_config:part_grid_reduce_frontal_thickness = "no";
+    pism_config:part_grid_reduce_frontal_thickness_doc = "Reduce the threshold ice thickness at ice fronts using a van der Veen flowline analytical profile";
+
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
 

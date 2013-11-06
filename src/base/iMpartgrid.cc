@@ -137,6 +137,8 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
   PetscErrorCode ierr;
   Mask mask;
 
+  bool reduce_frontal_thickness = config.get_flag("part_grid_reduce_frontal_thickness");
+
   ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
 
   // First step: distribute residual ice thickness
@@ -222,7 +224,8 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
       PetscReal H_threshold = get_threshold_thickness(vMask.int_star(i, j),
                                                       vH.star(i, j),
                                                       vh.star(i, j),
-                                                      vbed(i,j), true);
+                                                      vbed(i,j),
+                                                      reduce_frontal_thickness);
 
       PetscReal coverage_ratio = 1.0;
       if (H_threshold > 0.0)

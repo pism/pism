@@ -562,7 +562,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool do_part_grid = config.get_flag("part_grid"),
-    do_redist = config.get_flag("part_redist");
+    do_redist = config.get_flag("part_redist"),
+    reduce_frontal_thickness = config.get_flag("part_grid_reduce_frontal_thickness");
   if (do_part_grid) {
     ierr = vHref.begin_access(); CHKERRQ(ierr);
     if (do_redist) {
@@ -669,7 +670,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
           PetscReal H_threshold = get_threshold_thickness(vMask.int_star(i, j),
                                                           vH.star(i, j),
                                                           vh.star(i, j),
-                                                          vbed(i,j), do_redist);
+                                                          vbed(i,j),
+                                                          reduce_frontal_thickness);
           PetscReal coverage_ratio = 1.0;
           if (H_threshold > 0.0)
             coverage_ratio = vHref(i, j) / H_threshold;

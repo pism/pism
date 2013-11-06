@@ -32,7 +32,7 @@
    1      -verbose 1    less verbose than default: thresh must be 1 to print
    2      -verbose 2    DEFAULT
    3      -verbose 3    somewhat verbose
-          -verbose      same as "-verbose 3" 
+          -verbose      same as "-verbose 3"
    4      -verbose 4    fairly verbose
    5      -verbose 5    very verbose: print everything
 \endverbatim
@@ -42,8 +42,8 @@ PetscErrorCode verbosityLevelFromOptions() {
   PetscErrorCode ierr;
   PetscInt       myLevel;
   PetscBool     verbose, levelSet;
-  
-  ierr = setVerbosityLevel(2);  
+
+  ierr = setVerbosityLevel(2);
   ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
   if (levelSet == PETSC_TRUE) {
     ierr = setVerbosityLevel(myLevel);
@@ -64,7 +64,7 @@ PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
 
   if (option_is_set) {
     ierr = verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
-		      name.c_str()); CHKERRQ(ierr);
+                      name.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -79,8 +79,9 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std
   ierr = PetscOptionsGetString(PETSC_NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
-    ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is deprecated. Please use '%s' instead.\n",
-		       old_name.c_str(), new_name.c_str()); CHKERRQ(ierr);
+    ierr = PetscPrintf(com,
+                       "PISM ERROR: command-line option '%s' is deprecated. Please use '%s' instead.\n",
+                       old_name.c_str(), new_name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -97,7 +98,7 @@ PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
 
   if (option_is_set) {
     ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is not allowed.\n",
-		       name.c_str()); CHKERRQ(ierr);
+                       name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -134,13 +135,14 @@ PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string u
       "       http://www.pism-docs.org/doxy/html/index.html\n"
       "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
       "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
-      "  5. email for help:  help@pism-docs.org\n", 
+      "  5. email for help:  help@pism-docs.org\n",
       execname.c_str(), execname.c_str());  CHKERRQ(ierr);
   return 0;
 }
 
 
-//! Show provided usage message and quit.  (Consider using show_usage_check_req_opts() in preference to this one.)
+//! @brief Show provided usage message and quit. (Consider using
+//! show_usage_check_req_opts() in preference to this one.)
 PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage) {
   PetscErrorCode ierr;
 
@@ -153,7 +155,8 @@ PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::stri
 }
 
 
-//! In a single call a driver program can provide a usage string to the user and check if required options are given, and if not, end.
+//! @brief In a single call a driver program can provide a usage string to
+//! the user and check if required options are given, and if not, end.
 PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
                                          std::vector<std::string> required_options,
                                          std::string usage) {
@@ -183,7 +186,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
     ierr = verbPrintf(1,com,"\n"); CHKERRQ(ierr);
     ierr = show_usage_and_quit(com, execname, usage); CHKERRQ(ierr);
   }
-     
+
   // show usage message with -help, but don't fail
   bool helpSet = false;
   ierr = PISMOptionsIsSet("-help", helpSet); CHKERRQ(ierr);
@@ -195,7 +198,7 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
 }
 
 
-/* 
+/*
    note on pass-by-reference for options: For the last argument "flag" to
    PetscOptionsXXXX(....,&flag), the flag always indicates whether the option
    has been set. Therefore "flag" is altered by this function call. For other
@@ -217,8 +220,9 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   This is to make it possible to pass a parameter to a module selected using a
   command-line option without adding one mode option.
  */
-PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string description, std::set<std::string> choices,
-			       std::string default_value, std::string &result, bool &flag) {
+PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string description,
+                               std::set<std::string> choices, std::string default_value,
+                               std::string &result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   std::string list, descr;
@@ -238,7 +242,7 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string descri
   descr = description + " Choose one of " + list;
 
   ierr = PetscOptionsString(opt.c_str(), descr.c_str(), "", default_value.c_str(),
-			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+                            tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
 
   // return the default value if the option was not set
   if (!opt_set) {
@@ -259,7 +263,7 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string descri
     result = tmp;
   } else {
     ierr = PetscPrintf(com, "ERROR: invalid %s argument: \"%s\". Please choose one of %s.\n",
-		       opt.c_str(), tmp, list.c_str()); CHKERRQ(ierr);
+                       opt.c_str(), tmp, list.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -268,14 +272,14 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string descri
 
 //! \brief Process a command-line option taking a string as an argument.
 PetscErrorCode PISMOptionsString(std::string option, std::string text,
-				 std::string &result, bool &is_set, bool allow_empty_arg) {
+                                 std::string &result, bool &is_set, bool allow_empty_arg) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
-			    result.c_str(), tmp,
-			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            result.c_str(), tmp,
+                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
 
@@ -298,13 +302,13 @@ PetscErrorCode PISMOptionsString(std::string option, std::string text,
 
 //! PISM wrapper replacing PetscOptionsStringArray.
 PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
-				      std::vector<std::string>& result, bool &flag) {
+                                      std::vector<std::string>& result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool opt_set = PETSC_FALSE;
 
   ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
-			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+                            tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
 
   result.clear();
 
@@ -353,14 +357,14 @@ PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::stri
 
 //! \brief Process a command-line option taking an integer as an argument.
 PetscErrorCode PISMOptionsInt(std::string option, std::string text,
-			      PetscInt &result, bool &is_set) {
+                              PetscInt &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
   char *endptr;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
-			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
 
@@ -387,7 +391,7 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
 
 //! \brief Process a command-line option taking a real number as an argument.
 PetscErrorCode PISMOptionsReal(std::string option, std::string text,
-			       PetscReal &result, bool &is_set) {
+                               PetscReal &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -397,7 +401,7 @@ PetscErrorCode PISMOptionsReal(std::string option, std::string text,
   snprintf(str, TEMPORARY_STRING_LENGTH, "%f", result);
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", str, str,
-			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
 
@@ -424,14 +428,14 @@ PetscErrorCode PISMOptionsReal(std::string option, std::string text,
 //! \brief Process a command-line option taking a comma-separated list of reals
 //! as an argument.
 PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
-				    std::vector<PetscReal> &result, bool &is_set) {
+                                    std::vector<PetscReal> &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
-			    "none", str,
-			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            "none", str,
+                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
   is_set = (flag == PETSC_TRUE);
 
@@ -446,23 +450,23 @@ PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
 
       d = strtod(tmp.c_str(), &endptr);
       if (*endptr != '\0') {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,
-			   "PISM ERROR: Can't parse %s (%s is not a number).\n",
-			   tmp.c_str(), tmp.c_str()); CHKERRQ(ierr);
-	PISMEnd();
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+                           "PISM ERROR: Can't parse %s (%s is not a number).\n",
+                           tmp.c_str(), tmp.c_str()); CHKERRQ(ierr);
+        PISMEnd();
       }
       else
-	result.push_back(d);
+        result.push_back(d);
     }
   }
-  
+
   return 0;
 }
 
 //! \brief Process a command-line option taking a comma-separated list of
 //! integers as an argument.
 PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
-				    std::vector<PetscInt> &result, bool &is_set) {
+                                    std::vector<PetscInt> &result, bool &is_set) {
   PetscErrorCode ierr;
   std::vector<PetscReal> tmp;
 
@@ -502,13 +506,13 @@ PetscErrorCode PISMOptionsIsSet(std::string option, bool &result) {
 
 //! A version of PISMOptionsIsSet that prints a -help message.
 PetscErrorCode PISMOptionsIsSet(std::string option, std::string text,
-				bool &result) {
+                                bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
   PetscBool flag;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
-			    "", tmp, 1, &flag); CHKERRQ(ierr);
+                            "", tmp, 1, &flag); CHKERRQ(ierr);
 
   result = (flag == PETSC_TRUE);
 
@@ -541,7 +545,7 @@ PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result) {
   Processes -config and -config_override command line options.
  */
 PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
-			   NCConfigVariable &config, NCConfigVariable &overrides,
+                           NCConfigVariable &config, NCConfigVariable &overrides,
                            bool process_options) {
   PetscErrorCode ierr;
 
@@ -551,13 +555,13 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   std::string alt_config = PISM_DefaultConfigFile,
     override_config;
   bool use_alt_config, use_override_config;
-  
+
   ierr = PetscOptionsBegin(com, "", "PISM config file options", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsString("-config", "Specifies the name of an alternative config file",
-			     alt_config, use_alt_config); CHKERRQ(ierr);
+                             alt_config, use_alt_config); CHKERRQ(ierr);
     ierr = PISMOptionsString("-config_override", "Specifies a config override file name",
-			     override_config, use_override_config); CHKERRQ(ierr);
+                             override_config, use_override_config); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -567,7 +571,7 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
     ierr = overrides.read(override_config); CHKERRQ(ierr);
     config.import_from(overrides);
     ierr = verbPrintf(2, com, "CONFIG OVERRIDES read from file '%s'.\n",
-		      override_config.c_str()); CHKERRQ(ierr);
+                      override_config.c_str()); CHKERRQ(ierr);
   }
 
   if (process_options) {
@@ -585,7 +589,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // Energy modeling
   ierr = config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");  CHKERRQ(ierr);
-  ierr = config.flag_from_option("vark", "use_temperature_dependent_thermal_conductivity");  CHKERRQ(ierr);
+  ierr = config.flag_from_option("vark",
+                                 "use_temperature_dependent_thermal_conductivity");  CHKERRQ(ierr);
 
   ierr = config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity"); CHKERRQ(ierr);
 
@@ -595,7 +600,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // at bootstrapping, choose whether the method uses smb as upper boundary for
   // vertical velocity
-  ierr = config.flag_from_option("boot_no_smb_in_temp", "bootstrapping_no_smb_in_initial_temp"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("boot_no_smb_in_temp",
+                                 "bootstrapping_no_smb_in_initial_temp"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
@@ -645,7 +651,7 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
                                     "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("adapt_ratio",
-				   "adaptive_timestepping_ratio"); CHKERRQ(ierr);
+                                   "adaptive_timestepping_ratio"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
@@ -665,7 +671,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   // This parameter is used by the Goldsby-Kohlstedt flow law.
   ierr = config.scalar_from_option("ice_grain_size", "ice_grain_size"); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("grain_size_age_coupling", "compute_grain_size_using_age"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("grain_size_age_coupling",
+                                 "compute_grain_size_using_age"); CHKERRQ(ierr);
 
   // SSA
   // Decide on the algorithm for solving the SSA
@@ -680,9 +687,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // Basal sliding fiddles
   ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr); 
+  ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("sliding_scale", "sliding_scale_factor_reduces_tauc"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("sliding_scale",
+                                   "sliding_scale_factor_reduces_tauc"); CHKERRQ(ierr);
 
   // SSA Inversion
 
@@ -700,8 +708,11 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("tikhonov_rtol","tikhonov_rtol"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("tikhonov_ptol","tikhonov_ptol"); CHKERRQ(ierr);
 
-  ierr = config.keyword_from_option("inv_state_func","inv_state_func","meansquare,log_ratio,log_relative"); CHKERRQ(ierr);
-  ierr = config.keyword_from_option("inv_design_func","inv_design_func","sobolevH1,tv"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("inv_state_func",
+                                    "inv_state_func",
+                                    "meansquare,log_ratio,log_relative"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("inv_design_func",
+                                    "inv_design_func","sobolevH1,tv"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("inv_design_cL2","inv_design_cL2"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("inv_design_cH1","inv_design_cH1"); CHKERRQ(ierr);
@@ -710,10 +721,14 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
 
   // Basal strength
   ierr = config.scalar_from_option("till_c_0", "till_c_0");      CHKERRQ(ierr);
-  ierr = config.scalar_from_option("till_reference_void_ratio", "till_reference_void_ratio");      CHKERRQ(ierr);
-  ierr = config.scalar_from_option("till_compressibility_coefficient", "till_compressibility_coefficient");      CHKERRQ(ierr);
-  ierr = config.scalar_from_option("till_effective_fraction_overburden", "till_effective_fraction_overburden");      CHKERRQ(ierr);
-  ierr = config.flag_from_option("tauc_slippery_grounding_lines", "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("till_reference_void_ratio",
+                                   "till_reference_void_ratio");      CHKERRQ(ierr);
+  ierr = config.scalar_from_option("till_compressibility_coefficient",
+                                   "till_compressibility_coefficient");      CHKERRQ(ierr);
+  ierr = config.scalar_from_option("till_effective_fraction_overburden",
+                                   "till_effective_fraction_overburden");      CHKERRQ(ierr);
+  ierr = config.flag_from_option("tauc_slippery_grounding_lines",
+                                 "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
 
   // all basal strength models use this in ice-free areas
   ierr = config.scalar_from_option("high_tauc", "high_tauc");      CHKERRQ(ierr);
@@ -738,13 +753,17 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   ierr = config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q"); CHKERRQ(ierr);
 
   // threshold; at this velocity tau_c is basal shear stress
-  ierr = config.scalar_from_option("pseudo_plastic_uthreshold", "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
-  
+  ierr = config.scalar_from_option("pseudo_plastic_uthreshold",
+                                   "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
+
   ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
 
   // Ice shelves
 
   ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
+
+ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
+                               "part_grid_reduce_frontal_thickness"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
 
@@ -753,11 +772,12 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
   if (flag) {
     config.set_flag_from_option("nuBedrockSet", true);
   }
-  
+
   // fracture density
   ierr = config.flag_from_option("fractures", "do_fracture_density"); CHKERRQ(ierr);
   ierr = config.flag_from_option("write_fd_fields", "write_fd_fields"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("fracture_softening", "fracture_density_softening_lower_limit"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("fracture_softening",
+                                   "fracture_density_softening_lower_limit"); CHKERRQ(ierr);
 
 
   // Calving
@@ -820,13 +840,13 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &confi
       config.get_flag("ocean_kill")) {
     config.set_flag_from_option("kill_icebergs", true);
   }
-  
+
   // kill_icebergs requires part_grid
   if (config.get_flag("kill_icebergs")) {
     config.set_flag_from_option("part_grid", true);
   }
 
-  
+
   ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);
   if (flag) {
     config.set_flag_from_option("use_ssa_velocity", true);

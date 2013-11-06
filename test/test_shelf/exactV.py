@@ -131,7 +131,7 @@ elif options.variant == 1:
     run_pismv(101, 300, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'green', same_figure=True)
 elif options.variant == 2:
-    opt += " -cfbc -part_grid -part_redist"
+    opt += " -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness"
     run_pismv(101, 300, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'blue')
 
