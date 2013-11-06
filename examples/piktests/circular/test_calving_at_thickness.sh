@@ -18,7 +18,7 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
-stressbalance="-ssa_method fd -ssa_sliding -ssa_dirichlet_bc -no_sia -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
+stressbalance="-ssa_method fd -ssa_sliding -ssa_dirichlet_bc -no_sia -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
 
 calving="-thickness_calving -calving_at_thickness 200"
 
