@@ -233,10 +233,6 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
       // This ensures that an ice shelf does not climb up a cliff.
 
-      // FIXME: we should check surface elevations instead of using the mask,
-      // to allow an ice shelf to advance up a coast gradually rising from the
-      // sea level (or similar).
-
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
       continue;
@@ -545,6 +541,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
+  IceModelVec2S H_residual = vWork2d[1];
+
   IceModelVec2Stag *Qdiff;
   ierr = stress_balance->get_diffusive_flux(Qdiff); CHKERRQ(ierr);
 
@@ -568,10 +566,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (do_part_grid) {
     ierr = vHref.begin_access(); CHKERRQ(ierr);
     if (do_redist) {
-      ierr = vHresidual.begin_access(); CHKERRQ(ierr);
+      ierr = H_residual.begin_access(); CHKERRQ(ierr);
       // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
-      //        was not sufficient to zero-out vHresidual already
-      ierr = vHresidual.set(0.0); CHKERRQ(ierr);
+      //        was not sufficient to zero-out H_residual already
+      ierr = H_residual.set(0.0); CHKERRQ(ierr);
     }
   }
   const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
@@ -653,7 +651,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       if (mask.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
         // parameterization
-        if (do_part_grid && mask.next_to_floating_ice(i, j)) {
+        if (do_part_grid && mask.next_to_ice(i, j)) {
 
           // Add the flow contribution to this partially filled cell.
           H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
@@ -668,17 +666,18 @@ PetscErrorCode IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          PetscReal H_threshold = get_threshold_thickness(do_redist,
-                                                        vMask.int_star(i, j),
-                                                        vH.star(i, j),
-                                                        vh.star(i, j),
-                                                        vbed(i,j)),
+          PetscReal H_threshold = get_threshold_thickness(vMask.int_star(i, j),
+                                                          vH.star(i, j),
+                                                          vh.star(i, j),
+                                                          vbed(i,j), do_redist);
+          PetscReal coverage_ratio = 1.0;
+          if (H_threshold > 0.0)
             coverage_ratio = vHref(i, j) / H_threshold;
 
           if (coverage_ratio >= 1.0) {
             // A partially filled grid cell is now considered to be full.
             if (do_redist)
-              vHresidual(i, j) = vHref(i, j) - H_threshold; // residual ice thickness
+              H_residual(i, j) = vHref(i, j) - H_threshold; // residual ice thickness
 
             vHref(i, j) = 0.0;
 
@@ -695,7 +694,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
           proc_sum_divQ_SIA += - divQ_SIA;
           proc_sum_divQ_SSA += - divQ_SSA;
           divQ_SIA = divQ_SSA = 0;
-        }  else { // end of "if (part_grid...)
+        } else { // end of "if (part_grid...)
 
           // Standard ice-free ocean case:
           surface_mass_balance = 0.0;
@@ -714,7 +713,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         divQ_SSA             = 0.0;
       }
 
-      if (compute_flux_divergence == 1) {
+      if (compute_flux_divergence == true) {
 	flux_divergence(i, j) = divQ_SIA + divQ_SSA;
       }
 
@@ -797,7 +796,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (do_part_grid) {
     ierr = vHref.end_access(); CHKERRQ(ierr);
     if (do_redist) {
-      ierr = vHresidual.end_access(); CHKERRQ(ierr);
+      ierr = H_residual.end_access(); CHKERRQ(ierr);
     }
   }
 
@@ -841,7 +840,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // distribute residual ice mass if desired
   if (do_redist) {
-    ierr = redistResiduals(); CHKERRQ(ierr);
+    ierr = residual_redistribution(H_residual); CHKERRQ(ierr);
   }
 
   // Check if the ice thickness exceeded the height of the computational box
@@ -952,7 +951,7 @@ PetscErrorCode IceModel::sub_gl_position() {
         else
           gl_mask_unground_y(i,j-1)-=(interpol-0.5);
           //gl_mask_new(i,j-1)+=(interpol-0.5);
-          
+
 
         ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
       }
@@ -962,20 +961,20 @@ PetscErrorCode IceModel::sub_gl_position() {
   } // outer for loop (i)
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) { 
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       if (mask.floating_ice(i,j) || mask.ice_free_ocean(i,j))
         gl_mask_new(i,j) = 1.0 - gl_mask_unground_x(i,j) * gl_mask_unground_y(i,j);
     }
   }
 
-  ierr =         vH.end_access(); CHKERRQ(ierr);
-  ierr =       vbed.end_access(); CHKERRQ(ierr);
-  ierr =      vMask.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_new.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_unground_x.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_unground_y.end_access(); CHKERRQ(ierr);
-  
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_new.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_unground_x.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_unground_y.end_access(); CHKERRQ(ierr);
+
 
   ierr = gl_mask_new.copy_to(gl_mask); CHKERRQ(ierr);
 

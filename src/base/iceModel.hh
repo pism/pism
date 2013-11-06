@@ -254,7 +254,6 @@ protected:
     vFT,    //!< fracture toughness
     bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
     vHref,          //!< accumulated mass advected to a partially filled grid cell
-    vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
     acab,		//!< accumulation/ablation rate; no ghosts
     climatic_mass_balance_cumulative,    //!< cumulative acab
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
@@ -309,10 +308,9 @@ protected:
 
   // flags
   PetscBool  allowAboveMelting;
-  PetscBool  repeatRedist, putOnTop;
   char        adaptReasonFlag;
 
-  std::string      stdout_flags, stdout_ssa;
+  std::string stdout_flags, stdout_ssa;
 
   std::string executable_short_name;
   
@@ -381,13 +379,13 @@ protected:
   virtual PetscErrorCode calculateFractureDensity();
 
   // see iMpartgrid.cc
-  PetscReal get_threshold_thickness(bool do_redist,
-                                    planeStar<int> Mask,
+  PetscReal get_threshold_thickness(planeStar<int> Mask,
                                     planeStar<PetscScalar> thickness,
                                     planeStar<PetscScalar> surface_elevation,
-                                    PetscScalar bed_elevation);
-  virtual PetscErrorCode redistResiduals();
-  virtual PetscErrorCode calculateRedistResiduals();
+                                    PetscScalar bed_elevation,
+                                    bool reduce_frontal_thickness);
+  virtual PetscErrorCode residual_redistribution(IceModelVec2S &residual);
+  virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(

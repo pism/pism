@@ -354,14 +354,6 @@ PetscErrorCode IceModel::createVecs() {
     ierr = vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
                            "m", ""); CHKERRQ(ierr);
     ierr = variables.add(vHref); CHKERRQ(ierr);
-
-    if (config.get_flag("part_redist") == true){
-      // Hav
-      ierr = vHresidual.create(grid, "Hresidual", true); CHKERRQ(ierr);
-      ierr = vHresidual.set_attrs("diagnostic", "residual ice thickness in recently filled boundary grid cell",
-                                  "m", ""); CHKERRQ(ierr);
-      ierr = variables.add(vHresidual); CHKERRQ(ierr);
-    }
   }
 
   if (config.get_flag("do_eigen_calving") == true ||

@@ -195,7 +195,6 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
     }
   } else {
     dt = config.get("maximum_time_step_years", "years", "seconds");
-    bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
     adaptReasonFlag = 'm';
 
@@ -217,8 +216,8 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
         adaptReasonFlag = 'b';
       }
     }
-    if (do_mass_conserve && use_ssa_velocity) {
-      // CFLmaxdt2D is set by broadcastSSAVelocity()
+    if (do_mass_conserve) {
+      // CFLmaxdt2D is set by IceModel::computeMax2DSlidingSpeed()
       if (CFLmaxdt2D < dt) {
         dt = CFLmaxdt2D;
         adaptReasonFlag = 'u';
