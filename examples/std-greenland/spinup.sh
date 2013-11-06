@@ -72,9 +72,9 @@ if [ $# -lt 5 ] ; then
   echo "    $ REGRIDFILE=g10km.nc EXSTEP=1 ./spinup.sh 4 const 10 5 hybrid g5km.nc"
   echo
   echo "  A basic way to do grid sequencing  20km -> 10km -> 5 km,  for constant-climate"
-  echo "  and SIA+SSA dynamics simulations.  Note that bootstrapping is from default"
-  echo "  file $PISM_DATANAME in all runs, so the later runs use higher-res. bed data."
-  echo "  (Run duration should generally be increased in practice.)"
+  echo "  and SIA+SSA dynamics simulations.  Because bootstrapping is from default file"
+  echo "  $PISM_DATANAME in all runs, the later runs use higher-res. bed and climate"
+  echo "  data.  (Note: Run duration should generally be increased in practice.)"
   echo
   exit
 fi
@@ -188,9 +188,8 @@ for INPUT in $INLIST; do
   else
     echo "$SCRIPTNAME           input   $INPUT (MISSING!!)"
     echo
-    echo "$SCRIPTNAME           please run ./preprocess.sh, exiting"
+    echo "$SCRIPTNAME  ***WARNING***  you may need to run ./preprocess.sh to generate standard input files!"
     echo
-    exit
   fi
 done
 
