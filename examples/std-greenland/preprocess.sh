@@ -37,12 +37,12 @@ ncatted -O -a long_name,precipitation,c,c,"ice-equivalent mean annual precipitat
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
 # use pism-recognized name for 2m air temp
 ncrename -O -v airtemp2m,ice_surface_temp $PISMVERSION
-ncatted -O -a units,ice_surface_temp,a,c,"Celsius" $PISMVERSION
+ncatted -O -a units,ice_surface_temp,c,c,"Celsius" $PISMVERSION
 # use pism-recognized name and standard_name for surface mass balance, after
 # converting units
 ncap2 -O -s "climatic_mass_balance=(1000.0/910.0)*smb" $PISMVERSION $PISMVERSION
-ncatted -O -a standard_name,climatic_mass_balance,a,c,"land_ice_surface_specific_mass_balance" $PISMVERSION
-ncatted -O -a units,climatic_mass_balance,a,c,"meters/year" $PISMVERSION
+ncatted -O -a standard_name,climatic_mass_balance,m,c,"land_ice_surface_specific_mass_balance" $PISMVERSION
+ncatted -O -a units,climatic_mass_balance,m,c,"meters/year" $PISMVERSION
 # de-clutter by only keeping vars we want
 ncks -O -v mapping,lat,lon,bheatflx,topg,thk,precipitation,ice_surface_temp,climatic_mass_balance \
   $PISMVERSION $PISMVERSION
