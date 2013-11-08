@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 ")
 
 if ((NOT UDUNITS2_LIBRARIES) OR (NOT UDUNITS2_INCLUDES))
-  message(STATUS "Trying to use LD_LIBRARY_PATH to find UDUNITS-2...")
+  message(STATUS "Trying to find UDUNITS-2 using LD_LIBRARY_PATH (we're desperate)...")
 
   file(TO_CMAKE_PATH "$ENV{LD_LIBRARY_PATH}" LD_LIBRARY_PATH)
 
@@ -49,7 +49,7 @@ if ((NOT UDUNITS2_LIBRARIES) OR (NOT UDUNITS2_INCLUDES))
     HINTS ${LD_LIBRARY_PATH})
 
   if (UDUNITS2_LIBRARIES)
-    get_filename_component(UDUNITS2_LIB_DIR ${UDUNITS2_LIBRARIES} DIRECTORY)
+    get_filename_component(UDUNITS2_LIB_DIR ${UDUNITS2_LIBRARIES} PATH)
     string(REGEX REPLACE "/lib/?$" "/include"
       UDUNITS2_H_HINT ${UDUNITS2_LIB_DIR})
 

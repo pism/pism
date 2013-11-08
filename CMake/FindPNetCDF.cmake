@@ -24,6 +24,26 @@ find_library (PNETCDF_LIBRARIES
   NAMES pnetcdf
   HINTS ${PNETCDF_LIB_HINT})
 
+if ((NOT PNETCDF_LIBRARIES) OR (NOT PNETCDF_INCLUDES))
+  message(STATUS "Trying to find PNetCDF using LD_LIBRARY_PATH (we're desperate)...")
+
+  file(TO_CMAKE_PATH "$ENV{LD_LIBRARY_PATH}" LD_LIBRARY_PATH)
+
+  find_library(PNETCDF_LIBRARIES
+    NAMES pnetcdf
+    HINTS ${LD_LIBRARY_PATH})
+
+  if (PNETCDF_LIBRARIES)
+    get_filename_component(PNETCDF_LIB_DIR ${PNETCDF_LIBRARIES} PATH)
+    string(REGEX REPLACE "/lib/?$" "/include"
+      PNETCDF_H_HINT ${PNETCDF_LIB_DIR})
+
+    find_path (PNETCDF_INCLUDES pnetcdf.h
+      HINTS ${PNETCDF_H_HINT}
+      DOC "Path to pnetcdf.h")
+  endif()
+endif()
+
 # handle the QUIETLY and REQUIRED arguments and set PNETCDF_FOUND to TRUE if
 # all listed variables are TRUE
 include (FindPackageHandleStandardArgs)

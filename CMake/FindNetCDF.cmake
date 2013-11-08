@@ -41,6 +41,26 @@ find_library (NETCDF_LIBRARIES_C
   HINTS ${NETCDF_LIB_HINT})
 mark_as_advanced(NETCDF_LIBRARIES_C)
 
+if ((NOT NETCDF_LIBRARIES_C) OR (NOT NETCDF_INCLUDES))
+  message(STATUS "Trying to find NetCDF using LD_LIBRARY_PATH (we're desperate)...")
+
+  file(TO_CMAKE_PATH "$ENV{LD_LIBRARY_PATH}" LD_LIBRARY_PATH)
+
+  find_library(NETCDF_LIBRARIES_C
+    NAMES netcdf
+    HINTS ${LD_LIBRARY_PATH})
+
+  if (NETCDF_LIBRARIES_C)
+    get_filename_component(NETCDF_LIB_DIR ${NETCDF_LIBRARIES_C} PATH)
+    string(REGEX REPLACE "/lib/?$" "/include"
+      NETCDF_H_HINT ${NETCDF_LIB_DIR})
+
+    find_path (NETCDF_INCLUDES netcdf.h
+      HINTS ${NETCDF_H_HINT}
+      DOC "Path to netcdf.h")
+  endif()
+endif()
+
 set (NetCDF_has_interfaces "YES") # will be set to NO if we're missing any interfaces
 set (NetCDF_libs "${NETCDF_LIBRARIES_C}")
 
