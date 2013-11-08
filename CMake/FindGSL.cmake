@@ -12,7 +12,7 @@ if (GSL_INCLUDES)
 endif (GSL_INCLUDES)
 
 find_path (GSL_INCLUDES gsl/gsl_math.h
-  HINTS "${GSL_DIR}/include" "$ENV{GSL_DIR}/include")
+  HINTS "${GSL_ROOT}/include" "$ENV{GSL_ROOT}/include")
 
 string(REGEX REPLACE "/include/?$" "/lib"
   GSL_LIB_HINT ${GSL_INCLUDES})
@@ -29,7 +29,7 @@ if ((NOT GSL_INCLUDES) OR (NOT GSL_LIB) OR (NOT GSL_CBLAS_LIB))
   message(STATUS "Trying to use 'gsl-config' to find GSL...")
   find_program(GSL_CONFIG "gsl-config")
   if (GSL_CONFIG)
-    execute_process(COMMAND "${GSL_CONFIG} --prefix"
+    execute_process(COMMAND ${GSL_CONFIG} --prefix
       OUTPUT_VARIABLE GSL_PREFIX
       OUTPUT_STRIP_TRAILING_WHITESPACE)
 

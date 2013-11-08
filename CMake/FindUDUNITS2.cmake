@@ -11,7 +11,7 @@ if (UDUNITS2_INCLUDES)
 endif (UDUNITS2_INCLUDES)
 
 find_path (UDUNITS2_INCLUDES udunits2.h
-  HINTS "${UDUNITS2_DIR}/include" "$ENV{UDUNITS2_DIR}/include"
+  HINTS "${UDUNITS2_ROOT}/include" "$ENV{UDUNITS2_ROOT}/include"
   PATH_SUFFIXES "udunits2"
   DOC "Path to udunits2.h")
 

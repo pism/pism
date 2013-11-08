@@ -11,7 +11,7 @@ if (FFTW_INCLUDES)
 endif (FFTW_INCLUDES)
 
 find_path (FFTW_INCLUDES fftw3.h
-  HINTS "${FFTW_DIR}/include" "$ENV{FFTW_DIR}/include")
+  HINTS "${FFTW_ROOT}/include" "$ENV{FFTW_ROOT}/include")
 
 string(REGEX REPLACE "/include/?$" "/lib"
   FFTW_LIB_HINT ${FFTW_INCLUDES})
