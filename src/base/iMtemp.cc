@@ -41,9 +41,8 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
                     dE = rho * c * (*Texcess) * dvol,
                     massmelted = dE / L;
 
-  if (allowAboveMelting == PETSC_TRUE) {
-    SETERRQ(grid.com, 1,"IceModel::excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
-  }
+  assert(config.get_flag("temperature_allow_above_melting") == false);
+
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to
     // pressure-melting; a fraction of excess energy is turned into melt water at base
@@ -149,6 +148,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       L         = config.get("water_latent_heat_fusion"),
       melting_point_temp = config.get("water_melting_point_temperature"),
       beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity");
+
+    const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
 
     tempSystemCtx system(fMz, "temperature");
     system.dx              = grid.dx;
@@ -300,7 +301,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
         // insert solution for generic ice segments
         for (PetscInt k=1; k <= ks; k++) {
-          if (allowAboveMelting == PETSC_TRUE) { // in the ice
+          if (allow_above_melting == true) { // in the ice
             Tnew[k] = x[k];
           } else {
             const PetscScalar
@@ -329,7 +330,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
         // insert solution for ice base segment
         if (ks > 0) {
-          if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
+          if (allow_above_melting == true) { // ice/rock interface
             Tnew[0] = x[0];
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
             const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * vH(i,j); // FIXME issue #15

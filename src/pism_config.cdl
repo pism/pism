@@ -588,6 +588,9 @@ netcdf pism_config {
     pism_config:sia_sliding_verification_mode = "no";
     pism_config:sia_sliding_verification_mode_doc = "; Enable 'verification mode' of the SIA sliding code.";
 
+    pism_config:temperature_allow_above_melting = "no";
+    pism_config:temperature_allow_above_melting_doc = "If set to 'yes', allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";
+
     pism_config:sia_flow_law = "gpbld";
     pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 

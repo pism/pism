@@ -104,8 +104,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   save_extra     = false;
 
   reset_counters();
-
-  allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 }
 
 void IceModel::reset_counters() {

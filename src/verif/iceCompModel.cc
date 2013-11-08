@@ -184,10 +184,10 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
-    allowAboveMelting = PETSC_FALSE; // test K
+    config.set_flag("temperature_allow_above_melting", false);
   } else {
     // note temps are generally allowed to go above pressure melting in verify
-    allowAboveMelting = PETSC_TRUE; // tests other than K
+    config.set_flag("temperature_allow_above_melting", true);
   }
 
   if (testname == 'V') {

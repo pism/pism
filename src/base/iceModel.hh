@@ -307,7 +307,6 @@ protected:
   PetscInt    skipCountDown;
 
   // flags
-  PetscBool  allowAboveMelting;
   char        adaptReasonFlag;
 
   std::string stdout_flags, stdout_ssa;
