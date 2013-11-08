@@ -10,9 +10,15 @@ if (PROJ4_INCLUDES)
   set (PROJ4_FIND_QUIETLY TRUE)
 endif (PROJ4_INCLUDES)
 
-find_path (PROJ4_INCLUDES proj_api.h)
+find_path (PROJ4_INCLUDES proj_api.h
+  HINTS "${PROJ_DIR}/include" "$ENV{PROJ_DIR}/include")
 
-find_library (PROJ4_LIBRARIES NAMES proj)
+string(REGEX REPLACE "/include/?$" "/lib"
+  PROJ4_LIB_HINT ${PROJ4_INCLUDES})
+
+find_library (PROJ4_LIBRARIES
+  NAMES proj
+  HINTS ${PROJ4_LIB_HINT})
 
 # handle the QUIETLY and REQUIRED arguments and set PROJ4_FOUND to TRUE if
 # all listed variables are TRUE

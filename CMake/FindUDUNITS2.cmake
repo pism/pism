@@ -11,10 +11,23 @@ if (UDUNITS2_INCLUDES)
 endif (UDUNITS2_INCLUDES)
 
 find_path (UDUNITS2_INCLUDES udunits2.h
+  HINTS "${UDUNITS2_DIR}/include" "$ENV{UDUNITS2_DIR}/include"
   PATH_SUFFIXES "udunits2"
   DOC "Path to udunits2.h")
 
-find_library (UDUNITS2_LIBRARIES NAMES udunits2)
+# UDUNITS2 headers might be in .../include or .../include/udunits2.
+# We try both.
+if (${UDUNITS2_INCLUDES} MATCHES "udunits2/?$")
+  string(REGEX REPLACE "/include/udunits2/?$" "/lib"
+    UDUNITS2_LIB_HINT ${UDUNITS2_INCLUDES})
+else()
+  string(REGEX REPLACE "/include/?$" "/lib"
+    UDUNITS2_LIB_HINT ${UDUNITS2_INCLUDES})
+endif()
+
+find_library (UDUNITS2_LIBRARIES
+  NAMES udunits2
+  HINTS ${UDUNITS2_LIB_HINT})
 
 set(UDUNITS2_TEST_SRC "
 #include <udunits2.h>

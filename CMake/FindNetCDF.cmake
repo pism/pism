@@ -31,9 +31,14 @@ if (NETCDF_INCLUDES AND NETCDF_LIBRARIES)
 endif (NETCDF_INCLUDES AND NETCDF_LIBRARIES)
 
 find_path (NETCDF_INCLUDES netcdf.h
-  HINTS NETCDF_DIR ENV NETCDF_DIR)
+  HINTS "${NETCDF_DIR}/include" "$ENV{NETCDF_DIR}/include")
 
-find_library (NETCDF_LIBRARIES_C       NAMES netcdf)
+string(REGEX REPLACE "/include/?$" "/lib"
+  NETCDF_LIB_HINT ${NETCDF_INCLUDES})
+
+find_library (NETCDF_LIBRARIES_C
+  NAMES netcdf
+  HINTS ${NETCDF_LIB_HINT})
 mark_as_advanced(NETCDF_LIBRARIES_C)
 
 set (NetCDF_has_interfaces "YES") # will be set to NO if we're missing any interfaces

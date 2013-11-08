@@ -11,31 +11,42 @@ if (GSL_INCLUDES)
   set (GSL_FIND_QUIETLY TRUE)
 endif (GSL_INCLUDES)
 
-find_path (GSL_INCLUDES gsl/gsl_math.h)
+find_path (GSL_INCLUDES gsl/gsl_math.h
+  HINTS "${GSL_DIR}/include" "$ENV{GSL_DIR}/include")
 
-find_library (GSL_LIB NAMES gsl)
+string(REGEX REPLACE "/include/?$" "/lib"
+  GSL_LIB_HINT ${GSL_INCLUDES})
 
-find_library(GSL_CBLAS_LIB NAMES gslcblas)
+find_library (GSL_LIB
+  NAMES gsl
+  HINTS ${GSL_LIB_HINT})
 
-if (NOT GSL_INCLUDES)
+find_library(GSL_CBLAS_LIB
+  NAMES gslcblas
+  HINTS ${GSL_LIB_HINT})
+
+if ((NOT GSL_INCLUDES) OR (NOT GSL_LIB) OR (NOT GSL_CBLAS_LIB))
   message(STATUS "Trying to use 'gsl-config' to find GSL...")
   find_program(GSL_CONFIG "gsl-config")
   if (GSL_CONFIG)
     execute_process(COMMAND "${GSL_CONFIG} --prefix"
-      OUTPUT_VARIABLE GSL_PREFIX)
+      OUTPUT_VARIABLE GSL_PREFIX
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
 
     find_path(GSL_INCLUDES gsl/gsl_math.h
-      HINTS ${GSL_PREFIX})
+      HINTS "${GSL_PREFIX}/include")
 
     find_library (GSL_LIB NAMES gsl
-      HINTS ${GSL_PREFIX})
+      HINTS "${GSL_PREFIX}/lib")
 
     find_library(GSL_CBLAS_LIB NAMES gslcblas
-      HINTS ${GSL_PREFIX})
+      HINTS "${GSL_PREFIX}/lib")
   endif()
 endif()
 
-set (GSL_LIBRARIES "${GSL_LIB}" "${GSL_CBLAS_LIB}")
+if (GSL_LIB AND GSL_CBLAS_LIB)
+  set (GSL_LIBRARIES "${GSL_LIB}" "${GSL_CBLAS_LIB}")
+endif()
 
 # handle the QUIETLY and REQUIRED arguments and set GSL_FOUND to TRUE if
 # all listed variables are TRUE

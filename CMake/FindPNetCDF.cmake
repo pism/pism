@@ -14,9 +14,15 @@ if (PNETCDF_INCLUDES AND PNETCDF_LIBRARIES)
   set (PNETCDF_FIND_QUIETLY TRUE)
 endif (PNETCDF_INCLUDES AND PNETCDF_LIBRARIES)
 
-find_path (PNETCDF_INCLUDES pnetcdf.h HINTS $ENV{PNETCDF_DIR}/include)
+find_path (PNETCDF_INCLUDES pnetcdf.h
+  HINTS "${PNETCDF_DIR}/include" "$ENV{PNETCDF_DIR}/include")
 
-find_library (PNETCDF_LIBRARIES NAMES pnetcdf HINTS $ENV{PNETCDF_DIR}/lib)
+string(REGEX REPLACE "/include/?$" "/lib"
+  PNETCDF_LIB_HINT ${PNETCDF_INCLUDES})
+
+find_library (PNETCDF_LIBRARIES
+  NAMES pnetcdf
+  HINTS ${PNETCDF_LIB_HINT})
 
 # handle the QUIETLY and REQUIRED arguments and set PNETCDF_FOUND to TRUE if
 # all listed variables are TRUE
