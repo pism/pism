@@ -32,7 +32,7 @@ if [ $# -lt 5 ] ; then
   echo "    CLIMATE   in $CLIMLIST"
   echo "    DURATION  = model run time in years; does '-ys -DURATION -ye 0'"
   echo "    GRID      in $GRIDLIST (km)"
-  echo "    DYNAMICS  in $DYNALIST; sia is non-sliding"
+  echo "    DYNAMICS  in $DYNALIST; sia is non-sliding; default = sia"
   echo "    OUTFILE   optional name of output file; default = unnamed.nc"
   echo "    BOOTFILE  optional name of input file; default = $PISM_DATANAME"
   echo
