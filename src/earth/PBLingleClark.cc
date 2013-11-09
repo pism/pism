@@ -113,8 +113,10 @@ PetscErrorCode PBLingleClark::allocate() {
   ierr = VecDuplicate(Hp0,&bedstartp0); CHKERRQ(ierr);
   ierr = VecDuplicate(Hp0,&upliftp0); CHKERRQ(ierr);
 
+  bool use_elastic_model = config.get_flag("bed_def_lc_elastic_model");
+
   if (grid.rank == 0) {
-    ierr = bdLC.settings(config, PETSC_FALSE, // turn off elastic model for now
+    ierr = bdLC.settings(config, use_elastic_model,
 			 grid.Mx, grid.My, grid.dx, grid.dy,
 			 4,     // use Z = 4 for now; to reduce global drift?
 			 &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
@@ -160,6 +162,7 @@ PetscErrorCode PBLingleClark::init(PISMVars &vars) {
   ierr = transfer_to_proc0(uplift, upliftp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
+    ierr = bdLC.init(); CHKERRQ(ierr);
     ierr = bdLC.uplift_init(); CHKERRQ(ierr);
   }
 

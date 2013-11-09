@@ -88,6 +88,9 @@ netcdf pism_config {
     pism_config:bed_deformation_model = "none";
     pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [\\ref LingleClark], requires FFTW3).";
 
+    pism_config:bed_def_lc_elastic_model = "no";
+    pism_config:bed_def_lc_elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
+
     pism_config:ocean_kill  = "false";
     pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
 

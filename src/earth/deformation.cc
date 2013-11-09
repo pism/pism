@@ -19,18 +19,19 @@
 #include <cmath>
 #include <petscvec.h>
 #include <fftw3.h>
+#include <assert.h>
 #include "pism_const.hh"
 #include "matlablike.hh"
 #include "greens.hh"
 #include "deformation.hh"
 
 BedDeformLC::BedDeformLC() {
-  settingsDone = PETSC_FALSE;
-  allocDone = PETSC_FALSE;
+  settingsDone = false;
+  allocDone    = false;
 }
 
 BedDeformLC::~BedDeformLC() {
-  if (allocDone == PETSC_TRUE) {
+  if (allocDone == true) {
 
     fftw_destroy_plan(dft_forward);
     fftw_destroy_plan(dft_inverse);
@@ -45,65 +46,63 @@ BedDeformLC::~BedDeformLC() {
     VecDestroy(&vleft);
     VecDestroy(&vright);
     VecDestroy(&lrmE);
-    delete [] cx;  delete [] cy;
+    delete [] cx;
+    delete [] cy;
   }
-  allocDone = PETSC_FALSE;
 }
 
 PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
-                                     PetscBool  myinclude_elastic,
-                                     PetscInt myMx, PetscInt myMy,
-                                     PetscScalar mydx, PetscScalar mydy,
-                                     PetscInt myZ,
+                                     bool  myinclude_elastic,
+                                     int myMx, int myMy,
+                                     PetscReal mydx, PetscReal mydy,
+                                     int myZ,
                                      Vec* myHstart, Vec* mybedstart, Vec* myuplift,
                                      Vec* myH, Vec* mybed) {
 
   // set parameters
   include_elastic = myinclude_elastic;
-  Mx = myMx;
-  My = myMy;
-  dx = mydx;
-  dy = mydy;
-  Z = myZ;
+
+  Mx     = myMx;
+  My     = myMy;
+  dx     = mydx;
+  dy     = mydy;
+  Z      = myZ;
   icerho = config.get("ice_density");
-  rho = config.get("lithosphere_density");
-  eta = config.get("mantle_viscosity");
-  D = config.get("lithosphere_flexural_rigidity");
+  rho    = config.get("lithosphere_density");
+  eta    = config.get("mantle_viscosity");
+  D      = config.get("lithosphere_flexural_rigidity");
 
   standard_gravity = config.get("standard_gravity");
 
   // derive more parameters
-  Lx = ((Mx - 1) / 2) * dx;
-  Ly = ((My - 1) / 2) * dy;
-  Nx = Z*(Mx - 1);
-  Ny = Z*(My - 1);
-  Lx_fat = (Nx / 2) * dx;
-  Ly_fat = (Ny / 2) * dy;
-  Nxge = Nx + 1;
-  Nyge = Ny + 1;
+  Lx       = ((Mx - 1) / 2) * dx;
+  Ly       = ((My - 1) / 2) * dy;
+  Nx       = Z*(Mx - 1);
+  Ny       = Z*(My - 1);
+  Lx_fat   = (Nx / 2) *   dx;
+  Ly_fat   = (Ny / 2) *   dy;
+  Nxge     = Nx + 1;
+  Nyge     = Ny + 1;
   i0_plate = (Z - 1)*(Mx - 1) / 2;
   j0_plate = (Z - 1)*(My - 1) / 2;
 
   // attach to existing (must be allocated!) sequential Vecs
-  H = myH;
-  bed = mybed;
-  H_start = myHstart;
+  H         = myH;
+  bed       = mybed;
+  H_start   = myHstart;
   bed_start = mybedstart;
-  uplift = myuplift;
+  uplift    = myuplift;
 
-  settingsDone = PETSC_TRUE;
+  settingsDone = true;
   return 0;
 }
 
 
 PetscErrorCode BedDeformLC::alloc() {
   PetscErrorCode  ierr;
-  if (settingsDone == PETSC_FALSE) {
-    SETERRQ(PETSC_COMM_SELF, 1, "BedDeformLC must be set with settings() before alloc()\n");
-  }
-  if (allocDone == PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF, 2, "BedDeformLC already allocated\n");
-  }
+
+  assert(settingsDone == true);
+  assert(allocDone == false);
 
   ierr = VecDuplicate(*H, &Hdiff); CHKERRQ(ierr);  // allocate working space
   ierr = VecDuplicate(*H, &dbedElastic); CHKERRQ(ierr);  // allocate working space
@@ -135,11 +134,24 @@ PetscErrorCode BedDeformLC::alloc() {
   dft_forward = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_FORWARD, FFTW_MEASURE);
   dft_inverse = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_BACKWARD, FFTW_MEASURE);
 
-  // coeffs for Fourier spectral method Laplacian
-  // Matlab version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
   cx = new PetscScalar[Nx];
   cy = new PetscScalar[Ny];
 
+  allocDone = true;
+  return 0;
+}
+
+/**
+ * Pre-compute coefficients used by the model.
+ *
+ *
+ * @return 0 on success
+ */
+PetscErrorCode BedDeformLC::init() {
+  PetscErrorCode ierr;
+
+  // coeffs for Fourier spectral method Laplacian
+  // Matlab version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
   for (PetscInt i = 0; i <= Nx / 2; i++)
     cx[i] = (M_PI / Lx_fat) * i;
 
@@ -153,20 +165,17 @@ PetscErrorCode BedDeformLC::alloc() {
     cy[j] = (M_PI / Ly_fat) * (Ny - j);
 
   // compare geforconv.m
-  if (include_elastic == PETSC_TRUE) {
+  if (include_elastic == true) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
            "     computing spherical elastic load response matrix ..."); CHKERRQ(ierr);
     PetscVecAccessor2D II(lrmE, Nxge, Nyge);
     ge_params ge_data;
     ge_data.dx = dx;
     ge_data.dy = dy;
-    //const PetscInt imid_ge = Nx/2, jmid_ge = Ny/2;
     for (PetscInt i = 0; i < Nxge; i++) {
       for (PetscInt j = 0; j < Nyge; j++) {
         ge_data.p = i;
         ge_data.q = j;
-        //ge_data.p = i - imid_ge;
-        //ge_data.q = j - jmid_ge;
         II(i, j) = dblquad_cubature(ge_integrand, -dx/2, dx/2, -dy/2, dy/2,
                                     1.0e-8, &ge_data);
       }
@@ -175,10 +184,8 @@ PetscErrorCode BedDeformLC::alloc() {
     ierr = PetscPrintf(PETSC_COMM_SELF, " done\n"); CHKERRQ(ierr);
   }
 
-  allocDone = PETSC_TRUE;
   return 0;
 }
-
 
 PetscErrorCode BedDeformLC::uplift_init() {
   // to initialize we solve:
@@ -311,7 +318,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar
   tweak(seconds_from_start);
 
   // now compute elastic response if desired; bed = ue at end of this block
-  if (include_elastic == PETSC_TRUE) {
+  if (include_elastic == true) {
     // Matlab:     ue=rhoi*conv2(H-H_start, II, 'same')
     ierr = conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);  CHKERRQ(ierr);
     ierr = VecScale(dbedElastic, icerho);  CHKERRQ(ierr);
