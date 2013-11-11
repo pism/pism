@@ -35,7 +35,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   PetscErrorCode ierr;
   PetscBool T_is_set, m_is_set, m_limits_set;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n"); CHKERRQ(ierr);
@@ -171,8 +171,8 @@ void PSElevation::get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict
 
 PetscErrorCode PSElevation::update(PetscReal my_t, PetscReal my_dt)
 {
-  t = my_t;
-  dt = my_dt;
+  m_t = my_t;
+  m_dt = my_dt;
   return 0;
 }
 

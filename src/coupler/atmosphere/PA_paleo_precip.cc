@@ -64,7 +64,7 @@ PA_paleo_precip::~PA_paleo_precip()
 PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -90,7 +90,7 @@ PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, unsigned int N) {
 
 PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_precipitation(result);
-  ierr = result.scale(exp( m_precipexpfactor * (*offset)(t + 0.5 * dt) )); CHKERRQ(ierr);
+  ierr = result.scale(exp( m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt) )); CHKERRQ(ierr);
   return 0;
 }
 

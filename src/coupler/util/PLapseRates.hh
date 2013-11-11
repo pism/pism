@@ -45,8 +45,8 @@ public:
     PetscErrorCode ierr;
 
     // a convenience
-    PetscReal &m_t = Mod::t;
-    PetscReal &m_dt = Mod::dt;
+    PetscReal &m_t = Mod::m_t;
+    PetscReal &m_dt = Mod::m_dt;
 
     // "Periodize" the climate:
     my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);

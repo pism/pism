@@ -42,7 +42,7 @@ PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
 PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
@@ -95,12 +95,12 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
     PISMEnd();
   }
 
-  if ((fabs(my_t - t) < 1e-12) &&
-      (fabs(my_dt - dt) < 1e-12))
+  if ((fabs(my_t - m_t) < 1e-12) &&
+      (fabs(my_dt - m_dt) < 1e-12))
     return 0;
 
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
   const PetscReal 
     d_ma     = config.get("snow_temp_fausto_d_ma"),      // K

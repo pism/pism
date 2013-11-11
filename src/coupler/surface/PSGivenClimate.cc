@@ -71,7 +71,7 @@ void PSGivenClimate::attach_atmosphere_model(PISMAtmosphereModel *input) {
 PetscErrorCode PSGivenClimate::init(PISMVars &) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the surface model reading temperature at the top of the ice\n"
@@ -91,8 +91,8 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
 PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = climatic_mass_balance->average(t, dt); CHKERRQ(ierr);
-  ierr = ice_surface_temp->average(t, dt); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = ice_surface_temp->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }

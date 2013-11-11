@@ -163,7 +163,7 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   bool do_regrid = false;
   int start = -1;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time atmosphere model PAConstantPIK.\n"

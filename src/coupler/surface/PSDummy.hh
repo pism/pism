@@ -39,7 +39,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &) { return 0; };
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
+  { m_t = my_t; m_dt = my_dt; return 0; } // do nothing
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S&)
   { return 0; }
 

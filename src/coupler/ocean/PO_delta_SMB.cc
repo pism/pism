@@ -62,7 +62,7 @@ PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
 PetscErrorCode PO_delta_SMB::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 

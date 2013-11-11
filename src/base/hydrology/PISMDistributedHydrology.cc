@@ -333,11 +333,11 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
   //   interval on which we are solving
-  if ((fabs(icet - t) < 1e-12) && (fabs(icedt - dt) < 1e-12))
+  if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12))
     return 0;
   // update PISMComponent times: t = current time, t+dt = target time
-  t = icet;
-  dt = icedt;
+  m_t = icet;
+  m_dt = icedt;
 
   // make sure W,P have valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
@@ -355,7 +355,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             Wr = config.get("hydrology_roughness_scale"),
             phi0 = config.get("hydrology_regularizing_porosity");
 
-  PetscReal ht = t, hdt, // hydrology model time and time step
+  PetscReal ht = m_t, hdt, // hydrology model time and time step
             maxKW, maxV, maxD;
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
@@ -364,7 +364,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             cumratio = 0.0;
   PetscInt hydrocount = 0; // count hydrology time steps
 
-  while (ht < t + dt) {
+  while (ht < m_t + m_dt) {
     hydrocount++;
 
 #if (PISM_DEBUG==1)
@@ -398,7 +398,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
     ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
 
-    ierr = adaptive_for_WandP_evolution(ht, t+dt, maxKW, hdt, maxV, maxD, PtoCFLratio); CHKERRQ(ierr);
+    ierr = adaptive_for_WandP_evolution(ht, m_t+m_dt, maxKW, hdt, maxV, maxD, PtoCFLratio); CHKERRQ(ierr);
     cumratio += PtoCFLratio;
 
     if ((inputtobed != NULL) || (hydrocount==1)) {
@@ -503,7 +503,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
                       "        (average of %.2f steps per CFL time; max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
                       "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
                       "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
-                      hydrocount, grid.convert(dt/hydrocount, "seconds", "years"), dt/hydrocount,
+                      hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
                       cumratio/hydrocount, maxV, maxD,
                       icefreelost, oceanlost,
                       negativegain, nullstriplost); CHKERRQ(ierr);

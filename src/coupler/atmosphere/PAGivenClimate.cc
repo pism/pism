@@ -67,7 +67,7 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
 PetscErrorCode PAGivenClimate::init(PISMVars &) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the atmosphere model reading near-surface air temperature\n"
@@ -92,11 +92,11 @@ PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   // compute mean precipitation
-  ierr = precipitation->average(t, dt); CHKERRQ(ierr);
+  ierr = precipitation->average(m_t, m_dt); CHKERRQ(ierr);
 
   // Average so that the mean_annual_temp() may be reported correctly (at least
   // in the "-surface pdd" case).
-  ierr = air_temp->average(t, dt); CHKERRQ(ierr);
+  ierr = air_temp->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }

@@ -133,7 +133,7 @@ class PISMComponent_TS : public PISMComponent
 public:
   PISMComponent_TS(IceGrid &g, const NCConfigVariable &conf)
     : PISMComponent(g, conf)
-  { t = dt = GSL_NAN; }
+  { m_t = m_dt = GSL_NAN; }
   virtual ~PISMComponent_TS() {}
 
   //! \brief Reports the maximum time-step the model can take at my_t. Sets
@@ -145,8 +145,8 @@ public:
   virtual PetscErrorCode update(PetscReal /*my_t*/, PetscReal /*my_dt*/) = 0;
 
 protected:
-  PetscReal t,			//!< Last time used as an argument for the update() method.
-    dt;				//!< Last time-step used as an argument for the update() method.
+  PetscReal m_t,			//!< Last time used as an argument for the update() method.
+    m_dt;				//!< Last time-step used as an argument for the update() method.
 };
 
 //! \brief This template allows creating PISMComponent_TS (PISMAtmosphereModel,
@@ -215,8 +215,8 @@ public:
 
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   {
-    Model::t = my_t;
-    Model::dt = my_dt;
+    Model::m_t = my_t;
+    Model::m_dt = my_dt;
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->update(my_t, my_dt); CHKERRQ(ierr);
     }

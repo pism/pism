@@ -64,7 +64,7 @@ PetscErrorCode POGiven::allocate_POGiven() {
 PetscErrorCode POGiven::init(PISMVars &) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the ocean model reading base of the shelf temperature\n"
@@ -84,8 +84,8 @@ PetscErrorCode POGiven::init(PISMVars &) {
 PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = shelfbmassflux->average(t, dt); CHKERRQ(ierr);
-  ierr = shelfbtemp->average(t, dt); CHKERRQ(ierr);
+  ierr = shelfbmassflux->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = shelfbtemp->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }
