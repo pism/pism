@@ -322,28 +322,28 @@ PetscErrorCode POGivenTH::potential_temperature(PetscReal salinity,PetscReal tem
   PetscReal cq2a = 0.58578644 , cq2b = 0.121320344;
   PetscReal cq3a = 3.414213562, cq3b = -4.121320344;
 
-  PetscReal p,t,dp,dt,q, dd;
+  PetscReal p,my_t,dp,my_dt,q, dd;
 
   p  = pressure;
-  t  = temp_insitu;
+  my_t  = temp_insitu;
   dp = reference_pressure-pressure;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  t  = t +0.5*dt;
-  q = dt;
+  adiabatic_temperature_gradient(salinity,my_t,p,dd);
+  my_dt = dp*dd;
+  my_t  = my_t +0.5*my_dt;
+  q = my_dt;
   p  = p +0.5*dp;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  t  = t + ct2*(dt-q);
-  q  = cq2a*dt + cq2b*q;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  t  = t + ct3*(dt-q);
-  q  = cq3a*dt + cq3b*q;
+  adiabatic_temperature_gradient(salinity,my_t,p,dd);
+  my_dt = dp*dd;
+  my_t  = my_t + ct2*(my_dt-q);
+  q  = cq2a*my_dt + cq2b*q;
+  adiabatic_temperature_gradient(salinity,my_t,p,dd);
+  my_dt = dp*dd;
+  my_t  = my_t + ct3*(my_dt-q);
+  q  = cq3a*my_dt + cq3b*q;
   p  = reference_pressure;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  thetao = t+ (dt-q-q)/6.0;
+  adiabatic_temperature_gradient(salinity,my_t,p,dd);
+  my_dt = dp*dd;
+  thetao = my_t+ (my_dt-q-q)/6.0;
 
   return 0;
 }

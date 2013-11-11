@@ -70,7 +70,7 @@ PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
 PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
   std::string input_file;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = 0;
 
   t = dt = GSL_NAN;  // every re-init restarts the clock
@@ -79,14 +79,14 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
     ierr = input_model->init(vars); CHKERRQ(ierr);
   }
 
-  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing the 'turn_into_anomaly' modifier\n"
                     "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
                     "  read from '%s'.\n", input_file.c_str()); CHKERRQ(ierr);
 
-  if (regrid) {
+  if (do_regrid) {
     ierr = mass_flux_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
     ierr = temp_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
   } else {

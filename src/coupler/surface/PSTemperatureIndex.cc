@@ -203,11 +203,11 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   }
 
   std::string input_file;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = -1;
   
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,

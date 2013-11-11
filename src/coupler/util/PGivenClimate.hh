@@ -128,8 +128,8 @@ protected:
 
     if (bc_file_set == false) {
       // find PISM input file to read data from:
-      bool regrid; int start;   // will be ignored
-      ierr = Model::find_pism_input(filename, regrid, start); CHKERRQ(ierr);
+      bool do_regrid; int start;   // will be ignored
+      ierr = Model::find_pism_input(filename, do_regrid, start); CHKERRQ(ierr);
 
       ierr = verbPrintf(2, Model::grid.com,
                         "  - Option %s_file is not set. Trying the input file '%s'...\n",
