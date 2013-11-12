@@ -71,3 +71,18 @@ the runs shown here.  They can be found in the `stable0.5` branch of PISM.  See
 
     https://github.com/pism/pism/tree/stable0.5/examples/searise-greenland
 
+# Basic Parameter study
+
+An example for a basic paramter study is given in param20km.sh (or
+param20kmspawn.sh, to run on supercomputers like on [ARSC's
+pacman](http://www.arsc.edu/arsc/support/howtos/usingpacman/)). Run
+
+    ./param20km.sh
+
+Results can be visualized using, e.g. `im-plot.py` from
+[pypismtools](https://github.com/pism/pypismtools):
+
+    im-plot.py -v csurf --colorbar_label --inner_titles "q=0.1 f=0.01,q=0.25 f=0.01,q=0.8 f=0.01,q=0.1 f=0.02,q=0.25 f=0.02,q=0.1 f=0.02,q=0.8 f=0.0,q=0.1 f=0.05,q=0.25 f=0.05,q=0.8 f=0.05" -o nosgl.pdf g20km_*0.01_*.nc g20km_*0.02_*.nc g20km_*0.05_*.nc
+
+    im-plot.py -v csurf --colorbar_label --inner_titles "q=0.1 f=0.01,q=0.25 f=0.01,q=0.8 f=0.01,q=0.1 f=0.02,q=0.25 f=0.02,q=0.1 f=0.02,q=0.8 f=0.0,q=0.1 f=0.05,q=0.25 f=0.05,q=0.8 f=0.05" -o sgl.pdf g20km_*0.01.nc g20km_*0.02.nc g20km_*0.05.nc
+
