@@ -183,8 +183,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = system.initAllColumns(); CHKERRQ(ierr);
 
     // now get map-plane fields, starting with coupler fields
-    PetscScalar  **basalMeltRate;
-
     if (surface != PETSC_NULL) {
       ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     } else {
@@ -220,7 +218,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
     ierr = vH.begin_access(); CHKERRQ(ierr);
-    ierr = basal_melt_rate.get_array(basalMeltRate); CHKERRQ(ierr);
+    ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
     ierr = vMask.begin_access(); CHKERRQ(ierr);
     ierr = G0.begin_access(); CHKERRQ(ierr);
     ierr = bwatcurr.begin_access(); CHKERRQ(ierr);
@@ -367,28 +365,30 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
-        // basalMeltRate[][] is rate of mass loss at bottom of ice; finalize it
+        // basal_melt_rate(i,j) is rate of mass loss at bottom of ice; finalize it
         //   note massContExplicitStep() calls PISMOceanCoupler; FIXME: does there
         //   need to be a check that shelfbmassflux(i,j) is up to date?
         if (mask.ocean(i,j)) {
           if (mask.icy(i,j)) {
             // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
-            basalMeltRate[i][j] = shelfbmassflux(i,j); // set by PISMOceanCoupler
+            basal_melt_rate(i,j) = shelfbmassflux(i,j); // set by PISMOceanCoupler
           } else {
-            basalMeltRate[i][j] = 0.0;
+            basal_melt_rate(i,j) = 0.0;
           }
         } else {
           // basalMeltRate is rate of change of bwat;  can be negative
           //   (subglacial water freezes-on); note this rate is calculated
           //   *before* limiting or other nontrivial modelling of bwat,
           //   which is PISMHydrology's job
-          basalMeltRate[i][j] = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
+          basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
         }
 
     }
   }
 
-  if (myLowTempCount > maxLowTempCount) { SETERRQ(grid.com, 1,"too many low temps"); }
+  if (myLowTempCount > maxLowTempCount) {
+    SETERRQ(grid.com, 1,"too many low temps");
+  }
 
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);

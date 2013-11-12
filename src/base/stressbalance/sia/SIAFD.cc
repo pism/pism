@@ -292,23 +292,23 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
   PetscErrorCode ierr;
   const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
 
-  PetscScalar **h;
+  IceModelVec2S &h = *surface;
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = surface->get_array(h); CHKERRQ(ierr);
+  ierr = surface->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt o=0; o<2; o++) {
     PetscInt GHOSTS = 1;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
-          h_x(i,j,o) = (h[i+1][j] - h[i][j]) / dx;
-          h_y(i,j,o) = (+ h[i+1][j+1] + h[i][j+1]
-                        - h[i+1][j-1] - h[i][j-1]) / (4.0*dy);
+          h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
+          h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
+                        - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
         } else {        // J-offset
-          h_y(i,j,o) = (h[i][j+1] - h[i][j]) / dy;
-          h_x(i,j,o) = (+ h[i+1][j+1] + h[i+1][j]
-                        - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
+          h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
+          h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
+                        - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
         }
       }
     }

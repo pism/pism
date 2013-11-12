@@ -340,21 +340,22 @@ PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
     c_mj     = config.get("snow_temp_fausto_c_mj"),      // K (degN)-1
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
 
-  PetscScalar **lat_degN, **lon_degE, **h;
-  ierr = surfelev->get_array(h);   CHKERRQ(ierr);
-  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
-  ierr = lon->get_array(lon_degE); CHKERRQ(ierr);
+  IceModelVec2S &h = *surfelev, &lat_degN = *lat, &lon_degE = *lon;
+
+  ierr = h.begin_access();   CHKERRQ(ierr);
+  ierr = lat_degN.begin_access(); CHKERRQ(ierr);
+  ierr = lon_degE.begin_access(); CHKERRQ(ierr);
   ierr = temp_mj.begin_access();  CHKERRQ(ierr);
 
   for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      temp_mj(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j] + kappa_mj * (-lon_degE[i][j]);
+      temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
     }
   }
 
-  ierr = surfelev->end_access();   CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = lon->end_access(); CHKERRQ(ierr);
+  ierr = h.end_access();   CHKERRQ(ierr);
+  ierr = lat_degN.end_access(); CHKERRQ(ierr);
+  ierr = lon_degE.end_access(); CHKERRQ(ierr);
   ierr = temp_mj.end_access();  CHKERRQ(ierr);
 
   return 0;

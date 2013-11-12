@@ -364,81 +364,84 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
   const PetscScalar Hicefree = 0.0;  // standard for ice-free, in Haseloff
   const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  IceModelVec2S
+    &b = *bed,
+    &H = *thickness,
+    &h = *surface;
 
-  PetscScalar **h, **b, **H;
-  ierr = bed->get_array(b); CHKERRQ(ierr);
-  ierr = thickness->get_array(H); CHKERRQ(ierr);
-  ierr = surface->get_array(h); CHKERRQ(ierr);
+  ierr = h_x.begin_access();        CHKERRQ(ierr);
+  ierr = h_y.begin_access();        CHKERRQ(ierr);
+  ierr = bed->begin_access();       CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  ierr = surface->begin_access();   CHKERRQ(ierr);
   for (PetscInt o=0; o<2; o++) {
 
     PetscInt GHOSTS = 1;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
-          const bool icefreeP  = (H[i][j]     <= Hicefree),
-            icefreeE  = (H[i+1][j]   <= Hicefree),
-            icefreeN  = (H[i][j+1]   <= Hicefree),
-            icefreeS  = (H[i][j-1]   <= Hicefree),
-            icefreeNE = (H[i+1][j+1] <= Hicefree),
-            icefreeSE = (H[i+1][j-1] <= Hicefree);
+          const bool icefreeP  = (H(i,j)     <= Hicefree),
+            icefreeE  = (H(i+1,j)   <= Hicefree),
+            icefreeN  = (H(i,j+1)   <= Hicefree),
+            icefreeS  = (H(i,j-1)   <= Hicefree),
+            icefreeNE = (H(i+1,j+1) <= Hicefree),
+            icefreeSE = (H(i+1,j-1) <= Hicefree);
 
-          PetscScalar hhE = h[i+1][j];  // east pseudo-surface elevation
-          if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
-          h_x(i,j,o) = (hhE - h[i][j]) / dx;
+          PetscScalar hhE = h(i+1,j);  // east pseudo-surface elevation
+          if (icefreeE  && (b(i+1,j)   > h(i,j)    ))  hhE  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i+1,j)  ))  hhE  = h(i,j);
+          h_x(i,j,o) = (hhE - h(i,j)) / dx;
 
-          PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
-          if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
-          PetscScalar hhS  = h[i][j-1];  // south pseudo-surface elevation
-          if (icefreeS  && (b[i][j-1]   > h[i][j]    ))  hhS  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i][j-1]  ))  hhS  = h[i][j];
-          PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
-          if (icefreeNE && (b[i+1][j+1] > h[i+1][j]  ))  hhNE = h[i+1][j];
-          if (icefreeE  && (b[i+1][j]   > h[i+1][j+1]))  hhNE = h[i+1][j];
-          PetscScalar hhSE = h[i+1][j-1];// southeast pseudo-surface elevation
-          if (icefreeSE && (b[i+1][j-1] > h[i+1][j]  ))  hhSE = h[i+1][j];
-          if (icefreeE  && (b[i+1][j]   > h[i+1][j-1]))  hhSE = h[i+1][j];
+          PetscScalar hhN  = h(i,j+1);  // north pseudo-surface elevation
+          if (icefreeN  && (b(i,j+1)   > h(i,j)    ))  hhN  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i,j+1)  ))  hhN  = h(i,j);
+          PetscScalar hhS  = h(i,j-1);  // south pseudo-surface elevation
+          if (icefreeS  && (b(i,j-1)   > h(i,j)    ))  hhS  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i,j-1)  ))  hhS  = h(i,j);
+          PetscScalar hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
+          if (icefreeNE && (b(i+1,j+1) > h(i+1,j)  ))  hhNE = h(i+1,j);
+          if (icefreeE  && (b(i+1,j)   > h(i+1,j+1)))  hhNE = h(i+1,j);
+          PetscScalar hhSE = h(i+1,j-1);// southeast pseudo-surface elevation
+          if (icefreeSE && (b(i+1,j-1) > h(i+1,j)  ))  hhSE = h(i+1,j);
+          if (icefreeE  && (b(i+1,j)   > h(i+1,j-1)))  hhSE = h(i+1,j);
           h_y(i,j,o) = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
         } else {        // J-offset
-          const bool icefreeP  = (H[i][j]     <= Hicefree),
-            icefreeN  = (H[i][j+1]   <= Hicefree),
-            icefreeE  = (H[i+1][j]   <= Hicefree),
-            icefreeW  = (H[i-1][j]   <= Hicefree),
-            icefreeNE = (H[i+1][j+1] <= Hicefree),
-            icefreeNW = (H[i-1][j+1] <= Hicefree);
+          const bool icefreeP  = (H(i,j)     <= Hicefree),
+            icefreeN  = (H(i,j+1)   <= Hicefree),
+            icefreeE  = (H(i+1,j)   <= Hicefree),
+            icefreeW  = (H(i-1,j)   <= Hicefree),
+            icefreeNE = (H(i+1,j+1) <= Hicefree),
+            icefreeNW = (H(i-1,j+1) <= Hicefree);
 
-          PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
-          if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
-          h_y(i,j,o) = (hhN - h[i][j]) / dy;
+          PetscScalar hhN  = h(i,j+1);  // north pseudo-surface elevation
+          if (icefreeN  && (b(i,j+1)   > h(i,j)    ))  hhN  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i,j+1)  ))  hhN  = h(i,j);
+          h_y(i,j,o) = (hhN - h(i,j)) / dy;
 
-          PetscScalar hhE  = h[i+1][j];  // east pseudo-surface elevation
-          if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
-          PetscScalar hhW  = h[i-1][j];  // west pseudo-surface elevation
-          if (icefreeW  && (b[i-1][j]   > h[i][j]    ))  hhW  = h[i][j];
-          if (icefreeP  && (b[i][j]     > h[i-1][j]  ))  hhW  = h[i][j];
-          PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
-          if (icefreeNE && (b[i+1][j+1] > h[i][j+1]  ))  hhNE = h[i][j+1];
-          if (icefreeN  && (b[i][j+1]   > h[i+1][j+1]))  hhNE = h[i][j+1];
-          PetscScalar hhNW = h[i-1][j+1];// northwest pseudo-surface elevation
-          if (icefreeNW && (b[i-1][j+1] > h[i][j+1]  ))  hhNW = h[i][j+1];
-          if (icefreeN  && (b[i][j+1]   > h[i-1][j+1]))  hhNW = h[i][j+1];
+          PetscScalar hhE  = h(i+1,j);  // east pseudo-surface elevation
+          if (icefreeE  && (b(i+1,j)   > h(i,j)    ))  hhE  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i+1,j)  ))  hhE  = h(i,j);
+          PetscScalar hhW  = h(i-1,j);  // west pseudo-surface elevation
+          if (icefreeW  && (b(i-1,j)   > h(i,j)    ))  hhW  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i-1,j)  ))  hhW  = h(i,j);
+          PetscScalar hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
+          if (icefreeNE && (b(i+1,j+1) > h(i,j+1)  ))  hhNE = h(i,j+1);
+          if (icefreeN  && (b(i,j+1)   > h(i+1,j+1)))  hhNE = h(i,j+1);
+          PetscScalar hhNW = h(i-1,j+1);// northwest pseudo-surface elevation
+          if (icefreeNW && (b(i-1,j+1) > h(i,j+1)  ))  hhNW = h(i,j+1);
+          if (icefreeN  && (b(i,j+1)   > h(i-1,j+1)))  hhNW = h(i,j+1);
           h_x(i,j,o) = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
         }
 
       } // j
     }   // i
   }     // o
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr =       bed->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
 
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = bed->end_access();       CHKERRQ(ierr);
+  ierr = surface->end_access();   CHKERRQ(ierr);
+  ierr = h_y.end_access();        CHKERRQ(ierr);
+  ierr = h_x.end_access();        CHKERRQ(ierr);
 
   return 0;
 }
@@ -449,23 +452,23 @@ PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceM
   PetscErrorCode ierr;
   const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
 
-  PetscScalar **h;
+  IceModelVec2S &h = *surface;
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = surface->get_array(h); CHKERRQ(ierr);
+  ierr = surface->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt o=0; o<2; o++) {
     PetscInt GHOSTS = 1;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
-          h_x(i,j,o) = (h[i+1][j] - h[i][j]) / dx;
-          h_y(i,j,o) = (+ h[i+1][j+1] + h[i][j+1]
-                        - h[i+1][j-1] - h[i][j-1]) / (4.0*dy);
+          h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
+          h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
+                        - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
         } else {        // J-offset
-          h_y(i,j,o) = (h[i][j+1] - h[i][j]) / dy;
-          h_x(i,j,o) = (+ h[i+1][j+1] + h[i+1][j]
-                        - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
+          h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
+          h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
+                        - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
         }
       }
     }

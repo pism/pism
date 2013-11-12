@@ -84,14 +84,14 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
 
   if (lat->has_attr("missing_at_bootstrap")) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: latitude variable was missing at bootstrap;\n"
-      "  SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!!\n");
-      CHKERRQ(ierr);
+                       "  SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!!\n");
+    CHKERRQ(ierr);
     PISMEnd();
   }
   if (lon->has_attr("missing_at_bootstrap")) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: longitude variable was missing at bootstrap;\n"
-      "  SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!!\n");
-      CHKERRQ(ierr);
+                       "  SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!!\n");
+    CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -112,25 +112,24 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
     c_mj     = config.get("snow_temp_fausto_c_mj"),
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");
 
-  PetscScalar **lat_degN, **lon_degE, **h;
-  ierr = surfelev->get_array(h);   CHKERRQ(ierr);
-  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
-  ierr = lon->get_array(lon_degE); CHKERRQ(ierr);
+  IceModelVec2S &h = *surfelev, &lat_degN = *lat, &lon_degE = *lon;
+
+  ierr = h.begin_access();   CHKERRQ(ierr);
+  ierr = lat_degN.begin_access(); CHKERRQ(ierr);
+  ierr = lon_degE.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.begin_access();  CHKERRQ(ierr);
   ierr = air_temp_mean_july.begin_access();  CHKERRQ(ierr);
 
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      air_temp_mean_annual(i,j) = d_ma + gamma_ma * h[i][j] + c_ma * lat_degN[i][j] +
-        kappa_ma * (-lon_degE[i][j]);
-      air_temp_mean_july(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j] +
-        kappa_mj * (-lon_degE[i][j]);
+      air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
+      air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
     }
   }
 
-  ierr = surfelev->end_access();   CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = lon->end_access(); CHKERRQ(ierr);
+  ierr = h.end_access();   CHKERRQ(ierr);
+  ierr = lat_degN.end_access(); CHKERRQ(ierr);
+  ierr = lon_degE.end_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.end_access();  CHKERRQ(ierr);
   ierr = air_temp_mean_july.end_access();  CHKERRQ(ierr);
 

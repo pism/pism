@@ -100,26 +100,26 @@ sliding case we have a CFL condition.
  */
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
-  PISMVector2 **vel;
   PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
+  IceModelVec2V &vel = *vel_advective; // a shortcut
 
-  ierr = vel_advective->get_array(vel); CHKERRQ(ierr);
+  ierr = vel.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.icy(i, j)) {
-        const PetscReal denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;
+        const PetscReal denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
         if (denom > 0.0)
           locCFLmaxdt2D = PetscMin(locCFLmaxdt2D, 1.0/denom);
       }
     }
   }
-  ierr = vel_advective->end_access(); CHKERRQ(ierr);
+  ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);

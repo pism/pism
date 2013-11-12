@@ -91,24 +91,24 @@ PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const PetscScalar T0 = config.get("water_melting_point_temperature"), // K
-    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity"), // K m-1
-    ice_rho = config.get("ice_density"),
-    sea_water_rho = config.get("sea_water_density");
+    beta_CC = config.get("beta_CC"),
+    g = config.get("standard_gravity"),
+    rho_ice = config.get("ice_density");
 
-  PetscScalar **H;
-  ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
+  ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar shelfbaseelev = - ( ice_rho / sea_water_rho ) * H[i][j]; // FIXME task #7297
+      const PetscScalar pressure = rho_ice * g * (*ice_thickness)(i,j); // FIXME task #7297
+
       // temp is set to melting point at depth
-      result(i,j) = T0 + beta_CC_grad * shelfbaseelev;  // base elev negative here so is below T0
+      result(i,j) = T0 - beta_CC * pressure;
     }
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-  
-  return 0;                                 
+
+  return 0;
 }
 
 //! Computes mass flux in ice-equivalent m s-1, from assumption that basal heat flux rate converts to mass flux.

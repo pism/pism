@@ -1292,10 +1292,11 @@ issue is handled when -cfbc is set.
 PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
                                             PetscReal nuH_regularization) {
   PetscErrorCode ierr;
-  PISMVector2 **uv;
+
+  IceModelVec2V &uv = m_velocity; // shortcut
 
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = m_velocity.get_array(uv); CHKERRQ(ierr);
+  ierr = uv.begin_access(); CHKERRQ(ierr);
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
@@ -1320,15 +1321,15 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
         PetscScalar u_x, u_y, v_x, v_y;
         // Check the offset to determine how to differentiate velocity
         if (o == 0) {
-          u_x = (uv[i+1][j].u - uv[i][j].u) / dx;
-          u_y = (uv[i][j+1].u + uv[i+1][j+1].u - uv[i][j-1].u - uv[i+1][j-1].u) / (4*dy);
-          v_x = (uv[i+1][j].v - uv[i][j].v) / dx;
-          v_y = (uv[i][j+1].v + uv[i+1][j+1].v - uv[i][j-1].v - uv[i+1][j-1].v) / (4*dy);
+          u_x = (uv(i+1,j).u - uv(i,j).u) / dx;
+          u_y = (uv(i,j+1).u + uv(i+1,j+1).u - uv(i,j-1).u - uv(i+1,j-1).u) / (4*dy);
+          v_x = (uv(i+1,j).v - uv(i,j).v) / dx;
+          v_y = (uv(i,j+1).v + uv(i+1,j+1).v - uv(i,j-1).v - uv(i+1,j-1).v) / (4*dy);
         } else {
-          u_x = (uv[i+1][j].u + uv[i+1][j+1].u - uv[i-1][j].u - uv[i-1][j+1].u) / (4*dx);
-          u_y = (uv[i][j+1].u - uv[i][j].u) / dy;
-          v_x = (uv[i+1][j].v + uv[i+1][j+1].v - uv[i-1][j].v - uv[i-1][j+1].v) / (4*dx);
-          v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
+          u_x = (uv(i+1,j).u + uv(i+1,j+1).u - uv(i-1,j).u - uv(i-1,j+1).u) / (4*dx);
+          u_y = (uv(i,j+1).u - uv(i,j).u) / dy;
+          v_x = (uv(i+1,j).v + uv(i+1,j+1).v - uv(i-1,j).v - uv(i-1,j+1).v) / (4*dx);
+          v_y = (uv(i,j+1).v - uv(i,j).v) / dy;
         }
 
         PetscReal nu;
@@ -1351,7 +1352,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
+  ierr = uv.end_access(); CHKERRQ(ierr);
 
   // Some communication
   ierr = result.update_ghosts(); CHKERRQ(ierr);

@@ -100,9 +100,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   config.set_flag("compute_surf_grad_inward_ssa", true);
   config.set("epsilon_ssa", 0.0);  // don't use this lower bound
 
-  PetscScalar **ptauc;
-
-  ierr = tauc.get_array(ptauc); CHKERRQ(ierr);
+  ierr = tauc.begin_access(); CHKERRQ(ierr);
 
   PetscScalar standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
@@ -112,7 +110,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
       const PetscScalar y = grid.y[j];
       const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
       const PetscScalar f = ice_rho * standard_gravity * H0_schoof * tan(theta);
-      ptauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
+      tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }
   ierr = tauc.end_access(); CHKERRQ(ierr);
@@ -122,15 +120,15 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = surface.get_array(ph); CHKERRQ(ierr);
-  ierr = bed.get_array(pbed); CHKERRQ(ierr);
+  ierr = surface.begin_access(); CHKERRQ(ierr);
+  ierr = bed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk, myu, myv;
       const PetscScalar myx = grid.x[i], myy=grid.y[j];
       // eval exact solution; will only use exact vels if at edge
-      exactI(m_schoof, myx, myy, &(pbed[i][j]), &junk, &myu, &myv); 
-      ph[i][j] = pbed[i][j] + H0_schoof;
+      exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
+      surface(i,j) = bed(i,j) + H0_schoof;
 
       bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
       if (edge) {

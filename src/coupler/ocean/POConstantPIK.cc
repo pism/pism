@@ -82,18 +82,18 @@ PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const PetscScalar T0 = config.get("water_melting_point_temperature"), // K
-    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity"), // K m-1
-    ice_rho = config.get("ice_density"),
-    sea_water_rho = config.get("sea_water_density");
+    beta_CC = config.get("beta_CC"),
+    g = config.get("standard_gravity"),
+    rho_ice = config.get("ice_density");
 
-  PetscScalar **H;
-  ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
+  ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar shelfbaseelev = - ( ice_rho / sea_water_rho ) * H[i][j]; // FIXME issue #15
+      const PetscScalar pressure = rho_ice * g * (*ice_thickness)(i,j); // FIXME task #7297
+
       // temp is set to melting point at depth
-      result(i,j) = T0 + beta_CC_grad * shelfbaseelev;  // base elev negative here so is below T0
+      result(i,j) = T0 - beta_CC * pressure;
     }
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
@@ -136,8 +136,7 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
     meltfactor = meltfactor_pik; // default is 5e-3 as in martin_winkelmann11
   }
 
-  PetscScalar **H;
-  ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
+  ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
 
 
@@ -149,7 +148,7 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
       // under the shelf, (of salinity 35psu) [this is related to the
       // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
       // details]
-      PetscScalar shelfbaseelev = - (rho_ice / rho_ocean) * H[i][j],
+      PetscScalar shelfbaseelev = - (rho_ice / rho_ocean) * (*ice_thickness)(i,j),
         T_f= 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
       // add 273.15 to get it in Kelvin
 
