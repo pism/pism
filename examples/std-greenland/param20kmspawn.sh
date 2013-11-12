@@ -20,28 +20,8 @@
 set -e # exit on error
 SPAWNSCRIPT=param20kmspwan.sh
 
-#####################################################################
-# Default scale used by float functions.
 
-float_scale=3
-
-#####################################################################
-# Evaluate a floating point number expression.
-
-function float_eval()
-{
-    local stat=0
-    local result=0.0
-    if [[ $# -gt 0 ]]; then
-        result=$(echo "scale=$float_scale; $*" | bc -q 2>/dev/null)
-        stat=$?
-        if [[ $stat -eq 0  &&  -z "$result" ]]; then stat=1; fi
-    fi
-    echo $result
-    return $stat
-}
-
-NN=128  # default number of processors
+NN=8  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "spawnparam.sh 8" then NN = 8
   NN="$1"
 fi
@@ -67,7 +47,7 @@ NODES=$PISM_NODES
  SHEBANGLINE="#!/bin/bash"
 MPIQUEUELINE="#PBS -q standard_4"
  MPITIMELINE="#PBS -l walltime=$WALLTIME"
- MPISIZELINE="#PBS -l nodes=$NODES:ppn=16"
+ MPISIZELINE="#PBS -l nodes=$NODES:ppn=4"
   MPIOUTLINE="#PBS -j oe"
 
 
