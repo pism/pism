@@ -7,7 +7,6 @@ set (Pism_BRANCH "stable")
 
 # Set Pism_REVISION_TAG
 pism_set_revision_tag()
-message(STATUS "Configuring PISM version '${Pism_REVISION_TAG}'")
 
 # Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
