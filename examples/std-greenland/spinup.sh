@@ -41,6 +41,14 @@ if [ $# -lt 5 ] ; then
   echo "    EXVARS       desired -extra_vars; defaults to 'diffusivity,temppabase,"
   echo "                   tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf'"
   echo "                   plus ',hardav,cbase,tauc' if DYNAMICS=hybrid"
+  echo "    PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ"
+  echo "                   [default=0.25]"
+  echo "    PARAM_SIAE   sets option -sia_e \$PARAM_SIAE   [default=3.0]"
+  echo "    PARAM_TEFO   sets (hybrid-only) option -till_effective_fraction_overburden"
+  echo "                   \$PARAM_TEFO   [default=0.02]"
+  echo "    PARAM_TTPHI  sets (hybrid-only) option -topg_to_phi \$PARAM_TTPHI"
+  echo "                   [default=15.0,40.0,-300.0,700.0]"
+  echo "    PARAM_NOSGL  if set, DON'T use -tauc_slippery_grounding_lines"
   echo "    PISM_DO      set to 'echo' if no run desired; defaults to empty"
   echo "    PISM_MPIDO   defaults to 'mpiexec -n'"
   echo "    PISM_PREFIX  set to path to pismr executable if desired; defaults to empty"
@@ -148,15 +156,35 @@ else
 fi
 
 # set stress balance from argument 5
-PHYS="-ocean_kill $PISM_DATANAME -sia_e 3.0"
-if [ "$5" = "sia" ]; then
-  PHYS=$PHYS
-elif [ "$5" = "hybrid" ]; then
-  TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
-  PHYS="${PHYS} -ssa_sliding ${TILLPHI} -pseudo_plastic -pseudo_plastic_q 0.23 -till_effective_fraction_overburden 0.01 -tauc_slippery_grounding_lines"
+if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
+  PHYS="-ocean_kill ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
 else
-  echo "invalid fifth argument; must be in $DYNALIST"
-  exit
+  PHYS="-ocean_kill ${PISM_DATANAME} -sia_e 3.0"
+fi
+# done forming $PHYS if "$5" = "sia"
+if [ "$5" = "hybrid" ]; then
+  if [ -z "${PARAM_TTPHI}" ] ; then  # check if env var is NOT set
+    PARAM_TTPHI="15.0,40.0,-300.0,700.0"
+  fi
+  if [ -z "${PARAM_PPQ}" ] ; then  # check if env var is NOT set
+    PARAM_PPQ="0.23"
+  fi
+  if [ -z "${PARAM_TEFO}" ] ; then  # check if env var is NOT set
+    PARAM_TEFO="0.02"
+  fi
+  if [ -z "${PARAM_NOSGL}" ] ; then  # check if env var is NOT set
+    SGL="-tauc_slippery_grounding_lines"
+  else
+    SGL=""
+  fi
+  PHYS="${PHYS} -ssa_sliding -topg_to_phi ${PARAM_TTPHI} -pseudo_plastic -pseudo_plastic_q ${PARAM_PPQ} -till_effective_fraction_overburden ${PARAM_TEFO} ${SGL}"
+else
+  if [ "$5" = "sia" ]; then
+    echo "$SCRIPTNAME  sia-only case: ignoring PARAM_TTPHI, PARAM_PPQ, PARAM_TEFO ..."
+  else
+    echo "invalid fifth argument; must be in $DYNALIST"
+    exit
+  fi
 fi
 
 # set output filename from argument 6
@@ -249,14 +277,14 @@ fi
 
 # if REGRIDFILE set then form regridcommand
 if [ -n "${REGRIDFILE:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME      REGRIDFILE = $REGRIDFILE"
   if [ -n "${REGRIDVARS:+1}" ] ; then  # check if env var is already set
     echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS  (already set)"
   else
     REGRIDVARS='litho_temp,thk,enthalpy,tillwat,bmelt'
+    # note: other vars which are "state":  Href, dbdt, shelfbtemp, shelfbmassflux
+    echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS"
   fi
-  # note: other vars which are "state":  Href, dbdt, shelfbtemp, shelfbmassflux
-  echo "$SCRIPTNAME      REGRIDFILE = $REGRIDFILE"
-  echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS"
   regridcommand="-regrid_file $REGRIDFILE -regrid_vars $REGRIDVARS"
   if [ "$2" = "paleo" ]; then
     regridcommand="$regridcommand -regrid_bed_special"
