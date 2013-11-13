@@ -764,34 +764,32 @@ S -124791.571:  3.11640   2.25720      3.62041    18099.93737
 y  SSA:     3 outer iterations, ~17.0 KSP iterations each
 \end{verbatim}
 \normalsize
-\noindent The format of the third line, the summary, is simple:
+
+The characters ``\texttt{v\$Eh}'' at the beginning of the flags line, the first line in the above example, give a very terse description of which physical processes were modeled in that time step.  Here ``\texttt{v}'' means that a stress balance was solved to compute the velocity.  Then the enthalpy was updated (``\texttt{E}'') and the ice thickness and surface elevation were updated (``\texttt{h}'').  The rest of the flags line looks like
+
+  ``\texttt{d (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)}''
+
+\noindent Recall that the PISM time step is determined by an
+adaptive mechanism.  Stable mass conservation and conservation of energy solutions
+require such an adaptive time-stepping scheme \cite{BBL}.  The first character
+we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason''
+flag.  See Table \ref{tab:adaptiveflag}.  We also see that
+there was a major time step of $0.83945$ model years divided into $2$ substeps of
+about $0.42$ years.  The \intextoption{skip} option enables this mechanism, while
+\intextoption{skip_max} sets the maximum number of such substeps.  The adaptive
+mechanism may choose to take fewer substeps than \texttt{-skip_max} so as to
+satisfy certain numerical stability criteria, however.
+
+The second line in the above, the line which starts with ``\verb|S|'', is the summary.  Its format, and the units for these numbers, is simple and is given by a couple of lines printed near the beginning of the standard output for the run:
 \small
 \begin{verbatim}
 P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel
 U      years   10^6_km^3  10^6_km^2         m^2 s^-1       m/year
 \end{verbatim}
 \normalsize
-That is, we have the total ice volume, total ice area, maximum diffusivity of the SIA mass conservation, and maximum horizontal velocity ($\max(\max(|u|), \max(|v|))$).  A ``\texttt{U}'' line near the beginning of the standard output indicates the units.
+That is, in each summary we have the total ice volume, total ice area, maximum diffusivity (of the SIA mass conservation equation), and maximum horizontal velocity (i.e.~$\max(\max(|u|), \max(|v|))$).
 
-The characters ``\texttt{v\$Eh}'' at the beginning of the flag line give a very terse description of which physical processes were modeled in that time step.  Both the SIA and SSA stress balances were solved, and the latter, which is the most computationally-expensive, describes its nonlinear iterations.
-
-Now we explain what the rest of the flags line, namely
-
-``\texttt{d (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)}''
-
-\noindent might mean.  Note that the PISM time step is determined by an
-adaptive mechanism.  PISM does each step explicitly when
-numerically-approximating mass conservation in the map-plane.  This, and the
-modeling of horizontal advection in conservation of energy and age evolution,
-requires such an adaptive time-stepping scheme \cite{BBL}.  The first character
-we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason''
-flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time
-step was limited by the diffusivity of SIA mass conservation.  We also see that
-there was a major time step of $0.83945$ model years divided into $2$ substeps of
-about $0.42$ years.  The \intextoption{skip} option enables this mechanism, while
-\intextoption{skip_max} sets the maximum number of such substeps. The adaptive
-mechanism may choose to take fewer substeps to satisfy numerical stability
-criteria, however.
+The third line of the above example shows that the SSA stress balance was solved.  Information on the number of nonlinear (outer) and linear (inner) iterations is provided \cite{BBssasliding}.
 
 \begin{table}[ht]
 \centering

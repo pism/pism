@@ -77,21 +77,21 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
 //! Allocates memory and reads in the precipitaion data.
 PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = -1;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   variables = &vars;
 
-  ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(precip_filename, do_regrid, start); CHKERRQ(ierr);
 
   // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
 		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
 		    "      from %s ... \n",
 		    precip_filename.c_str()); CHKERRQ(ierr); 
-  if (regrid) {
+  if (do_regrid) {
     ierr = precipitation.regrid(precip_filename, true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = precipitation.read(precip_filename, start); CHKERRQ(ierr); // fails if not found!
@@ -213,7 +213,7 @@ PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
 
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
-    T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
+    T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   ierr = result.begin_access(); CHKERRQ(ierr);

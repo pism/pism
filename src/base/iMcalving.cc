@@ -93,14 +93,12 @@ PetscErrorCode IceModel::Href_cleanup() {
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
 
-      if (vH(i, j) > 0 &&
-          vHref(i, j) > 0) {
+      if (vH(i, j) > 0 && vHref(i, j) > 0) {
         vH(i, j) += vHref(i, j);
         vHref(i, j) = 0.0;
       }
 
-      if (vHref(i, j) > 0.0 &&
-          mask.next_to_floating_ice(i, j) == false) {
+      if (vHref(i, j) > 0.0 && mask.next_to_ice(i, j) == false) {
         vHref(i, j) = 0.0;
       }
 
@@ -133,7 +131,8 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
   MaskQuery mask(vMask);
 
   const double ice_density = config.get("ice_density");
-  const bool update_2d_discharge = discharge_flux_2D_cumulative.was_created(),
+  const bool
+    update_2d_discharge = discharge_flux_2D_cumulative.was_created(),
     use_Href = Href.was_created() && Href_old.was_created();
   PetscReal my_total_discharge = 0.0, total_discharge;
 

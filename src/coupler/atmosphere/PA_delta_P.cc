@@ -62,7 +62,7 @@ PA_delta_P::~PA_delta_P()
 PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 

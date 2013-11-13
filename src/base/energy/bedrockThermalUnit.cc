@@ -193,7 +193,7 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   PetscErrorCode ierr;
   grid_info g(grid.get_unit_system());
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2,grid.com,
       "* Initializing the bedrock thermal unit... setting constants...\n"); CHKERRQ(ierr);
@@ -320,20 +320,20 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
   // as a derived class of PISMComponent_TS, has t,dt members which keep track
   // of last update time-interval; so we do some checks ...
   // CHECK: has the desired time-interval already been dealt with?
-  if ((fabs(my_t - t) < 1e-12) && (fabs(my_dt - dt) < 1e-12))  return 0;
+  if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12))  return 0;
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (my_dt < 0) {
      SETERRQ(grid.com, 1,"PISMBedThermalUnit::update() does not allow negative timesteps\n"); }
   // CHECK: is desired time-interval equal to [my_t,my_t+my_dt] where my_t = t + dt?
-  if ((!gsl_isnan(t)) && (!gsl_isnan(dt))) { // this check should not fire on first use
+  if ((!gsl_isnan(m_t)) && (!gsl_isnan(m_dt))) { // this check should not fire on first use
     bool contiguous = true;
 
-    if (fabs(t + dt) < 1) {
-      if ( fabs(my_t - (t + dt)) >= 1e-12 ) // check if the absolute difference is small
+    if (fabs(m_t + m_dt) < 1) {
+      if ( fabs(my_t - (m_t + m_dt)) >= 1e-12 ) // check if the absolute difference is small
         contiguous = false;
     } else {
-      if ( fabs(my_t - (t + dt)) / (t + dt) >= 1e-12 ) // check if the relative difference is small
+      if ( fabs(my_t - (m_t + m_dt)) / (m_t + m_dt) >= 1e-12 ) // check if the relative difference is small
         contiguous = false;
     }
 
@@ -341,7 +341,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
      SETERRQ4(grid.com, 2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
                 "  stored:     t = %f s,    dt = %f s\n"
                 "  desired: my_t = %f s, my_dt = %f s\n",
-              t,dt,my_t,my_dt); }
+              m_t,m_dt,my_t,my_dt); }
   }
   // CHECK: is desired time-step too long?
   PetscScalar my_max_dt;
@@ -351,8 +351,8 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
      SETERRQ(grid.com, 3,"PISMBedThermalUnit::update() thinks you asked for too big a timestep\n"); }
 
   // o.k., we have checked; we are going to do the desired timestep!
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
   if (bedtoptemp == NULL)      SETERRQ(grid.com, 5, "bedtoptemp was never initialized");
   if (ghf == NULL)      SETERRQ(grid.com, 6, "bheatflx was never initialized");

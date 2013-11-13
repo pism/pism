@@ -57,14 +57,14 @@ PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
 //! Updates the pointwise isostasy model.
 PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
-  if ((fabs(my_t - t)   < 1e-12) &&
-      (fabs(my_dt - dt) < 1e-12))
+  if ((fabs(my_t - m_t)   < 1e-12) &&
+      (fabs(my_dt - m_dt) < 1e-12))
     return 0;
 
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
-  PetscReal t_final = t + dt;
+  PetscReal t_final = m_t + m_dt;
 
   // Check if it's time to update:
   PetscReal dt_beddef = t_final - t_beddef_last; // in seconds

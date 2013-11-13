@@ -47,9 +47,9 @@ static inline std::string string_strip(std::string input) {
   for more details about supported calendars.
  */
 PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
-                                     std::string calendar,
+                                     std::string calendar_string,
                                      PISMUnitSystem units_system)
-  : PISMTime(c, conf, calendar, units_system) {
+  : PISMTime(c, conf, calendar_string, units_system) {
 
   // init_calendar() was called by the constructor of PISMTime.
   if (pism_is_valid_calendar_name(m_calendar_string) == false) {

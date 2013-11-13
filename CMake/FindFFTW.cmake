@@ -10,9 +10,35 @@ if (FFTW_INCLUDES)
   set (FFTW_FIND_QUIETLY TRUE)
 endif (FFTW_INCLUDES)
 
-find_path (FFTW_INCLUDES fftw3.h)
+find_path (FFTW_INCLUDES fftw3.h
+  HINTS "${FFTW_ROOT}/include" "$ENV{FFTW_ROOT}/include")
 
-find_library (FFTW_LIBRARIES NAMES fftw3)
+string(REGEX REPLACE "/include/?$" "/lib"
+  FFTW_LIB_HINT ${FFTW_INCLUDES})
+
+find_library (FFTW_LIBRARIES
+  NAMES fftw3
+  HINTS ${FFTW_LIB_HINT})
+
+if ((NOT FFTW_LIBRARIES) OR (NOT FFTW_INCLUDES))
+  message(STATUS "Trying to find FFTW3 using LD_LIBRARY_PATH (we're desperate)...")
+
+  file(TO_CMAKE_PATH "$ENV{LD_LIBRARY_PATH}" LD_LIBRARY_PATH)
+
+  find_library(FFTW_LIBRARIES
+    NAMES fftw3
+    HINTS ${LD_LIBRARY_PATH})
+
+  if (FFTW_LIBRARIES)
+    get_filename_component(FFTW_LIB_DIR ${FFTW_LIBRARIES} PATH)
+    string(REGEX REPLACE "/lib/?$" "/include"
+      FFTW_H_HINT ${FFTW_LIB_DIR})
+
+    find_path (FFTW_INCLUDES fftw3.h
+      HINTS ${FFTW_H_HINT}
+      DOC "Path to fftw3.h")
+  endif()
+endif()
 
 # handle the QUIETLY and REQUIRED arguments and set FFTW_FOUND to TRUE if
 # all listed variables are TRUE

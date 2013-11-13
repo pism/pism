@@ -128,8 +128,8 @@ protected:
 
     if (bc_file_set == false) {
       // find PISM input file to read data from:
-      bool regrid; int start;   // will be ignored
-      ierr = Model::find_pism_input(filename, regrid, start); CHKERRQ(ierr);
+      bool do_regrid; int start;   // will be ignored
+      ierr = Model::find_pism_input(filename, do_regrid, start); CHKERRQ(ierr);
 
       ierr = verbPrintf(2, Model::grid.com,
                         "  - Option %s_file is not set. Trying the input file '%s'...\n",
@@ -203,20 +203,20 @@ protected:
     // "Periodize" the climate:
     my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
 
-    if ((fabs(my_t - Model::t) < 1e-12) &&
-        (fabs(my_dt - Model::dt) < 1e-12))
+    if ((fabs(my_t - Model::m_t) < 1e-12) &&
+        (fabs(my_dt - Model::m_dt) < 1e-12))
       return 0;
 
-    Model::t  = my_t;
-    Model::dt = my_dt;
+    Model::m_t  = my_t;
+    Model::m_dt = my_dt;
 
     if (Model::input_model != NULL) {
-      ierr = Model::input_model->update(Model::t, Model::dt); CHKERRQ(ierr);
+      ierr = Model::input_model->update(Model::m_t, Model::m_dt); CHKERRQ(ierr);
     }
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
-      ierr = (k->second)->update(Model::t, Model::dt); CHKERRQ(ierr);
+      ierr = (k->second)->update(Model::m_t, Model::m_dt); CHKERRQ(ierr);
 
       ++k;
     }

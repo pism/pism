@@ -82,7 +82,7 @@ PAAnomaly::~PAAnomaly()
 PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(input_model != NULL);
   ierr = input_model->init(vars); CHKERRQ(ierr);
@@ -103,8 +103,8 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
 PetscErrorCode PAAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = precipitation_anomaly->average(t, dt); CHKERRQ(ierr);
-  ierr = air_temp_anomaly->average(t, dt); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }

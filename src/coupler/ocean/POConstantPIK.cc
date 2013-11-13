@@ -57,7 +57,7 @@ PetscErrorCode POConstantPIK::allocate_POConstantPIK() {
 PetscErrorCode POConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (!config.get_flag("is_dry_simulation")) {
     ierr = verbPrintf(2, grid.com, "* Initializing the constant (PIK) ocean model...\n"); CHKERRQ(ierr);
@@ -70,7 +70,7 @@ PetscErrorCode POConstantPIK::init(PISMVars &vars) {
 }
 
 PetscErrorCode POConstantPIK::update(PetscReal my_t, PetscReal my_dt) {
-  t = my_t; dt = my_dt; return 0;
+  m_t = my_t; m_dt = my_dt; return 0;
 }
 
 PetscErrorCode POConstantPIK::sea_level_elevation(PetscReal &result) {

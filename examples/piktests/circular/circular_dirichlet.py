@@ -11,54 +11,49 @@ options = piktests_utils.process_options("circular_dirichlet.nc",
                                          domain_size=1000.0)
 p = piktests_utils.Parameters()
 
-# create arrays which will go in output
-thk   = np.zeros((options.My, options.Mx)) # sheet/shelf thickness
-bed   = np.zeros_like(thk)                 # bedrock surface elevation
-accum = np.zeros_like(thk)                 # accumulation/ ablation
-Ts    = np.zeros_like(thk) + p.air_temperature
-
-bcflag = np.zeros_like(thk)
-ubar   = np.zeros_like(thk)
-vbar   = np.zeros_like(thk)
-
 dx, dy, x, y = piktests_utils.create_grid(options)
 
-# bedrock and ice thickness
-for j in xrange(options.My):
-    for i in xrange(options.Mx):
-        radius = np.sqrt(x[i]**2 + y[j]**2) # radius in m
+xx, yy = np.meshgrid(x,y)
+radius = np.sqrt(xx**2 + yy**2)
+# remove the singularity (does not affect the result):
+radius[radius == 0] = 1e-16
 
-        # grounded
-        if radius <= p.r_gl:
-            bed[j,i] = 100.0
-            thk[j,i] = p.H0
+# Ice thickness
+thk = np.zeros((options.My, options.Mx)) # sheet/shelf thickness
+if options.shelf:
+    thk[radius > p.r_gl] = (4.0 * p.C / p.Q0 * (radius[radius > p.r_gl] - p.r_gl) + 1 / p.H0**4)**(-0.25)
+    thk[radius >= p.r_cf] = 0.0
+    # cap ice thickness
+    thk[thk > p.H0] = p.H0
+else:
+    thk[radius <= p.r_gl] = p.H0
 
-        # ice shelf
-        if radius <= p.r_cf and radius > p.r_gl and options.shelf == True:
-            thk[j,i] = (4.0 * p.C / p.Q0 * (radius - p.r_gl) + 1 / p.H0**4)**(-0.25)
+# Bed topography
+bed = np.zeros_like(thk)                 # bedrock surface elevation
+bed[radius <= p.r_gl] = 100.0
+bed[radius >  p.r_gl] = p.topg_min
 
-        # ocean (shelf and elsewhere)
-        if radius >= p.r_gl:
-            accum[j,i] = p.accumulation_rate
-            bed[j,i] = p.topg_min
+# Surface mass balance
+accum = np.zeros_like(thk)                 # accumulation/ ablation
+accum[radius >= p.r_gl] = p.accumulation_rate
 
-# cap ice thickness
-thk[thk > p.H0] = p.H0
-            
-# set values and locations of Dirichlet boundary conditions
-for j in xrange(options.My):
-    for i in xrange(options.Mx):
-        radius = np.sqrt(x[i]**2 + y[j]**2) # radius in m
-        width = dx*3
+# Surface temperature (irrelevant)
+Ts = np.zeros_like(thk) + p.air_temperature
 
-        if radius <= p.r_gl - width:
-            bcflag[j,i] = 1.0
-        elif radius <= p.r_gl:
-            bcflag[j,i] = 1.0
-            ubar[j,i]   = p.vel_bc * (x[i] / radius)
-            vbar[j,i]   = p.vel_bc * (y[j] / radius)
-        else:
-            bcflag[j,i] = 0.0
+# Dirichlet B.C locations
+width = dx*3
+bcflag = np.zeros_like(thk)
+bcflag[radius <= p.r_gl] = 1
+bcflag[radius <= p.r_gl - width] = 0
+
+# SSA velocity Dirichlet B.C.
+ubar = np.zeros_like(thk)
+ubar[radius <= p.r_gl] = p.vel_bc * (xx[radius <= p.r_gl] / radius[radius <= p.r_gl])
+ubar[bcflag == 0] = 0
+
+vbar = np.zeros_like(thk)
+vbar[radius <= p.r_gl] = p.vel_bc * (yy[radius <= p.r_gl] / radius[radius <= p.r_gl])
+vbar[bcflag == 0] = 0
 
 ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')
 piktests_utils.prepare_output_file(ncfile, x, y)

@@ -152,7 +152,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
@@ -203,11 +203,11 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   }
 
   std::string input_file;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = -1;
   
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
@@ -246,12 +246,12 @@ double PSTemperatureIndex::compute_next_balance_year_start(double time) {
 PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(my_t - t) < 1e-12) &&
-      (fabs(my_dt - dt) < 1e-12))
+  if ((fabs(my_t - m_t) < 1e-12) &&
+      (fabs(my_dt - m_dt) < 1e-12))
     return 0;
 
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
   // upate to ensure that temperature and precipitation time series
   // are correct:
@@ -349,10 +349,10 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
           mbscheme->step(ddf, PDDs[k], accumulation,
                          snow_depth(i,j), melt_rate(i,j), runoff_rate(i,j), climatic_mass_balance(i,j));
         }
-        accumulation_rate(i,j)     /= dt;
-        melt_rate(i,j)             /= dt;
-        runoff_rate(i,j)           /= dt;
-        climatic_mass_balance(i,j) /= dt;
+        accumulation_rate(i,j)     /= m_dt;
+        melt_rate(i,j)             /= m_dt;
+        runoff_rate(i,j)           /= m_dt;
+        climatic_mass_balance(i,j) /= m_dt;
       }
 
       if (m.ocean(i,j)) {

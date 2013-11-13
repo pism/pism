@@ -64,7 +64,7 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
 PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -80,7 +80,7 @@ PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
   PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
 
   if (offset)
-    result += (*offset)(t + 0.5*dt);
+    result += (*offset)(m_t + 0.5*m_dt);
 
   return 0;
 }

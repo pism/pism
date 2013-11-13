@@ -17,22 +17,4 @@ execute_process(
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (PETSc4Py DEFAULT_MSG PETSC4PY_INCLUDES)
 
-
-# if(PETSC4PY_INCLUDES)
-#   set(PETSC4PY_FOUND TRUE)
-#   set(PETSC4PY_INCLUDES ${PETSC4PY_INCLUDES} CACHE STRING "PETSc4Py include path")
-# else(PETSC4PY_INCLUDES)
-#   set(PETSC4PY_FOUND FALSE)
-# endif(PETSC4PY_INCLUDES)
-# 
-# if(PETSC4PY_FOUND)
-#   if(NOT PETSC4PY_FIND_QUIETLY)
-#     message(STATUS "Found petsc4py: ${PETSC4PY_INCLUDES}")
-#   endif(NOT PETSC4PY_FIND_QUIETLY)
-# else(PETSC4PY_FOUND)
-#   if(PETSC4PY_FIND_REQUIRED)
-#     message(FATAL_ERROR "petsc4py headers missing")
-#   endif(PETSC4PY_FIND_REQUIRED)
-# endif(PETSC4PY_FOUND)
-# 
 mark_as_advanced(PETSC4PY_INCLUDES)

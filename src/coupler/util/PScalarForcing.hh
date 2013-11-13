@@ -39,8 +39,8 @@ public:
 
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
   {
-    Mod::t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
-    Mod::dt = my_dt;
+    Mod::m_t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
+    Mod::m_dt = my_dt;
 
     PetscErrorCode ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
     return 0;
@@ -103,7 +103,7 @@ protected:
   }
 
   PetscErrorCode offset_data(IceModelVec2S &result) {
-    PetscErrorCode ierr = result.shift((*offset)(Mod::t + 0.5*Mod::dt)); CHKERRQ(ierr);
+    PetscErrorCode ierr = result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
     return 0;
   }
 

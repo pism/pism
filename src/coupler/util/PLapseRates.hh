@@ -35,7 +35,7 @@ public:
     : Mod(g, conf, in)
   {
     surface = thk = NULL;
-    temp_lapse_rate = 0;
+    temp_lapse_rate = 0.0;
   }
 
   virtual ~PLapseRates() {}
@@ -45,46 +45,47 @@ public:
     PetscErrorCode ierr;
 
     // a convenience
-    PetscReal &m_t = Mod::t;
-    PetscReal &m_dt = Mod::dt;
+    PetscReal &t = Mod::m_t;
+    PetscReal &dt = Mod::m_dt;
 
     // "Periodize" the climate:
     my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);
 
-    if ((fabs(my_t - m_t) < 1e-12) &&
-        (fabs(my_dt - m_dt) < 1e-12))
+    if ((fabs(my_t - t) < 1e-12) &&
+        (fabs(my_dt - dt) < 1e-12))
       return 0;
 
-    m_t = my_t;
-    m_dt = my_dt;
+    t  = my_t;
+    dt = my_dt;
 
+    // NB! Input model uses original t and dt
     ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
 
-    ierr = reference_surface.update(m_t, m_dt); CHKERRQ(ierr);
+    ierr = reference_surface.update(t, dt); CHKERRQ(ierr);
 
-    ierr = reference_surface.interp(m_t + 0.5*m_dt); CHKERRQ(ierr);
+    ierr = reference_surface.interp(t + 0.5*dt); CHKERRQ(ierr);
 
     return 0;
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+  virtual PetscErrorCode max_timestep(PetscReal t, PetscReal &dt, bool &restrict) {
     PetscErrorCode ierr;
     PetscReal max_dt = -1;
 
     // "Periodize" the climate:
-    my_t = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
+    t = Mod::grid.time->mod(t - bc_reference_time, bc_period);
 
-    ierr = Mod::input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+    ierr = Mod::input_model->max_timestep(t, dt, restrict); CHKERRQ(ierr);
 
-    max_dt = reference_surface.max_timestep(my_t);
+    max_dt = reference_surface.max_timestep(t);
 
     if (restrict == true) {
       if (max_dt > 0)
-        my_dt = PetscMin(max_dt, my_dt);
+        dt = PetscMin(max_dt, dt);
     }
-    else my_dt = max_dt;
+    else dt = max_dt;
 
-    if (my_dt > 0)
+    if (dt > 0)
       restrict = true;
     else
       restrict = false;

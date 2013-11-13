@@ -93,7 +93,7 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
 PetscErrorCode POGivenTH::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the 3eqn melting parameterization ocean model\n"
@@ -116,8 +116,8 @@ PetscErrorCode POGivenTH::update(PetscReal my_t, PetscReal my_dt) {
 
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = theta_ocean->average(t, dt); CHKERRQ(ierr);
-  ierr = salinity_ocean->average(t, dt); CHKERRQ(ierr);
+  ierr = theta_ocean->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = salinity_ocean->average(m_t, m_dt); CHKERRQ(ierr);
 
   ierr = calc_shelfbtemp_shelfbmassflux(); CHKERRQ(ierr);
 

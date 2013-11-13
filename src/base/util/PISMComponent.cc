@@ -31,7 +31,7 @@
   IceModel uses to initialize from.
 */
 PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name of the file found
-					      bool &regrid, //!< specifies whether regridding is necessary
+					      bool &do_regrid, //!< specifies whether regridding is necessary
 					      int &start    //!< "start" to use when reading from filename
 					      ) {
   PetscErrorCode ierr;
@@ -63,10 +63,10 @@ PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name o
   ierr = nc.close(); CHKERRQ(ierr);
 
   if (boot_file_set) {
-    regrid = true;
+    do_regrid = true;
     start = 0;
   } else {
-    regrid = false;
+    do_regrid = false;
     start = last_record;
   }
 

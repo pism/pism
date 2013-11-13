@@ -97,14 +97,14 @@ TAO_DIR  = ${TAO_DIR}
 PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR = ${PETSC_DIR}
 include ${TAO_DIR}/conf/tao_base
-show :
+findtao_show :
 	-@echo -n \${\${VARIABLE}}
 ")
 
   # Define macro for getting TAO variables from Makefile
   macro(TAO_GET_VARIABLE var name)
     set(${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${tao_config_makefile} show VARIABLE=${name}
+    execute_process(COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${tao_config_makefile} findtao_show VARIABLE=${name}
       OUTPUT_VARIABLE ${var}
       RESULT_VARIABLE tao_return)
   endmacro()

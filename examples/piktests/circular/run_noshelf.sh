@@ -1,7 +1,7 @@
 #!/bin/bash
 
 N=4
-xx=101   # FIXME:  for quick regression, try xx=51,yy=51
+xx=101
 yy=101
 length=400 
 
@@ -15,7 +15,7 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -verbose 3 -ssa_sliding -ssa_dirichlet_bc"
+pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc"
 
 doit="mpiexec -n $N pismr $pismopts"
 

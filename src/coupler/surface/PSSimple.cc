@@ -59,7 +59,7 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
 PetscErrorCode PSSimple::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
   ierr = atmosphere->init(vars); CHKERRQ(ierr);
@@ -76,8 +76,8 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
 
 PetscErrorCode PSSimple::update(PetscReal my_t, PetscReal my_dt)
 {
-  t = my_t;
-  dt = my_dt;
+  m_t = my_t;
+  m_dt = my_dt;
   if (atmosphere) {
     PetscErrorCode ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
   }

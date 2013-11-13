@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 
-# Computes and plots exact solution for "test V", in preparation for
-# implementing C version for PISM verification.
+from pylab import figure, plot, xlabel, ylabel, title, show, axis, linspace, hold, subplot, grid
+import numpy as np
+import subprocess, shlex, sys
 
-from pylab import *
-import subprocess
-
-try:
-    from netCDF4 import Dataset as NC
-except:
-    from netCDF3 import Dataset as NC
+from netCDF4 import Dataset as NC
 
 def permute(variable, output_order = ('time', 'z', 'zb', 'y', 'x')):
     """Permute dimensions of a NetCDF variable to match the output storage order."""
@@ -65,9 +60,7 @@ def x_c(t):
 def plot_xc(t_years):
     """Plot the location of the calving front."""
     x = x_c(t_years * secpera)/1000.0   # convert to km
-    a = axis()
-    y_min = a[2]
-    y_max = a[3]
+    _, _, y_min, y_max = axis()
 
     hold(True)
     plot([x, x], [y_min, y_max], '--g')
@@ -75,9 +68,9 @@ def plot_xc(t_years):
 def run_pismv(Mx, run_length, options, output):
     command = "pismv -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
     print "Running %s" % command
-    subprocess.call(command, shell=True)
+    subprocess.call(shlex.split(command))
 
-def plot_pism_results(figure_number, filename, figure_title, color):
+def plot_pism_results(filename, figure_title, color, same_figure=False):
     nc = NC(filename)
 
     time = nc.variables['time'][0]/secpera # convert to years
@@ -91,7 +84,8 @@ def plot_pism_results(figure_number, filename, figure_title, color):
 
     hold(True)
 
-    figure(figure_number)
+    if same_figure == False:
+        figure(1)
 
     subplot(211)
     title(figure_title)
@@ -113,18 +107,38 @@ def plot_pism_results(figure_number, filename, figure_title, color):
 
     nc.close()
 
-options = "-ssa_method fd -cfbc -part_grid -Lx 250"
 
-run_pismv(101, 300, options, "out.nc")
-plot_pism_results(1, "out.nc", "Figure 6 (b) (-part_grid)", 'blue')
+from argparse import ArgumentParser
+## Set up the option parser
+parser = ArgumentParser()
+parser.description = "Manages PISM runs reproducing Figure 6 in Albrecht et al 'Parameterization for subgrid-scale motion of ice-shelf calving fronts', 2011"
+parser.add_argument("-v", dest="variant", type=int,
+                    help="choose the 'model variant', choose from 0, 1, 2", default=2)
+options = parser.parse_args()
 
-run_pismv(101, 300, options + " -max_dt 1", "out.nc")
-plot_pism_results(1, "out.nc", "Figure 6 (b) (-part_grid)", 'green')
+opt = "-ssa_method fd -Lx 250 -o_order zyx"
+if options.variant == 0:
+    run_pismv(101, 300, opt, "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'blue')
 
-run_pismv(101, 300, options + " -part_redist", "out.nc")
-plot_pism_results(2, "out.nc", "Figure 6 (c) (-part_grid -part_redist)", 'blue')
+    run_pismv(101, 300, opt + " -max_dt 1", "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'green', same_figure=True)
+elif options.variant == 1:
+    opt += " -part_grid -cfbc"
+    run_pismv(101, 300, opt, "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'blue')
 
-run_pismv(101, 300, options + " -part_redist -max_dt 1", "out.nc")
-plot_pism_results(2, "out.nc", "Figure 6 (c) (-part_grid -part_redist)", 'green')
+    run_pismv(101, 300, opt + " -max_dt 1", "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'green', same_figure=True)
+elif options.variant == 2:
+    opt += " -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness"
+    run_pismv(101, 300, opt, "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'blue')
+
+    run_pismv(101, 300, opt + " -max_dt 1", "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'green', same_figure=True)
+else:
+    print "Wrong variant number. Choose one of 0, 1, 2."
+    sys.exit(1)
 
 show()

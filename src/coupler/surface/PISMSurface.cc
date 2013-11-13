@@ -53,7 +53,7 @@ void PISMSurfaceModel::attach_atmosphere_model(PISMAtmosphereModel *input) {
 PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
   ierr = atmosphere->init(vars); CHKERRQ(ierr);

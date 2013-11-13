@@ -164,11 +164,7 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
     // cells to zero. Note that the contents of these fields are
     // grid-dependent, so we don't want to read them from a bootstrapping file
     // using linear interpolation.
-    //ierr = vHav.set(0.0); CHKERRQ(ierr);
     ierr = vHref.set(0.0); CHKERRQ(ierr);
-    if (config.get_flag("part_redist")) {
-      ierr = vHresidual.set(0.0); CHKERRQ(ierr);
-    }
   }
 
   if (config.get_flag("do_eigen_calving")) {

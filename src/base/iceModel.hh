@@ -144,6 +144,9 @@ public:
   virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode allocate_iceberg_remover();
 
+  virtual PetscErrorCode attach_surface_model(PISMSurfaceModel *input);
+  virtual PetscErrorCode attach_ocean_model(PISMOceanModel *input);
+
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode set_grid_defaults();
@@ -160,14 +163,14 @@ public:
   PetscErrorCode init();
 
 
-  /**Backwards compatibility with stand-alone PISM */
+  /** Run PISM in the "standalone" mode. */
   virtual PetscErrorCode run();
-  /**Initialize a PISM run */
-  virtual PetscErrorCode init_run();
-  /**Advance the current PISM run to a specific time */
+  /** Advance the current PISM run to a specific time */
   virtual PetscErrorCode run_to(double time);
 protected:
-  /**Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
+  /** Do the "preliminary" time-step. */
+  virtual PetscErrorCode init_run();
+  /** Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
   virtual PetscErrorCode continue_run();
 public:
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
@@ -227,6 +230,7 @@ protected:
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
   PISMBedDef       *beddef;
+  bool external_surface_model, external_ocean_model;
 
   //! \brief A dictionary with pointers to IceModelVecs below, for passing them
   //! from the IceModel core to other components (such as surface and ocean models)
@@ -250,7 +254,6 @@ protected:
     vFT,    //!< fracture toughness
     bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
     vHref,          //!< accumulated mass advected to a partially filled grid cell
-    vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
     acab,		//!< accumulation/ablation rate; no ghosts
     climatic_mass_balance_cumulative,    //!< cumulative acab
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
@@ -304,18 +307,15 @@ protected:
   PetscInt    skipCountDown;
 
   // flags
-  PetscBool  allowAboveMelting;
-  PetscBool  repeatRedist, putOnTop;
   char        adaptReasonFlag;
 
-  std::string      stdout_flags, stdout_ssa;
+  std::string stdout_flags, stdout_ssa;
 
   std::string executable_short_name;
   
 protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode deallocate_internal_objects();
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMax3DVelocities();
@@ -378,13 +378,13 @@ protected:
   virtual PetscErrorCode calculateFractureDensity();
 
   // see iMpartgrid.cc
-  PetscReal get_threshold_thickness(bool do_redist,
-                                    planeStar<int> Mask,
+  PetscReal get_threshold_thickness(planeStar<int> Mask,
                                     planeStar<PetscScalar> thickness,
                                     planeStar<PetscScalar> surface_elevation,
-                                    PetscScalar bed_elevation);
-  virtual PetscErrorCode redistResiduals();
-  virtual PetscErrorCode calculateRedistResiduals();
+                                    PetscScalar bed_elevation,
+                                    bool reduce_frontal_thickness);
+  virtual PetscErrorCode residual_redistribution(IceModelVec2S &residual);
+  virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(

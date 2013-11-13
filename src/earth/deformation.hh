@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012, 2013 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -51,43 +51,44 @@ public:
   BedDeformLC();
   ~BedDeformLC();
   PetscErrorCode settings(const NCConfigVariable &config,
-			  PetscBool myinclude_elastic,
-                          PetscInt myMx, PetscInt myMy, PetscScalar mydx, PetscScalar mydy,
-                          PetscInt myZ,
+                          bool myinclude_elastic,
+                          int myMx, int myMy, PetscReal mydx, PetscReal mydy,
+                          int myZ,
                           Vec* myHstart, Vec* mybedstart, Vec* myuplift,  // initial state
                           Vec* myH,     // generally gets changed by calling program
                                         // before each call to step
                           Vec* mybed);  // mybed gets modified by step()
   PetscErrorCode alloc();
+  PetscErrorCode init();
   PetscErrorCode uplift_init();
   PetscErrorCode step(const PetscScalar dtyear, const PetscScalar yearFromStart);
 
 protected:
-  PetscBool     include_elastic;
-  PetscInt      Mx, My;
-  PetscScalar   dx, dy;
-  PetscInt      Z;       // factor by which fat FFT domain is larger than
-                         // region of physical interest
-  PetscScalar   icerho,  // ice density (for computing load from volume)
-                rho,     // earth density
-                eta,     // mantle viscosity
-                D;       // lithosphere flexural rigidity
+  bool        include_elastic;
+  int         Mx, My;
+  PetscReal   dx, dy;
+  int         Z;                // factor by which fat FFT domain is larger than
+                                // region of physical interest
+  PetscScalar icerho,           // ice density (for computing load from volume)
+    rho,                        // earth density
+    eta,                        // mantle viscosity
+    D;                          // lithosphere flexural rigidity
 
 private:
   PetscScalar   standard_gravity;
-  PetscBool    settingsDone, allocDone;
-  PetscInt      Nx, Ny,      // fat sizes
-                Nxge, Nyge;  // fat with boundary sizes
+  bool          settingsDone, allocDone;
+  PetscInt      Nx, Ny,         // fat sizes
+                Nxge, Nyge;     // fat with boundary sizes
   PetscInt      i0_plate,  j0_plate; // indices into fat array for corner of thin
-  PetscScalar   Lx, Ly;      // half-lengths of the physical domain
+  PetscScalar   Lx, Ly;         // half-lengths of the physical domain
   PetscScalar   Lx_fat, Ly_fat; // half-lengths of the FFT (spectral) computational domain
-  PetscScalar   *cx, *cy;      // coeffs of derivatives in Fourier space
-  Vec           *H, *bed, *H_start, *bed_start, *uplift; // pointers to sequential
-  Vec           Hdiff, dbedElastic,    // sequential; working space
-                U, U_start, // sequential and fat
+  PetscScalar  *cx, *cy;        // coeffs of derivatives in Fourier space
+  Vec          *H, *bed, *H_start, *bed_start, *uplift; // pointers to sequential
+  Vec           Hdiff, dbedElastic, // sequential; working space
+                U, U_start,     // sequential and fat
                 vleft, vright,  // coefficients; sequential and fat
                 lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
-  fftw_complex  *fftw_input, *fftw_output, *loadhat;  // 2D sequential
+  fftw_complex *fftw_input, *fftw_output, *loadhat; // 2D sequential
   fftw_plan     dft_forward, dft_inverse;
 
   void tweak(PetscReal seconds_from_start);

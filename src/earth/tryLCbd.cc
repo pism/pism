@@ -177,15 +177,15 @@ int main(int argc, char *argv[]) {
       }
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n"); CHKERRQ(ierr);
-      ierr = bdlc.settings(
-               config,
-               include_elastic,Mx,My,dx,dy,Z,
-               &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
+      ierr = bdlc.settings(config,
+                           include_elastic, Mx, My, dx, dy, Z,
+                           &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n"); CHKERRQ(ierr);
       ierr = bdlc.alloc(); CHKERRQ(ierr);
       
       ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n"); CHKERRQ(ierr);
+      ierr = bdlc.init(); CHKERRQ(ierr);
       ierr = bdlc.uplift_init(); CHKERRQ(ierr);
       
       ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n"); CHKERRQ(ierr);

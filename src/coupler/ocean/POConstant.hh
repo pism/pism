@@ -33,7 +33,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
+  { m_t = my_t; m_dt = my_dt; return 0; } // do nothing
 
   virtual PetscErrorCode sea_level_elevation(PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);

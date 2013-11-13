@@ -10,9 +10,35 @@ if (PROJ4_INCLUDES)
   set (PROJ4_FIND_QUIETLY TRUE)
 endif (PROJ4_INCLUDES)
 
-find_path (PROJ4_INCLUDES proj_api.h)
+find_path (PROJ4_INCLUDES proj_api.h
+  HINTS "${PROJ_ROOT}/include" "$ENV{PROJ_ROOT}/include")
 
-find_library (PROJ4_LIBRARIES NAMES proj)
+string(REGEX REPLACE "/include/?$" "/lib"
+  PROJ4_LIB_HINT ${PROJ4_INCLUDES})
+
+find_library (PROJ4_LIBRARIES
+  NAMES proj
+  HINTS ${PROJ4_LIB_HINT})
+
+if ((NOT PROJ4_LIBRARIES) OR (NOT PROJ4_INCLUDES))
+  message(STATUS "Trying to find proj.4 using LD_LIBRARY_PATH (we're desperate)...")
+
+  file(TO_CMAKE_PATH "$ENV{LD_LIBRARY_PATH}" LD_LIBRARY_PATH)
+
+  find_library(PROJ4_LIBRARIES
+    NAMES proj
+    HINTS ${LD_LIBRARY_PATH})
+
+  if (PROJ4_LIBRARIES)
+    get_filename_component(PROJ4_LIB_DIR ${PROJ4_LIBRARIES} PATH)
+    string(REGEX REPLACE "/lib/?$" "/include"
+      PROJ4_H_HINT ${PROJ4_LIB_DIR})
+
+    find_path (PROJ4_INCLUDES proj_api.h
+      HINTS ${PROJ4_H_HINT}
+      DOC "Path to proj_api.h")
+  endif()
+endif()
 
 # handle the QUIETLY and REQUIRED arguments and set PROJ4_FOUND to TRUE if
 # all listed variables are TRUE

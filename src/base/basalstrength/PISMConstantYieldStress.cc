@@ -82,7 +82,7 @@ PetscErrorCode PISMConstantYieldStress::write_variables(std::set<std::string> va
 
 
 PetscErrorCode PISMConstantYieldStress::update(PetscReal my_t, PetscReal my_dt) {
-  t = my_t; dt = my_dt;
+  m_t = my_t; m_dt = my_dt;
   return 0;
 }
 

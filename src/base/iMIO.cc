@@ -592,14 +592,14 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
  *
  * @param filename input file name
  *
- * @param regrid use regridding if 'true', otherwise assume that the
+ * @param do_regrid use regridding if 'true', otherwise assume that the
  *               input file has the same grid
- * @param last_record the record to use when 'regrid==false'.
+ * @param last_record the record to use when 'do_regrid==false'.
  *
  * @return 0 on success
  */
 PetscErrorCode IceModel::init_enthalpy(std::string filename,
-                                       bool regrid, int last_record) {
+                                       bool do_regrid, int last_record) {
   PetscErrorCode ierr;
   bool temp_exists  = false,
     liqfrac_exists  = false,
@@ -613,7 +613,7 @@ PetscErrorCode IceModel::init_enthalpy(std::string filename,
   ierr = nc.close(); CHKERRQ(ierr);
 
   if (enthalpy_exists == true) {
-    if (regrid) {
+    if (do_regrid) {
       ierr = Enth3.regrid(filename, true); CHKERRQ(ierr);
     } else {
       ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
@@ -627,7 +627,7 @@ PetscErrorCode IceModel::init_enthalpy(std::string filename,
     ierr = temp.set_attrs("temporary", "ice temperature", "Kelvin",
                           "land_ice_temperature"); CHKERRQ(ierr);
 
-    if (regrid) {
+    if (do_regrid) {
       ierr = temp.regrid(filename, true); CHKERRQ(ierr);
     } else {
       ierr = temp.read(filename, last_record); CHKERRQ(ierr);
@@ -638,7 +638,7 @@ PetscErrorCode IceModel::init_enthalpy(std::string filename,
       ierr = liqfrac.set_attrs("temporary", "ice liquid water fraction",
                                "1", ""); CHKERRQ(ierr);
 
-      if (regrid) {
+      if (do_regrid) {
         ierr = liqfrac.regrid(filename, true); CHKERRQ(ierr);
       } else {
         ierr = liqfrac.read(filename, last_record); CHKERRQ(ierr);

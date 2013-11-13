@@ -81,7 +81,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   PetscScalar fttalpha;
   PetscBool  fttalphaSet;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 

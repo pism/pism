@@ -160,10 +160,10 @@ PetscErrorCode PAConstantPIK::write_variables(std::set<std::string> vars, const 
 
 PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = -1;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time atmosphere model PAConstantPIK.\n"
@@ -171,14 +171,14 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
      "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"); CHKERRQ(ierr);
 
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate and air_temps from file
   ierr = verbPrintf(2, grid.com,
 		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
 		    "    from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
-  if (regrid) {
+  if (do_regrid) {
     ierr = precipitation.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = precipitation.read(input_file, start); CHKERRQ(ierr); // fails if not found!

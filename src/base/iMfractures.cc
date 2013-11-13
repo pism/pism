@@ -202,9 +202,9 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         //sigmateta = sigmateta +45.*M_PI/180;
           
         PetscScalar sigmabetatest, sigmanor, sigmatau, Kone, Ktwo,
-          KSI, KSImax, sigmabetanull, sigmatetanull;
+          KSI, KSImax, sigmatetanull;
         KSImax=0.0;
-        sigmabetanull=0.0;
+        //sigmabetanull=0.0;
         for (PetscInt l = 46; l <= 90; ++l) { //optimize for various precursor angles beta 
           sigmabetatest = l*M_PI/180.0;
           
@@ -237,8 +237,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
           KSI = cos(0.5*sigmatetanull)*(Kone*cos(0.5*sigmatetanull)*cos(0.5*sigmatetanull) - 0.5*3.0*Ktwo*sin(sigmatetanull));
           // mode I stress intensity
    
-          if (KSI>KSImax)
-            sigmabetanull=sigmabetatest;
+          //if (KSI>KSImax)
+          //  sigmabetanull=sigmabetatest;
           KSImax=std::max(KSI,KSImax);
           }
           sigmat=KSImax;      

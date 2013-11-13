@@ -83,7 +83,7 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
 PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (input_model != NULL) {
     ierr = input_model->init(vars); CHKERRQ(ierr);
@@ -104,8 +104,8 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
 PetscErrorCode PSAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = climatic_mass_balance_anomaly->average(t, dt); CHKERRQ(ierr);
-  ierr = ice_surface_temp_anomaly->average(t, dt); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = ice_surface_temp_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }

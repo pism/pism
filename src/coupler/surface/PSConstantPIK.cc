@@ -60,10 +60,10 @@ PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
 
 PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = -1;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
@@ -78,13 +78,13 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
 
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
     "    reading ice-equivalent surface mass balance rate 'climatic_mass_balance' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
-  if (regrid) {
+  if (do_regrid) {
     ierr = climatic_mass_balance.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = climatic_mass_balance.read(input_file, start); CHKERRQ(ierr); // fails if not found!
@@ -101,12 +101,12 @@ PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
 {
   PetscErrorCode ierr;
 
-  if ((fabs(my_t - t) < 1e-12) &&
-      (fabs(my_dt - dt) < 1e-12))
+  if ((fabs(my_t - m_t) < 1e-12) &&
+      (fabs(my_dt - m_dt) < 1e-12))
     return 0;
 
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
   ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);

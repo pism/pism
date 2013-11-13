@@ -61,6 +61,9 @@ netcdf pism_config {
     pism_config:part_redist = "no";
     pism_config:part_redist_doc = "for partially filled grid cell scheme, redistribute residuals Hresidual";
 
+    pism_config:part_grid_reduce_frontal_thickness = "no";
+    pism_config:part_grid_reduce_frontal_thickness_doc = "Reduce the threshold ice thickness at ice fronts using a van der Veen flowline analytical profile";
+
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
 
@@ -84,6 +87,9 @@ netcdf pism_config {
 
     pism_config:bed_deformation_model = "none";
     pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [\\ref LingleClark], requires FFTW3).";
+
+    pism_config:bed_def_lc_elastic_model = "no";
+    pism_config:bed_def_lc_elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
 
     pism_config:ocean_kill  = "false";
     pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
@@ -584,6 +590,9 @@ netcdf pism_config {
 
     pism_config:sia_sliding_verification_mode = "no";
     pism_config:sia_sliding_verification_mode_doc = "; Enable 'verification mode' of the SIA sliding code.";
+
+    pism_config:temperature_allow_above_melting = "no";
+    pism_config:temperature_allow_above_melting_doc = "If set to 'yes', allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";
 
     pism_config:sia_flow_law = "gpbld";
     pism_config:sia_flow_law_doc = "The SIA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";

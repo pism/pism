@@ -36,7 +36,7 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   bool input_file_flag, scaling_flag;
   std::string input_file, scaling_file;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   variables = &vars;
 
@@ -103,8 +103,8 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
 
 
 PetscErrorCode PACosineYearlyCycle::update(PetscReal my_t, PetscReal my_dt) {
-  t = my_t;
-  dt = my_dt;
+  m_t = my_t;
+  m_dt = my_dt;
   return 0;
 }
 
@@ -113,12 +113,12 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
 
   const PetscReal
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
-    T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
+    T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   double scaling = 1.0;
   if (A != NULL) {
-    scaling = (*A)(t + 0.5 * dt);
+    scaling = (*A)(m_t + 0.5 * m_dt);
   }
 
   ierr = result.begin_access(); CHKERRQ(ierr);

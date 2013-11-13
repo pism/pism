@@ -62,7 +62,7 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool smb_lapse_rate_set;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 

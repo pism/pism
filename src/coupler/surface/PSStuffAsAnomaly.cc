@@ -70,23 +70,23 @@ PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
 PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
   std::string input_file;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = 0;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (input_model != NULL) {
     ierr = input_model->init(vars); CHKERRQ(ierr);
   }
 
-  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing the 'turn_into_anomaly' modifier\n"
                     "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
                     "  read from '%s'.\n", input_file.c_str()); CHKERRQ(ierr);
 
-  if (regrid) {
+  if (do_regrid) {
     ierr = mass_flux_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
     ierr = temp_input.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
   } else {
@@ -100,20 +100,20 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
 PetscErrorCode PSStuffAsAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(my_t - t) < 1e-12) &&
-      (fabs(my_dt - dt) < 1e-12))
+  if ((fabs(my_t - m_t) < 1e-12) &&
+      (fabs(my_dt - m_dt) < 1e-12))
     return 0;
 
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
   if (input_model != NULL) {
-    ierr = input_model->update(t, dt); CHKERRQ(ierr);
+    ierr = input_model->update(m_t, m_dt); CHKERRQ(ierr);
     ierr = input_model->ice_surface_temperature(temp); CHKERRQ(ierr);
     ierr = input_model->ice_surface_mass_flux(mass_flux); CHKERRQ(ierr);
 
     // if we are at the beginning of the run...
-    if (t < grid.time->start() + 1) { // this is goofy, but time-steps are
+    if (m_t < grid.time->start() + 1) { // this is goofy, but time-steps are
                                       // usually longer than 1 second, so it
                                       // should work
       ierr = temp.copy_to(temp_0); CHKERRQ(ierr);

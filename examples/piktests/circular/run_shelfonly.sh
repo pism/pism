@@ -17,7 +17,7 @@ grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
 extra="-extra_times 1 -extra_vars thk,mask,cbar,Href,velbar -extra_file "
 
-pismopts="-boot_file $infile $grid -verbose 3 -ssa_sliding -ssa_dirichlet_bc"
+pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc"
 
 doit="mpiexec -n $N pismr $pismopts"
 

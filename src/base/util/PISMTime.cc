@@ -40,12 +40,12 @@ double PISMTime::seconds_to_years(double input) {
 
 PISMTime::PISMTime(MPI_Comm c,
                    const NCConfigVariable &conf,
-                   std::string calendar,
+                   std::string calendar_string,
                    PISMUnitSystem unit_system)
   : m_com(c), m_config(conf), m_unit_system(unit_system),
     m_time_units(m_unit_system) {
 
-  init_calendar(calendar);
+  init_calendar(calendar_string);
 
   m_run_start = years_to_seconds(m_config.get("start_year"));
   m_run_end   = increment_date(m_run_start, (int)m_config.get("run_length_years"));
@@ -58,13 +58,13 @@ PISMTime::PISMTime(MPI_Comm c,
 PISMTime::~PISMTime() {
 }
 
-void PISMTime::init_calendar(std::string calendar) {
-  m_calendar_string = calendar;
+void PISMTime::init_calendar(std::string calendar_string) {
+  m_calendar_string = calendar_string;
 
   double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
-  if (calendar == "360_day") {
+  if (calendar_string == "360_day") {
     m_year_length = 360 * seconds_per_day;
-  } else if (calendar == "365_day" || calendar == "noleap") {
+  } else if (calendar_string == "365_day" || calendar_string == "noleap") {
     m_year_length = 365 * seconds_per_day;
   } else {
     // use the ~365.2524-day year
