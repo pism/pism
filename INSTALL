@@ -48,6 +48,17 @@ A more thorough test of the build requires tools (esp. python and NCO):
 Please see the PISM User's Manual, also at www.pism-docs.org.  It
 explains actual ice sheet modeling with PISM.
 
+To generate Doxygen source code documentation:
+
+  cd 'your build directory'
+  make manual              # builds manual.pdf
+  make installation        # builds installation.pdf
+  make forcing             # builds forcing.pdf
+  make browser_base        # doxygen docs; view doc/browser/base/html/index.html when built
+  make browser_util        #      ...           doc/browser/util/html/index.html   ...
+
+See: http://www.pism-docs.org/wiki/doku.php?id=development_version
+
 For questions about PISM usage, installation, creating new models, etc.,
 e-mail <help@pism-docs.org>.
 
