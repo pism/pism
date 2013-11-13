@@ -136,13 +136,55 @@ public:
   { m_t = m_dt = GSL_NAN; }
   virtual ~PISMComponent_TS() {}
 
-  //! \brief Reports the maximum time-step the model can take at my_t. Sets
-  //! my_dt to -1 if any time-step is OK.
-  virtual PetscErrorCode max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict)
-  { my_dt = -1; restrict = false; return 0; }
+  //! \brief Reports the maximum time-step the model can take at t. Sets
+  //! dt to -1 if any time-step is OK.
+  virtual PetscErrorCode max_timestep(PetscReal /*t*/, PetscReal &dt, bool &restrict)
+  { dt = -1; restrict = false; return 0; }
 
-  //! Update a model, if necessary.
-  virtual PetscErrorCode update(PetscReal /*my_t*/, PetscReal /*my_dt*/) = 0;
+  //! Update the *state* of a component, if necessary.
+  /**
+   * Defines the common interface of time-stepping components.
+   *
+   * Derived classes should use this method to perform computations
+   * needed to step from `t` to `t + dt`. This could be
+   * a no-op.
+   *
+   * Time-step length `dt` should never be zero.
+   *
+   * This method will be called only once with a given `t`, `dt` pair;
+   * the value of `t` in a particular call should be equal to `t + dt`
+   * in the previous call (i.e. there should be no "gaps" or "repeats").
+   *
+   * One unfortunate exception is the initialization stage:
+   * IceModel::bootstrapFromFile() and IceModel::model_state_setup()
+   * might need to "know" the state of the model at the beginning of
+   * the run, which might require a non-trivial computation and so
+   * requires an update() call. Because of this and the "preliminary"
+   * step, *currently* update() gets called more than once at the
+   * beginning of the run.
+   *
+   * Other interface methods
+   * (PISMSurfaceModel::ice_surface_temperature() is an example)
+   * should use cached values if the corresponding computation is
+   * expensive. Methods like
+   * PISMSurfaceModel::ice_surface_temperature() might be called
+   * multiple times per time-step.
+   *
+   * PSTemperatureIndex is an example of a component that does a
+   * fairly expensive computation in PSTemperatureIndex::update() and
+   * uses cached values in
+   * PSTemperatureIndex::ice_surface_mass_flux().
+   *
+   * *Who* calls this depends on the kind of the component in
+   * question, but all calls originate from IceModel::step() and the
+   * initialization methods mentioned above.
+   *
+   * @param[in] t time corresponding to the beginning of the time-step, in seconds
+   * @param[in] dt length of the time-step, in seconds
+   *
+   * @return 0 on success
+   */
+  virtual PetscErrorCode update(PetscReal t, PetscReal dt) = 0;
 
 protected:
   PetscReal m_t,			//!< Last time used as an argument for the update() method.
