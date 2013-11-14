@@ -100,20 +100,24 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) = 0;
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/) = 0;
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO& /*nc*/) = 0;
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
-                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {}
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict)
+  {
+    (void)dict;
+    (void)ts_dict;
+  }
 
 protected:
   virtual PetscErrorCode find_pism_input(std::string &filename, bool &regrid, int &start);
@@ -138,8 +142,13 @@ public:
 
   //! \brief Reports the maximum time-step the model can take at t. Sets
   //! dt to -1 if any time-step is OK.
-  virtual PetscErrorCode max_timestep(PetscReal /*t*/, PetscReal &dt, bool &restrict)
-  { dt = -1; restrict = false; return 0; }
+  virtual PetscErrorCode max_timestep(PetscReal t, PetscReal &dt, bool &restrict)
+  {
+    (void)t;
+    dt = -1;
+    restrict = false;
+    return 0;
+  }
 
   //! Update the *state* of a component, if necessary.
   /**
