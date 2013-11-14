@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2012 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2013 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -424,39 +424,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           esys->Enth[0] = esys->Enth_s[0];
         }
 
-        const bool base_is_cold = (esys->Enth[0] < esys->Enth_s[0]);
+        bool base_is_cold = (esys->Enth[0] < esys->Enth_s[0]);
         const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME issue #15
         const bool k1_istemperate = EC->isTemperate(esys->Enth[1], p1); // level  z = + \Delta z
-
-        // can now determine melt, but only preliminarily because of drainage,
-        //   from heat flux out of bedrock, heat flux into ice, and frictional heating
-        if (is_floating) {
-          vbmr(i,j) = shelfbmassflux(i,j);
-        } else {
-          if (base_is_cold) {
-              vbmr(i,j) = 0.0;  // zero melt rate if cold base
-          } else {
-            const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME issue #15
-            PetscScalar hf_up;
-            if (k1_istemperate) {
-              const PetscScalar Tpmpbasal = EC->getMeltingTemp(pbasal);
-              hf_up = - esys->k_from_T(Tpmpbasal) * (EC->getMeltingTemp(p1) - Tpmpbasal) / fdz;
-            } else {
-              PetscScalar Tbasal;
-              ierr = EC->getAbsTemp(esys->Enth[0], pbasal, Tbasal); CHKERRQ(ierr);
-              const PetscScalar Kbasal = esys->k_from_T(Tbasal) / EC->c_from_T(Tbasal);
-              hf_up = - Kbasal * (esys->Enth[1] - esys->Enth[0]) / fdz;
-            }
-
-            // compute basal melt rate from flux balance; vbmr = - Mb / rho in
-            //   efgis paper; after we compute it we make sure there is no
-            //   refreeze if there is no available basal water
-            vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice_rho * L);
-
-            if ((vbwat(i,j) <= 0) && (vbmr(i,j) < 0))
-              vbmr(i,j) = 0.0;
-          }
-        }
 
         // now set-up for solve in ice; note esys->Enth[], esys->w[],
         //   esys->Enth_s[] are already filled
@@ -504,12 +474,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           ierr = esys->viewColumnInfoMFile(Enthnew, fMz); CHKERRQ(ierr);
         }
 
-        // thermodynamic basal melt rate causes water to be added to layer
-        PetscScalar bwatnew = vbwat(i,j);
-        if (mask.grounded(i,j)) {
-          bwatnew += vbmr(i,j) * dt_secs;
-        }
-
         // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
         //   using DrainageCalculator dc
         PetscScalar Hdrainedtotal = 0.0;
@@ -531,13 +495,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           }
         }
 
-        // in grounded case, add to both basal melt rate and bwat; if floating,
-        // Hdrainedtotal is discarded because ocean determines basal melt rate
-        if (mask.grounded(i,j)) {
-          vbmr(i,j) += Hdrainedtotal / dt_secs;
-          bwatnew += Hdrainedtotal;
-        }
-
         // finalize Enthnew[]:  apply bulge limiter and transfer column
         //   into vWork3d; communication will occur later
         const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
@@ -549,17 +506,81 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
         ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
-        // finalize bwat value
-        bwatnew -= bwat_decay_rate * dt_secs;
-        if (is_floating) {
-          // if floating assume maximally saturated till to avoid "shock" if grounding line advances
-          // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
-          vbwat(i,j) = bwat_max;
-        } else {
-          // limit bwat to be in [0.0, bwat_max]
-          // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
-          vbwat(i,j) = PetscMax(0.0, PetscMin(bwat_max, bwatnew) );
-        }
+        // compute basal melt rate
+        {
+          base_is_cold = (Enthnew[0] < esys->Enth_s[0]) && (vbwat(i,j) == 0.0);
+          // Determine melt rate, but only preliminarily because of
+          // drainage, from heat flux out of bedrock, heat flux into
+          // ice, and frictional heating
+          if (is_floating) {
+            vbmr(i, j) = shelfbmassflux(i, j);
+          } else {
+            if (base_is_cold) {
+              vbmr(i, j) = 0.0;  // zero melt rate if cold base
+            } else {
+              const PetscScalar
+                p_0 = EC->getPressureFromDepth(vH(i, j)),
+                p_1 = EC->getPressureFromDepth(vH(i, j) - grid.dz_fine); // FIXME issue #15
+              const bool k1_istemperate = EC->isTemperate(Enthnew[1], p_1); // level  z = + \Delta z
+
+              PetscScalar hf_up;
+              if (k1_istemperate) {
+                const PetscScalar
+                  Tpmp_0 = EC->getMeltingTemp(p_0),
+                  Tpmp_1 = EC->getMeltingTemp(p_1);
+
+                hf_up = -esys->k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / grid.dz_fine;
+              } else {
+                PetscScalar T_0;
+                ierr = EC->getAbsTemp(Enthnew[0], p_0, T_0); CHKERRQ(ierr);
+                const PetscScalar K_0 = esys->k_from_T(T_0) / EC->c_from_T(T_0);
+
+                hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / grid.dz_fine;
+              }
+
+              // compute basal melt rate from flux balance:
+              //
+              // vbmr = - Mb / rho in [\ref AschwandenBuelerKhroulevBlatter];
+              //
+              // after we compute it we make sure there is no refreeze if
+              // there is no available basal water
+              vbmr(i, j) = ( (*Rb)(i, j) + G0(i, j) - hf_up ) / (ice_rho * L);
+
+              if (vbwat(i, j) <= 0 && vbmr(i, j) < 0)
+                vbmr(i, j) = 0.0;
+            }
+          }
+
+          // in grounded case, add drained water from the column to
+          // basal melt rate; if floating, Hdrainedtotal is discarded
+          // because ocean determines basal melt rate
+          if (is_floating == false) {
+            vbmr(i, j) += Hdrainedtotal / dt_TempAge;
+          }
+        } // end of the basal melt rate update
+
+        // update basal water thickness
+        {
+          // thermodynamic basal melt rate causes water to be added to layer
+          PetscScalar bwatnew = vbwat(i,j);
+          if (mask.grounded(i,j)) {
+            bwatnew += vbmr(i,j) * dt_secs;
+            // in grounded case, add to both basal melt rate and bwat; if floating,
+            // Hdrainedtotal is discarded because ocean determines basal melt rate
+            bwatnew += Hdrainedtotal;
+          }
+
+          bwatnew -= bwat_decay_rate * dt_secs;
+          if (is_floating) {
+            // if floating assume maximally saturated till to avoid "shock" if grounding line advances
+            // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
+            vbwat(i,j) = bwat_max;
+          } else {
+            // limit bwat to be in [0.0, bwat_max]
+            // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
+            vbwat(i,j) = PetscMax(0.0, PetscMin(bwat_max, bwatnew) );
+          }
+        } // end of the basal water thickness update
 
       } // end explicit scoping
       
