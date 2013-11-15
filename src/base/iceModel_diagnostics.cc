@@ -1018,7 +1018,7 @@ IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m, IceGrid &g, PISM
   // set metadata:
   vars[0].init_2d("flux_divergence", grid);
 
-  set_attrs("flux divergence", "", "s-1", "year-1", 0);
+  set_attrs("flux divergence", "", "m s-1", "m year-1", 0);
 }
 
 PetscErrorCode IceModel_flux_divergence::compute(IceModelVec* &output) {
