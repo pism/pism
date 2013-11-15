@@ -26,7 +26,6 @@
  */
 
 #include "PISMComponent.hh"
-#include <memory>
 
 class PISMAtmosphereModel;
 class IceModelVec2S;
@@ -38,15 +37,7 @@ public:
   virtual ~PISMSurfaceModel();
 
   // the interface:
-  /** @param The atmosphere model to attach.  PISMSurface takes ownership. */
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
-
-  /** Memory-save version of attach_atmosphere_model().  Consider
-      moving in this direction and eliminating
-      attach_atmosphere_model(PISMAtmosphereModel *). */
-  void attach_atmosphere_model(std::unique_ptr<PISMAtmosphereModel> &&input)
-    { attach_atmosphere_model(input.release()); }
-
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
