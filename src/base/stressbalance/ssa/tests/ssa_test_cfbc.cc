@@ -60,6 +60,8 @@ public:
     C  = 2.45e-18;
   };
 
+  virtual PetscErrorCode write_nuH(std::string filename);
+
 protected:
   virtual PetscErrorCode initializeGrid(PetscInt Mx, PetscInt My);
 
@@ -74,6 +76,27 @@ protected:
     H0,      //!< grounding line thickness (meters)
     C;       //!< "typical constant ice parameter"
 };
+
+PetscErrorCode SSATestCaseCFBC::write_nuH(std::string filename) {
+  PetscErrorCode ierr;
+
+  SSAFD *ssafd = dynamic_cast<SSAFD*>(ssa);
+  if (ssafd == NULL) {
+    PetscPrintf(grid.com, "ssa_test_cfbc error: have to use the SSAFD solver.\n");
+    PISMEnd();
+  }
+
+  SSAFD_nuH nuH(ssafd, grid, vars);
+
+  IceModelVec* result;
+  ierr = nuH.compute(result); CHKERRQ(ierr);
+
+  ierr = result->write(filename); CHKERRQ(ierr);
+
+  delete result;
+
+  return 0;
+}
 
 PetscErrorCode SSATestCaseCFBC::initializeGrid(PetscInt Mx, PetscInt My)
 {
@@ -243,6 +266,7 @@ int main(int argc, char *argv[]) {
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("V"); CHKERRQ(ierr);
     ierr = testcase.write(output_file);
+    ierr = testcase.write_nuH(output_file); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

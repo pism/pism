@@ -386,6 +386,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
             "Y-component of the SSA exact solution", 
             "m s-1", "", 1); CHKERRQ(ierr);
   ierr = exact.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  exact.write_in_glaciological_units = true;
 
   ierr = exact.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
