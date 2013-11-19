@@ -131,6 +131,13 @@ PetscErrorCode SSAFD::allocate_fd() {
                            "ice thickness times effective viscosity (before an update)",
                            "Pa s m", ""); CHKERRQ(ierr);
 
+  ierr = m_work.create(grid, "m_work", true,
+                       2, /* stencil width */
+                       6  /* dof */); CHKERRQ(ierr);
+  ierr = m_work.set_attrs("internal",
+                          "temporary storage used to compute nuH",
+                          "", ""); CHKERRQ(ierr);
+
   m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
   // The nuH viewer:
@@ -232,6 +239,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   PISMVector2 **rhs_uv;
   const double dx = grid.dx, dy = grid.dy;
 
+  const double ice_free_default_velocity = 0.0;
+
   Mask M;
 
   const double standard_gravity = config.get("standard_gravity"),
@@ -282,8 +291,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
         if (M.ice_free(M_ij)) {
-          rhs_uv[i][j].u = 0.0;
-          rhs_uv[i][j].v = 0.0;
+          rhs_uv[i][j].u = m_scaling * ice_free_default_velocity;
+          rhs_uv[i][j].v = m_scaling * ice_free_default_velocity;
           continue;
         }
 
@@ -588,10 +597,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
             if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_sw)) aMs = 0;
             if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_sw)) bMw = 0;
             if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_nw)) bPw = 0;
-            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_nw)) aMn = 0;}
-
-          else {
-
+            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_nw)) aMn = 0;
+          } else {
             if (M.ice_free(M_e)) aPP = 0;
             if (M.ice_free(M_w)) aMM = 0;
             if (M.ice_free(M_n)) bPP = 0;
@@ -606,7 +613,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
             if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
             if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
             if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;				}
-           }
+        }
       } // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
@@ -875,7 +882,13 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 
   stdout_ssa.clear();
 
-  ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+  bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
+
+  if (use_cfbc == true) {
+    ierr = compute_nuH_staggered_cfbc(nuH, nuH_regularization); CHKERRQ(ierr);
+  } else {
+    ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+  }
   ierr = update_nuH_viewers(); CHKERRQ(ierr);
 
   // outer loop
@@ -930,7 +943,11 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
 
     // update viscosity and check for viscosity convergence
-    ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+    if (use_cfbc == true) {
+      ierr = compute_nuH_staggered_cfbc(nuH, nuH_regularization); CHKERRQ(ierr);
+    } else {
+      ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+    }
     ierr = compute_nuH_norm(nuH_norm, nuH_norm_change); CHKERRQ(ierr);
 
     ierr = update_nuH_viewers(); CHKERRQ(ierr);
@@ -1093,13 +1110,23 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = hardness.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+
+  MaskQuery m(*mask);
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = enthalpy->getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
       for (PetscInt o=0; o<2; o++) {
         const PetscInt oi = 1-o, oj=o;
-        const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+        PetscScalar H;
+
+        if (m.icy(i,j) && m.icy(i+oi,j+oj))
+          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+        else if (m.icy(i,j))
+          H = (*thickness)(i,j);
+        else
+          H = (*thickness)(i+oi,j+oj);
 
         if (H == 0) {
           hardness(i,j,o) = -1e6; // an obviously impossible value
@@ -1118,6 +1145,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
     }   // j
   }     // i
 
+  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
@@ -1242,12 +1270,6 @@ its minimum is at least \f$\epsilon\f$.  This regularization constant is an argu
 In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
-
-Note that this code (unlike the gravitational driving stress computation, for
-example) does not use first-order differences near ice margins. There are two
-reasons. 1) When CFBC is "on", values of nuH at ice margins are not used in the
-matrix assembly. 2) When CFBC is "off", the velocity field used in this
-computation is continuous across ice margins.
 */
 PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
                                             PetscReal nuH_regularization) {
@@ -1328,6 +1350,173 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   return 0;
 }
 
+/**
+ * @brief Compute the product of ice viscosity and thickness on the
+ * staggered grid. Used when CFBC is enabled.
+ *
+ * @param[out] result nu*H product
+ * @param[in] nuH_regularization regularization parameter (added to nu*H to keep it away from zero)
+ *
+ * m_work storage scheme:
+ *
+ * m_work(i,j,0) - u_x on the i-offset
+ * m_work(i,j,1) - v_x on the i-offset
+ * m_work(i,j,2) - i-offset weight
+ * m_work(i,j,3) - u_y on the j-offset
+ * m_work(i,j,4) - v_y on the j-offset
+ * m_work(i,j,5) - j-offset weight
+ *
+ * @return 0 on success
+ */
+PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
+                                                 PetscReal nuH_regularization) {
+
+  PetscErrorCode ierr;
+  IceModelVec2V &uv = m_velocity; // shortcut
+  PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
+    n_glen = flow_law->exponent(),
+    nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
+
+  const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
+
+  const PetscScalar dx = grid.dx, dy = grid.dy;
+
+  MaskQuery m(*mask);
+
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = m_work.begin_access(); CHKERRQ(ierr);
+  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
+
+  PetscInt GHOSTS = 1;
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+
+      // x-derivative, i-offset
+      {
+        if (m.icy(i,j) && m.icy(i+1,j)) {
+          m_work(i,j,U_X) = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
+          m_work(i,j,V_X) = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
+          m_work(i,j,W_I) = 1.0;
+        } else {
+          m_work(i,j,U_X) = 0.0;
+          m_work(i,j,V_X) = 0.0;
+          m_work(i,j,W_I) = 0.0;
+        }
+      }
+
+      // y-derivative, j-offset
+      {
+        if (m.icy(i,j) && m.icy(i,j+1)) {
+          m_work(i,j,U_Y) = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
+          m_work(i,j,V_Y) = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
+          m_work(i,j,W_J) = 1.0;
+        } else {
+          m_work(i,j,U_Y) = 0.0;
+          m_work(i,j,V_Y) = 0.0;
+          m_work(i,j,W_J) = 0.0;
+        }
+      }
+    } // j-loop
+  } // i-loop
+  ierr = m_velocity.end_access(); CHKERRQ(ierr);
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = hardness.begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+ 
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double u_x, u_y, v_x, v_y, H, nu, W;
+      // i-offset
+      {
+        if (m.icy(i,j) && m.icy(i+1,j))
+          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+1,j));
+        else if (m.icy(i,j))
+          H = (*thickness)(i,j);
+        else
+          H = (*thickness)(i+1,j);
+
+        if (H >= strength_extension->get_min_thickness()) {
+          u_x = m_work(i,j,U_X);
+          v_x = m_work(i,j,V_X);
+
+          W = m_work(i,j,W_J) + m_work(i,j-1,W_J) + m_work(i+1,j-1,W_J) + m_work(i+1,j,W_J);
+          if (W > 0) {
+            u_y = 1.0/W * (m_work(i,j,U_Y) + m_work(i,j-1,U_Y) +
+                           m_work(i+1,j-1,U_Y) + m_work(i+1,j,U_Y));
+            v_y = 1.0/W * (m_work(i,j,V_Y) + m_work(i,j-1,V_Y) +
+                           m_work(i+1,j-1,V_Y) + m_work(i+1,j,V_Y));
+          } else {
+            u_y = 0.0;
+            v_y = 0.0;
+          }
+
+          flow_law->effective_viscosity(hardness(i,j,0),
+                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        &nu, NULL);
+          result(i,j,0) = nu * H;
+        } else {
+          result(i,j,0) = strength_extension->get_notional_strength();
+        }
+      }
+      
+      // j-offset
+      {
+        if (m.icy(i,j) && m.icy(i,j+1))
+          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i,j+1));
+        else if (m.icy(i,j))
+          H = (*thickness)(i,j);
+        else
+          H = (*thickness)(i,j+1);
+
+        if (H >= strength_extension->get_min_thickness()) {
+          u_y = m_work(i,j,U_Y);
+          v_y = m_work(i,j,V_Y);
+
+          W = m_work(i,j,W_I) + m_work(i-1,j,W_I) + m_work(i-1,j+1,W_I) + m_work(i,j+1,W_I);
+          if (W > 0.0) {
+            u_x = 1.0/W * (m_work(i,j,U_X) + m_work(i-1,j,U_X) +
+                           m_work(i-1,j+1,U_X) + m_work(i,j+1,U_X));
+            v_x = 1.0/W * (m_work(i,j,V_X) + m_work(i-1,j,V_X) +
+                           m_work(i-1,j+1,V_X) + m_work(i,j+1,V_X));
+          } else {
+            u_x = 0.0;
+            v_x = 0.0;
+          }
+
+          flow_law->effective_viscosity(hardness(i,j,1),
+                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        &nu, NULL);
+          result(i,j,1) = nu * H;
+        } else {
+          result(i,j,1) = strength_extension->get_notional_strength();
+        }
+      }
+
+      // adjustments:
+      for (unsigned int o = 0; o < 2; ++o) {
+        // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
+        result(i,j,o) *= nu_enhancement_scaling;
+
+        // We ensure that nuH is bounded below by a positive constant.
+        result(i,j,o) += nuH_regularization;
+      }
+    } // j-loop
+  } // i-loop
+
+
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = hardness.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = m_work.end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+
+  // Some communication
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! Update the nuH viewer, which shows log10(nu H).
 PetscErrorCode SSAFD::update_nuH_viewers() {
@@ -1414,11 +1603,11 @@ bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
   Mask M;
 
   if (ssa_dirichlet_bc) {
-    return (!M.ice_free(M_ij)) &&
+    return M.icy(M_ij) &&
       (M.ice_free(M_e) || M.ice_free(M_w) || M.ice_free(M_n) || M.ice_free(M_s) ||
        M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));}
   else {
-    return (!M.ice_free(M_ij)) &&
+    return M.icy(M_ij) &&
       (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_w) ||
        M.ice_free_ocean(M_n) || M.ice_free_ocean(M_s) ||
        M.ice_free_ocean(M_ne) || M.ice_free_ocean(M_se) ||

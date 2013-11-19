@@ -76,12 +76,14 @@ public:
   }
 
   //! Returns strength = (viscosity times thickness).
-  virtual PetscReal get_notional_strength() const {
+  PetscReal get_notional_strength() const {
     return constant_nu * min_thickness;
   }
 
   //! Returns minimum thickness to trigger use of extension.
-  virtual PetscReal get_min_thickness() const { return min_thickness; }
+  PetscReal get_min_thickness() const {
+    return min_thickness;
+  }
 
 private:
   const NCConfigVariable &config;

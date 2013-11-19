@@ -24,7 +24,7 @@ rm -f $files
 set -e
 set -x
 
-OPTS="-verbose 1 -o foo-V.nc -My 5 -ssafd_ksp_type richardson -ssafd_pc_type lu"
+OPTS="-verbose 1 -o foo-V.nc -My 3 -ssafd_ksp_type richardson -ssafd_pc_type lu"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/ssa_test_cfbc${EXT} -Mx 201 $OPTS > test-V-out.txt
@@ -36,11 +36,11 @@ set +e
 diff test-V-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                1.3578      0.08462    1.3578    0.0000    0.8254    0.0000
+                1.1032      0.06516    1.1032    0.0000    0.6357    0.0000
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.6137      0.03548    0.6137    0.0000    0.3463    0.0000
+                0.5119      0.02768    0.5119    0.0000    0.2701    0.0000
 NUM ERRORS DONE
 END-OF-OUTPUT
 

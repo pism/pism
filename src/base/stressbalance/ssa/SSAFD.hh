@@ -76,6 +76,9 @@ protected:
   virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
                                                PetscReal epsilon);
 
+  virtual PetscErrorCode compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
+                                                    PetscReal nuH_regularization);
+
   virtual PetscErrorCode compute_nuH_norm(PetscReal &norm,
                                           PetscReal &norm_change);
 
@@ -98,6 +101,7 @@ protected:
 
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
+  IceModelVec2 m_work;
   KSP m_KSP;
   Mat m_A;
   Vec m_b;

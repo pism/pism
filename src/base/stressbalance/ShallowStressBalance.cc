@@ -26,8 +26,9 @@
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
   PetscErrorCode ierr;
+  unsigned int WIDE_STENCIL = 2;
 
-  ierr = m_velocity.create(grid, "bar", true); CHKERRQ(ierr); // components ubar, vbar
+  ierr = m_velocity.create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // components ubar, vbar
   ierr = m_velocity.set_attrs("model_state",
                             "thickness-advective ice velocity (x-component)", 
                             "m s-1", "", 0); CHKERRQ(ierr);
