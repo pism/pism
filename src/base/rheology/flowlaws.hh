@@ -66,8 +66,27 @@ public:
  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
-  virtual void effective_viscosity(PetscReal hardness, PetscReal gamma,
-				   PetscReal *nu, PetscReal *dnu) const;
+  //! \brief Computes effective viscosity and its derivative with respect to the
+  //! squared second invariant \f$ \gamma \f$.
+  /*!
+   *
+   * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
+   *
+   * \param[in] hardness ice hardness
+   * \param[in] gamma the second invariant \f$ \gamma = \frac{1}{2} D_{ij} D_{ij}\f$ if \f$D_{ij}\f$ is the strain rate tensor
+   * \param[out] nu effective viscosity
+   * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
+   */
+  inline void effective_viscosity(PetscReal hardness, PetscReal gamma,
+                                  PetscReal *nu, PetscReal *dnu) const {
+    const PetscReal
+      my_nu = 0.5 * hardness * pow(schoofReg + gamma, viscosity_power);
+
+    if (PetscLikely(nu != NULL))
+      *nu = my_nu;
+    if (PetscLikely(dnu != NULL))
+      *dnu = viscosity_power * my_nu / (schoofReg + gamma);
+  }
 
   virtual PetscReal averaged_hardness(PetscReal thickness,
                                       PetscInt kbelowH,
@@ -94,7 +113,7 @@ protected:
 
   PetscReal softness_parameter_paterson_budd(PetscReal T_pa) const;
 
-  PetscReal schoofLen,schoofVel,schoofReg,
+  PetscReal schoofLen,schoofVel,schoofReg, viscosity_power,
     A_cold, A_warm, Q_cold, Q_warm,  // see Paterson & Budd (1982)
     crit_temp;
 

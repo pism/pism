@@ -61,6 +61,7 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const NCConfigVariable &con
   beta_CC_grad = config.get("beta_CC") * rho * standard_gravity;
   melting_point_temp = config.get("water_melting_point_temperature");
   n            = config.get("Glen_exponent");
+  viscosity_power = (1.0 - n) / (2.0 * n);
 
   if (strlen(prefix) > 0)
     e = config.get(std::string(prefix) + "enhancement_factor");
@@ -77,28 +78,6 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const NCConfigVariable &con
 
 PetscErrorCode IceFlowLaw::setFromOptions() {
   return 0;
-}
-
-//! \brief Computes effective viscosity and its derivative with respect to the
-//! squared second invariant \f$ \gamma \f$.
-/*!
- *
- * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
- *
- * \param[in] hardness ice hardness
- * \param[in] gamma the second invariant \f$ \gamma = \frac{1}{2} D_{ij} D_{ij}\f$ if \f$D_{ij}\f$ is the strain rate tensor
- * \param[out] nu effective viscosity
- * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
- */
-void IceFlowLaw::effective_viscosity(PetscReal hardness, PetscReal gamma,
-				     PetscReal *nu, PetscReal *dnu) const {
-
-  const PetscReal
-    power = (1-n)/(2*n),
-    my_nu = 0.5 * hardness * pow(schoofReg + gamma, power);
-
-  if (nu)   *nu = my_nu;
-  if (dnu) *dnu = power * my_nu / (schoofReg + gamma);
 }
 
 //! Return the softness parameter A(T) for a given temperature T.
