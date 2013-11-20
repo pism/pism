@@ -117,25 +117,26 @@ parser.add_argument("-v", dest="variant", type=int,
 options = parser.parse_args()
 
 opt = "-ssa_method fd -Lx 250 -o_order zyx"
+opt = opt + " -extra_file ex.nc -extra_vars cflx,thk,nuH,flux_divergence,velbar -extra_times 1"
 if options.variant == 0:
-    run_pismv(101, 300, opt, "out.nc")
+    run_pismv(Mx, 300, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'blue')
 
-    run_pismv(101, 300, opt + " -max_dt 1", "out.nc")
+    run_pismv(Mx, 300, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'green', same_figure=True)
 elif options.variant == 1:
     opt += " -part_grid -cfbc"
-    run_pismv(101, 300, opt, "out.nc")
+    run_pismv(Mx, 300, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'blue')
 
-    run_pismv(101, 300, opt + " -max_dt 1", "out.nc")
+    run_pismv(Mx, 300, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'green', same_figure=True)
 elif options.variant == 2:
     opt += " -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness"
-    run_pismv(101, 300, opt, "out.nc")
+    run_pismv(Mx, 300, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'blue')
 
-    run_pismv(101, 300, opt + " -max_dt 1", "out.nc")
+    run_pismv(Mx, 300, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'green', same_figure=True)
 else:
     print "Wrong variant number. Choose one of 0, 1, 2."

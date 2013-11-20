@@ -103,7 +103,6 @@ class Experiment:
         config_filename = self.config(step)
 
         options = ["-cold",             # allow selecting cold-mode flow laws
-                   "-sia_flow_law isothermal_glen", # isothermal setup
                    "-ssa_flow_law isothermal_glen", # isothermal setup
                    "-no_energy",                    # isothermal setup
                    "-ssa_sliding",                  # use SSA
@@ -115,19 +114,21 @@ class Experiment:
                    "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
                    "-ocean_kill",               # calving at the present front
                    "-config_override %s" % config_filename,
-                   "-ssa_method fd",       # use the FD solver that includes PIK improvements
+                   "-ssa_method fd",
                    "-cfbc",                # calving front boundary conditions
                    "-part_grid",           # sub-grid front motion parameterization
-                   "-ksp_rtol 1e-7",
+                   "-ssafd_ksp_rtol 1e-7",
                    "-ys 0",
-                   "-ye %f" % MISMIP.run_length(self.experiment, step),
+                   "-ye %d" % MISMIP.run_length(self.experiment, step),
                    "-options_left",
                    ]
 
         if self.model == 1:
             options.extend(["-no_sia"])
         else:
-            options.extend(["-sia"])
+            options.extend(["-sia",
+                            "-sia_flow_law isothermal_glen", # isothermal setup
+                        ])
 
         if self.mode in (2, 3):
             options.extend(["-skip", "-skip_max 10"])
@@ -158,8 +159,10 @@ class Experiment:
                  "Glen_exponent" : MISMIP.n(),
                  "standard_gravity": MISMIP.g(),
                  "ocean_sub_shelf_heat_flux_into_ice" : 0.0,
-                 "bed_smoother_range" : 0.0,
                  }
+
+        if self.model != 1:
+            attrs["bed_smoother_range"] = 0.0
 
         for name, value in attrs.iteritems():
             var.setncattr(name, value)
@@ -190,7 +193,7 @@ class Experiment:
 
         options = ["-extra_file %s" % extra_file,
                    "-extra_times 0:50:3e4",
-                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf,hardav",
+                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,cbase,nuH,tauc,taud,taub,flux_divergence",
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
                    "-o %s" % output_file,
@@ -263,7 +266,6 @@ def run_mismip(initials, executable, semianalytic):
     models = (1, 2)
     modes  = (1, 2, 3)
     experiments = ('1a', '1b', '2a', '2b', '3a', '3b')
-    semianalytic = True
 
     print preamble
 
