@@ -66,35 +66,36 @@ urlcolor=blue     % only if colorlinks=true
 \bigskip
 
 \normalspacing
-PISM is a joint project between developers in the ice sheet modeling group at the University of Alaska (UAF) and at the Potsdam Institute for Climate Impact Research (PIK).  The number of source code authors, documentation authors, and script contributors is large. Perhaps the best description is this alphabetical list.
+PISM is a joint project between developers in the ice sheet modeling group at the University of Alaska (UAF) and at the Potsdam Institute for Climate Impact Research (PIK).  The list of designers, source code authors, documentation authors, and script contributors is substantial; current/recent affiliation and area of contributions shown:
 \bigskip
 \normalspacing
 
 \renewcommand{\arraystretch}{1.3}
 \begin{tabular}{ll}
-\textbf{Torsten Albrecht} & ice shelf physics and numerics \\
-\textbf{\underline{Andy Aschwanden}} & \begin{minipage}[t]{4in} scripts, visualization, thermodynamics, SeaRISE-Greenland, Storglaci\"aren  \end{minipage}  \\
-\textbf{Jed Brown} & source code original author, SSA numerics, PETSc underpinnings \\
-\textbf{\underline{Ed Bueler}} & \begin{minipage}[t]{4in} principal investigator, verification, earth deformation, SIA, thermodynamics, documentation  \end{minipage} \\
-\textbf{Dani DellaGiustina} & regional tools and modeling \\
-\textbf{Marijke Habermann} & inversion\\
-\textbf{Marianne Haselhoff} & ice streams: physics and numerics\\
-\textbf{Regine Hock} & surface mass and energy balance \\
-\textbf{\underline{Constantine Khroulev}} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, climate couplers, parallelization, testing, user support, most documentation, most bug fixes, regional tools \end{minipage} \\
-\textbf{Craig Lingle}\index{People!Lingle, Craig} & original modeling choices, earth deformation, modeled-it-before-you-did \\
-\textbf{Maria Martin} & SeaRISE-Antarctica, Antarctica processes \\
-\textbf{Mattias Mengel} & marine ice sheet processes \\
-\textbf{David Maxwell} & inversion, SSA finite elements, python bindings \\
-\textbf{Ward van Pelt} & hydrology analysis and design \\
-\textbf{Julien Seguinot} & bug fixes \\
-\textbf{Ricarda Winkelmann} & Antarctica processes, coupling, and modeling  \\
-\textbf{Florian Ziemen} & bug fixes, sliding \\
+\textbf{Torsten Albrecht (PIK)} & ice shelf physics and numerics \\
+\textbf{\underline{Andy Aschwanden} (UAF)} & \begin{minipage}[t]{4in} scripts, visualization, thermodynamics, SeaRISE-Greenland, Storglaci\"aren  \end{minipage}  \\
+\textbf{Jed Brown (ANL)} & source code original author, SSA numerics, PETSc underpinnings \\
+\textbf{\underline{Ed Bueler} (UAF)} & \begin{minipage}[t]{4in} principal investigator, verification, earth deformation, SIA numerics, thermodynamics, documentation  \end{minipage} \\
+\textbf{Dani DellaGiustina (UAF)} & regional tools and modeling \\
+\textbf{Johannes Feldman (PIK)} & marine ice sheet processes \\
+\textbf{Bob Fischer (GFDL)} & coupling design \\
+\textbf{Marijke Habermann (UAF)} & inversion\\
+\textbf{Marianne Haselhoff (UBC)} & ice streams: physics and numerics\\
+\textbf{Regine Hock (UAF)} & surface mass and energy balance \\
+\textbf{\underline{Constantine Khroulev} (UAF)} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, climate couplers, parallelization, testing, user support, most documentation, most bug fixes, regional tools, \dots \end{minipage} \\
+\textbf{Anders Levermann (PIK)} & calving, ice shelf processes \\
+\textbf{Craig Lingle (UAF)}\index{People!Lingle, Craig} & original SIA model, earth deformation \\
+\textbf{Maria Martin (PIK)} & SeaRISE-Antarctica, Antarctica processes \\
+\textbf{Mattias Mengel (PIK)} & marine ice sheet processes \\
+\textbf{David Maxwell (UAF)} & inversion, SSA finite elements, python bindings \\
+\textbf{Ward van Pelt (IMAU)} & hydrology analysis and design \\
+\textbf{Julien Seguinot (INK)} & bug fixes \\
+\textbf{Ricarda Winkelmann (PIK)} & Antarctica processes, coupling, and modeling  \\
+\textbf{Florian Ziemen (MPI)} & bug fixes, sliding \\
 \end{tabular}
 
-\bigskip\bigskip
-Users will reach the \underline{underlined} UAF-based developers listed above by using the email address
-
-\centerline{ \PISMEMAIL.  }
+\bigskip
+\noindent Email the \underline{underlined} UAF developers at \qquad \PISMEMAIL.
 
 \bigskip\bigskip
 \noindent \textsc{Front page}:  Magnitude of horizontal surface velocity from PISM run on a horizontal grid resolution of 1\,km.  Visualization by IDV.
@@ -117,10 +118,10 @@ Users will reach the \underline{underlined} UAF-based developers listed above by
 \small
 The NASA Modeling, Analysis, and Prediction program\index{Organizations!NASA!Modeling, Analysis, and Prediction Program} (grant \# NNX09AJ38G) supports the development of PISM from 2009 to 2013.  Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences Program\index{Organizations!NASA!Cryospheric Sciences Program}.  The Snow, Ice, and Permafrost (SIP) group\index{Organizations!Geophysical Institute!Snow, Ice, and Permafrost group} at the Geophysical Institute is the home for the University of Alaska PISM developers; find us in Elvey 410D.  The Arctic Region Supercomputing Center\index{Organizations!Arctic Region Supercomputing Center (ARSC)} has provided significant computational resources and technical help in the development of PISM.
 
-Thanks for comments/questions from many PISM users around the world, including
+Thanks for comments/questions from many PISM users around the world, including these not already listed as contributors:
 
 \begin{quote}
-Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Marianne Madsen, Malou Maris, Art Mahoney, Mirena Olaizola, Kent Overstreet, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
+Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Marianne Madsen, Malou Maris, Tim Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
 \end{quote}
 
 \noindent for helpful comments and questions on PISM and this \emph{Manual}.  Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and computations.  Bob Bindshadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE group have motivated and assisted PISM development in many ways.  
