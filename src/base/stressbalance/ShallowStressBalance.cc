@@ -371,7 +371,7 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_var
   // set metadata:
   vars[0].init_2d("taud_mag", grid);
 
-  set_attrs("magnitude of the driving shear stress at the base of ice", "",
+  set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
   vars[0].set_string("comment",
                      "this field is purely diagnostic (not used by the model)");

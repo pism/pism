@@ -133,6 +133,7 @@ provides the basic fields.
 class SSA : public ShallowStressBalance
 {
   friend class SSA_taud;
+  friend class SSA_taub;
 public:
   SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
       const NCConfigVariable &c);
@@ -205,6 +206,14 @@ class SSA_taud : public PISMDiag<SSA>
 {
 public:
   SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! @brief Computes the basal shear stress @f$ \tau_b @f$.
+class SSA_taub : public PISMDiag<SSA>
+{
+public:
+  SSA_taub(SSA *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
