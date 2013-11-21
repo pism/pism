@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -581,6 +581,11 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
         const PetscScalar dz = thk - grid.zlevels[ks];
         Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+
+        // Override diffusivity values in ghosted cells outside the
+        // computational domain. This helps with regional runs.
+        if (i < 0 || i >= grid.Mx || j < 0 || j >= grid.My)
+          Dfoffset = 0.0;
 
         my_D_max = PetscMax(my_D_max, Dfoffset);
 
