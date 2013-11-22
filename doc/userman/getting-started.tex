@@ -1,14 +1,21 @@
 
 \section{Getting started}\label{sec:start}\index{PISM!getting started}
 
+\subsection{Installing PISM}
+
+To install PISM, see the \,\emph{Getting PISM}\, tab at \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}.  Or use the PISM Installation Manual (PDF).\footnote{At \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=installation.pdf}.}
+
+Once installed, the executable \texttt{pismr} should be available on your system's ``path''; confirm this with ``\texttt{which pismr}''.  The instructions below also assume you are using a \texttt{bash} shell or one that accepts \texttt{bash} syntax.  The examples below assume you have the PISM source code in the directory ``\texttt{pism/}''.
+
+\subsection{A Greenland ice sheet example}
+
 We get started with an extended example showing how to generate initial states for prognostic model experiments on the Greenland ice sheet.  Ice sheet and glacier model studies often involve modeling present and past states using actions like the ones demonstrated in this section.  The particular choices made here are motivated by the evaluation of initialization methods in \cite{AschwandenAdalgeirsdottirKhroulev}.
 
 We use data assembled by the \href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{Sea-level Response to Ice Sheet Evolution (SeaRISE)} group \cite{Bindschadler2013SeaRISE}.  SeaRISE was a community-organized assessment process providing an upper bound on ice sheet contributions to sea level in the next 100--200 years, especially for the IPCC AR5 report in 2013.
 
-This example is a hands-on first look at PISM.  It is not an in-depth tutorial, and some details of what is happening will only be explained later.  Other sections list PISM options, discuss some nontrivial modeling choices, and explain the ways users may need to preprocess input data.  Some of the PISM output figures in this section were produced using a supercomputer.  Though the basic run here on a rather coarse $20\,\textrm{km}$ grid can be done on a typical workstation or laptop, PISM is designed to make high resolution possible by exploiting large-scale parallel processing \cite[among many other examples]{AschwandenAdalgeirsdottirKhroulev,Golledgeetal2012,Golledgeetal2013}.
+This example is a hands-on first look at PISM.  It is not an in-depth tutorial, and some details of what is happening will only be explained later.  The remainder of this manual lists PISM options, discusses nontrivial modeling choices, and explains the ways users may need to preprocess input data.
 
-To install PISM, see the Installation Manual at \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}.
-Once installed, the executable \texttt{pismr} should be available on your system's ``path''; confirm this with ``\texttt{which pismr}''.  The instructions below also assume you are using a \texttt{bash} shell or one that accepts \texttt{bash} syntax.
+Some of the PISM output figures in this section were produced using a supercomputer.  Though the basic run here, on a rather coarse $20\,\textrm{km}$ grid, can be done on a typical workstation or laptop, PISM is designed to make high resolution possible by exploiting large-scale parallel processing \cite[among many other examples]{AschwandenAdalgeirsdottirKhroulev,Golledgeetal2012,Golledgeetal2013}.
 
 
 \subsection{Input data for the Greenland ice sheet}
@@ -21,10 +28,12 @@ The NetCDF data used to initialize SeaRISE runs is freely-available online:
 
 \noindent The quickest way to get the file is to do
 \begin{verbatim}
-$ cd examples/std-greenland
+$ cd pism/examples/std-greenland
 $ ./preprocess.sh
 \end{verbatim}
-\noindent The script \texttt{preprocess.sh}\footnote{\protect{This script requires \texttt{wget} and also NCO (NetCDF Operators; \url{http://nco.sourceforge.net/})}.} downloads the version 1.1 of the SeaRISE ``master'' present-day data set, which contains ice thickness and bedrock topography from BEDMAP \cite{BamberLayberryGogenini}, among other fields.  It creates three new NetCDF files which can be read by PISM.  It adjusts the metadata in the downloaded ``master'' file to make the PISM-readable file \texttt{pism_Greenland_5km_v1.1.nc}.  Two of the new files contain famous time-dependent paleo-climate records from ice core and seabed core records; \texttt{pism_dT.nc} has GRIP while \texttt{pism_dSL.nc} has SPECMAP.
+\noindent The script \texttt{preprocess.sh} requires \texttt{wget} and also the NetCDF Operators (``NCO''; \url{http://nco.sourceforge.net/}).  It downloads the version 1.1 of the SeaRISE ``master'' present-day data set, which contains ice thickness and bedrock topography from BEDMAP \cite{BamberLayberryGogenini}, and modeled precipitation rates from RACMO \cite{Ettemaetal2009}, among other fields.
+
+In particular, it creates three new NetCDF files which can be read by PISM.  The spatially-varying fields from the downloaded ``master'' file, with adjusted metadata, go in the PISM-readable file \texttt{pism_Greenland_5km_v1.1.nc}.  The other two new files contain famous time-dependent paleo-climate records from ice core and seabed core records; \texttt{pism_dT.nc} has GRIP \cite{JohnsenetalGRIP} while \texttt{pism_dSL.nc} has SPECMAP \cite{Imbrieetal1984}.
 
 Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF visualization tools; see Table \ref{tab:NetCDFview} below.  An application of IDV to the master data set produced Figure \ref{fig:sr-input}, for example.  Use \texttt{ncdump -h} to see the metadata and history of the files.
 
@@ -42,13 +51,15 @@ Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF vis
 
 \subsection{Run PISM}   \label{subsect:runscript}  Like many Unix programs, PISM allows many command-line options.  Because PISM handles a wide variety of ice sheet, shelf, and glacier sub-models and configurations, the list of possible command-line options is long; see sections \ref{sec:boot} through \ref{sec:practical-usage} of this manual.  Therefore, in practice, one often builds scripts to run PISM with the correct options.
 
-Our script is called ``\texttt{spinup.sh}''.  Initializing ice sheets can be done by computing approximate steady states with constant boundary data, or, in some cases, by integrating paleo-climatic and long-time-scale information to build a model for the present state of the ice sheet.  Both of these possibilities are illustrated in the \texttt{spinup.sh} script.  Often, the spin-up stage is the one which requires the most processor-hours, compared to a follow-on ``experiment'' or ``forecast'' stages.
+Our script is called ``\texttt{spinup.sh}''.  Initializing ice sheets can be done by computing approximate steady states with constant boundary data, or, in some cases, by integrating paleo-climatic and long-time-scale information to build a model for the present state of the ice sheet.  Both of these possibilities are illustrated in the \texttt{spinup.sh} script.  The spin-up stage may even require the most processor-hours, compared to a follow-on ``experiment'' or ``forecast'' stages.
 
 We are ready to run PISM.  To see what can be done with the script, read the usage message it produces:
 \begin{verbatim}
 $ ./spinup.sh
 \end{verbatim}
-The simplest spin-up approach is to use a ``constant-climate'' model.  Let's do this first; to see a bit more of what we plan to do, before doing it, try:
+The simplest spin-up approach is to use a ``constant-climate'' model.  We take this approach here, first.
+
+To see a more detailed view of the run we will do first, try:
 \begin{verbatim}
 $ PISM_DO=echo ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc
 \end{verbatim}
@@ -67,24 +78,26 @@ mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
 \normalsize
 Let's briefly deconstruct this run.
 
-At the front is ``\texttt{mpiexec -n 4 pismr}''.  This means that the PISM executable \texttt{pismr} is run in parallel on four processes (e.g.~cores).  Though this example assumes you have a workstation or laptop with at least 4 cores, it will work with 1 to 100 processors, with reasonably good scaling in speed, and with far more processors if re-run at higher spatial resolution.  The executable name ``\texttt{pismr}'' stands for the standard ``run'' mode of PISM, in contrast to other, specialized modes described later (e.g.~in sections \ref{sec:simp} and \ref{sec:verif}).
+At the front is ``\texttt{mpiexec -n 4 pismr}''.  This means that the PISM executable \texttt{pismr} is run in parallel on four processes (e.g.~cores).  Though this example assumes you have a workstation or laptop with at least 4 cores, it will work with 1 to 100 processors, with reasonably good scaling in speed.  (Scaling can be good with far more processors if we run at higher spatial resolution.)  The executable name ``\texttt{pismr}'' stands for the standard ``run'' mode of PISM, in contrast to other, specialized modes described later (e.g.~in sections \ref{sec:verif} and \ref{sec:simp}).
 
-Next, the proposed run uses option \texttt{-boot_file} to start the run by ``bootstrapping,'' a term describes the creation, by heuristics and highly-simplified models, of the complete initial conditions required for a deterministic, time-dependent ice dynamics model.  Then the options describe a $76\times 141$ point grid in the horizontal, which gives 20 km grid spacing in both directions.  Then there are choices about the vertical extent and resolution of the computational grid; more on those later.
+Next, the proposed run uses option \texttt{-boot_file} to start the run by ``bootstrapping,'' a term describes the creation, by heuristics and highly-simplified models, of the complete initial conditions required for a deterministic, time-dependent ice dynamics model.  Then the options describe a $76\times 141$ point grid in the horizontal, which gives 20 km grid spacing in both directions.  Then there are choices about the vertical extent and resolution of the computational grid; more on those later.  After that we see a description of the time-axis, with a start and end time given: ``\texttt{-ys -10000 -ye 0}''.
 
-After that we see a description of the time-axis, with a start and end time given: \texttt{-ys -10000 -ye 0}''.  Then we get the instructions that tell PISM to read the constant-climate at the ice sheet surface from a file: ``-surface given -surface_given_file pism_Greenland_5km_v1.1.nc''.  Following that there are longish options describing the fields we want as output, including scalar time series (``\texttt{-ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0}''; see section \ref{sec:practical-usage}), time- and space-dependent fields (``\texttt{-extra_file ...}''; again see section \ref{sec:practical-usage}), and finally the named output file (``\texttt{-o g20km_10ka.nc}'').
+Then we get the instructions that tell PISM to read the upper surface boundary conditions (i.e.~climate) from a file: ``\texttt{-surface given -surface_given_file pism_Greenland_5km_v1.1.nc}''.  For more on these choices, see subsection \ref{sec:climate-inputs}, and also the PDF PISM Climate Forcing Manual.
+
+Following that there are longish options describing the fields we want as output, including scalar time series (``\texttt{-ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0}''; see section \ref{sec:practical-usage}), time- and space-dependent fields (``\texttt{-extra_file ...}''; again see section \ref{sec:practical-usage}), and finally the named output file (``\texttt{-o g20km_10ka.nc}'').
 
 Now let's actually get the run going:
 \begin{verbatim}
 $ ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc &> out.g20km_10ka &
 \end{verbatim}
-\noindent Because we have re-directed the text output, PISM will show what it is doing in the text file \texttt{out.g20km_10ka} as it runs in the background.  Using \texttt{less} is a good way to watch such a growing text file.
+\noindent Because we have re-directed the text output, PISM will show what it is doing in the text file \texttt{out.g20km_10ka} as it runs in the background.  Using \texttt{less} is a good way to watch such a growing text-output file.
 
 % FIXME: replace this?  Soon after that some climatic boundary conditions sample results will appear in \texttt{g20km_climate-500a.nc}.  Such output is effectively a movie of the stored and modeled climatic inputs provided to our ice dynamics model, including the results from surface models like the above-mentioned PDD model for surface mass balance.  This is a convenient way to, early in the modeling process, look at the critical surface mass balance and surface temperature inputs to the ice dynamics.
 
 
 \subsection{Watching the spin-up}  \label{subsect:spinupsketch}  The next paragraphs describe what happens and what files are produced by the run which is underway.  We believe that the modeling choices represented here are reasonable, but they are not the only way to do it.  The user is encouraged to experiment; that is the point of a model!
 
-After the completion of the first 100 model year run (\texttt{g20km_pre100.nc}), we then work to generate a more-physical enthalpy (i.e.~temperature and liquid fraction) field in which the modeled ice internal energy, its temperature, its softness, its stored basal water, and its basal melt rate are all in better balance with the ice sheet geometry and the simultaneously evolving flow velocity field.  Note the velocity advects the ice properties, especially enthalpy and thus ice softness.
+FIXME FROM HERE:  After the completion of the first 100 model year run (\texttt{g20km_pre100.nc}), we then work to generate a more-physical enthalpy (i.e.~temperature and liquid fraction) field in which the modeled ice internal energy, its temperature, its softness, its stored basal water, and its basal melt rate are all in better balance with the ice sheet geometry and the simultaneously evolving flow velocity field.  Note the velocity advects the ice properties, especially enthalpy and thus ice softness.
 
 The upper and lower surfaces of this modeled ice are held fixed at this stage.  The upper surface is held fixed by the option \texttt{-no_mass}, while the lower surface is held fixed in the sense that we do not yet apply a bed deformation model.  The resulting enthalpy field is in approximate equilibrium with a velocity field for which the surface kinematical equation \cite{Fowler} is unfortunately \emph{not} satisfied.  Also there is no sliding at this stage because good sliding requires good basal strength which requires good basal melt rates; these improve significantly as this no-sliding run evolves.
 
