@@ -127,25 +127,86 @@ PETSc MFlops = 0.03.\n",
 \end{verbatim}
 The whole first run took about 21 minutes (0.3435 wall clock hours) on a 2012-era 4-core laptop.
 
-The intention of this run was to generate a minimal model of the Greenland ice sheet in approximate steady-state with a steady (constant-in-time) climate.  Figure \ref{fig:firstoutput} shows some fields from \texttt{g20km_10ka.nc}.
+The intention of this run was to generate a minimal model of the Greenland ice sheet in approximate steady-state with a steady (constant-in-time) climate.  Figure \ref{fig:firstoutput} shows some fields from \texttt{g20km_10ka.nc}.  In the next subsection  we will start discussing their ``quality'' as model results.
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-mask}}
-\caption{Fields from output file \texttt{g20km_10ka.nc}.  Left: \texttt{usurf}, the ice sheet surface elevation in meters.  Middle: \texttt{csurf}, the surface velocity in meters/year, including the 100 meter/year contour (solid black).  Right: \texttt{mask}, with 0 = ice-free land, 2 = ice, 4 = ice-free ocean.}
+\caption{Fields from output file \texttt{g20km_10ka.nc}.  Left: \texttt{usurf}, the ice sheet surface elevation in meters.  Middle: \texttt{csurf}, the surface velocity in meters/year ($=$ m/a), including the 100 m/a contour (solid black).  Right: \texttt{mask}, with 0 = ice-free land, 2 = ice, 4 = ice-free ocean.}
 \label{fig:firstoutput}
 \end{figure}
 
 
 \subsection{Second run: a better ice-dynamics model}  \label{subsect:ssarun}  
 
-% $ PISM_DO=echo PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hybrid.nc
+It is widely-understood that ice sheets slide on their bases, especially when liquid water is present at the base (see \cite{Joughinetal2001,MacAyeal}, among many others).  An important aspect of modeling such sliding is the inclusion of membrane or ``longitudinal'' stresses into the stress balance \cite{BBssasliding}.  The basic stress balance in PISM which uses membrane stresses is the Shallow Shelf Approximation (SSA) \cite{WeisGreveHutter}.  The stress balance used in the previous section was, by contrast, the (thermomechanically-coupled) non-sliding, non-membrane-stress Shallow Ice Approximation (SIA) \cite{BBL,EISMINT00}.  The preferred ice dynamics model within PISM, that allows both sliding balanced by membrane stresses and shear flow as described by the SIA, is the SIA+SSA ``hybrid'' model \cite{BBssasliding,Winkelmannetal2011}.  For more on such theory see section \ref{sec:dynamics} of the current \emph{Manual}.
 
-% $ ncdump -h g20km_10ka_hybrid.nc |"grep" history
-%		:history = "bueler@bueler-lemur 2013-11-23 17:36:55 AKST: PISM done.  Performance stats: 0.1649 wall clock hours, 0.6598 proc.-hours, 15146.2867 model years per proc.-hour, PETSc MFlops = 264118.55.\n",
-%bueler@bueler-lemur ~/pism/examples/std-greenland[dev*]$ octave
-%>> 0.1649*60
-%ans =  9.8940
+The practical disadvantage of models of sliding is that a distinctly-uncertain parameter space must be introduced, especially involving parameters controlling the amount and pressure of subglacial water (see \cite{AschwandenAdalgeirsdottirKhroulev,Clarke05,Tulaczyketal2000,vanPeltOerlemans2012} among other references).  In this regard, PISM uses the concept of a saturated and pressurized subglacial till with a modeled distribution of yield stress  \cite{BBssasliding,SchoofStream}.  The yield stress arises from the PISM model of the production of subglacial water, which is itself computed through the conservation of energy model \cite{AschwandenBuelerKhroulevBlatter}.
+
+We use such models in the rest of this Getting Started section.  We will show some steps which analyze the difference between observed and modeled surface velocity of the Greenland ice sheet.  While the \texttt{spinup.sh} script has default sliding parameters, for demonstration purposes we change one parameter; we replace the default power $q=0.25$ in the sliding law, an equation which relates both the subglacial sliding velocity and the till yield stress to the basal shear stress which appears in the SSA stress balance, by a less ``plastic'' choice $q=0.5$.  (See subsection \ref{subsect:basestrength} for more on this important parameter, and other related parameters.)
+
+To see the run we propose, do
+\begin{verbatim}
+$ PISM_DO=echo PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hy.nc
+\end{verbatim}
+Now remove the setting of \texttt{PISM_DO} and redirect the text output into a file, and start the run:
+\begin{verbatim}
+$ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hy.nc &> out.g20km_10ka_hy &
+\end{verbatim}
+
+Surprisingly perhaps,\footnote{The reason this run is quicker is fairly deep.  Though the computation of the SSA stress balance is substantially more expensive than the SIA in a per-step sense---and in fact the hybrid model is doing both the SIA and SSA computation at each step!---the SSA stress balance in combination with the mass continuity equation causes the maximum diffusivity in the ice sheet to be substantially lower during the run.  (To see this do ``\texttt{ncview ts_g20km_10ka*nc} and view variable \texttt{max_diffusivity}.)  Because the maximum diffusivity controls the time-step in the PISM adaptive time-stepping scheme \cite{BBL}, the number of time steps is so much reduced that the run takes half the time.} this finishes in half the time of the computation in the previous section, about 10 minutes (0.1649 wall clock hours) on a 2012-era 4-core laptop:
+\begin{verbatim}
+$ ncdump -h g20km_10ka_hy.nc |grep history
+    :history = "user@machine 2013-11-23 17:36:55 AKST: PISM done.  Performance stats:
+0.1649 wall clock hours, 0.6598 proc.-hours, 15146.2867 model years per proc.-hour,
+PETSc MFlops = 264118.55.\n",
+\end{verbatim}
+Note that the number reported as ``\texttt{PETSc MFlops}'' is many orders of magnitude larger because calls to the PETSc library are used when solving the non-local SSA stress balance.
+
+The results of this run are shown in Figure \ref{fig:secondoutputcoarse}.  Unlike in Figure \ref{fig:firstoutput}, we show the basal sliding velocity field \texttt{cbase} in this figure (replacing \texttt{mask}); the reader can check that \texttt{cbase}=0 in the SIA-only result \texttt{g20km_10ka.nc}.
+
+\begin{figure}[ht]
+\centering
+\mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-cbase}}
+\caption{Fields from output file \texttt{g20km_10ka_hy.nc}.  Left: \texttt{usurf}, the ice sheet surface elevation in meters.  Middle: \texttt{csurf}, the surface velocity in m/a, including the 100 m/a contour (solid black).  Right: \texttt{cbase}, shown the same way as \texttt{csurf}.}
+\label{fig:secondoutputcoarse}
+\end{figure}
+
+Although the critical basal sliding velocity is essentially unobservable, at the present state of technology, the surface velocity of an ice sheet is an observable (because of relatively recent advances in radar and image technology and processing \cite{Joughin2002}).  So, how good is our result for \texttt{csurf}?  The left-hand two subfigures of Figure \ref{fig:csurfvsobserved} compare the \texttt{surfvelmag} field in the downloaded SeaRISE-Greenland data file \texttt{Greenland_5km_v1.1.nc} with the just-computed PISM result.  The reader might agree with these broad qualitative judgements:
+\begin{itemize}
+\item FIXME: look similar
+\item FIXME  southern greenland has too-widespread marginal speed
+\item FIXME  NE greenland ice stream 
+\end{itemize}
+In considering these PISM results compared to some recent observed-vs-model comparisons of this type (e.g.~Figure 1 in \cite{Priceetal2011} and Figure 8 in \cite{Larouretal2012}), note that only ice-sheet-wide values of parameters were used.  That is, there was no attempt to tune a large number of subglacial parameters to values which would yield close match to observations of the surface velocity.  Such tuning techniques are called ``inversions''; see \cite{vanPeltetal2013} (basal topography) and \cite{Habermannetal2013} (basal shear stress) for PISM-based inversion methods and analysis.
+
+\begin{figure}[ht]
+\centering
+\mbox{\includegraphics[height=2.75in,keepaspectratio=true]{Greenland-5km-v1p1-surfvelmag} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-csurf}}
+\caption{Comparing modeled surface speed to observations.  All are in m/a with 100 m/a contour solid black.  Left: \texttt{surfvelmag}, the observed values from SeaRISE data file \texttt{Greenland_5km_v1.1.nc}.  Middle: \texttt{csurf} from \texttt{g20km_10ka_hy.nc}.  Right: \texttt{csurf} from \texttt{g10km_10ka_hy.nc}.}
+\label{fig:csurfvsobserved}
+\end{figure}
+
+% $ PISM_DO=echo PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 10 hybrid g10km_10ka_hy.nc
+% $ ncdump -h g10km_10ka_hy.nc |"grep" history
+%		:history = "bueler@bueler-lemur 2013-11-23 21:40:57 AKST: PISM done.  Performance stats: 3.9983 wall clock hours, 15.9933 proc.-hours, 624.8485 model years per proc.-hour, PETSc MFlops = 2966617.10.\n",\begin{figure}[ht]
+\begin{figure}[ht]
+\centering
+\mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-cbase}}
+\caption{Fields from output file \texttt{g10km_10ka_hy.nc}.  Left: \texttt{usurf} in meters.  Middle: \texttt{csurf} in m/a.  Right: \texttt{cbase} in m/a.}
+\label{fig:secondoutputfiner}
+\end{figure}
+
+Figure \ref{fig:ivolboth} shows ice volume time series for 20km and 10km runs done here.  We see that the result \emph{does} depend on resolution.  In fact, higher resolution grids allow the model to better resolve the flux through outlet glaciers especially, which are topographically-controlled.
+% edit util/ivolboth.py to remove searise details, move to std-greenland
+
+\begin{figure}[ht]
+\centering
+%python ../../util/ivolboth.py -o both.png ts_g20km_10ka_hybrid.nc ts_g10km_10ka_hybrid.nc
+%\includegraphics[width=4.5in,keepaspectratio=true]{ivolboth}
+\caption{FIXME Time series of modeled ice sheet volume on 20km and 10km grids.}
+\label{fig:ivolboth}
+\end{figure}
 
 
 \subsection{Third run: paleo-climate model spin-up}  \label{subsect:paleorun}  
@@ -179,24 +240,15 @@ Also, we turn on a bed deformation model; the option is ``\texttt{-bed_def lc}''
 
 These options are discussed in section \ref{sec:modeling-dynamics}.
 
-FIXME: Over the course of the spin-up we have saved the modeled ice volume in ``time-series'' NetCDF files.  This important model output can be viewed by
-\begin{verbatim}
-$ ncview ts_g20km_m5000a.nc ts_g20km_0.nc
-\end{verbatim}
-\noindent Figure \ref{fig:sr-spindone-ivolboth} shows this ice volume time series for the whole spin-up.  We see the modeled volatility of ice volume in the late ``Eemian'' period, between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data.  We also see that the result \emph{does} depend on resolution.  Higher resolution grids allow the model to better resolve the flux through outlet glaciers especially, which are topographically-controlled, and such an effect explains the greater Eemian volume loss in the above 10\,km time series.  See the later examples in this manual for more on high resolution modeling.
-
-\begin{figure}[ht]
-\centering
-%\includegraphics[width=4.5in,keepaspectratio=true]{ivolboth}
-\caption{FIXME Time series of modeled ice sheet volume on 20km and 10km grids.}
-\label{fig:sr-spindone-ivolboth}
-\end{figure}
-
-
 
 
 \subsection{More runs: grid sequencing}  \label{subsect:gridseq}  
 
+\subsection{More runs: a sliding parameter study}  \label{subsect:paramstudy}
+
+% 9 runs:
+-pseudo_plastic_q   0.0 0.25 1.0
+-sia_e   1 3 10
 
 \subsection{Going forward}  \label{subsect:forecastcaution}  Because real ice sheets, and ice sheet models too, have a ``memory'' of past climates, results of ``forecast'' runs may strongly depend on the nature of the spin-up process which create the initial conditions.  It is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity and other fields \cite{AschwandenAdalgeirsdottirKhroulev}.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.
 
