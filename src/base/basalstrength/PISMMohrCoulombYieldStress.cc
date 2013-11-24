@@ -30,13 +30,11 @@ computed by the Mohr-Coulomb criterion [\ref SchoofTill], but using an empirical
 relation between the amount of water in the till and the effective pressure
 of the overlying glacier resting on the till [\ref Tulaczyketal2000].
 
-In the default implementation PISMMohrCoulombYieldStress [\ref BBssasliding], the
-"dry" strength of the (notional) till is a state variable, but private to the
-submodel, namely `tillphi`.
-
-Its initialization is nontrivial: either `-topg_to_phi`  heuristic or inverse
-modeling so that `tillphi` can be read-in at the beginning of the run. Currently
-`tillphi` does not evolve during the run.
+The "dry" strength of the till is a state variable which is private to
+the submodel, namely `tillphi`.  Its initialization is nontrivial: either the
+`-topg_to_phi`  heuristic is used or inverse modeling can be used.  (In the
+latter case `tillphi` can be read-in at the beginning of the run.  Currently
+`tillphi` does not evolve during the run.)
 
 This submodel uses a pointer to a PISMHydrology instance to get the till (pore)
 water amount, the effective water layer thickness.  The effective pressure is
@@ -308,7 +306,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
     return 0;
 
   m_t = my_t; m_dt = my_dt;
-  // this model performs a "diagnostic" computation (i.e. without time-stepping)
+  // this model does no internal time-stepping
 
   bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded"),
        slipperygl = config.get_flag("tauc_slippery_grounding_lines");
