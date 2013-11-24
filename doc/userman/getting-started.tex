@@ -5,7 +5,7 @@
 
 To install PISM, see the \,\emph{Getting PISM}\, tab at \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}.  Or use the PISM Installation Manual (PDF).\footnote{At \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=installation.pdf}.}
 
-Once installed, the executable \texttt{pismr} should be available on your system's ``path''; confirm this with ``\texttt{which pismr}''.  The instructions below also assume you are using a \texttt{bash} shell or one that accepts \texttt{bash} syntax.  The examples below assume you have the PISM source code in the directory ``\texttt{pism/}''.
+Once installed, the executable \texttt{pismr} should be available on your system's ``path''; confirm this with ``\texttt{which pismr}''.  The instructions below also assume you are using a \texttt{bash} shell (or one that accepts \texttt{bash} syntax).  The examples below assume you have the PISM source code in the directory ``\texttt{pism/}''.
 
 \subsection{A Greenland ice sheet example}
 
@@ -49,7 +49,7 @@ Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF vis
 \end{figure}
 
 
-\subsection{Run PISM}   \label{subsect:runscript}  Like many Unix programs, PISM allows many command-line options.  Because PISM handles a wide variety of ice sheet, shelf, and glacier sub-models and configurations, the list of possible command-line options is long; see sections \ref{sec:boot} through \ref{sec:practical-usage} of this manual.  Therefore, in practice, one often builds scripts to run PISM with the correct options.
+\subsection{First run of PISM}   \label{subsect:runscript}  Like many Unix programs, PISM allows many command-line options.  Because PISM handles a wide variety of ice sheet, shelf, and glacier sub-models and configurations, the list of possible command-line options is long; see sections \ref{sec:boot} through \ref{sec:practical-usage} of this manual.  Therefore, in practice, one often builds scripts to run PISM with the correct options.
 
 Our script is called ``\texttt{spinup.sh}''.  Initializing ice sheets can be done by computing approximate steady states with constant boundary data, or, in some cases, by integrating paleo-climatic and long-time-scale information to build a model for the present state of the ice sheet.  Both of these possibilities are illustrated in the \texttt{spinup.sh} script.  The spin-up stage may even require the most processor-hours, compared to a follow-on ``experiment'' or ``forecast'' stages.
 
@@ -57,9 +57,8 @@ We are ready to run PISM.  To see what can be done with the script, read the usa
 \begin{verbatim}
 $ ./spinup.sh
 \end{verbatim}
-The simplest spin-up approach is to use a ``constant-climate'' model.  We take this approach here, first.
 
-To see a more detailed view of the run we will do first, try:
+The simplest spin-up approach is to use a ``constant-climate'' model.  We take this approach first.  To see a more detailed view of the run we will do first, try:
 \begin{verbatim}
 $ PISM_DO=echo ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc
 \end{verbatim}
@@ -90,18 +89,44 @@ Now let's actually get the run going:
 \begin{verbatim}
 $ ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc &> out.g20km_10ka &
 \end{verbatim}
-\noindent Because we have re-directed the text output, PISM will show what it is doing in the text file \texttt{out.g20km_10ka} as it runs in the background.  Using \texttt{less} is a good way to watch such a growing text-output file.
-
-% FIXME: replace this?  Soon after that some climatic boundary conditions sample results will appear in \texttt{g20km_climate-500a.nc}.  Such output is effectively a movie of the stored and modeled climatic inputs provided to our ice dynamics model, including the results from surface models like the above-mentioned PDD model for surface mass balance.  This is a convenient way to, early in the modeling process, look at the critical surface mass balance and surface temperature inputs to the ice dynamics.
+\noindent The terminating ``\verb|&|'' asks unix to run the command in the background, so we can keep working in the current shell.  Because we have re-directed the text output, PISM will show what it is doing in the text file \texttt{out.g20km_10ka}.  Using \texttt{less} is a good way to watch such a growing text-output file.
 
 
-\subsection{Watching the spin-up}  \label{subsect:spinupsketch}  The next paragraphs describe what happens and what files are produced by the run which is underway.  We believe that the modeling choices represented here are reasonable, but they are not the only way to do it.  The user is encouraged to experiment; that is the point of a model!
+\subsection{Watching the first run}  \label{subsect:watchrun}  The next paragraphs describe what happens and what files are produced by the run which is underway.  The modeling choices represented here are reasonable, but they are not the only way to do it.  The user is encouraged to experiment; that is the point of a model!
 
-FIXME FROM HERE:  After the completion of the first 100 model year run (\texttt{g20km_pre100.nc}), we then work to generate a more-physical enthalpy (i.e.~temperature and liquid fraction) field in which the modeled ice internal energy, its temperature, its softness, its stored basal water, and its basal melt rate are all in better balance with the ice sheet geometry and the simultaneously evolving flow velocity field.  Note the velocity advects the ice properties, especially enthalpy and thus ice softness.
+As soon as the run starts it creates time-dependent NetCDF files \texttt{ts_g20km_10ka.nc} and \texttt{ex_g20km_10ka.nc}.  Actually the latter file spatially-dependent file is created after the first 100 years of model run, but that is a few seconds in this case.  In fact, the command \texttt{-extra_file ex_g20km_10ka.nc -extra_times -10000:100:0} will add a spatially-dependent ``frame'' at model times -9900, -9800, \dots, 0.  One way to get a snapshot of how many frames this file contains at any time is to do
+\begin{verbatim}
+$ ncdump -h ex_g20km_10ka.nc |grep "time ="
+\end{verbatim}
+but a more interactive way is to look at the output graphically with
+\begin{verbatim}
+$ ncview ex_g20km_10ka.nc
+\end{verbatim}
+In any case, we see that \texttt{ex_g20km_10ka.nc} contains ``movies'' of the fields chosen by the option \texttt{-extra_vars diffusivity,...,thk,topg,usurf}.  A frame of the ice thickness \texttt{thk} is shown in Figure \ref{fig:growing} (left).
 
-The upper and lower surfaces of this modeled ice are held fixed at this stage.  The upper surface is held fixed by the option \texttt{-no_mass}, while the lower surface is held fixed in the sense that we do not yet apply a bed deformation model.  The resulting enthalpy field is in approximate equilibrium with a velocity field for which the surface kinematical equation \cite{Fowler} is unfortunately \emph{not} satisfied.  Also there is no sliding at this stage because good sliding requires good basal strength which requires good basal melt rates; these improve significantly as this no-sliding run evolves.
+The time-series file \texttt{ts_g20km_10ka.nc} is also growing.  It contains spatially-averaged ``scalar'' diagnostics like the total ice volume or the ice-sheet-wide maximum velocity (variable \texttt{ivol} and \texttt{max_hor_vel}, respectively).  It can be viewed
+\begin{verbatim}
+$ ncview ts_g20km_10ka.nc
+\end{verbatim}
+Generally PISM ``buffers'' its time series, so the file may only be updated when the buffer is full (see section \ref{sec:saving-time-series}), but, as the buffer is also cleared everytime a frame is written to an \texttt{-extra_file}, in this case the file \texttt{ts_g20km_10ka.nc} is updated frequently.  The growing time series for \texttt{ivol} is shown in Figure \ref{fig:growing} (right).
 
-We sometimes call this early stage ``pre-spin-up'', a stage which follows on ``bootstrapping'' and comes before the classical paleo-climatic data-using ``spin-up''.  This ``pre-spin-up'' stage goes for 50,000 model years and yields the file \texttt{g20km_steady.nc} at the end.  Along the way the file \texttt{ex_g20km_steady.nc} is updated at every 500 model years, and it can be used to evaluate the degree to which we have reached a thermomechanically-coupled steady state.
+\begin{figure}[ht]
+\centering
+\mbox{\includegraphics[height=5.0in,keepaspectratio=true]{ex-growing-thk-g20km}
+  \qquad \includegraphics[height=5.0in,keepaspectratio=true]{ts-growing-ivol-g20km}}
+\caption{Two views produced by \texttt{ncview} during a PISM model run for the Greenland ice sheet.  Left: Field \texttt{thk}, the ice sheet thickness, a space-dependent frame from file \texttt{ex_g20km_10ka.nc}.  Right: Time-series \texttt{ivol}, the total ice sheet volume, from file \texttt{ts_g20km_10ka.nc}. }
+\label{fig:growing}
+\end{figure}
+
+After inspection of the fields in the diagnostic files \texttt{ex_g20km_10ka.nc} and \texttt{ts_g20km_10ka.nc}, the reader will agree that PISM can be asked to produce quite a bit of information about a run!
+
+The whole first run takes about 20 minutes on a 2012-era 4-core laptop.  At the end of the run the output file \texttt{g20km_10ka.nc} is generated.
+
+\subsection{Second run: a better ice-dynamics model}  \label{subsect:ssarun}  
+
+% $ PISM_DO=echo PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 20 hybrid g20km_10ka_hybrid.nc
+
+\subsection{Third run: paleo-climate model spin-up}  \label{subsect:paleorun}  
 
 
 \begin{figure}[ht]
@@ -109,11 +134,10 @@ We sometimes call this early stage ``pre-spin-up'', a stage which follows on ``b
 %  temppabase from last time in ex_g10km_steady.nc and driving stress taud from g10km_SIA.nc
 \mbox{\includegraphics[width=2.0in,keepaspectratio=true]{temppabase}
   \qquad \includegraphics[width=2.1in,keepaspectratio=true]{taud}}
-\caption{Part of the model state at the beginning of paleo-climate-modeling ice sheet spin-up, in file \texttt{g20km_steady.nc} from running \texttt{spinup.sh}.  Left: pressure-adjusted basal temperature ($\phantom{|}^\circ$C; field \texttt{temp_pa}).  Right: driving stress magnitude $\rho g H |\grad h|$ (Pa; field \texttt{taud_mag}).}
+\caption{FIXME: Part of the model state at the beginning of paleo-climate-modeling ice sheet spin-up, in file \texttt{g20km_steady.nc} from running \texttt{spinup.sh}.  Left: pressure-adjusted basal temperature ($\phantom{|}^\circ$C; field \texttt{temp_pa}).  Right: driving stress magnitude $\rho g H |\grad h|$ (Pa; field \texttt{taud_mag}).}
 \label{fig:sr-spinstart}
 \end{figure}
 
-The resulting model state in \texttt{g20km_steady.nc} is our model for the state of the Greenland ice sheet at the beginning of the paleo-climate record provided in the SeaRISE data set, namely 125,000 B.P.  There is, obviously, great uncertainty in this model for the distant past of the Greenland ice sheet.  Two views of the 10\,km model grid version of this state are in Figure \ref{fig:sr-spinstart}.
 
 \begin{figure}[ht]
 \centering
@@ -121,33 +145,19 @@ The resulting model state in \texttt{g20km_steady.nc} is our model for the state
 \mbox{\includegraphics[width=2.in,keepaspectratio=true]{thk}
   \qquad \includegraphics[width=2.in,keepaspectratio=true]{cbase}
   \qquad \includegraphics[width=2.in,keepaspectratio=true]{csurf}}
-\caption{Model for the present-day Greenland ice sheet, based on spin-up over 125,000 model years using paleo-climate forcing.  Left: ice thickness (m).  Center: basal sliding speed (m/a).  Right: surface speed (m/a).  These are fields \texttt{thk}, \texttt{cbase}, and \texttt{csurf} from file \texttt{g10km_0.nc}.}
+\caption{FIXME Model for the present-day Greenland ice sheet, based on spin-up over 125,000 model years using paleo-climate forcing.  Left: ice thickness (m).  Center: basal sliding speed (m/a).  Right: surface speed (m/a).  These are fields \texttt{thk}, \texttt{cbase}, and \texttt{csurf} from file \texttt{g10km_0.nc}.}
 \label{fig:sr-spindone-map}
 \end{figure}
 
-The actual paleo-climate-driven spin-up starts from model state \texttt{g20km_steady.nc}.  We turn on three new mechanisms, climatic forcing, bed deformation, and improved stress balance.  There are two forms of climatic forcing. First, temperature offsets from GRIP core data affect the snow energy balance and thus rates of melting and runoff; the model is a simple temperature-index scheme described at the SeaRISE website.  Thereby the surface mass balance varies over time; in warm periods there is more marginal ablation.  Additionally, sea levels from the SPECMAP cores affects which ice is floating.
+FIXME The actual paleo-climate-driven spin-up starts from model state \texttt{g20km_steady.nc}.  We turn on three new mechanisms, climatic forcing, bed deformation, and improved stress balance.  There are two forms of climatic forcing. First, temperature offsets from GRIP core data affect the snow energy balance and thus rates of melting and runoff; the model is a simple temperature-index scheme described at the SeaRISE website.  Thereby the surface mass balance varies over time; in warm periods there is more marginal ablation.  Additionally, sea levels from the SPECMAP cores affects which ice is floating.
 
-Significantly, we start using a more complete ice dynamics model with sliding controlled by a membrane stress balance, the SIA+SSA hybrid model described in section \ref{sec:dynamics}.  This is turned on with option ``\texttt{-ssa_sliding}''.  Also, we turn on a bed deformation model; the option is ``\texttt{-bed_def lc}''.  These options are discussed in section \ref{sec:modeling-dynamics}.  The command itself (do \verb|PISM_DO=echo ./spinup.sh 8| to see) is
-\small
-\begin{verbatim}
-mpiexec -n 8 pismr -config_override searise_config.nc -climatic_mass_balance_cumulative -skip -skip_max 10 \
-  -i g20km_steady.nc -ssa_sliding -topg_to_phi 5.0,20.0,-300.0,700.0 -bed_def lc \
-  -atmosphere searise_greenland,delta_T -surface pdd -paleo_precip pism_dT.nc \
-  -atmosphere_delta_T_file pism_dT.nc \
-  -ocean constant,delta_SL -ocean_delta_SL_file pism_dSL.nc -ocean_kill pism_Greenland_5km_v1.1.nc \
-  -ts_file ts_g20km_m5000a.nc -ts_times -125000:yearly:-5000 -extra_file ex_g20km_m5000a.nc \
-  -extra_vars ... -extra_times -125000:500:-5000 -ys -125000 -ye -5000 -o g20km_m5000a.nc
-\end{verbatim}
-\normalsize
-but where the full list \verb|-extra_vars| is suppressed.  It uses option \verb|-i| for its input file \verb|g20km_steady.nc|, which is a PISM output file containing the grid information; contrast this with the earlier run which had options \verb|-boot_file| and specified a grid.   (A grid specification uses options \verb|-Mx|, \verb|-My|, \verb|-Mz|, etc.; see subsection \ref{subsect:grid}.)  This run command illustrates that PISM allows a great deal of command-line control, which is a desirable feature, but it also means in practice that most PISM modeling is done using shell scripts to run executables, as here.
+Significantly, we start using a more complete ice dynamics model with sliding controlled by a membrane stress balance, the SIA+SSA hybrid model described in section \ref{sec:dynamics}.  This is turned on with option ``\texttt{-ssa_sliding}''.
 
-This run goes from the SeaRISE-Greenland start time of -125,000 years to -5,000 years.  In this period, diagnostic outputs are written into \texttt{ex_g20km_m5000a.nc} at every 500 model years, and scalar time series including total ice volume are written into \texttt{ts_g20km_m5000a.nc} at every model year.  At the end of this period of the spinup we get the model state file \texttt{g20km_m5000a.nc}.  After that, a final run continues on the same grid from -5,000 years to present day, producing \texttt{g20km_0.nc}.  A variation on this last 5,000 model years run is put in \texttt{g20km_0_ftt.nc}.
+Also, we turn on a bed deformation model; the option is ``\texttt{-bed_def lc}''.  
 
+These options are discussed in section \ref{sec:modeling-dynamics}.
 
-
-The spun-up states \texttt{g20km_0.nc} or \texttt{g20km_0_ftt.nc} is intended to be a model for the Greenland ice sheet at the present day, and thus a basis on which to explore future ice sheet behavior.  If you run \texttt{./spinup N 2} then all of this is done on a 10\,km grid.  Figure \ref{fig:sr-spindone-map} shows some fields from the 10\,km model grid version of this present-day state.  The ice sheet thickness and surface velocity can be compared to present-day observations \cite{BKAJS}, and parameter dependences in the spin-up process should be explored.
-
-Over the course of the spin-up we have saved the modeled ice volume in ``time-series'' NetCDF files.  This important model output can be viewed by
+FIXME: Over the course of the spin-up we have saved the modeled ice volume in ``time-series'' NetCDF files.  This important model output can be viewed by
 \begin{verbatim}
 $ ncview ts_g20km_m5000a.nc ts_g20km_0.nc
 \end{verbatim}
@@ -160,18 +170,13 @@ $ ncview ts_g20km_m5000a.nc ts_g20km_0.nc
 \label{fig:sr-spindone-ivolboth}
 \end{figure}
 
-%from PISM0.4:  On an 8 core workstation the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sec:dynamics}) is about 5 wall clock hours or 40 processor-hours.  For the same machine, the complete 10\,km spin-up used about 660 processor-hours, thus several wall-clock days.
-
-On an the total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sec:dynamics}) is about 290 processor-hours.  The complete 10\,km spin-up used about 6131 processor-hours.
-
-If done without membrane stresses (i.e.~non-sliding SIA only) these computational times are significantly reduced.  The polythermal versus ``cold'' energy-conservation choice corresponds to no performance difference of consequence.
 
 
-\subsection{Going forward}  \label{subsect:forecastcaution}  In the same \verb|examples/searise-greenland| directory is a script \verb|experiments.sh|.  This does a suite of runs for 500 years into the future for the SeaRISE assessment, initializing from the above-computed modeled present-day state.  The first run is a ``control''  run assuming steady climate for the entire period.  Other runs perform the experiments described at \url{http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet}.  Some runs use the AR4 climate forcing files which were produced when you ran \texttt{preprocess.sh}.  Once these runs are completed there are postprocessing scripts which primarily adjust metadata to match the standardizations used for the SeaRISE assessment.
 
-Please run \verb|experiments.sh| and the postprocessing scripts, play with them, and modify them, but remember that we include these scripts for demonstration purposes.
+\subsection{More runs: grid sequencing}  \label{subsect:gridseq}  
 
-Because real ice sheets, and ice sheet models too, have a ``memory'' of past climates, the results strongly depend on the nature of the spin-up process which preceded this ``forecast'' run.  Therefore, as already noted, it is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity \cite{AschwandenAdalgeirsdottirKhroulev}, and other observations including ice temperature in ice bore-holes.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.
+
+\subsection{Going forward}  \label{subsect:forecastcaution}  Because real ice sheets, and ice sheet models too, have a ``memory'' of past climates, results of ``forecast'' runs may strongly depend on the nature of the spin-up process which create the initial conditions.  It is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity and other fields \cite{AschwandenAdalgeirsdottirKhroulev}.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.
 
 
 \subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  PISM takes one or more NetCDF files as input, then it does some computation, and then it produces one or more NetCDF files as output.  Usually, other tools help to extract meaning from these NetCDF files, and yet more tools help with creating PISM input files or post-processing PISM output files.

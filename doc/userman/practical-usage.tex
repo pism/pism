@@ -124,7 +124,7 @@ this is usually a reasonable choice. Run PISM with the
 If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
 
 PISM buffers time-series data and writes it at the end of the run, once 10000
-values are stored, or when and \texttt{-extra_file} is saved, whichever comes first. Sending an \texttt{USR1} (or
+values are stored, or when an \texttt{-extra_file} is saved, whichever comes first. Sending an \texttt{USR1} (or
 \texttt{USR2}) signal to a PISM process flushes these buffers, making it
 possible to monitor the run. (See section \ref{subsect:signal} for more about
 PISM's signal handling.)
