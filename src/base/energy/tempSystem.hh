@@ -58,7 +58,7 @@ public:
   PetscErrorCode setBasalBoundaryValuesThisColumn(
                      PetscScalar my_G0, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
 
-  PetscErrorCode solveThisColumn(PetscScalar **x);  
+  PetscErrorCode solveThisColumn(PetscScalar *x);  
 
 public:
   // constants which should be set before calling initForAllColumns()

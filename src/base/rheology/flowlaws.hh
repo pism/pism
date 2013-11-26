@@ -114,6 +114,7 @@ protected:
   PetscReal softness_parameter_paterson_budd(PetscReal T_pa) const;
 
   PetscReal schoofLen,schoofVel,schoofReg, viscosity_power,
+    hardness_power,
     A_cold, A_warm, Q_cold, Q_warm,  // see Paterson & Budd (1982)
     crit_temp;
 
@@ -175,7 +176,7 @@ protected:
   { return softness_parameter_paterson_budd(T_pa); }
 
   virtual PetscReal hardness_parameter_from_temp(PetscReal T_pa) const
-  { return pow(softness_parameter_from_temp(T_pa), -1.0/n); }
+  { return pow(softness_parameter_from_temp(T_pa), hardness_power); }
 
   // special temperature-dependent method
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,

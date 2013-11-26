@@ -285,7 +285,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           ierr = system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j)); CHKERRQ(ierr);
 
           // solve the system for this column; melting not addressed yet
-          ierr = system.solveThisColumn(&x); CHKERRQ(ierr);
+          ierr = system.solveThisColumn(x); CHKERRQ(ierr);
 
           if (viewOneColumn && issounding(i,j)) {
             ierr = PetscPrintf(grid.com,

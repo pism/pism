@@ -244,8 +244,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   Mask M;
 
   const double standard_gravity = config.get("standard_gravity"),
-    ocean_rho = config.get("sea_water_density"),
-    ice_rho = config.get("ice_density");
+    rho_ocean = config.get("sea_water_density"),
+    rho_ice = config.get("ice_density");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
@@ -272,7 +272,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      if (m_vel_bc && (bc_locations->as_int(i, j) == 1)) {
+      if (m_vel_bc != NULL &&
+          bc_locations->as_int(i, j) == 1) {
         rhs_uv[i][j].u = m_scaling * (*m_vel_bc)(i, j).u;
         rhs_uv[i][j].v = m_scaling * (*m_vel_bc)(i, j).v;
         continue;
@@ -311,34 +312,24 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             if (M.ice_free(M_s)) bMM = 0;
           }
 
-          const double H_ij2        = H_ij*H_ij;
-                double ocean_pressure;
+          const double H_ij2 = H_ij*H_ij,
+            b     = (*bed)(i,j),
+            rho_g = rho_ice * standard_gravity;
 
-          if ((*bed)(i,j) < (sea_level - (ice_rho / ocean_rho) * H_ij)) {
-            //calving front boundary condition for floating shelf
-            ocean_pressure = 0.5 * ice_rho * standard_gravity * (1 - (ice_rho / ocean_rho))*H_ij2;
-            // this is not really the ocean_pressure, but the difference between
-            // ocean_pressure and isotrop.normal stresses (=pressure) from within
-            // the ice
+          double ocean_pressure;
+          // this is not really the ocean_pressure, but the difference
+          // between ocean_pressure and isotrop.normal stresses
+          // (=pressure) from within the ice
 
-            // what is the force balance of an iceshelf facing a bedrock wall?! 
-            // this is not relevant as long as we ask only for ice_free_ocean neighbors
-            //if ((aPP==0 && (*bed)(i+1,j)>h_ij) || (aMM==0 && (*bed)(i-1,j)>h_ij) ||
-            //    (bPP==0 && (*bed)(i,j+1)>h_ij) || (bMM==0 && (*bed)(i,j-1)>h_ij)){
-            //  ocean_pressure = 0.0; 
-            //}
-
+          if (M.ocean(M_ij)) {
+            // floating shelf
+            ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
           } else {
-            if( (*bed)(i,j) >= sea_level) {
-              // boundary condition for a "cliff" (grounded ice next to
-              // ice-free ocean) or grounded margin.
-              ocean_pressure = 0.5 * ice_rho * standard_gravity * H_ij2;
-              // this is not 'zero' because the isotrop.normal stresses
-              // (=pressure) from within the ice figures on RHS
+            // grounded terminus
+            if(b >= sea_level) {
+              ocean_pressure = 0.5 * rho_g * H_ij2;
             } else {
-              // boundary condition for marine terminating glacier
-              ocean_pressure = 0.5 * ice_rho * standard_gravity *
-                (H_ij2 - (ocean_rho / ice_rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
+              ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
             }
           }
 
@@ -1295,8 +1286,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
         const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
         if (H < strength_extension->get_min_thickness()) {
-          // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
-          //  Does not add or subtract ice mass.
           result(i,j,o) = strength_extension->get_notional_strength();
           continue;
         }
@@ -1321,14 +1310,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
                                       &nu, NULL);
 
         result(i,j,o) = nu * H;
-
-        if (! isfinite(result(i,j,o)) || false) {
-          ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
-          CHKERRQ(ierr);
-          ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n",
-                             u_x, u_y, v_x, v_y);
-          CHKERRQ(ierr);
-        }
 
         // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
         result(i,j,o) *= nu_enhancement_scaling;

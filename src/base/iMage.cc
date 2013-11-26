@@ -31,7 +31,7 @@ public:
   ageSystemCtx(PetscInt my_Mz, std::string my_prefix);
   PetscErrorCode initAllColumns();
 
-  PetscErrorCode solveThisColumn(PetscScalar **x);  
+  PetscErrorCode solveThisColumn(PetscScalar *x);
 
 public:
   // constants which should be set before calling initForAllColumns()
@@ -132,7 +132,7 @@ CODE STILL REFLECTS THE OLD SCHEME.
 
 FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
  */
-PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
+PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar *x) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
      "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
@@ -288,7 +288,7 @@ PetscErrorCode IceModel::ageStep() {
         ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
 
         // solve the system for this column; call checks that params set
-        ierr = system.solveThisColumn(&x); CHKERRQ(ierr);
+        ierr = system.solveThisColumn(x); CHKERRQ(ierr);
 
         if (viewOneColumn && issounding(i,j)) {
           ierr = PetscPrintf(PETSC_COMM_SELF,

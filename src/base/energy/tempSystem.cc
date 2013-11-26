@@ -116,7 +116,7 @@ PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(PetscScalar my_G0
 }
 
 
-PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
+PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar *x) {
 
   assert(initAllDone == true);
   assert(schemeParamsValid == true);

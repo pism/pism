@@ -344,7 +344,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
         }
 
         // solve the system
-        ierr = esys.solveThisColumn(&Enthnew); CHKERRQ(ierr);
+        ierr = esys.solveThisColumn(Enthnew); CHKERRQ(ierr);
 
         if (viewOneColumn && issounding(i, j)) {
           ierr = esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine); CHKERRQ(ierr);

@@ -84,10 +84,10 @@ something like "H[i][j] - z[k]".  The input depth to this routine is allowed to
 be negative, representing a position above the surface of the ice.
  */ 
 double EnthalpyConverter::getPressureFromDepth(double depth) const {
-  if (depth <= 0.0) { // at or above surface of ice
-    return p_air;
-  } else {
+  if (depth > 0.0) {
     return p_air + rho_i * g * depth;
+  } else {
+    return p_air; // at or above surface of ice
   }
 }
 
@@ -161,17 +161,22 @@ return an error code of 1 if \f$E \ge E_l(p)\f$.
  */
 PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
   double E_s, E_l;
-  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
-  if (E >= E_l) { // enthalpy equals or exceeds that of liquid water
-    T = getMeltingTemp(p);
-    return 1;
-  }
+  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l);
+#if PISM_DEBUG==1
+  CHKERRQ(ierr);
+#endif
   if (E < E_s) {
     T = (E / c_i) + T_0;
+    return 0;
   } else {
     T = getMeltingTemp(p);
+
+    if (E < E_l)
+      return 0;
+
+    // enthalpy equals or exceeds that of liquid water
+    return 1;
   }
-  return 0;
 }
 
 
@@ -183,7 +188,10 @@ The pressure-adjusted temperature is:
 PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) const {
   PetscErrorCode ierr;
   double T = 0;	 // initialized to avoid a compiler warning
-  ierr = getAbsTemp(E,p,T); CHKERRQ(ierr);
+  ierr = getAbsTemp(E,p,T);
+#if PISM_DEBUG==1
+  CHKERRQ(ierr);
+#endif
   T_pa = T - getMeltingTemp(p) + T_melting;
   return 0;
 }
@@ -201,7 +209,10 @@ error code 1 if \f$E \ge E_l(p)\f$, but we still compute \f$\omega=1.0\f$.
  */
 PetscErrorCode EnthalpyConverter::getWaterFraction(double E, double p, double &omega) const {
   double E_s, E_l;
-  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
+  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l);
+#if PISM_DEBUG==1
+  CHKERRQ(ierr);
+#endif
   if (E >= E_l) {
     omega = 1.0;
     return 1;
@@ -294,9 +305,15 @@ PetscErrorCode EnthalpyConverter::getEnthPermissive(
 #endif
   const double T_m = getMeltingTemp(p);
   if (T < T_m) {
-    ierr = getEnth(T, 0.0, p, E); CHKERRQ(ierr);
+    ierr = getEnth(T, 0.0, p, E);
+#if PISM_DEBUG==1
+    CHKERRQ(ierr);
+#endif
   } else { // T >= T_m(p) replaced with T = T_m(p)
-    ierr = getEnth(T_m, PetscMax(0.0,PetscMin(omega,1.0)), p, E); CHKERRQ(ierr);
+    ierr = getEnth(T_m, PetscMax(0.0,PetscMin(omega,1.0)), p, E);
+#if PISM_DEBUG==1
+    CHKERRQ(ierr);
+#endif
   }
   return 0;
 }

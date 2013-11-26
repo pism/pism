@@ -397,7 +397,7 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 /*! \brief Solve the tridiagonal system, in a single column, which
  *  determines the new values of the ice enthalpy.
  */
-PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
+PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar *x) {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
@@ -463,7 +463,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
 
   // air above
   for (PetscInt k = m_ks+1; k < Mz; k++) {
-    (*x)[k] = Enth_ks;
+    x[k] = Enth_ks;
   }
 
 #if (PISM_DEBUG==1)

@@ -644,7 +644,7 @@ public:
 
   inline PetscScalar& operator() (int i, int j, int k) {
 #if (PISM_DEBUG==1)
-    // check_array_indices(i, j, k);
+    check_array_indices(i, j, k);
 #endif
     return static_cast<PetscScalar***>(array)[i][j][k];
   }

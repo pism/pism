@@ -658,11 +658,15 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         const PetscScalar dz = thk - grid.zlevels[ks];
         Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
-        // Override diffusivity values in ghosted cells outside the
-        // computational domain. This has no effect if the setup is
-        // periodic or if the ice does not extend to the boundary of
-        // the domain. (It does matter in a "regional" setup, though.)
-        if (i < 0 || i >= grid.Mx || j < 0 || j >= grid.My)
+        // Override diffusivity at the edges of the domain. (At these
+        // locations PISM uses ghost cells *beyond* the boundary of
+        // the computational domain. This does not matter if the ice
+        // does not extend all the way to the domain boundary, as in
+        // whole-ice-sheet simulations. In a regional setup, though,
+        // this adjustment lets us avoid taking very small time-steps
+        // because of the possible thickness and bed elevation
+        // "discontinuities" at the boundary.)
+        if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
           Dfoffset = 0.0;
 
         my_D_max = PetscMax(my_D_max, Dfoffset);

@@ -68,11 +68,13 @@ columnSystemCtx::~columnSystemCtx() {
 //! Zero all entries.
 PetscErrorCode columnSystemCtx::resetColumn() {
   PetscErrorCode ierr;
+#if PISM_DEBUG==1
   ierr = PetscMemzero(Lp,   (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
   ierr = PetscMemzero(U,    (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
   ierr = PetscMemzero(D,    (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
   ierr = PetscMemzero(rhs,  (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
   ierr = PetscMemzero(work, (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
+#endif
   return 0;
 }
 
@@ -131,9 +133,11 @@ PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
 
 PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(PetscInt my_i, PetscInt my_j,
                                                              PetscInt my_ks) {
+#if PISM_DEBUG==1
   if (indicesValid && i == my_i && j == my_j) {
     SETERRQ(PETSC_COMM_SELF, 3, "setIndicesAndClearThisColumn() called twice in same column");
   }
+#endif
 
   i  = my_i;
   j  = my_j;
@@ -283,20 +287,18 @@ Solution of system in x.
 Success is return code zero.  Positive return code gives location of zero pivot.
 Negative return code indicates a software problem.
  */
-PetscErrorCode columnSystemCtx::solveTridiagonalSystem(const PetscInt n, PetscScalar **x) {
+PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, PetscScalar *x) {
   assert(x != NULL);
-  assert(*x != NULL);
   assert(indicesValid == true);
   assert(n >= 1);
   assert(n <= nmax);
 
-  PetscScalar b = D[0];
-
-  if (b == 0.0)
+  if (D[0] == 0.0)
     return 1;
 
-  (*x)[0] = rhs[0] / b;
+  PetscScalar b = D[0];
 
+  x[0] = rhs[0] / b;
   for (int k = 1; k < n; ++k) {
     work[k] = U[k - 1] / b;
 
@@ -305,11 +307,11 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(const PetscInt n, PetscSc
     if (b == 0.0)
       return k + 1;
 
-    (*x)[k] = (rhs[k] - L[k] * (*x)[k - 1]) / b;
+    x[k] = (rhs[k] - L[k] * x[k-1]) / b;
   }
 
   for (int k = n - 2; k >= 0; --k)
-    (*x)[k] -= work[k + 1] * (*x)[k + 1];
+    x[k] -= work[k + 1] * x[k + 1];
 
   indicesValid = false;
   return 0;

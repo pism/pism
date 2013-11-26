@@ -62,6 +62,7 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const NCConfigVariable &con
   melting_point_temp = config.get("water_melting_point_temperature");
   n            = config.get("Glen_exponent");
   viscosity_power = (1.0 - n) / (2.0 * n);
+  hardness_power  = -1.0 / n;
 
   if (strlen(prefix) > 0)
     e = config.get(std::string(prefix) + "enhancement_factor");
@@ -96,7 +97,7 @@ PetscReal IceFlowLaw::flow(PetscReal stress, PetscReal enthalpy,
 }
 
 PetscReal IceFlowLaw::hardness_parameter(PetscReal E, PetscReal p) const {
-  return pow(softness_parameter(E, p), -1.0/n);
+  return pow(softness_parameter(E, p), hardness_power);
 }
 
 PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
@@ -289,7 +290,7 @@ IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const char pre[],
                                      const NCConfigVariable &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   softness_A = config.get("ice_softness");
-  hardness_B = pow(softness_A, -1/n);
+  hardness_B = pow(softness_A, hardness_power);
 }
 
 // HookeIce
@@ -388,7 +389,7 @@ PetscReal GoldsbyKohlstedtIce::hardness_parameter(PetscReal enthalpy, PetscReal 
     softness = A_warm * exp(-Q_warm/(ideal_gas_constant * T_pa));
   }
 
-  return pow(softness, -1.0/n);
+  return pow(softness, hardness_power);
 }
 
 PetscReal GoldsbyKohlstedtIce::softness_parameter(PetscReal , PetscReal ) const {

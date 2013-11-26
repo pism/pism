@@ -60,7 +60,7 @@ public:
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
   PetscErrorCode viewSystem(PetscViewer viewer) const;
 
-  PetscErrorCode solveThisColumn(PetscScalar **x);
+  PetscErrorCode solveThisColumn(PetscScalar *x);
 
   int ks()
   { return m_ks; }

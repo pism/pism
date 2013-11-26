@@ -62,7 +62,7 @@ protected:
   PetscInt    i, j, ks;
 
   // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(const PetscInt n, PetscScalar **x);
+  PetscErrorCode solveTridiagonalSystem(unsigned int n, PetscScalar *x);
   
   std::string      prefix;
 private:
