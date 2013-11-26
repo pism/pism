@@ -347,6 +347,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
   }
 
+  ierr = tillwat.update_ghosts(); CHKERRQ(ierr);
+
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = tillwat.begin_access(); CHKERRQ(ierr);
@@ -366,7 +368,10 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
         if ( slipperygl && (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
           water = Wtilmax;
         } else {
-          water = tillwat(i,j); // usual case
+          //water = tillwat(i,j); // usual case
+          water = (1.0/6.0) * (  tillwat(i-1,j) + tillwat(i+1,j)
+                               + tillwat(i,j-1) + tillwat(i,j+1)
+                               + 2.0 * tillwat(i,j));
         }
         Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / Wtilmax)));
         Ntil = PetscMin(Po(i,j), Ntil);
