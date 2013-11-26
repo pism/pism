@@ -134,13 +134,15 @@ PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar
 
   PetscScalar ***arr = (PetscScalar***) array;
   
-  for (PetscInt k=0; k < n_levels; ++k) {
+  for (PetscInt k=0; k < n_levels-1; ++k) {
     PetscInt m = grid->ice_fine2storage[k];
 
     const PetscScalar increment = (zlevels[k] - zlevels_fine[m])
                                   / (zlevels_fine[m+1] - zlevels_fine[m]);
     arr[i][j][k] = source[m] +  increment * (source[m+1] - source[m]);
   }
+  
+  arr[i][j][n_levels-1] = source[grid->ice_fine2storage[n_levels-1]];
 
   return 0;
 }
