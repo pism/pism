@@ -341,40 +341,68 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
   check_array_indices(i, j);
 #endif
 
-  std::vector<double> &zlevels_fine = grid->zlevels_fine;
-  const PetscScalar ***arr = (const PetscScalar***) array;
-  const PetscScalar *column = arr[i][j];
+  // Assume that the fine grid is equally-spaced:
+  const PetscScalar dz_fine = grid->zlevels_fine[1] - grid->zlevels_fine[0];
+  const PetscScalar *column = static_cast<const PetscScalar***>(array)[i][j];
 
-  for (PetscInt k = 0; k < grid->Mz_fine; k++) {
-    if (k > ks) {
-      result[k] = column[grid->ice_storage2fine[k]];
-      continue;
+  int k = 0, m;
+  for (m = 0; m < n_levels - 2; m++) {
+    if (k > ks)
+      break;
+
+    const PetscScalar
+      z0 = zlevels[m],
+      z1 = zlevels[m+1],
+      z2 = zlevels[m+2],
+      f0 = column[m],
+      f1 = column[m+1],
+      f2 = column[m+2];
+
+    const PetscScalar
+      d1 = (f1 - f0) / (z1 - z0),
+      d2 = (f2 - f0) / (z2 - z0),
+      b  = (d2 - d1) / (z2 - z1),
+      a  = d1 - b * (z1 - z0),
+      c  = f0;
+
+    PetscScalar z_fine = k * dz_fine;
+    while (z_fine < z1) {
+      if (k > ks)
+        break;
+
+      const PetscScalar s = z_fine - z0;
+
+      result[k] = s * (a + b * s) + c;
+
+      k++;
+      z_fine = k * dz_fine;
     }
+  } // m-loop
 
-    const PetscInt m = grid->ice_storage2fine[k];
+  // check if we got to the end of the m-loop and use linear
+  // interpolation between the remaining 2 coarse levels
+  if (m == n_levels - 2) {
+    const PetscScalar
+      z0 = zlevels[m],
+      z1 = zlevels[m+1],
+      f0 = column[m],
+      f1 = column[m+1],
+      lambda = (f1 - f0) / (z1 - z0);
 
-    // extrapolate (if necessary):
-    if (m == n_levels - 1) {
-      result[k] = column[n_levels-1];
-      continue;
+    PetscScalar z_fine = k * dz_fine;
+    while (z_fine < z1) {
+      result[k] = f0 + lambda * (z_fine - z0);
+
+      k++;
+      z_fine = k * dz_fine;
     }
+  }
 
-    const PetscScalar z0 = zlevels[m],
-                      f0 = column[m];
-    if (m >= n_levels - 2) {
-				// top of the grid: just do linear interpolation
-      const PetscScalar incr = (zlevels_fine[k] - z0) / (zlevels[m+1] - z0);
-      result[k] = f0 + incr * (column[m+1] - f0);
-    } else {			// the rest: one-sided quadratic interpolation
-      const PetscScalar dz1 = zlevels[m+1] - z0,
-                        dz2 = zlevels[m+2] - z0;
-      const PetscScalar D1 = (column[m+1] - f0) / dz1,
-                        D2 = (column[m+2] - f0) / dz2;
-      const PetscScalar c = (D2 - D1) / (dz2 - dz1),
-                        b = D1 - c * dz1;
-      const PetscScalar s = zlevels_fine[k] - z0;
-      result[k] = f0 + s * (b + c * s);
-    }
+  // fill the rest using constant extrapolation
+  const PetscScalar f0 = column[n_levels - 1];
+  while (k <= ks) {
+    result[k] = f0;
+    k++;
   }
 
   return 0;
