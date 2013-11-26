@@ -1,8 +1,16 @@
 #!/bin/bash
 
-./spinup.sh 4 const 30000 20 hybrid g20km.nc &> out.gridseq
+NN=6
 
-REGRIDFILE=g20km.nc EXSTEP=10 ./spinup.sh 4 const 10000 10 hybrid g10km.nc &>> out.gridseq
+export REGRIDFILE=
+export EXSTEP=500
+./spinup.sh $NN const 50000 20 hybrid g20km.nc
 
-REGRIDFILE=g10km.nc EXSTEP=1 ./spinup.sh 4 const 100 5 hybrid g5km.nc &>> out.gridseq
+export REGRIDFILE=g20km.nc
+export EXSTEP=50
+./spinup.sh $NN const 5000  10 hybrid g10km.nc
+
+export REGRIDFILE=g10km.nc
+export EXSTEP=1
+./spinup.sh $NN const 200    5 hybrid  g5km.nc
 
