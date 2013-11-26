@@ -11,7 +11,7 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.usage = "usage: %prog [options] FILE"
-parser.description = "A script to compare PISM flowline velocities with full Stokes solution."
+parser.description = "A script to compare PISM flowline velocities with Stokes solution."
 
 (options, args) = parser.parse_args()
 
