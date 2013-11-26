@@ -167,7 +167,7 @@ if [ "$5" = "hybrid" ]; then
     PARAM_TTPHI="15.0,40.0,-300.0,700.0"
   fi
   if [ -z "${PARAM_PPQ}" ] ; then  # check if env var is NOT set
-    PARAM_PPQ="0.23"
+    PARAM_PPQ="0.25"
   fi
   if [ -z "${PARAM_TEFO}" ] ; then  # check if env var is NOT set
     PARAM_TEFO="0.02"

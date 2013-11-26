@@ -180,9 +180,9 @@ The basal sliding velocity, though critical to the response of the ice to change
 \end{itemize}
 Of course, this is just one model of many ``in'' PISM.  We are free to find and adjust important parameters.  The first we address is one of the most important: grid resolution.
 
-First, though, in considering these PISM results compared to some recent observed-vs-model comparisons of this type (e.g.~Figure 1 in \cite{Priceetal2011} and Figure 8 in \cite{Larouretal2012}), note that only ice-sheet-wide parameters and models were used.  Each location in the ice sheet was modeled by the same physics.  Specifically there was no attempt to tune a large number of subglacial parameters to values which would yield close match to observations of the surface velocity.  Such tuning techniques are called ``inversions''; see \cite{vanPeltetal2013} (basal topography) and \cite{Habermannetal2013} (basal shear stress) for PISM-based inversion methods and analysis.
+We can compare these easily-generated PISM results to some recent observed-vs-model comparisons of surface velocity maps, of exactly this type, for example Figure 1 in \cite{Priceetal2011} and Figure 8 in \cite{Larouretal2012}.  Note that only ice-sheet-wide parameters and models were used here, that is, each location in the ice sheet was modeled by the same physics.  By comparison, those other results involved tuning a large number of subglacial parameters to values which would yield close match to observations of the surface velocity.  Such tuning techniques are usually called ``inversion'' or ``assimilation'' of the surface velocity data.  Such methods are also possible in PISM if desired; see \cite{vanPeltetal2013} (inversion of DEMs for basal topography) and \cite{Habermannetal2013} (inversion surface velocities for basal shear stress) for PISM-based inversion methods and analysis.
 
-As noted, we change one key parameter first, the grid resolution.  If you can let it run overnight on a laptop,\footnote{Or change ``\texttt{4}'' in the call to \texttt{spinup.sh} to a substantially larger number, on a supercomputer.} do
+Now we change one key parameter, the grid resolution.  If you can let it run overnight on a laptop,\footnote{Or change ``\texttt{4}'', the number of processes in the call to \texttt{spinup.sh}, to a substantially larger number if you have an available supercomputer.} do
 \begin{verbatim}
 $ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 10 hybrid g10km_10ka_hy.nc &> out.g10km_10ka_hy &
 \end{verbatim}
@@ -208,7 +208,7 @@ As a different kind of comparison, Figure \ref{fig:ivolboth} shows ice volume ti
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.0in,keepaspectratio=true]{ivol-both-g20km-g10km}
+\includegraphics[width=4.5in,keepaspectratio=true]{ivol-both-g20km-g10km}
 \caption{Time series of modeled ice sheet volume on 20km and 10km grids.  The present-day ice sheet has volume approximately $2.91\times 10^6\,\text{km}^3$, the initial value in both runs.}
 \label{fig:ivolboth}
 \end{figure}
