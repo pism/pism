@@ -352,6 +352,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = tillwat.begin_access(); CHKERRQ(ierr);
   ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
+  ierr = bed_topography->begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
   PetscReal Ntil;
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
@@ -361,9 +362,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
       } else if (m.ice_free(i, j)) {
         tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
       } else { // grounded and there is some ice
-        // user can ask that grounding lines get special treatment
+        // user can ask that marine grounding lines get special treatment
+        // FIXME: get sea-level from correct PISM source
         PetscReal water;
-        if ( slipperygl && (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
+        if ( slipperygl && ((*bed_topography)(i,j) <= 0.0)
+             && (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
           water = Wtilmax;
         } else {
           water = tillwat(i,j); // usual case
@@ -379,6 +382,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = till_phi.end_access(); CHKERRQ(ierr);
   ierr = tillwat.end_access(); CHKERRQ(ierr);
   ierr = Po.end_access(); CHKERRQ(ierr);
+  ierr = bed_topography->end_access(); CHKERRQ(ierr);
 
   ierr = tauc.update_ghosts(); CHKERRQ(ierr);
 
