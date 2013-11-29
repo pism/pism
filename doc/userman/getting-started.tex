@@ -29,7 +29,7 @@ The NetCDF data used to initialize SeaRISE runs is freely-available online:
 $ cd pism/examples/std-greenland
 $ ./preprocess.sh
 \end{verbatim}
-\noindent The script \texttt{preprocess.sh} requires \texttt{wget} and also the NetCDF Operators (``NCO''; \url{http://nco.sourceforge.net/}).  It downloads the version 1.1 of the SeaRISE ``master'' present-day data set, which contains ice thickness and bedrock topography from BEDMAP \cite{BamberLayberryGogenini}, and modeled precipitation rates from RACMO \cite{Ettemaetal2009}, among other fields.
+\noindent The script \texttt{preprocess.sh} requires \texttt{wget} and also the NetCDF Operators (``NCO''; \url{http://nco.sourceforge.net/}).  It downloads the version 1.1 of the SeaRISE ``master'' present-day data set, which contains ice thickness and bedrock topography from BEDMAP \cite{BamberLayberryGogenini}, and modeled precipitation and surface mass balance rates from RACMO \cite{Ettemaetal2009}, among other fields.
 
 In particular, it creates three new NetCDF files which can be read by PISM.  The spatially-varying fields, with adjusted metadata, go in \texttt{pism_Greenland_5km_v1.1.nc}.  The other two new files contain famous time-dependent paleo-climate records from ice and seabed cores: \texttt{pism_dT.nc} has the GRIP temperature record \cite{JohnsenetalGRIP} and \texttt{pism_dSL.nc} has the SPECMAP sea level record \cite{Imbrieetal1984}.
 
@@ -61,6 +61,7 @@ The simplest spin-up approach is to use a ``constant-climate'' model.  We take t
 $ PISM_DO=echo ./spinup.sh 4 const 10000 20 sia g20km_10ka.nc
 \end{verbatim}
 Setting the environment variable \texttt{PISM_DO} in this way tells \texttt{spinup.sh} just to print out the commands it is about to run, not do them.  The ``proposed'' run looks like this:
+\label{firstcommand}
 \small
 \begin{verbatim}
 mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
@@ -194,71 +195,93 @@ Now we change one key parameter, the grid resolution.  If you can let it run ove
 \begin{verbatim}
 $ PARAM_PPQ=0.5 ./spinup.sh 4 const 10000 10 hybrid g10km_10ka_hy.nc &> out.g10km_10ka_hy &
 \end{verbatim}
-This run takes about four hours on a 2012-era 4 core laptop.  Supposing you have an available supercomputer, for a shorter duration change ``\texttt{mpiexec -n 4}'' to ``\texttt{mpiexec -n N}'' where \texttt{N} is a substantially larger number, up to 200 or so.
+It takes about four hours on a 2012-era 4 core laptop.  Supposing you have an available supercomputer you can change ``\texttt{mpiexec -n 4}'' to ``\texttt{mpiexec -n N}'' where \texttt{N} is a substantially larger number, up to 200 or so.
 
-FIXME from here: We see some fields from the result in Figure \ref{fig:secondoutputfiner}.
+Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig:secondoutputfiner}.  Figure \ref{fig:csurfvsobserved} also compares observed velocity to the model results from 20 km and 10 km grids.  Model results differ even when the only change is the resolution!  Importantly for ice sheet modeling, using higher resolution ``picks up'' more detail in the bed elevation and climate data.
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-cbase}}
-\caption{Fields from output file \texttt{g10km_10ka_hy.nc}.  Left: \texttt{usurf} in meters.  Middle: \texttt{csurf} in m/a.  Right: \texttt{cbase} in m/a.}
+\caption{Fields from output file \texttt{g10km_10ka_hy.nc}.  Compare Figure \ref{fig:secondoutputcoarse}, which only differs by resolution.  Left: \texttt{usurf} in meters.  Middle: \texttt{csurf} in m/a.  Right: \texttt{cbase} in m/a.}
 \label{fig:secondoutputfiner}
 \end{figure}
 
-Figure \ref{fig:csurfvsobserved} compares observed velocity to the model results from 20 km and 10 km grids.  Model results differ, of course, even when the only change is the resolution.  Importantly for ice sheet modeling, higher resolution model runs ``pick up'' higher resolution bed elevation and climate data.
+As a different kind of comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20km and 10km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-averaged quantity, the \texttt{ivol} difference from 20km and 10km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20km to 10km.
 
-As a different kind of comparison, Figure \ref{fig:ivolboth} shows ice volume time series \texttt{ivol} for 20km and 10km runs done here.  We see that this result depends on resolution, in particular because higher resolution grids allow the model to better resolve the flux through topographically-controlled outlet glaciers (compare \cite{Pfefferetal2008}).  However, because the total ice sheet volume is a highly-average quantity, the \texttt{ivol} difference from 20km and 10km resolution runs is only about one part in 60 (about 1.5\%) at the final time.  By contrast, as is seen in the near-margin ice in various locations shown in Figure \ref{fig:csurfvsobserved}, the ice velocity at a particular location may change by 100\% when the resolution changes from 20km to 10km.  Roughly speaking, the reader should only trust model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is, in fact, often justified merely to confirm that lower-resolution runs were already ``getting'' a given feature in model results.
+Roughly speaking, the reader should only consider trusting those model results which are demonstrated to be robust across a range of model parameters, and, in particular, which are shown to be relatively-stable among relatively-high resolution results for a particular case.  Using a supercomputer is justifiable merely to confirm that lower-resolution runs were already ``getting'' a given feature!
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivol-both-g20km-g10km}
-\caption{Time series of modeled ice sheet volume on 20km and 10km grids.  The present-day ice sheet has volume approximately $2.91\times 10^6\,\text{km}^3$, the initial value in both runs.}
+\caption{Time series of modeled ice sheet volume on 20km and 10km grids.  The present-day ice sheet has volume about $2.9\times 10^6\,\text{km}^3$ \cite{BamberLayberryGogenini}, the initial value seen in both runs.}
 \label{fig:ivolboth}
 \end{figure}
 
 
-\subsection{Third run: paleo-climate model spin-up}  \label{subsect:paleorun}  
+\subsection{Fourth run: paleo-climate model spin-up}  \label{subsect:paleorun}  
 
+A this point we have barely mentioned one of the most important players in the ice sheet modeling game: the surface mass balance (SMB) model.  Specifically, an SMB model combines precipitation (e.g.~\cite{Balesetal2001} for present-day Greenland) and a model for melt based on an approximation of the energy available at the ice surface \cite{Hock05}.  As noted, previous runs in this section used a ``constant-climate'' assumption, which specifically meant using the modeled present-day SMB rates from the regional climate model RACMO \cite{Ettemaetal2009}, as contained in the SeaRISE-Greenland data set \verb|Greenland_5km_v1.1.nc|.  SMB is a key input, of course, because, while a physical model of ice dynamics only describes the rate of movement of the ice, the SMB (and the sub-shelf melt rate) determine changes in the boundary geometry.  That boundary geometry largely determines the stresses seen by the stress balance.
 
-\begin{figure}[ht]
-\centering
-%  temppabase from last time in ex_g10km_steady.nc and driving stress taud from g10km_SIA.nc
-%\mbox{\includegraphics[width=2.0in,keepaspectratio=true]{temppabase}
-%  \qquad \includegraphics[width=2.1in,keepaspectratio=true]{taud}}
-\caption{FIXME: Part of the model state at the beginning of paleo-climate-modeling ice sheet spin-up, in file \texttt{g20km_steady.nc} from running \texttt{spinup.sh}.  Left: pressure-adjusted basal temperature ($\phantom{|}^\circ$C; field \texttt{temp_pa}).  Right: driving stress magnitude $\rho g H |\grad h|$ (Pa; field \texttt{taud_mag}).}
-\label{fig:sr-spinstart}
-\end{figure}
+There are other methods for producing SMB than to use present-day modeled values.  We now try such a method, one that does ``paleo-climate spin-up'' for a Greenland ice sheet model.  Of course, direct measurements of prior climates in Greenland are not available as data!  There are, however, estimates of prior surface temperatures at the locations of ice cores \cite[for GRIP]{JohnsenetalGRIP}.  Also there are estimates of prior global sea level \cite{Imbrieetal1984} which can be used to determine where the flotation criterion is applied, which is how PISM's \verb|mask| variable is determined (in part).  Also, models have been constructed for how precipitation differs from the present-day values, based on paleo-records of surface temperature \cite{Huybrechts02}.  Essentially for demonstration purposes, these are all used in the next run.  They are further documented in PISM's Climate Forcing Manual.
 
+But there is more to a paleo-climate model than ``applying'' estimated temperature and precipitation.  One must compute melt in order to compute SMB.  This is done using a temperature-index model, a so-called ``positive degree-day'' (PDD) model \cite{Hock05}; see the Climate Forcing Manual.  Such a model has key parameters for how much snow and/or ice is melted when surface temperatures spend time near or above zero degrees.
 
-\begin{figure}[ht]
-\centering
-%  thk, cbase, csurf from g10km_0.nc
-%\mbox{\includegraphics[width=2.in,keepaspectratio=true]{thk}
-%  \qquad \includegraphics[width=2.in,keepaspectratio=true]{cbase}
-%  \qquad \includegraphics[width=2.in,keepaspectratio=true]{csurf}}
-\caption{FIXME Model for the present-day Greenland ice sheet, based on spin-up over 125,000 model years using paleo-climate forcing.  Left: ice thickness (m).  Center: basal sliding speed (m/a).  Right: surface speed (m/a).  These are fields \texttt{thk}, \texttt{cbase}, and \texttt{csurf} from file \texttt{g10km_0.nc}.}
-\label{fig:sr-spindone-map}
-\end{figure}
+To summarize the paleo-climate model applied next, temperature offsets from the GRIP core record affect the snow energy balance, and thus rates of melting and runoff calculated by the PDD model.  In warm periods there is more marginal ablation, but precipitation may also increase (according to a temperature-offset model \cite{Huybrechts02}).  Additionally sea level undergoes changes in time and this affects which ice is floating.  Finally we add an earth deformation model, which responds to changes in ice load by moving the bedrock elevation \cite{BLKfastearth}.
 
-FIXME The actual paleo-climate-driven spin-up starts from model state \texttt{g20km_steady.nc}.  We turn on three new mechanisms, climatic forcing, bed deformation, and improved stress balance.  There are two forms of climatic forcing. First, temperature offsets from GRIP core data affect the snow energy balance and thus rates of melting and runoff; the model is a simple temperature-index scheme described at the SeaRISE website.  Thereby the surface mass balance varies over time; in warm periods there is more marginal ablation.  Additionally, sea levels from the SPECMAP cores affects which ice is floating.
+To see how all this translates into PISM options, do
+\begin{verbatim}
+$ PISM_DO=echo PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
+  ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc
+\end{verbatim}
+You will see the impressive command (reformatted for clarity):
+\small
+\begin{verbatim}
+mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
+  -Mz 101 -Mbz 11 -z_spacing equal -Lz 4000 -Lbz 2000 -skip -skip_max 10 \
+  -ys -25000 -ye 0 \
+  -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
+  -bed_def lc \
+  -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd \
+  -atmosphere_paleo_precip_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc \
+  -ocean constant,delta_SL -ocean_delta_SL_file pism_dSL.nc \
+  -ocean_kill pism_Greenland_5km_v1.1.nc -sia_e 3.0 \
+  -ssa_sliding -topg_to_phi 15.0,40.0,-300.0,700.0 -pseudo_plastic -pseudo_plastic_q 0.5 \
+  -till_effective_fraction_overburden 0.02 -tauc_slippery_grounding_lines \
+  -ts_file ts_g20km_25ka_paleo.nc -ts_times -25000:yearly:0 \
+  -extra_file ex_g20km_25ka_paleo.nc -extra_times -25000:100:0 \
+  -extra_vars diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,\
+mask,thk,topg,usurf,hardav,cbase,tauc \ 
+  -o g20km_25ka_paleo.nc
+\end{verbatim}
+\normalsize
 
-Significantly, we start using a more complete ice dynamics model with sliding controlled by a membrane stress balance, the SIA+SSA hybrid model described in section \ref{sec:dynamics}.  This is turned on with option ``\texttt{-ssa_sliding}''.
+There are several key changes from the command on page \pageref{firstcommand}.  First, we do not start from scratch but instead from a previously computed near-equilibrium result:
+\begin{verbatim}
+  -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
+\end{verbatim}
+For more on regridding see subsection \ref{sec:regridding}.  Then we turn on the earth deformation model with option \verb|-bed_def lc|; see subsection \ref{subsect:beddef}.  After that the atmosphere and surface (PDD) models are turned on and the files they need are identified:
+\begin{verbatim}
+  -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd \
+  -atmosphere_paleo_precip_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc \
+\end{verbatim}
+Then the ocean model, which provides both a subshelf melt rate and a time-dependent sealevel to the ice dynamics core, is turned on with \verb|-ocean constant,delta_SL| and the file it needs is identified with \verb|-ocean_delta_SL_file pism_dSL.nc|.  For all of these ``forcing'' options, see the PISM Climate Forcing Manual.  The remainder of the options are similar or identical to the run that created \verb|g20km_10ka_hy.nc|.
 
-Also, we turn on a bed deformation model; the option is ``\texttt{-bed_def lc}''.  
+To actually start the run, do:
+\begin{verbatim}
+$ PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
+  ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc &> out.g20km_25ka_paleo &
+\end{verbatim}
 
-These options are discussed in section \ref{sec:modeling-dynamics}.
-
+FIXME: show results
 
 
 \subsection{More runs: grid sequencing}  \label{subsect:gridseq}  
 
+% used 20km result to do   10km@1ka --> 5km@200a
+
 \subsection{More runs: a sliding parameter study}  \label{subsect:paramstudy}
 
-% 9 runs:
--pseudo_plastic_q   0.0 0.25 1.0
--sia_e   1 3 10
-
-\subsection{Going forward}  \label{subsect:forecastcaution}  Because real ice sheets, and ice sheet models too, have a ``memory'' of past climates, results of ``forecast'' runs may strongly depend on the nature of the spin-up process which create the initial conditions.  It is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity and other fields \cite{AschwandenAdalgeirsdottirKhroulev}.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.
+% 9 runs: -pseudo_plastic_q   0.0 0.25 1.0   -sia_e   1 3 10
 
 
 \subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  PISM takes one or more NetCDF files as input, then it does some computation, and then it produces one or more NetCDF files as output.  Usually, other tools help to extract meaning from these NetCDF files, and yet more tools help with creating PISM input files or post-processing PISM output files.

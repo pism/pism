@@ -286,9 +286,10 @@ if [ -n "${REGRIDFILE:+1}" ] ; then  # check if env var is already set
     echo "$SCRIPTNAME      REGRIDVARS = $REGRIDVARS"
   fi
   regridcommand="-regrid_file $REGRIDFILE -regrid_vars $REGRIDVARS"
-  if [ "$2" = "paleo" ]; then
-    regridcommand="$regridcommand -regrid_bed_special"
-  fi
+  # -regrid_bed_special not used here because hard-to-explain and not documented
+  #if [ "$2" = "paleo" ]; then
+  #  regridcommand="$regridcommand -regrid_bed_special"
+  #fi
 else
   regridcommand=""
 fi
