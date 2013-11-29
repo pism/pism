@@ -1,0 +1,242 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath,hyperref}
+\usepackage[margin=1in]{geometry}
+
+\date{}
+\title{Calving front stress boundary condition}
+
+\begin{document}
+
+\maketitle
+\newcommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\n}{\mathbf{n}}
+\newcommand{\nx}{\n_{x}}
+\newcommand{\ny}{\n_{y}}
+\newcommand{\nz}{\n_{z}}
+\newcommand{\psw}{p_{\text{ocean}}}
+\newcommand{\pice}{p_{\text{ice}}}
+\newcommand{\rhoi}{\rho_{\text{ice}}}
+\newcommand{\rhosw}{\rho_{\text{ocean}}}
+\newcommand{\zs}{z_{\text{s}}}
+\newcommand{\td}[1]{t^{D}_{#1}}
+\newcommand{\D}{\displaystyle}
+\newcommand{\dx}{\Delta x}
+\newcommand{\dy}{\Delta y}
+\newcommand{\viscosity}{\nu}
+
+\section{Notation}
+\label{sec-1}
+
+\begin{center}
+\begin{tabular}{ll}
+\textbf{\textbf{Variable}} & \textbf{\textbf{Meaning}}\\
+\hline
+$h$ & top surface elevation\\
+$b$ & bottom surface elevation\\
+$H = h - b$ & ice thickness\\
+$\zs$ & sea level elevation\\
+$g$ & acceleration due to gravity\\
+$\rhoi$ & ice density\\
+$\rhosw$ & sea water density\\
+$\viscosity$ & vertically-averaged viscosity of ice\\
+$\n$ & normal vector\\
+$B(T)$ & ice hardness\\
+$\pice$ & pressure due to the weight of a column of ice\\
+$\psw$ & pressure due to the weight of a column of seawater\\
+$D$ & strain rate tensor\\
+$d_{e}$ & effective strain rate\\
+$t$ & Cauchy stress tensor\\
+$t^{D}$ & deviatoric stress tensor\\
+\end{tabular}
+\end{center}
+
+\section{Calving front stress boundary condition}
+\label{sec-2}
+
+In the 3D case the calving front stress boundary condition reads
+\begin{equation*}
+\left.\left( t \cdot \n \right)\right|_{\text{cf}} = -\psw \n.
+\end{equation*}
+
+Expanded in the component form and evaluating the left-hand side at
+the calving front and assuming that the calving front face is vertical
+($\nz = 0$), this gives
+\begin{equation*}
+\begin{array}{rcrcl}
+(\td{xx} - p) \nx &+& \td{xy} \ny &=& -\psw \nx,\\
+\td{xy} \nx &+& (\td{yy} - p) \ny &=& -\psw  \ny,\\
+\td{xz} \nx &+& \td{yz} \ny &=& 0.
+\end{array}
+\end{equation*}
+
+In the hydrostatic approximation shear stresses $\td{xz}$ and $\td{yz}$ are omitted, so we have
+\begin{equation*}
+\begin{array}{rcrcl}
+(\td{xx} - p) \nx &+& \td{xy} \ny &=& -\psw \nx,\\
+\td{xy} \nx &+& (\td{yy} - p) \ny &=& -\psw  \ny.\\
+\end{array}
+\end{equation*}
+
+Next, since $p = p_{\text{column}} - \td{xx} - \td{yy}$,
+\begin{equation}
+\label{eq:1}
+\begin{array}{rcrcl}
+(2\td{xx} + \td{yy}) \nx &+& \td{xy} \ny &=& (\pice - \psw) \nx,\\
+\td{xy} \nx &+& (2\td{yy} + \td{xx}) \ny &=& (\pice - \psw) \ny.\\
+\end{array}
+\end{equation}
+
+Now, using the ``viscosity form'' of the flow law
+\begin{align*}
+\td{} &= 2\viscosity\, D,\\
+\viscosity &= \frac 12 B(T) d_{e}^{1/n-1}
+\end{align*}
+and the fact that in the shallow shelf approximation $u$ and $v$ are
+depth-independent, we can define the membrane stress $N$ as the
+vertically-integrated deviatoric stress
+\begin{align*}
+N_{ij} &= \int_{b}^{h} t^{D}_{ij} dz\\
+&= 2\, \bar \viscosity\, H\, D_{ij}.\notag
+\end{align*}
+Here $\bar \viscosity$ is the vertically-averaged effective viscosity.
+
+Integrating \eqref{eq:1} with respect to $z$, we get
+
+\begin{equation}
+\label{eq:3}
+\begin{array}{rcrcl}
+(2N_{xx} + N_{yy}) \nx &+& N_{xy} \ny &=& \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \nx,\\
+N_{xy} \nx &+& (2N_{yy} + N_{xx}) \ny &=& \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \ny.
+\end{array}
+\end{equation}
+
+\section{Shallow shelf approximation}
+\label{sec-3}
+
+The shallow shelf approximation written in terms of $N_{ij}$ is
+
+\begin{equation}
+\label{eq:2}
+\begin{array}{rcrcl}
+\D \diff{}{x}(2N_{xx} + N_{yy}) &+& \D \diff{N_{xy}}{y} &=& \D \rho g H \diff{h}{x},\\
+\D \diff{N_{xy}}{x} &+& \D \diff{}{y}(2N_{yy} + N_{xx}) &=& \D \rho g H \diff{h}{y}.
+\end{array}
+\end{equation}
+
+\section{Implementing the CFBC}
+\label{sec-4}
+
+We use centered finite difference approximations in the discretization
+of the SSA (see \eqref{eq:2}).
+
+Consider the first equation:
+
+\begin{equation}
+\label{eq:4}
+\diff{}{x}(2N_{xx} + N_{yy}) + \D \diff{N_{xy}}{y} = \D \rho g H \diff{h}{x}.
+\end{equation}
+
+\newcommand{\partI}{(2\tilde N_{xx} + \tilde N_{yy})}
+\newcommand{\partII}{(\tilde N_{xy})}
+Let $\tilde F$ be an approximation of $F$ using a finite-difference
+scheme. Then the first SSA equation is approximated by
+\begin{equation*}
+\frac1{\dx}\left(\partI_{i+\frac12,j} - \partI_{i-\frac12,j}\right) +
+\frac1{\dy}\left(\partII_{i,j+\frac12} - \partII_{i,j-\frac12}\right) =
+\rho g H \frac{h_{i+\frac12,j} - h_{i-\frac12,j}}{\dx}.
+\end{equation*}
+
+Now, assume that the cell boundary (face) at $i+\frac12,j$ is at the
+calving front. Then $\n = (1,0)$ and from \eqref{eq:3} we have
+\begin{equation*}
+2N_{xx} + N_{yy} = \int_{b}^{h}(\pice - \psw) dz.
+\end{equation*}
+So, instead of assembling a matrix row corresponding to the generic
+equation \eqref{eq:4} we use
+\begin{equation*}
+\frac1{\dx}\left(\int_{b}^{h}(\pice - \psw) dz - \partI_{i-\frac12,j}\right) +
+\frac1{\dy}\left(\partII_{i,j+\frac12} - \partII_{i,j-\frac12}\right) =
+\rho g H \frac{h_{i+\frac12,j} - h_{i-\frac12,j}}{\dx}.
+\end{equation*}
+
+Moving terms that do not depend on the velocity field to the
+right-hand side, we get
+\begin{equation*}
+\frac1{\dx}\left(- \partI_{i-\frac12,j}\right) +
+\frac1{\dy}\left(\partII_{i,j+\frac12} - \partII_{i,j-\frac12}\right) =
+\rho g H \frac{h_{i+\frac12,j} - h_{i-\frac12,j}}{\dx} + \left.\frac{\int_{b}^{h}(\psw - \pice) dz}{\dx}\right|_{i+\frac12,j}
+\end{equation*}
+
+The second equation and other cases ($\n = (-1,0)$, etc) are treated
+similarly.
+
+\section{Evaluating the ``pressure imbalance term''}
+\label{sec-5}
+
+For $z \in [b, h]$ the column pressures are
+\begin{align}
+\psw &= 
+\begin{cases}
+0, & z > \zs,\\
+\rhosw\, g (\zs - z), & z \le \zs,
+\end{cases}\\
+\pice &= \rhoi\, g (h - z).
+\end{align}
+
+Depending of the local geometry $b$ is either prescribed (grounded
+case) or is a function of the ice thickness and sea level elevation.
+
+\subsection{Floating case}
+\label{sec-5-1}
+
+Using the floatation criterion, we have
+
+\begin{equation*}
+\int_{b}^{h}{\pice(z)\; dz}-\int_{b}^{\zs}{\psw(z)\; dz}=
+ \frac{g\, \rhoi\, \left(\rhosw-\rhoi\right)\, H^2}{2\, \rhosw}
+\end{equation*}
+
+\subsection{Grounded below sea level}
+\label{sec-5-2}
+
+\begin{equation*}
+\int_{b}^{h}{\pice(z)\; dz}-\int_{b}^{\zs}{\psw(z)\; dz}=
+ \frac{1}{2}\, g\, \left(\rhoi\, H^2-\rhosw\, \left(\zs-b\right)^2\right)
+\end{equation*}
+
+This, in fact, applies in both floating and grounded-below-sea-level
+cases.
+
+\subsection{Grounded above sea level}
+\label{sec-5-3}
+
+In this case $\psw = 0$, so
+\begin{equation*}
+\int_{b}^{h}{\pice(z)\; dz}-\int_{b}^{\zs}{\psw(z)\; dz}=\frac{1}{2}\, g\, \rhoi\, H^2
+\end{equation*}
+
+\section{Modeling melange back-pressure}
+\label{sec-6}
+
+\newcommand{\pmelange}{p_{\text{melange}}}
+Let $\pmelange$ be the additional melange back-pressure. Then $\psw \le \psw +
+\pmelange \le \pice$. Put another way,
+\begin{equation}
+\label{eq:13}
+0 \le \pmelange \le \pice - \psw.
+\end{equation}
+
+Let $\lambda$ be the ``melange back-pressure fraction'' (or ``relative
+melange density'') ranging from $0$ to $1$, so that
+\begin{equation}
+\label{eq:14}
+\pmelange = \lambda \cdot (\pice - \psw).
+\end{equation}
+
+Then the modified pressure imbalance term is
+\begin{equation}
+\label{eq:15}
+\int_{b}^{h}(\pice - (\psw + \lambda(\pice - \psw)))\, dz = (1 - \lambda) \int_{b}^{h} (\pice - \psw)\, dz
+\end{equation}
+
+\end{document}
