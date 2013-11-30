@@ -1,5 +1,6 @@
 #!/bin/bash
 NN=4
+export PARAM_PPQ=0.5
 
 export REGRIDFILE=g20km_10ka_hy.nc
 export EXSTEP=100
