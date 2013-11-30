@@ -284,12 +284,13 @@ The reader is encouraged to examine the diagnostic files \texttt{ts_g20km_25ka_p
 
 \subsection{More runs: grid sequencing}  \label{subsect:gridseq}  
 
-FIXME: be brief; warn on memory size for 5 km part
+FIXME: be brief; warn on memory size (>= 8 Gb) for 5 km part
 
 \small
 \begin{verbatim}
 #!/bin/bash
 NN=4
+export PARAM_PPQ=0.5
 
 export REGRIDFILE=g20km_10ka_hy.nc
 export EXSTEP=100

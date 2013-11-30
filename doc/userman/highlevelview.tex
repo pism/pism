@@ -1,18 +1,4 @@
-
 \section{Ice dynamics, the PISM view}\label{sec:dynamics}
-
-\subsection{PISM design principles}\index{PISM!principles}  This section gives an overview of ice dynamics models in PISM.  First, some organizing principles:
-\begin{enumerate}
-\item source code should be open, free, and work well with other free software tools,
-\item science is better with publicly-available data,
-\item numerical methods should be verifiable (comparable to exact solutions of the equations),
-\item shallow models are the most effective at whole ice sheet scale,
-\item everything computed diagnostically (instantaneously) should be available prognostically (can evolve in time), and
-\item climate inputs should affect ice dynamics by a well-defined interface.
-\end{enumerate}
-
-\noindent We do not claim to follow these principles perfectly, but principle 1 is illustrated by our existence and principle 2 by examples in sections \ref{sec:start}, and \ref{sec:ross}.  Principle 3 is addressed in section \ref{sec:verif}.  Principles 4, 5, and 6 are addressed next.
-
 
 \subsection{Two main shallow models, SIA and SSA}\index{PISM!SIA}\index{PISM!SSA}  At each time-step of a typical PISM run, the geometry, temperature, and basal strength of the ice sheet are included into stress (momentum) balance equations to determine the velocity of the flowing ice.   The ``full'' stress balance equations, namely the (non-Newtonian) Stokes model for slowly-flowing fluids \cite{Fowler}, are themselves an inertia-free approximation of the conservation of momentum equations.  Even though PISM does not solve this ``full'' model, it can numerically solve two different shallow approximations which are suited to the situations in large ice sheet and ice shelf systems:
 \begin{itemize}
