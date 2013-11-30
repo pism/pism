@@ -1,7 +1,7 @@
 
 \section{Getting started}\label{sec:start}\index{PISM!getting started}
 
-\subsection{On installing PISM}
+This introduction is intended to be interactive and participatory, and it should work on \emph{your personal machine}.  Please try the commands and view the resulting files.  Do the runs with your own values for the options.  We can't hide the fact that PISM has lots of control ``knobs,'' but fiddling with them will help you get going.  Give it a try!
 
 To install PISM see the \emph{Getting PISM} tab at \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}.  Or get the PISM Installation Manual (PDF) at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=installation.pdf}.  Once PISM is installed, the executable \texttt{pismr} should be available on your system's ``path''; confirm this with ``\texttt{which pismr}''.  The instructions below assume you are using a \texttt{bash} shell (or one that accepts \texttt{bash} syntax).  They also assume you have the PISM source code in the directory ``\texttt{pism/}''.
 
@@ -224,6 +224,13 @@ A this point we have barely mentioned one of the most important players in the i
 
 There are other methods for producing SMB than to use present-day modeled values.  We now try such a method, one that does ``paleo-climate spin-up'' for a Greenland ice sheet model.  Of course, direct measurements of prior climates in Greenland are not available as data!  There are, however, estimates of prior surface temperatures at the locations of ice cores \cite[for GRIP]{JohnsenetalGRIP}.  Also there are estimates of prior global sea level \cite{Imbrieetal1984} which can be used to determine where the flotation criterion is applied, which is how PISM's \verb|mask| variable is determined (in part).  Also, models have been constructed for how precipitation differs from the present-day values, based on paleo-records of surface temperature \cite{Huybrechts02}.  Essentially for demonstration purposes, these are all used in the next run.  They are further documented in PISM's Climate Forcing Manual.
 
+\begin{figure}[ht]
+\centering
+\mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g20km-25ka-paleo-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-25ka-paleo-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-25ka-paleo-cbase}}
+\caption{Fields from output file \texttt{g20km_25ka_paleo.nc}.  Compare Figure \ref{fig:secondoutputcoarse}, which only differs by climate inputs and run length.  Left: \texttt{usurf} in meters.  Middle: \texttt{csurf} in m/a.  Right: \texttt{cbase} in m/a.}
+\label{fig:paleooutput}
+\end{figure}
+
 But there is more to a paleo-climate model than ``applying'' estimated temperature and precipitation.  One must compute melt in order to compute SMB.  This is done using a temperature-index model, a so-called ``positive degree-day'' (PDD) model \cite{Hock05}; see the Climate Forcing Manual.  Such a model has key parameters for how much snow and/or ice is melted when surface temperatures spend time near or above zero degrees.
 
 To summarize the paleo-climate model applied next, temperature offsets from the GRIP core record affect the snow energy balance, and thus rates of melting and runoff calculated by the PDD model.  In warm periods there is more marginal ablation, but precipitation may also increase (according to a temperature-offset model \cite{Huybrechts02}).  Additionally sea level undergoes changes in time and this affects which ice is floating.  Finally we add an earth deformation model, which responds to changes in ice load by moving the bedrock elevation \cite{BLKfastearth}.
@@ -233,51 +240,51 @@ To see how all this translates into PISM options, do
 $ PISM_DO=echo PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
   ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc
 \end{verbatim}
-You will see the impressive command (reformatted for clarity):
-\small
-\begin{verbatim}
-mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
-  -Mz 101 -Mbz 11 -z_spacing equal -Lz 4000 -Lbz 2000 -skip -skip_max 10 \
-  -ys -25000 -ye 0 \
-  -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
-  -bed_def lc \
-  -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd \
-  -atmosphere_paleo_precip_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc \
-  -ocean constant,delta_SL -ocean_delta_SL_file pism_dSL.nc \
-  -ocean_kill pism_Greenland_5km_v1.1.nc -sia_e 3.0 \
-  -ssa_sliding -topg_to_phi 15.0,40.0,-300.0,700.0 -pseudo_plastic -pseudo_plastic_q 0.5 \
-  -till_effective_fraction_overburden 0.02 -tauc_slippery_grounding_lines \
-  -ts_file ts_g20km_25ka_paleo.nc -ts_times -25000:yearly:0 \
-  -extra_file ex_g20km_25ka_paleo.nc -extra_times -25000:100:0 \
-  -extra_vars diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,\
-mask,thk,topg,usurf,hardav,cbase,tauc \ 
-  -o g20km_25ka_paleo.nc
-\end{verbatim}
-\normalsize
 
-There are several key changes from the command on page \pageref{firstcommand}.  First, we do not start from scratch but instead from a previously computed near-equilibrium result:
+\begin{figure}[ht]
+\centering
+\includegraphics[width=4.5in,keepaspectratio=true]{ivol-const-paleo}
+\caption{Time series of modeled ice sheet volume from constant-climate (blue; \texttt{ts_g20km_10ka_hy.nc}) and paleo-climate (red; \texttt{ts_g20km_25ka_paleo.nc}) spinup runs.  Note that the paleo-climate run started with the ice geometry at the end of the constant-climate run.}
+\label{fig:ivolconstpaleo}
+\end{figure}
+
+You will see an impressive command, which you can compare to the one on  page \pageref{firstcommand}.  There are several key changes.  First, we do not start from scratch but instead from a previously computed near-equilibrium result:
 \begin{verbatim}
-  -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
+  -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt
 \end{verbatim}
 For more on regridding see subsection \ref{sec:regridding}.  Then we turn on the earth deformation model with option \verb|-bed_def lc|; see subsection \ref{subsect:beddef}.  After that the atmosphere and surface (PDD) models are turned on and the files they need are identified:
 \begin{verbatim}
   -atmosphere searise_greenland,delta_T,paleo_precip -surface pdd \
-  -atmosphere_paleo_precip_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc \
+  -atmosphere_paleo_precip_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc
 \end{verbatim}
 Then the ocean model, which provides both a subshelf melt rate and a time-dependent sealevel to the ice dynamics core, is turned on with \verb|-ocean constant,delta_SL| and the file it needs is identified with \verb|-ocean_delta_SL_file pism_dSL.nc|.  For all of these ``forcing'' options, see the PISM Climate Forcing Manual.  The remainder of the options are similar or identical to the run that created \verb|g20km_10ka_hy.nc|.
 
-To actually start the run, do:
+To actually start the run, which we rather arbitrarily start at year -25000, essentially at the LGM, do:
 \begin{verbatim}
 $ PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
   ./spinup.sh 4 paleo 25000 20 hybrid g20km_25ka_paleo.nc &> out.g20km_25ka_paleo &
 \end{verbatim}
+This run takes about forty minutes on a 2012-era 4 core laptop.
 
-FIXME: show results
+Results from file \texttt{g20km_25ka_paleo.nc} are shown in Figure \ref{fig:paleooutput}.  Without close inspection they appear to be very similar to the results in Figure \ref{fig:secondoutputcoarse}.  Of course these runs only differ in the applied climate and run duration.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=4.5in,keepaspectratio=true]{ivoltemp-const-paleo}
+\caption{Time series of temperate ice volume from constant-climate (blue; \texttt{ts_g20km_10ka_hy.nc}) and paleo-climate (red; \texttt{ts_g20km_25ka_paleo.nc}) spinup runs.  The cold of the last ice age affects the fraction of temperate ice.  Note different volume scale compared to that in Figure \ref{fig:ivolconstpaleo}; only about 1\% of ice is temperate (by volume).}
+\label{fig:ivoltempconstpaleo}
+\end{figure}
+
+To see the difference between runs more clearly, Figure \ref{fig:ivolconstpaleo} compares the time-series variable \texttt{ivol}.  We see the effect of option \verb|-regrid_file g20km_10ka_hy.nc -regrid_vars ...,thk,...|, which implies that the paleo-climate run starts with the ice geometry from the end of the constant-climate run.
+
+Another time-series comparison, of the variable \verb|ivoltemp|, the total volume of temperate (at 0$^\circ$C) ice, appears in Figure \ref{fig:ivoltempconstpaleo}.  The paleo-climate run shows the cold period from $\approx -25$ ka to $\approx -12$ ka.  Both constant-climate and paleo-climate runs then come into rough equilibrium in the holocene.  The bootstrapping artifact, seen at the start of the constant-climate run, which disappears in less than 1000 years, is avoided in the paleo-climate run by starting with the constant-climate end-state.
+
+The reader is encouraged to examine the diagnostic files \texttt{ts_g20km_25ka_paleo.nc} and \texttt{ex_g20km_25ka_paleo.nc} to see more evidence of the (modeled) climate impact on the ice dynamics.
 
 
 \subsection{More runs: grid sequencing}  \label{subsect:gridseq}  
 
-% used 20km result to do   10km@1ka --> 5km@200a
+% use 20km result to do   10km@1ka --> 5km@200a
 
 \subsection{More runs: a sliding parameter study}  \label{subsect:paramstudy}
 
