@@ -118,6 +118,14 @@ The PISM ice dynamics core would like to get the required fields listed in Table
 
 To be able to use the data that is available, a PISM run might need components that are responsible for modeling surface (snow) processes or sub-shelf/ocean interaction.  These components might be very minimal, merely turning data that we already have into data in the right units and with the right metadata.
 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=4.2in]{figs/data-flow.pdf}
+  \caption{PISM climate input data flow. Colored arrows correspond to interfaces in
+    Figure \ref{fig:climate-inputs}.}
+  \label{fig:climate-input-data-flow}
+\end{figure}
+
 Thus we have PISM's design: the ice-dynamics PISM core does not contain any parameterization or other model for boundary mass or energy fluxes into or out of the ice.  These boundary parameterizations and models are present in the PISM source code, however, as instances of \emph{PISMComponent} classes.  This simplifies customizing and debugging PISM's climate inputs, and it promotes code reuse.  Moreover, it isolates the code that needs to be changed to couple PISM to different climate models.
 
 The classes \mbox{\emph{PISMSurfaceModel}}, \mbox{\emph{PISMAtmosphereModel}}, and \mbox{\emph{PISMOceanModel}} are all derived from \mbox{\emph{PISMComponent}}.  Figure~\ref{fig:climate-inputs} includes an interface between the surface layer and the atmosphere (\textcolor{red}{red} dashed line), but this interface \emph{may not even be present in some PISM configurations}.  The ice dynamics core of PISM only ``knows'' about mediums directly touching ice and bedrock.  A pair consisting of a \emph{PISMSurfaceModel} and a \emph{PISMOceanModel} may be hiding anything from a nearly trivial parameterization of ice surface temperature plus surface and sub-shelf mass fluxes to a GCM of great complexity.  
@@ -135,14 +143,6 @@ a list of climate components included in PISM source code and other details.
 Users wishing to customize PISM's climate inputs and/or couple PISM to a climate
 model should additionally see the \emph{PISM Source Browser} at \url{\PISMBROWSERURL}
 and the documentation therein.
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=4.5in]{figs/data-flow.pdf}
-  \caption{PISM climate input data flow. Colored arrows correspond to interfaces in
-    Figure \ref{fig:climate-inputs}.}
-  \label{fig:climate-input-data-flow}
-\end{figure}
 
 Why describe all this structure here?  On the one hand, some users may be interested
 in coupling PISM to other models.  On the other hand, the PISM authors do not

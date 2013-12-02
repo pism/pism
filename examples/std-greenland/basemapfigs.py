@@ -3,18 +3,23 @@
 # generate figures in Getting Started section of User's Manual
 
 # usage:
-#   $ python basemapfigs.py FILEROOT FIELD
+#   $ python basemapfigs.py FILEROOT [FIELD] [DPI]
 # where
 #   FILEROOT   root of NetCDF filename and output .png figures
-#   FIELD      one of {[cbase], csurf, mask, usurf}  (edit script to add more)
+#   FIELD      optional: one of {cbase, [csurf], mask, usurf}  (edit script to add more)
+#   DPI        optional: resolution in dots per inch [200]
 #
 # equivalent usages:
-#   $ python basemapfigs.py g20km_10ka csurf
-#   $ python basemapfigs.py g20km_10ka
+#   $ python basemapfigs.py g20km_10ka_hy csurf 200
+#   $ python basemapfigs.py g20km_10ka_hy csurf
+#   $ python basemapfigs.py g20km_10ka_hy
 #
-# generate figs for User's Manual:
-#   $ for FLD in csurf usurf mask; do ./basemapfigs.py g20km_10ka ${FLD}; done
-
+# generate figs like those in Getting Started section of User's Manual:
+#   $ for FLD in csurf usurf cbase mask; do ./basemapfigs.py g20km_10ka_hy ${FLD}; done
+#
+# crop out western Greenland with command like this (uses ImageMagick):
+#   $ ./basemapfigs.py g20km_10ka_hy csurf 500
+#   $ convert -crop 600x800+400+800 +repage g20km_10ka_hy-csurf.png g20km-detail.png
 
 from mpl_toolkits.basemap import Basemap
 
@@ -43,7 +48,12 @@ if len(sys.argv) >= 3:
 else:
   field = 'csurf'
 
-bluemarble = False  # FIXME: m.basemap() works ... but inverts earth!
+if len(sys.argv) >= 4:
+  mydpi = float(sys.argv[3])
+else:
+  mydpi = 200
+
+bluemarble = False  # FIXME: m.basemap() inverts earth!
 
 if (field == 'csurf') | (field == 'cbase'):
   fill       = nc.variables[field]._FillValue
@@ -69,10 +79,7 @@ else:
   print 'invalid choice for FIELD option'
   sys.exit(3)
 
-titlestr = ''  # edit to preferred value, e.g.
-               #   titlestr = "modeled surface velocity, m/year"
-
-# we need to know longitudes and latitudes corresponding to out grid
+# we need to know longitudes and latitudes corresponding to grid
 lon = nc.variables['lon'][:]
 lat = nc.variables['lat'][:]
 if field == 'surfvelmag':
@@ -130,13 +137,11 @@ plt.colorbar(extend='both',
              ticks=ticklist,
              format="%d")
 
-# draw parallels and meridians. The labels argument specifies where to draw
-# ticks: [left, right, top, bottom]
+# draw parallels and meridians
+# labels kwarg is where to draw ticks: [left, right, top, bottom]
 m.drawparallels(np.arange(-55.,90.,5.), labels = [1, 0, 0, 0])
 m.drawmeridians(np.arange(-120.,30.,10.), labels = [0, 0, 0, 1])
 
-plt.title(titlestr)
-
 outname = rootname+'-'+field+'.png'
 print "saving image to file %s ..." % outname
-plt.savefig(outname, bbox_inches='tight')
+plt.savefig(outname, dpi=mydpi, bbox_inches='tight')

@@ -10,7 +10,7 @@
 
 set -e  # exit on error
 
-GRIDLIST="{20, 10, 5, 3, 2}"
+GRIDLIST="{40, 20, 10, 5, 3, 2}"
 CLIMLIST="{const, paleo}"
 DYNALIST="{sia, hybrid}"
 
@@ -73,17 +73,6 @@ if [ $# -lt 5 ] ; then
   echo "  5 km grid, sliding with SIA+SSA hybrid, output to {out.nc,ts_out.nc,ex_out.nc},"
   echo "  and bootstrapping from boot.nc."
   echo
-  echo "example usage 3:"
-  echo
-  echo "    $ ./spinup.sh 4 const 5000 20 hybrid g20km.nc"
-  echo "    $ REGRIDFILE=g20km.nc EXSTEP=10 ./spinup.sh 4 const 500 10 hybrid g10km.nc"
-  echo "    $ REGRIDFILE=g10km.nc EXSTEP=1 ./spinup.sh 4 const 10 5 hybrid g5km.nc"
-  echo
-  echo "  A basic way to do grid sequencing  20km -> 10km -> 5 km,  for constant-climate"
-  echo "  and SIA+SSA dynamics simulations.  Because bootstrapping is from default file"
-  echo "  $PISM_DATANAME in all runs, the later runs use higher-res. bed and climate"
-  echo "  data.  (Note: Run duration should generally be increased in practice.)"
-  echo
   exit
 fi
 
@@ -124,7 +113,12 @@ VDIMS="-Lz 4000 -Lbz 2000 -skip -skip_max "
 COARSEVGRID="-Mz 101 -Mbz 11 -z_spacing equal ${VDIMS} ${COARSESKIP}"
 FINEVGRID="-Mz 201 -Mbz 21 -z_spacing equal ${VDIMS} ${FINESKIP}"
 FINESTVGRID="-Mz 401 -Mbz 41 -z_spacing equal ${VDIMS} ${FINESTSKIP}"
-if [ "$4" -eq "20" ]; then
+if [ "$4" -eq "40" ]; then
+  dx=40
+  myMx=38
+  myMy=71
+  vgrid=$COARSEVGRID
+elif [ "$4" -eq "20" ]; then
   dx=20
   myMx=76
   myMy=141
