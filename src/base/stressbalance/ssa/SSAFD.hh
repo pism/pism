@@ -50,6 +50,8 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
+
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                                std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 protected:
@@ -107,7 +109,7 @@ protected:
   Vec m_b;
   PetscScalar m_scaling;
 
-  IceModelVec2S *fracture_density;
+  IceModelVec2S *fracture_density, *m_melange_back_pressure;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;

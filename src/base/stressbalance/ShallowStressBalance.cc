@@ -49,10 +49,12 @@ PetscErrorCode ShallowStressBalance::allocate() {
 }
 
 //! \brief Update the trivial shallow stress balance object.
-PetscErrorCode SSB_Trivial::update(bool fast) {
+PetscErrorCode SSB_Trivial::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   if (fast)
     return 0;
+
+  (void) melange_back_pressure;
 
   ierr = m_velocity.set(0.0); CHKERRQ(ierr);
 
@@ -420,10 +422,12 @@ SSB_Constant::~SSB_Constant() {
   // empty
 }
 
-PetscErrorCode SSB_Constant::update(bool fast) {
+PetscErrorCode SSB_Constant::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   if (fast == true)
     return 0;
+
+  (void) melange_back_pressure;
 
   ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
   return 0;

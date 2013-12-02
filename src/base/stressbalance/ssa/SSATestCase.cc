@@ -113,6 +113,12 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
                           "no_data ssa_dirichlet_bc_location"); CHKERRQ(ierr);
   bc_mask.output_data_type = PISM_BYTE;
   ierr = vars.add(bc_mask); CHKERRQ(ierr);
+
+  ierr = melange_back_pressure.create(grid, "melange_back_pressure_fraction",
+                                      true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = melange_back_pressure.set_attrs("boundary_condition",
+                                         "melange back pressure fraction", "", ""); CHKERRQ(ierr);
+  ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
   
   return 0;
 }
@@ -155,7 +161,7 @@ PetscErrorCode SSATestCase::run()
   ierr = verbPrintf(2,grid.com,"* Solving the SSA stress balance ...\n"); CHKERRQ(ierr);
 
   bool fast = false;
-  ierr = ssa->update(fast); CHKERRQ(ierr);
+  ierr = ssa->update(fast, melange_back_pressure); CHKERRQ(ierr);
 
   return 0;
 }

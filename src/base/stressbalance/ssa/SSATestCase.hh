@@ -113,7 +113,7 @@ protected:
 
   // SSA coefficient variables.
   PISMVars vars;
-  IceModelVec2S  surface, thickness, bed, tauc;
+  IceModelVec2S  surface, thickness, bed, tauc, melange_back_pressure;
   IceModelVec3 enthalpy;
   IceModelVec2V vel_bc;
   IceModelVec2Int ice_mask, bc_mask;

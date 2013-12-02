@@ -875,5 +875,7 @@ ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
 
   ierr = config.flag_from_option("bed_def_lc_elastic", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
+
   return 0;
 }

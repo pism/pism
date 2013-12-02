@@ -88,7 +88,8 @@ PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S *bmr_input) 
 }
 
 //! \brief Performs the shallow stress balance computation.
-PetscErrorCode PISMStressBalance::update(bool fast, double sea_level) {
+PetscErrorCode PISMStressBalance::update(bool fast, double sea_level,
+                                         IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   IceModelVec2V *velocity_2d;
   IceModelVec3  *u, *v;
@@ -96,7 +97,7 @@ PetscErrorCode PISMStressBalance::update(bool fast, double sea_level) {
   // Tell the ShallowStressBalance object about the current sea level:
   m_stress_balance->set_sea_level_elevation(sea_level);
 
-  ierr = m_stress_balance->update(fast);
+  ierr = m_stress_balance->update(fast, melange_back_pressure);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: Shallow stress balance solver failed.\n");
     return ierr;

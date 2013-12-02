@@ -49,7 +49,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }

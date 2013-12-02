@@ -109,7 +109,8 @@ public:
   virtual PetscErrorCode stdout_report(std::string &/*result*/)
   { return 0; }
 
-  virtual PetscErrorCode update(bool fast); // almost done (compute vertically-averaged u,v and sigma)
+  virtual PetscErrorCode update(bool fast,
+                                IceModelVec2S &melange_back_pressure); // almost done (compute vertically-averaged u,v and sigma)
 
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }

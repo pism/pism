@@ -228,16 +228,23 @@ int main(int argc, char *argv[]) {
 
     ierr =  read_input_data(input_file, variables, EC); CHKERRQ(ierr);
 
+    IceModelVec2S melange_back_pressure;
+    ierr = melange_back_pressure.create(grid, "melange_back_pressure", false); CHKERRQ(ierr);
+    ierr = melange_back_pressure.set_attrs("boundary_condition",
+                                           "melange back pressure fraction",
+                                           "1", ""); CHKERRQ(ierr);
+    ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
+
     PetscLogStagePush(cold);
     BlatterStressBalance blatter(grid, basal, EC, config);
     // Initialize the Blatter solver:
     ierr = blatter.init(variables); CHKERRQ(ierr);
-    ierr = blatter.update(false); CHKERRQ(ierr);
+    ierr = blatter.update(false, melange_back_pressure); CHKERRQ(ierr);
     PetscLogStagePop();
 
     if (compare_cold_and_hot) {
       PetscLogStagePush(hot);
-      ierr = blatter.update(false); CHKERRQ(ierr);
+      ierr = blatter.update(false, melange_back_pressure); CHKERRQ(ierr);
       PetscLogStagePop();
     }
 

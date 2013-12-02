@@ -196,11 +196,13 @@ PetscErrorCode SSA::deallocate() {
 
 
 //! \brief Update the SSA solution.
-PetscErrorCode SSA::update(bool fast) {
+PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
 
   if (fast)
     return 0;
+
+  (void) melange_back_pressure;
 
   grid.profiler->begin(event_ssa);
 
@@ -415,6 +417,7 @@ void SSA::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
     dict["taud"] = new SSA_taud(this, grid, *variables);
     dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
     dict["taub"] = new SSA_taub(this, grid, *variables);
+    dict["beta"] = new SSA_beta(this, grid, *variables);
 }
 
 SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
@@ -549,3 +552,40 @@ PetscErrorCode SSA_taub::compute(IceModelVec* &output) {
   return 0;
 }
 
+SSA_beta::SSA_beta(SSA *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SSA>(m, g, my_vars) {
+  // set metadata:
+  vars[0].init_2d("beta", grid);
+
+  set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
+}
+
+PetscErrorCode SSA_beta::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  // Allocate memory:
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "beta", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  IceModelVec2S *tauc = model->tauc;
+  IceModelVec2V *velocity;
+  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  ierr = velocity->begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      (*result)(i,j) = model->basal.drag((*tauc)(i,j),
+                                         (*velocity)(i,j).u, (*velocity)(i,j).v);
+    }
+  }
+  ierr = velocity->end_access(); CHKERRQ(ierr);
+  ierr = tauc->end_access(); CHKERRQ(ierr);
+  ierr = result->end_access(); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}

@@ -100,6 +100,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   PetscErrorCode ierr;
 
   fracture_density = NULL;
+  m_melange_back_pressure = NULL;
 
   // note SSADA and SSAX are allocated in SSA::allocate()
   ierr = VecDuplicate(SSAX, &m_b); CHKERRQ(ierr);
@@ -218,6 +219,16 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   return 0;
 }
 
+PetscErrorCode SSAFD::update(bool fast, IceModelVec2S& melange_back_pressure) {
+  PetscErrorCode ierr;
+
+  m_melange_back_pressure = &melange_back_pressure;
+
+  ierr = SSA::update(fast, melange_back_pressure); CHKERRQ(ierr);
+
+  return 0;
+}
+
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the
 //! Picard iteration and finite-difference implementation of the SSA equations.
 /*!
@@ -267,6 +278,10 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     ierr = thickness->begin_access(); CHKERRQ(ierr);
     ierr = bed->begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
+  }
+
+  if (use_cfbc && m_melange_back_pressure != NULL) {
+    ierr = m_melange_back_pressure->begin_access(); CHKERRQ(ierr);
   }
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
@@ -333,6 +348,14 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             }
           }
 
+          if (m_melange_back_pressure != NULL) {
+            PetscScalar lambda = (*m_melange_back_pressure)(i, j);
+
+            // adjust the "pressure imbalance term" using the provided
+            // "melange back pressure fraction".
+            ocean_pressure *= (1.0 - lambda);
+          }
+
           // Note that if the current cell is "marginal" but not a CFBC
           // location, the following two lines are equaivalent to the "usual
           // case" below.
@@ -351,6 +374,10 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
       rhs_uv[i][j].u = taud(i, j).u;
       rhs_uv[i][j].v = taud(i, j).v;
     }
+  }
+
+  if (use_cfbc && m_melange_back_pressure != NULL) {
+    ierr = m_melange_back_pressure->end_access(); CHKERRQ(ierr);
   }
 
   if (use_cfbc) {

@@ -181,8 +181,10 @@ PetscErrorCode BlatterStressBalance::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode BlatterStressBalance::update(bool fast) {
+PetscErrorCode BlatterStressBalance::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
+
+  (void) melange_back_pressure;
 
   if (fast) {
     ierr = verbPrintf(1,grid.com,

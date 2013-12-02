@@ -671,8 +671,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   PetscReal sea_level = 0;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
+  IceModelVec2S melange_back_pressure = vWork2d[0];
+
+  ierr = ocean->melange_back_pressure_fraction(melange_back_pressure); CHKERRQ(ierr);
+
   ierr = stress_balance->update(updateAtDepth == false,
-                                sea_level);
+                                sea_level,
+                                melange_back_pressure);
   if (ierr != 0) {
     std::string o_file = "stressbalance_failed.nc";
     bool o_file_set;

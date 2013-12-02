@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011, 2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,10 +33,9 @@ public:
   virtual PetscErrorCode sea_level_elevation(PetscReal &result) = 0;
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result) = 0;
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 protected:
   PetscReal sea_level;
 };
-
-
 
 #endif	// __PISMOceanModel_hh

@@ -451,9 +451,15 @@ int main(int argc, char *argv[]) {
     // Allocate the SIA solver:
     ierr = stress_balance.init(vars); CHKERRQ(ierr);
 
+    IceModelVec2S melange_back_pressure;
+    ierr = melange_back_pressure.create(grid, "melange_back_pressure", false); CHKERRQ(ierr);
+    ierr = melange_back_pressure.set_attrs("boundary_condition",
+                                           "melange back pressure fraction", "", ""); CHKERRQ(ierr);
+    ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
+
     // Solve (fast==true means "no 3D update and no strain heating computation"):
     bool fast = false;
-    ierr = stress_balance.update(fast, 0.0); CHKERRQ(ierr);
+    ierr = stress_balance.update(fast, 0.0, melange_back_pressure); CHKERRQ(ierr);
 
     // Report errors relative to the exact solution:
     IceModelVec3 *u_sia, *v_sia, *w_sia, *sigma;

@@ -91,9 +91,12 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
 
   The strain heating contribution is ignored by this code.
  */
-PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
+PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
+
+  (void) fast;
+  (void) melange_back_pressure;
 
   ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 

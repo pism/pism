@@ -64,7 +64,8 @@ public:
   void set_sea_level_elevation(PetscReal new_sea_level)
   { sea_level = new_sea_level; }
 
-  virtual PetscErrorCode update(bool fast) = 0;
+  virtual PetscErrorCode update(bool fast,
+                                IceModelVec2S &melange_back_pressure) = 0;
 
   // interface to the data provided by the stress balance object:
 
@@ -156,7 +157,7 @@ public:
   virtual ~SSB_Trivial() {
     delete flow_law;
   }
-  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
@@ -184,7 +185,7 @@ public:
   SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
                EnthalpyConverter &e, const NCConfigVariable &conf);
   virtual ~SSB_Constant();
-  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(PISMVars &vars);
 };
 

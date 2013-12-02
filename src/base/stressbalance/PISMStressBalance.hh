@@ -74,7 +74,8 @@ public:
 
   //! \brief Update all the fields if fast == false, only update diffusive flux
   //! and max. diffusivity otherwise.
-  virtual PetscErrorCode update(bool fast, double sea_level);
+  virtual PetscErrorCode update(bool fast, double sea_level,
+                                IceModelVec2S &melange_back_pressure);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result);

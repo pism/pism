@@ -136,6 +136,7 @@ class SSA : public ShallowStressBalance
 {
   friend class SSA_taud;
   friend class SSA_taub;
+  friend class SSA_beta;
 public:
   SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
       const NCConfigVariable &c);
@@ -153,7 +154,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
@@ -216,6 +217,13 @@ class SSA_taub : public PISMDiag<SSA>
 {
 public:
   SSA_taub(SSA *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+class SSA_beta : public PISMDiag<SSA>
+{
+public:
+  SSA_beta(SSA *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
