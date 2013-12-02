@@ -106,7 +106,7 @@ PetscErrorCode PISMStressBalance::update(bool fast, double sea_level) {
 
   ierr = m_modifier->update(velocity_2d, fast); CHKERRQ(ierr);
 
-  if (!fast) {
+  if (fast == false) {
     ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
     ierr = this->compute_volumetric_strain_heating(); CHKERRQ(ierr);

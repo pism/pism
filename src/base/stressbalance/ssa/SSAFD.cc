@@ -336,8 +336,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           // Note that if the current cell is "marginal" but not a CFBC
           // location, the following two lines are equaivalent to the "usual
           // case" below.
-          rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP)*ocean_pressure / dx;
-          rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP)*ocean_pressure / dy;
+          rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
+          rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
 
           continue;
         } // end of "if (is_marginal(i, j))"

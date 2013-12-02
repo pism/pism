@@ -108,14 +108,10 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input, bool fast) {
   ierr = u.begin_access(); CHKERRQ(ierr);
   ierr = v.begin_access(); CHKERRQ(ierr);
   ierr = vel_input->begin_access(); CHKERRQ(ierr);
-  PetscReal my_u_max = 0, my_v_max = 0;
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
       ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
-
-      my_u_max = PetscMax(my_u_max, PetscAbs((*vel_input)(i,j).u));
-      my_v_max = PetscMax(my_v_max, PetscAbs((*vel_input)(i,j).u));
     }
   }
   ierr = vel_input->end_access(); CHKERRQ(ierr);
@@ -125,9 +121,6 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input, bool fast) {
   // Communicate to get ghosts (needed to compute w):
   ierr = u.update_ghosts(); CHKERRQ(ierr);
   ierr = v.update_ghosts(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&my_v_max, &v_max, grid.com); CHKERRQ(ierr);
 
   // diffusive flux and maximum diffusivity
   ierr = diffusive_flux.set(0.0); CHKERRQ(ierr);

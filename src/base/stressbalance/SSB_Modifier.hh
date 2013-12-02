@@ -32,7 +32,7 @@ class SSB_Modifier : public PISMComponent
 public:
   SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
     : PISMComponent(g, c), EC(e)
-  { D_max = u_max = v_max = 0.0; variables = NULL; allocate(); }
+  { D_max = 0.0; variables = NULL; allocate(); }
   virtual ~SSB_Modifier() {}
 
   virtual PetscErrorCode init(PISMVars &vars) { variables = &vars; return 0; }
@@ -47,11 +47,9 @@ public:
   virtual PetscErrorCode get_max_diffusivity(PetscReal &result)
   { result = D_max; return 0; }
 
-  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
+  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result,
+                                                    IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
-
-  virtual PetscErrorCode get_max_horizontal_velocity(PetscReal &max_u, PetscReal &max_v)
-  { max_u = u_max; max_v = v_max; return 0; }
 
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
   { result = &strain_heating; return 0; }
@@ -69,7 +67,7 @@ protected:
 
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
-  PetscReal D_max, u_max, v_max;
+  PetscReal D_max;
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, strain_heating;
 
