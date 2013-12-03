@@ -35,6 +35,7 @@ public:
 
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
+  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 protected:
   IceModelVec2T *shelfbtemp, *shelfbmassflux;
 private:

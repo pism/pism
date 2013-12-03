@@ -106,3 +106,7 @@ PetscErrorCode POGiven::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
+PetscErrorCode POGiven::melange_back_pressure_fraction(IceModelVec2S &result) {
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}

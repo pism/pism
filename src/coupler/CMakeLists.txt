@@ -22,6 +22,7 @@ add_library (pismboundary
   ./ocean/PO_delta_SL.cc
   ./ocean/PO_delta_T.cc
   ./ocean/PO_delta_SMB.cc
+  ./ocean/PO_delta_MBP.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
   ./surface/PSCache.cc

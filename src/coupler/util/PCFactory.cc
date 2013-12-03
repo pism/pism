@@ -47,6 +47,7 @@
 #include "PO_delta_SL.hh"
 #include "PO_delta_T.hh"
 #include "PO_delta_SMB.hh"
+#include "PO_delta_MBP.hh"
 #include "POCache.hh"
 #include "POGivenTH.hh" 
 
@@ -148,6 +149,10 @@ static void create_po_delta_SL(IceGrid& g, const NCConfigVariable& conf, PISMOce
   result = new PO_delta_SL(g, conf, input);
 }
 
+static void create_po_delta_MBP(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new PO_delta_MBP(g, conf, input);
+}
+
 static void create_po_delta_T(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
   result = new PO_delta_T(g, conf, input);
 }
@@ -170,6 +175,7 @@ void POFactory::add_standard_types() {
   add_modifier("delta_SL",  &create_po_delta_SL);
   add_modifier("delta_T",   &create_po_delta_T);
   add_modifier("delta_SMB", &create_po_delta_SMB);
+  add_modifier("delta_MBP", &create_po_delta_MBP);
   add_modifier("cache",     &create_po_cache);
 }
 

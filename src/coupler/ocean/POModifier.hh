@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,12 @@ public:
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result)
   {
     PetscErrorCode ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->melange_back_pressure_fraction(result); CHKERRQ(ierr);
     return 0;
   }
 };
