@@ -83,12 +83,43 @@ The stress balance equations determining the velocities are only sensitive to ``
 The vertically integrated force balance at floating calving fronts has been formulated by \cite{Morland} as
 \begin{equation}
 \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}\;dz = \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\rho_w g (z-z_s) \;\mathbf{n}\;dz.
-\label{MacAyeal2}
+\label{eq:cfbc}
 \end{equation}
-with $\mathbf{n}$ being the horizontal normal vector pointing from the ice boundary oceanward, $\mathbf{\sigma}$ the \emph{Cauchy} stress tensor, $H$ the ice thickness and $\rho$ and $\rho_{w}$ the densities of ice and seawater, respectively, for a sea level of $z_s$. The integration limits on the right hand side of Eq.~\eqref{MacAyeal2} account for the pressure exerted by the ocean on that part of the shelf, which is below sea level (bending and torque neglected). The limits on the left hand side change for water-terminating outlet glacier or glacier fronts above sea level according to the bed topography. Applying the ice flow law (Sect.~\ref{sec:rheology}) Eq.~\eqref{MacAyeal2} can be written in terms of strain rates (velocity derivatives).
+with $\mathbf{n}$ being the horizontal normal vector pointing from the ice boundary oceanward, $\mathbf{\sigma}$ the \emph{Cauchy} stress tensor, $H$ the ice thickness and $\rho$ and $\rho_{w}$ the densities of ice and seawater, respectively, for a sea level of $z_s$. The integration limits on the right hand side of Eq.~\eqref{eq:cfbc} account for the pressure exerted by the ocean on that part of the shelf, which is below sea level (bending and torque neglected). The limits on the left hand side change for water-terminating outlet glacier or glacier fronts above sea level according to the bed topography. Applying the ice flow law (Sect.~\ref{sec:rheology}) Eq.~\eqref{eq:cfbc} can be written in terms of strain rates (velocity derivatives).
 
-Note that the discretized SSA stress balance, in the default finite difference discretization chosen by \intextoption{ssa_method} \texttt{fd}, is solved with an iterative matrix scheme. During matrix assembly, those grid cells along the ice domain boundary (fully-filled) are replaced according to Eq.~\eqref{MacAyeal2} to apply the correct forces, when option \intextoption{cfbc} is set.  Details can be found in \cite{Winkelmannetal2011} and \cite{Albrechtetal2011}.  
+Note that the discretized SSA stress balance, in the default finite difference discretization chosen by \intextoption{ssa_method} \texttt{fd}, is solved with an iterative matrix scheme. During matrix assembly, those grid cells along the ice domain boundary (fully-filled) are replaced according to Eq.~\eqref{eq:cfbc} to apply the correct forces, when option \intextoption{cfbc} is set.  Details can be found in \cite{Winkelmannetal2011} and \cite{Albrechtetal2011}.  
 
+\subsubsection{Modeling melange back-pressure}
+\label{sec:model-melange-pressure}
+
+As mentioned above, by using the flow law, equation~\eqref{eq:cfbc} can be written in terms of velocity components:
+\newcommand{\psw}{p_{\text{ocean}}}
+\newcommand{\pice}{p_{\text{ice}}}
+\newcommand{\pmelange}{p_{\text{melange}}}
+\newcommand{\n}{\mathbf{n}}
+\newcommand{\nx}{\n_{x}}
+\newcommand{\ny}{\n_{y}}
+\begin{equation}
+  \label{eq:cfbc-uv}
+  \begin{array}{lclcl}
+    2 \nu H (2u_x + u_y) \nx &+& 2 \nu H (u_y + v_x)  \ny &=& \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \nx,\\
+    2 \nu H (u_y + v_x)  \nx &+& 2 \nu H (2v_y + u_x) \ny &=& \displaystyle \int_{b}^{h}(\pice - \psw) dz\, \ny.
+  \end{array}
+\end{equation}
+Here $\nu$ is the vertically-averaged ice viscosity, $b$ is the bottom ice surface, $h$ is the top ice surface elevation, and $\psw$ and $\pice$ are pressures of the column of sea water and ice, respectively.
+
+We call the integral on the right hand side the ``pressure imbalance term''. We assume that the melange back-pressure $\pmelange$ does not exceed $\pice - \psw$ and introduce $\lambda \in [0,1]$ (the melange back pressure fraction) such that
+\begin{equation*}
+  \pmelange = \lambda (\pice - \psw).
+\end{equation*}
+
+Then the pressure imbalance term with added melange pressure is
+\begin{align}
+\int_{b}^{h}(\pice - (\psw + \pmelange))\, dz &= \int_{b}^{h}(\pice - (\psw + \lambda(\pice - \psw)))\, dz \notag \\
+&= (1 - \lambda) \int_{b}^{h} (\pice - \psw)\, dz.  \label{eq:cfbc-3}
+\end{align}
+
+By default, $\lambda$ is set so zero. PISM implements a scalar time-dependent ``melange back pressure fraction offset'' forcing. Please see the \emph{PISM's climate forcing components} manual for details.
 
 \subsection{Iceberg removal}
 \label{sec:kill-icebergs}
@@ -96,7 +127,7 @@ Any calving mechanism (next subsection) removes ice along the seaward front of t
 
 In terms of our basic model of ice as a very-viscous fluid, however, the stress balance for an iceberg is not well-posed because the ocean applies no resistance to balance its driving stress \cite{SchoofStream}!  In this situation the numerical stress balance (SSA) solver will fail.
 
-Option \intextoption{kill_iceberg} turns on the mechanism which cleans this up.  This option, or \intextoption{pik}, is generally needed if there is nontrivial calving.  It identifies such regions by checking iteratively for grid neighbors that are grounded, creating an ``iceberg mask'' showing floating ice that is, and is not (icebergs).  That is, it finds attachments back to grounded ice.  It then eliminates the free-floating icebergs.  This mass loss is reported as a scalar time series (see \ref{sec:saving-time-series}).
+Option \intextoption{kill_iceberg} turns on the mechanism which cleans this up.  This option, or \intextoption{pik}, is generally needed if there is nontrivial calving.  It identifies free-floating icebergs by using a 2-scan connected component labeling algorithm. It then eliminates such icebergs.  This mass loss is reported as a part of the 2D discharge flux diagnostic (see \ref{sec:saving-spat-vari}).
 
 
 \subsection{Calving}

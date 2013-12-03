@@ -425,13 +425,13 @@ This section describes how to use PISM to inspect climate forcing.
 \subsection{Visualizing climate inputs, without ice dynamics}
 \label{sec:visualize-climate}
 \index{Visualizing climate inputs!without ice dynamics}
-\optsection{Tesing climate models}
+\optsection{Testing climate models}
 
 Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). This makes it possible to turn ``off'' the ice dynamics code to visualize the climate mass balance and temperature boundary conditions produced using a combination of options and input files. This is helpful during the process of creating PISM-readable data files, and modeling with such.
 
 To do this, use the option \intextoption{test_climate_models}, which is equivalent to \intextoption{no_sia}, and \intextoption{no_energy} together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
 
-Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface evelation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
+Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface elevation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
 
 \bigskip
 As an example, set up an ice sheet state file and check if climate data is read in correctly:
@@ -678,7 +678,7 @@ $ ncpdq -a t,x,y input.nc output.nc
   \end{tabular}
 \end{center}
 
-This surface model~component parametrizes the ice surface temperature $T_{h}$ =
+This surface model~component parameterizes the ice surface temperature $T_{h}$ =
 \variable{ice_surface_temp} and the mass balance $m$ =
 \variable{climatic_mass_balance} as \emph{piecewise-linear} functions of
 surface elevation $h$.
@@ -1520,7 +1520,7 @@ It takes the following command-line options:
     \toprule
     Command-line option: & \texttt{-ocean~...,delta_SMB} \index[options]{OB@\oceanmods!\texttt{delta_SMB}} \\
     NetCDF variables: & \variable{delta_SMB} \\
-    C++ class: & \class{POdSBMFforcing}\\
+    C++ class: & \class{PO_delta_SMB}\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -1534,9 +1534,34 @@ It takes the following command-line options:
 \item \intextoption{ocean_delta_SMB_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
+\subsection{Modifier: Scalar melange back pressure fraction offsets}
+\label{sec:delta-subshelf-smb}
+\optsection{OB@\oceanmods!\texttt{delta_MBP}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~...,delta_MBP} \index[options]{OB@\oceanmods!\texttt{delta_MBP}} \\
+    NetCDF variables: & \variable{delta_MBP} \\
+    C++ class: & \class{PO_delta_MBP}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements forcing using melange back pressure fraction offsets. The variable \texttt{delta_MBP} should take on values from 0 to 1; it is understood as the fraction of the maximum melange back pressure possible at a given location. (We assume that melange back pressure cannot exceed the pressure of the ice column at a calving front.)
+
+Please see section \ref*{userman-sec:model-melange-pressure} of the \emph{User's Manual} for details.
+
+This modifier takes the following command-line options:
+\begin{itemize}
+\item \fileopt{ocean_delta_MBP_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{delta_MBP} variable using units of ``1'' (a dimensionless parameter)
+\item \intextoption{ocean_delta_MBP_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_delta_MBP_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
 \subsection{Modifier: Caching}
 \label{sec:ocean-cache}
-\optsection{SB@\oceanmods!\texttt{cache}}
+\optsection{OB@\oceanmods!\texttt{cache}}
 
 \begin{center}
   \begin{tabular}{rp{0.5\linewidth}}

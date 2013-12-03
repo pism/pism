@@ -649,7 +649,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
-  //! horizontal velocity is updated; see velocity()
+  //! horizontal velocity is updated
 
   // always do SIA velocity calculation (unless -no_sia is given); only update
   // SSA and only update velocities at depth if suggested by temp and age
