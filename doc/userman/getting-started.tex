@@ -275,21 +275,22 @@ Another time-series comparison, of the variable \verb|ivoltemp|, the total volum
 
 \subsection{Getting serious I: grid sequencing}  \label{subsect:gridseq}  
 
-The previous sections were not very ambitious.  You were just getting started!  Now we switch to a serious PISM capability, the ability to change the grid---specifically, to \emph{refine} the grid---at runtime.
+The previous sections were not very ambitious.  You were just getting started!  Now we demonstrate a serious PISM capability, the ability to change the grid resolution.  Specifically, the ability to \emph{refine} the grid at runtime.
 
-Clearly it is possible to do longer model runs (in model years) using a coarse grid like the 20 km grid used first.  On the other hand it is only possible to pick up the detail in high quality data, for instance bed elevation and/or high-resolution climate data, using high resolution.  Furthermore, a 20 or 10 km grid is clearly inadequate to, for example, resolve the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs under the Jakobshavn isbrae in west Greenland, which is perhaps both the fastest-flowing and most-important outlet glacier in the Greenland ice sheet \cite{Joughinetal08}.
+While it is possible to do the longest model runs using a coarse grid, like the 20 km grid used first, it is only possible to pick up the detail in high quality data, for instance bed elevation and/or high-resolution climate data, using high resolution.  A 20 or 10 km grid is inadequate for resolving the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs at the Jakobshavn isbrae in the west Greenland ice sheet \cite{Joughinetal08}.  It is an outlet glacier which both flows fast and drains a large fraction of the ice sheet, and thus it is important.  One possibility is to set up a PISM regional model (see section \ref{sec:jako}), but here we work on high resolution for the whole ice sheet.
 
-Consider the following (incomplete) command, comparing it to the first PISM command on page \pageref{firstcommand}:
+Consider the following command; compare it to the first PISM command on page \pageref{firstcommand}:
 \begin{verbatim}
 mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 301 -My 561 \
   -Mz 201 -Mbz 21 -z_spacing equal -Lz 4000 -Lbz 2000 \
   -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
   ...
 \end{verbatim}
-Instead of a 20 km grid in the horizontal (\verb|-Mx 76 -My 141|)
+Instead of a 20 km grid in the horizontal (\verb|-Mx 76 -My 141|) we ask for a 5 km grid (\verb|-Mx 301 -My 561|), and instead of vertical grid resolution of 40 m (\verb|-Mz 101 -z_spacing equal -Lz 4000|) we ask for a vertical resolution of 20 m (\verb|-Mz 201 -z_spacing equal -Lz 4000|).\footnote{See subsections \ref{sec:bootstrapping}, \ref{subsect:coords}, and \ref{subsect:grid} about determining the computation domain and grid at bootstrapping.}  Most significantly, however, we say \verb|-regrid_file g20km_10ka_hy.nc| to regrid fields from a model result computed on the coarser 20 km grid.  The listed fields (\verb|-regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt|) are the evolving mass and energy state variables which are already (somewhat) near equilibrium on the coarse grid.  Because we are bootstrapping (i.e.~using \verb|-boot_file|), the other variables, especially the bedrock topography \verb|topg| and the climate data, are brought in to PISM at ``full'' resolution, that is, the 5 km resolution in the data file \texttt{pism_Greenland_5km_v1.1.nc}.
 
-FIXME in prev subsection we used regridding, but only to ``bring in'' fields from a run of the same resolution
+This technique could be called ``grid sequencing''.  (It is not quite ``multigrid.''  That would both involve refinement and coarsening stages in computing the fine grid solution.)  The result is to compute the near-equilibrium result on the fine 5 km grid.  How close to equilibrium we get depends both on the duration of the coarse grid run and the duration of the fine grid run.  Note that in the previous subsection we also used regridding (\verb|-regrid_file ... -regrid_vars ...|), but only to ``bring in'' fields from a run on the same resolution.
 
+Of course there is no reason to jump $20\,\text{km}\,\to\,5\,\text{km}$ in one step.  Instead we can do it in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$.  We propose to run the script \texttt{gridseq.sh} in \texttt{examples/std-greenland/}, which calls \texttt{spinup.sh} to collect all the right PISM options:
 \small
 \begin{verbatim}
 #!/bin/bash
@@ -302,16 +303,25 @@ export EXSTEP=100
 
 export REGRIDFILE=g10km_gridseq.nc
 export EXSTEP=10
-
+./spinup.sh $NN const 200    5 hybrid  g5km_gridseq.nc
 \end{verbatim}
 \normalsize
-Before you run this script, a
+Note that environment variable \verb|EXSTEP| specifies the time in years between writing the spatially-dependent, and large-file-size-generating, frames for the \verb|-extra_file ...| option.
+
+Before you run this script, however, an important
 
 \medskip
 \centerline{\large\emph{WARNING:} the 5km run requires \underline{8 Gb of memory at minimum!}\normalsize}
 
 \medskip
-\noindent If you try it without that much memory then your machine will ``bog down'' and start using the hard disk for swap space.  The run will no complete and your hard disk will get a lot of wear!  If you have less than 8 Gb, comment out the last three lines of the above script (using the ``\verb|#|'' character at the beginning of the line) so that you only do the 20 km $\to$ 10 km refinement.
+\noindent If you try it without at least 8 Gb of memory then your machine will ``bog down'' and start using the hard disk for swap space!  The run will not complete and your hard disk will get a lot of wear!
+
+So, if you have less than 8 Gb, comment out the last three lines of the above script (using the ``\verb|#|'' character at the beginning of the line) so that you only do the 20 km $\to$ 10 km refinement.
+
+Run the script like this:
+\begin{verbatim}
+$ ./gridseq.sh &> out.gridseq &
+\end{verbatim}
 
 FIXME:  runtime for 10km and 5km, and: if you have an available supercomputer then a good test is to extend this comparison to 3km and 2km (and perhaps even 1km), noting memory is a big part of issue
 
