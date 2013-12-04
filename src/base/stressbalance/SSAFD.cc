@@ -87,6 +87,20 @@ PetscErrorCode SSAFD::allocate_fd() {
 
   dump_system_matlab = false;
 
+  if (config.get_flag("ssafd_melange_back_pressure")) {
+    melange_back_pressure_fraction = new(std::nothrow) Timeseries(&grid, "melange_back_pressure_fraction",
+                                                                  config.get_string("time_dimension_name"));
+    melange_back_pressure_fraction->set_units("1", "1");
+    melange_back_pressure_fraction->set_dimension_units(grid.time->units(), "");
+
+    if (melange_back_pressure_fraction == NULL) {
+      PetscPrintf(grid.com, "PISM ERROR: Memory allocation failed.\n");
+      PISMEnd();
+    }
+  } else {
+    melange_back_pressure_fraction = NULL;
+  }
+
   return 0;
 }
 
@@ -104,6 +118,10 @@ PetscErrorCode SSAFD::deallocate_fd() {
 
   if (SSARHS != PETSC_NULL) {
     ierr = VecDestroy(&SSARHS); CHKERRQ(ierr);
+  }
+
+  if (melange_back_pressure_fraction != NULL) {
+    delete melange_back_pressure_fraction;
   }
 
   return 0;
@@ -148,6 +166,31 @@ An explicit driving stress was specified instead and cannot be used.");
 
   ierr = velocity.set(0.0); CHKERRQ(ierr);
 
+  if (config.get_flag("ssafd_melange_back_pressure")) {
+    ierr = verbPrintf(2, grid.com,
+                      "  using the melange back pressure parameterization...\n"); CHKERRQ(ierr);
+
+    std::string filename;
+    bool flag;
+    ierr = PetscOptionsBegin(grid.com, "",
+                             "Melange back pressure fraction parameterization options",
+                             ""); CHKERRQ(ierr);
+    {
+      ierr = PISMOptionsString("-ssafd_mbp_file",
+                               "file containing the melange back pressure fraction variable",
+                               filename, flag); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+    if (flag == false) {
+      PetscPrintf(grid.com, "PISM ERROR: option -ssafd_mbp_file is required but not set.\n");
+      PISMEnd();
+    }
+
+    ierr = melange_back_pressure_fraction->read(filename,
+                                                grid.time->use_reference_date()); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -174,6 +217,12 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
   Mask M;
 
+  double lambda = 0.0;
+
+  if (config.get_flag("ssafd_melange_back_pressure")) {
+    lambda = (*melange_back_pressure_fraction)(grid.time->current());
+  }
+
   const double standard_gravity = config.get("standard_gravity"),
     ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
@@ -198,6 +247,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     ierr = thickness->begin_access(); CHKERRQ(ierr);
     ierr = bed->begin_access(); CHKERRQ(ierr);
     ierr = mask->begin_access(); CHKERRQ(ierr);
+    ierr = surface->begin_access(); CHKERRQ(ierr);
   }
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
@@ -280,21 +330,25 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             }
           }
 
-          //here we take the direct gradient at the boundary (not centered)
+          if (aMM + aPP > 0)
+            tdx = -ice_pressure * 1.0 / (aMM + aPP) * (aMM * surface->diff_x_stagE(i-1,j) +
+                                                       aPP * surface->diff_x_stagE(i,j));
+          else
+            tdx = 0.0;
 
-          if (aPP == 0 && aMM == 1) tdx = ice_pressure*h_ij / dx;
-          else if (aMM == 0 && aPP == 1) tdx = -ice_pressure*h_ij / dx;
-          else if (aPP == 0 && aMM == 0) tdx = 0; //in case of some kind of ice nose, or ice bridge
+          if (bMM + bPP > 0)
+            tdy = -ice_pressure * 1.0 / (bMM + bPP) * (bMM * surface->diff_y_stagN(i,j-1) +
+                                                       bPP * surface->diff_y_stagN(i,j));
+          else
+            tdy = 0.0;
 
-          if (bPP == 0 && bMM == 1) tdy = ice_pressure*h_ij / dy;
-          else if (bMM == 0 && bPP == 1) tdy = -ice_pressure*h_ij / dy;
-          else if (bPP == 0 && bMM == 0) tdy = 0;
+          ocean_pressure *= (1.0 - lambda);
 
           // Note that if the current cell is "marginal" but not a CFBC
           // location, the following two lines are equaivalent to the "usual
           // case" below.
-          rhs_uv[i][j].u = tdx - (aMM - aPP)*ocean_pressure / dx;
-          rhs_uv[i][j].v = tdy - (bMM - bPP)*ocean_pressure / dy;
+          rhs_uv[i][j].u = tdx + (aMM - aPP)*ocean_pressure / dx;
+          rhs_uv[i][j].v = tdy + (bMM - bPP)*ocean_pressure / dy;
 
           continue;
         } // end of "if (is_marginal(i, j))"
@@ -311,6 +365,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   }
 
   if (use_cfbc) {
+    ierr = surface->end_access(); CHKERRQ(ierr);
     ierr = thickness->end_access(); CHKERRQ(ierr);
     ierr = bed->end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);

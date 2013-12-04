@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "SSA.hh"
 #include <petscksp.h>
 
+class Timeseries;
 
 //! PISM's SSA solver: the finite difference implementation
 class SSAFD : public SSA
@@ -91,6 +92,9 @@ protected:
   PetscInt nuh_viewer_size;
 
   bool dump_system_matlab;
+
+private:
+  Timeseries *melange_back_pressure_fraction;
 };
 
 //! Constructs a new SSAFD
