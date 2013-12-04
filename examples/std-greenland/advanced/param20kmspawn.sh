@@ -75,7 +75,7 @@ for PPQ in 0.1 0.25 0.8 ; do
       export PISM_TITLE="Greenland Parameter Study"
       
       cmd="PISM_DO="" PARAM_PPQ=$PPQ PARAM_TEFO=$TEFO ./spinup.sh $NN const $DURA 20 hybrid $OUTFILE"
-      echo "$cmd 2>&1 | tee job.${PBS_JOBID}" >> $SCRIPT
+      echo "$cmd 2>&1 | tee job.\${PBS_JOBID}" >> $SCRIPT
 	  
       echo "($SPAWNSCRIPT)  $SCRIPT written"
 
@@ -99,7 +99,7 @@ for PPQ in 0.1 0.25 0.8 ; do
       export PISM_TITLE="Greenland Parameter Study"
       
       cmd="PISM_DO="" PARAM_PPQ=$PPQ PARAM_TEFO=$TEFO PARAM_NOSGL=foo ./spinup.sh $NN const $DURA 20 hybrid $OUTFILE"
-      echo "$cmd 2>&1 | tee job.${PBS_JOBID}" >> $SCRIPT
+      echo "$cmd 2>&1 | tee job.\${PBS_JOBID}" >> $SCRIPT
 	  
       echo "($SPAWNSCRIPT)  $SCRIPT written"
 
