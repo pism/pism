@@ -40,7 +40,7 @@ PetscErrorCode PO_delta_MBP::allocate_PO_delta_MBP() {
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
-  offset->set_units("m", "");
+  offset->set_units("1", "1");
   offset->set_dimension_units(grid.time->units_string(), "");
   offset->set_attr("long_name", "melange back pressure fraction");
 
