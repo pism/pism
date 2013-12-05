@@ -59,21 +59,29 @@ if (field == 'csurf') | (field == 'cbase'):
   fill       = nc.variables[field]._FillValue
   logscale   = True
   contour100 = True
+  myvmin     = 1.0
+  myvmax     = 6.0e3
   ticklist   = [2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000]
 elif field == 'surfvelmag':
   fill       = 0.0
   logscale   = True
   contour100 = True
+  myvmin     = 1.0
+  myvmax     = 6.0e3
   ticklist   = [2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000]
 elif field == 'usurf':
   fill       = 0.0
   logscale   = False
   contour100 = False
+  myvmin     = 1.0
+  myvmax     = 3500.0
   ticklist   = [100, 500, 1000, 1500, 2000, 2500, 3000, 3500]
 elif field == 'mask':
   fill       = -1.0
   logscale   = False
   contour100 = False
+  myvmin     = 1.0
+  myvmax     = 4.0
   ticklist   = [0, 1, 2, 3, 4]
 else:
   print 'invalid choice for FIELD option'
@@ -128,9 +136,9 @@ if contour100:
 # plot log color scale or not
 if logscale:
   m.pcolormesh(xx,yy,myvar,
-               norm=colors.LogNorm(vmin=1, vmax=6e3))
+               norm=colors.LogNorm(vmin=myvmin, vmax=myvmax))
 else:
-  m.pcolormesh(xx,yy,myvar)
+  m.pcolormesh(xx,yy,myvar,vmin=myvmin,vmax=myvmax)
 
 # add a colorbar:
 plt.colorbar(extend='both',
