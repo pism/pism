@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2013 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -55,6 +55,10 @@ PetscErrorCode SSAFD::allocate_fd() {
   ierr = KSPGetPC(SSAKSP,&pc); CHKERRQ(ierr);
   ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
+
+  // Use non-zero initial guess (i.e. SSA velocities from the last
+  // solve() call).
+  ierr = KSPSetInitialGuessNonzero(SSAKSP, PETSC_TRUE); CHKERRQ(ierr);
 
   const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
@@ -141,6 +145,8 @@ An explicit driving stress was specified instead and cannot be used.");
   string tempPrefix;
   ierr = PISMOptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
 			  dump_system_matlab); CHKERRQ(ierr);
+
+  ierr = velocity.set(0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -736,6 +742,8 @@ PetscErrorCode SSAFD::solve() {
   const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
 
   ierr = velocity.copy_to(velocity_old); CHKERRQ(ierr);
+
+  ierr = velocity.copy_to(SSAX); CHKERRQ(ierr);
 
   // computation of RHS only needs to be done once; does not depend on
   // solution; but matrix changes under nonlinear iteration (loop over k below)
