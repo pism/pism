@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2012 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -99,7 +99,7 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 
   enthalpyconverter = new EnthalpyConverter(config);
 
-  config.set_flag("ssa_flow_law", "isothermal_glen");
+  config.set_string("ssa_flow_law", "isothermal_glen");
   config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
 
   return 0;
