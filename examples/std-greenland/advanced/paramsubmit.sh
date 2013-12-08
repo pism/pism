@@ -2,18 +2,19 @@
 
 # Copyright (C) 2009-2013 Ed Bueler and Andy Aschwanden
 
-#  submits scripts produced by param20kmspawn.sh; uses QSUB environment variable if set
-
+# submits scripts produced by paramspawn.sh; uses QSUB environment variable if set
+# "qsub" is from PBS job scheduler
+# (see  http://www.adaptivecomputing.com/products/open-source/torque/)
+#
 # usage for real, using qsub:
-#   $ ./submitparam.sh
-
+#   $ ./paramsubmit.sh
+#
 # usage for test:
-#   $ export PISM_QSUB=cat
-#   $ ./param20kmsubmit.sh
+#   $ PISM_QSUB=cat ./paramsubmit.sh
 
 set -e -x # exit on error
 
-SCRIPTNAME=param20kmsubmit.sh
+SCRIPTNAME=paramsubmit.sh
 
 # submission command
 if [ -n "${PISM_QSUB:+1}" ] ; then  # check if env var PREFIX is already set
