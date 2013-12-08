@@ -1,5 +1,4 @@
 #!/bin/bash
-
 for scriptname in $(ls p10km*sh) ; do
   echo
   echo "starting ${scriptname} ..."

@@ -18,7 +18,7 @@ if len(sys.argv) < 5:
     print "tsshow.py ERROR: at least 4 arguments needed"
     print "usage:"
     print
-    print "   $ python tsboth.py FIELD OUTIMAGE TSFILE1 LABEL1 ... TSFILEn LABELn"
+    print "   $ python tsshow.py FIELD OUTIMAGE TSFILE1 LABEL1 ... TSFILEn LABELn"
     print
     print "where strings LABEL1 ... LABELn go in the legend"
     print "example:"
@@ -61,4 +61,3 @@ plt.ylabel("%s ($10^6$ km$^3$)" % field, size=16)
 plt.grid(True)
 print "saving image to file '%s' ..." % outimage
 plt.savefig(outimage, bbox_inches='tight')
-

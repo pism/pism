@@ -1,4 +1,3 @@
-
 \section{Getting started}\label{sec:start}\index{PISM!getting started}
 
 This introduction is intended to be interactive and participatory, and it should work on \emph{your personal machine}.  Please try the commands and view the resulting files.  Do the runs with your own values for the options.  We can't hide the fact that PISM has lots of control ``knobs,'' but fiddling with them will help you get going.  Give it a try!
@@ -212,7 +211,7 @@ Roughly speaking, the reader should only consider trusting those model results w
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.5in,keepaspectratio=true]{ivol-both-g20km-g10km}
+\includegraphics[width=4.0in,keepaspectratio=true]{ivol-both-g20km-g10km}
 \caption{Time series of modeled ice sheet volume on 20km and 10km grids.  The present-day ice sheet has volume about $2.9\times 10^6\,\text{km}^3$ \cite{BamberLayberryGogenini}, the initial value seen in both runs.}
 \label{fig:ivolboth}
 \end{figure}
@@ -296,8 +295,7 @@ Generally the fine grid run duration in grid sequencing should be at least $t = 
 Of course there is no reason to jump from $20\,\text{km}$ to $5\,\text{km}$ in one step!  Instead we can do it in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$, with durations of 10 ka, 2 ka, and 200 a, respectively.  The 20 km coarse grid run is already done and the result is in \texttt{g20km_10ka_hy.nc}.
 
 So now we propose to run the following script which is \texttt{gridseq.sh} in \texttt{examples/std-greenland/}.  It calls the flexible spinup script \texttt{spinup.sh} to collect all the right PISM options:
-\small
-\begin{verbatim}
+\begin{scriptvrb}
 #!/bin/bash
 NN=4
 export PARAM_PPQ=0.5
@@ -309,8 +307,7 @@ export EXSTEP=100
 export REGRIDFILE=g10km_gridseq.nc
 export EXSTEP=10
 ./spinup.sh $NN const 200    5 hybrid  g5km_gridseq.nc
-\end{verbatim}
-\normalsize
+\end{scriptvrb}
 Note that environment variable \verb|EXSTEP| specifies the time in years between writing the spatially-dependent, and large-file-size-generating, frames for the \verb|-extra_file ...| diagnostic output.  Before you run this script, however, an important
 
 \medskip
@@ -336,7 +333,7 @@ Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Gr
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.5in,keepaspectratio=true]{ivol-gridseq}
+\includegraphics[width=4.0in,keepaspectratio=true]{ivol-gridseq}
 \caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20 km for 10 ka = \texttt{ts_g20km_10ka_hy.nc}, 10 km for 2 ka = \texttt{ts_g10km_gridseq.nc}, and 5 km for 200 a = \texttt{ts_g20km_10ka_hy.nc}.}
 \label{fig:ivolgridseq}
 \end{figure}
@@ -347,15 +344,97 @@ In this vein, if you have an available supercomputer then a good exercise is to 
 
 Going to a 1km grid is possible, but you will start to see the limitations of distributed file systems in writing the enormous NetCDF files in question \cite{DickensMorey2013}.  Notice that a factor-of-five refinement in all three dimensions, e.g.~from 5 km to 1 km in the horizontal, and from 20 m to 4 m in the vertical, generates an output NetCDF file which is 125 times larger.  Since the already-generated 5 km result \texttt{g5km_gridseq.nc} is over 0.5 Gb, the result is a very large file at 1 km.  In any case, on fine grids we observe that \emph{memory} parallelism, i.e.~spreading the stored model state over the separated memory of many nodes of supercomputers, is as important as the usual computation (CPU) parallelism.
 
-This section has emphasized the ``P'' in PISM, the nontrivial parallelism of splitting the solution of conservation equations, especially the stress balance equations, across processors.  The next section addresses the equally-significant, in terms of answering scientific equations, but easier and more common, parallel technique of multiple model runs with different parameter values in each run.  So we now switch to an ``embarrassingly-parallel'' parameter study mode.
+This subsection has emphasized the ``P'' in PISM, the nontrivial parallelism in which the solution of the conservation equations, especially the stress balance equations, is distributed across processors.  An easier and more common mode of parallelism is to distribute model runs, with different parameter values in each run, among processors.  For scientific purposes, such parameter studies, whether parallel or not, are at least as valuable as individual high-resolution runs.
 
 
-\subsection{Getting serious II: a sliding parameter study}  \label{subsect:paramstudy}
+\subsection{Getting serious II: an ice dynamics parameter study}  \label{subsect:paramstudy}
 
-FIXME: separate the assignment of parameters to each run from the mode in which we do these runs (the latter can be either sequential or parallel)
+The readers of this manual \emph{should not} assume the PISM authors know all the correct parameters for describing ice flow.  While PISM must have default values of all parameters, to help users get started,\footnote{They are stored in human-readable form in the file \texttt{src/pism_config.cdl}.} it has more than two hundred user-configurable parameters, so adjusting them to their desired values, much less their ``correct'' values, is a nontrivial task.
 
-% 9 runs: -pseudo_plastic_q   0.0 0.25 1.0   -sia_e   1 3 10
+Changing certain parameters used by PISM, within their ranges of experimental uncertainty, is unlikely to affect model results in any important manner (e.g.~\texttt{sea_water_density}).  For others, however, for instance for the exponent in the basal sliding law, whether it has an exponent of 0.1 or 0.5 is both significant to model results---as we'll see in this subsection---and distinctly-uncertain given current glaciological understanding \cite{CuffeyPaterson}.  To illustrate a parameter study we restrict consideration to just two important parameters for ice dynamics,\begin{itemize}
+\item $e=$ \texttt{sia_enhancement_factor}: values larger than one give flow ``enhancement'' by making the ice deform more easily in shear than is determined by the standard flow law \cite{LliboutryDuval1985,PatersonBudd}, but applied only in the SIA stress balance; see subsection \ref{sec:rheology} for more on this parameter, and
+\item $q=$ \texttt{pseudo_plastic_q}: exponent used in the sliding law which relates basal sliding velocity to basal shear stress in the SSA stress balance; see subsection \ref{subsect:basestrength} for more on this parameter.
+\end{itemize}
 
+By varying these parameters over full intervals of values, say $1 \le e \le 6$ and $0.1\le q \le 1.0$, we could explore a two-dimensional parameter space.  But of course each $(e,q)$ pair needs a full computation, so we can only sample this two-dimensional space.  Furthermore we must specify a concrete run for each parameter pair.  In this case we choose to run for 1000 model years, in every case initializing from the stored state \texttt{g10km_gridseq.nc} generated in the previous subsection (\ref{subsect:gridseq}).\footnote{The stored state \texttt{g10km_gridseq.nc} used $q=0.5$ and $e=3$, and thus one of the runs of the parameter study just continues that run.}
+
+The next script, which is \texttt{param.sh} in \texttt{examples/std-greenland/}, gets values $e\in\{1,3,6\}$ and $q\in\{0.1,0.5,1.0\}$ and generates a run-script for that $(e,q)$ pair.  For each parameter setting it calls \texttt{spinup.sh} with the environment variable setting \texttt{PISM_DO=echo} so that \texttt{spinup.sh} simply outputs the run command.  This run command is then redirected into an appropriately-named \texttt{.sh} script:
+\begin{scriptvrb}
+#!/bin/bash
+NN=4
+DUR=1000
+START=g10km_gridseq.nc
+
+for PPQ in 0.1 0.5 1.0 ; do
+  for SIAE in 1 3 6 ; do
+     PISM_DO=echo REGRIDFILE=$START PARAM_PPQ=$PPQ PARAM_SIAE=$SIAE \
+       ./spinup.sh $NN const $DUR 10 hybrid p10km_${PPQ}_${SIAE}.nc \
+       &> p10km_${PPQ}_${SIAE}.sh
+  done
+done
+\end{scriptvrb}
+%$
+To set up and run the parameter study, without making a mess from all the generated files,  from the directory \texttt{examples/std-greenland/} in which the file \texttt{g10km_gridseq.nc} from subsection \ref{subsect:gridseq} is already present, do:
+\begin{verbatim}
+$ mkdir paramstudy
+$ cd paramstudy
+$ ln -s ../g10km_gridseq.nc            # these four lines make ...
+$ ln -s ../pism_Greenland_5km_v1.1.nc  #
+$ ln -s ../spinup.sh                   #
+$ ln -s ../param.sh                    # ... links inside paramstudy/
+$ ./param.sh
+\end{verbatim}
+The result of the last command is to generate nine run scripts,
+\small
+\begin{verbatim}
+p10km_0.1_1.sh  p10km_0.1_3.sh  p10km_0.1_6.sh
+p10km_0.5_1.sh  p10km_0.5_3.sh  p10km_0.5_6.sh
+p10km_1.0_1.sh  p10km_1.0_3.sh  p10km_1.0_6.sh
+\end{verbatim}
+\normalsize
+The reader should inspect a few of these run scripts.  They are all very similar, and they all start with ``\texttt{mpiexec -n 4 pismr ...}'', but, for instance, in the \texttt{p10km_0.1_1.sh} script one sees options including \texttt{-pseudo_plastic_q 0.1} and \texttt{-sia_e 1}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=4.0in,keepaspectratio=true]{ivol-e1}
+
+\includegraphics[width=4.0in,keepaspectratio=true]{ivol-e3}
+
+\includegraphics[width=4.0in,keepaspectratio=true]{ivol-e6}
+
+\caption{Time series of ice volume \texttt{ivol} from nine runs in our parameter study example.}
+\label{fig:ivolparamstudy}
+\end{figure}
+
+We have still not run PISM, but only asked one script (\texttt{param.sh}) to create nine others.  We now have the option of running them sequentially or in parallel.  Each script itself does a parallel run, over the \texttt{NN=4} processes specified by \texttt{param.sh} when generating the run scripts.  If you have $4 \times 9 = 36$ cores available then you can do the runs in parallel (this is \texttt{runparallel.sh} in \texttt{examples/std-greenland/}):
+\begin{scriptvrb}
+#!/bin/bash
+for scriptname in $(ls p10km*sh) ; do
+  echo
+  echo "starting ${scriptname} ..."
+  bash $scriptname &> out.$scriptname &  # start immediately in background
+done
+\end{scriptvrb}
+%$
+Otherwise you should do them in sequence (this is \texttt{runsequential.sh} in \texttt{examples/std-greenland/}):
+\begin{scriptvrb}
+#!/bin/bash
+for scriptname in $(ls p10km*sh) ; do
+  echo
+  echo "running ${scriptname} ..."
+  bash $scriptname                       # will wait for completion
+done
+\end{scriptvrb}
+%$
+On the same old 2012-era 4 core laptop, the \texttt{runsequential.sh} way make sense.  It took a total of just under 7 hours for the whole parameter study.  The runs with $q=0.1$ (the more ``plastic'' end of the basal sliding spectrum) took up to four times longer than the $q=0.5$ and $q=1.0$ runs, with the $e$ value less significant in determining run times.
+
+On a supercomputer, the \texttt{runparallel.sh} FIXME: should submit jobs to the scheduler
+
+FIXME: analyze Fig \ref{fig:ivolparamstudy}
+
+FIXME: Fig with csurf for all
+
+\clearpage
 
 \subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  PISM takes one or more NetCDF files as input, then it does some computation, and then it produces one or more NetCDF files as output.  Usually, other tools help to extract meaning from these NetCDF files, and yet more tools help with creating PISM input files or post-processing PISM output files.  Thus we conclude this Getting Started section with a list of some NetCDF tools in Table \ref{tab:NetCDFview}.
 

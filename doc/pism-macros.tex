@@ -15,7 +15,7 @@
 
 \usepackage[usenames]{xcolor}
 
-\usepackage{bm,url,xspace,verbatim}
+\usepackage{bm,url,xspace,verbatim,fancyvrb}
 \usepackage{amssymb,amsmath}
 \usepackage[pdftex]{graphicx}
 
@@ -57,3 +57,5 @@
 \def\variable#1{\texttt{#1}\index{NetCDF variables!\texttt{#1}}}
 \def\config#1{\texttt{#1}\index{Configuration flags and parameters!\texttt{#1}}}
 \def\class#1{\texttt{#1}\index{C++ classes!\texttt{#1}}}
+
+\DefineVerbatimEnvironment{scriptvrb}{Verbatim}{frame=single,rulecolor=\color{green},framerule=0.1mm,framesep=2mm,xleftmargin=8mm,fontsize=\small}
