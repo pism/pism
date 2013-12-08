@@ -356,7 +356,7 @@ Changing certain parameters used by PISM, within their ranges of experimental un
 \item $q=$ \texttt{pseudo_plastic_q}: exponent used in the sliding law which relates basal sliding velocity to basal shear stress in the SSA stress balance; see subsection \ref{subsect:basestrength} for more on this parameter.
 \end{itemize}
 
-By varying these parameters over full intervals of values, say $1 \le e \le 6$ and $0.1\le q \le 1.0$, we could explore a two-dimensional parameter space.  But of course each $(e,q)$ pair needs a full computation, so we can only sample this two-dimensional space.  Furthermore we must specify a concrete run for each parameter pair.  In this case we choose to run for 1000 model years, in every case initializing from the stored state \texttt{g10km_gridseq.nc} generated in the previous subsection (\ref{subsect:gridseq}).\footnote{The stored state \texttt{g10km_gridseq.nc} used $q=0.5$ and $e=3$, and thus one of the runs of the parameter study just continues that run.}
+By varying these parameters over full intervals of values, say $1 \le e \le 6$ and $0.1\le q \le 1.0$, we could explore a two-dimensional parameter space.  But of course each $(e,q)$ pair needs a full computation, so we can only sample this two-dimensional space.  Furthermore we must specify a concrete run for each parameter pair.  In this case we choose to run for 1000 model years, in every case initializing from the stored state \texttt{g10km_gridseq.nc} generated in the previous subsection (\ref{subsect:gridseq}).
 
 The next script, which is \texttt{param.sh} in \texttt{examples/std-greenland/}, gets values $e\in\{1,3,6\}$ and $q\in\{0.1,0.5,1.0\}$ and generates a run-script for that $(e,q)$ pair.  For each parameter setting it calls \texttt{spinup.sh} with the environment variable setting \texttt{PISM_DO=echo} so that \texttt{spinup.sh} simply outputs the run command.  This run command is then redirected into an appropriately-named \texttt{.sh} script:
 \begin{scriptvrb}
@@ -374,16 +374,20 @@ for PPQ in 0.1 0.5 1.0 ; do
 done
 \end{scriptvrb}
 %$
+Notice that, because the stored state \texttt{g10km_gridseq.nc} used $q=0.5$ and $e=3$, one of these runs just continues that one, without a change in physics.
+
 To set up and run the parameter study, without making a mess from all the generated files,  from the directory \texttt{examples/std-greenland/} in which the file \texttt{g10km_gridseq.nc} from subsection \ref{subsect:gridseq} is already present, do:
+\small
 \begin{verbatim}
 $ mkdir paramstudy
 $ cd paramstudy
-$ ln -s ../g10km_gridseq.nc            # these four lines make ...
+$ ln -s ../g10km_gridseq.nc            # these four lines make links to ...
 $ ln -s ../pism_Greenland_5km_v1.1.nc  #
 $ ln -s ../spinup.sh                   #
-$ ln -s ../param.sh                    # ... links inside paramstudy/
+$ ln -s ../param.sh                    # ... existing files in std-greenland/
 $ ./param.sh
 \end{verbatim}
+\normalsize
 The result of the last command is to generate nine run scripts,
 \small
 \begin{verbatim}
@@ -392,7 +396,7 @@ p10km_0.5_1.sh  p10km_0.5_3.sh  p10km_0.5_6.sh
 p10km_1.0_1.sh  p10km_1.0_3.sh  p10km_1.0_6.sh
 \end{verbatim}
 \normalsize
-The reader should inspect a few of these run scripts.  They are all very similar, and they all start with ``\texttt{mpiexec -n 4 pismr ...}'', but, for instance, in the \texttt{p10km_0.1_1.sh} script one sees options including \texttt{-pseudo_plastic_q 0.1} and \texttt{-sia_e 1}.
+The reader should inspect a few of these run scripts.  They are all very similar as they all have a command starting with ``\texttt{mpiexec -n 4 pismr ...}''.  But, for instance, the \texttt{p10km_0.1_1.sh} script uses options \texttt{-pseudo_plastic_q 0.1} and \texttt{-sia_e 1}.
 
 \begin{figure}[ht]
 \centering
@@ -402,7 +406,7 @@ The reader should inspect a few of these run scripts.  They are all very similar
 
 \includegraphics[width=4.0in,keepaspectratio=true]{ivol-e6}
 
-\caption{Time series of ice volume \texttt{ivol} from nine runs in our parameter study example.}
+\caption{Time series of ice volume \texttt{ivol} from nine runs in our parameter study example.  The ``center'' run ($q=0.5$ and $e=3$) simply continuous the previous run.  For the others we see abrupt initial changes when the physics change, especially when the basal sliding becomes much more plastic (i.e.~changes to $q=0.1$).  In all cases with $e=1$ the ice slows and thus grows in volume (as discharge increases), while in all cases with $e=6$ the ice speeds up and thus shrinks in volume (as discharge increases).}
 \label{fig:ivolparamstudy}
 \end{figure}
 
@@ -428,7 +432,17 @@ done
 %$
 On the same old 2012-era 4 core laptop, the \texttt{runsequential.sh} way make sense.  It took a total of just under 7 hours for the whole parameter study.  The runs with $q=0.1$ (the more ``plastic'' end of the basal sliding spectrum) took up to four times longer than the $q=0.5$ and $q=1.0$ runs, with the $e$ value less significant in determining run times.
 
-On a supercomputer, the \texttt{runparallel.sh} FIXME: should submit jobs to the scheduler
+\begin{figure}[ht]
+\centering
+\mbox{\includegraphics[width=1.5in,keepaspectratio=true]{p10km-0.1-1-csurf.png} \includegraphics[width=1.5in,keepaspectratio=true]{p10km-0.1-3-csurf.png} \includegraphics[width=1.5in,keepaspectratio=true]{p10km-0.1-6-csurf.png}}
+
+FIXME
+
+\caption{FIXME}
+\label{fig:paramstudy}
+\end{figure}
+
+On a supercomputer, the \texttt{runparallel.sh} script generally should be modified to submit jobs to the scheduler.  See example scripts \texttt{advanced/paramspawn.sh} and \texttt{advanced/paramsubmit.sh} for a parameter study that does this.  (But see your system administrator if you want to know what a ``job scheduler'' is!)
 
 FIXME: analyze Fig \ref{fig:ivolparamstudy}
 
