@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Creates graph of the modeled time series from multiple files.  See figures
+Creates graph of modeled time series from multiple files.  See figures
 in the "Getting Started" section of the User's Manual.
 """
 
@@ -28,6 +28,8 @@ if len(sys.argv) < 5:
 field = sys.argv[1]
 outimage = sys.argv[2]
 
+legloc='lower right'
+
 secpera = 31556926.0
 vfactor = 1.0e6 * 1.0e9
 
@@ -35,6 +37,8 @@ n = (len(sys.argv) - 3) / 2
 labels = []
 plt.figure(figsize=(9,4))
 
+style = ['b-',  'g-',  'r-',  'c-',  'm-',  'y-',  'k-',
+         'b--', 'g--', 'r--', 'c--', 'm--', 'y--', 'k--']
 for k in range(n):
 
   tsfile = sys.argv[2*k+3]
@@ -50,14 +54,15 @@ for k in range(n):
   ncfile.close()
   print "read variable '%s' from time-series file '%s' ..." % (field,tsfile)
 
-  plt.plot(t, var / vfactor, linewidth=2.5)  # automatic colors; default order
+  plt.plot(t, var / vfactor, style[k], linewidth=2.5)  # automatic colors; default order
                                              # blue, green, red, cyan, magenta, ...
   plt.hold(True)
 
 plt.hold(False)
-plt.legend(labels, loc='lower right')
+plt.legend(labels, loc=legloc)
 plt.xlabel("t (years)", size=16)
 plt.ylabel("%s ($10^6$ km$^3$)" % field, size=16)
 plt.grid(True)
 print "saving image to file '%s' ..." % outimage
+#plt.show()
 plt.savefig(outimage, bbox_inches='tight')
