@@ -1,5 +1,0 @@
-This directory contains very basic manpages for most important PISM executables.
-
-They are written using the reStructuredText mark-up language provided by "docutils".
-
-To build manpages, make sure that your system has rst2man.py in the PATH and set Pism_BUILD_DOCS to "on" using CMake.
