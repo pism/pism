@@ -426,7 +426,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         bool base_is_cold = (esys->Enth[0] < esys->Enth_s[0]);
         const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME issue #15
-        const bool k1_istemperate = EC->isTemperate(esys->Enth[1], p1); // level  z = + \Delta z
+        bool k1_istemperate = EC->isTemperate(esys->Enth[1], p1); // level  z = + \Delta z
 
         // now set-up for solve in ice; note esys->Enth[], esys->w[],
         //   esys->Enth_s[] are already filled
@@ -521,7 +521,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               const PetscScalar
                 p_0 = EC->getPressureFromDepth(vH(i, j)),
                 p_1 = EC->getPressureFromDepth(vH(i, j) - grid.dz_fine); // FIXME issue #15
-              const bool k1_istemperate = EC->isTemperate(Enthnew[1], p_1); // level  z = + \Delta z
+              k1_istemperate = EC->isTemperate(Enthnew[1], p_1); // level  z = + \Delta z
 
               PetscScalar hf_up;
               if (k1_istemperate) {
