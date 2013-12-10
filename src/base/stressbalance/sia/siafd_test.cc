@@ -207,7 +207,6 @@ PetscErrorCode setInitStateF(IceGrid &grid,
                              IceModelVec3 *enthalpy) {
   PetscErrorCode ierr;
   PetscInt        Mz=grid.Mz;
-  PetscScalar     **H;
   PetscScalar     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
 
   PetscReal ST = 1.67e-5,
