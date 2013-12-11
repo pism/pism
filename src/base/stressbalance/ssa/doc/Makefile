@@ -1,6 +1,6 @@
 all: new_notes.pdf
 
-new_notes.pdf: new_notes..tex
+new_notes.pdf: new_notes.tex
 	pdflatex new_notes.tex
 	bibtex new_notes
 	pdflatex new_notes.tex
