@@ -115,7 +115,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
 PetscErrorCode PA_SeaRISE_Greenland::init_timeseries(PetscReal *ts, unsigned int N) {
   PetscErrorCode ierr;
 
-  ierr = PAYearlyCycle::init_timeseries(ts, N);
+  ierr = PAYearlyCycle::init_timeseries(ts, N); CHKERRQ(ierr);
 
   if (paleo_precipitation_correction) {
     m_delta_T_values.resize(m_ts_times.size());
