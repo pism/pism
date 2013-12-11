@@ -29,9 +29,10 @@ else:
     thk[radius <= p.r_gl] = p.H0
 
 # Bed topography
+width = dx*3
 bed = np.zeros_like(thk)                 # bedrock surface elevation
-bed[radius <= p.r_gl] = 100.0
-bed[radius >  p.r_gl] = p.topg_min
+bed[radius <= p.r_gl - width] = -p.H0 * (910.0 / 1028.0) + 1.0
+bed[radius >  p.r_gl - width] = p.topg_min
 
 # Surface mass balance
 accum = np.zeros_like(thk)                 # accumulation/ ablation
@@ -41,10 +42,8 @@ accum[radius >= p.r_gl] = p.accumulation_rate
 Ts = np.zeros_like(thk) + p.air_temperature
 
 # Dirichlet B.C locations
-width = dx*3
 bcflag = np.zeros_like(thk)
 bcflag[radius <= p.r_gl] = 1
-bcflag[radius <= p.r_gl - width] = 0
 
 # SSA velocity Dirichlet B.C.
 ubar = np.zeros_like(thk)
