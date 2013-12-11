@@ -108,20 +108,34 @@ def plot_pism_results(filename, figure_title, color, same_figure=False):
     nc.close()
 
 
-from argparse import ArgumentParser
+import argparse
 ## Set up the option parser
-parser = ArgumentParser()
-parser.description = "Manages PISM runs reproducing Figure 6 in Albrecht et al 'Parameterization for subgrid-scale motion of ice-shelf calving fronts', 2011"
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.description = """Manages PISM runs reproducing Figure 6 in Albrecht et al
+'Parameterization for subgrid-scale motion of ice-shelf calving fronts', 2011"""
+
+parser.epilog = """Model "variants":
+
+0:  no subgrid parameterization, no stress boundary condition at the calving front
+1: -cfbc -part_grid
+2: -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness
+
+Here -part_grid_reduce_frontal_thickness adjusts the thickness
+threshold used to decide when a 'partially filled' cell becomes full.
+This is done to try and match the van der Veen profile this particular
+setup is based on. Don't use it."""
+
 parser.add_argument("-v", dest="variant", type=int,
                     help="choose the 'model variant', choose from 0, 1, 2", default=2)
 options = parser.parse_args()
 
 opt = "-ssa_method fd -Lx 250 -o_order zyx"
-opt = opt + " -extra_file ex.nc -extra_vars cflx,thk,nuH,flux_divergence,velbar -extra_times 1"
+extras = " -extra_file ex.nc -extra_vars cflx,thk,nuH,flux_divergence,velbar -extra_times 1"
 if options.variant == 0:
     run_pismv(Mx, 300, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'blue')
 
+    opt = opt + extras
     run_pismv(Mx, 300, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'green', same_figure=True)
 elif options.variant == 1:
@@ -129,6 +143,7 @@ elif options.variant == 1:
     run_pismv(Mx, 300, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'blue')
 
+    opt = opt + extras
     run_pismv(Mx, 300, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'green', same_figure=True)
 elif options.variant == 2:
@@ -136,6 +151,7 @@ elif options.variant == 2:
     run_pismv(Mx, 300, opt, "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'blue')
 
+    opt = opt + extras
     run_pismv(Mx, 300, opt + " -max_dt 1", "out.nc")
     plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'green', same_figure=True)
 else:

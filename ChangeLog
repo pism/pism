@@ -26,8 +26,5 @@ Changes since 0.4 (around June 1, 2011) (in no particular order, need to be orga
 	* Implemented -tauc_to_phi
 	* Updated and improved modeling examples
 	* Removed the pgrn executable; all whole-Greenland examples use pismr
-	* Removed the EISMINT-Ross example and the pross executable	
+	* Removed the EISMINT-Ross example and the pross executable
 	* Inverse modeling tools (not part of the release)
-
-
-	

@@ -3,7 +3,6 @@
 from PISMNC import PISMDataset as NC
 from optparse import OptionParser
 import numpy as np
-import subprocess, shlex, sys
 
 parser = OptionParser()
 

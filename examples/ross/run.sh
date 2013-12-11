@@ -23,7 +23,7 @@ if [ $# -gt 2 ] ; then  # if user says "run.sh 8 351 0.7" then ... and -ssa_e 0.
 fi
 
 cmd="mpiexec -n $NN pismr -boot_file Ross_combined.nc -Mx $M -My $M \
-  -Mz 21 -Lz 3000 -z_spacing equal -surface given -no_sia -no_energy \
+  -Mz 3 -Lz 3000 -z_spacing equal -surface given -no_sia -no_energy \
   -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_view_nuh \
   -y 0 -o out_$M.nc -o_order zyx -ssa_e $SSAE -ssafd_ksp_monitor"
 
