@@ -41,6 +41,7 @@ if [ $# -lt 5 ] ; then
   echo "    EXVARS       desired -extra_vars; defaults to 'diffusivity,temppabase,"
   echo "                   tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf'"
   echo "                   plus ',hardav,cbase,tauc' if DYNAMICS=hybrid"
+  echo "    NODIAGS      if set, DON'T use -ts_file or -extra_file"
   echo "    PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ"
   echo "                   [default=0.25]"
   echo "    PARAM_SIAE   sets option -sia_e \$PARAM_SIAE   [default=3.0]"
@@ -295,12 +296,16 @@ echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"
 
 # set up diagnostics
-TSNAME=ts_$OUTNAME
-TSTIMES=-$DURATION:yearly:0
-EXNAME=ex_$OUTNAME
-EXTIMES=-$DURATION:$EXSTEP:0
-# check_stationarity.py can be applied to $EXNAME
-DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
+if [ -z "${NODIAGS}" ] ; then  # check if env var is NOT set
+  TSNAME=ts_$OUTNAME
+  TSTIMES=-$DURATION:yearly:0
+  EXNAME=ex_$OUTNAME
+  EXTIMES=-$DURATION:$EXSTEP:0
+  # check_stationarity.py can be applied to $EXNAME
+  DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
+else
+  DIAGNOSTICS=""
+fi
 
 # construct command
 cmd="$PISM_MPIDO $NN $PISM -boot_file $INNAME -Mx $myMx -My $myMy $vgrid $RUNSTARTEND $regridcommand $COUPLER $PHYS $DIAGNOSTICS -o $OUTNAME"
