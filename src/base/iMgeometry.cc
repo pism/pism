@@ -50,7 +50,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
   ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
 
-  if (config.get_flag("kill_icebergs") || iceberg_remover != NULL) {
+  if (config.get_flag("kill_icebergs") && iceberg_remover != NULL) {
     ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
     // the call above modifies ice thickness and updates the mask
     // accordingly
@@ -107,9 +107,12 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed_topography,
  * Update ice surface elevation using the floatation criterion, sea
  * level elevation, ice thickness, and bed topography.
  *
+ * Uses ghosts of `bed_topography`, `ice_thickness`. Updates ghosts of
+ * the `result`.
+ *
  * @param[in] bed_topography 
  * @param[in] ice_thickness 
- * @param[out] result 
+ * @param[out] result computed surface elevation
  *
  * @return 0 on success.
  */

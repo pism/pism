@@ -89,7 +89,6 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
 PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  PetscScalar    **ph, **pbed;
 
   ierr = bc_mask.set(0); CHKERRQ(ierr);
   ierr = thickness.set(H0_schoof); CHKERRQ(ierr);

@@ -38,13 +38,13 @@ the system in each column.
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(PetscInt my_nmax, std::string my_prefix);
+  columnSystemCtx(unsigned int my_nmax, std::string my_prefix);
   virtual ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
 
-  PetscScalar    norm1(const PetscInt n) const;
-  PetscScalar    ddratio(const PetscInt n) const;
+  PetscScalar    norm1(unsigned int n) const;
+  PetscScalar    ddratio(unsigned int n) const;
 
   PetscErrorCode viewVectorValues(PetscViewer viewer,
                                   const PetscScalar *v, PetscInt m, const char* info) const;
@@ -52,11 +52,11 @@ public:
   virtual PetscErrorCode viewSystem(PetscViewer viewer) const;
 
   PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex);
-  PetscErrorCode viewColumnInfoMFile(PetscScalar *x, PetscInt n);
-  PetscErrorCode viewColumnInfoMFile(char *filename, PetscScalar *x, PetscInt n);
+  PetscErrorCode viewColumnInfoMFile(PetscScalar *x, unsigned int n);
+  PetscErrorCode viewColumnInfoMFile(char *filename, PetscScalar *x, unsigned int n);
 
 protected:
-  PetscInt    nmax;
+  unsigned int nmax;
   PetscScalar *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
 
   PetscInt    i, j, ks;
