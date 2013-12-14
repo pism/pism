@@ -22,7 +22,7 @@ echo "$SCRIPTNAME   run preprocess.sh before this..."
 
 set -e  # exit on error
 
-echo "$SCRIPTNAME   Constant-climate spinup-script using SeaRISE-Antarctica data"
+echo "$SCRIPTNAME   Constant-climate spinup script using SeaRISE-Antarctica data"
 echo "$SCRIPTNAME      and -ssa_sliding and -pik"
 echo "$SCRIPTNAME   Run as './antspinCC.sh NN' for NN procs and 30km grid"
 
@@ -35,8 +35,6 @@ PISM_MPIDO="mpiexec -n "
 
 # input data:
 PISM_INDATANAME=${BOOTDIR}pism_Antarctica_5km.nc
-PISM_TEMPSERIES=${BOOTDIR}pism_dT.nc
-PISM_SLSERIES=${BOOTDIR}pism_dSL.nc
 
 NN=4  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "antspinup.sh 8" then NN = 8

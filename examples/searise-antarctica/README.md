@@ -2,7 +2,7 @@ SeaRISE-Antarctica example
 =========
 
 These are minimal scripts which are less than needed for an actual
-SeaRISE submission.  Most of the modeling in this example is explained in
+SeaRISE submission.  The modeling strategy in this example is explained in
 
 * M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  _The Potsdam Parallel Ice Sheet Model (PISM-PIK) - Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet_, **The Cryosphere** 5, 727--740. <http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.pdf>
 
@@ -41,10 +41,7 @@ and `SKIP` variables.  Different parameter values can be set also.
 SeaRISE experiments
 ---------
 
-To perform the SeaRISE experiments, there are scripts that ran under PISM
-`stable0.4`; they will require modifications to run under more recent versions
-of PISM.
-
-    $ ./experiments.sh N
-    $ ./postprocess.sh       # calls postprocess_mask.py
+To perform the SeaRISE experiments, see scripts in PISM release `stable0.4`.
+Look in `examples/searise-antarctica`.  These scripts will require modifications
+to run under more recent versions of PISM.
 
