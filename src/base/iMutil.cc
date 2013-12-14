@@ -115,10 +115,15 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
 
 PetscErrorCode IceModel::update_run_stats() {
   PetscErrorCode ierr;
+
+  MPI_Datatype mpi_type;
+  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
+
   // timing stats
-  PetscLogDouble current_time;
+  PetscLogDouble current_time, my_current_time;
   PetscReal wall_clock_hours, proc_hours, mypph;
-  ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
+  ierr = PISMGetTime(&my_current_time); CHKERRQ(ierr);
+  MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
   wall_clock_hours = (current_time - start_time) / 3600.0;
 
@@ -132,9 +137,7 @@ PetscErrorCode IceModel::update_run_stats() {
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
   PetscLogDouble flops, my_flops;
-  MPI_Datatype mpi_type;
   ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
-  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
 
   run_stats.set("wall_clock_hours", wall_clock_hours);

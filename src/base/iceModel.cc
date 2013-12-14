@@ -1069,8 +1069,16 @@ PetscErrorCode IceModel::init() {
   //!
   //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
 
-  ierr = MPI_Barrier(grid.com); CHKERRQ(ierr);
-  ierr = PISMGetTime(&start_time); CHKERRQ(ierr);
+  // Get the start time in seconds and ensure that it is consistent
+  // across all processors.
+  {
+    MPI_Datatype mpi_type;
+    PetscReal my_start_time;
+    ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
 
+    ierr = PISMGetTime(&my_start_time); CHKERRQ(ierr);
+    MPI_Allreduce(&my_start_time, &start_time, 1, mpi_type, MPI_MAX, grid.com);
+
+  }
   return 0;
 }
