@@ -22,7 +22,7 @@ the effect of various options including `[none]`, `-cfbc`,
 
 Note that without the calving front boundary condition (`make no_cfbc`
 which uses `[none]`), the strength extension "ties" floating blobs to the
-biggest, blob, which remains grounded.  In this (not-recommended) case the
+biggest blob, which remains grounded.  In this (not-recommended) case the
 SSA solver does not see a zero pivot.
 
 As a result of this example and others, the option combination
