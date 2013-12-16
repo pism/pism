@@ -54,6 +54,8 @@ protected:
   bool m_restrict_timestep;
 
   PetscErrorCode update_strain_rates();
+  PetscErrorCode remove_narrow_tongues(IceModelVec2Int &pism_mask,
+                                       IceModelVec2S &ice_thickness);
 };
 
 

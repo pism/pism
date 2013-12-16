@@ -75,7 +75,7 @@ PetscErrorCode PISMEigenCalving::init(PISMVars &vars) {
 
   m_mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (m_mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
-  
+
   return 0;
 }
 
@@ -243,19 +243,24 @@ PetscErrorCode PISMEigenCalving::update(PetscReal dt,
   ierr = m_strain_rates.end_access(); CHKERRQ(ierr);
   ierr = m_thk_loss.end_access(); CHKERRQ(ierr);
 
+  ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
+
+  ierr = remove_narrow_tongues(pism_mask, ice_thickness); CHKERRQ(ierr);
+
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
+  ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-/** 
+/**
  * @brief Compute the maximum time-step length allowed by the CFL
  * condition applied to the calving rate.
  *
  * @param[in] my_t current time, in seconds
  * @param[out] my_dt set the the maximum allowed time-step, in seconds
- * @param[out] restrict set to "true" if this component has a time-step restriction 
+ * @param[out] restrict set to "true" if this component has a time-step restriction
  *
  * Note: this code uses the mask variable obtained from the PISMVars
  * dictionary. This is not the same mask that is used in the update()
@@ -290,7 +295,7 @@ PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
   MaskQuery mask(*m_mask);
 
   ierr = update_strain_rates(); CHKERRQ(ierr);
-  
+
   ierr = m_mask->begin_access(); CHKERRQ(ierr);
   ierr = m_strain_rates.begin_access(); CHKERRQ(ierr);
 
@@ -395,7 +400,7 @@ PetscErrorCode PISMEigenCalving::write_variables(std::set<std::string> /*vars*/,
   return 0;
 }
 
-/** 
+/**
  * Update the strain rates field.
  *
  * Note: this code uses the mask obtained from the PISMVars
@@ -416,3 +421,88 @@ PetscErrorCode PISMEigenCalving::update_strain_rates() {
   return 0;
 }
 
+/** Remove tips of one-cell-wide ice tongues.
+ *
+ * ice tongues like this one (and equivalent)
+ *
+ * @code
+   O O O
+   X X O
+   O O O
+   @endcode
+ *
+ * are removed, while ones like this one
+ *
+ * @code
+   X O O
+   X X O
+   X O O
+   @endcode
+ * are not.
+ *
+ * @note We use `pism_mask` (and not ice_thickness) to make decisions.
+ * This means that we can update `ice_thickness` in place without
+ * introducing a dependence on the grid traversal order.
+ *
+ * @param[in,out] pism_mask cell type mask
+ * @param[in,out] ice_thickness modeled ice thickness
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMEigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
+                                                       IceModelVec2S &ice_thickness) {
+  PetscErrorCode ierr;
+
+  MaskQuery mask(pism_mask);
+
+  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      if (mask.floating_ice(i, j) == false)
+        continue;
+
+      const bool
+        ice_free_N  = mask.ice_free_ocean(i, j + 1),
+        ice_free_E  = mask.ice_free_ocean(i + 1, j),
+        ice_free_S  = mask.ice_free_ocean(i, j - 1),
+        ice_free_W  = mask.ice_free_ocean(i - 1, j),
+        ice_free_NE = mask.ice_free_ocean(i + 1, j + 1),
+        ice_free_NW = mask.ice_free_ocean(i - 1, j + 1),
+        ice_free_SE = mask.ice_free_ocean(i + 1, j - 1),
+        ice_free_SW = mask.ice_free_ocean(i - 1, j - 1);
+
+      if ((ice_free_W == false &&
+           ice_free_NW         &&
+           ice_free_SW         &&
+           ice_free_N          &&
+           ice_free_S          &&
+           ice_free_E)         ||
+          (ice_free_N == false &&
+           ice_free_NW         &&
+           ice_free_NE         &&
+           ice_free_W          &&
+           ice_free_E          &&
+           ice_free_S)         ||
+          (ice_free_E == false &&
+           ice_free_NE         &&
+           ice_free_SE         &&
+           ice_free_W          &&
+           ice_free_S          &&
+           ice_free_N)         ||
+          (ice_free_S == false &&
+           ice_free_SW         &&
+           ice_free_SE         &&
+           ice_free_W          &&
+           ice_free_E          &&
+           ice_free_N)) {
+        pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
+        ice_thickness(i, j) = 0.0;
+      }
+    }
+  }
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+  ierr = pism_mask.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
