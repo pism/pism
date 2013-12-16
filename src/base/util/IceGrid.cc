@@ -776,7 +776,13 @@ void IceGrid::check_parameters() {
     PISMEnd();
   }
 
-  if (Mx * My * Mz * sizeof(double) > pow(2, 32) - 4 &&
+  // A single record of a time-dependent variable cannot exceed 2^32-4
+  // bytes in size. See the NetCDF User's Guide
+  // <http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#g_t64-bit-Offset-Limitations>.
+  // Here we use "long int" to avoid integer overflow.
+  const long int two_to_thirty_two = 4294967296L;
+  const long int Mx_long = Mx, My_long = My, Mz_long = Mz;
+  if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 &&
       ((config.get_string("output_format") == "netcdf3") ||
        (config.get_string("output_format") == "pnetcdf"))) {
     PetscPrintf(com,
@@ -784,7 +790,7 @@ void IceGrid::check_parameters() {
                 "            Each 3D variable requires %lu Mb.\n"
                 "            Please use \"-o_format quilt\" or re-build PISM with parallel NetCDF-4 or HDF5\n"
                 "            and use \"-o_format netcdf4_parallel\" or \"-o_format hdf5\" to proceed.\n",
-                Mx * My * Mz * sizeof(double) / (1024 * 1024));
+                Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
     PISMEnd();
   }
 
