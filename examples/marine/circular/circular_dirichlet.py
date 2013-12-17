@@ -29,14 +29,13 @@ else:
     thk[radius <= p.r_gl] = p.H0
 
 # Bed topography
-width = dx*3
 bed = np.zeros_like(thk)                 # bedrock surface elevation
-bed[radius <= p.r_gl - width] = -p.H0 * (910.0 / 1028.0) + 1.0
-bed[radius >  p.r_gl - width] = p.topg_min
+bed[radius <= p.r_gl] = -p.H0 * (910.0 / 1028.0) + 1.0
+bed[radius >  p.r_gl] = p.topg_min
 
 # Surface mass balance
 accum = np.zeros_like(thk)                 # accumulation/ ablation
-accum[radius >= p.r_gl] = p.accumulation_rate
+accum[radius > p.r_gl] = p.accumulation_rate
 
 # Surface temperature (irrelevant)
 Ts = np.zeros_like(thk) + p.air_temperature
@@ -47,11 +46,11 @@ bcflag[radius <= p.r_gl] = 1
 
 # SSA velocity Dirichlet B.C.
 ubar = np.zeros_like(thk)
-ubar[radius <= p.r_gl] = p.vel_bc * (xx[radius <= p.r_gl] / radius[radius <= p.r_gl])
+ubar[bcflag == 1] = p.vel_bc * (xx[radius <= p.r_gl] / radius[radius <= p.r_gl])
 ubar[bcflag == 0] = 0
 
 vbar = np.zeros_like(thk)
-vbar[radius <= p.r_gl] = p.vel_bc * (yy[radius <= p.r_gl] / radius[radius <= p.r_gl])
+vbar[bcflag == 1] = p.vel_bc * (yy[radius <= p.r_gl] / radius[radius <= p.r_gl])
 vbar[bcflag == 0] = 0
 
 ncfile = PISMNC.PISMDataset(options.output_filename, 'w', format='NETCDF3_CLASSIC')

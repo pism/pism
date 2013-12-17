@@ -2,7 +2,7 @@
 
 N=4
 xx=101
-yy=101
+yy=$xx
 length=400 
 
 infile="circular_noshelf.nc"
@@ -15,11 +15,11 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 1500 -Lbz 1000"
 
-pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc"
+pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -o_order zyx"
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 10 -extra_vars thk,mask,cbar,Href,velbar -extra_file ns_ex.nc"
+extra="-extra_times 10 -extra_vars thk,mask,cbar,Href,velbar,usurf -extra_file ns_ex.nc"
+ts="-ts_file ns_ts.nc -ts_times 1"
 
-# run with CFBC and part_grid
-$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o ns_partcfbc.nc $extra
+$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o ns_o.nc $extra $ts -float_kill
