@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
+PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf),
     ice_surface_temp(g.get_unit_system())
 {
@@ -97,7 +97,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
     faustogreve = new FaustoGrevePDDObject(grid, config);
   }
 
-  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("diagnostic",
 					 "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
 					 "m s-1",  // m *ice-equivalent* per second
@@ -105,11 +105,11 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
-  ierr = climatic_mass_balance.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
+  climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // diagnostic fields:
 
-  ierr = accumulation_rate.create(grid, "saccum", false); CHKERRQ(ierr);
+  ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = accumulation_rate.set_attrs("diagnostic",
                                      "instantaneous ice-equivalent surface accumulation rate"
                                      " (precipitation minus rain)",
@@ -118,7 +118,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   ierr = accumulation_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   accumulation_rate.write_in_glaciological_units = true;
 
-  ierr = melt_rate.create(grid, "smelt", false); CHKERRQ(ierr);
+  ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = melt_rate.set_attrs("diagnostic",
                              "instantaneous ice-equivalent surface melt rate",
                              "m s-1",
@@ -126,7 +126,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   ierr = melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   melt_rate.write_in_glaciological_units = true;
 
-  ierr = runoff_rate.create(grid, "srunoff", false); CHKERRQ(ierr);
+  ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = runoff_rate.set_attrs("diagnostic",
                                "instantaneous ice-equivalent surface meltwater runoff rate",
                                "m s-1",
@@ -134,7 +134,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   runoff_rate.write_in_glaciological_units = true;
 
-  ierr = snow_depth.create(grid, "snow_depth", false); CHKERRQ(ierr);
+  ierr = snow_depth.create(grid, "snow_depth", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = snow_depth.set_attrs("diagnostic",
 			      "snow cover depth (set to zero once a year)",
 			      "m", ""); CHKERRQ(ierr);
@@ -213,7 +213,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
 		    "    reading snow depth (ice equivalent meters) from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr);
-  ierr = snow_depth.regrid(input_file, 0.0); CHKERRQ(ierr);
+  ierr = snow_depth.regrid(input_file, OPTIONAL, 0.0); CHKERRQ(ierr);
 
   m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
 
@@ -458,8 +458,8 @@ PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, c
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 

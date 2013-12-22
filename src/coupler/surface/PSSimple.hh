@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "PISMSurface.hh"
 #include "PISMAtmosphere.hh"
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 
 //! \brief A class implementing a primitive surface model.
 /*! 
@@ -38,7 +38,7 @@ energy scheme for the ice fluid is exactly the 2m air temperature.
 */
 class PSSimple : public PISMSurfaceModel {
 public:
-  PSSimple(IceGrid &g, const NCConfigVariable &conf);
+  PSSimple(IceGrid &g, const PISMConfig &conf);
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);

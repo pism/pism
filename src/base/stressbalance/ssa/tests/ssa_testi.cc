@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -38,9 +38,8 @@ static char help[] =
 class SSATestCaseI: public SSATestCase
 {
 public:
-  SSATestCaseI( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c ): 
-                 SSATestCase(com,rank,size,c)
+  SSATestCaseI(MPI_Comm com, PISMConfig &c): 
+                 SSATestCase(com,c)
   { };
 
 protected:
@@ -81,7 +80,7 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
   enthalpyconverter = new EnthalpyConverter(config);
 
   config.set_string("ssa_flow_law", "isothermal_glen");
-  config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
+  config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
 
   return 0;
 }
@@ -97,7 +96,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set("epsilon_ssa", 0.0);  // don't use this lower bound
+  config.set_double("epsilon_ssa", 0.0);  // don't use this lower bound
 
   ierr = tauc.begin_access(); CHKERRQ(ierr);
 
@@ -171,20 +170,18 @@ PetscErrorCode SSATestCaseI::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
+  MPI_Comm    com;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -234,7 +231,7 @@ int main(int argc, char *argv[]) {
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
-    SSATestCaseI testcase(com,rank,size,config);
+    SSATestCaseI testcase(com, config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("I"); CHKERRQ(ierr);

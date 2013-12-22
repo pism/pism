@@ -56,7 +56,7 @@ PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceMod
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = temperature.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
+      for (unsigned int k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         ierr = EC->getEnthPermissive(Tij[k],0.0,EC->getPressureFromDepth(depth),
                                     Enthij[k]); CHKERRQ(ierr);
@@ -94,7 +94,7 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
       ierr = temperature.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = liquid_water_fraction.getInternalColumn(i,j,&Liqfracij); CHKERRQ(ierr);
       ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
+      for (unsigned int k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         ierr = EC->getEnthPermissive(Tij[k],Liqfracij[k],
                       EC->getPressureFromDepth(depth), Enthij[k]); CHKERRQ(ierr);
@@ -134,7 +134,7 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
       ierr = enthalpy.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
+      for (unsigned int k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         ierr = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth),
                                    omegaij[k]); CHKERRQ(ierr);
@@ -170,7 +170,7 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result.getInternalColumn(i,j,&CTSij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
+      for (unsigned int k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME issue #15
         CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));
       }

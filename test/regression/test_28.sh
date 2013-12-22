@@ -12,6 +12,7 @@ files="foo-28.nc bar-28.nc baz-28.nc"
 rm -f $files
 
 set -e
+set -x
 
 # create a (complete) dataset to bootstrap from:
 $MPIEXEC -n 2 $PISM_PATH/pisms -y 100 -o foo-28.nc
@@ -27,6 +28,7 @@ ncks -x -v bmelt,tillwat,dbdt,lon,lat -O foo-28.nc foo-28.nc
 $MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o baz-28.nc
 
 set +e
+set +x
 
 # Check results:
 $PISM_PATH/nccmp.py bar-28.nc baz-28.nc

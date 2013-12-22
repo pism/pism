@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "PIO.hh"
 #include "utCalendar2_cal.h"
 #include "calcalcs.h"
+#include "PISMConfig.hh"
 
 static inline std::string string_strip(std::string input) {
   if (input.empty() == true)
@@ -46,7 +47,7 @@ static inline std::string string_strip(std::string input) {
 
   for more details about supported calendars.
  */
-PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
+PISMTime_Calendar::PISMTime_Calendar(MPI_Comm c, const PISMConfig &conf,
                                      std::string calendar_string,
                                      PISMUnitSystem units_system)
   : PISMTime(c, conf, calendar_string, units_system) {
@@ -167,16 +168,17 @@ PetscErrorCode PISMTime_Calendar::init() {
  */
 PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
   PetscErrorCode ierr;
-  NCTimeseries time_axis(m_unit_system);
-  NCTimeBounds bounds(m_unit_system);
   PetscMPIInt rank;
   std::vector<double> time, time_bounds;
   std::string time_units, time_bounds_name, new_calendar,
     time_name = m_config.get_string("time_dimension_name");
   bool exists;
 
+  NCTimeseries time_axis(time_name, time_name, m_unit_system);
+  time_axis.set_units(m_time_units.format());
+
   ierr = MPI_Comm_rank(m_com, &rank); CHKERRQ(ierr);
-  PIO nc(m_com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
   ierr = nc.inq_var(time_name, exists); CHKERRQ(ierr);
@@ -236,16 +238,14 @@ PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
   // set the time
   if (time_bounds_name.empty() == false) {
     // use the time bounds
-    bounds.init(time_bounds_name, time_name, m_com, rank);
+    NCTimeBounds bounds(time_bounds_name, time_name, m_unit_system);
     bounds.set_units(m_time_units.format());
 
-    ierr = bounds.read(nc, this, time); CHKERRQ(ierr);
+    ierr = nc.read_time_bounds(bounds, this, time); CHKERRQ(ierr);
   } else {
     // use the time axis
-    time_axis.init(time_name, time_name, m_com, rank);
-    time_axis.set_units(m_time_units.format());
 
-    ierr = time_axis.read(nc, this, time); CHKERRQ(ierr);
+    ierr = nc.read_timeseries(time_axis, this, time); CHKERRQ(ierr);
   }
 
   m_run_start       = time.front();

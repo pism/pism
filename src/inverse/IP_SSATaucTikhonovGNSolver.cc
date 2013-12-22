@@ -45,54 +45,54 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   IceGrid &grid = *m_d0.get_grid();
   m_comm = grid.com;
 
-  PetscInt design_stencil_width = m_d0.get_stencil_width();
-  PetscInt state_stencil_width = m_u_obs.get_stencil_width();
+  unsigned int design_stencil_width = m_d0.stencil_width();
+  unsigned int state_stencil_width = m_u_obs.stencil_width();
 
-  ierr = m_x.create(grid,"x",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
+  ierr = m_x.create(grid, "x", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_tmp_D1Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_tmp_D2Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_tmp_S1Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_tmp_S2Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
+  ierr = m_tmp_D1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_tmp_D2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_tmp_S1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_tmp_S2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
 
-  ierr = m_tmp_D1Local.create(grid,"work vector",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_D2Local.create(grid,"work vector",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.create(grid,"work vector",kHasGhosts,state_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_S2Local.create(grid,"work vector",kHasGhosts,state_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_D1Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_D2Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_S1Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_S2Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_GN_rhs.create(grid,"GN_rhs",kNoGhosts,0); CHKERRQ(ierr);
+  ierr = m_GN_rhs.create(grid, "GN_rhs", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
 
-  ierr = m_dGlobal.create(grid,"d (sans ghosts)",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_d.create(grid,"d",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create(grid,"d_diff",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff_lin.create(grid,"d_diff linearized",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_h.create(grid,"h",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_hGlobal.create(grid,"h (sans ghosts)",kNoGhosts); CHKERRQ(ierr);
+  ierr = m_dGlobal.create(grid, "d (sans ghosts)", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_d.create(grid, "d", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff.create(grid, "d_diff", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff_lin.create(grid, "d_diff linearized", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_h.create(grid, "h", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_hGlobal.create(grid, "h (sans ghosts)", WITHOUT_GHOSTS); CHKERRQ(ierr);
   
-  ierr = m_dalpha_rhs.create(grid,"dalpha rhs",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_dh_dalpha.create(grid,"dh_dalpha",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dh_dalphaGlobal.create(grid,"dh_dalpha",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_u_diff.create(grid,"du",kHasGhosts,state_stencil_width); CHKERRQ(ierr);
+  ierr = m_dalpha_rhs.create(grid, "dalpha rhs", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_dh_dalpha.create(grid, "dh_dalpha", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_dh_dalphaGlobal.create(grid, "dh_dalpha", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_u_diff.create(grid, "du", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_grad_design.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_grad_state.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_gradient.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
+  ierr = m_grad_design.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_gradient.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &m_ksp); CHKERRQ(ierr);
-  ierr = KSPSetOptionsPrefix(m_ksp,"inv_gn_"); CHKERRQ(ierr);
+  ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_"); CHKERRQ(ierr);
   PetscReal ksp_rtol = 1e-5; // Soft tolerance
-  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
-  ierr = KSPSetType(m_ksp,KSPCG); CHKERRQ(ierr);
+  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  ierr = KSPSetType(m_ksp, KSPCG); CHKERRQ(ierr);
   PC pc;
-  ierr = KSPGetPC(m_ksp,&pc); CHKERRQ(ierr);
-  ierr = PCSetType(pc,PCNONE); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCNONE); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);  
 
   PetscInt nLocalNodes  = grid.xm*grid.ym;
   PetscInt nGlobalNodes = grid.Mx*grid.My;
-  ierr = MatCreateShell(grid.com,nLocalNodes,nLocalNodes,nGlobalNodes,nGlobalNodes,this,&m_mat_GN); CHKERRQ(ierr);
+  ierr = MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN); CHKERRQ(ierr);
 
-  typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver,&IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
+  typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   ierr = multCallback::connect(m_mat_GN);
 
   m_alpha = 1./m_eta;
@@ -101,7 +101,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   
   m_iter_max = 1000; bool flag;
-  ierr = PISMOptionsInt("-inv_gn_iter_max", "",m_iter_max,flag); CHKERRQ(ierr);  
+  ierr = PISMOptionsInt("-inv_gn_iter_max", "", m_iter_max, flag); CHKERRQ(ierr);  
 
   m_tikhonov_atol = grid.config.get("tikhonov_atol");
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");

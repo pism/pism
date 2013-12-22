@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,7 +27,7 @@
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public PISMBedDef {
 public:
-  PBLingleClark(IceGrid &g, const NCConfigVariable &conf);
+  PBLingleClark(IceGrid &g, const PISMConfig &conf);
   virtual ~PBLingleClark();
 
   PetscErrorCode init(PISMVars &vars);

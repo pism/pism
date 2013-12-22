@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -106,7 +106,7 @@ public:
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
     EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-    const NCConfigVariable &c);
+    const PISMConfig &c);
 
   virtual ~IP_SSATaucForwardProblem();
 

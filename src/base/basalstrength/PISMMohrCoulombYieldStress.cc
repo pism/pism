@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 PISM Authors
+// Copyright (C) 2004--2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,14 +47,14 @@ This submodel is inactive in floating areas.
 PetscErrorCode PISMMohrCoulombYieldStress::allocate() {
   PetscErrorCode ierr;
 
-  ierr = till_phi.create(grid, "tillphi", true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = till_phi.create(grid, "tillphi", WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
   ierr = till_phi.set_attrs("model_state",
                             "friction angle for till under grounded ice sheet",
                             "degrees", ""); CHKERRQ(ierr);
-  till_phi.time_independent = true; // in this model; need not be
-                                    // time-independent in general
+  till_phi.set_time_independent(true);
+  // in this model; need not be time-independent in general
 
-  ierr = tauc.create(grid, "tauc", true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = tauc.create(grid, "tauc", WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
   ierr = tauc.set_attrs("diagnostic",
                         "yield stress for basal till (plastic or pseudo-plastic model)",
                         "Pa", ""); CHKERRQ(ierr);
@@ -62,12 +62,12 @@ PetscErrorCode PISMMohrCoulombYieldStress::allocate() {
   // internal working space; stencil width needed because redundant computation
   // on overlaps
   ierr = tillwat.create(grid, "tillwat_for_MohrCoulomb",
-                        true, grid.max_stencil_width); CHKERRQ(ierr);
+                        WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
   ierr = tillwat.set_attrs("internal",
                            "copy of till water thickness held by PISMMohrCoulombYieldStress",
                            "m", ""); CHKERRQ(ierr);
   ierr = Po.create(grid, "overburden_pressure_for_MohrCoulomb",
-                   true, grid.max_stencil_width); CHKERRQ(ierr);
+                   WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
   ierr = Po.set_attrs("internal",
                       "copy of overburden pressure held by PISMMohrCoulombYieldStress",
                       "Pa", ""); CHKERRQ(ierr);
@@ -171,18 +171,18 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
     if (i_set || bootstrap) {
       ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
 
-      PIO nc(grid.com, grid.rank, "guess_mode", grid.get_unit_system());
+      PIO nc(grid.com, "guess_mode", grid.get_unit_system());
       bool tillphi_present;
 
       ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-      ierr = nc.inq_var(till_phi.string_attr("short_name"), tillphi_present); CHKERRQ(ierr);
+      ierr = nc.inq_var(till_phi.metadata().get_string("short_name"), tillphi_present); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
 
       if (tillphi_present) {
         ierr = verbPrintf(2, grid.com,
                           "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
                           "              present in the input file '%s'!\n",
-                          till_phi.string_attr("short_name").c_str(), filename.c_str()); CHKERRQ(ierr);
+                          till_phi.metadata().get_string("short_name").c_str(), filename.c_str()); CHKERRQ(ierr);
       }
     }
 
@@ -196,8 +196,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
     if (i_set) {
       ierr = till_phi.read(filename, start); CHKERRQ(ierr);
     } else {
-      ierr = till_phi.regrid(filename,
-                             config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
+      ierr = till_phi.regrid(filename, OPTIONAL,
+                                 config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
     }
   }
 
@@ -212,7 +212,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
 
     if (tauc_to_phi_file.empty() == false) {
       // "-tauc_to_phi filename.nc" is given
-      ierr = tauc.regrid(tauc_to_phi_file, true); CHKERRQ(ierr);
+      ierr = tauc.regrid(tauc_to_phi_file, CRITICAL); CHKERRQ(ierr);
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
@@ -221,7 +221,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
       if (bootstrap == false) {
         ierr = tauc.read(filename, start); CHKERRQ(ierr);
       } else {
-        ierr = tauc.regrid(filename, true); CHKERRQ(ierr);
+        ierr = tauc.regrid(filename, CRITICAL); CHKERRQ(ierr);
       }
     }
 

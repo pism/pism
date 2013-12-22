@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
 class PSElevation : public PISMSurfaceModel {
 public:
-  PSElevation(IceGrid &g, const NCConfigVariable &conf);
+  PSElevation(IceGrid &g, const PISMConfig &conf);
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,11 +23,11 @@
 #include "Mask.hh"
 #include <assert.h>
 
-PISMOceanKill::PISMOceanKill(IceGrid &g, const NCConfigVariable &conf)
+PISMOceanKill::PISMOceanKill(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
   PetscErrorCode ierr;
 
-  ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", true,
+  ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
                                   grid.max_stencil_width);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for PISMOceanKill.\n");
@@ -37,7 +37,7 @@ PISMOceanKill::PISMOceanKill(IceGrid &g, const NCConfigVariable &conf)
   ierr = m_ocean_kill_mask.set_attrs("internal",
                                      "mask specifying fixed calving front locations",
                                      "", ""); CHKERRCONTINUE(ierr);
-  m_ocean_kill_mask.time_independent = true;
+  m_ocean_kill_mask.set_time_independent(true);
 }
 
 PISMOceanKill::~PISMOceanKill() {
@@ -76,12 +76,12 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
        "  setting fixed calving front location using\n"
        "  ice thickness from '%s'.\n", filename.c_str()); CHKERRQ(ierr);
 
-    ierr = thickness.create(grid, "thk", false); CHKERRQ(ierr);
+    ierr = thickness.create(grid, "thk", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = thickness.set_attrs("temporary", "land ice thickness",
                                "m", "land_ice_thickness"); CHKERRQ(ierr);
-    ierr = thickness.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    thickness.metadata().set_double("valid_min", 0.0);
 
-    ierr = thickness.regrid(filename, true); CHKERRQ(ierr);
+    ierr = thickness.regrid(filename, CRITICAL); CHKERRQ(ierr);
 
     tmp = &thickness;
   }
@@ -133,14 +133,14 @@ PetscErrorCode PISMOceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
 
 void PISMOceanKill::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big")
-    result.insert(m_ocean_kill_mask.string_attr("short_name"));
+    result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
 }
 
 PetscErrorCode PISMOceanKill::define_variables(std::set<std::string> vars, const PIO &nc,
                                                PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, m_ocean_kill_mask.string_attr("short_name"))) {
+  if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
     ierr = m_ocean_kill_mask.define(nc, nctype); CHKERRQ(ierr);
   }
 
@@ -150,7 +150,7 @@ PetscErrorCode PISMOceanKill::define_variables(std::set<std::string> vars, const
 PetscErrorCode PISMOceanKill::write_variables(std::set<std::string> vars, const PIO& nc) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, m_ocean_kill_mask.string_attr("short_name"))) {
+  if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
     ierr = m_ocean_kill_mask.write(nc); CHKERRQ(ierr);
   }
 

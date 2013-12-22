@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 class BTU_Verification : public PISMBedThermalUnit
 {
 public:
-  BTU_Verification(IceGrid &g, const NCConfigVariable &conf, int test, int bii)
+  BTU_Verification(IceGrid &g, const PISMConfig &conf, int test, int bii)
     : PISMBedThermalUnit(g, conf) { testname = test; bedrock_is_ice = bii; }
   virtual ~BTU_Verification() {}
 
@@ -38,7 +38,7 @@ protected:
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides, int mytest);
+  IceCompModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:

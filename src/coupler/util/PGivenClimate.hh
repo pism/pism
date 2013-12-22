@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 
 #include "iceModelVec2T.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
 #include "PIO.hh"
 #include "pism_options.hh"
 
@@ -28,7 +29,7 @@ template <class Model, class Input>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(IceGrid &g, const NCConfigVariable &conf, Input *in)
+  PGivenClimate(IceGrid &g, const PISMConfig &conf, Input *in)
     : Model(g, conf, in) {}
 
   virtual ~PGivenClimate() {
@@ -160,8 +161,7 @@ protected:
     PetscErrorCode ierr;
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
 
-    PIO nc(Model::grid.com, Model::grid.rank, "netcdf3",
-           Model::grid.get_unit_system());
+    PIO nc(Model::grid.com, "netcdf3", Model::grid.get_unit_system());
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,8 @@
 #endif
 #include <netcdf.h>
 
-PISMNCFile::PISMNCFile(MPI_Comm c, int r)
-  : rank(r), com(c) {
+PISMNCFile::PISMNCFile(MPI_Comm c)
+  : com(c) {
   ncid = -1;
   define_mode = false;
   m_xs = m_xm = m_ys = m_ym = -1;
@@ -69,7 +69,8 @@ void PISMNCFile::set_local_extent(unsigned int xs, unsigned int xm,
  * Note: only processor 0 does the renaming.
  */
 int PISMNCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
-  int stat;
+  int stat, rank = 0;
+  MPI_Comm_rank(com, &rank);
 
   if (rank == rank_to_use) {
     bool exists = false;

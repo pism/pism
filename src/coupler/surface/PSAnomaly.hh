@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 class PSAnomaly : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {
 public:
-  PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  PSAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
   virtual ~PSAnomaly();
 
   virtual PetscErrorCode init(PISMVars &vars);

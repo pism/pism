@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Constantine Khroulev
+// Copyright (C) 2009--2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,34 +26,34 @@
 #include "IceGrid.hh"
 
 IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
-  localp           = false;
-  da3              = PETSC_NULL;
-  v3               = PETSC_NULL;
-  array3           = NULL;
-  first            = -1;
-  N                = 0;
-  n_records        = 50;	// just a default
-  report_range     = false;
-  lic              = NULL;
-  m_period         = 0;
-  m_reference_time = 0.0;
+  m_has_ghosts           = false;
+  da3                    = NULL;
+  v3                     = NULL;
+  array3                 = NULL;
+  first                  = -1;
+  N                      = 0;
+  n_records              = 50;	// just a default
+  m_report_range         = false;
+  lic                    = NULL;
+  m_period               = 0;
+  m_reference_time       = 0.0;
   n_evaluations_per_year = 53;
 }
 
 IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) {
   shallow_copy = true;
 
-  array3      = other.array3;
-  da3         = other.da3;
-  filename    = other.filename;
-  first       = other.first;
-  N           = other.N;
-  lic         = other.lic;
-  localp      = other.localp;
-  n_records   = other.n_records;
-  time        = other.time;
-  time_bounds = other.time_bounds;
-  v3          = other.v3;
+  array3       = other.array3;
+  da3          = other.da3;
+  filename     = other.filename;
+  first        = other.first;
+  N            = other.N;
+  lic          = other.lic;
+  m_has_ghosts = other.m_has_ghosts;
+  n_records    = other.n_records;
+  time         = other.time;
+  time_bounds  = other.time_bounds;
+  v3           = other.v3;
 
   m_interp_indices = other.m_interp_indices;
   m_period         = other.m_period;
@@ -91,10 +91,10 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, std::string my_short_name
     SETERRQ(grid->com, 1, "IceModelVec2T cannot be 'local'");
   }
 
-  ierr = IceModelVec2S::create(my_grid, my_short_name, false, width); CHKERRQ(ierr);
+  ierr = IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width); CHKERRQ(ierr);
 
   // initialize the da3 member:
-  ierr = grid->get_dm(this->n_records, this->da_stencil_width, da3); CHKERRQ(ierr);
+  ierr = grid->get_dm(this->n_records, this->m_da_stencil_width, da3); CHKERRQ(ierr);
 
   // allocate the 3D Vec:
   ierr = DMCreateGlobalVector(da3, &v3); CHKERRQ(ierr);
@@ -107,9 +107,9 @@ PetscErrorCode IceModelVec2T::destroy() {
 
   ierr = IceModelVec2S::destroy(); CHKERRQ(ierr);
 
-  if (v3 != PETSC_NULL) {
+  if (v3 != NULL) {
     ierr = VecDestroy(&v3); CHKERRQ(ierr);
-    v3 = PETSC_NULL;
+    v3 = NULL;
   }
 
   return 0;
@@ -139,7 +139,7 @@ PetscErrorCode IceModelVec2T::end_access() {
 
   if (access_counter == 0) {
     ierr = DMDAVecRestoreArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
-    array3 = PETSC_NULL;
+    array3 = NULL;
   }
 
   return 0;
@@ -159,11 +159,11 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
   std::string name_found;
   bool exists, found_by_standard_name;
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-  ierr = nc.inq_var(vars[0].short_name, vars[0].get_string("standard_name"),
+  ierr = nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (exists == false) {
     PetscPrintf(grid->com, "PISM ERROR: can't find %s (%s) in %s.\n",
-                vars[0].get_string("long_name").c_str(), vars[0].short_name.c_str(),
+                m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
                 filename.c_str());
     PISMEnd();
   }
@@ -188,23 +188,21 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
 
   if (time_found) {
     // we're found the time dimension
-    NCTimeseries time_dimension(grid->get_unit_system());
-    time_dimension.init(dimname, dimname, grid->com, grid->rank);
+    NCTimeseries time_dimension(dimname, dimname, grid->get_unit_system());
 
     ierr = time_dimension.set_units(grid->time->units_string()); CHKERRQ(ierr);
-    ierr = time_dimension.read(nc, grid->time, time); CHKERRQ(ierr);
+    ierr = nc.read_timeseries(time_dimension, grid->time, time); CHKERRQ(ierr);
 
     std::string bounds_name;
-    ierr = time_dimension.get_bounds_name(nc, bounds_name);
+    ierr = nc.get_att_text(dimname, "bounds", bounds_name); CHKERRQ(ierr);
 
     if (time.size() > 1) {
       if (bounds_name.empty() == false) {
         // read time bounds data from a file
-        NCTimeBounds tb(grid->get_unit_system());
-        tb.init(bounds_name, dimname, grid->com, grid->rank);
+        NCTimeBounds tb(bounds_name, dimname, grid->get_unit_system());
         ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
 
-        ierr = tb.read(nc, grid->time, time_bounds); CHKERRQ(ierr);
+        ierr = nc.read_time_bounds(tb, grid->time, time_bounds); CHKERRQ(ierr);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -215,7 +213,7 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
         PetscPrintf(grid->com,
                     "PISM ERROR: Variable '%s' does not have the time_bounds attribute.\n"
                     "  Cannot use time-dependent forcing data '%s' (%s) without time bounds.\n",
-                    dimname.c_str(),  vars[0].get_string("long_name").c_str(), vars[0].short_name.c_str());
+                    dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str());
         PISMEnd();
       }
     } else {
@@ -242,10 +240,6 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
 		       filename.c_str());
     PISMEnd();
   }
-
-  if (lic != NULL)
-    delete lic;
-  ierr = get_interp_context(nc, lic); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -319,7 +313,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
 
   unsigned int missing = PetscMin(n_records, time_size - start);
 
-  if (start == (unsigned int)first)
+  if (start == static_cast<unsigned int>(first))
     return 0;                   // nothing to do
 
   int kept = 0;
@@ -347,29 +341,25 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
     ierr = verbPrintf(2, grid->com,
                       "  reading \"%s\" into buffer\n"
                       "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
-                      string_attr("long_name").c_str(), name.c_str(), missing,
+                      metadata().get_string("long_name").c_str(), m_name.c_str(), missing,
                       grid->time->date(time_bounds[start*2]).c_str(),
                       grid->time->date(time_bounds[start*2 + 1]).c_str(),
                       grid->time->date(time_bounds[(start + missing - 1)*2]).c_str(),
                       grid->time->date(time_bounds[(start + missing - 1)*2 + 1]).c_str()); CHKERRQ(ierr);
-    report_range = false;
+    m_report_range = false;
   } else {
-    report_range = true;
+    m_report_range = true;
   }
 
   PIO nc(*grid, "guess_mode");
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < missing; ++j) {
-    if (lic != NULL) {
-      lic->start[0] = start + j;
-      lic->report_range = report_range;
-    }
-
-    ierr = vars[0].regrid(nc, lic, true, false, 0.0, v); CHKERRQ(ierr);
+    ierr = m_metadata[0].regrid(nc, start + j,
+                                CRITICAL, m_report_range, 0.0, v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
-		      name.c_str(),
+		      m_name.c_str(),
                       start + j,
                       grid->time->date(time[start + j]).c_str());
     ierr = set_record(kept + j); CHKERRQ(ierr);

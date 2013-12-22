@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ class PISMStressBalance : public PISMComponent
 {
 public:
   PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                    const NCConfigVariable &config);
+                    const PISMConfig &config);
   virtual ~PISMStressBalance();
 
   //! \brief Initialize the PISMStressBalance object.

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2014 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -26,6 +26,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include <cmath>                // for erf() in method 1 in putTempAtDepth()
+#include <assert.h>
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
@@ -50,24 +51,25 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
 
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
-  if (surface != NULL) {
+  assert(surface != NULL);
+
+  {
     PetscReal max_dt = 0;
     bool restrict = false;
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
-    if (restrict) {
+    if (restrict == true) {
       max_dt = PetscMin(1.0, max_dt);
     } else {
-      max_dt = 1.0;
+      max_dt = grid.convert(1.0, "year", "seconds");
     }
     
-    if (restrict == false)
-      max_dt = grid.convert(1.0, "year", "seconds");
-
     ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  } else SETERRQ(grid.com, 1, "surface == NULL");
+  }
 
-  if (ocean != NULL) {
+  assert(ocean != NULL);
+
+  {
     PetscReal max_dt = 0;
     bool restrict = false;
     // FIXME: this will break if an ocean model requires contiguous update intervals
@@ -77,7 +79,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
       max_dt = grid.convert(1, "year", "seconds");
 
     ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  } else SETERRQ(grid.com, 1, "ocean == NULL");
+  }
 
   ierr = verbPrintf(2, grid.com,
 		    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
@@ -143,21 +145,21 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   ierr = verbPrintf(2, grid.com, 
 		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
-  ierr = vLongitude.regrid(filename, false); CHKERRQ(ierr);
+  ierr = vLongitude.regrid(filename, OPTIONAL); CHKERRQ(ierr);
   if (!lonExists) {
-    ierr = vLongitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
+    vLongitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  ierr =  vLatitude.regrid(filename, false); CHKERRQ(ierr);
+  ierr =  vLatitude.regrid(filename, OPTIONAL); CHKERRQ(ierr);
   if (!latExists) {
-    ierr = vLatitude.set_attr("missing_at_bootstrap","true"); CHKERRQ(ierr);
+    vLatitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  ierr = vH.regrid(filename, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
-  ierr = vbed.regrid(filename, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr = basal_melt_rate.regrid(filename, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr = vGhf.regrid(filename, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
-  ierr = vuplift.regrid(filename, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+  ierr = vH.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  ierr = vbed.regrid(filename, OPTIONAL, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
+  ierr = basal_melt_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
+  ierr = vGhf.regrid(filename, OPTIONAL, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
+  ierr = vuplift.regrid(filename, OPTIONAL, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled
@@ -173,10 +175,10 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
 
   if (config.get_flag("ssa_dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bcflag is not present.
-    ierr = vBCMask.regrid(filename, 0.0); CHKERRQ(ierr);
+    ierr = vBCMask.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that
     // makes sense is the zero Dirichlet B.C.
-    ierr = vBCvel.regrid(filename,  0.0); CHKERRQ(ierr);
+    ierr = vBCvel.regrid(filename, OPTIONAL,  0.0); CHKERRQ(ierr);
   }
 
   // check if Lz is valid
@@ -291,24 +293,26 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   PetscScalar *T = new PetscScalar[grid.Mz];
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
-             usesmb = !(config.get_flag("bootstrapping_no_smb_in_initial_temp"));
+             usesmb  = config.get_flag("bootstrapping_no_smb_in_initial_temp") == false;
   const PetscScalar
     ice_k = config.get("ice_thermal_conductivity"),
     melting_point_temp = config.get("water_melting_point_temperature"),
-    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity"),
-    KK = ice_k / (config.get("ice_density") * config.get("ice_specific_heat_capacity"));
+    ice_density = config.get("ice_density"),
+    beta_CC_grad = config.get("beta_CC") * ice_density * config.get("standard_gravity"),
+    KK = ice_k / (ice_density * config.get("ice_specific_heat_capacity"));
 
-  if (surface != NULL) {
+  assert(surface != NULL);
+
+  // Note that surface->update was called in bootstrapFromFile()
+  {
     ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
-    if (usesmb) {
+    if (usesmb == true) {
       ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
     }
-  } else {
-    SETERRQ(grid.com, 1, "PISM ERROR: surface == NULL");
   }
 
   IceModelVec3 *result;
-  if (do_cold) 
+  if (do_cold)
     result = &T3;
   else
     result = &Enth3;
@@ -324,13 +328,13 @@ PetscErrorCode IceModel::putTempAtDepth() {
       const PetscScalar HH = vH(i,j),
                         Ts = ice_surface_temp(i,j),
                         gg = vGhf(i,j);
-      const PetscInt    ks = grid.kBelowHeight(HH);
+      const unsigned int ks = grid.kBelowHeight(HH);
 
       // within ice
-      if (usesmb) { // method 1:  includes surface mass balance in estimate
+      if (usesmb == true) { // method 1:  includes surface mass balance in estimate
         const PetscScalar mm = acab(i,j);
         if (mm <= 0.0) { // negative or zero surface mass balance case: linear
-          for (PetscInt k = 0; k < ks; k++) {
+          for (unsigned int k = 0; k < ks; k++) {
             const PetscScalar z = grid.zlevels[k],
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = gg / ice_k * (HH - z) + Ts;
@@ -339,7 +343,8 @@ PetscErrorCode IceModel::putTempAtDepth() {
         } else { // positive surface mass balance case
           const PetscScalar C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
             gamma0 = sqrt(mm * HH / (2.0 * KK));
-          for (PetscInt k = 0; k < ks; k++) {
+
+          for (unsigned int k = 0; k < ks; k++) {
             const PetscScalar z = grid.zlevels[k],
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = Ts + C0 * ( erf(gamma0) - erf(gamma0 * z / HH) );
@@ -349,7 +354,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       } else { // method 2:  does not use smb
         const PetscScalar beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
                           alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
-        for (PetscInt k = 0; k < ks; k++) {
+        for (unsigned int k = 0; k < ks; k++) {
           const PetscScalar depth = HH - grid.zlevels[k],
                             Tpmp = melting_point_temp - beta_CC_grad * depth,
                             d2 = depth * depth;
@@ -358,12 +363,12 @@ PetscErrorCode IceModel::putTempAtDepth() {
       }
 
       // above ice
-      for (PetscInt k = ks; k < grid.Mz; k++)
+      for (unsigned int k = ks; k < grid.Mz; k++)
         T[k] = ice_surface_temp(i,j);
       
-      // convert to enthalpy if that's what we are calculuting
+      // convert to enthalpy if that's what we are calculating
       if (!do_cold) {
-        for (PetscInt k = 0; k < grid.Mz; ++k) {
+        for (unsigned int k = 0; k < grid.Mz; ++k) {
           const PetscScalar depth = HH - grid.zlevels[k];
           const PetscScalar pressure = EC->getPressureFromDepth(depth);
           // reuse T to store enthalpy; assume that the ice is cold

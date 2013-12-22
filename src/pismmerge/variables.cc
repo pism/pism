@@ -1,4 +1,4 @@
-// Copyright (C) 2013 PISM Authors
+// Copyright (C) 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -84,7 +84,7 @@ int copy_coordinate_variable(PISMNC4_Serial &input, std::string var_name, PISMNC
  */
 int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Serial &output) {
   std::map<std::string, int> dim_lengths;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0, 0);
+  PISMNC4_Serial input(MPI_COMM_SELF, 0);
   int stat;
   std::vector<std::string> dims;
   std::vector<unsigned int> in_start, out_start, count;
@@ -186,7 +186,7 @@ int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Se
  */
 int copy_all_variables(std::string filename, PISMNC4_Serial &output) {
   int n_vars, stat;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0, 0);
+  PISMNC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dimensions, spatial_vars;
 
   stat = input.open(patch_filename(filename, 0), PISM_NOWRITE); check(stat);

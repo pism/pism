@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,14 +27,14 @@ class PISMVars;
 //! Class for a 3d DA-based Vec for PISMBedThermalUnit.
 class IceModelVec3BTU : public IceModelVec3D {
 public:
-  IceModelVec3BTU() { Lbz = -1.0; }
+  IceModelVec3BTU() : Lbz(-1.0) {}
   virtual ~IceModelVec3BTU() {}
 
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
                                 int myMbz, PetscReal myLbz, int stencil_width = 1);
                                 
-  virtual PetscErrorCode get_layer_depth(PetscReal &depth); //!< Return -Lbz value.
-  virtual PetscErrorCode get_spacing(PetscReal &dzb);
+  PetscErrorCode get_layer_depth(PetscReal &depth); //!< Return -Lbz value.
+  PetscErrorCode get_spacing(PetscReal &dzb);
 private:
   PetscReal Lbz;
   bool good_init();
@@ -101,7 +101,7 @@ values of \f$G_0\f$.
 class PISMBedThermalUnit : public PISMComponent_TS {
 
 public:
-  PISMBedThermalUnit(IceGrid &g, const NCConfigVariable &conf);
+  PISMBedThermalUnit(IceGrid &g, const PISMConfig &conf);
 
   virtual ~PISMBedThermalUnit() { }
 
@@ -128,7 +128,7 @@ protected:
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
   PetscScalar    bed_rho, bed_c, bed_k, bed_D;
   
-  PetscInt Mbz;
+  unsigned int Mbz;
   PetscReal Lbz;
   std::string m_input_file;		//!< non-empty if "-i" was set
 

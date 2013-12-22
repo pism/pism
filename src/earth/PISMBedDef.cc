@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
-PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
+PISMBedDef::PISMBedDef(IceGrid &g, const PISMConfig &conf)
   : PISMComponent_TS(g, conf) {
 
   thk    = NULL;
@@ -41,11 +41,11 @@ PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
-  ierr = topg_initial.create(grid, "topg_initial", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
                                 "m", ""); CHKERRQ(ierr);
 
-  ierr = topg_last.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = topg_last.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_last.set_attrs("model_state", "bedrock surface elevation",
 			     "m", "bedrock_altitude"); CHKERRQ(ierr);
 

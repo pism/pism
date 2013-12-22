@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,11 @@
 #ifndef __PISMDiagnostic_hh
 #define __PISMDiagnostic_hh
 
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 #include "Timeseries.hh"        // inline code
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 class IceModelVec;
 class PISMVars;

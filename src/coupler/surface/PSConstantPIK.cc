@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 PISM Authors
+// Copyright (C) 2008-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PSConstantPIK::PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+PSConstantPIK::PSConstantPIK(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf)
 {
   PetscErrorCode ierr = allocate_PSConstantPIK(); CHKERRCONTINUE(ierr);
@@ -42,7 +42,7 @@ void PSConstantPIK::attach_atmosphere_model(PISMAtmosphereModel *input)
 PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
   PetscErrorCode ierr;
 
-  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("climate_state",
                                          "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
                                          "m s-1",
@@ -50,7 +50,7 @@ PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
 
-  ierr = ice_surface_temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = ice_surface_temp.set_attrs("climate_state",
                                     "constant-in-time ice temperature at the ice surface",
                                     "K", ""); CHKERRQ(ierr);
@@ -85,7 +85,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
     "    reading ice-equivalent surface mass balance rate 'climatic_mass_balance' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
   if (do_regrid) {
-    ierr = climatic_mass_balance.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
+    ierr = climatic_mass_balance.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = climatic_mass_balance.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }

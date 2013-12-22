@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@
 class PISMCalvingAtThickness : public PISMComponent
 {
 public:
-  PISMCalvingAtThickness(IceGrid &g, const NCConfigVariable &conf);
+  PISMCalvingAtThickness(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMCalvingAtThickness();
 
   virtual PetscErrorCode init(PISMVars &vars);

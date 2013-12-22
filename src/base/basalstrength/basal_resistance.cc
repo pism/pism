@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,11 @@
 #include "basal_resistance.hh"
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
+#include "PISMConfig.hh"
 
 /* Purely plastic */
 
-IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const NCConfigVariable &config)
+IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const PISMConfig &config)
   : m_unit_system(config.get_unit_system()) {
   plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
 }
@@ -60,7 +61,7 @@ void IceBasalResistancePlasticLaw::dragWithDerivative(PetscReal tauc, PetscScala
 
 /* Pseudo-plastic */
 
-IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config)
+IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const PISMConfig &config)
   : IceBasalResistancePlasticLaw(config) {
   pseudo_q = config.get("pseudo_plastic_q");
   pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");

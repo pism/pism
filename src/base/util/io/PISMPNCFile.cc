@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,8 +23,8 @@
 #include "PISMPNCFile.hh"
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
 
-PISMPNCFile::PISMPNCFile(MPI_Comm c, int r)
-  : PISMNCFile(c, r) {
+PISMPNCFile::PISMPNCFile(MPI_Comm c)
+  : PISMNCFile(c) {
   // MPI_Info_create(&mpi_info);
   mpi_info = MPI_INFO_NULL;
 }
@@ -226,7 +226,7 @@ int PISMPNCFile::get_vara_double(std::string variable_name,
 int PISMPNCFile::put_vara_double(std::string variable_name,
                                  std::vector<unsigned int> start,
                                  std::vector<unsigned int> count,
-                                 double *op) const {
+                                 const double *op) const {
   std::vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
                               start, count, dummy, op, false);
@@ -236,7 +236,8 @@ int PISMPNCFile::put_vara_double(std::string variable_name,
 int PISMPNCFile::get_varm_double(std::string variable_name,
                                  std::vector<unsigned int> start,
                                  std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, double *ip) const {
+                                 std::vector<unsigned int> imap,
+                                 double *ip) const {
   return this->get_var_double(variable_name,
                               start, count, imap, ip, true);
 }
@@ -245,7 +246,8 @@ int PISMPNCFile::get_varm_double(std::string variable_name,
 int PISMPNCFile::put_varm_double(std::string variable_name,
                                  std::vector<unsigned int> start,
                                  std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, double *op) const {
+                                 std::vector<unsigned int> imap,
+                                 const double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
@@ -437,7 +439,7 @@ int PISMPNCFile::get_att_text(std::string variable_name, std::string att_name, s
 }
 
 
-int PISMPNCFile::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type nctype, std::vector<double> &data) const {
+int PISMPNCFile::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type nctype, const std::vector<double> &data) const {
   int stat = 0;
 
   stat = redef(); check(stat);
@@ -647,6 +649,8 @@ void PISMPNCFile::init_hints() {
                    const_cast<char*>(words[0].c_str()),
                    const_cast<char*>(words[1].c_str()));
     } else {
+      int rank = 0;
+      MPI_Comm_rank(com, &rank);
       if (rank == 0) {
         printf("PISM WARNING: invalid MPI I/O hint: %s. Ignoring it...\n",
                j->c_str());

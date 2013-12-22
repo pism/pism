@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@ class Timeseries;
 
 class PACosineYearlyCycle : public PAYearlyCycle {
 public:
-  PACosineYearlyCycle(IceGrid &g, const NCConfigVariable &conf);
+  PACosineYearlyCycle(IceGrid &g, const PISMConfig &conf);
   virtual ~PACosineYearlyCycle();
 
   virtual PetscErrorCode init(PISMVars &vars);

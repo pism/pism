@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@
 class PO_delta_MBP : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
-  PO_delta_MBP(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  PO_delta_MBP(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
   virtual ~PO_delta_MBP();
 
   virtual PetscErrorCode init(PISMVars &vars);

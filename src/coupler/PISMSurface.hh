@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,7 +33,7 @@ class IceModelVec2S;
 //! \brief The interface of PISM's surface models.
 class PISMSurfaceModel : public PISMComponent_TS {
 public:
-  PISMSurfaceModel(IceGrid &g, const NCConfigVariable &conf);
+  PISMSurfaceModel(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMSurfaceModel();
 
   // the interface:

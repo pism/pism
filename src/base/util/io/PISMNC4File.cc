@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,8 +30,8 @@
 
 #include "pism_type_conversion.hh"
 
-PISMNC4File::PISMNC4File(MPI_Comm c, int r, unsigned int compression_level)
-  : PISMNCFile(c, r), m_compression_level(compression_level) {
+PISMNC4File::PISMNC4File(MPI_Comm c, unsigned int compression_level)
+  : PISMNCFile(c), m_compression_level(compression_level) {
   // empty
 }
 
@@ -214,9 +214,9 @@ int PISMNC4File::get_vara_double(std::string variable_name,
 int PISMNC4File::put_varm_double(std::string variable_name,
                                  std::vector<unsigned int> start,
                                  std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, double *op) const {
+                                 std::vector<unsigned int> imap, const double *op) const {
   return this->get_put_var_double(variable_name,
-                                  start, count, imap, op,
+                                  start, count, imap, const_cast<double*>(op),
                                   false /*put*/,
                                   true /*mapped*/);
 }
@@ -224,10 +224,10 @@ int PISMNC4File::put_varm_double(std::string variable_name,
 int PISMNC4File::put_vara_double(std::string variable_name,
                                  std::vector<unsigned int> start,
                                  std::vector<unsigned int> count,
-                                 double *op) const {
+                                 const double *op) const {
   std::vector<unsigned int> dummy;
   return this->get_put_var_double(variable_name,
-                                  start, count, dummy, op,
+                                  start, count, dummy, const_cast<double*>(op),
                                   false /*put*/,
                                   false /*not mapped*/);
 }
@@ -416,7 +416,7 @@ int PISMNC4File::get_att_text(std::string variable_name, std::string att_name, s
   return 0;
 }
 
-int PISMNC4File::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, std::vector<double> &data) const {
+int PISMNC4File::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const {
   int stat = 0;
 
   stat = redef(); check(stat);

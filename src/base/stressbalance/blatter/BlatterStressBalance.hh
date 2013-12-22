@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -96,7 +96,7 @@ class BlatterStressBalance : public ShallowStressBalance
 		   PetscReal *taud, PetscReal *dtaub);
 public:
   BlatterStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                       EnthalpyConverter &e, const NCConfigVariable &conf);
+                       EnthalpyConverter &e, const PISMConfig &conf);
 
   virtual ~BlatterStressBalance();
 

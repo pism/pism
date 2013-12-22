@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,9 +20,10 @@
 #include "Timeseries.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
+#include "PISMConfig.hh"
 
 
-PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
+PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const PISMConfig &conf)
   : PAYearlyCycle(g, conf), A(NULL) {
 }
 
@@ -67,9 +68,9 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
                     "  Reading mean annual air temperature, mean July air temperature, and\n"
                     "  precipitation fields from '%s'...\n", input_file.c_str()); CHKERRQ(ierr);
 
-  ierr = air_temp_mean_annual.regrid(input_file, true); CHKERRQ(ierr);
-  ierr = air_temp_mean_july.regrid(input_file, true); CHKERRQ(ierr);
-  ierr = precipitation.regrid(input_file, true); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.regrid(input_file, CRITICAL); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.regrid(input_file, CRITICAL); CHKERRQ(ierr);
+  ierr = precipitation.regrid(input_file, CRITICAL); CHKERRQ(ierr);
 
   if (scaling_flag) {
 

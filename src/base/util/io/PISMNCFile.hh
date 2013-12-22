@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -75,7 +75,7 @@ enum PISM_Fill_Mode {
 class PISMNCFile
 {
 public:
-  PISMNCFile(MPI_Comm com, int rank);
+  PISMNCFile(MPI_Comm com);
   virtual ~PISMNCFile();
 
   // open/create/close
@@ -114,17 +114,19 @@ public:
   virtual int put_vara_double(std::string variable_name,
                               std::vector<unsigned int> start,
                               std::vector<unsigned int> count,
-                              double *op) const = 0;
+                              const double *op) const = 0;
 
   virtual int get_varm_double(std::string variable_name,
                               std::vector<unsigned int> start,
                               std::vector<unsigned int> count,
-                              std::vector<unsigned int> imap, double *ip) const = 0;
+                              std::vector<unsigned int> imap,
+                              double *ip) const = 0;
 
   virtual int put_varm_double(std::string variable_name,
                               std::vector<unsigned int> start,
                               std::vector<unsigned int> count,
-                              std::vector<unsigned int> imap, double *op) const = 0;
+                              std::vector<unsigned int> imap,
+                              const double *op) const = 0;
 
   virtual int inq_nvars(int &result) const = 0;
 
@@ -143,7 +145,7 @@ public:
 
   virtual int get_att_text(std::string variable_name, std::string att_name, std::string &result) const = 0;
 
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, std::vector<double> &data) const = 0;
+  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const = 0;
 
   virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, double value) const;
 
@@ -169,13 +171,12 @@ protected:
 
   virtual void check(int return_code) const;
 
-  int rank;
   MPI_Comm com;
 
   int ncid;
   std::string m_filename;
   mutable bool define_mode;
-  mutable int m_xs, m_xm, m_ys, m_ym;
+  mutable unsigned int m_xs, m_xm, m_ys, m_ym;
 };
 
 #endif /* _PISMNCWRAPPER_H_ */

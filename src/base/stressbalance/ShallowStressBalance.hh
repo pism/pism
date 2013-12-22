@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "flowlaws.hh"
 #include "flowlaw_factory.hh"
 #include <PISMDiagnostic.hh>
+#include "PISMConfig.hh"
 
 class PISMVars;
 class IceFlowLaw;
@@ -36,7 +37,7 @@ class ShallowStressBalance : public PISMComponent
 {
 public:
   ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                       EnthalpyConverter &e, const NCConfigVariable &conf)
+                       EnthalpyConverter &e, const PISMConfig &conf)
     : PISMComponent(g, conf), basal(b), flow_law(NULL), EC(e)
   {
     m_vel_bc = NULL; bc_locations = NULL; variables = NULL;
@@ -144,7 +145,7 @@ class SSB_Trivial : public ShallowStressBalance
 {
 public:
   SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              EnthalpyConverter &e, const NCConfigVariable &conf)
+              EnthalpyConverter &e, const PISMConfig &conf)
     : ShallowStressBalance(g, b, e, conf) {
 
     // Use the SIA flow law.
@@ -183,7 +184,7 @@ public:
 class SSB_Constant : public SSB_Trivial {
 public:
   SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
-               EnthalpyConverter &e, const NCConfigVariable &conf);
+               EnthalpyConverter &e, const PISMConfig &conf);
   virtual ~SSB_Constant();
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(PISMVars &vars);

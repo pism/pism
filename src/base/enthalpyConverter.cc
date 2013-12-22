@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2013 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,9 +19,9 @@
 #include <petsc.h>  // for PetscErrorPrintf, etc.
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 
-EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
+EnthalpyConverter::EnthalpyConverter(const PISMConfig &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
   g     = config.get("standard_gravity");			 // m s-2

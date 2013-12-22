@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2007-2014 Ed Bueler and Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 
-PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf)
+PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const PISMConfig &conf)
   : PAYearlyCycle(g, conf) {
   do_greenhouse_warming = false;
   greenhouse_warming_start_year = 0.0;

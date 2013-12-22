@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@
  * the code.)
  */
 
-POGivenTH::POGivenTH(IceGrid &g, const NCConfigVariable &conf)
+POGivenTH::POGivenTH(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
 {
   PetscErrorCode ierr = allocate_POGivenTH(); CHKERRCONTINUE(ierr);

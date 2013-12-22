@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "PISMSurface.hh"
 #include "localMassBalance.hh"
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -45,7 +45,7 @@ then an object is called which updates these values based on the location.
 */
 class PSTemperatureIndex : public PISMSurfaceModel {
 public:
-  PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf);
+  PSTemperatureIndex(IceGrid &g, const PISMConfig &conf);
   virtual ~PSTemperatureIndex();
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode init(PISMVars &vars);

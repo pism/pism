@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include "Mask.hh"
 
 
-PISMBedSmoother::PISMBedSmoother(IceGrid &g, const NCConfigVariable &conf, PetscInt MAX_GHOSTS)
+PISMBedSmoother::PISMBedSmoother(IceGrid &g, const PISMConfig &conf, PetscInt MAX_GHOSTS)
     : grid(g), config(conf) {
 
   if (allocate(MAX_GHOSTS) != 0) {
@@ -92,27 +92,27 @@ PetscErrorCode PISMBedSmoother::allocate(int maxGHOSTS) {
 
   // allocate Vecs that live on all procs; all have to be as "wide" as any of
   //   their prospective uses
-  ierr = topgsmooth.create(grid, "topgsmooth", true, maxGHOSTS); CHKERRQ(ierr);
+  ierr = topgsmooth.create(grid, "topgsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
   ierr = topgsmooth.set_attrs(
      "bed_smoother_tool", 
      "smoothed bed elevation, in bed roughness parameterization",
      "m", ""); CHKERRQ(ierr);
-  ierr = maxtl.create(grid, "maxtl", true, maxGHOSTS); CHKERRQ(ierr);
+  ierr = maxtl.create(grid, "maxtl", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
   ierr = maxtl.set_attrs(
      "bed_smoother_tool", 
      "maximum elevation in local topography patch, in bed roughness parameterization",
      "m", ""); CHKERRQ(ierr);
-  ierr = C2.create(grid, "C2bedsmooth", true, maxGHOSTS); CHKERRQ(ierr);
+  ierr = C2.create(grid, "C2bedsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
   ierr = C2.set_attrs(
      "bed_smoother_tool", 
      "polynomial coeff of H^-2, in bed roughness parameterization",
      "m2", ""); CHKERRQ(ierr);
-  ierr = C3.create(grid, "C3bedsmooth", true, maxGHOSTS); CHKERRQ(ierr);
+  ierr = C3.create(grid, "C3bedsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
   ierr = C3.set_attrs(
      "bed_smoother_tool", 
      "polynomial coeff of H^-3, in bed roughness parameterization",
      "m3", ""); CHKERRQ(ierr);
-  ierr = C4.create(grid, "C4bedsmooth", true, maxGHOSTS); CHKERRQ(ierr);
+  ierr = C4.create(grid, "C4bedsmooth", WITH_GHOSTS, maxGHOSTS); CHKERRQ(ierr);
   ierr = C4.set_attrs(
      "bed_smoother_tool", 
      "polynomial coeff of H^-4, in bed roughness parameterization",
@@ -335,7 +335,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
   MaskQuery M(mask);
   IceModelVec2S &result = *thksmooth;
 
-  int GHOSTS = topgsmooth.get_stencil_width();
+  int GHOSTS = topgsmooth.stencil_width();
 
   ierr = mask.begin_access(); CHKERRQ(ierr);
   ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
@@ -407,7 +407,7 @@ PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S usurf, IceModelVec2S *th
     return 0;
   }
 
-  int GHOSTS = topgsmooth.get_stencil_width();
+  int GHOSTS = topgsmooth.stencil_width();
   
   IceModelVec2S &result = *theta;
 

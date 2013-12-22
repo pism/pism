@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,14 +20,14 @@
 #define _POCONSTANT_H_
 
 #include "PISMOcean.hh"
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 
 //! \brief A class implementing a constant (in terms of the ocean inputs) ocean
 //! model. Uses configuration parameters for the sea level elevation and
 //! sub-shelf heat flux.
 class POConstant : public PISMOceanModel {
 public:
-  POConstant(IceGrid &g, const NCConfigVariable &conf);
+  POConstant(IceGrid &g, const PISMConfig &conf);
   virtual ~POConstant() {}
 
   virtual PetscErrorCode init(PISMVars &vars);

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ paradigm.  See \ref EISMINT00 and Appendix B of \ref BBssasliding.
  */
 class IceEISModel : public IceModel {
 public:
-  IceEISModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
+  IceEISModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode set_grid_defaults();

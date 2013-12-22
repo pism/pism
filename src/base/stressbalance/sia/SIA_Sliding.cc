@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,13 +29,13 @@ PetscErrorCode SIA_Sliding::allocate() {
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    ierr = work_2d_stag[i].create(grid, "work_vector", true); CHKERRQ(ierr);
+    ierr = work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS); CHKERRQ(ierr);
     snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
     ierr = work_2d_stag[i].set_name(namestr); CHKERRQ(ierr);
 
   }
 
-  ierr = work_2d.create(grid, "work_vector_2d", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = work_2d.create(grid, "work_vector_2d", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
 
   {
     IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
@@ -57,7 +57,7 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
   standard_gravity = config.get("standard_gravity");
   verification_mode = config.get_flag("sia_sliding_verification_mode");
 
-  if (config.has("EISMINT_II_experiment"))
+  if (config.is_set("EISMINT_II_experiment"))
     eisII_experiment = config.get_string("EISMINT_II_experiment");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));

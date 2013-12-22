@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,7 @@ static char help[] =
 #include "ShallowStressBalance.hh"
 #include "PISMVars.hh"
 
-PetscErrorCode compute_strain_heating_errors(const NCConfigVariable &config,
+PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
                                   IceModelVec3 &strain_heating,
                                   IceModelVec2S &thickness,
                                   IceGrid &grid,
@@ -178,7 +178,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
       ierr = temperature.getInternalColumn(i,j,&T_ij); CHKERRQ(ierr);
       ierr = enthalpy.getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
 
-      for (PetscInt k=0; k<grid.Mz; ++k) {
+      for (unsigned int k=0; k<grid.Mz; ++k) {
         PetscReal depth = thickness(i,j) - grid.zlevels[k];
         ierr = EC.getEnthPermissive(T_ij[k], 0.0,
                                     EC.getPressureFromDepth(depth),
@@ -260,7 +260,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   return 0;
 }
 
-PetscErrorCode reportErrors(const NCConfigVariable &config,
+PetscErrorCode reportErrors(const PISMConfig &config,
                             IceGrid &grid,
                             IceModelVec2S *thickness,
                             IceModelVec3 *u_sia, IceModelVec3 *v_sia,
@@ -305,19 +305,17 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     config.set_flag("compute_grain_size_using_age", false);
 
@@ -332,7 +330,7 @@ int main(int argc, char *argv[]) {
                   "\n");
     }
 
-    IceGrid grid(com, rank, size, config);
+    IceGrid grid(com, config);
 
     grid.Lx = grid.Ly = 900e3;
     grid.Lz = 4000;
@@ -340,6 +338,7 @@ int main(int argc, char *argv[]) {
     grid.Mz = 61;
 
     std::string output_file = "siafd_test_F.nc";
+    int tmp = grid.Mz;
     ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", ""); CHKERRQ(ierr);
     {
       bool flag;
@@ -348,11 +347,19 @@ int main(int argc, char *argv[]) {
       ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
                             grid.My, flag); CHKERRQ(ierr);
       ierr = PISMOptionsInt("-Mz", "Number of vertical grid levels",
-                            grid.Mz, flag); CHKERRQ(ierr);
+                            tmp, flag); CHKERRQ(ierr);
       ierr = PISMOptionsString("-o", "Set the output file name",
                                output_file, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+    if (tmp > 0) {
+      grid.Mz = tmp;
+    } else {
+      PetscPrintf(grid.com, "PISM ERROR: -Mz %d is invalid (has to be positive).\n",
+                  tmp);
+      PISMEnd();
+    }
 
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
@@ -376,40 +383,40 @@ int main(int argc, char *argv[]) {
     PISMVars vars;
 
     // ice upper surface elevation
-    ierr = vh.create(grid, "usurf", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = vh.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
           "m", "surface_altitude"); CHKERRQ(ierr);
     ierr = vars.add(vh); CHKERRQ(ierr);
 
     // land ice thickness
-    ierr = vH.create(grid, "thk", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = vH.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vH.set_attrs("model_state", "land ice thickness",
           "m", "land_ice_thickness"); CHKERRQ(ierr);
-    ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    vH.metadata().set_double("valid_min", 0.0);
     ierr = vars.add(vH); CHKERRQ(ierr);
 
     // bedrock surface elevation
-    ierr = vbed.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = vbed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
           "m", "bedrock_altitude"); CHKERRQ(ierr);
     ierr = vars.add(vbed); CHKERRQ(ierr);
 
     // age of the ice; is not used here
-    ierr = age.create(grid, "age", false); CHKERRQ(ierr);
+    ierr = age.create(grid, "age", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = age.set_attrs("diagnostic", "age of the ice", "s", ""); CHKERRQ(ierr);
     ierr = age.set_glaciological_units("year"); CHKERRQ(ierr);
     age.write_in_glaciological_units = true;
     ierr = vars.add(age); CHKERRQ(ierr);
 
     // enthalpy in the ice
-    ierr = enthalpy.create(grid, "enthalpy", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = enthalpy.set_attrs("model_state",
                               "ice enthalpy (includes sensible heat, latent heat, pressure)",
                               "J kg-1", ""); CHKERRQ(ierr);
     ierr = vars.add(enthalpy); CHKERRQ(ierr);
 
     // grounded_dragging_floating integer mask
-    ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
                            "", ""); CHKERRQ(ierr);
     std::vector<double> mask_values(4);
@@ -417,11 +424,9 @@ int main(int argc, char *argv[]) {
     mask_values[1] = MASK_GROUNDED;
     mask_values[2] = MASK_FLOATING;
     mask_values[3] = MASK_ICE_FREE_OCEAN;
-    ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
-    ierr = vMask.set_attr("flag_meanings",
-                          "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-    CHKERRQ(ierr);
-    vMask.output_data_type = PISM_BYTE;
+    vMask.metadata().set_doubles("flag_values", mask_values);
+    vMask.metadata().set_string("flag_meanings",
+                                "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
     ierr = vars.add(vMask); CHKERRQ(ierr);
 
     // This is never used (but it is a required argument of the
@@ -449,7 +454,7 @@ int main(int argc, char *argv[]) {
     ierr = stress_balance.init(vars); CHKERRQ(ierr);
 
     IceModelVec2S melange_back_pressure;
-    ierr = melange_back_pressure.create(grid, "melange_back_pressure", false); CHKERRQ(ierr);
+    ierr = melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = melange_back_pressure.set_attrs("boundary_condition",
                                            "melange back pressure fraction", "", ""); CHKERRQ(ierr);
     ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);

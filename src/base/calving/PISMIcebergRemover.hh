@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@
 class PISMIcebergRemover : public PISMComponent
 {
 public:
-  PISMIcebergRemover(IceGrid &g, const NCConfigVariable &conf);
+  PISMIcebergRemover(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMIcebergRemover();
 
   virtual PetscErrorCode init(PISMVars &vars);

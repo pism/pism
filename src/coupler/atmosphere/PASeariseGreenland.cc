@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -28,10 +28,11 @@
 #include "pism_options.hh"
 #include "PISMTime.hh"
 #include <assert.h>
+#include "PISMConfig.hh"
 
 ///// PA_SeaRISE_Greenland
 
-PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
+PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const PISMConfig &conf)
   : PAYearlyCycle(g, conf)
 {
 }
@@ -82,13 +83,13 @@ PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, PetscReal 
 PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
-  if (lat->has_attr("missing_at_bootstrap")) {
+  if (lat->metadata().has_attribute("missing_at_bootstrap")) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: latitude variable was missing at bootstrap;\n"
                        "  SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!!\n");
     CHKERRQ(ierr);
     PISMEnd();
   }
-  if (lon->has_attr("missing_at_bootstrap")) {
+  if (lon->metadata().has_attribute("missing_at_bootstrap")) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: longitude variable was missing at bootstrap;\n"
                        "  SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!!\n");
     CHKERRQ(ierr);

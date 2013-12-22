@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/year
 const double IceCompModel::secpera = 3.15569259747e7;
 
-IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
+IceCompModel::IceCompModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides, int mytest)
   : IceModel(g, conf, conf_overrides) {
 
   // note lots of defaults are set by the IceModel constructor
@@ -53,8 +53,8 @@ IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
   bedrock_is_ice_forK = PETSC_FALSE;
 
   // Override some defaults from parent class
-  config.set("sia_enhancement_factor", 1.0);
-  config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
+  config.set_double("sia_enhancement_factor", 1.0);
+  config.set_double("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
                                           // parameterization
 
   // set values of flags in run()
@@ -69,9 +69,9 @@ PetscErrorCode IceCompModel::createVecs() {
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
-  ierr = vHexactL.create(grid, "HexactL", true, 2); CHKERRQ(ierr);
+  ierr = vHexactL.create(grid, "HexactL", WITH_GHOSTS, 2); CHKERRQ(ierr);
 
-  ierr = strain_heating3_comp.create(grid,"strain_heating_comp", false); CHKERRQ(ierr);
+  ierr = strain_heating3_comp.create(grid,"strain_heating_comp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
 			      "W m-3", ""); CHKERRQ(ierr);
 
@@ -80,8 +80,8 @@ PetscErrorCode IceCompModel::createVecs() {
   // PSDummy is used):
   ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
   ierr = variables.add(acab); CHKERRQ(ierr);
-  ierr = ice_surface_temp.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
-  ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ice_surface_temp.metadata().set_string("pism_intent", "model_state");
+  acab.metadata().set_string("pism_intent", "model_state");
 
   return 0;
 }
@@ -123,8 +123,8 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    config.set("grid_Mbz", 2);
-    config.set("grid_Lbz", 1000);
+    config.set_double("grid_Mbz", 2);
+    config.set_double("grid_Lbz", 1000);
     grid.Lx = grid.Ly = 1000e3;
     grid.Lz = 4000;
     grid.periodicity = XY_PERIODIC;
@@ -174,8 +174,8 @@ PetscErrorCode IceCompModel::setFromOptions() {
     config.set_flag("do_energy", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
-    config.set("global_min_allowed_temp", 0.0);
-    config.set("max_low_temp_count", 1000000);
+    config.set_double("global_min_allowed_temp", 0.0);
+    config.set_double("max_low_temp_count", 1000000);
   } else
     config.set_flag("do_energy", false);
 
@@ -240,9 +240,9 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
     if (testname == 'K') {
       ierr = verbPrintf(1,grid.com,
                         "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
-      config.set("bedrock_thermal_density", config.get("ice_density"));
-      config.set("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
-      config.set("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
+      config.set_double("bedrock_thermal_density", config.get("ice_density"));
+      config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
+      config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
       bedrock_is_ice_forK = PETSC_TRUE;
     } else {
       ierr = verbPrintf(1,grid.com,
@@ -256,9 +256,9 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    config.set("bedrock_thermal_density", config.get("ice_density"));
-    config.set("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
-    config.set("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
+    config.set_double("bedrock_thermal_density", config.get("ice_density"));
+    config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
+    config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
   }
 
   btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);
@@ -270,7 +270,7 @@ PetscErrorCode IceCompModel::set_default_flowlaw() {
 
   if (testname == 'V') {
     config.set_string("ssa_flow_law", "isothermal_glen");
-    config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+    config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
     config.set_string("sia_flow_law", "arr");
@@ -1080,11 +1080,11 @@ PetscErrorCode IceCompModel::reportErrors() {
   unsigned int start;
   std::string filename;
   bool netcdf_report, append;
-  NCTimeseries err(grid.get_unit_system());
+  NCTimeseries err("N", "N", grid.get_unit_system());
 
   err.set_units("1");
 
-  PIO nc(grid.com, grid.rank, "netcdf3", grid.get_unit_system()); // OK to use netcdf3
+  PIO nc(grid.com, "netcdf3", grid.get_unit_system()); // OK to use netcdf3
 
   ierr = PISMOptionsString("-report_file", "NetCDF error report file",
                            filename, netcdf_report); CHKERRQ(ierr);
@@ -1098,25 +1098,24 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
     ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
 
-    ierr = global_attributes.write(nc); CHKERRQ(ierr);
+    ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);
 
     // Write the dimension variable:
-    err.init("N", "N", grid.com, grid.rank);
-    ierr = err.write(nc, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
+    ierr = nc.write_timeseries(err, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
 
     // Always write grid parameters:
-    err.short_name = "dx";
+    err.set_name("dx");
     ierr = err.set_units("meters"); CHKERRQ(ierr);
-    ierr = err.write(nc, (size_t)start, grid.dx); CHKERRQ(ierr);
-    err.short_name = "dy";
-    ierr = err.write(nc, (size_t)start, grid.dy); CHKERRQ(ierr);
-    err.short_name = "dz";
-    ierr = err.write(nc, (size_t)start, grid.dzMAX); CHKERRQ(ierr);
+    ierr = nc.write_timeseries(err, (size_t)start, grid.dx); CHKERRQ(ierr);
+    err.set_name("dy");
+    ierr = nc.write_timeseries(err, (size_t)start, grid.dy); CHKERRQ(ierr);
+    err.set_name("dz");
+    ierr = nc.write_timeseries(err, (size_t)start, grid.dzMAX); CHKERRQ(ierr);
 
     // Always write the test name:
-    err.reset(); err.set_units("1");
-    err.short_name = "test";
-    ierr = err.write(nc, (size_t)start, (double)testname, PISM_BYTE); CHKERRQ(ierr);
+    err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+    err.set_name("test");
+    ierr = nc.write_timeseries(err, (size_t)start, (double)testname, PISM_BYTE); CHKERRQ(ierr);
   }
 
   // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA
@@ -1135,26 +1134,26 @@ PetscErrorCode IceCompModel::reportErrors() {
                       maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset(); err.set_units("1");
-      err.short_name = "relative_volume";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("relative_volume");
       ierr = err.set_units("percent"); CHKERRQ(ierr);
       err.set_string("long_name", "relative ice volume error");
-      ierr = err.write(nc, (size_t)start, 100*volerr/volexact); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, 100*volerr/volexact); CHKERRQ(ierr);
 
-      err.short_name = "relative_max_eta";
+      err.set_name("relative_max_eta");
       ierr = err.set_units("1"); CHKERRQ(ierr);
       err.set_string("long_name", "relative $\\eta$ error");
-      ierr = err.write(nc, (size_t)start, maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
 
-      err.short_name = "maximum_thickness";
+      err.set_name("maximum_thickness");
       ierr = err.set_units("meters"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice thickness error");
-      ierr = err.write(nc, (size_t)start, maxHerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxHerr); CHKERRQ(ierr);
 
-      err.short_name = "average_thickness";
+      err.set_name("average_thickness");
       ierr = err.set_units("meters"); CHKERRQ(ierr);
       err.set_string("long_name", "average ice thickness error");
-      ierr = err.write(nc, (size_t)start, avHerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, avHerr); CHKERRQ(ierr);
     }
   }
 
@@ -1171,22 +1170,22 @@ PetscErrorCode IceCompModel::reportErrors() {
        maxTerr, avTerr, basemaxTerr, baseavTerr); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset(); err.set_units("1");
-      err.short_name = "maximum_temperature";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("maximum_temperature");
       ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
-      ierr = err.write(nc, (size_t)start, maxTerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxTerr); CHKERRQ(ierr);
 
-      err.short_name = "average_temperature";
+      err.set_name("average_temperature");
       err.set_string("long_name", "average ice temperature error");
-      ierr = err.write(nc, (size_t)start, avTerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, avTerr); CHKERRQ(ierr);
 
-      err.short_name = "maximum_basal_temperature";
+      err.set_name("maximum_basal_temperature");
       err.set_string("long_name", "maximum basal temperature error");
-      ierr = err.write(nc, (size_t)start, basemaxTerr); CHKERRQ(ierr);
-      err.short_name = "average_basal_temperature";
+      ierr = nc.write_timeseries(err, (size_t)start, basemaxTerr); CHKERRQ(ierr);
+      err.set_name("average_basal_temperature");
       err.set_string("long_name", "average basal temperature error");
-      ierr = err.write(nc, (size_t)start, baseavTerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, baseavTerr); CHKERRQ(ierr);
     }
 
   } else if ((testname == 'K') || (testname == 'O')) {
@@ -1199,23 +1198,23 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset(); err.set_units("1");
-      err.short_name = "maximum_temperature";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("maximum_temperature");
       ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
-      ierr = err.write(nc, (size_t)start, maxTerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxTerr); CHKERRQ(ierr);
 
-      err.short_name = "average_temperature";
+      err.set_name("average_temperature");
       err.set_string("long_name", "average ice temperature error");
-      ierr = err.write(nc, (size_t)start, avTerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, avTerr); CHKERRQ(ierr);
 
-      err.short_name = "maximum_bedrock_temperature";
+      err.set_name("maximum_bedrock_temperature");
       err.set_string("long_name", "maximum bedrock temperature error");
-      ierr = err.write(nc, (size_t)start, maxTberr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxTberr); CHKERRQ(ierr);
 
-      err.short_name = "average_bedrock_temperature";
+      err.set_name("average_bedrock_temperature");
       err.set_string("long_name", "average bedrock temperature error");
-      ierr = err.write(nc, (size_t)start, avTberr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, avTberr); CHKERRQ(ierr);
     }
   }
 
@@ -1229,16 +1228,16 @@ PetscErrorCode IceCompModel::reportErrors() {
                   max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset(); err.set_units("1");
-      err.short_name = "maximum_sigma";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("maximum_sigma");
       ierr = err.set_units("J s-1 m-3"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("1e6 J s-1 m-3"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum strain heating error");
-      ierr = err.write(nc, (size_t)start, max_strain_heating_error); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, max_strain_heating_error); CHKERRQ(ierr);
 
-      err.short_name = "average_sigma";
+      err.set_name("average_sigma");
       err.set_string("long_name", "average strain heating error");
-      ierr = err.write(nc, (size_t)start, av_strain_heating_error); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, av_strain_heating_error); CHKERRQ(ierr);
     }
   }
 
@@ -1252,24 +1251,24 @@ PetscErrorCode IceCompModel::reportErrors() {
                   grid.convert(maxUerr, "m/second", "m/year"), grid.convert(avUerr, "m/second", "m/year"), grid.convert(maxWerr, "m/second", "m/year"), grid.convert(avWerr, "m/second", "m/year")); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset(); err.set_units("1");
-      err.short_name = "maximum_surface_velocity";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("maximum_surface_velocity");
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
       ierr = err.set_units("m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
-      ierr = err.write(nc, (size_t)start, maxUerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxUerr); CHKERRQ(ierr);
 
-      err.short_name = "average_surface_velocity";
+      err.set_name("average_surface_velocity");
       err.set_string("long_name", "average ice surface horizontal velocity error");
-      ierr = err.write(nc, (size_t)start, avUerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, avUerr); CHKERRQ(ierr);
 
-      err.short_name = "maximum_surface_w";
+      err.set_name("maximum_surface_w");
       err.set_string("long_name", "maximum ice surface vertical velocity error");
-      ierr = err.write(nc, (size_t)start, maxWerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxWerr); CHKERRQ(ierr);
 
-      err.short_name = "average_surface_w";
+      err.set_name("average_surface_w");
       err.set_string("long_name", "average ice surface vertical velocity error");
-      ierr = err.write(nc, (size_t)start, avWerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, avWerr); CHKERRQ(ierr);
     }
   }
 
@@ -1287,23 +1286,23 @@ PetscErrorCode IceCompModel::reportErrors() {
                   grid.convert(maxuberr, "m/second", "m/year"), grid.convert(maxvberr, "m/second", "m/year")); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset(); err.set_units("1");
-      err.short_name = "maximum_basal_velocity";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("maximum_basal_velocity");
       ierr = err.set_units("m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
-      ierr = err.write(nc, (size_t)start, maxvecerr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxvecerr); CHKERRQ(ierr);
 
-      err.short_name = "average_basal_velocity";
-      ierr = err.write(nc, (size_t)start, avvecerr); CHKERRQ(ierr);
-      err.short_name = "maximum_basal_u";
-      ierr = err.write(nc, (size_t)start, maxuberr); CHKERRQ(ierr);
-      err.short_name = "maximum_basal_v";
-      ierr = err.write(nc, (size_t)start, maxvberr); CHKERRQ(ierr);
+      err.set_name("average_basal_velocity");
+      ierr = nc.write_timeseries(err, (size_t)start, avvecerr); CHKERRQ(ierr);
+      err.set_name("maximum_basal_u");
+      ierr = nc.write_timeseries(err, (size_t)start, maxuberr); CHKERRQ(ierr);
+      err.set_name("maximum_basal_v");
+      ierr = nc.write_timeseries(err, (size_t)start, maxvberr); CHKERRQ(ierr);
 
-      err.reset(); err.set_units("1");
-      err.short_name = "relative_basal_velocity";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("relative_basal_velocity");
       ierr = err.set_units("percent"); CHKERRQ(ierr);
-      ierr = err.write(nc, (size_t)start, (avvecerr/exactmaxspeed)*100); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, (avvecerr/exactmaxspeed)*100); CHKERRQ(ierr);
     }
   }
 
@@ -1324,11 +1323,11 @@ PetscErrorCode IceCompModel::reportErrors() {
                       grid.convert(maxbmelterr, "m/second", "m/year")); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.reset(); err.set_units("1");
-      err.short_name = "maximum_basal_melt_rate";
+      err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
+      err.set_name("maximum_basal_melt_rate");
       ierr = err.set_units("m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
-      ierr = err.write(nc, (size_t)start, maxbmelterr); CHKERRQ(ierr);
+      ierr = nc.write_timeseries(err, (size_t)start, maxbmelterr); CHKERRQ(ierr);
     }
   }
 

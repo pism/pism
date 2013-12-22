@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
-PAConstantPIK::PAConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+PAConstantPIK::PAConstantPIK(IceGrid &g, const PISMConfig &conf)
   : PISMAtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -34,21 +34,21 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
 
   // create mean annual ice equivalent precipitation rate (before separating
   // rain, and before melt, etc. in PISMSurfaceModel)
-  ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
+  ierr = precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = precipitation.set_attrs("climate_state",
                                  "mean annual ice-equivalent precipitation rate",
                                  "m s-1",
                                  ""); CHKERRQ(ierr); // no CF standard_name ??
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   precipitation.write_in_glaciological_units = true;
-  precipitation.time_independent = true;
+  precipitation.set_time_independent(true);
 
-  ierr = air_temp.create(grid, "air_temp", false); CHKERRQ(ierr);
+  ierr = air_temp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = air_temp.set_attrs("climate_state",
                                    "mean annual near-surface (2 m) air temperature",
                                    "K",
                                    ""); CHKERRQ(ierr);
-  air_temp.time_independent = true;
+  air_temp.set_time_independent(true);
 
   // initialize metadata for "air_temp_snapshot"
   air_temp_snapshot.init_2d("air_temp_snapshot", grid);
@@ -139,8 +139,8 @@ PetscErrorCode PAConstantPIK::write_variables(std::set<std::string> vars, const 
 
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp_snapshot", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp_snapshot, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp_snapshot", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = air_temp_snapshot;
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
@@ -179,7 +179,7 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
 		    "    from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (do_regrid) {
-    ierr = precipitation.regrid(input_file, true); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = precipitation.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }

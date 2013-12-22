@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _POCONSTANTPIK_H_
 
 #include "PISMOcean.hh"
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 
 //! A class defining the interface of a PISM ocean model modifier.
 
@@ -28,7 +28,7 @@
 //! Parameterization of sub-shelf melting with respect to sub-shelf heat flux like in Beckmann_Goosse 2003
 class POConstantPIK : public PISMOceanModel {
 public:
-  POConstantPIK(IceGrid &g, const NCConfigVariable &conf);
+  POConstantPIK(IceGrid &g, const PISMConfig &conf);
   virtual ~POConstantPIK();
 
   virtual PetscErrorCode init(PISMVars &vars);

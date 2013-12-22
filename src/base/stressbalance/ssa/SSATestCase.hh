@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2014 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -57,10 +57,9 @@ A driver uses an SSATestCase by calling 1-3 below and 4,5 as desired:
 class SSATestCase
 {
 public:
-  SSATestCase( MPI_Comm com, PetscMPIInt rank, 
-               PetscMPIInt size, NCConfigVariable &c ): 
-                  config(c), grid(com,rank,size,config), 
-                  basal(0), enthalpyconverter(0), ssa(0)
+  SSATestCase(MPI_Comm com, PISMConfig &c): 
+    config(c), grid(com, config), 
+    basal(0), enthalpyconverter(0), ssa(0)
   {  };
 
   virtual ~SSATestCase()
@@ -104,7 +103,7 @@ protected:
                                double max_v,
                                double avg_u,
                                double avg_v);
-  NCConfigVariable &config;
+  PISMConfig &config;
   IceGrid grid;
 
   // SSA model variables.

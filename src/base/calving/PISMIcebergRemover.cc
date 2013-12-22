@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 #include "Mask.hh"
 #include "PISMVars.hh"
 
-PISMIcebergRemover::PISMIcebergRemover(IceGrid &g, const NCConfigVariable &conf)
+PISMIcebergRemover::PISMIcebergRemover(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
 
   PetscErrorCode ierr = allocate();

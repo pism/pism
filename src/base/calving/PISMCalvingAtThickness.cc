@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,11 +20,11 @@
 #include "PISMCalvingAtThickness.hh"
 #include "Mask.hh"
 
-PISMCalvingAtThickness::PISMCalvingAtThickness(IceGrid &g, const NCConfigVariable &conf)
+PISMCalvingAtThickness::PISMCalvingAtThickness(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
   m_calving_threshold = config.get("calving_at_thickness");
 
-  PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", true, 1);
+  PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
   if (ierr != 0) {
     PetscPrintf(grid.com,
                 "PISM ERROR: memory allocation failed (PISMCalvingAtThickness constructor.\n");

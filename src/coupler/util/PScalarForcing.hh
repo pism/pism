@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid &g, const NCConfigVariable &conf, Model* in)
+  PScalarForcing(IceGrid &g, const PISMConfig &conf, Model* in)
     : Mod(g, conf, in), input(in) {}
   virtual ~PScalarForcing()
   {
@@ -91,7 +91,7 @@ protected:
                       "  reading %s data from forcing file %s...\n",
                       offset->short_name.c_str(), filename.c_str());
     CHKERRQ(ierr);
-    PIO nc(g.com, g.rank, "netcdf3", g.get_unit_system());
+    PIO nc(g.com, "netcdf3", g.get_unit_system());
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     {
       ierr = offset->read(nc, g.time); CHKERRQ(ierr);

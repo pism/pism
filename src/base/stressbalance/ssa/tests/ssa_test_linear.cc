@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -47,9 +47,8 @@ static char help[] =
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(MPI_Comm com, PetscMPIInt rank,
-                 PetscMPIInt size, NCConfigVariable &c)
-    : SSATestCase(com,rank,size,c)
+  SSATestCaseExp(MPI_Comm com, PISMConfig &c)
+    : SSATestCase(com, c)
   {
     PISMUnitSystem s = c.get_unit_system();
 
@@ -86,7 +85,7 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
 {
   // Use a pseudo-plastic law with linear till
   config.set_flag("do_pseudo_plastic_till", true);
-  config.set("pseudo_plastic_q", 1.0);
+  config.set_double("pseudo_plastic_q", 1.0);
   basal = new IceBasalResistancePseudoPlasticLaw(config);
 
   // The following is irrelevant because we will force linear rheology later.
@@ -168,19 +167,17 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -231,7 +228,7 @@ int main(int argc, char *argv[]) {
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
-    SSATestCaseExp testcase(com,rank,size,config);
+    SSATestCaseExp testcase(com,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("linear"); CHKERRQ(ierr);

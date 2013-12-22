@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -92,7 +92,7 @@ one-way during the update() call.
  */
 class PISMHydrology : public PISMComponent_TS {
 public:
-  PISMHydrology(IceGrid &g, const NCConfigVariable &conf);
+  PISMHydrology(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -158,7 +158,7 @@ Here is a talk which illustrates the "till-can" metaphor:
  */
 class PISMNullTransportHydrology : public PISMHydrology {
 public:
-  PISMNullTransportHydrology(IceGrid &g, const NCConfigVariable &conf)
+  PISMNullTransportHydrology(IceGrid &g, const PISMConfig &conf)
     : PISMHydrology(g, conf) {}
   virtual ~PISMNullTransportHydrology() {}
 
@@ -234,7 +234,7 @@ not add to the water amount W; such an addition is generally unstable.
  */
 class PISMRoutingHydrology : public PISMHydrology {
 public:
-  PISMRoutingHydrology(IceGrid &g, const NCConfigVariable &conf);
+  PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMRoutingHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -324,7 +324,7 @@ potential to zero if either regular grid neighbor is in the null strip.
  */
 class PISMDistributedHydrology : public PISMRoutingHydrology {
 public:
-  PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb);
+  PISMDistributedHydrology(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb);
   virtual ~PISMDistributedHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -369,7 +369,7 @@ protected:
 //! \brief A form of the PISM subglacial hydrology model for a distributed linked-cavity system with an alternate (more "elliptic") way of updating pressure.
 class PISMDistHydrologyALT : public PISMDistributedHydrology {
 public:
-  PISMDistHydrologyALT(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb)
+  PISMDistHydrologyALT(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb)
     : PISMDistributedHydrology(g,conf,sb) {}
   virtual ~PISMDistHydrologyALT() {}
   virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);

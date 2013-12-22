@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ setting each of these does not affect the value of the other.
  */
 class SSAStrengthExtension {
 public:
-  SSAStrengthExtension(const NCConfigVariable &c) : config(c) {
+  SSAStrengthExtension(const PISMConfig &c) : config(c) {
     min_thickness = config.get("min_thickness_strength_extension_ssa");
     constant_nu = config.get("constant_nu_strength_extension_ssa");
   }
@@ -86,7 +86,7 @@ public:
   }
 
 private:
-  const NCConfigVariable &config;
+  const PISMConfig &config;
   PetscReal  min_thickness, constant_nu;
 };
 
@@ -99,7 +99,7 @@ Subclasses of SSA should provide an associated function pointer matching the
 SSAFactory typedef */
 class SSA;
 typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &,
-                            EnthalpyConverter &, const NCConfigVariable &);
+                            EnthalpyConverter &, const PISMConfig &);
 
 
 //! PISM's SSA solver.
@@ -139,7 +139,7 @@ class SSA : public ShallowStressBalance
   friend class SSA_beta;
 public:
   SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-      const NCConfigVariable &c);
+      const PISMConfig &c);
 
   SSAStrengthExtension *strength_extension;
 

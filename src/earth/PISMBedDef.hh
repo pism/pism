@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
  */
 class PISMBedDef : public PISMComponent_TS {
 public:
-  PISMBedDef(IceGrid &g, const NCConfigVariable &conf);
+  PISMBedDef(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMBedDef() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
@@ -51,7 +51,7 @@ protected:
 //! Pointwide isostasy bed deformation model.
 class PBPointwiseIsostasy : public PISMBedDef {
 public:
-  PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &conf); 
+  PBPointwiseIsostasy(IceGrid &g, const PISMConfig &conf); 
   virtual ~PBPointwiseIsostasy() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);

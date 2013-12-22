@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #include "Mask.hh"
 #include "iceModelVec.hh"
 
-PISMFloatKill::PISMFloatKill(IceGrid &g, const NCConfigVariable &conf)
+PISMFloatKill::PISMFloatKill(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
   // empty
 }

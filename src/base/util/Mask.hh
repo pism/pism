@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 // the following three includes are needed here because of inlined code
 #include "iceModelVec.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 
 class Mask
 {
@@ -45,7 +45,7 @@ public:
 class GeometryCalculator
 {
 public:
-  GeometryCalculator(PetscReal seaLevel, const NCConfigVariable &config)
+  GeometryCalculator(PetscReal seaLevel, const PISMConfig &config)
   {
     sea_level = seaLevel;
     alpha = 1 - config.get("ice_density") / config.get("sea_water_density");

@@ -1,4 +1,4 @@
-// Copyright (C) 2013 PISM Authors
+// Copyright (C) 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -74,7 +74,7 @@ int get_quilt_size(PISMNC4_Serial &input, int &mpi_size) {
 //! \brief Checks if all input files are present. (We do this before creating
 //! the output file to make sure we don't end up bailing in the middle of it.)
 int check_input_files(std::string filename) {
-  PISMNC4_Serial nc(MPI_COMM_SELF, 0, 0);
+  PISMNC4_Serial nc(MPI_COMM_SELF, 0);
   int stat;
 
   stat = nc.open(patch_filename(filename, 0), PISM_NOWRITE);

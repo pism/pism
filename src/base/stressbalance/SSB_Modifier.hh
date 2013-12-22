@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ class EnthalpyConverter;
 class SSB_Modifier : public PISMComponent
 {
 public:
-  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
     : PISMComponent(g, c), EC(e)
   { D_max = 0.0; variables = NULL; allocate(); }
   virtual ~SSB_Modifier() {}
@@ -79,7 +79,7 @@ protected:
 class SSBM_Trivial : public SSB_Modifier
 {
 public:
-  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c);
+  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
   virtual ~SSBM_Trivial();
 
   virtual PetscErrorCode init(PISMVars &vars);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,7 +27,7 @@ class PISMStressBalance;
 class PISMEigenCalving : public PISMComponent
 {
 public:
-  PISMEigenCalving(IceGrid &g, const NCConfigVariable &conf,
+  PISMEigenCalving(IceGrid &g, const PISMConfig &conf,
                    PISMStressBalance *stress_balance);
   virtual ~PISMEigenCalving();
 

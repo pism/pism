@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,9 @@
 #include "PISMBedDef.hh"
 #include "IceGrid.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
 
-PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &conf)
+PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const PISMConfig &conf)
   : PISMBedDef(g, conf) {
   PetscErrorCode ierr;
 
@@ -35,7 +36,7 @@ PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &con
 PetscErrorCode PBPointwiseIsostasy::allocate() {
   PetscErrorCode ierr;
 
-  ierr = thk_last.create(grid, "thk_last", true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = thk_last.create(grid, "thk_last", WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
 
   return 0;
 }

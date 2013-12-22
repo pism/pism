@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
-  SIAFD(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+  SIAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
     : SSB_Modifier(g, e, c), WIDE_STENCIL(2) { allocate(); }
 
   virtual ~SIAFD();

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,8 +25,8 @@ static char help[] =
 
 int process_one_variable(std::string var_name, std::string input_file, std::string output_file,
                          unsigned int compression_level) {
-  PISMNC4_Serial input(MPI_COMM_SELF, 0, 0),
-    output(MPI_COMM_SELF, 0, compression_level);
+  PISMNC4_Serial input(MPI_COMM_SELF, 0),
+    output(MPI_COMM_SELF, compression_level);
   bool exists;
   int ierr;
 
@@ -99,8 +99,8 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
 int process_all_variables(std::string input_file, std::string output_file,
                           unsigned int compression_level) {
   int ierr, n_vars;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0, 0),
-    output(MPI_COMM_SELF, 0, compression_level);
+  PISMNC4_Serial input(MPI_COMM_SELF, 0),
+    output(MPI_COMM_SELF, compression_level);
 
   fprintf(stderr, "Merging all variables from %s into %s, compression level %d...\n",
           input_file.c_str(), output_file.c_str(), compression_level);

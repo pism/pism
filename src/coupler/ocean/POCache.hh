@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@
 
 class POCache : public POModifier {
 public:
-  POCache(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  POCache(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
   virtual ~POCache();
 
   virtual PetscErrorCode init(PISMVars &vars);

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2013 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2014 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,11 +18,11 @@
 
 #include "enthSystem.hh"
 #include <gsl/gsl_math.h>
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "iceModelVec.hh"
 #include "enthalpyConverter.hh"
 
-enthSystemCtx::enthSystemCtx(const NCConfigVariable &config,
+enthSystemCtx::enthSystemCtx(const PISMConfig &config,
                              IceModelVec3 &my_Enth3,
                              PetscScalar my_dx,  PetscScalar my_dy,
                              PetscScalar my_dt,  PetscScalar my_dz,

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ PetscErrorCode ShallowStressBalance::allocate() {
   PetscErrorCode ierr;
   unsigned int WIDE_STENCIL = 2;
 
-  ierr = m_velocity.create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // components ubar, vbar
+  ierr = m_velocity.create(grid, "bar", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // components ubar, vbar
   ierr = m_velocity.set_attrs("model_state",
                             "thickness-advective ice velocity (x-component)", 
                             "m s-1", "", 0); CHKERRQ(ierr);
@@ -38,7 +38,7 @@ PetscErrorCode ShallowStressBalance::allocate() {
   ierr = m_velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   m_velocity.write_in_glaciological_units = true;
 
-  ierr = basal_frictional_heating.create(grid, "bfrict", false); CHKERRQ(ierr);
+  ierr = basal_frictional_heating.create(grid, "bfrict", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = basal_frictional_heating.set_attrs("diagnostic",
                                             "basal frictional heating",
                                             "W m-2", ""); CHKERRQ(ierr);
@@ -133,7 +133,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
   Mask M;
 
   if (result.get_dof() != 2)
-    SETERRQ(grid.com, 1, "result.get_dof() == 2 is required");
+    SETERRQ(grid.com, 1, "result.dof() == 2 is required");
 
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -330,9 +330,9 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   IceModelVec2S *thickness, *surface;
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
@@ -385,8 +385,8 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "taud_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
@@ -413,7 +413,7 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
  * The only use I can think of right now is testing.
  */
 SSB_Constant::SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                           EnthalpyConverter &e, const NCConfigVariable &conf)
+                           EnthalpyConverter &e, const PISMConfig &conf)
   : SSB_Trivial(g, b, e, conf) {
   // empty
 }
@@ -446,7 +446,7 @@ PetscErrorCode SSB_Constant::init(PISMVars &vars) {
     PISMEnd();
   }
 
-  ierr = m_velocity.regrid(input_filename, true); CHKERRQ(ierr);
+  ierr = m_velocity.regrid(input_filename, CRITICAL); CHKERRQ(ierr);
 
   return 0;
 }

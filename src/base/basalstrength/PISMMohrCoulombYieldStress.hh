@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@
 class PISMMohrCoulombYieldStress : public PISMYieldStress
 {
 public:
-  PISMMohrCoulombYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro)
+  PISMMohrCoulombYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro)
     : PISMYieldStress(g, conf)
   {
     bed_topography = NULL;

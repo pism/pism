@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,7 @@ static PetscErrorCode read_input_data(std::string filename, PISMVars &variables,
 
   for (std::set<std::string>::iterator i = vars.begin(); i != vars.end(); ++i) {
     if (*i != "enthalpy") {
-      ierr = variables.get(*i)->regrid(filename, true); CHKERRQ(ierr);
+      ierr = variables.get(*i)->regrid(filename, CRITICAL); CHKERRQ(ierr);
     } else {
       PetscReal T = 263.15, omega = 0.0, pressure = 0.0, E;
       EC.getEnth(T, omega, pressure, E);
@@ -101,23 +101,23 @@ static PetscErrorCode allocate_variables(IceGrid &grid, PISMVars &variables) {
   tauc = new IceModelVec2S;
   enthalpy = new IceModelVec3;
 
-  ierr = thk->create(grid, "thk", true); CHKERRQ(ierr);
+  ierr = thk->create(grid, "thk", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = thk->set_attrs("", "ice thickness",
 			"m", "land_ice_thickness"); CHKERRQ(ierr);
   ierr = variables.add(*thk); CHKERRQ(ierr);
 
-  ierr = topg->create(grid, "topg", true); CHKERRQ(ierr);
+  ierr = topg->create(grid, "topg", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = topg->set_attrs("", "bedrock surface elevation",
 			"m", "bedrock_altitude"); CHKERRQ(ierr);
   ierr = variables.add(*topg); CHKERRQ(ierr);
 
-  ierr = tauc->create(grid, "tauc", true); CHKERRQ(ierr);
+  ierr = tauc->create(grid, "tauc", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = tauc->set_attrs("diagnostic",
                          "yield stress for basal till (plastic or pseudo-plastic model)",
                          "Pa", ""); CHKERRQ(ierr);
   ierr = variables.add(*tauc); CHKERRQ(ierr);
 
-  ierr = enthalpy->create(grid, "enthalpy", true, 1); CHKERRQ(ierr);
+  ierr = enthalpy->create(grid, "enthalpy", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = enthalpy->set_attrs("model_state",
 			     "ice enthalpy (includes sensible heat, latent heat, pressure)",
 			     "J kg-1", ""); CHKERRQ(ierr);
@@ -145,7 +145,6 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
   PetscLogStage cold, hot;
   bool compare_cold_and_hot = false;
 
@@ -155,14 +154,13 @@ int main(int argc, char *argv[]) {
   ierr = PetscLogStageRegister("Hot ", &hot); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
     ierr = set_config_from_options(com, config); CHKERRQ(ierr);
     ierr = setVerbosityLevel(2);
 
@@ -180,7 +178,7 @@ int main(int argc, char *argv[]) {
                   "\n");
     }
 
-    IceGrid grid(com, rank, size, config);
+    IceGrid grid(com, config);
 
     std::string input_file, output_file = "blatter_test.nc";
     ierr = PetscOptionsBegin(grid.com, "", "BLATTER_TEST options", ""); CHKERRQ(ierr);
@@ -229,7 +227,7 @@ int main(int argc, char *argv[]) {
     ierr =  read_input_data(input_file, variables, EC); CHKERRQ(ierr);
 
     IceModelVec2S melange_back_pressure;
-    ierr = melange_back_pressure.create(grid, "melange_back_pressure", false); CHKERRQ(ierr);
+    ierr = melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = melange_back_pressure.set_attrs("boundary_condition",
                                            "melange back pressure fraction",
                                            "1", ""); CHKERRQ(ierr);

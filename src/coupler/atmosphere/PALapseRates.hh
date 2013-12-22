@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
 {
 public:
-  PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  PALapseRates(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
   virtual ~PALapseRates();
 
   virtual PetscErrorCode init(PISMVars &vars);

@@ -32,6 +32,7 @@ set(PISMUTIL_SRC
   base/util/IceGrid.cc
   base/util/Mask.cc
   base/util/NCVariable.cc
+  base/util/PISMConfig.cc
   base/util/PISMComponent.cc
   base/util/PISMProf.cc
   base/util/PISMTime.cc

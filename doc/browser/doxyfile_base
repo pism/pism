@@ -282,22 +282,6 @@ SUBGROUPING            = YES
 
 TYPEDEF_HIDES_STRUCT   = NO
 
-# The SYMBOL_CACHE_SIZE determines the size of the internal cache use to
-# determine which symbols to keep in memory and which to flush to disk.
-# When the cache is full, less often used symbols will be written to disk.
-# For small to medium size projects (<1000 input files) the default value is
-# probably good enough. For larger projects a too small cache size can cause
-# doxygen to be busy swapping symbols to and from disk most of the time
-# causing a significant performance penality.
-# If the system has enough physical memory increasing the cache will improve the
-# performance by keeping more symbols in memory. Note that the value works on
-# a logarithmic scale so increasing the size by one will rougly double the
-# memory usage. The cache size is given by this formula:
-# 2^(16+SYMBOL_CACHE_SIZE). The valid range is 0..9, the default is 0,
-# corresponding to a cache size of 2^16 = 65536 symbols
-
-SYMBOL_CACHE_SIZE      = 0
-
 #---------------------------------------------------------------------------
 # Build related configuration options
 #---------------------------------------------------------------------------
@@ -580,33 +564,7 @@ INPUT                  = pism_config.txt \
                          bedrough.txt \
                          references.txt \
                          howto.txt \
-                         ${PROJECT_SOURCE_DIR}/src/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/energy/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/rheology/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/sia/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/ssa/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/blatter/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/basalstrength/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/hydrology/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/calving/ \
-                         ${PROJECT_SOURCE_DIR}/src/software_tests/ \
-                         ${PROJECT_SOURCE_DIR}/src/coupler/ \
-                         ${PROJECT_SOURCE_DIR}/src/coupler/atmosphere/ \
-                         ${PROJECT_SOURCE_DIR}/src/coupler/surface/ \
-                         ${PROJECT_SOURCE_DIR}/src/coupler/ocean/ \
-                         ${PROJECT_SOURCE_DIR}/src/coupler/util/ \
-                         ${PROJECT_SOURCE_DIR}/src/earth/ \
-                         ${PROJECT_SOURCE_DIR}/src/inverse/ \
-                         ${PROJECT_SOURCE_DIR}/src/inverse/functional \
-                         ${PROJECT_SOURCE_DIR}/src/verif/ \
-                         ${PROJECT_SOURCE_DIR}/src/verif/tests/ \
-                         ${PROJECT_SOURCE_DIR}/src/eismint/ \
-                         ${PROJECT_SOURCE_DIR}/src/regional/ \
-			 ${PROJECT_SOURCE_DIR}/test/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/util/PISMComponent.cc \
-                         ${PROJECT_SOURCE_DIR}/src/base/util/PISMComponent.hh
+                         ${PROJECT_SOURCE_DIR}/src/
 
 # The last two files belong in the other (util) browser, but are crucial for
 # understanding PISMSurfaceModel and similar classes.
@@ -628,52 +586,14 @@ INPUT_ENCODING         = UTF-8
 
 FILE_PATTERNS          = *.c \
                          *.cc \
-                         *.cxx \
-                         *.cpp \
-                         *.c++ \
-                         *.d \
-                         *.java \
-                         *.ii \
-                         *.ixx \
-                         *.ipp \
-                         *.i++ \
-                         *.inl \
                          *.h \
-                         *.hh \
-                         *.hxx \
-                         *.hpp \
-                         *.h++ \
-                         *.idl \
-                         *.odl \
-                         *.cs \
-                         *.php \
-                         *.php3 \
-                         *.inc \
-                         *.m \
-                         *.mm \
-                         *.dox \
-                         *.py \
-                         *.C \
-                         *.CC \
-                         *.C++ \
-                         *.II \
-                         *.I++ \
-                         *.H \
-                         *.HH \
-                         *.H++ \
-                         *.CS \
-                         *.PHP \
-                         *.PHP3 \
-                         *.M \
-                         *.MM \
-                         *.PY \
-                         *.cdl
+                         *.hh
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories
 # should be searched for input files as well. Possible values are YES and NO.
 # If left blank NO is used.
 
-RECURSIVE              = NO
+RECURSIVE              = YES
 
 # The EXCLUDE tag can be used to specify files and/or directories that should
 # excluded from the INPUT source files. This way you can easily exclude a
@@ -681,9 +601,7 @@ RECURSIVE              = NO
 
 EXCLUDE                = ${PROJECT_SOURCE_DIR}/src/earth/cubature.h \
                          ${PROJECT_SOURCE_DIR}/src/earth/cubature.c \
-                         ${PROJECT_SOURCE_DIR}/src/verif/tests/exactM.py \
-                         ${PROJECT_SOURCE_DIR}/src/pythonbindings/PISMPYTHON_wrap.cxx \
-                         ${PROJECT_SOURCE_DIR}/src/pism_config.cdl
+                         ${PROJECT_SOURCE_DIR}/src/calcalcs
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded
@@ -782,7 +700,7 @@ INLINE_SOURCES         = NO
 # doxygen to hide any special comment blocks from generated source code
 # fragments. Normal C and C++ comments will always remain visible.
 
-STRIP_CODE_COMMENTS    = YES
+STRIP_CODE_COMMENTS    = NO
 
 # If the REFERENCED_BY_RELATION tag is set to YES
 # then for each documented function all documented
@@ -854,7 +772,7 @@ GENERATE_HTML          = YES
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be
 # put in front of it. If left blank `html' will be used as the default path.
 
-HTML_OUTPUT            = html
+HTML_OUTPUT            = .
 
 # The HTML_FILE_EXTENSION tag can be used to specify the file extension for
 # each generated HTML page (for example: .htm,.php,.asp). If it is left blank
@@ -1043,7 +961,7 @@ TREEVIEW_WIDTH         = 250
 # to manually remove any form_*.png images from the HTML output directory
 # to force them to be regenerated.
 
-FORMULA_FONTSIZE       = 12
+FORMULA_FONTSIZE       = 14
 
 # When the SEARCHENGINE tag is enable doxygen will generate a search box for the HTML output. The underlying search engine uses javascript
 # and DHTML and should work on any modern browser. Note that when using HTML help (GENERATE_HTMLHELP) or Qt help (GENERATE_QHP)
@@ -1441,7 +1359,7 @@ HAVE_DOT               = YES
 # DOTFONTPATH environment variable or by setting DOT_FONTPATH to the directory
 # containing the font.
 
-DOT_FONTNAME           = FreeSans
+DOT_FONTNAME           = 
 
 # The DOT_FONTSIZE tag can be used to set the size of the font of dot graphs.
 # The default size is 10pt.

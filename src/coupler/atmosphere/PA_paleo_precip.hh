@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 class PA_paleo_precip : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:
-  PA_paleo_precip(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  PA_paleo_precip(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
   virtual ~PA_paleo_precip();
 
   virtual PetscErrorCode init(PISMVars &vars);

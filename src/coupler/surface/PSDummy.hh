@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@
 */
 class PSDummy : public PISMSurfaceModel {
 public:
-  PSDummy(IceGrid &g, const NCConfigVariable &conf)
+  PSDummy(IceGrid &g, const PISMConfig &conf)
     : PISMSurfaceModel(g, conf)
   {};
 

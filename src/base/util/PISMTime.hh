@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -58,7 +58,7 @@ inline bool pism_is_valid_calendar_name(std::string name) {
 class PISMTime
 {
 public:
-  PISMTime(MPI_Comm c, const NCConfigVariable &conf, std::string calendar,
+  PISMTime(MPI_Comm c, const PISMConfig &conf, std::string calendar,
            PISMUnitSystem units_system);
   virtual ~PISMTime();
 
@@ -177,7 +177,7 @@ protected:
 
 protected:
   MPI_Comm m_com;
-  const NCConfigVariable &m_config;
+  const PISMConfig &m_config;
   PISMUnitSystem m_unit_system;
   PISMUnit m_time_units;
   double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@
 class PSGivenClimate : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {
 public:
-  PSGivenClimate(IceGrid &g, const NCConfigVariable &conf);
+  PSGivenClimate(IceGrid &g, const PISMConfig &conf);
   virtual ~PSGivenClimate();
 
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 
 #include "pism_options.hh"
 #include "NCVariable.hh"
+#include "PISMConfig.hh"
 
 //! Determine verbosity level from user options.
 /*!
@@ -544,13 +545,10 @@ PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result) {
 /*!
   Processes -config and -config_override command line options.
  */
-PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
-                           NCConfigVariable &config, NCConfigVariable &overrides,
+PetscErrorCode init_config(MPI_Comm com,
+                           PISMConfig &config, PISMConfig &overrides,
                            bool process_options) {
   PetscErrorCode ierr;
-
-  config.init("pism_config", com, rank);
-  overrides.init("pism_overrides", com, rank);
 
   std::string alt_config = PISM_DefaultConfigFile,
     override_config;
@@ -578,12 +576,12 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
     ierr =  set_config_from_options(com, config); CHKERRQ(ierr);
   }
 
-  config.print();
+  config.print_to_stdout();
 
   return 0;
 }
 
-PetscErrorCode set_config_from_options(MPI_Comm /*com*/, NCConfigVariable &config) {
+PetscErrorCode set_config_from_options(MPI_Comm /*com*/, PISMConfig &config) {
   PetscErrorCode ierr;
   bool flag;
 

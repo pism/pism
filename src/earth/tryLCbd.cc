@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ static char help[] =
 #include <petscvec.h>
 #include <petscdmda.h>
 #include "pism_const.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "deformation.hh"
 #include "pism_options.hh"
 
@@ -61,9 +61,9 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     BedDeformLC bdlc;
     DM          da2;

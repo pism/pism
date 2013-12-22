@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ class SSAFD : public SSA
   friend class SSAFD_nuH;
 public:
   SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-        const NCConfigVariable &c) :
+        const PISMConfig &c) :
     SSA(g,b,e,c)
   {
     PetscErrorCode ierr = allocate_fd();
@@ -123,7 +123,7 @@ protected:
 
 //! Constructs a new SSAFD
 SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &,
-                   EnthalpyConverter &, const NCConfigVariable &);
+                   EnthalpyConverter &, const PISMConfig &);
 
 //! \brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.

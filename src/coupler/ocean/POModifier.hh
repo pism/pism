@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013 PISM Authors
+// Copyright (C) 2011, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 class POModifier : public Modifier<PISMOceanModel>
 {
 public:
-  POModifier(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
+  POModifier(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
     : Modifier<PISMOceanModel>(g, conf, in) {}
   virtual ~POModifier() {}
 

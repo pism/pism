@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include "PISMConstantYieldStress.hh"
 #include "pism_options.hh"
+#include "PISMConfig.hh"
 
 PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
@@ -47,7 +48,8 @@ PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
     if (i_set) {
       ierr = tauc.read(filename, start); CHKERRQ(ierr);
     } else {
-      ierr = tauc.regrid(filename, config.get("default_tauc")); CHKERRQ(ierr);
+      ierr = tauc.regrid(filename, OPTIONAL,
+                         config.get("default_tauc")); CHKERRQ(ierr);
     }
   } else {
     ierr = tauc.set(config.get("default_tauc")); CHKERRQ(ierr);
@@ -95,7 +97,7 @@ PetscErrorCode PISMConstantYieldStress::basal_material_yield_stress(IceModelVec2
 PetscErrorCode PISMConstantYieldStress::allocate() {
   PetscErrorCode ierr;
 
-  ierr = tauc.create(grid, "tauc", true, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = tauc.create(grid, "tauc", WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   ierr = tauc.set_attrs("model_state", 
                         "yield stress for basal till (plastic or pseudo-plastic model)",

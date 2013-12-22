@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -72,7 +72,7 @@ class IceGrid;
 class Timeseries {
 public:
   Timeseries(IceGrid * g, std::string name, std::string dimension_name);
-  Timeseries(MPI_Comm com, PetscMPIInt rank, PISMUnitSystem units_system,
+  Timeseries(MPI_Comm com, PISMUnitSystem units_system,
              std::string name, std::string dimension_name);
   
   PetscErrorCode read(const PIO &nc, PISMTime *time);
@@ -90,18 +90,17 @@ public:
 
   std::string short_name;
 protected:
-  MPI_Comm com;
-  PetscMPIInt rank;
+  PISMUnitSystem m_unit_system;
   NCTimeseries dimension, var;
+  MPI_Comm com;
   NCTimeBounds bounds;
   bool use_bounds;
-  PISMUnitSystem m_unit_system;
-
   std::vector<double> time;
   std::vector<double> values;
   std::vector<double> time_bounds;
-  void private_constructor(MPI_Comm com, PetscMPIInt rank,
-                           std::string name, std::string dimension_name);
+private:
+  void private_constructor(MPI_Comm com, std::string name, std::string dimension_name);
+  PetscErrorCode report_range();
 };
 
 //! A class for storing and writing diagnostic time-series.

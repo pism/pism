@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ PetscErrorCode IceModel::update_viewers() {
     if (v == NULL)
       continue;
 
-    int dims = v->get_ndims();
+    unsigned int dims = v->get_ndims();
 
     if (dims != 2) {
       ierr = PetscPrintf(grid.com,
@@ -66,7 +66,7 @@ PetscErrorCode IceModel::update_viewers() {
     }
 
     if (v->get_dof() == 1) {    // scalar fields
-      std::string name = v->string_attr("short_name");
+      std::string name = v->metadata().get_string("short_name");
       PetscViewer viewer = viewers[name];
 
       if (viewer == PETSC_NULL) {
@@ -80,8 +80,8 @@ PetscErrorCode IceModel::update_viewers() {
       ierr = v2d->view(viewer, PETSC_NULL); CHKERRQ(ierr);
 
     } else if (v->get_dof() == 2) { // vector fields
-      std::string name_1 = v->string_attr("short_name", 0),
-        name_2 = v->string_attr("short_name", 1);
+      std::string name_1 = v->metadata().get_string("short_name"),
+        name_2 = v->metadata(1).get_string("short_name");
       PetscViewer v1 = viewers[name_1],
         v2 = viewers[name_2];
 
@@ -125,7 +125,7 @@ PetscErrorCode IceModel::update_viewers() {
     if (v == NULL)
       continue;
 
-    int dims = v->get_ndims();
+    unsigned int dims = v->get_ndims();
 
     // if it's a 2D variable, stop
     if (dims == 2) {
@@ -133,7 +133,7 @@ PetscErrorCode IceModel::update_viewers() {
       PISMEnd();
     }
 
-    std::string name = v->string_attr("short_name");
+    std::string name = v->metadata().get_string("short_name");
     PetscViewer viewer = viewers[name];
 
     if (viewer == PETSC_NULL) {
@@ -167,7 +167,7 @@ PetscErrorCode IceModel::init_viewers() {
 			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 
   if (flag)
-    config.set("viewer_size", viewer_size);
+    config.set_double("viewer_size", viewer_size);
 
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",

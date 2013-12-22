@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "POGivenClimate.hh"
 #include "IceGrid.hh"
 
-POGiven::POGiven(IceGrid &g, const NCConfigVariable &conf)
+POGiven::POGiven(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
 {
   PetscErrorCode ierr = allocate_POGiven(); CHKERRCONTINUE(ierr);

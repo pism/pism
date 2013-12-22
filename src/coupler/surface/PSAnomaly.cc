@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "PSAnomaly.hh"
 #include "IceGrid.hh"
 
-PSAnomaly::PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+PSAnomaly::PSAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
   : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
@@ -158,8 +158,8 @@ PetscErrorCode PSAnomaly::write_variables(std::set<std::string> vars, const PIO 
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
@@ -170,8 +170,8 @@ PetscErrorCode PSAnomaly::write_variables(std::set<std::string> vars, const PIO 
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(climatic_mass_balance, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = climatic_mass_balance;
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;

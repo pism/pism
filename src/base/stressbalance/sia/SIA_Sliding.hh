@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ class SIA_Sliding : public ShallowStressBalance
 {
 public:
   SIA_Sliding(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              EnthalpyConverter &e, const NCConfigVariable &conf)
+              EnthalpyConverter &e, const PISMConfig &conf)
     : ShallowStressBalance(g, b, e, conf)
   {
     verification_mode = false;

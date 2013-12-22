@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2014 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include <assert.h>
 
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                  EnthalpyConverter &ec, const NCConfigVariable &c)
+                  EnthalpyConverter &ec, const PISMConfig &c)
 {
   return new SSAFD(g,b,ec,c);
 }
@@ -117,22 +117,22 @@ PetscErrorCode SSAFD::allocate_fd() {
   const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  ierr = hardness.create(grid, "hardness", false); CHKERRQ(ierr);
+  ierr = hardness.create(grid, "hardness", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = hardness.set_attrs("diagnostic",
                             "vertically-averaged ice hardness",
                             unitstr, ""); CHKERRQ(ierr);
 
-  ierr = nuH.create(grid, "nuH", true); CHKERRQ(ierr);
+  ierr = nuH.create(grid, "nuH", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = nuH.set_attrs("internal",
                        "ice thickness times effective viscosity",
                        "Pa s m", ""); CHKERRQ(ierr);
 
-  ierr = nuH_old.create(grid, "nuH_old", true); CHKERRQ(ierr);
+  ierr = nuH_old.create(grid, "nuH_old", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = nuH_old.set_attrs("internal",
                            "ice thickness times effective viscosity (before an update)",
                            "Pa s m", ""); CHKERRQ(ierr);
 
-  ierr = m_work.create(grid, "m_work", true,
+  ierr = m_work.create(grid, "m_work", WITH_GHOSTS,
                        2, /* stencil width */
                        6  /* dof */); CHKERRQ(ierr);
   ierr = m_work.set_attrs("internal",
@@ -1153,7 +1153,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
 
         ierr = enthalpy->getInternalColumn(i+oi,j+oj,&E_offset); CHKERRQ(ierr);
         // build a column of enthalpy values a the current location:
-        for (int k = 0; k < grid.Mz; ++k) {
+        for (unsigned int k = 0; k < grid.Mz; ++k) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
@@ -1534,7 +1534,7 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
   if (!view_nuh) return 0;
 
   IceModelVec2S tmp;
-  ierr = tmp.create(grid, "nuH", false); CHKERRQ(ierr);
+  ierr = tmp.create(grid, "nuH", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = tmp.set_attrs("temporary",
                        "log10 of (viscosity * thickness)",
                        "Pa s m", ""); CHKERRQ(ierr);
@@ -1650,7 +1650,7 @@ PetscErrorCode SSAFD::write_system_matlab() {
   char           yearappend[PETSC_MAX_PATH_LEN];
 
   IceModelVec2S component;
-  ierr = component.create(grid, "temp_storage", false); CHKERRQ(ierr);
+  ierr = component.create(grid, "temp_storage", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   bool flag;
   ierr = PISMOptionsString("-ssafd_matlab",
@@ -1713,18 +1713,18 @@ PetscErrorCode SSAFD::write_system_matlab() {
 
   ierr = nuH.get_component(0, component); CHKERRQ(ierr);
   ierr = component.set_name("nuH_0"); CHKERRQ(ierr);
-  ierr = component.set_attr("long_name",
-    "effective viscosity times thickness (i offset) at current time step"); CHKERRQ(ierr);
+  component.metadata().set_string("long_name",
+                                  "effective viscosity times thickness (i offset) at current time step");
   ierr = component.view_matlab(viewer); CHKERRQ(ierr);
 
-  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
+  ierr = nuH.get_component(1, component); CHKERRQ(ierr);
   ierr = component.set_name("nuH_1"); CHKERRQ(ierr);
-  ierr = component.set_attr("long_name",
-    "effective viscosity times thickness (j offset) at current time step"); CHKERRQ(ierr);
+  component.metadata().set_string("long_name",
+                                  "effective viscosity times thickness (j offset) at current time step");
   ierr = component.view_matlab(viewer); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1748,9 +1748,9 @@ PetscErrorCode SSAFD_nuH::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "nuH", true); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "nuH", WITH_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
 
   ierr = model->nuH.copy_to(*result); CHKERRQ(ierr);

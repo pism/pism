@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "hydrology_diagnostics.hh"
 
 
-PISMHydrology::PISMHydrology(IceGrid &g, const NCConfigVariable &conf)
+PISMHydrology::PISMHydrology(IceGrid &g, const PISMConfig &conf)
   : PISMComponent_TS(g, conf)
 {
   thk   = NULL;
@@ -34,8 +34,8 @@ PISMHydrology::PISMHydrology(IceGrid &g, const NCConfigVariable &conf)
   inputtobed = NULL;
   variables = NULL;
 
-  PetscErrorCode ierr1, ierr2, ierr3;
-  ierr1 = total_input.create(grid, "total_input_hydro", false);
+  PetscErrorCode ierr1, ierr2;
+  ierr1 = total_input.create(grid, "total_input_hydro", WITHOUT_GHOSTS);
   ierr2 = total_input.set_attrs("internal",
                          "workspace for total input rate into subglacial water layer",
                          "m s-1", "");
@@ -46,12 +46,12 @@ PISMHydrology::PISMHydrology(IceGrid &g, const NCConfigVariable &conf)
   }
 
   // *all* PISMHydrology classes have layer of water stored in till
-  ierr1 = Wtil.create(grid, "tillwat", false);
+  ierr1 = Wtil.create(grid, "tillwat", WITHOUT_GHOSTS);
   ierr2 = Wtil.set_attrs("model_state",
                      "effective thickness of subglacial water stored in till",
                      "m", "");
-  ierr3 = Wtil.set_attr("valid_min", 0.0);
-  if ((ierr1 != 0) || (ierr2 != 0) || (ierr3 != 0)) {
+  Wtil.metadata().set_double("valid_min", 0.0);
+  if ((ierr1 != 0) || (ierr2 != 0)) {
       PetscPrintf(grid.com,
         "PISM ERROR: memory allocation failed in PISMHydrology constructor (Wtil).\n");
       PISMEnd();
@@ -116,7 +116,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
                  n_records = 1;
 
-    PIO nc(grid.com, grid.rank, "netcdf3", grid.get_unit_system());
+    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
     ierr = nc.open(itbfilename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
@@ -140,7 +140,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
       "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records); CHKERRQ(ierr);
     inputtobed = new IceModelVec2T;
     inputtobed->set_n_records(n_records);
-    ierr = inputtobed->create(grid, "inputtobed", false); CHKERRQ(ierr);
+    ierr = inputtobed->create(grid, "inputtobed", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = inputtobed->set_attrs("climate_forcing",
                                  "amount of water (depth per time like bmelt) which should be put at the ice sheet bed",
                                  "m s-1", ""); CHKERRQ(ierr);
@@ -161,8 +161,8 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
     if (i_set) {
       ierr = Wtil.read(filename, start); CHKERRQ(ierr);
     } else {
-      ierr = Wtil.regrid(filename,
-                         config.get("bootstrapping_tillwat_value_no_var")); CHKERRQ(ierr);
+      ierr = Wtil.regrid(filename, OPTIONAL,
+                             config.get("bootstrapping_tillwat_value_no_var")); CHKERRQ(ierr);
     }
   } else {
     ierr = Wtil.set(config.get("bootstrapping_tillwat_value_no_var")); CHKERRQ(ierr);

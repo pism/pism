@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012 David Maxwell
+# Copyright (C) 2011, 2012, 2014 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -199,7 +199,7 @@ if PISM.getVerbosityLevel() >3:
 if PISM.optionsIsSet("-ssa_glen"):
   B_schoof = 3.7e8;     # Pa s^{1/3}; hardness
   config.set_string("ssa_flow_law", "isothermal_glen")
-  config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
+  config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
 else:
   config.set_string("ssa_flow_law", "gpbld")
 
@@ -231,7 +231,7 @@ tillphi2.set(0.)
 basal_till.updateTillPhi_algebraic(ice_mask, thickness, bwat, bmr, tauc, tillphi2, tillphi_prev=tillphi)
 
 
-pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+pio = PISM.PIO(grid.com,"netcdf3")
 pio.open(output_file,PISM.NC_WRITE,False)
 pio.def_time(grid.config.get_string("time_dimension_name"),
              grid.config.get_string("calendar"), grid.time.units_string())

@@ -137,16 +137,16 @@ int main(int argc, char**argv) {
       ierr = PISMOptionsList(mpi_comm, "-mode", "I/O mode", modes, mode, mode, flag); CHKERRQ(ierr);
 
       if (mode == "netcdf3") {
-        nc = new PISMNC3File(mpi_comm, mpi_rank);
+        nc = new PISMNC3File(mpi_comm);
       }
 #if (PISM_USE_PARALLEL_NETCDF4==1)
       else if (mode == "netcdf4") {
-        nc = new PISMNC4_Par(mpi_comm, mpi_rank);
+        nc = new PISMNC4_Par(mpi_comm);
       }
 #endif
 #if (PISM_USE_PNETCDF==1)
       else if (mode == "pnetcdf") {
-        nc = new PISMPNCFile(mpi_comm, mpi_rank);
+        nc = new PISMPNCFile(mpi_comm);
       }
 #endif
       else {

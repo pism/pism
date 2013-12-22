@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,29 +21,30 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "flowlaw_factory.hh"
+#include "PISMConfig.hh"
 
 PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;
 
-  ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
+  ierr =     u.create(grid, "uvel", WITH_GHOSTS); CHKERRQ(ierr);
   ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
 			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
   ierr =     u.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   u.write_in_glaciological_units = true;
 
-  ierr =     v.create(grid, "vvel", true); CHKERRQ(ierr);
+  ierr =     v.create(grid, "vvel", WITH_GHOSTS); CHKERRQ(ierr);
   ierr =     v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
 			  "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
   ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   v.write_in_glaciological_units = true;
 
-  ierr = strain_heating.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); CHKERRQ(ierr); // never diff'ed in hor dirs
   ierr = strain_heating.set_attrs("internal",
                           "rate of strain heating in ice (dissipation heating)",
 	        	  "W m-3", ""); CHKERRQ(ierr);
   ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
 
-  ierr = diffusive_flux.create(grid, "diffusive_flux", true, 1); CHKERRQ(ierr);
+  ierr = diffusive_flux.create(grid, "diffusive_flux", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = diffusive_flux.set_attrs("internal", 
                                   "diffusive (SIA) flux components on the staggered grid",
                                   "", ""); CHKERRQ(ierr);
@@ -69,7 +70,7 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
   return 0;
 }
 
-SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
   : SSB_Modifier(g, e, c)
 {
   IceFlowLawFactory ice_factory(grid.com, "", config, &EC);

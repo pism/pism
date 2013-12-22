@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,6 @@
 #include "flowlaw_factory.hh"
 #include "basal_resistance.hh"
 #include "PISMProf.hh"
-#include "LocalInterpCtx.hh"
 #include "pism_options.hh"
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
@@ -64,7 +63,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Lz_set, boot_file_set;
   std::string filename;
-  grid_info input(grid.get_unit_system());
+  grid_info input;
 
   // Get the bootstrapping file name:
 
@@ -123,8 +122,8 @@ PetscErrorCode IceModel::set_grid_defaults() {
   bool mapping_exists;
   ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
   if (mapping_exists) {
-    ierr = mapping.read(filename); CHKERRQ(ierr);
-    ierr = mapping.print(); CHKERRQ(ierr);
+    ierr = nc.read_attributes(mapping.get_name(), mapping); CHKERRQ(ierr);
+    ierr = mapping.report_to_stdout(grid.com, 4); CHKERRQ(ierr);
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -189,12 +188,25 @@ PetscErrorCode IceModel::set_grid_from_options() {
                          z_scale,  Lz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz.
+  int tmp_Mx = grid.Mx, tmp_My = grid.My, tmp_Mz = grid.Mz;
   ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
-                        grid.My, My_set); CHKERRQ(ierr);
+                        tmp_My, My_set); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-Mx", "Number of grid points in the Y direction",
-                        grid.Mx, Mx_set); CHKERRQ(ierr);
+                        tmp_Mx, Mx_set); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-                        grid.Mz, Mz_set); CHKERRQ(ierr);
+                        tmp_Mz, Mz_set); CHKERRQ(ierr);
+
+
+  if (tmp_Mx > 0 && tmp_My > 0 && tmp_Mz > 0) {
+    grid.Mx = tmp_Mx;
+    grid.My = tmp_My;
+    grid.Mz = tmp_Mz;
+  } else {
+    PetscPrintf(grid.com, "PISM ERROR: -Mx %d -My %d -Mz %d is invalid"
+                " (have to have a positive number of grid points).\n",
+                tmp_Mx, tmp_My, tmp_Mz);
+    PISMEnd();
+  }
 
   std::vector<double> x_range, y_range;
   bool x_range_set, y_range_set;
@@ -304,8 +316,8 @@ PetscErrorCode IceModel::grid_setup() {
     bool mapping_exists;
     ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
     if (mapping_exists) {
-      ierr = mapping.read(filename); CHKERRQ(ierr);
-      ierr = mapping.print(); CHKERRQ(ierr);
+      ierr = nc.read_attributes(mapping.get_name(), mapping); CHKERRQ(ierr);
+      ierr = mapping.report_to_stdout(grid.com, 4); CHKERRQ(ierr);
     }
 
     ierr = nc.close(); CHKERRQ(ierr);
@@ -551,7 +563,7 @@ PetscErrorCode IceModel::model_state_setup() {
       ierr = verbPrintf(2, grid.com,
                         "* Trying to read cumulative climatic mass balance from '%s'...\n",
                         filename.c_str()); CHKERRQ(ierr);
-      ierr = climatic_mass_balance_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+      ierr = climatic_mass_balance_cumulative.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
     } else {
       ierr = climatic_mass_balance_cumulative.set(0.0); CHKERRQ(ierr);
     }
@@ -562,7 +574,7 @@ PetscErrorCode IceModel::model_state_setup() {
       ierr = verbPrintf(2, grid.com,
                         "* Trying to read cumulative grounded basal flux from '%s'...\n",
                         filename.c_str()); CHKERRQ(ierr);
-      ierr = grounded_basal_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+      ierr = grounded_basal_flux_2D_cumulative.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
     } else {
       ierr = grounded_basal_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
     }
@@ -573,7 +585,7 @@ PetscErrorCode IceModel::model_state_setup() {
       ierr = verbPrintf(2, grid.com,
                         "* Trying to read cumulative floating basal flux from '%s'...\n",
                         filename.c_str()); CHKERRQ(ierr);
-      ierr = floating_basal_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+      ierr = floating_basal_flux_2D_cumulative.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
     } else {
       ierr = floating_basal_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
     }
@@ -584,49 +596,49 @@ PetscErrorCode IceModel::model_state_setup() {
       ierr = verbPrintf(2, grid.com,
                         "* Trying to read cumulative nonneg flux from '%s'...\n",
                         filename.c_str()); CHKERRQ(ierr);
-      ierr = nonneg_flux_2D_cumulative.regrid(filename, 0.0); CHKERRQ(ierr);
+      ierr = nonneg_flux_2D_cumulative.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
     } else {
       ierr = nonneg_flux_2D_cumulative.set(0.0); CHKERRQ(ierr);
     }
   }
 
   if (i_set) {
-    PIO nc(grid.com, grid.rank, "netcdf3", grid.get_unit_system());
+    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
     bool run_stats_exists;
 
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.inq_var("run_stats", run_stats_exists); CHKERRQ(ierr);
     if (run_stats_exists) {
-      ierr = run_stats.read(nc); CHKERRQ(ierr);
+      ierr = nc.read_attributes(run_stats.get_name(), run_stats); CHKERRQ(ierr);
     }
     ierr = nc.close(); CHKERRQ(ierr);
 
-    if (run_stats.has("grounded_basal_ice_flux_cumulative"))
-      grounded_basal_ice_flux_cumulative = run_stats.get("grounded_basal_ice_flux_cumulative");
+    if (run_stats.has_attribute("grounded_basal_ice_flux_cumulative"))
+      grounded_basal_ice_flux_cumulative = run_stats.get_double("grounded_basal_ice_flux_cumulative");
 
-    if (run_stats.has("nonneg_rule_flux_cumulative"))
-      nonneg_rule_flux_cumulative = run_stats.get("nonneg_rule_flux_cumulative");
+    if (run_stats.has_attribute("nonneg_rule_flux_cumulative"))
+      nonneg_rule_flux_cumulative = run_stats.get_double("nonneg_rule_flux_cumulative");
 
-    if (run_stats.has("sub_shelf_ice_flux_cumulative"))
-      sub_shelf_ice_flux_cumulative = run_stats.get("sub_shelf_ice_flux_cumulative");
+    if (run_stats.has_attribute("sub_shelf_ice_flux_cumulative"))
+      sub_shelf_ice_flux_cumulative = run_stats.get_double("sub_shelf_ice_flux_cumulative");
 
-    if (run_stats.has("surface_ice_flux_cumulative"))
-      surface_ice_flux_cumulative = run_stats.get("surface_ice_flux_cumulative");
+    if (run_stats.has_attribute("surface_ice_flux_cumulative"))
+      surface_ice_flux_cumulative = run_stats.get_double("surface_ice_flux_cumulative");
 
-    if (run_stats.has("sum_divQ_SIA_cumulative"))
-      sum_divQ_SIA_cumulative = run_stats.get("sum_divQ_SIA_cumulative");
+    if (run_stats.has_attribute("sum_divQ_SIA_cumulative"))
+      sum_divQ_SIA_cumulative = run_stats.get_double("sum_divQ_SIA_cumulative");
 
-    if (run_stats.has("sum_divQ_SSA_cumulative"))
-      sum_divQ_SSA_cumulative = run_stats.get("sum_divQ_SSA_cumulative");
+    if (run_stats.has_attribute("sum_divQ_SSA_cumulative"))
+      sum_divQ_SSA_cumulative = run_stats.get_double("sum_divQ_SSA_cumulative");
 
-    if (run_stats.has("Href_to_H_flux_cumulative"))
-      Href_to_H_flux_cumulative = run_stats.get("Href_to_H_flux_cumulative");
+    if (run_stats.has_attribute("Href_to_H_flux_cumulative"))
+      Href_to_H_flux_cumulative = run_stats.get_double("Href_to_H_flux_cumulative");
 
-    if (run_stats.has("H_to_Href_flux_cumulative"))
-      H_to_Href_flux_cumulative = run_stats.get("H_to_Href_flux_cumulative");
+    if (run_stats.has_attribute("H_to_Href_flux_cumulative"))
+      H_to_Href_flux_cumulative = run_stats.get_double("H_to_Href_flux_cumulative");
 
-    if (run_stats.has("discharge_flux_cumulative"))
-      discharge_flux_cumulative = run_stats.get("discharge_flux_cumulative");
+    if (run_stats.has_attribute("discharge_flux_cumulative"))
+      discharge_flux_cumulative = run_stats.get_double("discharge_flux_cumulative");
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);
@@ -1016,11 +1028,11 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   for (int j = 0; j < nWork2d; j++) {
     char namestr[30];
     snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    ierr = vWork2d[j].create(grid, namestr, true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = vWork2d[j].create(grid, namestr, WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   }
 
   // 3d work vectors
-  ierr = vWork3d.create(grid,"work_vector_3d",false); CHKERRQ(ierr);
+  ierr = vWork3d.create(grid,"work_vector_3d",WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = vWork3d.set_attrs(
            "internal",
            "e.g. new values of temperature or age or enthalpy during time step",

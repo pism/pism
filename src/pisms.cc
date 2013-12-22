@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -35,13 +35,10 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {    
@@ -64,8 +61,9 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
 
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
     config.set_string("calendar", "none");
 
@@ -85,7 +83,7 @@ int main(int argc, char *argv[]) {
     }
 
     // actually construct the IceModel
-    IceGrid g(com, rank, size, config);
+    IceGrid g(com, config);
     IceModel *m;
     if (PSTexchosen == PETSC_TRUE) {
       m = new IcePSTexModel(g, config, overrides);

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 class POGiven : public PGivenClimate<POModifier,PISMOceanModel>
 {
 public:
-  POGiven(IceGrid &g, const NCConfigVariable &conf);
+  POGiven(IceGrid &g, const PISMConfig &conf);
   virtual ~POGiven();
 
   virtual PetscErrorCode init(PISMVars &vars);

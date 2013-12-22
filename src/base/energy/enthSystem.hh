@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 
 #include "columnSystem.hh"
 
-class NCConfigVariable;
+class PISMConfig;
 class IceModelVec3;
 class EnthalpyConverter;
 
@@ -35,7 +35,7 @@ class EnthalpyConverter;
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(const NCConfigVariable &config,
+  enthSystemCtx(const PISMConfig &config,
                 IceModelVec3 &my_Enth3,
                 PetscScalar my_dx,  PetscScalar my_dy,
                 PetscScalar my_dt,  PetscScalar my_dz,

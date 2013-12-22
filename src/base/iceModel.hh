@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ file containing a complete model state, versus bootstrapping).
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "PISMVars.hh"
 
 // forward declarations
@@ -126,7 +126,7 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
+  IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
@@ -207,12 +207,12 @@ protected:
 
   IceGrid               &grid;
 
-  NCConfigVariable      mapping, //!< grid projection (mapping) parameters
-    &config,			 //!< configuration flags and parameters
-    &overrides,			 //!< flags and parameters overriding config, see -config_override
-    run_stats;                   //!< run statistics
+  PISMConfig &config,		//!< configuration flags and parameters
+    &overrides;			//!< flags and parameters overriding config, see -config_override
 
-  NCGlobalAttributes    global_attributes;
+  NCVariable global_attributes, //!< stores global attributes saved in a PISM output file
+    mapping,                    //!< grid projection (mapping) parameters
+    run_stats;                  //!< run statistics
 
   PISMHydrology   *subglacial_hydrology;
   PISMYieldStress *basal_yield_stress;
@@ -371,7 +371,7 @@ protected:
   // see iMIO.cc
   virtual PetscErrorCode dumpToFile(std::string filename);
   virtual PetscErrorCode regrid(int dimensions);
-  virtual PetscErrorCode regrid_variables(std::string filename, std::set<std::string> regrid_vars, int ndims);
+  virtual PetscErrorCode regrid_variables(std::string filename, std::set<std::string> regrid_vars, unsigned int ndims);
   virtual PetscErrorCode init_enthalpy(std::string filename, bool regrid, int last_record);
 
   // see iMfractures.cc

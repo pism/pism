@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,11 +34,12 @@ PetscErrorCode PISMVars::add(IceModelVec &v, std::string name) {
  */
 PetscErrorCode PISMVars::add(IceModelVec &v) {
 
-  std::string short_name = v.string_attr("name");
+  NCSpatialVariable &m = v.metadata();
+  std::string name = v.name();
 
-  if (v.has_attr("standard_name")) {
+  if (m.has_attribute("standard_name")) {
 
-    std::string standard_name = v.string_attr("standard_name");
+    std::string standard_name = m.get_string("standard_name");
     if (standard_names[standard_name] == NULL)
       standard_names[standard_name] = &v;
     else
@@ -47,11 +48,11 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
 
   }
 
-  if (variables[short_name] == NULL)
-    variables[short_name] = &v;
+  if (variables[name] == NULL)
+    variables[name] = &v;
   else
     SETERRQ1(PETSC_COMM_SELF, 1, "PISMVars::add(): an IceModelVec with the short_name '%s' was added already.",
-             short_name.c_str());
+             name.c_str());
 
   return 0;
 }
@@ -59,10 +60,11 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
 //! Removes a variable with the key `name` from the dictionary.
 void PISMVars::remove(std::string name) {
   IceModelVec *v = variables[name];
+  NCSpatialVariable &m = v->metadata();
 
   if (v != NULL) {              // the argument is a "short" name
-    if (v->has_attr("standard_name")) {
-      std::string std_name = v->string_attr("standard_name");
+    if (m.has_attribute("standard_name")) {
+      std::string std_name = m.get_string("standard_name");
 
       variables.erase(name);
       standard_names.erase(std_name);
@@ -71,7 +73,7 @@ void PISMVars::remove(std::string name) {
     v = standard_names[name];
 
     if (v != NULL) {            // the argument is a standard_name
-      std::string short_name = v->string_attr("name");
+      std::string short_name = v->name();
 
       variables.erase(short_name);
       standard_names.erase(name);

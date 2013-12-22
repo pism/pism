@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
 
 //! Factory function for constructing a new SSAFEM.
 SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &,
-                    EnthalpyConverter &, const NCConfigVariable &);
+                    EnthalpyConverter &, const PISMConfig &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -70,7 +70,7 @@ class SSAFEM : public SSA
                                       MatStructure *str, SSAFEM_SNESCallbackData *fe);
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b,
-         EnthalpyConverter &e, const NCConfigVariable &c)
+         EnthalpyConverter &e, const PISMConfig &c)
   : SSA(g,b,e,c), element_index(g)
   {
     quadrature.init(grid);

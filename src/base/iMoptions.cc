@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // Set global attributes using the config database:
-  global_attributes.set_from_config(config);
+  global_attributes.set_string("title", config.get_string("run_title"));
+  global_attributes.set_string("institution", config.get_string("institution"));
+  global_attributes.set_string("command", pism_args_string());
 
   // warn about some option combinations
 
@@ -128,8 +130,9 @@ PetscErrorCode IceModel::set_output_size(std::string option,
   std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
+    NCSpatialVariable &m = var->metadata();
 
-    std::string intent = var->string_attr("pism_intent");
+    std::string intent = m.get_string("pism_intent");
     if ((intent == "model_state") || (intent == "mapping") || (intent == "climate_steady")) {
       result.insert(*i);
     }

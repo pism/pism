@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,9 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "PISMConfig.hh"
 
-PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
+PBLingleClark::PBLingleClark(IceGrid &g, const PISMConfig &conf)
   : PISMBedDef(g, conf) {
 
   if (allocate() != 0) {
@@ -223,13 +224,13 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   int WIDE_STENCIL = grid.max_stencil_width;
-  ierr = topg_tmp.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = topg_tmp.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                             "m", "bedrock_altitude"); CHKERRQ(ierr);
 
   // Get topg and topg_initial from the regridding file.
-  ierr = topg_initial.regrid(regrid_filename, true); CHKERRQ(ierr);
-  ierr =     topg_tmp.regrid(regrid_filename, true); CHKERRQ(ierr);
+  ierr = topg_initial.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
+  ierr =     topg_tmp.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
 
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.

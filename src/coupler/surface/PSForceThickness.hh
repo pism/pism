@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input);
+  PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input);
 
   virtual ~PSForceThickness();
   virtual PetscErrorCode init(PISMVars &vars);

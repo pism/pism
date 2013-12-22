@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,10 +18,11 @@
 
 #include "POConstant.hh"
 #include "PISMVars.hh"
+#include "PISMConfig.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
 
-POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
+POConstant::POConstant(IceGrid &g, const PISMConfig &conf)
   : PISMOceanModel(g, conf),
     shelfbmassflux(g.get_unit_system()),
     shelfbtemp(g.get_unit_system())
@@ -160,20 +161,20 @@ PetscErrorCode POConstant::write_variables(std::set<std::string> vars, const PIO
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", false); CHKERRQ(ierr);
+      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
     }
 
-    ierr = tmp.set_metadata(shelfbtemp, 0); CHKERRQ(ierr);
+    tmp.metadata() = shelfbtemp;
     ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
     ierr = tmp.write(nc); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", false); CHKERRQ(ierr);
+      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
     }
 
-    ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
+    tmp.metadata() = shelfbmassflux;
     tmp.write_in_glaciological_units = true;
     ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
     ierr = tmp.write(nc); CHKERRQ(ierr);

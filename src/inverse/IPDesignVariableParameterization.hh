@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013  David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -63,7 +63,7 @@ public:
   
   virtual ~IPDesignVariableParameterization() {};
 
-  virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
 
   //! Converts from parameterization value \f$\zeta\f$ to \f$d=g(\zeta)\f$.
   /*!
@@ -118,7 +118,7 @@ public:
 
   virtual ~IPDesignVariableParamExp() {};
 
-  virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
 
   virtual PetscErrorCode toDesignVariable( PetscReal p, PetscReal *value, PetscReal *derivative);
 
@@ -140,7 +140,7 @@ public:
 
   virtual ~IPDesignVariableParamTruncatedIdent() {};
 
-  virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
 
   virtual PetscErrorCode toDesignVariable( PetscReal p, PetscReal *value, PetscReal *derivative);
 

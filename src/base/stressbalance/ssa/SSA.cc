@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2014 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
          EnthalpyConverter &e,
-         const NCConfigVariable &c)
+         const PISMConfig &c)
   : ShallowStressBalance(g, b, e, c)
 {
   mask = NULL;
@@ -141,7 +141,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 PetscErrorCode SSA::allocate() {
   PetscErrorCode ierr;
 
-  ierr = taud.create(grid, "taud", false); CHKERRQ(ierr);
+  ierr = taud.create(grid, "taud", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = taud.set_attrs("diagnostic",
                         "X-component of the driving shear stress at the base of ice",
                         "Pa", "", 0); CHKERRQ(ierr);
@@ -149,7 +149,7 @@ PetscErrorCode SSA::allocate() {
                         "Y-component of the driving shear stress at the base of ice",
                         "Pa", "", 1); CHKERRQ(ierr);
 
-  ierr = m_velocity_old.create(grid, "velocity_old", true); CHKERRQ(ierr);
+  ierr = m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = m_velocity_old.set_attrs("internal",
                                   "old SSA velocity field; used for re-trying with a different epsilon",
                                   "m s-1", ""); CHKERRQ(ierr);
@@ -443,9 +443,9 @@ PetscErrorCode SSA_taud::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
 
   ierr = model->compute_driving_stress(*result); CHKERRQ(ierr);
 
@@ -470,8 +470,8 @@ PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "taud_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
@@ -513,9 +513,9 @@ PetscErrorCode SSA_taub::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
 
   IceModelVec2V *velocity;
   ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
@@ -565,8 +565,8 @@ PetscErrorCode SSA_beta::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "beta", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "beta", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec2S *tauc = model->tauc;

@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -20,25 +20,6 @@
 #define __lic_hh
 
 #include "IceGrid.hh"
-
-//! \brief Contains parameters of an input file grid.
-class grid_info {
-public:
-  grid_info(PISMUnitSystem unit_system);
-  // dimension lengths
-  unsigned int t_len, x_len, y_len, z_len;
-  double time,			//!< current time (seconds)
-    x_min,			//!< [x_min, x_max] is the X extent of the grid
-    x_max,			//!< [x_min, x_max] is the X extent of the grid
-    y_min,			//!< [y_min, y_max] is the Y extent of the grid
-    y_max,			//!< [y_min, y_max] is the Y extent of the grid
-    z_min,			//!< minimal value of the z dimension
-    z_max;			//!< maximal value of the z dimension
-  std::vector<double> x, y, z;       //!< coordinates
-  PetscErrorCode print(MPI_Comm com, int threshold = 3);
-private:
-  PISMUnitSystem m_unit_system;
-};
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF file (for regridding).
 /*!
@@ -70,10 +51,11 @@ public:
   PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only
 
 public:
-  LocalInterpCtx(grid_info g, IceGrid &grid, PetscReal z_min, PetscReal z_max);
+  LocalInterpCtx(grid_info g, const IceGrid &grid, PetscReal z_min, PetscReal z_max);
   ~LocalInterpCtx();
   PetscErrorCode printArray();
-protected:
+private:
+ void print_grid_info(grid_info g, PISMUnitSystem s, int threshold);
 };
 
 #endif // __lic_hh

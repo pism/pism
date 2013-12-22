@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013 Ed Bueler
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ class BedDeformLC {
 public:
   BedDeformLC();
   ~BedDeformLC();
-  PetscErrorCode settings(const NCConfigVariable &config,
+  PetscErrorCode settings(const PISMConfig &config,
                           bool myinclude_elastic,
                           int myMx, int myMy, PetscReal mydx, PetscReal mydy,
                           int myZ,

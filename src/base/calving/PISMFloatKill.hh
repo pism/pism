@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ class IceModelVec2S;
 class PISMFloatKill : public PISMComponent
 {
 public:
-  PISMFloatKill(IceGrid &g, const NCConfigVariable &conf);
+  PISMFloatKill(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMFloatKill();
 
   virtual PetscErrorCode init(PISMVars &vars);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@
  */
 class PISMOceanKill : public PISMComponent {
 public:
-  PISMOceanKill(IceGrid &g, const NCConfigVariable &conf);
+  PISMOceanKill(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMOceanKill();
 
   virtual PetscErrorCode init(PISMVars &vars);

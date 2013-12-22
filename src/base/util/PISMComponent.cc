@@ -110,11 +110,13 @@ PetscErrorCode PISMComponent::regrid(std::string module_name, IceModelVec *varia
   if (file_set == false)
     return 0;
 
-  if ((vars_set == true && set_contains(vars, variable->string_attr("short_name")) == true) ||
+  NCSpatialVariable &m = variable->metadata();
+
+  if ((vars_set == true && set_contains(vars, m.get_string("short_name")) == true) ||
       (vars_set == false && flag == REGRID_WITHOUT_REGRID_VARS)) {
     ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
-                      variable->string_attr("short_name").c_str(), file.c_str()); CHKERRQ(ierr);
-    ierr = variable->regrid(file, true); CHKERRQ(ierr);
+                      m.get_string("short_name").c_str(), file.c_str()); CHKERRQ(ierr);
+    ierr = variable->regrid(file, CRITICAL); CHKERRQ(ierr);
   }
 
   return 0;

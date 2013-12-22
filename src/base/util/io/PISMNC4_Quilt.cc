@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,8 @@ static std::string patch_filename(std::string input, int mpi_rank) {
 }
 
 int PISMNC4_Quilt::open(std::string fname, int mode) {
-  int stat;
+  int stat, rank = 0;
+  MPI_Comm_rank(com, &rank);
 
   m_filename = patch_filename(fname, rank);
 
@@ -58,8 +59,9 @@ int PISMNC4_Quilt::open(std::string fname, int mode) {
 
 
 int PISMNC4_Quilt::create(std::string fname) {
-  int stat;
+  int stat = 0, rank = 0;
 
+  MPI_Comm_rank(com, &rank);
   m_filename = patch_filename(fname, rank);
 
   stat = nc_create(m_filename.c_str(), NC_NETCDF4, &ncid); check(stat);
@@ -103,7 +105,8 @@ int PISMNC4_Quilt::def_dim(std::string name, size_t length) const {
 }
 
 int PISMNC4_Quilt::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
-  int stat;
+  int stat = 0, rank = 0;
+  MPI_Comm_rank(com, &rank);
 
   if (name == "x" || name == "y") {
     std::vector<std::string> dims_local;
@@ -132,7 +135,7 @@ int PISMNC4_Quilt::def_var(std::string name, PISM_IO_Type nctype, std::vector<st
 }
 
 int PISMNC4_Quilt::put_att_double(std::string name, std::string att_name,
-                                      PISM_IO_Type xtype, std::vector<double> &data) const {
+                                      PISM_IO_Type xtype, const std::vector<double> &data) const {
   int stat;
 
   if (name == "x" || name == "y") {
@@ -169,13 +172,13 @@ void PISMNC4_Quilt::correct_start_and_count(std::string name,
     if (dim_names[j] == "x" + suffix) {
       assert(m_xs >= 0 && m_xm > 0);
       start[j] -= m_xs;
-      count[j] = PetscMin(count[j], static_cast<unsigned int>(m_xm));
+      count[j] = PetscMin(count[j], m_xm);
     }
 
     if (dim_names[j] == "y" + suffix) {
       assert(m_ys >= 0 && m_ym > 0);
       start[j] -= m_ys;
-      count[j] = PetscMin(count[j], static_cast<unsigned int>(m_ym));
+      count[j] = PetscMin(count[j], m_ym);
     }
   }
 
@@ -235,7 +238,8 @@ int PISMNC4_Quilt::global_stat(int stat) const {
 }
 
 int PISMNC4_Quilt::move_if_exists(std::string file, int /*rank_to_use*/) {
-  int stat;
+  int stat = 0, rank = 0;
+  MPI_Comm_rank(com, &rank);
 
   stat = PISMNCFile::move_if_exists(patch_filename(file, rank), rank);
 

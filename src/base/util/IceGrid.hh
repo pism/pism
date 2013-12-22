@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@
 
 class PISMTime;
 class PISMProf;
-class NCConfigVariable;
+class PISMConfig;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -100,8 +100,7 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
  */
 class IceGrid {
 public:
-  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
-          const NCConfigVariable &config);
+  IceGrid(MPI_Comm c, const PISMConfig &config);
   ~IceGrid();
 
   PetscErrorCode report_parameters();
@@ -121,14 +120,14 @@ public:
   PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
-  int       kBelowHeight(PetscScalar height);
+  unsigned int kBelowHeight(PetscScalar height);
   PetscErrorCode create_viewer(int viewer_size, std::string title, PetscViewer &viewer);
   PetscReal      radius(int i, int j);
   PetscErrorCode get_dm(PetscInt dm_dof, PetscInt stencil_width, DM &result);
   double convert(double, const char*, const char*) const;
   PISMUnitSystem get_unit_system() const;
 
-  const NCConfigVariable &config;
+  const PISMConfig &config;
   MPI_Comm    com;
   PetscMPIInt rank, size;
   int    xs,               //!< starting x-index of a processor sub-domain
@@ -144,7 +143,7 @@ public:
   // Fine vertical grid and the interpolation setup:
   std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
   PetscReal   dz_fine;                    //!< spacing of the fine vertical grid
-  int    Mz_fine;          //!< number of levels of the fine vertical grid in the ice
+  unsigned int Mz_fine;          //!< number of levels of the fine vertical grid in the ice
 
   // Array ice_storage2fine contains indices of the ice storage vertical grid
   // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
@@ -175,14 +174,14 @@ public:
   PetscScalar dx,               //!< horizontal grid spacing
     dy;                         //!< horizontal grid spacing
 
-  PetscScalar Lz;      //!< extent of the ice in z-direction (m)
+  PetscScalar Lz;      //!< max extent of the ice in z-direction (m)
 
-  int    Mz; //!< number of grid points in z-direction in the ice
+  unsigned int Mz; //!< number of grid points in z-direction in the ice
 
-  int initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
+  unsigned int initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
 
-  int max_stencil_width;   //!< \brief maximum stencil width supported by
-                                //!< the DA in this IceGrid object
+  unsigned int max_stencil_width;
+  //!< maximum stencil width supported by the DA in this IceGrid object
 
   PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
   PISMTime *time;               //!< The time management object (hides calendar computations)

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ PetscErrorCode IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
   if (config.get_flag("correct_cell_areas") == false ||
-      mapping.has("proj4") == false) {
+      mapping.has_attribute("proj4") == false) {
 
     ierr = cell_area.set(grid.dx * grid.dy); CHKERRQ(ierr);
 

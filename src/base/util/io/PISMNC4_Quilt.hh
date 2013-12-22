@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,8 +24,8 @@
 class PISMNC4_Quilt : public PISMNC4File
 {
 public:
-  PISMNC4_Quilt(MPI_Comm c, int r, unsigned int compression_level)
-    : PISMNC4File(c, r, compression_level), suffix("_patch")
+  PISMNC4_Quilt(MPI_Comm c, unsigned int compression_level)
+    : PISMNC4File(c, compression_level), suffix("_patch")
   {
   }
   virtual ~PISMNC4_Quilt() {}
@@ -44,7 +44,7 @@ public:
   virtual int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
   // att
   using PISMNCFile::put_att_double;
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, std::vector<double> &data) const;
+  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const;
 
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 

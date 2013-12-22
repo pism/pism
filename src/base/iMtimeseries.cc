@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2013 Constantine Khroulev
+// Copyright (C) 2009-2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -333,8 +333,9 @@ PetscErrorCode IceModel::init_extras() {
     std::set<std::string>::iterator i = vars_set.begin();
     while (i != vars_set.end()) {
       IceModelVec *var = variables.get(*i);
+      NCSpatialVariable &m = var->metadata();
 
-      std::string intent = var->string_attr("pism_intent");
+      std::string intent = m.get_string("pism_intent");
       if ((intent == "model_state") ||
           (intent == "mapping") ||
           (intent == "climate_steady")) {
@@ -354,15 +355,6 @@ PetscErrorCode IceModel::init_extras() {
        "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n"); CHKERRQ(ierr);
   }
 
-  extra_bounds.init("time_bounds", config.get_string("time_dimension_name"),
-                    grid.com, grid.rank);
-  extra_bounds.set_units(grid.time->units_string());
-
-  timestamp.init("timestamp", config.get_string("time_dimension_name"),
-                 grid.com, grid.rank);
-  timestamp.set_units("hours");
-  timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
-
   return 0;
 }
 
@@ -381,9 +373,9 @@ PetscErrorCode IceModel::write_extras() {
     return 0;
 
   // do we need to save *now*?
-  if ( next_extra < extra_times.size() &&
-       (grid.time->current() >= extra_times[next_extra] ||
-        fabs(grid.time->current() - extra_times[next_extra]) < 1) ) {
+  if (next_extra < extra_times.size() &&
+      (grid.time->current() >= extra_times[next_extra] ||
+       fabs(grid.time->current() - extra_times[next_extra]) < 1)) {
     // the condition above is "true" if we passed a requested time or got to
     // within 1 second from it
 
@@ -481,17 +473,22 @@ PetscErrorCode IceModel::write_extras() {
     ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
   }
 
+  double      current_time = grid.time->current();
+  std::string time_name    = config.get_string("time_dimension_name");
+
+  ierr = nc.append_time(time_name, current_time); CHKERRQ(ierr);
+
   unsigned int time_length = 0;
+  ierr = nc.inq_dimlen(time_name, time_length); CHKERRQ(ierr);
 
-  ierr = nc.append_time(config.get_string("time_dimension_name"),
-                        grid.time->current()); CHKERRQ(ierr);
-  ierr = nc.inq_dimlen(config.get_string("time_dimension_name"), time_length); CHKERRQ(ierr);
+  size_t time_start = static_cast<size_t>(time_length - 1);
 
-  ierr = extra_bounds.write(nc, static_cast<size_t>(time_length - 1),
-                            last_extra, grid.time->current()); CHKERRQ(ierr);
+  std::vector<double> data(2);
+  data[0] = last_extra;
+  data[1] = current_time;
+  ierr = nc.write_time_bounds(extra_bounds, time_start, data); CHKERRQ(ierr);
 
-  ierr = timestamp.write(nc, static_cast<size_t>(time_length - 1),
-                         wall_clock_hours); CHKERRQ(ierr);
+  ierr = nc.write_timeseries(timestamp, time_start, wall_clock_hours); CHKERRQ(ierr);
 
   ierr = write_variables(nc, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
 
@@ -500,7 +497,7 @@ PetscErrorCode IceModel::write_extras() {
   // flush time-series buffers
   ierr = flush_timeseries(); CHKERRQ(ierr);
 
-  last_extra = grid.time->current();
+  last_extra = current_time;
 
   return 0;
 }

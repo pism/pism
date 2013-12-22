@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Constantine Khroulev
+// Copyright (C) 2009--2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,34 +18,36 @@
 
 #include <algorithm>
 #include <gsl/gsl_math.h>
+#include <assert.h>
 
 #include "Timeseries.hh"
 #include "pism_const.hh"
 #include "IceGrid.hh"
 #include "PIO.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
 
 Timeseries::Timeseries(IceGrid *g, std::string name, std::string dimension_name)
-  : dimension(g->get_unit_system()), var(g->get_unit_system()),
-    bounds(g->get_unit_system()),
-    m_unit_system(g->get_unit_system()) {
-  private_constructor(g->com, g->rank, name, dimension_name);
+  : m_unit_system(g->get_unit_system()),
+    dimension(dimension_name, dimension_name, m_unit_system),
+    var(name, dimension_name, m_unit_system),
+    bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
+{
+  private_constructor(g->com, name, dimension_name);
 }
 
-Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, PISMUnitSystem units_system,
+Timeseries::Timeseries(MPI_Comm c, PISMUnitSystem unit_system,
                        std::string name, std::string dimension_name)
-  : dimension(units_system), var(units_system), bounds(units_system),
-    m_unit_system(units_system) {
-  private_constructor(c, r, name, dimension_name);
+  : m_unit_system(unit_system),
+    dimension(dimension_name, dimension_name, m_unit_system),
+    var(name, dimension_name, m_unit_system),
+    bounds(dimension_name + "_bounds", dimension_name, m_unit_system)
+{
+  private_constructor(c, name, dimension_name);
 }
 
-void Timeseries::private_constructor(MPI_Comm c, PetscMPIInt r,
-                                     std::string name, std::string dimension_name) {
+void Timeseries::private_constructor(MPI_Comm c, std::string name, std::string dimension_name) {
   com = c;
-  rank = r;
-  dimension.init(dimension_name, dimension_name, com, rank);
-  var.init(name, dimension_name, com, rank);
-  bounds.init(dimension_name + "_bounds", dimension_name, com, rank);
   dimension.set_string("bounds", dimension_name + "_bounds");
 
   short_name = name;
@@ -89,9 +91,9 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
   time_name = dims[0];
 
 
-  dimension.init(time_name, time_name, com, rank);
+  NCTimeseries tmp_dim(time_name, time_name, m_unit_system);
 
-  ierr = dimension.read(nc, time_manager, time); CHKERRQ(ierr);
+  ierr = nc.read_timeseries(tmp_dim, time_manager, time); CHKERRQ(ierr);
   bool is_increasing = true;
   for (unsigned int j = 1; j < time.size(); ++j) {
     if (time[j] - time[j-1] < 1e-16) {
@@ -101,35 +103,63 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
   }
   if (!is_increasing) {
     ierr = PetscPrintf(com, "PISM ERROR: dimension '%s' has to be strictly increasing (read from '%s').\n",
-		       dimension.short_name.c_str(), nc.inq_filename().c_str());
+		       tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
     PISMEnd();
   }
 
   std::string time_bounds_name;
-  ierr = dimension.get_bounds_name(nc, time_bounds_name); CHKERRQ(ierr);
+  ierr = nc.get_att_text(time_name, "bounds", time_bounds_name); CHKERRQ(ierr);
 
   if (!time_bounds_name.empty()) {
     use_bounds = true;
 
-    bounds.init(time_bounds_name, time_name, com, rank);
-    ierr = bounds.set_units(dimension.get_string("units")); CHKERRQ(ierr);
+    NCTimeBounds tmp_bounds(time_bounds_name, time_name,m_unit_system);
+    ierr = tmp_bounds.set_units(tmp_dim.get_string("units")); CHKERRQ(ierr);
 
-    ierr = bounds.read(nc, time_manager, time_bounds); CHKERRQ(ierr);
+    ierr = nc.read_time_bounds(tmp_bounds, time_manager, time_bounds); CHKERRQ(ierr);
   } else {
     use_bounds = false;
   }
 
-  ierr = var.read(nc, time_manager, values); CHKERRQ(ierr);
+  ierr = nc.read_timeseries(var, time_manager, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
-		       dimension.short_name.c_str(),
-		       var.short_name.c_str(),
+		       dimension.get_name().c_str(),
+		       var.get_name().c_str(),
 		       nc.inq_filename().c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
-  ierr = var.report_range(values); CHKERRQ(ierr);
+  ierr = report_range(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Report the range of a time-series stored in `values`.
+PetscErrorCode Timeseries::report_range() {
+  PetscErrorCode ierr;
+  double min, max;
+
+  // min_element and max_element return iterators; "*" is used to get
+  // the value corresponding to this iterator
+  min = *std::min_element(values.begin(), values.end());
+  max = *std::max_element(values.begin(), values.end());
+
+  cv_converter *c = var.get_glaciological_units().get_converter_from(var.get_units());
+  assert(c != NULL);
+  min = cv_convert_double(c, min);
+  max = cv_convert_double(c, max);
+  cv_free(c);
+
+  std::string spacer(var.get_name().size(), ' ');
+
+  ierr = verbPrintf(2, com,
+		    "  FOUND  %s / %-60s\n"
+                    "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+		    var.get_name().c_str(),
+		    var.get_string("long_name").c_str(), spacer.c_str(), min, max,
+		    var.get_string("glaciological_units").c_str()); CHKERRQ(ierr);
 
   return 0;
 }
@@ -139,11 +169,11 @@ PetscErrorCode Timeseries::write(const PIO &nc) {
   PetscErrorCode ierr;
 
   // write the dimensional variable; this call should go first
-  ierr = dimension.write(nc, 0, time); CHKERRQ(ierr);
-  ierr = var.write(nc, 0, values); CHKERRQ(ierr);
+  ierr = nc.write_timeseries(dimension, 0, time); CHKERRQ(ierr);
+  ierr = nc.write_timeseries(var, 0, values); CHKERRQ(ierr);
   
   if (use_bounds) {
-    ierr = bounds.write(nc, 0, time_bounds); CHKERRQ(ierr);
+    ierr = nc.write_time_bounds(bounds, 0, time_bounds); CHKERRQ(ierr);
   }
 
   return 0;
@@ -176,7 +206,7 @@ double Timeseries::operator()(double t) {
       PetscPrintf(com,
                   "PISM ERROR: time bounds array in %s does not represent continguous time intervals.\n"
                   "            (PISM was trying to compute %s at time %3.3f years.)\n",
-                  bounds.short_name.c_str(), short_name.c_str(), t);
+                  bounds.get_name().c_str(), short_name.c_str(), t);
       PISMEnd();
     }
 
@@ -212,7 +242,7 @@ double Timeseries::operator[](unsigned int j) const {
 #if (PISM_DEBUG==1)
   if (j >= values.size()) {
     PetscPrintf(com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
-		var.short_name.c_str(), values.size(), j);
+		var.get_name().c_str(), values.size(), j);
     PISMEnd();
   }
 #endif
@@ -283,7 +313,7 @@ std::string Timeseries::get_string(std::string name) {
 
 //! Set a single-valued scalar attribute.
 PetscErrorCode Timeseries::set_attr(std::string name, double value) {
-  var.set(name, value);
+  var.set_double(name, value);
   return 0;
 }
 
@@ -391,7 +421,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 }
 PetscErrorCode DiagnosticTimeseries::init(std::string filename) {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
@@ -400,7 +430,7 @@ PetscErrorCode DiagnosticTimeseries::init(std::string filename) {
 
   if (file_exists == true) {
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
-    ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
+    ierr = nc.inq_dimlen(dimension.get_name(), len); CHKERRQ(ierr);
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
       std::vector<double> tmp;
@@ -427,7 +457,7 @@ PetscErrorCode DiagnosticTimeseries::init(std::string filename) {
   //! Writes data to a file.
 PetscErrorCode DiagnosticTimeseries::flush() {
   PetscErrorCode ierr;
-  PIO nc(com, rank, "netcdf3", m_unit_system); // OK to use netcdf3
+  PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // return cleanly if this DiagnosticTimeseries object was created but never
@@ -439,21 +469,22 @@ PetscErrorCode DiagnosticTimeseries::flush() {
     return 0;
 
   ierr = nc.open(output_filename, PISM_WRITE, true); CHKERRQ(ierr);
-  ierr = nc.inq_dimlen(dimension.short_name, len); CHKERRQ(ierr);
+  ierr = nc.inq_dimlen(dimension.get_name(), len); CHKERRQ(ierr);
 
   if (len > 0) {
     double last_time;
-    ierr = nc.inq_dim_limits(dimension.dimension_name, NULL, &last_time); CHKERRQ(ierr);
+    ierr = nc.inq_dim_limits(dimension.get_dimension_name(),
+                             NULL, &last_time); CHKERRQ(ierr);
     if (last_time < time.front()) {
       start = len;
     }
   }
 
   if (len == (unsigned int)start) {
-    ierr = dimension.write(nc, start, time);   CHKERRQ(ierr);
-    ierr = bounds.write(nc, start, time_bounds);   CHKERRQ(ierr);
+    ierr = nc.write_timeseries(dimension, start, time);   CHKERRQ(ierr);
+    ierr = nc.write_time_bounds(bounds, start, time_bounds);   CHKERRQ(ierr);
   }
-  ierr = var.write(nc, start, values); CHKERRQ(ierr);
+  ierr = nc.write_timeseries(var, start, values); CHKERRQ(ierr);
 
   start += time.size();
 

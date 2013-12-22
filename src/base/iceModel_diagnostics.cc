@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -88,7 +88,7 @@ PetscErrorCode IceModel::init_diagnostics() {
   }
 
 #if (PISM_USE_PROJ4==1)
-  if (mapping.has("proj4")) {
+  if (mapping.has_attribute("proj4")) {
     std::string proj4 = mapping.get_string("proj4");
     diagnostics["lat_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lat", proj4);
     diagnostics["lon_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lon", proj4);
@@ -192,7 +192,7 @@ PetscErrorCode IceModel::list_diagnostics() {
     if (surface != NULL)
       surface->add_vars_to_output("big", list);
 
-    for (int d = 3; d > 1; --d) {
+    for (unsigned int d = 3; d > 1; --d) {
 
       PetscPrintf(grid.com,
                   "======== Available %dD quantities with dedicated storage ========\n",
@@ -203,10 +203,10 @@ PetscErrorCode IceModel::list_diagnostics() {
         IceModelVec *v = variables.get(*j);
 
         if (v != NULL && v->get_ndims() == d) {
-          NCSpatialVariable var = v->get_metadata();
+          NCSpatialVariable var = v->metadata();
 
           std::string
-            name                = var.short_name,
+            name                = var.get_name(),
             units               = var.get_string("units"),
             glaciological_units = var.get_string("glaciological_units"),
             long_name           = var.get_string("long_name");
@@ -226,7 +226,7 @@ PetscErrorCode IceModel::list_diagnostics() {
   } // done with quantities with dedicated storage
 
   // 2D and 3D diagnostics
-  for (int d = 3; d > 1; --d) {
+  for (unsigned int d = 3; d > 1; --d) {
 
     PetscPrintf(grid.com,
                 "======== Available %dD diagnostic quantities ========\n",
@@ -243,7 +243,7 @@ PetscErrorCode IceModel::list_diagnostics() {
       if (glaciological_units.empty() == false)
         units = glaciological_units;
 
-      if (diag->get_metadata().get_ndims() == d) {
+      if (diag->get_metadata().get_n_spatial_dimensions() == d) {
 
         PetscPrintf(grid.com, "   Name: %s [%s]\n", name.c_str(), units.c_str());
 
@@ -303,8 +303,8 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("vertical average of ice hardness", "",
             unitstr, unitstr, 0);
 
-  vars[0].set("valid_min", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("valid_min", 0);
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 //! \brief Computes vertically-averaged ice hardness.
@@ -323,8 +323,8 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   }
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "hardav", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "hardav", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
   ierr = model->vH.begin_access(); CHKERRQ(ierr);
@@ -357,15 +357,15 @@ IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars)
   vars[0].init_2d("rank", grid);
 
   set_attrs("processor rank", "", "1", "", 0);
-  vars[0].time_independent = true;
+  vars[0].set_time_independent(true);
 }
 
 PetscErrorCode IceModel_rank::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "rank", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "rank", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   ierr = result->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
@@ -395,8 +395,8 @@ PetscErrorCode IceModel_cts::compute(IceModelVec* &output) {
   vars[0].set_levels(grid.zlevels);
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "cts", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "cts", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   ierr = model->setCTSFromEnthalpy(*result); CHKERRQ(ierr);
 
@@ -412,7 +412,7 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, PISMVars
 
   set_attrs("number of cells containing ice in a processor's domain", "",
             "", "", 0);
-  vars[0].time_independent = true;
+  vars[0].set_time_independent(true);
 }
 
 PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
@@ -423,8 +423,8 @@ PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "proc_ice_area", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "proc_ice_area", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   PetscInt ice_filled_cells = 0;
 
@@ -454,7 +454,7 @@ IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   vars[0].init_3d("temp", grid, g.zlevels);
 
   set_attrs("ice temperature", "land_ice_temperature", "K", "K", 0);
-  vars[0].set("valid_min", 0);
+  vars[0].set_double("valid_min", 0);
 }
 
 PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
@@ -464,8 +464,8 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
   vars[0].set_levels(grid.zlevels);
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "temp", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   IceModelVec2S *thickness;
   IceModelVec3 *enthalpy;
@@ -484,7 +484,7 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result->getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
+      for (unsigned int k=0; k <grid.Mz; ++k) {
         const PetscScalar depth = (*thickness)(i,j) - grid.zlevels[k];
         ierr = model->EC->getAbsTemp(Enthij[k],
                                      model->EC->getPressureFromDepth(depth),
@@ -515,7 +515,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("pressure-adjusted ice temperature (degrees above pressure-melting point)", "",
             "deg_C", "deg_C", 0);
-  vars[0].set("valid_max", 0);
+  vars[0].set_double("valid_max", 0);
 }
 
 PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
@@ -527,8 +527,8 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   vars[0].set_levels(grid.zlevels);
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "temp_pa", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "temp_pa", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   IceModelVec2S *thickness;
   IceModelVec3 *enthalpy;
@@ -547,7 +547,7 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result->getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
+      for (unsigned int k=0; k < grid.Mz; ++k) {
         const PetscScalar depth = (*thickness)(i,j) - grid.zlevels[k],
           p = model->EC->getPressureFromDepth(depth);
         ierr = model->EC->getPATemp(Enthij[k], p, Tij[k]);
@@ -595,8 +595,8 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   PetscReal melting_point_temp = grid.config.get("water_melting_point_temperature");
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "temp_pa_base", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "temp_pa_base", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   IceModelVec2S *thickness;
   IceModelVec3 *enthalpy;
@@ -652,15 +652,15 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g, PISMVars &
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "enthalpysurf", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "enthalpysurf", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   PetscScalar fill_value = grid.config.get("fill_value");
 
@@ -700,15 +700,15 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g, PISMVars &
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_enthalpybase::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "enthalpybase", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "enthalpybase", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   ierr = model->Enth3.getHorSlice(*result, 0.0); CHKERRQ(ierr);  // z=0 slice
 
@@ -727,7 +727,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
@@ -768,7 +768,7 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
 
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   output = result;
   return 0;
 }
@@ -781,7 +781,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
@@ -821,7 +821,7 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
 
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   output = result;
   return 0;
 }
@@ -835,8 +835,8 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
-  vars[0].set("valid_min", 0);
-  vars[0].set("valid_max", 1);
+  vars[0].set_double("valid_min", 0);
+  vars[0].set_double("valid_max", 1);
 }
 
 PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
@@ -846,8 +846,8 @@ PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
   vars[0].set_levels(grid.zlevels);
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "liqfrac", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "liqfrac", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   bool cold_mode = grid.config.get_flag("do_cold_ice_methods");
 
@@ -869,15 +869,15 @@ IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g, PISMVars &my_v
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "tempicethk", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "tempicethk", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   PetscScalar *Enth;
 
@@ -889,9 +889,9 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
       if (model->vH(i,j) > 0.) {
         ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
         PetscScalar tithk = 0.;
-        const PetscInt ks = grid.kBelowHeight(model->vH(i,j));
+        const unsigned int ks = grid.kBelowHeight(model->vH(i,j));
 
-        for (PetscInt k=0; k<ks; ++k) { // FIXME issue #15
+        for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
           PetscReal pressure = model->EC->getPressureFromDepth(model->vH(i,j) - grid.zlevels[k]);
 
           if (model->EC->isTemperate(Enth[k], pressure)) {
@@ -926,7 +926,7 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g, PI
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 /*!
@@ -936,8 +936,8 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "tempicethk_basal", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "tempicethk_basal", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   PetscScalar *Enth;
   EnthalpyConverter *EC = model->EC;
@@ -956,7 +956,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
 
       ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
       PetscReal pressure;
-      PetscInt ks = grid.kBelowHeight(thk),
+      unsigned int ks = grid.kBelowHeight(thk),
         k = 0;
 
       while (k <= ks) {         // FIXME issue #15
@@ -1025,8 +1025,8 @@ PetscErrorCode IceModel_flux_divergence::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "flux_divergence", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "flux_divergence", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   ierr = result->copy_from(model->flux_divergence); CHKERRQ(ierr);
@@ -1049,8 +1049,8 @@ PetscErrorCode IceModel_climatic_mass_balance_cumulative::compute(IceModelVec* &
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "climatic_mass_balance_cumulative", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "climatic_mass_balance_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   ierr = result->copy_from(model->climatic_mass_balance_cumulative); CHKERRQ(ierr);
@@ -1641,12 +1641,12 @@ IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("ice thickness rate of change", "tendency_of_land_ice_thickness",
             "m s-1", "m year-1", 0);
 
-  vars[0].set("valid_min",  grid.convert(-1e6, "m/year", "m/s"));
-  vars[0].set("valid_max",  grid.convert( 1e6, "m/year", "m/s"));
-  vars[0].set("_FillValue", grid.config.get("fill_value", "m/year", "m/s"));
+  vars[0].set_double("valid_min",  grid.convert(-1e6, "m/year", "m/s"));
+  vars[0].set_double("valid_max",  grid.convert( 1e6, "m/year", "m/s"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value", "m/year", "m/s"));
   vars[0].set_string("cell_methods", "time: mean");
 
-  last_ice_thickness.create(grid, "last_ice_thickness", false);
+  last_ice_thickness.create(grid, "last_ice_thickness", WITHOUT_GHOSTS);
   last_ice_thickness.set_attrs("internal",
                                "ice thickness at the time of the last report of dHdt",
                                "m", "land_ice_thickness");
@@ -1658,8 +1658,8 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "dHdt", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "dHdt", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   if (gsl_isnan(last_report_time)) {
@@ -1892,8 +1892,8 @@ PetscErrorCode IceModel_nonneg_flux_2D_cumulative::compute(IceModelVec* &output)
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "nonneg_flux_cumulative", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   ierr = result->copy_from(model->nonneg_flux_2D_cumulative); CHKERRQ(ierr);
@@ -1917,8 +1917,8 @@ PetscErrorCode IceModel_grounded_basal_flux_2D_cumulative::compute(IceModelVec* 
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "grounded_basal_flux_cumulative", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   ierr = result->copy_from(model->grounded_basal_flux_2D_cumulative); CHKERRQ(ierr);
@@ -1942,8 +1942,8 @@ PetscErrorCode IceModel_floating_basal_flux_2D_cumulative::compute(IceModelVec* 
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "floating_basal_flux_cumulative", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   ierr = result->copy_from(model->floating_basal_flux_2D_cumulative); CHKERRQ(ierr);
@@ -1968,8 +1968,8 @@ PetscErrorCode IceModel_discharge_flux_2D_cumulative::compute(IceModelVec* &outp
   PetscErrorCode ierr;
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "discharge_flux_cumulative", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   ierr = result->copy_from(model->discharge_flux_2D_cumulative); CHKERRQ(ierr);
@@ -1991,18 +1991,19 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVa
     levels[k] = k;
 
   vars[0].init_3d(m_var_name + "_bounds", grid, levels);
-  vars[0].dimensions["z"] = "grid_corners";
-  vars[0].z_attrs.clear();
-  vars[0].time_independent = true;
+  vars[0].get_z().set_name("grid_corners");
+  vars[0].get_z().clear_all_strings();
+  vars[0].get_z().clear_all_doubles();
+  vars[0].set_time_independent(true);
 
   if (m_var_name == "lon") {
     set_attrs("longitude bounds", "", "degree_east", "degree_east", 0);
-    vars[0].set("valid_min", -180);
-    vars[0].set("valid_max", 180);
+    vars[0].set_double("valid_min", -180);
+    vars[0].set_double("valid_max", 180);
   } else {
     set_attrs("latitude bounds", "", "degree_north", "degree_north", 0);
-    vars[0].set("valid_min", -90);
-    vars[0].set("valid_max", 90);
+    vars[0].set_double("valid_min", -90);
+    vars[0].set_double("valid_max", 90);
   }
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
@@ -2035,7 +2036,7 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
 
   ierr = result->create(grid, m_var_name + "_bounds", "grid_corners",
                         indices, attrs); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->metadata() = vars[0];
 
   double dx2 = 0.5 * grid.dx, dy2 = 0.5 * grid.dy;
   double x_offsets[] = {-dx2, dx2, dx2, -dx2};

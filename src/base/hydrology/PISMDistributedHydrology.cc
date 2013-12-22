@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "PISMStressBalance.hh"
 
 
-PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf,
+PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const PISMConfig &conf,
                                                    PISMStressBalance *sb)
     : PISMRoutingHydrology(g, conf)
 {
@@ -41,22 +41,22 @@ PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
   PetscErrorCode ierr;
 
   // additional variables beyond PISMRoutingHydrology::allocate()
-  ierr = P.create(grid, "bwp", true, 1); CHKERRQ(ierr);
+  ierr = P.create(grid, "bwp", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = P.set_attrs("model_state",
                      "pressure of transportable water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
-  ierr = P.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = cbase.create(grid, "ice_sliding_speed", false); CHKERRQ(ierr);
+  P.metadata().set_double("valid_min", 0.0);
+  ierr = cbase.create(grid, "ice_sliding_speed", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = cbase.set_attrs("internal",
                          "ice sliding speed seen by subglacial hydrology",
                          "m s-1", ""); CHKERRQ(ierr);
-  ierr = cbase.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = Pnew.create(grid, "Pnew_internal", false); CHKERRQ(ierr);
+  cbase.metadata().set_double("valid_min", 0.0);
+  ierr = Pnew.create(grid, "Pnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = Pnew.set_attrs("internal",
                      "new transportable subglacial water pressure during update",
                      "Pa", ""); CHKERRQ(ierr);
-  ierr = Pnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = psi.create(grid, "hydraulic_potential", true, 1); CHKERRQ(ierr);
+  Pnew.metadata().set_double("valid_min", 0.0);
+  ierr = psi.create(grid, "hydraulic_potential", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = psi.set_attrs("internal",
                        "hydraulic potential of water in subglacial layer",
                        "Pa", ""); CHKERRQ(ierr);
@@ -127,8 +127,8 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
     if (i) {
       ierr = P.read(filename, start); CHKERRQ(ierr);
     } else {
-      ierr = P.regrid(filename,
-                      config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
+      ierr = P.regrid(filename, OPTIONAL,
+                          config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
     }
   } else {
     ierr = P.set(config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);

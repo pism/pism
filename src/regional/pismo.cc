@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ Instead see the PSForceThickness surface model modifier class.
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, NCConfigVariable &c, NCConfigVariable &o)
+  IceRegionalModel(IceGrid &g, PISMConfig &c, PISMConfig &o)
      : IceModel(g,c,o) {};
 protected:
   virtual PetscErrorCode set_vars_from_options();
@@ -116,7 +116,7 @@ PetscErrorCode IceRegionalModel::set_no_model_strip(PetscReal strip) {
     }
     ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
-    ierr = no_model_mask.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+    no_model_mask.metadata().set_string("pism_intent", "model_state");
 
     ierr = no_model_mask.update_ghosts(); CHKERRQ(ierr);
   return 0;
@@ -132,7 +132,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
      "  creating IceRegionalModel vecs ...\n"); CHKERRQ(ierr);
 
   // stencil width of 2 needed for surfaceGradientSIA() action
-  ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
+  ierr = no_model_mask.create(grid, "no_model_mask", WITH_GHOSTS, 2); CHKERRQ(ierr);
   ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
     "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
     "", ""); CHKERRQ(ierr); // no units and no standard name
@@ -141,15 +141,14 @@ PetscErrorCode IceRegionalModel::createVecs() {
   std::vector<double> mask_values(2);
   mask_values[0] = NMMASK_NORMAL;
   mask_values[1] = NMMASK_ZERO_OUT;
-  ierr = no_model_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
-  ierr = no_model_mask.set_attr("flag_meanings", "normal special_treatment"); CHKERRQ(ierr);
-  no_model_mask.output_data_type = PISM_BYTE;
-  no_model_mask.time_independent = true;
+  no_model_mask.metadata().set_doubles("flag_values", mask_values);
+  no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
+  no_model_mask.set_time_independent(true);
   ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
-  ierr = usurfstore.create(grid, "usurfstore", true, 2); CHKERRQ(ierr);
+  ierr = usurfstore.create(grid, "usurfstore", WITH_GHOSTS, 2); CHKERRQ(ierr);
   ierr = usurfstore.set_attrs(
     "model_state", // ensures that it gets written at the end of the run
     "saved surface elevation for use to keep surface gradient constant in no_model strip",
@@ -158,7 +157,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
   ierr = variables.add(usurfstore); CHKERRQ(ierr);
 
   // stencil width of 1 needed for differentiation
-  ierr = thkstore.create(grid, "thkstore", true, 1); CHKERRQ(ierr);
+  ierr = thkstore.create(grid, "thkstore", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = thkstore.set_attrs(
     "model_state", // ensures that it gets written at the end of the run
     "saved ice thickness for use to keep driving stress constant in no_model strip",
@@ -168,7 +167,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
 
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of bmelt instead.
-  ierr = bmr_stored.create(grid, "bmr_stored", true, 2); CHKERRQ(ierr);
+  ierr = bmr_stored.create(grid, "bmr_stored", WITH_GHOSTS, 2); CHKERRQ(ierr);
   ierr = bmr_stored.set_attrs("internal",
                               "time-independent basal melt rate in the no-model-strip",
                               "m s-1", ""); CHKERRQ(ierr);
@@ -281,8 +280,8 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(std::string filename) {
 
   ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
 
-  ierr = usurfstore.regrid(filename, 0.0); CHKERRQ(ierr);
-  ierr =   thkstore.regrid(filename, 0.0); CHKERRQ(ierr);
+  ierr = usurfstore.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
+  ierr =   thkstore.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -297,7 +296,7 @@ PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
                           no_model_strip_set); CHKERRQ(ierr);
 
   if (no_model_strip_set) {
-    ierr = no_model_mask.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+    no_model_mask.metadata().set_string("pism_intent", "internal");
   }
 
   ierr = verbPrintf(2, grid.com,
@@ -315,7 +314,7 @@ PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
     ierr = nc.close(); CHKERRQ(ierr);
 
     if (! (u_ssa_exists && v_ssa_exists)) {
-      ierr = vBCvel.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+      vBCvel.metadata().set_string("pism_intent", "internal");
       ierr = verbPrintf(2, grid.com,
                         "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
                         "              This may be overridden by the -regrid_file option.\n",
@@ -328,19 +327,19 @@ PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
   bool zgwnm;
   ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
   if (zgwnm) {
-    ierr = thkstore.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
-    ierr = usurfstore.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+    thkstore.metadata().set_string("pism_intent", "internal");
+    usurfstore.metadata().set_string("pism_intent", "internal");
   }
 
   ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
 
   if (config.get_flag("ssa_dirichlet_bc")) {
-      ierr = vBCvel.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+      vBCvel.metadata().set_string("pism_intent", "model_state");
   }
 
   if (zgwnm) {
-    ierr = thkstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
-    ierr = usurfstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+    thkstore.metadata().set_string("pism_intent", "model_state");
+    usurfstore.metadata().set_string("pism_intent", "model_state");
   }
 
   return 0;
@@ -435,7 +434,7 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       ierr = vWork3d.getInternalColumn(i, j, &new_enthalpy); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i, j, &old_enthalpy); CHKERRQ(ierr);
 
-      for (int k = 0; k < grid.Mz; ++k)
+      for (unsigned int k = 0; k < grid.Mz; ++k)
         new_enthalpy[k] = old_enthalpy[k];
     }
   }
@@ -467,9 +466,6 @@ int main(int argc, char *argv[]) {
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   MPI_Comm    com = PETSC_COMM_WORLD;
-  PetscMPIInt rank, size;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
@@ -504,11 +500,12 @@ int main(int argc, char *argv[]) {
     }
 
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
     // initialize the ice dynamics model
-    IceGrid g(com, rank, size, config);
+    IceGrid g(com, config);
     IceRegionalModel m(g, config, overrides);
     ierr = m.setExecName("pismo"); CHKERRQ(ierr);
 

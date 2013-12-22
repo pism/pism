@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -50,9 +50,8 @@ static double u_exact(double V0, double H0, double C, double x)
 class SSATestCaseCFBC: public SSATestCase
 {
 public:
-  SSATestCaseCFBC( MPI_Comm com, PetscMPIInt rank,
-                 PetscMPIInt size, NCConfigVariable &c )
-    : SSATestCase(com, rank, size, c)
+  SSATestCaseCFBC(MPI_Comm com, PISMConfig &c)
+    : SSATestCase(com, c)
   {
     PISMUnitSystem s = c.get_unit_system();
     V0 = s.convert(300.0, "m/year", "m/second");
@@ -110,7 +109,7 @@ PetscErrorCode SSATestCaseCFBC::initializeGrid(PetscInt Mx, PetscInt My)
 PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 {
 
-  config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+  config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
   config.set_flag("compute_surf_grad_inward_ssa", false);
   config.set_flag("calving_front_stress_boundary_condition", true);
   config.set_string("ssa_flow_law", "isothermal_glen");
@@ -211,19 +210,17 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -261,7 +258,7 @@ int main(int argc, char *argv[]) {
 
     SSAFactory ssafactory = SSAFDFactory;
 
-    SSATestCaseCFBC testcase(com,rank,size,config);
+    SSATestCaseCFBC testcase(com, config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("V"); CHKERRQ(ierr);

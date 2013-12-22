@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 class DrainageCalculator {
 
 public:
-  DrainageCalculator(const NCConfigVariable &config) {
+  DrainageCalculator(const PISMConfig &config) {
     OM1 = config.get("drainage_target_water_frac"); // 0.01
     OM2 = 2.0 * OM1;
     OM3 = 3.0 * OM1;

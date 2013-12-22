@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "PISMConfig.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
 #include <sstream>
@@ -39,7 +40,7 @@ double PISMTime::seconds_to_years(double input) {
 
 
 PISMTime::PISMTime(MPI_Comm c,
-                   const NCConfigVariable &conf,
+                   const PISMConfig &conf,
                    std::string calendar_string,
                    PISMUnitSystem unit_system)
   : m_com(c), m_config(conf), m_unit_system(unit_system),
@@ -379,7 +380,7 @@ int PISMTime::parse_interval_length(std::string spec, std::string &keyword, doub
   // latter allows intervals of the form "0.5", which stands for "half
   // of a model year". This also discards interval specs such as "days
   // since 1-1-1", even though "days" is compatible with "seconds".
-  if (ut_are_convertible(tmp.get(), seconds.get()) == 1) {
+  if (units_are_convertible(tmp, seconds) == true) {
     cv_converter *c = seconds.get_converter_from(tmp);
     assert(c != NULL);
 
@@ -388,7 +389,7 @@ int PISMTime::parse_interval_length(std::string spec, std::string &keyword, doub
 
     cv_free(c);
 
-  } else if (ut_are_convertible(tmp.get(), one.get()) == 1) {
+  } else if (units_are_convertible(tmp, one) == true) {
     cv_converter *c = one.get_converter_from(tmp);
     assert(c != NULL);
 

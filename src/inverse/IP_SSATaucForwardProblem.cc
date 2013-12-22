@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 
 IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
   EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-  const NCConfigVariable &c) : SSAFEM(g,b,e,c),
+  const PISMConfig &c) : SSAFEM(g,b,e,c),
   m_grid(grid), m_zeta(NULL), 
   m_fixed_tauc_locations(NULL), 
   m_tauc_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) 
@@ -43,21 +43,21 @@ IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
 
 PetscErrorCode IP_SSATaucForwardProblem::construct() {
   PetscErrorCode ierr;
-  PetscInt stencilWidth = 1;
+  PetscInt stencil_width = 1;
 
-  ierr = m_dzeta_local.create(m_grid,"d_zeta_local",kHasGhosts,stencilWidth); CHKERRQ(ierr);
+  ierr = m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencil_width); CHKERRQ(ierr);
 
-  ierr = m_du_global.create(m_grid,"linearization work vector (sans ghosts)",kNoGhosts,stencilWidth); CHKERRQ(ierr);
-  ierr = m_du_local.create(m_grid,"linearization work vector (with ghosts)",kHasGhosts,stencilWidth); CHKERRQ(ierr);
+  ierr = m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width); CHKERRQ(ierr);
+  ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width); CHKERRQ(ierr);
 
   ierr = DMCreateMatrix(SSADA, "baij", &m_J_state); CHKERRQ(ierr);
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
   PetscReal ksp_rtol = 1e-12;
-  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT); CHKERRQ(ierr);
+  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT); CHKERRQ(ierr);
   PC pc;
-  ierr = KSPGetPC(m_ksp,&pc); CHKERRQ(ierr);
-  ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);  
 
   m_quadrature.init(m_grid);

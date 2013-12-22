@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 #include "PIO.hh"
 
 class IceGrid;
-class NCConfigVariable;
+class PISMConfig;
 class NCSpatialVariable;
 class PISMDiagnostic;
 class PISMTSDiagnostic;
@@ -89,7 +89,7 @@ class IceModelVec;
  */
 class PISMComponent {
 public:
-  PISMComponent(IceGrid &g, const NCConfigVariable &conf)
+  PISMComponent(IceGrid &g, const PISMConfig &conf)
     : grid(g), config(conf) {}
   virtual ~PISMComponent() {}
 
@@ -122,7 +122,7 @@ public:
 protected:
   virtual PetscErrorCode find_pism_input(std::string &filename, bool &regrid, int &start);
   IceGrid &grid;
-  const NCConfigVariable &config;
+  const PISMConfig &config;
 
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
   virtual PetscErrorCode regrid(std::string module_name, IceModelVec *variable,
@@ -135,7 +135,7 @@ protected:
 class PISMComponent_TS : public PISMComponent
 {
 public:
-  PISMComponent_TS(IceGrid &g, const NCConfigVariable &conf)
+  PISMComponent_TS(IceGrid &g, const PISMConfig &conf)
     : PISMComponent(g, conf)
   { m_t = m_dt = GSL_NAN; }
   virtual ~PISMComponent_TS() {}
@@ -212,7 +212,7 @@ template<class Model>
 class Modifier : public Model
 {
 public:
-  Modifier(IceGrid &g, const NCConfigVariable &conf, Model* in)
+  Modifier(IceGrid &g, const PISMConfig &conf, Model* in)
     : Model(g, conf), input_model(in) {}
   virtual ~Modifier()
   {

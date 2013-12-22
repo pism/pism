@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 class PISMTime_Calendar : public PISMTime
 {
 public:
-  PISMTime_Calendar(MPI_Comm c, const NCConfigVariable &conf,
+  PISMTime_Calendar(MPI_Comm c, const PISMConfig &conf,
                     std::string calendar,
                     PISMUnitSystem units_system);
   virtual ~PISMTime_Calendar();

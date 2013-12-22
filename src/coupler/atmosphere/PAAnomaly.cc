@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,10 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PAAnomaly.hh"
+#include "PISMConfig.hh"
 #include "IceGrid.hh"
 #include <assert.h>
 
-PAAnomaly::PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PAAnomaly::PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
@@ -221,8 +222,8 @@ PetscErrorCode PAAnomaly::write_variables(std::set<std::string> vars, const PIO 
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = air_temp;
 
     ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
 
@@ -233,8 +234,8 @@ PetscErrorCode PAAnomaly::write_variables(std::set<std::string> vars, const PIO 
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = precipitation;
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 

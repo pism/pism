@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 class PAModifier : public Modifier<PISMAtmosphereModel>
 {
 public:
-  PAModifier(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+  PAModifier(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
     : Modifier<PISMAtmosphereModel>(g, conf, in) {}
   virtual ~PAModifier() {}
 

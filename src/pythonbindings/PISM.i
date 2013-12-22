@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -311,50 +311,34 @@ namespace std {
   }
 }
 
-// There was a collision between the two IceModelVec::regrid methods:
-//  regrid(string filename,bool critical,start=0)
-//  regrid(string filename, PetscScalar default)
-//
-//  Calls in the python bindings to var.regrid(filename,True)
-//  were actually calling the second version, i.e. with a default value
-//  of true, and verification of critical variables was not done.
-//  
-//  We avoid the collision by renaming all three regrids (there are three
-//  because of SWIG's implementation of the default variable) 
-//
-//  And we add a python method regrid that can be called via
-//  var.regrid(filename, critical=True).  
-//
-//  To access the version of regrid taking a default value, call
-//  var.regrid_with_default(filename, value)
-%rename(regrid_with_default) IceModelVec::regrid(std::string, PetscScalar);
-%rename(regrid_with_critical) IceModelVec::regrid(std::string, bool);
-%rename(regrid_with_critical_and_start) IceModelVec::regrid(std::string, bool, int);
-%rename(regrid_with_default_pio) IceModelVec::regrid(const PIO&, PetscScalar);
-%rename(regrid_with_critical_pio) IceModelVec::regrid(const PIO&, bool);
-%rename(regrid_with_critical_and_start_pio) IceModelVec::regrid(const PIO&, bool, int);
+%rename(_regrid) IceModelVec::regrid;
 %extend IceModelVec
 {
   %pythoncode {
-    def regrid(self,filename,critical=False,start=0):
-      self.regrid_with_critical_and_start(filename,critical,start)
+    def regrid(self,filename,critical=False,default_value=0.0):
+      if critical == True:
+        flag = CRITICAL
+      else:
+        flag = OPTIONAL
+      self._regrid(filename, flag, default_value)
   }
 }
 
 // We also make the same fix for IceModelVec2's.
-%rename(regrid_with_default) IceModelVec2::regrid(std::string, PetscScalar);
-%rename(regrid_with_critical) IceModelVec2::regrid(std::string, bool);
-%rename(regrid_with_critical_and_start) IceModelVec2::regrid(std::string, bool, int);
-%rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
-%rename(read_attributes_with_pio) IceModelVec::read_attributes(const PIO&, int);
+%rename(_regrid) IceModelVec2::regrid;
 %extend IceModelVec2
 {
   %pythoncode {
-    def regrid(self,filename,critical=False,start=0):
-      self.regrid_with_critical_and_start(filename,critical,start)
+    def regrid(self,filename,critical=False,default_value=0.0):
+      if critical == True:
+        flag = CRITICAL
+      else:
+        flag = OPTIONAL
+      self._regrid(filename, flag, default_value)
   }
 }
 
+%rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
 
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
@@ -556,17 +540,6 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %immutable PISM_Revision;
 %immutable PISM_DefaultConfigFile;
 
-// Deal with 'print' being a python keyword
-%extend NCVariable
-{
-    %rename(printinfo) print;
-}
-
-%extend grid_info
-{
-    %rename(printinfo) print;
-}
-
 
 %include "stressbalance/ssa/SNESProblem.hh"
 %template(SNESScalarProblem) SNESProblem<1,PetscScalar>;
@@ -581,6 +554,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %feature("valuewrapper") NCVariable;
 %feature("valuewrapper") NCSpatialVariable;
 %include "NCVariable.hh"
+%include "PISMConfig.hh"
 %include "pism_const.hh"
 %include "pism_options.hh"
 %include "Timeseries.hh"

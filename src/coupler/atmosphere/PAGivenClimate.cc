@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,8 +18,9 @@
 
 #include "PAGivenClimate.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
-PAGivenClimate::PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
+PAGivenClimate::PAGivenClimate(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
 {
   option_prefix = "-atmosphere_given";

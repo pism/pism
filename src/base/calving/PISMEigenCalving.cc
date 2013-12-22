@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,12 +22,12 @@
 #include "PISMStressBalance.hh"
 #include "Mask.hh"
 
-PISMEigenCalving::PISMEigenCalving(IceGrid &g, const NCConfigVariable &conf,
+PISMEigenCalving::PISMEigenCalving(IceGrid &g, const PISMConfig &conf,
                                    PISMStressBalance *stress_balance)
   : PISMComponent(g, conf), m_stencil_width(2), m_mask(NULL),
     m_stress_balance(stress_balance) {
   PetscErrorCode ierr;
-  ierr = m_strain_rates.create(grid, "edot", true,
+  ierr = m_strain_rates.create(grid, "edot", WITH_GHOSTS,
                                m_stencil_width,
                                2); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
@@ -35,7 +35,7 @@ PISMEigenCalving::PISMEigenCalving(IceGrid &g, const NCConfigVariable &conf,
     PISMEnd();
   }
 
-  ierr = m_thk_loss.create(grid, "temporary_storage", true, 1); CHKERRCONTINUE(ierr);
+  ierr = m_thk_loss.create(grid, "temporary_storage", WITH_GHOSTS, 1); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: memory allocation failed.\n");
     PISMEnd();

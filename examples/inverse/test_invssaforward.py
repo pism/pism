@@ -45,13 +45,13 @@ def view(vec,viewer):
     v_global = PISM.IceModelVec2S()
   else:
     v_global = PISM.IceModelVec2V()
-  v_global.create(vec.get_grid(),"",PISM.kNoGhosts)
+  v_global.create(vec.get_grid(),"",PISM.WITHOUT_GHOSTS)
   v_global.copy_from(vec)
   v_global.get_vec().view(viewer)
 
 # def view2(vec,viewer):
 #   v_global = PISM.IceModelVec2V()
-#   v_global.create(vec.get_grid(),"",PISM.kNoGhosts)
+#   v_global.create(vec.get_grid(),"",PISM.WITHOUT_GHOSTS)
 #   v_global.copy_from(vec)
 #   v_global.get_vec().view(viewer)
 
@@ -97,39 +97,39 @@ def test_lin(ssarun):
 
   for (i,j) in grid.points():
     d = PISM.IceModelVec2S()
-    d.create(grid,"",PISM.kHasGhosts)
+    d.create(grid,"",PISM.WITH_GHOSTS)
     d.set(0)
     with PISM.vec.Access(comm = d):
       d[i,j] = 1
 
     ssarun.ssa.linearize_at(zeta1)
     u1 = PISM.IceModelVec2V();
-    u1.create(grid,"",PISM.kHasGhosts)
+    u1.create(grid,"",PISM.WITH_GHOSTS)
     u1.copy_from(ssarun.ssa.solution())
 
     Td = PISM.IceModelVec2V()
-    Td.create(grid,"",PISM.kHasGhosts)
+    Td.create(grid,"",PISM.WITH_GHOSTS)
     ssarun.ssa.apply_linearization(d,Td)
 
     eps = 1e-8
     zeta2 = PISM.IceModelVec2S();
-    zeta2.create(grid, "", PISM.kHasGhosts)
+    zeta2.create(grid, "", PISM.WITH_GHOSTS)
     zeta2.copy_from(d)
     zeta2.scale(eps)
     zeta2.add(1,zeta1)
     ssarun.ssa.linearize_at(zeta2)
     u2 = PISM.IceModelVec2V();
-    u2.create(grid,"",PISM.kHasGhosts)
+    u2.create(grid,"",PISM.WITH_GHOSTS)
     u2.copy_from(ssarun.ssa.solution())
 
     Td_fd = PISM.IceModelVec2V();
-    Td_fd.create(grid,"",PISM.kHasGhosts)
+    Td_fd.create(grid,"",PISM.WITH_GHOSTS)
     Td_fd.copy_from(u2)
     Td_fd.add(-1,u1)
     Td_fd.scale(1./eps)
 
     d_Td = PISM.IceModelVec2V()
-    d_Td.create(grid,"",PISM.kHasGhosts)
+    d_Td.create(grid,"",PISM.WITH_GHOSTS)
     d_Td.copy_from(Td_fd)
     d_Td.add(-1,Td)
 
@@ -160,26 +160,26 @@ def test_lin(ssarun):
     PISM.verbPrintf(1,grid.com,"\n")
 
     d_global = PISM.IceModelVec2S()
-    d_global.create(grid,"",PISM.kNoGhosts)
+    d_global.create(grid,"",PISM.WITHOUT_GHOSTS)
     d_global.copy_from(d)
     d_global.get_vec().view(d_viewer)
 
     Td_global = PISM.IceModelVec2V()
-    Td_global.create(grid,"",PISM.kNoGhosts)
+    Td_global.create(grid,"",PISM.WITHOUT_GHOSTS)
     Td_global.copy_from(Td)
     # if n_Td_linf > 0:
     #   Td_global.scale(1./n_Td_linf)
     Td_global.get_vec().view(Td_viewer)
 
     Td_fd_global = PISM.IceModelVec2V()
-    Td_fd_global.create(grid,"",PISM.kNoGhosts)
+    Td_fd_global.create(grid,"",PISM.WITHOUT_GHOSTS)
     Td_fd_global.copy_from(Td_fd)
     # if n_Td_fd_linf > 0:
     #   Td_fd_global.scale(1./n_Td_linf)
     Td_fd_global.get_vec().view(Td_fd_viewer)
 
     d_Td_global = PISM.IceModelVec2V()
-    d_Td_global.create(grid,"",PISM.kNoGhosts)
+    d_Td_global.create(grid,"",PISM.WITHOUT_GHOSTS)
     d_Td_global.copy_from(d_Td)
     # if n_Td_linf > 0:
     #   d_Td_global.scale(1./n_Td_linf)
@@ -202,12 +202,12 @@ def test_j_design(ssarun):
 
   ssarun.ssa.linearize_at(zeta1)
   u1 = PISM.IceModelVec2V();
-  u1.create(grid,"",PISM.kHasGhosts)
+  u1.create(grid,"",PISM.WITH_GHOSTS)
   u1.copy_from(ssarun.ssa.solution())
   
   for (i,j) in grid.points():
     d = PISM.IceModelVec2S()
-    d.create(grid,"",PISM.kHasGhosts)
+    d.create(grid,"",PISM.WITH_GHOSTS)
     d.set(0)
     with PISM.vec.Access(comm = d):
       d[i,j] = 1
@@ -215,33 +215,33 @@ def test_j_design(ssarun):
     ssarun.ssa.linearize_at(zeta1)
 
     rhs1 = PISM.IceModelVec2V();
-    rhs1.create(grid,"",PISM.kNoGhosts)
+    rhs1.create(grid,"",PISM.WITHOUT_GHOSTS)
     ssarun.ssa.assemble_residual(u1,rhs1)
 
     eps = 1e-8
     zeta2 = PISM.IceModelVec2S();
-    zeta2.create(grid, "zeta_prior", PISM.kHasGhosts)
+    zeta2.create(grid, "zeta_prior", PISM.WITH_GHOSTS)
     zeta2.copy_from(d)
     zeta2.scale(eps)
     zeta2.add(1,zeta1)
     ssarun.ssa.set_design(zeta2)
 
     rhs2 = PISM.IceModelVec2V();
-    rhs2.create(grid,"",PISM.kNoGhosts)
+    rhs2.create(grid,"",PISM.WITHOUT_GHOSTS)
     ssarun.ssa.assemble_residual(u1,rhs2)
 
     drhs_fd = PISM.IceModelVec2V();
-    drhs_fd.create(grid,"",PISM.kNoGhosts)
+    drhs_fd.create(grid,"",PISM.WITHOUT_GHOSTS)
     drhs_fd.copy_from(rhs2)
     drhs_fd.add(-1,rhs1)
     drhs_fd.scale(1./eps)
 
     drhs = PISM.IceModelVec2V();
-    drhs.create(grid,"",PISM.kNoGhosts)
+    drhs.create(grid,"",PISM.WITHOUT_GHOSTS)
     ssarun.ssa.apply_jacobian_design(u1,d,drhs)
 
     d_drhs = PISM.IceModelVec2V();
-    d_drhs.create(grid,"",PISM.kNoGhosts)
+    d_drhs.create(grid,"",PISM.WITHOUT_GHOSTS)
   
     d_drhs.copy_from(drhs)
     d_drhs.add(-1,drhs_fd)
@@ -280,24 +280,24 @@ def test_j_design_transpose(ssarun):
 
   ssarun.ssa.linearize_at(zeta1)
   u = PISM.IceModelVec2V();
-  u.create(grid,"",PISM.kHasGhosts)
+  u.create(grid,"",PISM.WITH_GHOSTS)
   u.copy_from(ssarun.ssa.solution())
 
   Jd = PISM.IceModelVec2V();
-  Jd.create(grid,"",PISM.kNoGhosts)
+  Jd.create(grid,"",PISM.WITHOUT_GHOSTS)
 
   JStarR = PISM.IceModelVec2S();
-  JStarR.create(grid,"",PISM.kNoGhosts)
+  JStarR.create(grid,"",PISM.WITHOUT_GHOSTS)
 
   JStarR_indirect = PISM.IceModelVec2S();
-  JStarR_indirect.create(grid,"",PISM.kNoGhosts)
+  JStarR_indirect.create(grid,"",PISM.WITHOUT_GHOSTS)
   
   for (i,j) in grid.points():
 
     for k in range(2):
       
       r = PISM.IceModelVec2V()
-      r.create(grid,"",PISM.kHasGhosts)
+      r.create(grid,"",PISM.WITH_GHOSTS)
       r.set(0)
       with PISM.vec.Access(comm = r):
         if k==0:
@@ -309,13 +309,13 @@ def test_j_design_transpose(ssarun):
       ssarun.ssa.apply_jacobian_design_transpose(u,r,JStarR)
 
       r_global = PISM.IceModelVec2V();
-      r_global.create(grid,"",PISM.kNoGhosts)
+      r_global.create(grid,"",PISM.WITHOUT_GHOSTS)
       r_global.copy_from(r)
   
       for(k,l) in grid.points():
         with PISM.vec.Access(nocomm=JStarR_indirect):
           d = PISM.IceModelVec2S()
-          d.create(grid,"",PISM.kHasGhosts)
+          d.create(grid,"",PISM.WITH_GHOSTS)
           d.set(0)
           with PISM.vec.Access(comm = d):
             d[k,l] = 1
@@ -326,7 +326,7 @@ def test_j_design_transpose(ssarun):
 
 
       d_JStarR = PISM.IceModelVec2S();
-      d_JStarR.create(grid,"",PISM.kNoGhosts)
+      d_JStarR.create(grid,"",PISM.WITHOUT_GHOSTS)
 
       d_JStarR.copy_from(JStarR)
       d_JStarR.add(-1,JStarR_indirect)
@@ -351,24 +351,24 @@ def test_linearization_transpose(ssarun):
 
   ssarun.ssa.linearize_at(zeta1)
   u = PISM.IceModelVec2V();
-  u.create(grid,"",PISM.kHasGhosts)
+  u.create(grid,"",PISM.WITH_GHOSTS)
   u.copy_from(ssarun.ssa.solution())
 
   Td = PISM.IceModelVec2V();
-  Td.create(grid,"",PISM.kNoGhosts)
+  Td.create(grid,"",PISM.WITHOUT_GHOSTS)
 
   TStarR = PISM.IceModelVec2S();
-  TStarR.create(grid,"",PISM.kNoGhosts)
+  TStarR.create(grid,"",PISM.WITHOUT_GHOSTS)
 
   TStarR_indirect = PISM.IceModelVec2S();
-  TStarR_indirect.create(grid,"",PISM.kNoGhosts)
+  TStarR_indirect.create(grid,"",PISM.WITHOUT_GHOSTS)
 
   for (i,j) in grid.points():
 
     for k in range(2):
 
       r = PISM.IceModelVec2V()
-      r.create(grid,"",PISM.kHasGhosts)
+      r.create(grid,"",PISM.WITH_GHOSTS)
       r.set(0)
       with PISM.vec.Access(comm = r):
         if k==0:
@@ -380,13 +380,13 @@ def test_linearization_transpose(ssarun):
       ssarun.ssa.apply_linearization_transpose(r,TStarR)
 
       r_global = PISM.IceModelVec2V();
-      r_global.create(grid,"",PISM.kNoGhosts)
+      r_global.create(grid,"",PISM.WITHOUT_GHOSTS)
       r_global.copy_from(r)
 
       for(k,l) in grid.points():
         with PISM.vec.Access(nocomm=TStarR_indirect):
           d = PISM.IceModelVec2S()
-          d.create(grid,"",PISM.kHasGhosts)
+          d.create(grid,"",PISM.WITH_GHOSTS)
           d.set(0)
           with PISM.vec.Access(comm = d):
             d[k,l] = 1
@@ -397,7 +397,7 @@ def test_linearization_transpose(ssarun):
 
 
       d_TStarR = PISM.IceModelVec2S();
-      d_TStarR.create(grid,"",PISM.kNoGhosts)
+      d_TStarR.create(grid,"",PISM.WITHOUT_GHOSTS)
 
       d_TStarR.copy_from(TStarR)
       d_TStarR.add(-1,TStarR_indirect)
@@ -483,7 +483,7 @@ if __name__ == "__main__":
 
   # Convert design_prior -> zeta_prior
   zeta1 = PISM.IceModelVec2S();
-  zeta1.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
+  zeta1.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
   ssarun.designVariableParameterization().convertFromDesignVariable(design_prior,zeta1)
 
   ssarun.ssa.linearize_at(zeta1)

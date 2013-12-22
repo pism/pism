@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -105,10 +105,8 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
            "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
   ierr = stampHistory(std::string(startstr)); CHKERRQ(ierr);
 
-  // Create a string with space-separated command-line arguments:
-  std::string cmdstr = pism_args_string();
-
-  global_attributes.prepend_history(cmdstr);
+  global_attributes.set_string("history",
+                               pism_args_string() + global_attributes.get_string("history"));
 
   return 0;
 }
@@ -140,20 +138,20 @@ PetscErrorCode IceModel::update_run_stats() {
   ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
   MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
 
-  run_stats.set("wall_clock_hours", wall_clock_hours);
-  run_stats.set("processor_hours", proc_hours);
-  run_stats.set("model_years_per_processor_hour", mypph);
-  run_stats.set("PETSc_MFlops", flops * 1.0e-6);
+  run_stats.set_double("wall_clock_hours", wall_clock_hours);
+  run_stats.set_double("processor_hours", proc_hours);
+  run_stats.set_double("model_years_per_processor_hour", mypph);
+  run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
 
-  run_stats.set("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
-  run_stats.set("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
-  run_stats.set("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
-  run_stats.set("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
-  run_stats.set("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);
-  run_stats.set("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
-  run_stats.set("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
-  run_stats.set("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
-  run_stats.set("discharge_flux_cumulative", discharge_flux_cumulative);
+  run_stats.set_double("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
+  run_stats.set_double("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
+  run_stats.set_double("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
+  run_stats.set_double("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
+  run_stats.set_double("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);
+  run_stats.set_double("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
+  run_stats.set_double("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
+  run_stats.set_double("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
+  run_stats.set_double("discharge_flux_cumulative", discharge_flux_cumulative);
 
   return 0;
 }
@@ -170,10 +168,10 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
   snprintf(str, TEMPORARY_STRING_LENGTH,
     "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
-           run_stats.get("wall_clock_hours"),
-           run_stats.get("processor_hours"),
-           run_stats.get("model_years_per_processor_hour"),
-           run_stats.get("PETSc_MFlops"));
+           run_stats.get_double("wall_clock_hours"),
+           run_stats.get_double("processor_hours"),
+           run_stats.get_double("model_years_per_processor_hour"),
+           run_stats.get_double("PETSc_MFlops"));
 
   ierr = stampHistory(str); CHKERRQ(ierr);
 
@@ -184,7 +182,10 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 //! Get time and user/host name and add it to the given string.
 PetscErrorCode  IceModel::stampHistory(std::string str) {
 
-  global_attributes.prepend_history(pism_username_prefix(grid.com) + (str + "\n"));
+  std::string history = pism_username_prefix(grid.com) + (str + "\n");
+
+  global_attributes.set_string("history",
+                               history + global_attributes.get_string("history"));
   
   return 0;
 }

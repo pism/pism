@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 class PAConstantPIK : public PISMAtmosphereModel {
 public:
-  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf);
+  PAConstantPIK(IceGrid &g, const PISMConfig &conf);
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);

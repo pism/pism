@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "pism_const.hh"
 
-class NCConfigVariable;
+class PISMConfig;
 
 PetscErrorCode verbosityLevelFromOptions();
 
@@ -65,12 +65,12 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
                                          std::string usage);
 
 // config file initialization:
-PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
-			   NCConfigVariable &config, NCConfigVariable &overrides,
+PetscErrorCode init_config(MPI_Comm com,
+			   PISMConfig &config, PISMConfig &overrides,
                            bool process_options = false);
 
 PetscErrorCode set_config_from_options(MPI_Comm com,
-                                       NCConfigVariable &config);
+                                       PISMConfig &config);
 
 
 #endif /* _PISM_OPTIONS_H_ */

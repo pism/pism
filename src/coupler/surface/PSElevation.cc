@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 
 
 ///// Elevation-dependent temperature and surface mass balance.
-PSElevation::PSElevation(IceGrid &g, const NCConfigVariable &conf)
+PSElevation::PSElevation(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
@@ -272,8 +272,8 @@ PetscErrorCode PSElevation::write_variables(std::set<std::string> vars, const PI
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
@@ -282,8 +282,8 @@ PetscErrorCode PSElevation::write_variables(std::set<std::string> vars, const PI
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(climatic_mass_balance, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = climatic_mass_balance;
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;

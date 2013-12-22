@@ -30,8 +30,8 @@ PISMHydrology_bwat::PISMHydrology_bwat(PISMHydrology *m, IceGrid &g, PISMVars &m
 PetscErrorCode PISMHydrology_bwat::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwat", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "bwat", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
   ierr = model->subglacial_water_thickness(*result); CHKERRQ(ierr);
   output = result;
@@ -48,8 +48,8 @@ PISMHydrology_bwp::PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_
 PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwp", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "bwp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
   ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
   output = result;
@@ -62,7 +62,7 @@ PISMHydrology_bwprel::PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVar
   vars[0].init_2d("bwprel", grid);
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
-  vars[0].set("_FillValue", grid.config.get("fill_value"));
+  vars[0].set_double("_FillValue", grid.config.get("fill_value"));
 }
 
 
@@ -71,10 +71,9 @@ PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
   PetscReal fill = grid.config.get("fill_value");
   IceModelVec2S *Po     = new IceModelVec2S,
                 *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwprel", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = Po->create(grid, "Po_temporary", false); CHKERRQ(ierr);
-  ierr = Po->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "bwprel", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  ierr = Po->create(grid, "Po_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
   ierr = model->overburden_pressure(*Po); CHKERRQ(ierr);
@@ -109,10 +108,9 @@ PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *P      = new IceModelVec2S,
                 *result = new IceModelVec2S;
-  ierr = result->create(grid, "effbwp", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = P->create(grid, "P_temporary", false); CHKERRQ(ierr);
-  ierr = P->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "effbwp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  ierr = P->create(grid, "P_temporary", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   ierr = model->subglacial_water_pressure(*P); CHKERRQ(ierr);
   ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
@@ -134,8 +132,8 @@ PISMHydrology_hydroinput::PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g,
 PetscErrorCode PISMHydrology_hydroinput::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "hydroinput", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "hydroinput", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
   // the value reported diagnostically is merely the last value filled
   ierr = (model->total_input).copy_to(*result); CHKERRQ(ierr);
@@ -155,8 +153,8 @@ PISMHydrology_wallmelt::PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PIS
 PetscErrorCode PISMHydrology_wallmelt::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "wallmelt", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "wallmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
   ierr = model->wall_melt(*result); CHKERRQ(ierr);
   output = result;

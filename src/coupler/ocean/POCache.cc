@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #include "PISMTime.hh"
 #include "pism_options.hh"
 
-POCache::POCache(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
+POCache::POCache(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
   : POModifier(g, conf, in) {
 
   m_next_update_time = grid.time->current();
@@ -37,7 +37,7 @@ POCache::POCache(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
 PetscErrorCode POCache::allocate_POCache() {
   PetscErrorCode ierr;
 
-  ierr = m_shelf_base_mass_flux.create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
+  ierr = m_shelf_base_mass_flux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_shelf_base_mass_flux.set_attrs("climate_state",
                                           "ice mass flux from ice shelf base"
                                           " (positive flux is loss from ice shelf)",
@@ -45,7 +45,7 @@ PetscErrorCode POCache::allocate_POCache() {
   ierr = m_shelf_base_mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
-  ierr = m_shelf_base_temperature.create(grid, "shelfbtemp", false); CHKERRQ(ierr);
+  ierr = m_shelf_base_temperature.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_shelf_base_temperature.set_attrs("climate_state",
                                             "absolute temperature at ice shelf base",
                                             "K", ""); CHKERRQ(ierr);
@@ -127,14 +127,14 @@ PetscErrorCode POCache::shelf_base_mass_flux(IceModelVec2S &result) {
 PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, m_shelf_base_mass_flux.string_attr("short_name"))) {
+  if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
     ierr = m_shelf_base_mass_flux.define(nc, nctype); CHKERRQ(ierr);
-    vars.erase(m_shelf_base_mass_flux.string_attr("short_name"));
+    vars.erase(m_shelf_base_mass_flux.metadata().get_string("short_name"));
   }
 
-  if (set_contains(vars, m_shelf_base_temperature.string_attr("short_name"))) {
+  if (set_contains(vars, m_shelf_base_temperature.metadata().get_string("short_name"))) {
     ierr = m_shelf_base_temperature.define(nc, nctype); CHKERRQ(ierr);
-    vars.erase(m_shelf_base_temperature.string_attr("short_name"));
+    vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
   }
 
   ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -145,14 +145,14 @@ PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &
 PetscErrorCode POCache::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, m_shelf_base_mass_flux.string_attr("short_name"))) {
+  if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
     ierr = m_shelf_base_mass_flux.write(nc); CHKERRQ(ierr);
-    vars.erase(m_shelf_base_mass_flux.string_attr("short_name"));
+    vars.erase(m_shelf_base_mass_flux.metadata().get_string("short_name"));
   }
 
-  if (set_contains(vars, m_shelf_base_temperature.string_attr("short_name"))) {
+  if (set_contains(vars, m_shelf_base_temperature.metadata().get_string("short_name"))) {
     ierr = m_shelf_base_temperature.write(nc); CHKERRQ(ierr);
-    vars.erase(m_shelf_base_temperature.string_attr("short_name"));
+    vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
   }
 
   ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);

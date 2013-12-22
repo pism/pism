@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010-2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
 BlatterStressBalance::BlatterStressBalance(IceGrid &g,
 					   IceBasalResistancePlasticLaw &b,
 					   EnthalpyConverter &e,
-					   const NCConfigVariable &conf)
+					   const PISMConfig &conf)
   : ShallowStressBalance(g, b, e, conf), min_thickness(10.0)
 {
   if (allocate_blatter() != 0) {
@@ -91,20 +91,20 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
   ierr = BlatterQ1_create(grid.com, da2, blatter_Mz, &this->ctx, &this->snes); CHKERRQ(ierr);
 
   // now allocate u, v, and strain_heating (strain heating)
-  ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
+  ierr =     u.create(grid, "uvel", WITH_GHOSTS); CHKERRQ(ierr);
   ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
 			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
   ierr =     u.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   u.write_in_glaciological_units = true;
 
-  ierr =     v.create(grid, "vvel", true); CHKERRQ(ierr);
+  ierr =     v.create(grid, "vvel", WITH_GHOSTS); CHKERRQ(ierr);
   ierr =     v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
 			  "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
   ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   v.write_in_glaciological_units = true;
 
   // strain_heating
-  ierr = strain_heating.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); CHKERRQ(ierr); // never diff'ed in hor dirs
   ierr = strain_heating.set_attrs("internal",
                           "rate of strain heating in ice (dissipation heating)",
 	        	  "W m-3", ""); CHKERRQ(ierr);
@@ -295,7 +295,7 @@ PetscErrorCode BlatterStressBalance::initialize_ice_hardness() {
 	  depth = thk - z_fem,
 	  pressure = EC.getPressureFromDepth(depth),
 	  E_local;
-	int k0 = grid.kBelowHeight(z_fem);
+	unsigned int k0 = grid.kBelowHeight(z_fem);
 	
 	if (k0 + 1 < grid.Mz) {
 	  PetscReal lambda = (z_fem - grid.zlevels[k0]) / (grid.zlevels[k0+1] - grid.zlevels[k0]);
@@ -366,7 +366,7 @@ PetscErrorCode BlatterStressBalance::transfer_velocity() {
       m_velocity(i,j).v = vbar * (0.5*dz_fem) / thk;
       
       // compute 3D horizontal velocity
-      for (int k = 0; k < grid.Mz; ++k) {
+      for (unsigned int k = 0; k < grid.Mz; ++k) {
 
 	// find the FEM grid level just below the current PISM grid level
 	while ((current_level + 1) * dz_fem < grid.zlevels[k])

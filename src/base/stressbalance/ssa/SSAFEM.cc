@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,Mat
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                   EnthalpyConverter &ec, const NCConfigVariable &c)
+                   EnthalpyConverter &ec, const PISMConfig &c)
 {
   return new SSAFEM(g,b,ec,c);
 }
@@ -71,7 +71,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   const PetscScalar power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  ierr = hardav.create(grid, "hardav", true); CHKERRQ(ierr);
+  ierr = hardav.create(grid, "hardav", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = hardav.set_attrs("internal", "vertically-averaged ice hardness", unitstr, ""); CHKERRQ(ierr);
 
   return 0;

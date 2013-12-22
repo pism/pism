@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -128,7 +128,7 @@ static bool inStream(const PetscScalar angle, const PetscScalar width,
   return inStreamNbhd(true, angle,width, x,y, x_loc,y_loc);
 }
 
-IcePSTexModel::IcePSTexModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
+IcePSTexModel::IcePSTexModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   : IceEISModel(g, conf, conf_overrides) {  // do almost nothing; derived need constructors
   expername = 'A';      // PST expers are closest to EISMINT II exper A
   ivol = PETSC_NULL;    // if we write series then this is not NULL
@@ -304,7 +304,7 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     ierr = prepare_series(); CHKERRQ(ierr);
   }
 
-  config.set("default_till_phi", DEFAULT_PHI_STRONG); 
+  config.set_double("default_till_phi", DEFAULT_PHI_STRONG); 
   config.set_flag("include_bmr_in_continuity", true);
   config.set_flag("use_eta_transformation", true);
 

@@ -40,8 +40,8 @@ PetscErrorCode SIAFD::allocate() {
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    ierr = work_2d[i].create(grid, "work_vector", true, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = work_2d_stag[i].create(grid, "work_vector", true); CHKERRQ(ierr);
+    ierr = work_2d[i].create(grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS); CHKERRQ(ierr);
 
     snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
     ierr = work_2d[i].set_name(namestr); CHKERRQ(ierr);
@@ -52,12 +52,12 @@ PetscErrorCode SIAFD::allocate() {
     }
   }
 
-  ierr = delta[0].create(grid, "delta_0", true); CHKERRQ(ierr);
-  ierr = delta[1].create(grid, "delta_1", true); CHKERRQ(ierr);
+  ierr = delta[0].create(grid, "delta_0", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = delta[1].create(grid, "delta_1", WITH_GHOSTS); CHKERRQ(ierr);
 
   // 3D temporary storage:
-  ierr = work_3d[0].create(grid, "work_3d_0", true); CHKERRQ(ierr);
-  ierr = work_3d[1].create(grid, "work_3d_1", true); CHKERRQ(ierr);
+  ierr = work_3d[0].create(grid, "work_3d_0", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS); CHKERRQ(ierr);
 
   // bed smoother
   bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
@@ -679,7 +679,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         // if doing the full update, fill the delta column above the ice and
         // store it:
         if (full_update) {
-          for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
+          for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
             delta_ij[k] = 0.0;
           }
           ierr = delta[o].setInternalColumn(i,j,delta_ij); CHKERRQ(ierr);
@@ -771,10 +771,10 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
           continue;
         }
 
-        const PetscInt ks = grid.kBelowHeight(thk);
+        const unsigned int ks = grid.kBelowHeight(thk);
         PetscScalar Dfoffset = 0.0;
 
-        for (PetscInt k = 1; k <= ks; ++k) {
+        for (unsigned int k = 1; k <= ks; ++k) {
           PetscReal depth = thk - grid.zlevels[k];
 
           const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
@@ -852,19 +852,19 @@ PetscErrorCode SIAFD::compute_I() {
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
         ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
 
-        const PetscInt ks = grid.kBelowHeight(thk);
+        const unsigned int ks = grid.kBelowHeight(thk);
 
         // within the ice:
         I_ij[0] = 0.0;
         PetscScalar I_current = 0.0;
-        for (int k = 1; k <= ks; ++k) {
+        for (unsigned int k = 1; k <= ks; ++k) {
           const PetscReal dz = grid.zlevels[k] - grid.zlevels[k-1];
           // trapezoidal rule
           I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
           I_ij[k] = I_current;
         }
         // above the ice:
-        for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
           I_ij[k] = I_current;
         }
       }
@@ -939,7 +939,7 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
       PetscScalar vel_input_u = (*vel_input)(i, j).u,
         vel_input_v = (*vel_input)(i, j).v;
 
-      for (PetscInt k = 0; k < grid.Mz; ++k) {
+      for (unsigned int k = 0; k < grid.Mz; ++k) {
         u_ij[k] = - 0.25 * ( IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
                              INORTH[k] * h_x_n + ISOUTH[k] * h_x_s );
         v_ij[k] = - 0.25 * ( IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +

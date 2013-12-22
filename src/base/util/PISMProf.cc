@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -134,7 +134,7 @@ void PISMProf::end(int /*index*/) {
 //! Save a profiling report to a file.
 PetscErrorCode PISMProf::save_report(std::string filename) {
   PetscErrorCode ierr;
-  PISMNC3File nc(com, rank);
+  PISMNC3File nc(com);
 
   ierr = nc.create(filename); CHKERRQ(ierr);
 

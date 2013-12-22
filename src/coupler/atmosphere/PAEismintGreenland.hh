@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011, 2013 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2007-2011, 2013, 2014 Ed Bueler and Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 
 class PA_EISMINT_Greenland : public PAYearlyCycle {
 public:
-  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf);
+  PA_EISMINT_Greenland(IceGrid &g, const PISMConfig &conf);
   virtual ~PA_EISMINT_Greenland();
 
   virtual PetscErrorCode init(PISMVars &vars);

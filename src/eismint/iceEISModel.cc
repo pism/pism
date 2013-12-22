@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include "POConstant.hh"
 #include "PSDummy.hh"
 
-IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
+IceEISModel::IceEISModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
   expername = 'A';
 
@@ -48,8 +48,8 @@ PetscErrorCode IceEISModel::createVecs() {
   // PSDummy is used):
   ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
   ierr = variables.add(acab); CHKERRQ(ierr);
-  ierr = ice_surface_temp.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
-  ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ice_surface_temp.metadata().set_string("pism_intent", "model_state");
+  acab.metadata().set_string("pism_intent", "model_state");
 
   return 0;
 }
@@ -60,7 +60,7 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
   grid.Ly = 750e3;
   grid.Lz = 4e3;  // depend on auto-expansion to handle bigger thickness
 
-  PetscErrorCode ierr =  grid.time->init(); CHKERRQ(ierr);
+  PetscErrorCode ierr = grid.time->init(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -105,8 +105,8 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   ierr = set_expername_from_options(); CHKERRQ(ierr);
 
-  config.set("sia_enhancement_factor", 1.0);
-  config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
+  config.set_double("sia_enhancement_factor", 1.0);
+  config.set_double("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
                                           // parameterization
   // basal melt does not change computation of mass continuity or vertical velocity:
   config.set_flag("include_bmr_in_continuity", false);
@@ -188,9 +188,9 @@ PetscErrorCode  IceEISModel::set_default_flowlaw() {
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
-  config.set("bedrock_thermal_density", config.get("ice_density"));
-  config.set("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
-  config.set("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
+  config.set_double("bedrock_thermal_density", config.get("ice_density"));
+  config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
+  config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
 
   return 0;
 }

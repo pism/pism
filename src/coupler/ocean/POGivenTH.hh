@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ class POGivenTH : public PGivenClimate<POModifier,PISMOceanModel>
 {
 
 public:
-  POGivenTH(IceGrid &g, const NCConfigVariable &conf);
+  POGivenTH(IceGrid &g, const PISMConfig &conf);
   virtual ~POGivenTH();
 
   virtual PetscErrorCode init(PISMVars &vars);

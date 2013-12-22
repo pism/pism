@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2011, 2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011, 2013, 2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -26,7 +26,7 @@ class IceModelVec2S;
 //! A very rudimentary PISM ocean model.
 class PISMOceanModel : public PISMComponent_TS {
 public:
-  PISMOceanModel(IceGrid &g, const NCConfigVariable &conf)
+  PISMOceanModel(IceGrid &g, const PISMConfig &conf)
     : PISMComponent_TS(g, conf), sea_level(0) {}
   virtual ~PISMOceanModel() {};
 

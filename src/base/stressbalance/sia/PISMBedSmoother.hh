@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "iceModelVec.hh"
 
 class IceGrid;
-class NCConfigVariable;
+class PISMConfig;
 
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).
 /*!
@@ -66,13 +66,13 @@ if asked.  In IceModel::velocitySIAStaggered()
     ierr = smoother.get_smoothed_thk(usurf, thk, 1, &thksmooth); CHKERRQ(ierr);
     ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
 \endcode
-See IceGrid and NCConfigVariable documentation for initializing `grid` and
+See IceGrid and PISMConfig documentation for initializing `grid` and
 `config`.  Note we assume `topg`, `usurf`, `thk`, `thksmooth`, and `theta`
 are all created IceModelVec2S instances.
  */
 class PISMBedSmoother {
 public:
-  PISMBedSmoother(IceGrid &g, const NCConfigVariable &conf, PetscInt MAX_GHOSTS);
+  PISMBedSmoother(IceGrid &g, const PISMConfig &conf, PetscInt MAX_GHOSTS);
   virtual ~PISMBedSmoother();
 
   virtual PetscErrorCode preprocess_bed(IceModelVec2S topg);
@@ -89,7 +89,7 @@ public:
 
 protected:
   IceGrid &grid;
-  const NCConfigVariable &config;
+  const PISMConfig &config;
   IceModelVec2S maxtl, C2, C3, C4;
 
   PetscInt Nx, Ny;  //!< number of grid points to smooth over; e.g.

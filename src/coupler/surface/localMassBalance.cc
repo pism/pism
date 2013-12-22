@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -23,11 +23,17 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <assert.h>
 #include "pism_const.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "localMassBalance.hh"
 #include "IceGrid.hh"
 
-PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig)
+LocalMassBalance::LocalMassBalance(const PISMConfig &myconfig)
+  : config(myconfig), m_unit_system(config.get_unit_system()),
+    seconds_per_day(86400) {
+  // empty
+}
+
+PDDMassBalance::PDDMassBalance(const PISMConfig& myconfig)
   : LocalMassBalance(myconfig) {
   precip_as_snow     = config.get_flag("interpret_precip_as_snow");
   Tmin               = config.get("air_temp_all_precip_as_snow");
@@ -209,7 +215,7 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(const NCConfigVariable& myconfig,
+PDDrandMassBalance::PDDrandMassBalance(const PISMConfig& myconfig,
                                        bool repeatable)
   : PDDMassBalance(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
@@ -266,7 +272,7 @@ void PDDrandMassBalance::get_PDDs(double pddStdDev, double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &myconfig)
+FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const PISMConfig &myconfig)
   : grid(g), config(myconfig) {
 
   beta_ice_w  = config.get("pdd_fausto_beta_ice_w");
@@ -281,7 +287,7 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &m
   ice_density		     = config.get("ice_density");
   pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
 
-  temp_mj.create(grid, "temp_mj_faustogreve", false);
+  temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   temp_mj.set_attrs("internal",
                     "mean July air temp from Fausto et al (2009) parameterization",
                     "K", "");

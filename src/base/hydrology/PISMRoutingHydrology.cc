@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "hydrology_diagnostics.hh"
 
 
-PISMRoutingHydrology::PISMRoutingHydrology(IceGrid &g, const NCConfigVariable &conf)
+PISMRoutingHydrology::PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf)
     : PISMHydrology(g, conf)
 {
   stripwidth = config.get("hydrology_null_strip_width");
@@ -38,54 +38,54 @@ PetscErrorCode PISMRoutingHydrology::allocate() {
   PetscErrorCode ierr;
 
   // model state variables; need ghosts
-  ierr = W.create(grid, "bwat", true, 1); CHKERRQ(ierr);
+  ierr = W.create(grid, "bwat", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = W.set_attrs("model_state",
                      "thickness of transportable subglacial water layer",
                      "m", ""); CHKERRQ(ierr);
-  ierr = W.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  W.metadata().set_double("valid_min", 0.0);
 
   // auxiliary variables which NEED ghosts
-  ierr = Wstag.create(grid, "W_staggered", true, 1); CHKERRQ(ierr);
+  ierr = Wstag.create(grid, "W_staggered", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = Wstag.set_attrs("internal",
                      "cell face-centered (staggered) values of water layer thickness",
                      "m", ""); CHKERRQ(ierr);
-  ierr = Wstag.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = Kstag.create(grid, "K_staggered", true, 1); CHKERRQ(ierr);
+  Wstag.metadata().set_double("valid_min", 0.0);
+  ierr = Kstag.create(grid, "K_staggered", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = Kstag.set_attrs("internal",
                      "cell face-centered (staggered) values of nonlinear conductivity",
                      "", ""); CHKERRQ(ierr);
-  ierr = Kstag.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = Qstag.create(grid, "advection_flux", true, 1); CHKERRQ(ierr);
+  Kstag.metadata().set_double("valid_min", 0.0);
+  ierr = Qstag.create(grid, "advection_flux", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = Qstag.set_attrs("internal",
                      "cell face-centered (staggered) components of advective subglacial water flux",
                      "m2 s-1", ""); CHKERRQ(ierr);
-  ierr = R.create(grid, "potential_workspace", true, 1); CHKERRQ(ierr); // box stencil used
+  ierr = R.create(grid, "potential_workspace", WITH_GHOSTS, 1); CHKERRQ(ierr); // box stencil used
   ierr = R.set_attrs("internal",
                       "work space for modeled subglacial water hydraulic potential",
                       "Pa", ""); CHKERRQ(ierr);
 
   // auxiliary variables which do not need ghosts
-  ierr = Pover.create(grid, "overburden_pressure_internal", false); CHKERRQ(ierr);
+  ierr = Pover.create(grid, "overburden_pressure_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = Pover.set_attrs("internal",
                      "overburden pressure",
                      "Pa", ""); CHKERRQ(ierr);
-  ierr = Pover.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = V.create(grid, "water_velocity", false); CHKERRQ(ierr);
+  Pover.metadata().set_double("valid_min", 0.0);
+  ierr = V.create(grid, "water_velocity", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = V.set_attrs("internal",
                      "cell face-centered (staggered) components of water velocity in subglacial water layer",
                      "m s-1", ""); CHKERRQ(ierr);
 
   // temporaries during update; do not need ghosts
-  ierr = Wnew.create(grid, "Wnew_internal", false); CHKERRQ(ierr);
+  ierr = Wnew.create(grid, "Wnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = Wnew.set_attrs("internal",
                      "new thickness of transportable subglacial water layer during update",
                      "m", ""); CHKERRQ(ierr);
-  ierr = Wnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = Wtilnew.create(grid, "Wtilnew_internal", false); CHKERRQ(ierr);
+  Wnew.metadata().set_double("valid_min", 0.0);
+  ierr = Wtilnew.create(grid, "Wtilnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = Wtilnew.set_attrs("internal",
                      "new thickness of till (subglacial) water layer during update",
                      "m", ""); CHKERRQ(ierr);
-  ierr = Wtilnew.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  Wtilnew.metadata().set_double("valid_min", 0.0);
 
   return 0;
 }
@@ -142,8 +142,8 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
     if (i) {
       ierr = W.read(filename, start); CHKERRQ(ierr);
     } else {
-      ierr = W.regrid(filename,
-                      config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+      ierr = W.regrid(filename, OPTIONAL,
+                          config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
     }
   } else {
     ierr = W.set(config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
@@ -849,9 +849,9 @@ PetscErrorCode PISMRoutingHydrology_bwatvel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "bwatvel", true); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "bwatvel", WITH_GHOSTS); CHKERRQ(ierr);
+  result->metadata(0) = vars[0];
+  result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
 
   ierr = model->velocity_staggered(*result); CHKERRQ(ierr);

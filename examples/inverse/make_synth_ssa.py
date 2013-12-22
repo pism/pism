@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -179,7 +179,7 @@ if __name__ == '__main__':
     final_velocity.add(grid.convert(1.0, "m/year", "m/second"),
                        u_noise)
 
-  pio = PISM.PIO(grid.com, grid.rank, "netcdf3", grid.get_unit_system())
+  pio = PISM.PIO(grid.com, "netcdf3", grid.get_unit_system())
   pio.open(output_file_name, PISM.NC_WRITE)
   pio.def_time(grid.config.get_string("time_dimension_name"),
                grid.config.get_string("calendar"), grid.time.units_string())

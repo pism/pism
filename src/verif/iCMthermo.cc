@@ -158,7 +158,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
                     &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
           acab(i, j) = accum;
         }
-        for (PetscInt k=0;  k<grid.Mz;  k++) // scale strain_heating to J/(s m^3)
+        for (unsigned int k=0;  k<grid.Mz;  k++) // scale strain_heating to J/(s m^3)
           strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
         ierr = strain_heating3_comp.setInternalColumn(i, j, strain_heating_C); CHKERRQ(ierr);
       }
@@ -238,7 +238,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
           vH(i,j)   = H;
           acab(i,j) = accum;
         }
-        for (PetscInt k = 0; k < grid.Mz; k++) {
+        for (unsigned int k = 0; k < grid.Mz; k++) {
           u[k] = Uradial[k]*(xx/r);
           v[k] = Uradial[k]*(yy/r);
           strain_heating[k] = strain_heating[k] * ice_rho * ice_c; // scale strain_heating to J/(s m^3)
@@ -365,27 +365,27 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   ierr = my_btu->get_temp(bedrock_temp); CHKERRQ(ierr);
 
   std::vector<double> zblevels = bedrock_temp->get_levels();
-  int Mbz = (int)zblevels.size();
+  unsigned int Mbz = (unsigned int)zblevels.size();
   Tbex = new PetscScalar[Mbz];
 
   switch (testname) {
     case 'K':
-      for (PetscInt k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz; k++) {
         ierr = exactK(grid.time->current(), grid.zlevels[k], &Tex[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
-      for (PetscInt k = 0; k < Mbz; k++) {
+      for (unsigned int k = 0; k < Mbz; k++) {
         ierr = exactK(grid.time->current(), zblevels[k], &Tbex[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       break;
     case 'O':
       PetscScalar dum1, dum2, dum3, dum4;
-      for (PetscInt k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz; k++) {
         ierr = exactO(grid.zlevels[k], &Tex[k], &dum1, &dum2, &dum3, &dum4);
              CHKERRQ(ierr);
       }
-      for (PetscInt k = 0; k < Mbz; k++) {
+      for (unsigned int k = 0; k < Mbz; k++) {
         ierr = exactO(zblevels[k], &Tbex[k], &dum1, &dum2, &dum3, &dum4);
              CHKERRQ(ierr);
       }
@@ -398,14 +398,14 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       ierr = bedrock_temp->getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-      for (PetscInt kb = 0; kb < Mbz; kb++) {
+      for (unsigned int kb = 0; kb < Mbz; kb++) {
         const PetscScalar Tberr = PetscAbs(Tb[kb] - Tbex[kb]);
         maxTberr = PetscMax(maxTberr,Tberr);
         avbcount += 1.0;
         avTberr += Tberr;
       }
       ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
-      for (PetscInt k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz; k++) {
         const PetscScalar Terr = PetscAbs(T[k] - Tex[k]);
         maxTerr = PetscMax(maxTerr,Terr);
         avcount += 1.0;
@@ -538,11 +538,11 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
           default:
             SETERRQ(grid.com, 1,"strain-heating (strain_heating) errors only computable for tests F and G\n");
         }
-        for (PetscInt k = 0; k < grid.Mz; k++)
+        for (unsigned int k = 0; k < grid.Mz; k++)
           strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
-        const PetscInt ks = grid.kBelowHeight(vH(i,j));
+        const unsigned int ks = grid.kBelowHeight(vH(i,j));
         ierr = strain_heating3->getInternalColumn(i,j,&strain_heating); CHKERRQ(ierr);
-        for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
+        for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
           const PetscScalar strain_heating_err = PetscAbs(strain_heating[k] - strain_heating_exact[k]);
           max_strain_heating_err = PetscMax(max_strain_heating_err,strain_heating_err);
           avcount += 1.0;
@@ -666,13 +666,13 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
   // evaluate exact solution in a column; all columns are the same
   switch (testname) {
     case 'K':
-      for (PetscInt k=0; k<grid.Mz; k++) {
+      for (unsigned int k=0; k<grid.Mz; k++) {
         ierr = exactK(grid.time->current(), grid.zlevels[k], &Tcol[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       break;
     case 'O':
-      for (PetscInt k=0; k<grid.Mz; k++) {
+      for (unsigned int k=0; k<grid.Mz; k++) {
         ierr = exactO(grid.zlevels[k], &Tcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
       }
       break;
@@ -753,7 +753,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
   // evaluate exact solution in a column; all columns are the same
   switch (testname) {
     case 'K':
-      for (PetscInt k=0; k<Mbz; k++) {
+      for (unsigned int k=0; k<Mbz; k++) {
         if (exactK(grid.time->current(), zlevels[k], &Tbcol[k], &FF,
                    (bedrock_is_ice==PETSC_TRUE)))
           SETERRQ1(grid.com, 1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
@@ -761,7 +761,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
       }
       break;
     case 'O':
-      for (PetscInt k=0; k<Mbz; k++) {
+      for (unsigned int k=0; k<Mbz; k++) {
         ierr = exactO(zlevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
       }
       break;

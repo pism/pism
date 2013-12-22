@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013 Ed Bueler
+// Copyright (C) 2004-2009, 2011, 2013, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "matlablike.hh"
 #include "greens.hh"
 #include "deformation.hh"
+#include "PISMConfig.hh"
 
 BedDeformLC::BedDeformLC() {
   settingsDone = false;
@@ -51,7 +52,7 @@ BedDeformLC::~BedDeformLC() {
   }
 }
 
-PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
+PetscErrorCode BedDeformLC::settings(const PISMConfig &config,
                                      bool  myinclude_elastic,
                                      int myMx, int myMy,
                                      PetscReal mydx, PetscReal mydy,

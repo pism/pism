@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,12 +22,14 @@
 #include "PISMTime.hh"
 #include "PISMTime_Calendar.hh"
 #include "PISMProf.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "pism_options.hh"
 
-IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
-                 const NCConfigVariable &conf)
-  : config(conf), com(c), rank(r), size(s), m_unit_system(config.get_unit_system()) {
+IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
+  : config(conf), com(c), m_unit_system(config.get_unit_system()) {
+
+  MPI_Comm_rank(com, &rank);
+  MPI_Comm_size(com, &size);
 
   // The grid in symmetric with respect to zero by default.
   x0 = 0.0;
@@ -193,7 +195,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     dzMAX = dzMIN;
 
     // Equal spacing
-    for (PetscInt k=0; k < Mz - 1; k++) {
+    for (unsigned int k=0; k < Mz - 1; k++) {
       zlevels[k] = dzMIN * ((PetscScalar) k);
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
@@ -201,7 +203,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (PetscInt k=0; k < Mz - 1; k++) {
+    for (unsigned int k=0; k < Mz - 1; k++) {
       const PetscScalar zeta = ((PetscScalar) k) / ((PetscScalar) Mz - 1);
       zlevels[k] = Lz * ( (zeta / lambda) * (1.0 + (lambda - 1.0) * zeta) );
     }
@@ -248,7 +250,7 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbosity,com,
      "    vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz); CHKERRQ(ierr);
-  for (PetscInt k=0; k < Mz; k++) {
+  for (unsigned int k=0; k < Mz; k++) {
     ierr = verbPrintf(verbosity,com," %5.4f,",zlevels[k]); CHKERRQ(ierr);
   }
   ierr = verbPrintf(verbosity,com,"\n"); CHKERRQ(ierr);
@@ -257,7 +259,7 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
 
 
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
-PetscInt IceGrid::kBelowHeight(PetscScalar height) {
+unsigned int IceGrid::kBelowHeight(PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(com,
        "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be non-negative)\n",
@@ -270,8 +272,8 @@ PetscInt IceGrid::kBelowHeight(PetscScalar height) {
        height,Lz);
     PISMEnd();
   }
-  PetscInt mcurr = 0;
-//  while ((zlevels[mcurr+1] <= height) && (mcurr+1 < Mz)) {
+
+  unsigned int mcurr = 0;
   while (zlevels[mcurr+1] < height) {
     mcurr++;
   }
@@ -288,7 +290,7 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
   // ice:
   dzMIN = Lz;
   dzMAX = 0.0;
-  for (PetscInt k = 0; k < Mz - 1; k++) {
+  for (unsigned int k = 0; k < Mz - 1; k++) {
     const PetscScalar mydz = zlevels[k+1] - zlevels[k];
     dzMIN = PetscMin(mydz,dzMIN);
     dzMAX = PetscMax(mydz,dzMAX);
@@ -508,7 +510,7 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
   zlevels_fine.resize(Mz_fine);
 
   // compute levels in the ice:
-  for (PetscInt k = 0; k < Mz_fine; k++)
+  for (unsigned int k = 0; k < Mz_fine; k++)
     zlevels_fine[k] = ((PetscScalar) k) * dz_fine;
   // Note that it's allowed to go over Lz.
 
@@ -520,12 +522,12 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
 //! Fills arrays ice_storage2fine, ice_fine2storage, bed_storage2fine,
 //! bed_fine2storage with indices of levels that are just below
 PetscErrorCode IceGrid::init_interpolation() {
-  PetscInt m;
+  unsigned int m = 0;
 
   // ice: storage -> fine
   ice_storage2fine.resize(Mz_fine);
   m = 0;
-  for (PetscInt k = 0; k < Mz_fine; k++) {
+  for (unsigned int k = 0; k < Mz_fine; k++) {
     if (zlevels_fine[k] >= Lz) {
       ice_storage2fine[k] = Mz - 1;
       continue;
@@ -541,7 +543,7 @@ PetscErrorCode IceGrid::init_interpolation() {
   // ice: fine -> storage
   ice_fine2storage.resize(Mz);
   m = 0;
-  for (PetscInt k = 0; k < Mz; k++) {
+  for (unsigned int k = 0; k < Mz; k++) {
     while (m < Mz_fine - 1 && zlevels_fine[m + 1] < zlevels[k]) {
       m++;
     }

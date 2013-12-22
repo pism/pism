@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -16,42 +16,35 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-static char help[] =
-  "\nBEDROUGH_TEST\n"
+static char help[] = "\nBEDROUGH_TEST\n"
   "  Simple testing program for Schoof (2003)-type bed smoothing and roughness-\n"
   "  parameterization schemes.  Allows comparison of computed theta to result\n"
   "  from Matlab/Octave code exampletheta.m in src/base/bedroughplay.  Also\n"
   "  used in PISM software (regression) test.\n\n";
 
+#include "PISMConfig.hh"
 #include <cmath>
 #include <cstdio>
-#include <petscvec.h>
-#include <petscdmda.h>
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "iceModelVec.hh"
-#include "NCVariable.hh"
 #include "PISMBedSmoother.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
-
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
-  com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
+  MPI_Comm com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
-    IceGrid grid(com, rank, size, config);
+    IceGrid grid(com, config);
     grid.Mx = 81;
     grid.My = 81;
     grid.Lx = 1200e3;
@@ -67,19 +60,19 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-show", show); CHKERRQ(ierr);
 
     IceModelVec2S topg, usurf, theta;
-    ierr = topg.create(grid, "topg", true, 1); CHKERRQ(ierr);
+    ierr = topg.create(grid, "topg", WITH_GHOSTS, 1); CHKERRQ(ierr);
     ierr = topg.set_attrs(
-      "trybedrough_tool", "original topography",
-      "m", "bedrock_altitude"); CHKERRQ(ierr);
-    ierr = usurf.create(grid, "usurf", true, 1); CHKERRQ(ierr);
+                          "trybedrough_tool", "original topography",
+                          "m", "bedrock_altitude"); CHKERRQ(ierr);
+    ierr = usurf.create(grid, "usurf", WITH_GHOSTS, 1); CHKERRQ(ierr);
     ierr = usurf.set_attrs(
-      "trybedrough_tool", "ice surface elevation",
-      "m", "surface_altitude"); CHKERRQ(ierr);
-    ierr = theta.create(grid, "theta", true, 1); CHKERRQ(ierr);
+                           "trybedrough_tool", "ice surface elevation",
+                           "m", "surface_altitude"); CHKERRQ(ierr);
+    ierr = theta.create(grid, "theta", WITH_GHOSTS, 1); CHKERRQ(ierr);
     ierr = theta.set_attrs(
-      "trybedrough_tool",
-      "coefficient theta in Schoof (2003) bed roughness parameterization",
-      "", ""); CHKERRQ(ierr);
+                           "trybedrough_tool",
+                           "coefficient theta in Schoof (2003) bed roughness parameterization",
+                           "", ""); CHKERRQ(ierr);
 
     // put in bed elevations, a la this Matlab:
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
@@ -88,7 +81,7 @@ int main(int argc, char *argv[]) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x[i] / 600.0e3) +
-                    100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
+          100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
       }
     }
     ierr = topg.end_access(); CHKERRQ(ierr);
@@ -96,8 +89,8 @@ int main(int argc, char *argv[]) {
     ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
-    config.set("Glen_exponent", 3.0);
-    config.set("bed_smoother_range", 50.0e3);
+    config.set_double("Glen_exponent", 3.0);
+    config.set_double("bed_smoother_range", 50.0e3);
     PISMBedSmoother smoother(grid, config, 1);
     ierr = smoother.preprocess_bed(topg); CHKERRQ(ierr);
     PetscInt Nx,Ny;
@@ -122,14 +115,14 @@ int main(int argc, char *argv[]) {
     ierr = theta.min(theta_min); CHKERRQ(ierr);
     ierr = theta.max(theta_max); CHKERRQ(ierr);
     PetscPrintf(grid.com,
-           "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
-           topg_min, topg_max);
+                "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+                topg_min, topg_max);
     PetscPrintf(grid.com,
-           "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
-           topgs_min, topgs_max);
+                "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+                topgs_min, topgs_max);
     PetscPrintf(grid.com,
-           "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
-           theta_min, theta_max);
+                "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
+                theta_min, theta_max);
 
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ by Bueler at AGU 2007 and at NYU in Feb 2008.  IcePSTexModel has no "lake" or
 class IcePSTexModel : public IceEISModel {
 
 public:
-  IcePSTexModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides);
+  IcePSTexModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides);
   virtual ~IcePSTexModel();
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode allocate_basal_yield_stress();
@@ -70,7 +70,7 @@ protected:
 class PSTYieldStress : public PISMMohrCoulombYieldStress
 {
 public:
-  PSTYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro, int e, std::string name)
+  PSTYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro, int e, std::string name)
     : PISMMohrCoulombYieldStress(g, conf, hydro),
       experiment(e), experiment_name(name) {}
   virtual ~PSTYieldStress() {}

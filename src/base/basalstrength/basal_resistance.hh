@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ viscous till to purely plastic till.
  */
 class IceBasalResistancePlasticLaw {
 public:
-  IceBasalResistancePlasticLaw(const NCConfigVariable &config);
+  IceBasalResistancePlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePlasticLaw() {}
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,
@@ -44,7 +44,7 @@ protected:
 
 class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
-  IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config);
+  IceBasalResistancePseudoPlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() {}
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,

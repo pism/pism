@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -24,11 +24,12 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
+#include "PISMConfig.hh"
 
 PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      ShallowStressBalance *sb,
                                      SSB_Modifier *ssb_mod,
-                                     const NCConfigVariable &conf)
+                                     const PISMConfig &conf)
   : PISMComponent(g, conf), m_stress_balance(sb), m_modifier(ssb_mod) {
 
   m_basal_melt_rate = NULL;
@@ -46,15 +47,15 @@ PetscErrorCode PISMStressBalance::allocate() {
   PetscErrorCode ierr;
 
   // allocate the vertical velocity field:
-  ierr = m_w.create(grid, "wvel_rel", false); CHKERRQ(ierr);
+  ierr = m_w.create(grid, "wvel_rel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_w.set_attrs("diagnostic",
                        "vertical velocity of ice, relative to base of ice directly below",
                        "m s-1", ""); CHKERRQ(ierr);
-  m_w.time_independent = false;
+  m_w.set_time_independent(false);
   ierr = m_w.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   m_w.write_in_glaciological_units = true;
 
-  ierr = m_strain_heating.create(grid, "strain_heating", false); CHKERRQ(ierr);
+  ierr = m_strain_heating.create(grid, "strain_heating", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_strain_heating.set_attrs("internal",
                                     "rate of strain heating in ice (dissipation heating)",
                                     "W m-3", ""); CHKERRQ(ierr);
@@ -292,7 +293,7 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
 
       // within the ice and above:
       PetscScalar old_integrand = u_x + v_y;
-      for (PetscInt k = 1; k < grid.Mz; ++k) {
+      for (unsigned int k = 1; k < grid.Mz; ++k) {
         u_x = D_x * (west  * (u_ij[k] - u_im1[k]) + east  * (u_ip1[k] - u_ij[k]));
         v_y = D_y * (south * (v_ij[k] - v_jm1[k]) + north * (v_jp1[k] - v_ij[k]));
         const PetscScalar new_integrand = u_x + v_y;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@
 
 class PSCache : public PSModifier {
 public:
-  PSCache(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  PSCache(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
   virtual ~PSCache();
 
   virtual PetscErrorCode init(PISMVars &vars);

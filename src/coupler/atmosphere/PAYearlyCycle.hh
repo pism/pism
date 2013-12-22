@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 //! (constant in time) precipitation field.
 class PAYearlyCycle : public PISMAtmosphereModel {
 public:
-  PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf);
+  PAYearlyCycle(IceGrid &g, const PISMConfig &conf);
   virtual ~PAYearlyCycle();
 
   virtual PetscErrorCode init(PISMVars &vars);

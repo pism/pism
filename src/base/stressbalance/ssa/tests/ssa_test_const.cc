@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -51,9 +51,8 @@ static char help[] =
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c, PetscScalar q ): 
-                 SSATestCase(com,rank,size,c), basal_q(q)
+  SSATestCaseConst(MPI_Comm com, PISMConfig &c, PetscScalar q): 
+    SSATestCase(com, c), basal_q(q)
   {
     PISMUnitSystem s = c.get_unit_system();
 
@@ -89,7 +88,7 @@ PetscErrorCode SSATestCaseConst::initializeGrid(PetscInt Mx,PetscInt My)
 PetscErrorCode SSATestCaseConst::initializeSSAModel()
 {
   config.set_flag("do_pseudo_plastic_till", true);
-  config.set("pseudo_plastic_q", basal_q);
+  config.set_double("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
   basal = new IceBasalResistancePseudoPlasticLaw(config);
@@ -172,19 +171,17 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -239,7 +236,7 @@ int main(int argc, char *argv[]) {
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
-    SSATestCaseConst testcase(com,rank,size,config,basal_q);
+    SSATestCaseConst testcase(com,config,basal_q);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("const"); CHKERRQ(ierr);

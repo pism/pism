@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 class PISMNC3File : public PISMNCFile
 {
 public:
-  PISMNC3File(MPI_Comm com, int rank);
+  PISMNC3File(MPI_Comm com);
   virtual ~PISMNC3File();
 
   // open/create/close
@@ -63,17 +63,19 @@ public:
   int put_vara_double(std::string variable_name,
                       std::vector<unsigned int> start,
                       std::vector<unsigned int> count,
-                      double *op) const;
+                      const double *op) const;
 
   int get_varm_double(std::string variable_name,
                       std::vector<unsigned int> start,
                       std::vector<unsigned int> count,
-                      std::vector<unsigned int> imap, double *ip) const;
+                      std::vector<unsigned int> imap,
+                      double *ip) const;
 
   int put_varm_double(std::string variable_name,
                       std::vector<unsigned int> start,
                       std::vector<unsigned int> count,
-                      std::vector<unsigned int> imap, double *op) const;
+                      std::vector<unsigned int> imap,
+                      const double *op) const;
 
   int inq_nvars(int &result) const;
 
@@ -92,7 +94,7 @@ public:
   int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
 
   using PISMNCFile::put_att_double;
-  int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, std::vector<double> &data) const;
+  int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const;
 
   int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
@@ -105,6 +107,7 @@ public:
 
   virtual std::string get_format() const;
 private:
+  int m_rank;
   int get_var_double(std::string variable_name,
                      std::vector<unsigned int> start,
                      std::vector<unsigned int> count,

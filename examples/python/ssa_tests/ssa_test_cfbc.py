@@ -72,7 +72,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
     config.set_string("ssa_flow_law", "isothermal_glen")
-    config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")))
+    config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")))
     
     self.modeldata.setPhysics(basal,enthalpyconverter)
 
