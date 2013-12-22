@@ -347,20 +347,20 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
   const PetscReal
-            rg = config.get("fresh_water_density") * config.get("standard_gravity"),
+            rg    = config.get("fresh_water_density") * config.get("standard_gravity"),
             nglen = config.get("Glen_exponent"),
             Aglen = config.get("ice_softness"),
-            c1 = config.get("hydrology_cavitation_opening_coefficient"),
-            c2 = config.get("hydrology_creep_closure_coefficient"),
-            Wr = config.get("hydrology_roughness_scale"),
-            phi0 = config.get("hydrology_regularizing_porosity");
+            c1    = config.get("hydrology_cavitation_opening_coefficient"),
+            c2    = config.get("hydrology_creep_closure_coefficient"),
+            Wr    = config.get("hydrology_roughness_scale"),
+            phi0  = config.get("hydrology_regularizing_porosity");
 
-  PetscReal ht = m_t, hdt, // hydrology model time and time step
-            maxKW, maxV, maxD;
+  PetscReal ht = m_t, hdt = 0, // hydrology model time and time step
+            maxKW = 0, maxV = 0, maxD = 0;
   PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
-            delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
+            delta_icefree = 0, delta_ocean = 0, delta_neggain = 0, delta_nullstrip = 0;
 
-  PetscReal PtoCFLratio,  // for reporting ratio of dtCFL to dtDIFFP
+  PetscReal PtoCFLratio = 0,  // for reporting ratio of dtCFL to dtDIFFP
             cumratio = 0.0;
   PetscInt hydrocount = 0; // count hydrology time steps
 
