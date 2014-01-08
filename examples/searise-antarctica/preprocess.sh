@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Copyright (C) 2009-2014  PISM authors
+
 # downloads development version of SeaRISE "Present Day Antarctica" master
 # dataset NetCDF file, adjusts metadata, breaks up, saves under new names,
 # ready for PISM

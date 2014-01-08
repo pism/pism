@@ -1,20 +1,21 @@
-SeaRISE-Antarctica example
+Antarctica example using SeaRISE-Antarctica data
 =========
 
-These are minimal scripts which are less than needed for an actual
-SeaRISE submission.  The modeling strategy in this example is explained in
+The scripts in this directory apply the PISM model to the present-day Antarctic
+ice sheet.  The data are from the SeaRISE collaboration, specifically the file
+`Antarctica_5km_dev1.0.nc` (105 MB) described at
+<http://websrv.cs.umt.edu/isis/index.php/Present_Day_Antarctica>.
+
+These scripts do not prepare an actual SeaRISE submission.  Some elements of the
+modeling strategy in this example is explained in
 
 * M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  _The Potsdam Parallel Ice Sheet Model (PISM-PIK) - Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet_, **The Cryosphere** 5, 727--740. <http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.pdf>
 
 Getting and preprocessing the data
 ---------
 
-First download the data and do the preprocessing by calling the `preprocess.sh`
-script.  The downloaded files `Antarctica_5km_dev1.0.nc` (105 MB) and
-`ANT_climate_forcing_2004_2098_v3.nc` (1.1 GB) are described at
-<http://websrv.cs.umt.edu/isis/index.php/Present_Day_Antarctica>.
-This script downloads with `wget` and uses NCO to preprocess to PISM-ready
-condition:
+This script downloads `Antarctica_5km_dev1.0.nc` with `wget` and uses NCO to
+preprocess to PISM-ready condition:
 
     $ ./preprocess.sh
 
@@ -41,7 +42,7 @@ and `SKIP` variables.  Different parameter values can be set also.
 SeaRISE experiments
 ---------
 
-To perform the SeaRISE experiments, see scripts in PISM release `stable0.4`.
+To perform the actual SeaRISE experiments, see scripts in PISM release `stable0.4`.
 Look in `examples/searise-antarctica`.  These scripts will require modifications
 to run under more recent versions of PISM.
 
