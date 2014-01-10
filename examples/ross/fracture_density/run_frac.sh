@@ -63,7 +63,9 @@ fi
 PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
-output="-o Mx${M}_year-000${YEARS}.nc -o_order zyx -o_size big"
+NAME=Mx${M}year${YEARS}.nc
+
+output="-o $NAME -o_order zyx -o_size big"
 
 ssa="-no_sia -ssa_floating_only -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
 #-pik:-part_grid -cfbc -kill_icebergs -part_redist
@@ -71,9 +73,9 @@ ssa="-no_sia -ssa_floating_only -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfb
 #calving="-eigen_calving -eigen_calving_K ${ECALV} -thickness_calving -calving_at_thickness 50.0 "
 calving="-ocean_kill "
 
-extra="-extra_file ex_Mx${M}.nc -extra_times ${interval}:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
+extra="-extra_file ex-${NAME} -extra_times 0:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
-timeseries="-ts_file ts-prog.nc -ts_times 0:1:${YEARS}"
+timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 
 # fractures ##############################################################################
 

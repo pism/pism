@@ -28,7 +28,6 @@ if [ $# -gt 3 ] ; then  # if user says "run_prog.sh 8 211 0.6 500" then ... and 
 fi
 interval=2
 
-
 ECALV=1e17   #  constant for eigencalving parameterization
 if [ $# -gt 4 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16" then ... and -eigen_calving_K 7e16
   ECALV="$5"
@@ -42,12 +41,15 @@ cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file Ross_combined_prog.nc -Mx
   -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_e $SSAE \
   -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx "
 
+NAME=Mx${M}year${YEARS}.nc
+CTHICK=50.0
+
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc \
   -surface given -no_sia -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_e ${SSAE} \
-  -y ${YEARS} -o Mx${M}_year-000${YEARS}.nc -o_order zyx -o_size big \
-  -eigen_calving -eigen_calving_K ${ECALV} -thickness_calving -calving_at_thickness 50.0 \
-  -ts_file ts-prog.nc -ts_times 0:1:${YEARS} \
-  -extra_file ex_Mx${M}.nc -extra_times ${interval}:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask"
+  -y ${YEARS} -o $NAME -o_order zyx -o_size big \
+  -eigen_calving -eigen_calving_K ${ECALV} -thickness_calving -calving_at_thickness $CTHICK \
+  -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
+  -extra_file ex-${NAME} -extra_times 0:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask"
 
 # -ssa_rtol 1.0e-3 -ssa_eps 5.0e15
 # -cfl_eigencalving
