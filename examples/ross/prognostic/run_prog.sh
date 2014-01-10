@@ -4,7 +4,7 @@
 #     discontinuities of surface and bedrock elevation fields).
 # -pik sets the calving front boundary condition
 #     (can be reduced to '-cfbc -kill_icebergs')
-# -ssa_method fem seems not to work?
+# -ssa_method fem will not work as '-pik', including '-cfbc', are not implemented in fem
 
 NN=1  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "run_prog.sh 8" then NN = 8

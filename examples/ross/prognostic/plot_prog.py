@@ -73,8 +73,9 @@ plt.quiver(x[::s], y[::s], u[::s,::s], v[::s,::s], color='black')
 plt.xticks([])
 plt.yticks([])
 plt.title(r"Ross ice velocity (m/year); white=observed, black=model")
-print "saving figure 'rossquiver.png'"
-plt.savefig('prog_rossquiver.png', dpi=300)
+quivname = 'prog_rossquiver.png'
+print "saving figure '%s'" % quivname
+plt.savefig(quivname, dpi=300)
 
 # do the scatter plot
 magnitude = np.sqrt(np.abs(u[::s,::s])**2 + np.abs(v[::s,::s])**2)
@@ -92,5 +93,6 @@ plt.axis(xmin=0, xmax=max_velocity, ymin=0, ymax=max_velocity)
 plt.xlabel('modeled speed')
 plt.ylabel('observed speed')
 plt.title("Observed versus modeled speed (m/year), at points in quiver plot")
-print "saving figure 'rossscatter.png'"
-plt.savefig('prog_rossscatter.png', dpi=300)
+scatname = 'prog_rossscatter.png'
+print "saving figure '%s'" % scatname
+plt.savefig(scatname, dpi=300)
