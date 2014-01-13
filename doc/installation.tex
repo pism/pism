@@ -172,36 +172,39 @@ The following Python packages are needed to do all the examples in the \emph{Use
 \label{sec:deb-libraries-by-hand}
 
 Even if you cannot use the meta-package above you may still be able to use your
-package manager to manually-select the packages PISM requires.
-In the following package list, note that \texttt{libopenmpi-dev} and
-\texttt{openmpi-bin} are not needed if you will configure PETSc with
-option \texttt{--download-mpich=1} or similar, which PETSc generally recommends
-and which works well for PISM if you do not already use OpenMPI.
-Install, using \texttt{apt-get} or \texttt{synaptic}, for example, the following
-prerequisite packages:
+package manager to get the prerequisites for PISM.
+Install the following packages using \texttt{apt-get} or \texttt{synaptic} or similar.
+All of these are recommended as they satisfy requirements for building or running PISM.
+Regarding the final group, note that some form of MPI and
+BLAS and LAPACK are needed, but that if you will configure PETSc with
+option \texttt{--download-mpich=1} and so on (see below), which PETSc generally recommends
+and which works well for PISM, then you may not need to get these packages.
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
     \toprule
     \emph{Package name} & \emph{Comments}\\
     \midrule
-    \texttt{libblas-dev} & required by PETSc\\
-    \texttt{liblapack-dev} & required by PETSc \\
-    \texttt{libopenmpi-dev} & required by PETSc and PISM \\
-    \texttt{openmpi-bin} & required to run PISM in parallel \\
-    \texttt{libgsl0-dev} & required by PISM\\
-    \texttt{libudunits2-dev} & required by PISM\\
-    \texttt{libfftw3-dev} & optional; used in the bed deformation code\\
-    \texttt{libproj-dev} & optional; used to compute ice area and volume \\
-    \texttt{netcdf-bin} & \texttt{ncgen} is used during the build process \\
-    \texttt{libnetcdf-dev} & required by PISM \\
+    \texttt{cmake} & required to configure PISM \\
+    \texttt{libfftw3-dev} & required by PISM \\
     \texttt{g++} & required to build PISM \\
-    \texttt{git} & required to get PISM source code \\
-    \texttt{cmake} & used to configure PISM \\
-    \texttt{cmake-curses-gui} & a text-based easy interface for CMake \\
-    \texttt{python-dev} & (helps with scripts\dots perhaps not essential) \\
-    \texttt{ncview} & view fields in NetCDF files \\
-    \texttt{nco} & used in many pre-processing scripts \\
+    \texttt{libgsl0-dev} & required by PISM \\
+    \texttt{netcdf-bin} & required: \texttt{ncgen} is used during the build process \\
+    \texttt{libnetcdf-dev} & required by PISM \\
+    \texttt{libudunits2-dev} & required by PISM \\
+    \midrule
     \texttt{cdo} & used in some pre-processing scripts \\
+    \texttt{cmake-curses-gui} & a text-based easy interface for CMake \\
+    \texttt{git} & used to get PISM source code \\
+    \texttt{nco} & used in many pre-processing scripts \\
+    \texttt{ncview} & view fields in NetCDF files \\
+    \texttt{libproj-dev} & used to compute ice area and volume \\
+    \texttt{python-dev} & (helps with scripts\dots perhaps not essential) \\
+    \texttt{python-pyproj} & used in some pre-processing scripts \\
+    \midrule
+    \texttt{libblas-dev} & BLAS is required by PETSc \\
+    \texttt{liblapack-dev} & LAPACK is required by PETSc \\
+    \texttt{openmpi-bin} & MPI is required to run PISM in parallel \\
+    \texttt{libopenmpi-dev} & MPI is required to run PISM in parallel \\
     \bottomrule
   \end{tabular*}
 \end{center}
@@ -242,16 +245,11 @@ From now on, this manual assumes the use of the \texttt{bash} shell.
   present, install it using the instructions at the web-page or using a package
   management system.
 
-\item PISM optionally uses the \href{http://www.fftw.org/}{FFTW-3
+\item PISM uses the \href{http://www.fftw.org/}{FFTW
  (= \emph{Fastest Fourier Transform in the West}) library}\index{FFTW
-    (\emph{Fastest Fourier Transform in the West})} in one approximation of the
-  deformation of the solid earth (bed) under ice loads.\footnote{Bueler and
-    others (2007). \emph{Fast computation of a viscoelastic deformable Earth
-      model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–-105.} If you
-  want the functionality of this bed deformation model, which is coupled to the
-  ice flow and which we recommend, install FFTW version 3.x or check that it is installed
-  already. If this library is absent, all of PISM will work \emph{except} for
-  this bed deformation model.
+    (\emph{Fastest Fourier Transform in the West})} for the
+  deformation of the solid earth (bed) under ice loads.  Install FFTW version
+  3.x or check that it is installed already.
 
 \item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (=
     \emph{Message Passing Interface})}.\index{MPI (\emph{Message Passing
