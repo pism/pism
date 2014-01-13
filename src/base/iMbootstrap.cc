@@ -223,8 +223,8 @@ PetscErrorCode IceModel::bootstrap_3d() {
 //! Create a temperature field within the ice from provided ice thickness, surface temperature, surface mass balance, and geothermal flux.
 /*!
 In bootstrapping we need to determine initial values for the temperature within
-the ice (and the bedrock).  There is various data available at bootstrapping,
-but there is not enough to determine initial values for the temperature.  Here 
+the ice (and the bedrock).  There are various data available at bootstrapping,
+but not the 3D temperature field needed as initial values for the temperature.  Here 
 we take a "guess" based on an assumption of steady state and a simple model of
 the vertical velocity in the column.  The rule is certainly heuristic but it
 seems to work well anyway.
@@ -232,16 +232,16 @@ seems to work well anyway.
 The result is *not* the temperature field which is in steady state with the ice
 dynamics.  Spinup is most-definitely needed in many applications.  Such spinup
 usually starts from the temperature field computed by this procedure and then
-runs for a long time (e.g. \f$10^5\f$ years), with fixed geometry, to get closer
-to thermomechanically-coupled equilibrium.
+runs for a long time (e.g. \f$10^4\f$ to \f$10^6\f$ years), possibly with fixed
+geometry, to get closer to thermomechanically-coupled equilibrium.
 
 Consider a horizontal grid point.  Suppose the surface temperature
-\f$T_s\f$, surface mass balance \f$m\f$, and geothermal flux \f$g\f$ are given.
+\f$T_s\f$, surface mass balance \f$m\f$, and geothermal flux \f$g\f$ are given at that location.
 Within the column denote the temperature by \f$T(z)\f$ at height \f$z\f$ above
 the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
 thickness.
 
-There are two alternative bootstrap methods determined by configuration flag
+There are two alternative bootstrap methods determined by the boolean
 `usesmb = !(config.get("bootstrapping_no_smb_in_initial_temp"))`.
 
 1. If `usesmb` is true, which is the default, and if \f$m>0\f$,
@@ -261,10 +261,11 @@ Then let
 [\ref Paterson]; compare [\ref vanderWeletal2013].)  The solution to the
 two-point boundary value problem is then
   \f[T(z) = T_s + C_0 \left(\operatorname{erf}(\gamma_0) - \operatorname{erf}\left(\gamma_0 \frac{z}{H}\right)\right).\f]
-If \f$m \le 0\f$, then the solution is
-\f[ T(z) = \frac{g}{k_i} \left( H - z \right) + T_s, \f]
+If `usesmb` is true and \f$m \le 0\f$, then the velocity in the column, relative
+to the base, is taken to be zero.  Thus the solution is
+  \f[ T(z) = \frac{g}{k_i} \left( H - z \right) + T_s, \f]
 a straight line whose slope is determined by the geothermal flux and whose value
-at the ice surface is the surface temperature, \f$T(H) = T_s\$.
+at the ice surface is the surface temperature, \f$T(H) = T_s\f$.
 2. If `usesmb` is false then the "quartic guess" formula which was in older
 versions of PISM is used.  Namely, within the ice we set
 \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
