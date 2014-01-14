@@ -117,8 +117,7 @@ int main(int argc, char *argv[]) {
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
                           PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
-      ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 
-                                       PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+      ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0); CHKERRQ(ierr);
       ierr = DMCreateGlobalVector(da2, &bed); CHKERRQ(ierr);
 
       // create a bed viewer

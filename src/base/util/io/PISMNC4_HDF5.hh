@@ -25,7 +25,7 @@
 
 class PISMNC4_HDF5 : public PISMNCFile {
 public:
-  PISMNC4_HDF5(MPI_Comm com, int rank);
+  PISMNC4_HDF5(MPI_Comm com);
   virtual ~PISMNC4_HDF5();
 
   // open/create/close
@@ -64,7 +64,7 @@ public:
   virtual int put_vara_double(std::string variable_name,
                               std::vector<unsigned int> start,
                               std::vector<unsigned int> count,
-                              double *op) const;
+                              const double *op) const;
 
   virtual int get_varm_double(std::string variable_name,
                               std::vector<unsigned int> start,
@@ -74,7 +74,7 @@ public:
   virtual int put_varm_double(std::string variable_name,
                               std::vector<unsigned int> start,
                               std::vector<unsigned int> count,
-                              std::vector<unsigned int> imap, double *op) const;
+                              std::vector<unsigned int> imap, const double *op) const;
 
   virtual int inq_nvars(int &result) const;
 
@@ -94,7 +94,8 @@ public:
   virtual int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
 
   using PISMNCFile::put_att_double;
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, std::vector<double> &data) const;
+  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype,
+			     const std::vector<double> &data) const;
 
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 

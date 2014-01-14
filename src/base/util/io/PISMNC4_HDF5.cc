@@ -442,8 +442,8 @@ static herr_t extend_dimension(hid_t dim_id, int increment) {
   return 0;
 }
 
-PISMNC4_HDF5::PISMNC4_HDF5(MPI_Comm c, int r)
-  : PISMNCFile(c, r) {
+PISMNC4_HDF5::PISMNC4_HDF5(MPI_Comm c)
+  : PISMNCFile(c) {
   file_id = -1;
 }
 
@@ -455,6 +455,9 @@ PISMNC4_HDF5::~PISMNC4_HDF5() {
 int PISMNC4_HDF5::open(std::string filename, int mode) {
   herr_t stat;
   hid_t plist_id;
+  int rank = 0;
+
+  MPI_Comm_rank(com, &rank);
 
   m_filename = filename;
 
@@ -804,7 +807,7 @@ int PISMNC4_HDF5::get_vara_double(std::string variable_name,
 int PISMNC4_HDF5::put_vara_double(std::string variable_name,
                                   std::vector<unsigned int> start,
                                   std::vector<unsigned int> count,
-                                  double *op) const {
+                                  const double *op) const {
   herr_t stat;
   hid_t plist_id;
 
@@ -887,7 +890,7 @@ int PISMNC4_HDF5::get_varm_double(std::string /*variable_name*/,
 int PISMNC4_HDF5::put_varm_double(std::string /*variable_name*/,
                                   std::vector<unsigned int> /*start*/,
                                   std::vector<unsigned int> /*count*/,
-                                  std::vector<unsigned int> /*imap*/, double */*op*/) const {
+                                  std::vector<unsigned int> /*imap*/, const double */*op*/) const {
   // Not implemented.
   return -1;
 }
@@ -1043,7 +1046,8 @@ int PISMNC4_HDF5::get_att_text(std::string variable_name, std::string att_name, 
   return 0;
 }
 
-int PISMNC4_HDF5::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, std::vector<double> &data) const {
+int PISMNC4_HDF5::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype,
+				 const std::vector<double> &data) const {
 
   herr_t stat;
 

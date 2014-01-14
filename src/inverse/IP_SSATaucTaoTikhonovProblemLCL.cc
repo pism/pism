@@ -47,26 +47,26 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   m_velocityScale = grid.config.get("inv_ssa_velocity_scale", "m/year", "m/second");
 
 
-  PetscInt design_stencil_width = m_d0.get_stencil_width();
-  PetscInt state_stencil_width = m_u_obs.get_stencil_width();
-  ierr = m_d.create(grid, "design variable", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_Jdesign.create(grid, "Jdesign design variable", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dGlobal.create(grid, "design variable (global)", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
+  PetscInt design_stencil_width = m_d0.stencil_width();
+  PetscInt state_stencil_width = m_u_obs.stencil_width();
+  ierr = m_d.create(grid, "design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_Jdesign.create(grid, "Jdesign design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_dGlobal.create(grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dGlobal.copy_from(m_d0); CHKERRQ(ierr);
 
-  ierr = m_uGlobal.create(grid, "state variable (global)", kNoGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_u.create(grid, "state variable", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_du.create(grid, "du", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_u_Jdesign.create(grid, "Jdesign state variable", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_uGlobal.create(grid, "state variable (global)", WITHOUT_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_u.create(grid, "state variable", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_du.create(grid, "du", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_u_Jdesign.create(grid, "Jdesign state variable", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
   
-  ierr = m_u_diff.create( grid, "state residual", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create( grid, "design residual", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dzeta.create(grid,"dzeta",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
+  ierr = m_u_diff.create( grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff.create( grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_dzeta.create(grid,"dzeta",WITH_GHOSTS,design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_grad_state.create( grid, "state gradient", kNoGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad_design.create( grid, "design gradient", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_state.create( grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_design.create( grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_constraints.create(grid,"PDE constraints",kNoGhosts,design_stencil_width); CHKERRQ(ierr);
+  ierr = m_constraints.create(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width); CHKERRQ(ierr);
 
   DM da;
   ierr = m_ssaforward.get_da(&da); CHKERRQ(ierr);

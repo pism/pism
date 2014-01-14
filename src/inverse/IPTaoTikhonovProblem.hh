@@ -25,6 +25,7 @@
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 #include <assert.h>
+#include "PISMConfig.hh"
 
 template<class ForwardProblem> class IPTaoTikhonovProblem;
 
@@ -281,20 +282,20 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   m_tikhonov_atol = m_grid->config.get("tikhonov_atol");
   m_tikhonov_rtol = m_grid->config.get("tikhonov_rtol");
 
-  PetscInt design_stencil_width = m_d0.get_stencil_width();
-  PetscInt state_stencil_width = m_u_obs.get_stencil_width();
-  ierr = m_d.create(*m_grid, "design variable", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dGlobal.create(*m_grid, "design variable (global)", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
+  PetscInt design_stencil_width = m_d0.stencil_width();
+  PetscInt state_stencil_width = m_u_obs.stencil_width();
+  ierr = m_d.create(*m_grid, "design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_dGlobal.create(*m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dGlobal.copy_from(m_d0); CHKERRQ(ierr);
 
-  ierr = m_u_diff.create( *m_grid, "state residual", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create( *m_grid, "design residual", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_u_diff.create( *m_grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff.create( *m_grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_grad_state.create( *m_grid, "state gradient", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad_design.create( *m_grid, "design gradient", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad.create( *m_grid, "gradient", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_state.create( *m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_design.create( *m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad.create( *m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_adjointRHS.create(*m_grid,"work vector", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_adjointRHS.create(*m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
   return 0;
 }
