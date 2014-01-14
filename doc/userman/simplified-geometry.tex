@@ -97,26 +97,15 @@ This intercomparison addresses grounding line dynamics by considering an idealiz
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip/}}
 
-\noindent Find a full text description there.  It is essential reading for understanding MISMIP results generally, and for appreciating many of the comments in this subsection.
+\noindent Find a full text description there, along with the published report on the results \cite{MISMIP2012}, including results from PISM version 0.1.  These are essential reading for understanding MISMIP results generally, and for appreciating many of the comments in this subsection.
 
-PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  The analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf, in the flow line case, is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  But this analysis does not apply to ice shelves with two horizontal dimensions, of course.  Real ice shelves have ``buttressing'' and ``side drag'' and other forces not present in flow line circumstances \cite{Goldbergetal2009}.  See the Ross ice shelf example in section \ref{sec:ross}, for example.
+PISM's version of MISMIP includes an attached ice shelf even though modeling the shelf is theoretically unnecessary in the MISMIP flow line case.  The analysis in \cite{SchoofMarine1} shows that the only effect of an ice shelf, in the flow line case, is to transfer the force imbalance at the calving front directly to the ice column at the grounding line.  (Such an analysis does not apply to ice shelves with two horizontal dimensions; real ice shelves have ``buttressing'' and ``side drag'' and other forces not present in the flow line \cite{Goldbergetal2009}.  See the Ross ice shelf example in section \ref{sec:ross}, for example.)
 
-We use the usual PISM ice shelf model, with two horizontal dimensions, to do MISMIP.  This intercomparison therefore looks at the grounding line dynamics results from the usual PISM code, though in a highly symmetric case without side drag.
+We use the usual PISM ice shelf model, with two horizontal dimensions, to do MISMIP.  We must adapt it to do a flow line problem (see section \ref{sec:flowline-modeling}).  The flow direction for MISMIP is taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in the $y$-direction which maintains function.  This number turns out to be ``\texttt{-My 3}''; fewer points than this in the cross-flow direction confuses the finite difference scheme.
 
-Because PISM is a model with two horizontal dimensions, we must adapt it to do a flow line problem (see section \ref{sec:flowline-modeling}). The flow direction for MISMIP is arbitrarily taken to be ``$x$''.  We periodize the cross-flow direction ``$y$'', and use the minimum number of points in this direction which maintains function.  This number turns out to be ``\texttt{-My 3}''; fewer points than this in the cross-flow direction confuses the finite difference scheme.
+PISM has two applicable ice dynamics models. Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{Winkelmannetal2011}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
 
-PISM has two applicable ice dynamics models. Model 1 is a pure SSA model.  It is ``category 2'' in the MISMIP classification.  Model 2 combines SIA and SSA velocities as described in \cite{BBssasliding}, and is ``category 3'' because it resolves ``vertical'' shear (i.e.~using SIA flow).
-
-There are many runs for a complete MISMIP intercomparison submission.  There are $62$ runs for each model and grid choice, and there are two models and three (suggested) grid choices, so a full suite is $6 \times 62 = 372$ runs.  The finest grid runs account for all the compute time, however.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction\footnote{This translates into 3001 grid \emph{points} in PISM's doubled computational domain.}, a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.  For the PISM MISMIP submission in Sept.~2008 we chose to only submit runs for a grid with 150 (``grid mode 1'') and 600 (``grid mode 3'') grid spaces in the flow line direction.  This was still 248 runs to submit, with 3 files each for a total of 744 text files.
-
-Please see \texttt{README.md} in \texttt{examples/mismip/mismip2d} for a description of the setup that can be used to run MISMIP experiments in PISM.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=4.0in,keepaspectratio=true]{CKH1-1a-M1-A1-profile}
-\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 1, step 1. Starting from a uniform $10$ m ice thickness.}
-\label{fig:MISMIPmodel1exper1aM1A1}
-\end{figure}
+There are many runs for a complete MISMIP intercomparison submission.  (Count: $62$ runs for each model and grid choice, three (suggested) grid choices, and two models equals a full suite of $6 \times 62 = 372$ runs!)  The finest grid runs account for all the compute time, however.  ``Grid mode 2'' in the MISMIP description is 1500 grid spaces in the flow line direction (= 3001 grid \emph{points} in PISM's doubled computational domain), a very fine grid which imposes severe time-step restrictions on the explicit methods in PISM.
 
 The implementation of MISMIP in PISM conforms fairly closely to the intercomparison description.  However, that document specifies
 \begin{quotation}
@@ -124,7 +113,26 @@ The implementation of MISMIP in PISM conforms fairly closely to the intercompari
 \end{quotation}
 as a standard for ``steady state''. PISM does not include a stopping criterion such as ones described here. However, we report enough information, in PISM output files with scalar and spatially-variable time-series, to compute a grounding line rate or the time at which the thickness rate of change drops below $10^{-4}$ m/a.
 
-One of the physical parameters regarding PISM's ice shelf model needs comment: we make the base of the ice shelves have very small resistance, using $10^{-4}$ times the linear drag typical of a Siple coast ice stream \cite{HulbeMacAyeal}, because this seems to have the effect of stabilizing the ice shelf.
+See
+
+  \centerline{\texttt{examples/mismip/mismip2d/README.md}}
+
+\noindent for usage of the scripts that run MISMIP experiments in PISM.  For example, as described in this \texttt{README.md}, the commands
+
+\begin{verbatim}
+$ ./run.py -e 1a --mode=1 > experiment-1a-mode-1.sh
+$ bash experiment-1a-mode-1.sh 2 >& out.1a-mode-1 &
+$ ./plot.py ABC1_1a_M1_A7.nc -p -o profileA7.png
+\end{verbatim}
+
+\noindent first generate a bash script, then use it to do a run (which takes about 20 minutes), and then generate an image in \texttt{.png} format which is shown in Figure \ref{fig:MISMIPmodel1exper1aM1A7}.
+ 
+\begin{figure}[ht]
+\centering
+\includegraphics[width=4.0in,keepaspectratio=true]{profileA7}
+\caption{A marine ice sheet profile in the MISMIP intercomparison; PISM model 1, experiment 1a, grid mode 1, at step 7.}
+\label{fig:MISMIPmodel1exper1aM1A7}
+\end{figure}
 
 \begin{figure}[ht]
 \centering
@@ -136,12 +144,12 @@ One of the physical parameters regarding PISM's ice shelf model needs comment: w
 The script \texttt{MISMIP.py} in \texttt{examples/mismip/mismip2d} has the ability to compute the profile from the Schoof's \cite{SchoofMarine1} asymptotic-matching boundary layer theory.  This script is a Python translation, using \texttt{scipy} and \texttt{pylab}, of the \Matlab codes in \url{http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar}.  For example,
 
 \begin{verbatim}
-$ python MISMIP.py
+$ python MISMIP.py -o mismip_analytic.png
 \end{verbatim}
 
-\noindent produces Figure \ref{fig:SMexper1aM1A1}.
+\noindent produces a \verb|.png| image file with Figure \ref{fig:SMexper1aM1A1}.
 
-We see immediately that the PISM result does not put the grounding line in the same location as Schoof's boundary layer theory.  We believe the problem is with PISM's numerical solution, not with that theory.  More evidence that the problem is numerical can be found by looking at the ice flux.  Using \texttt{ncview} to examine the diagnostic variable \texttt{cflx} (magnitude) in \texttt{ABC1_1a_M1_A1.nc} we see Figure \ref{fig:cflx1aM1A1}.  \emph{This is a problem with PISM}.  The flux should be a linear function.  Indeed, at steady state the flux $\bq$ solves $a=\Div\bq$ where $a$ is the accumulation rate.  In MISMIP, $a$ is the constant $0.3$ m/a, so at steady state $|\bq| = a x$, a line.
+Generally the PISM result does not put the grounding line in the same location as Schoof's boundary layer theory, and at least at coarser resolutions the problem is with PISM's numerical solution, not with Schoof's semi-analytic theory.  Evidence that the problem is numerical can be found by looking at the ice flux.  Examining the diagnostic variable \texttt{cflx} (flux magnitude) in \texttt{ABC1_1a_M1_A1.nc} we see Figure \ref{fig:cflx1aM1A1}.  The flux should be a linear function because, at steady state, the flux $\bq$ solves $a=\Div\bq$ where $a$ is the constant (at least in MISMIP) surface mass balance, so at steady state $|\bq| = a x$, a line.
 
 \begin{figure}[ht]
 \centering
@@ -150,12 +158,11 @@ We see immediately that the PISM result does not put the grounding line in the s
 \label{fig:cflx1aM1A1}
 \end{figure}
 
-We can learn more about the problem.  It turns out that the numerical flaw in the flux also keeps the grounding line from moving properly, we think.  The problem is that the numerical result doesn't move the grounding line to its correct location if the ice sheet and shelf are initially $10$ m as specified in MISMIP.  On the other hand, the correct location for the grounding line is also approximately a steady state for PISM numerics; the grounding line stays where you put it (compare \cite{SchoofMarine2} and \cite{VieliPayne}).
+By default \texttt{run.py} uses the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to initialize the initial ice thickness, as allowed by the MISMIP specification.
 
-In fact, by default \texttt{run.py} uses the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to initialize the initial ice thickness, as allowed by the MISMIP specification.
-
-The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward.
-The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
+The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is an improvement; see Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}.
+% FIXME does not work for me
+On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
 
 \begin{figure}[ht]
 \centering
@@ -168,7 +175,7 @@ The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory
 
 \subsection{MISMIP3D}\label{subsect:MISMIP3D}
 \optsection{MISMIP3D}
-
+q
  The ice2sea MISMIP3D Marine Ice Sheet Model Intercomparison Project is a two-dimensional expansion of the MISMIP experiments for the flowline case as described above. The initial MISMIP3D setup is very close to MISMIP and considers ice flow in one direction. As in MISMIP, the grounding line position and its reversibility under changes of physical parameters is analyzed. However, in MISMIP3D not the ice softness $A$ is varied but the basal friction $\tau_C$ and the applied perturbation of the basal friction is punctual so that a curved grounding line is obtained. In contrast to the MISMIP experiments, no (semi-)analytical solutions are available to compare the numerical results against. A full description of the intent of the MISMIP3D experiments analogous to MISMIP can be found at
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip3d/}}
