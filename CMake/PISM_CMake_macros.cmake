@@ -266,7 +266,6 @@ macro(pism_set_dependencies)
     ${UDUNITS2_LIBRARIES}
     ${GSL_LIBRARIES}
     ${NETCDF_LIBRARIES}
-    ${MPI_LIBRARY}
     ${MPI_C_LIBRARIES})
 
   # Hide distracting CMake variables
