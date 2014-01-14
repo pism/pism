@@ -340,7 +340,7 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
     variable was not found in the input file
   - uses the last record in the file
  */
-PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool report_range,
+PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
                                          PetscScalar default_value, Vec v) {
   PetscErrorCode ierr;
   unsigned int t_length = 0;
@@ -348,13 +348,13 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, boo
   ierr = nc.inq_nrecords(get_name(), get_string("standard_name"),
                          t_length); CHKERRQ(ierr);
 
-  ierr = this->regrid(nc, t_length - 1, flag, report_range, default_value, v); CHKERRQ(ierr);
+  ierr = this->regrid(nc, t_length - 1, flag, do_report_range, default_value, v); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
-                                         RegriddingFlag flag, bool report_range,
+                                         RegriddingFlag flag, bool do_report_range,
                                          PetscScalar default_value, Vec v) {
   PetscErrorCode ierr;
 
@@ -400,7 +400,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     // Check the range and warn the user if needed:
     ierr = check_range(nc.inq_filename(), v); CHKERRQ(ierr);
 
-    if (report_range) {
+    if (do_report_range == true) {
       // We can report the success, and the range now:
       ierr = verbPrintf(2, m_com, "  FOUND ");
       ierr = this->report_range(v, found_by_standard_name); CHKERRQ(ierr);
@@ -540,33 +540,30 @@ PetscErrorCode NCSpatialVariable::check_range(std::string filename, Vec v) {
 //! \brief Define dimensions a variable depends on.
 PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
   PetscErrorCode ierr;
-  std::string dimname;
   bool exists;
 
   // x
-  dimname = get_x().get_name();
-  ierr = nc.inq_dim(dimname, exists); CHKERRQ(ierr);
+  ierr = nc.inq_dim(get_x().get_name(), exists); CHKERRQ(ierr);
   if (!exists) {
-    ierr = nc.def_dim(dimname, m_grid->Mx, m_x); CHKERRQ(ierr);
-    ierr = nc.put_dim(dimname, m_grid->x); CHKERRQ(ierr);
+    ierr = nc.def_dim(m_grid->Mx, m_x); CHKERRQ(ierr);
+    ierr = nc.put_dim(get_x().get_name(), m_grid->x); CHKERRQ(ierr);
   }
 
   // y
-  dimname = get_y().get_name();
-  ierr = nc.inq_dim(dimname, exists); CHKERRQ(ierr);
+  ierr = nc.inq_dim(get_y().get_name(), exists); CHKERRQ(ierr);
   if (!exists) {
-    ierr = nc.def_dim(dimname, m_grid->My, m_y); CHKERRQ(ierr);
-    ierr = nc.put_dim(dimname, m_grid->y); CHKERRQ(ierr);
+    ierr = nc.def_dim(m_grid->My, m_y); CHKERRQ(ierr);
+    ierr = nc.put_dim(get_y().get_name(), m_grid->y); CHKERRQ(ierr);
   }
 
   // z
-  dimname = get_z().get_name();
-  if (dimname.empty() == false) {
-    ierr = nc.inq_dim(dimname, exists); CHKERRQ(ierr);
+  std::string z_name = get_z().get_name();
+  if (z_name.empty() == false) {
+    ierr = nc.inq_dim(z_name, exists); CHKERRQ(ierr);
     if (!exists) {
       unsigned int nlevels = PetscMax(m_zlevels.size(), 1); // make sure we have at least one level
-      ierr = nc.def_dim(dimname, nlevels, m_z); CHKERRQ(ierr);
-      ierr = nc.put_dim(dimname, m_zlevels); CHKERRQ(ierr);
+      ierr = nc.def_dim(nlevels, m_z); CHKERRQ(ierr);
+      ierr = nc.put_dim(z_name, m_zlevels); CHKERRQ(ierr);
     }
   }
 
@@ -810,7 +807,7 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) co
   ierr = nc.inq_dim(m_dimension_name, exists); CHKERRQ(ierr);
   if (exists == false) {
     NCVariable tmp(m_dimension_name, get_units().get_system());
-    ierr = nc.def_dim(m_dimension_name, PISM_UNLIMITED, tmp); CHKERRQ(ierr);
+    ierr = nc.def_dim(PISM_UNLIMITED, tmp); CHKERRQ(ierr);
   }
 
   ierr = nc.inq_var(get_name(), exists); CHKERRQ(ierr);
@@ -856,13 +853,13 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) co
   ierr = nc.inq_dim(dimension_name, exists); CHKERRQ(ierr);
   if (exists == false) {
     NCVariable tmp(dimension_name, system);
-    ierr = nc.def_dim(dimension_name, PISM_UNLIMITED, tmp); CHKERRQ(ierr);
+    ierr = nc.def_dim(PISM_UNLIMITED, tmp); CHKERRQ(ierr);
   }
 
   ierr = nc.inq_dim(m_bounds_name, exists); CHKERRQ(ierr);
   if (exists == false) {
     NCVariable tmp(m_bounds_name, system);
-    ierr = nc.def_dim(m_bounds_name, 2, tmp); CHKERRQ(ierr);
+    ierr = nc.def_dim(2, tmp); CHKERRQ(ierr);
   }
 
   dims.push_back(dimension_name);

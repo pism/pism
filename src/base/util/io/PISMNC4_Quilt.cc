@@ -113,7 +113,6 @@ int PISMNC4_Quilt::def_var(std::string name, PISM_IO_Type nctype, std::vector<st
     dims_local.push_back(name + suffix);
     stat = this->def_var(name + suffix, nctype, dims_local); check(stat);
 
-    assert(m_xs >= 0 && m_ys >= 0);
     stat = this->put_att_double(name + suffix, "patch_offset", PISM_INT,
                                 name == "x" ? m_xs : m_ys); check(stat);
 
@@ -170,13 +169,13 @@ void PISMNC4_Quilt::correct_start_and_count(std::string name,
 
   for (unsigned int j = 0; j < dim_names.size(); ++j) {
     if (dim_names[j] == "x" + suffix) {
-      assert(m_xs >= 0 && m_xm > 0);
+      assert(m_xm > 0);
       start[j] -= m_xs;
       count[j] = PetscMin(count[j], m_xm);
     }
 
     if (dim_names[j] == "y" + suffix) {
-      assert(m_ys >= 0 && m_ym > 0);
+      assert(m_ym > 0);
       start[j] -= m_ys;
       count[j] = PetscMin(count[j], m_ym);
     }
@@ -204,12 +203,12 @@ int PISMNC4_Quilt::get_put_var_double(std::string name,
 
       double *tmp;
       if (name == "x") {
-        assert(m_xs >= 0 && m_xm > 0);
+        assert(m_xm > 0);
         start[0] = 0;
         count[0] = m_xm;
         tmp = &data[m_xs];
       } else {
-        assert(m_ys >= 0 && m_ym > 0);
+        assert(m_ym > 0);
         start[0] = 0;
         count[0] = m_ym;
         tmp = &data[m_ys];

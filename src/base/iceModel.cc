@@ -45,10 +45,10 @@
 IceModel::IceModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   : grid(g),
     config(conf),
-    mapping("mapping", g.get_unit_system()),
     overrides(conf_overrides),
-    run_stats("run_stats", g.get_unit_system()),
     global_attributes("PISM_GLOBAL", g.get_unit_system()),
+    mapping("mapping", g.get_unit_system()),
+    run_stats("run_stats", g.get_unit_system()),
     extra_bounds("time_bounds", config.get_string("time_dimension_name"), g.get_unit_system()),
     timestamp("timestamp", config.get_string("time_dimension_name"), g.get_unit_system()) {
 

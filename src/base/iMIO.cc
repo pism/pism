@@ -107,11 +107,23 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
   PetscErrorCode ierr;
 
   if (write_mapping) {
+    bool mapping_exists = false;
+    ierr = nc.inq_var(mapping.get_name(), mapping_exists); CHKERRQ(ierr);
+    if (mapping_exists == false) {
+      ierr = nc.redef(); CHKERRQ(ierr);
+      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+    }
     ierr = nc.write_attributes(mapping, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
 
   if (write_run_stats) {
     ierr = update_run_stats(); CHKERRQ(ierr);
+    bool run_stats_exists = false;
+    ierr = nc.inq_var(run_stats.get_name(), run_stats_exists); CHKERRQ(ierr);
+    if (run_stats_exists == false) {
+      ierr = nc.redef(); CHKERRQ(ierr);
+      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+    }
     ierr = nc.write_attributes(run_stats, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
 

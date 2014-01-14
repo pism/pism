@@ -97,8 +97,8 @@ PetscErrorCode PISMConfig::write(const PIO &nc) const {
   if (variable_exists == false) {
     ierr = nc.redef(); CHKERRQ(ierr);
 
-    std::vector<std::string> dims;
-    ierr = nc.def_var(m_data.get_name(), PISM_BYTE, dims); CHKERRQ(ierr);
+    ierr = nc.def_var(m_data.get_name(),
+                      PISM_BYTE, std::vector<std::string>()); CHKERRQ(ierr);
 
     ierr = nc.write_attributes(m_data, PISM_DOUBLE, false); CHKERRQ(ierr);
   } else {

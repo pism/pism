@@ -710,9 +710,11 @@ PetscErrorCode PIO::inq_grid_info(std::string name, grid_info &g) const {
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
-PetscErrorCode PIO::def_dim(std::string name, unsigned long int length,
+PetscErrorCode PIO::def_dim(unsigned long int length,
                             const NCVariable &metadata) const {
   PetscErrorCode ierr;
+
+  std::string name = metadata.get_name();
 
   ierr = nc->redef(); CHKERRQ(ierr);
 
@@ -807,7 +809,7 @@ PetscErrorCode PIO::def_time(std::string name, std::string calendar, std::string
   ierr = t.set_units(units); CHKERRQ(ierr);
   t.set_string("axis", "T");
 
-  ierr = this->def_dim(name, PISM_UNLIMITED, t); CHKERRQ(ierr);
+  ierr = this->def_dim(PISM_UNLIMITED, t); CHKERRQ(ierr);
 
   return 0;
 }

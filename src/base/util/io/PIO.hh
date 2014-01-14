@@ -86,7 +86,7 @@ public:
 
   PetscErrorCode inq_grid_info(std::string name, grid_info &g) const;
 
-  PetscErrorCode def_dim(std::string name, unsigned long int length, const NCVariable &metadata) const;
+  PetscErrorCode def_dim(unsigned long int length, const NCVariable &metadata) const;
 
   PetscErrorCode def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
 
