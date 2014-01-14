@@ -1,13 +1,27 @@
 MISMIP3D in PISM
 ==============
 
-This directory contains scripts that can be used to run MISMIP3d experiments using PISM. To understand the intent of these experiments, please see the MISMIP website at http://homepages.ulb.ac.be/~fpattyn/mismip3d/, and download the intercomparison description PDF from that site. Results will be soon published in 
-Pattyn et al., 2012; "Grounding-line migration in plan-view marine ice-sheet models: results of the ice2sea MISMIP3d intercomparison" (submitted to JoGl).
+This directory contains scripts that can be used to run MISMIP3d experiments using PISM.  See section 10  .3 of the PISM User's Manual.
 
-To run the complete set of the MISMIP3d experiments, the three files `create_runscript.py`, `createSetup_Stnd.py` and `createSetup_PXXS.py` are needed. By running the file `create_runscript.py` a very simple structured shell script for running the experiments is created (details and options below), as well as a config-override file `MISMIP3D_conf.nc`. This shell script then uses the files `createSetup_Stnd.py` and `createSetup_PXXS.py` for creating the initial setup nc-files used by PISM and runs the experiments one after another. (Note that the script `createSetup_PXXS.py` needs the result of the Standard (Stnd) experiment for creating the setup of the P10S and P75S experiments. See the above mentioned description PDF for further details).
+In outline, running `preprocess.py` creates a config-override file `MISMIP3D_conf.nc`.  Then running `create_runscript.py` creates a shell script for running the experiments.  This shell script uses  `createSetup_Stnd.py` or `createSetup_PXXS.py` for creating the initial setup `.nc`-files which contain the geometry and basal sliding fields, and then it runs PISM for the experiment.
+
+Note that the script `createSetup_PXXS.py` needs the result of the Standard (Stnd) experiment for creating the setup of the P10S and P75S experiments.  The `PXXR` runs require the output of the corresponding `PXXS` experiment.
 
 
-Step by step instructions
+Usage
+-------
+
+For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA computation, grounding line interpolation and accumulation rate of 0.5m/a, and a resolution of dx=dy=1km, do:
+
+    $ ./preprocess      # generate MISMIP3D_conf.nc, used by all experiments
+    $ ./create_runscript.py -m 2 -s -a 0.5 -r 2 -e Stnd > runscript.sh
+    $ bash runscript.sh > Stnd.out &
+
+FIXME: with adapted paths for the Python and PISM executables
+FIXME: add P10S
+
+
+Options for `create_runscript.py`
 -------------------------
 
 The script `create_runscript.py` is used to generate a `bash` script performing the set of MISMIP3d experiments. Following options can be set:
@@ -15,9 +29,10 @@ The script `create_runscript.py` is used to generate a `bash` script performing 
       -m MODEL, --model=MODEL
 			    Choose SSA only or SIA+SSA computation. model=1 sets SSA only, model=2 SSA+SIA computation. If no option is set, model 2 is used.
 
-      -s, --subgl  	    if this option is set, subgrid groundling line interpolation method is used (as defined as "LI" in Gladstone et al., 2010, "Parameterising the grounding line in flow-line ice sheet models; The Cryosphere 4, p.605--619). Also, the field gl_mask is written into the extra file to determine the subgrid groundling line position. The subgrid groundling line interpolation method is available from PISM in the development version (https://github.com/pism/pism/commit/626b309de4342f379c13ed879da694bbd96bada3). It modifies basal friction in grid cells, where the grounding lines position is identified. If no option is set, subgrid groundling line interpolation is not used.
+      -s, --subgl
+                if this option is set, subgrid groundling line interpolation method is used (as defined as "LI" in Gladstone et al., 2010, "Parameterising the grounding line in flow-line ice sheet models; The Cryosphere 4, p.605--619). Also, the field gl_mask is written into the extra file to determine the subgrid groundling line position. The subgrid groundling line interpolation method modifies basal friction in grid cells where the grounding lines position is identified. If no option is set, subgrid groundling line interpolation is not used.
 
-      -a ACCUMRATE, --accumrate=ACCUMRATE  
+      -a ACCUMRATE, --accumrate=ACCUMRATE
 			    sets the accumulation rate in meters per year. If no option is set, standard accumulation rate of a=0.5 m/a is used.
 
       -r RESOLUTIONMODE, --resolutionmode=RESOLUTIONMODE
@@ -30,19 +45,7 @@ The script `create_runscript.py` is used to generate a `bash` script performing 
 			     resolutionmode=6: 16.6km
 			     If no option is set, standard resolution of 16.6 km is used. Note that the computational domain is doubled in both directions to 1600km x 100km to omit the implementation of boundary conditions along symmerty lines, but for additional computational cost.
 
-The initial ice sheet configuration from which the Stnd-experiment is started has the constant thickness of 500 meters. For all experiments, the ice shelf is cut off at the distance of x=700 km (option -ocean_kill) from the center of the computational domain, where the stress boundary condition is applied. 
- 
-
-
-Example
--------
-
-For example, to set up a MISMIP3d experiment with SIA+SSA computation, grounding line interpolation and accumulation rate of 0.5m/a for a resolution of dx=dy=1km run
-
-    ./create_runscript.py -m 2 -s -a 0.5 -r 2 > runscript.sh
-
-This will create `runscript.sh` as well as the bootstrapping file
-`MISMIP3D_conf.nc`. Running this script with the accordingly adapted path for the Python and PISM executable at the file header will create a full set of MISMIP3d experiments.
+The initial ice sheet configuration from which the Stnd-experiment is started has the constant thickness of 500 meters. For all experiments, the ice shelf is cut off at the distance of x=700 km (option -ocean_kill) from the center of the computational domain, where the stress boundary condition is applied.
 
 
 Implementation details
@@ -65,5 +68,5 @@ Note that PISM does not at this time implement the stopping criteria described i
 Post-processing
 ---------------
 
-Converting PISM output files to ASCII files following MISMIP
-specifications is left as an exercise. A bunch of additional variables for evaluation is saved to an extra file for each run. For output of the deviatoric stress components, see development version (https://github.com/pism/pism/commit/03f1c4f5676875efb3a4ae855426a7bf79c2fa63).
+Converting PISM output files to ASCII files following MISMIP specifications is left as an exercise.  See the additional variables saved in the extra file for each run.
+
