@@ -38,7 +38,7 @@ PROJECT_NUMBER         = "${Pism_REVISION_TAG}"
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = ./base/
+OUTPUT_DIRECTORY       = .
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -556,14 +556,14 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = pism_config.txt \
-                         std_names.txt \
-                         pages.txt \
-                         bombproof_enth.txt \
-                         vertchange.txt \
-                         bedrough.txt \
-                         references.txt \
-                         howto.txt \
+INPUT                  = pism_config.md \
+                         std_names.md \
+                         pages.md \
+                         bombproof_enth.md \
+                         vertchange.md \
+                         bedrough.md \
+                         references.md \
+                         howto.md \
                          ${PROJECT_SOURCE_DIR}/src/
 
 # The last two files belong in the other (util) browser, but are crucial for
@@ -772,7 +772,7 @@ GENERATE_HTML          = YES
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be
 # put in front of it. If left blank `html' will be used as the default path.
 
-HTML_OUTPUT            = .
+HTML_OUTPUT            = html/
 
 # The HTML_FILE_EXTENSION tag can be used to specify the file extension for
 # each generated HTML page (for example: .htm,.php,.asp). If it is left blank

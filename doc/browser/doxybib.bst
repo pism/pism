@@ -1395,13 +1395,13 @@ FUNCTION {begin.bib}
     'skip$
     { preamble$ write$ newline$ }
   if$
-  "/*! \page references References" write$ newline$
+  "# References {#references}" write$ newline$
 }
 EXECUTE {begin.bib}
 EXECUTE {init.state.consts}
 ITERATE {call.type$}
 FUNCTION {end.bib}
 { newline$
-  "*/" write$ newline$
+  "" write$ newline$
 }
 EXECUTE {end.bib}

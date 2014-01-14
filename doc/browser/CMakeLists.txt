@@ -9,12 +9,12 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     config_doc.py
     doxybib.bst
     doxybib.py
-    bedrough.txt
-    bombproof_enth.txt
-    pages.txt
-    std_names.txt
-    vertchange.txt
-    howto.txt
+    bedrough.md
+    bombproof_enth.md
+    pages.md
+    std_names.md
+    vertchange.md
+    howto.md
     pism.sty
     )
 
@@ -25,11 +25,11 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     configure_file(${filename} ${filename} COPYONLY)
   endforeach()
 
-  # copy doxyfile_base, changing some things along the way:
-  configure_file(doxyfile_base doxyfile_base)
+  # copy doxyfile, changing some things along the way:
+  configure_file(doxyfile doxyfile)
 
   # Generate the list of references
-  add_custom_command (OUTPUT references.txt
+  add_custom_command (OUTPUT references.md
     COMMAND ./doxybib.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -38,43 +38,23 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${PROJECT_SOURCE_DIR}/src/pism_config.cdl)
 
   # Generate the config documentation
-  add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pism_config.txt
-    COMMAND ./config_doc.py > pism_config.txt
+  add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pism_config.md
+    COMMAND ./config_doc.py > pism_config.md
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Generate the "base" browser
-  add_custom_target (browser_base
-    COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_base
-    DEPENDS pism_config.txt references.txt doxyfile_base
+  # Generate the browser
+  add_custom_target (browser
+    COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
+    DEPENDS pism_config.md references.md doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Create the compressed "base" browser
-  add_custom_target (browser_base.tgz
-    COMMAND tar -czf browser_base.tgz html
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/base)
-
-  add_dependencies(browser_base.tgz browser_base)
-
-  ### Util browser
-  configure_file(doxyfile_util doxyfile_util)
-  configure_file (util_main.txt util_main.txt)
-
-  # Generate the "util" browser
-  add_custom_target (browser_util
-    COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_util
-    DEPENDS doxyfile_util
+  # Create the compressed browser
+  add_custom_target (browser.tgz
+    COMMAND tar -czf browser.tgz html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-  # Create the compressed "util" browser
-  add_custom_target (browser_util.tgz
-    COMMAND tar -czf browser_util.tgz html
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/util)
-
-  add_dependencies(browser_util.tgz browser_util)
-
-  add_custom_target (browsers)
-  add_dependencies (browsers browser_base browser_util)
+  add_dependencies(browser.tgz browser)
 
 else ()
   if (NOT LATEX_COMPILER)

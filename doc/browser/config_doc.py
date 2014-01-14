@@ -18,8 +18,7 @@ nc = Dataset(input, 'r')
 var = nc.variables['pism_config']
 
 print """
-/*!
-\page config Configuration flags and parameters
+# Configuration flags and parameters {#config}
 
 \htmlonly
 <p style="text-align: right">
@@ -158,4 +157,4 @@ for attr in sort(var.ncattrs()):
 
     print '<tr><td class="indexkey">%s</td><td class="indexvalue">\'%s\'</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
 
-print "</table> */"
+print "</table>"

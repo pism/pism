@@ -1,15 +1,15 @@
-/*! \page std_names Standard names of NetCDF variables, including PISM current and proposed
+# Standard names of NetCDF variables, including PISM current and proposed {#std_names}
 
-\section existing Existing standard names
+@section existing Existing standard names
 
 We start by listing standard names from the CF 1.6 Standard Name Table. The subset here
-is a small subset of the <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF 1.6 standard name table</a>.  We list only
-\li those with "land_ice" in the name and/or
-\li those currently used by the <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model (PISM)</a>.
+is a small subset of the [CF 1.6 standard name table](http://cf-pcmdi.llnl.gov/documents/cf-standard-names/).  We list only
+- those with "land_ice" in the name and/or
+- those currently used by the [Parallel Ice Sheet Model (PISM)](http://www.pism-docs.org/).
 
-The existing names starting with "land_ice" are believed to have all been submitted by Magnus Hagdorn to the CF committee circa 2003.  The <a href="http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment">SeaRISE assessment process</a> now has a <a href="http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling">wiki on CF standard name use</a>, which to a significant extent duplicates content regarding proposed names on this page.  That wiki is an evolving community standard, and it supercedes this page when it comes to actual evolving standards.
+The existing names starting with "land_ice" are believed to have all been submitted by Magnus Hagdorn to the CF committee circa 2003.  The [SeaRISE assessment process](http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment) now has a [wiki on CF standard name use](http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling), which to a significant extent duplicates content regarding proposed names on this page.  That wiki is an evolving community standard, and it supercedes this page when it comes to actual evolving standards.
 
-If the "PISM short name" column is blank then PISM does not use that standard_name.  Some of the short names are shared with <a href="http://glimmer.forge.nesc.ac.uk/">GLIMMER</a> and <a href="http://oceans11.lanl.gov/trac/CISM/wiki">CISM</a>.
+If the "PISM short name" column is blank then PISM does not use that standard_name.  Some of the short names are shared with [GLIMMER](http://glimmer.forge.nesc.ac.uk/) and [CISM](http://oceans11.lanl.gov/trac/CISM/wiki).
 
 Like the legendary Eskimo, the CF standard name table has a bazillion names for snow "amounts" and "fluxes".  No attempt at using those names is made in PISM, which is an ice flow model not a snow process model.
 
@@ -45,7 +45,7 @@ Because of the use of UDUNITS, PISM input files do not have to have fields alrea
 </table>
 
 
-\section proposed PROPOSED standard names
+@section proposed PROPOSED standard names
 
 These are merely proposed by Bueler and Aschwanden, for now.
 
@@ -65,7 +65,7 @@ These are merely proposed by Bueler and Aschwanden, for now.
   <tr><td>land_ice_liquid_fraction</td><td>1</td><td>liqfrac</td><td></td><td>liquid water fraction in ice, a pure number between 0 and 1; a diagnostic function of enthalpy which is not stored during run</td></tr>
   </table>
 
-\section orphans Orphans
+@section orphans Orphans
 
 Used in PISM but no proposed standard name for now.  This is an incomplete list.
 
@@ -75,14 +75,11 @@ Used in PISM but no proposed standard name for now.  This is an incomplete list.
   <tr><td>grounded_dragging_floating integer mask</td><td></td><td>mask</td><td>vMask [IceModelVec2Mask]</td><td>assumes integer values</td></tr>
   <tr><td>effective thickness of subglacial melt water</td><td>m</td><td>bwat</td><td>vHmelt [IceModelVec2S]</td><td></td></tr>
   <tr><td>subglacial pore water pressure</td><td>Pa</td><td></td><td></td><td>currently neither written as NetCDF or an IceModelVec, but it should be write-able as diagnostic</td></tr>
-  
 </table>
 
-\section finaltech Final technical notes
+@section finaltech Final technical notes
 
-\li PISM also uses attributes "grid_mapping = "mapping" ;" and "coordinates = "lat lon" ;" on output variables that depend on y,x.
-\li Because PISM uses UDUNITS, it will write some variables in "glaciological units" instead of the SI units listed above, for instance velocities in m year-1 instead of m s-1.  This is allowed under CF.  When PISM reads such a field from a NetCDF file, the conversion is handled automatically by UDUNITS.
-\li It is possible for PISM to write a NetCDF variable for diagnostic purposes without having a dedicated internal IceModelVec.  In that case the last column of the corresponding table may be empty for that standard_name.
-
-*/
+- PISM also uses attributes "grid_mapping = "mapping" ;" and "coordinates = "lat lon" ;" on output variables that depend on y,x.
+- Because PISM uses UDUNITS, it will write some variables in "glaciological units" instead of the SI units listed above, for instance velocities in m year-1 instead of m s-1.  This is allowed under CF.  When PISM reads such a field from a NetCDF file, the conversion is handled automatically by UDUNITS.
+- It is possible for PISM to write a NetCDF variable for diagnostic purposes without having a dedicated internal IceModelVec.  In that case the last column of the corresponding table may be empty for that standard_name.
 

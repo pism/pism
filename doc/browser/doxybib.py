@@ -4,7 +4,7 @@ from os import popen, system
 
 input  = "ice_bib"
 bbl    = "texput.bbl"
-output = "references.txt"
+output = "references.md"
 
 notes = """
 \par Notes
@@ -59,8 +59,7 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         ]
 
 for (regex, substitution) in subs:
-    r = re.compile(regex)
-    body = r.sub(substitution, body)
+    body = re.compile(regex).sub(substitution, body)
 
 f = open(output, 'w')
 f.write(header)

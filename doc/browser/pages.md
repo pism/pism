@@ -1,8 +1,4 @@
-// -*- mode: markdown -*-
-
-// adds commentary and GPL to first page of doxygen-erated HTML browser
-
-/*! \mainpage PISM Source Code Browser
+# PISM Source Code Browser {#index}
 
 This searchable *Browser* shows the C++ class (object) structure of
 PISM, the [Parallel Ice Sheet Model](http://www.pism-docs.org/).  It
@@ -17,19 +13,19 @@ overall class which implements an ice sheet model is IceModel.
 
 The [Related Pages tab](pages.html) links to some
 overview pages for PISM usage and design.  You will find a
-\ref std_names "table of standard names used by PISM", a
-\ref config "table of configuration parameters for PISM", a
-\ref howto "'how do I?' page for developers", a
-\ref references "list of References", and other helpful material.
+@ref std_names "table of standard names used by PISM", a
+@ref config "table of configuration parameters for PISM", a
+@ref howto "'how do I?' page for developers", a
+@ref references "list of References", and other helpful material.
 
 This doxygen source *Browser* can be regenerated in any source code release.
-Just do `"make browser_base"` in the build directory and look in
-`doc/browser/base/html/` therein.
+Just do `"make browser"` in the build directory and look in
+`doc/browser/html/` therein.
 
-\section other Other PISM documentation
+@section other Other PISM documentation
 
-- The website [www.pism-docs.org](http://www.pism-docs.org/) is the \e
-  root for all PISM information.
+- The website [www.pism-docs.org](http://www.pism-docs.org/) is the
+  *root* for all PISM information.
 
 - The "PISM Utility classes" source code browser can also be generated from
   source; do `"make browser_util"` in the build directory and look in
@@ -52,7 +48,7 @@ Just do `"make browser_base"` in the build directory and look in
   suffice for understanding PISM unless one wants to modify it or
   couple another model to it.
 
-Copyright (C) 2008-2013 the PISM authors.  
+Copyright (C) 2008-2014 the PISM authors.
 
 This document is part of PISM. PISM is free software; you can redistribute it
 and/or modify it under the terms of the GNU General Public License as published
@@ -64,13 +60,10 @@ License for more details. You should have received a copy of the GNU General
 Public License along with PISM; see `COPYING` in the PISM source directory; if
 not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 Boston, MA 02110-1301 USA
-*/
 
+@page petscID PETSc: An overview for PISM users
 
-/*!
-\page petscID PETSc: An overview for PISM users
-
-\section preamble Preamble
+@section preamble Preamble
 
 In v0.5, because of abstractions especially in IceModelVec and its derived
 classes, programmers building derived classes of IceModel now need minimal
@@ -81,9 +74,9 @@ preconditioning, *the solution of the SSA stress balance depends on the number
 of processors*.  This will also be true of high resolution parallel solution
 of all other membrane-including stress balances (Blatter, Stokes).
 
-\section intro Introduction
+@section intro Introduction
 
-The PETSc library [\ref petsc-user-ref] provides essential support for distributed 
+The PETSc library [@ref petsc-user-ref] provides essential support for distributed 
 arrays and linear solvers in a parallel computing environment.  "PETSc" stands for 
 "Portable, Extensible Toolkit for Scientific Computation."  It is a suite of data structures 
 and routines in C for the scalable parallel solution of partial differential equations and their 
@@ -102,7 +95,7 @@ PISM is a C++ program and PETSc is a C library, but all PISM calls to PETSc use
 the PETSc C API, not the C++ API.
 
 
-\subsection petsctypesID PETSc types
+@subsection petsctypesID PETSc types
 
 Most important variables deep inside PISM are of these PETSc types:
   - `DM`
@@ -117,7 +110,7 @@ largely buried inside IceGrid (esp. DM type) and IceModelVec (esp. Vec type).
 But Mat and KSP types are exposed in the IceModel code which solves the SSA.
 
 
-\subsection distributedID Distributed arrays and vectors
+@subsection distributedID Distributed arrays and vectors
 
 PETSc has an abstract date type called a Distributed Array, which is a kind of
 a Distributed Mesh (type `DM`). `DMs` contain information about the grid and
@@ -140,7 +133,7 @@ indicates that ghosted points are needed in the box-shaped %region surrounding e
 and thus each processor.  (On processor *N,* information owned by a neighboring processor 
 but duplicated onto *N* is called *ghosted.*  A picture is worth a thousand words here, so 
 find the appropriate picture in the PETSc manual!)  We only need `BOX` style stencils when gradient 
-terms must be evaluated on a staggered grid (*h* in SIA regions and \f$\bar{u},\bar{v}\f$
+terms must be evaluated on a staggered grid (*h* in SIA regions and @f$\bar{u},\bar{v}@f$
 in the computation of effective viscosity in SSA regions).  Keeping all other 
 two-dimensional vectors on a `STAR` type stencil would reduce the necessary communication
 slightly, but for now all two dimensional arrays are based on `BOX`.
@@ -154,14 +147,14 @@ thermal model) is owned by exactly one processor*.  From the point of view of pa
 our problem is two-dimensional.  All three-dimensional arrays have stencil type `STAR` in the 
 horizontal directions.
 
-One point of confusion (we admit ...) is the redefinition of the \f$x,y,z\f$ axes. Contrary 
-to the PETSc default, our \f$z\f$ axis changes most rapidly through memory while the
-\f$x\f$ axis changes most slowly.  The desirable consequence, however, is that our C
+One point of confusion (we admit ...) is the redefinition of the @f$x,y,z@f$ axes. Contrary 
+to the PETSc default, our @f$z@f$ axis changes most rapidly through memory while the
+@f$x@f$ axis changes most slowly.  The desirable consequence, however, is that our C
 arrays are addressed as `u[i][j][k]` where `i,j,k` are the coordinate 
-indices in the directions \f$x,y,z\f$ respectively.
+indices in the directions @f$x,y,z@f$ respectively.
 
 
-\subsection davecsID Accessing the processor's part of a DM-managed Vec
+@subsection davecsID Accessing the processor's part of a DM-managed Vec
 
 `DM` -based vectors must be accessed by a call to `DMDAVecGetArray()` before the access and
 a call to `DMDAVecRestoreArray()` after.  This just means that one gets a valid pointer 
@@ -189,7 +182,7 @@ from a call to `DMDAGetLocalInfo()`, just after the `DM` is created, but normall
 a programmer just calls IceGrid.
 
 
-\subsection localglobalID "Local" versus "global" Vecs
+@subsection localglobalID "Local" versus "global" Vecs
 
 PETSc `DM` -based vectors can be "local" or "global".   (This weird PETSc language should
 probably be translated as "has ghosts" or "sans ghosts".)  "Local" vectors include 
@@ -254,11 +247,11 @@ this is an entirely "local" operation which does not require message passing (`D
 At risk of repetition, most of the above distinction between "local" and "global"
 is buried in IceModelVec abstraction.
 
-\subsection linearsysID Solving linear systems
+@subsection linearsysID Solving linear systems
 
 PETSc is designed for solving large, sparse systems in parallel.  Iterative methods are 
 the name of the game and especially Krylov subspace methods such as conjugate gradients and 
-GMRES [\ref TrefethenBau, \ref Saad].  For consistency, all methods use the same 
+GMRES [@ref TrefethenBau, @ref Saad].  For consistency, all methods use the same 
 Krylov-subspace-method-with-preconditioner `KSP` interface, even though some are really direct 
 methods.
 
@@ -290,7 +283,7 @@ message passing has to occur; fortunately PETSc manages that all.  Values are
 cached until one calls `MatAssemblyBegin()` followed by `MatAssemblyEnd()` to
 communicate the values.
 
-\subsection additionalpetscID Additional PETSc utility functions
+@subsection additionalpetscID Additional PETSc utility functions
 
 Quite ellaborate error tracing and performance monitoring is possible with PETSc.  All
 functions return `PetscErrorCode` which should be checked by the macro `CHKERRQ()`.
@@ -313,6 +306,27 @@ as the final option.  For example,
 
 allows a two processor run to view the ice thickness.
 
-*/
- 
+@page utility_classes PISM utility classes (grid management, parallel communication, NetCDF I/O, etc)
 
+This source code browser documents the PISM classes that form the infrastructure
+for PISM's implementations of physical models. These classes are not
+ice-sheet-modeling specific, but would any support shallow, two-dimensional,
+regular grid, parallel scientific computations which need NetCDF input and output.
+These classes could be used as a separate library.
+
+Click on "Classes" above to see the full list of classes in this library.  Some
+key classes include:
+
+- IceGrid
+- IceModelVec2S, IceModelVec2Stag, IceModelVec2V, and IceModelVec3
+- PISMComponent, `PISMComponent_Diag` and `PISMComponent_TS`
+- Timeseries
+- PISMNCFile
+- PIO
+
+The following pages describe some important infrastructure concepts and techniques:
+
+- @ref computational_grid "Organization of PISM's computational grid"
+- @ref imv_allocation "IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields"
+- @ref pism_components "PISM's model components and their interface"
+- @ref timeseries_overview "Reading scalar time-series (Timeseries)"
