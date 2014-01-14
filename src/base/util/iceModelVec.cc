@@ -762,10 +762,10 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
   } else {
     // all of x, y, z have ghosts
     // (The remaining 8-th case.)
-    if (z->stencil_width() <= x->stencil_width() &&
-        z->stencil_width() <= y->stencil_width()) {
+    if (z->get_stencil_width() <= x->get_stencil_width() &&
+        z->get_stencil_width() <= y->get_stencil_width()) {
       // x and y have enough ghosts to update ghosts of z locally
-      ghosts = z->stencil_width();
+      ghosts = z->get_stencil_width();
       scatter = false;
     } else {
       // z has ghosts, but at least one of x and y doesn't have a wide enough

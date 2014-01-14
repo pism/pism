@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,7 @@ PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "schoofs_theta", WITH_GHOSTS,
-                        surface->stencil_width()); CHKERRQ(ierr);
+                        surface->get_stencil_width()); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   ierr = model->bed_smoother->get_theta(*surface, result); CHKERRQ(ierr);
@@ -111,7 +111,7 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "thksmooth", WITH_GHOSTS,
-                        surface->stencil_width()); CHKERRQ(ierr);
+                        surface->get_stencil_width()); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   ierr = model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,

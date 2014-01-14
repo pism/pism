@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -45,8 +45,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   IceGrid &grid = *m_d0.get_grid();
   m_comm = grid.com;
 
-  unsigned int design_stencil_width = m_d0.stencil_width();
-  unsigned int state_stencil_width = m_u_obs.stencil_width();
+  unsigned int design_stencil_width = m_d0.get_stencil_width();
+  unsigned int state_stencil_width = m_u_obs.get_stencil_width();
 
   ierr = m_x.create(grid, "x", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 

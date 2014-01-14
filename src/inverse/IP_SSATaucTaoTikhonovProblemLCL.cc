@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -47,8 +47,8 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   m_velocityScale = grid.config.get("inv_ssa_velocity_scale", "m/year", "m/second");
 
 
-  PetscInt design_stencil_width = m_d0.stencil_width();
-  PetscInt state_stencil_width = m_u_obs.stencil_width();
+  PetscInt design_stencil_width = m_d0.get_stencil_width();
+  PetscInt state_stencil_width = m_u_obs.get_stencil_width();
   ierr = m_d.create(grid, "design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_d_Jdesign.create(grid, "Jdesign design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dGlobal.create(grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);

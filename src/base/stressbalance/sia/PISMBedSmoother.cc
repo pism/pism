@@ -335,7 +335,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
   MaskQuery M(mask);
   IceModelVec2S &result = *thksmooth;
 
-  int GHOSTS = topgsmooth.stencil_width();
+  int GHOSTS = topgsmooth.get_stencil_width();
 
   ierr = mask.begin_access(); CHKERRQ(ierr);
   ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
@@ -407,7 +407,7 @@ PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S usurf, IceModelVec2S *th
     return 0;
   }
 
-  int GHOSTS = topgsmooth.stencil_width();
+  int GHOSTS = topgsmooth.get_stencil_width();
   
   IceModelVec2S &result = *theta;
 
