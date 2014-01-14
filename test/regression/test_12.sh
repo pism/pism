@@ -15,7 +15,12 @@ GRID="-Mx 31 -My 31 -Mz 31 -y 5000 -ys 1000"
 OPTS="-test B -max_dt 25 -o_size small"
 TS_OPTS="-ts_file ivol-12.nc -ts_vars ivol -ts_times 1000:25:1e4"
 # run test B 
+
+set -x
+
 $MPIEXEC -n 2 $PISM_PATH/pismv -test B $GRID $OPTS $TS_OPTS
+
+set +x
 
 /usr/bin/env python <<EOF
 from numpy import diff, log10, floor
