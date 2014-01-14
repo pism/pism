@@ -130,9 +130,6 @@ class Experiment:
                             "-sia_flow_law isothermal_glen", # isothermal setup
                         ])
 
-        if self.mode in (2, 3):
-            options.extend(["-skip", "-skip_max 10"])
-
         return options
 
     def config(self, step):

@@ -17,7 +17,7 @@ def L():
     return 1800e3
 
 def N(mode):
-    "Number of grid points corresponding to a MISMIP 'mode.'"
+    "Number of grid spaces corresponding to a MISMIP 'mode.'"
     if mode == 1:
         return 150
 
