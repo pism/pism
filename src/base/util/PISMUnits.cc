@@ -204,7 +204,7 @@ PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMU
   // Get the converter:
   cv_converter *c = to.get_converter_from(from);
   if (c == NULL) {              // can't convert
-    SETERRQ2(1, MPI_COMM_SELF, "cannot convert data from '%s' to '%s'.\n",
+    SETERRQ2(MPI_COMM_SELF, 1, "cannot convert data from '%s' to '%s'.\n",
              from_name.c_str(), to_name.c_str());
   }
 

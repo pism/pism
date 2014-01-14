@@ -1039,7 +1039,7 @@ PetscErrorCode PIO::get_interp_context(std::string name,
 
   if (exists == false) {
     lic = NULL;
-    SETERRQ1(1, grid.com, "Variable %s was not found", name.c_str());
+    SETERRQ1(grid.com, 1, "Variable %s was not found", name.c_str());
   } else {
     grid_info gi;
 
