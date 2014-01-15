@@ -1,6 +1,6 @@
-/*! \page bedrough Using Schoof's (2003) parameterized bed roughness technique in PISM
+# Using Schoof's (2003) parameterized bed roughness technique in PISM {#bedrough}
 
-\section justify An explanation
+@section justify An explanation
 
 If the bed elevation \c topg is smoothed by preprocessing then we observe a reduction in the peak values of the SIA diffusivities.  From such smoothing there is (generically) also a reduction in the peak magnitudes of horizontal velocities from both the SIA and SSA models.  The major consequence of these reductions, through the adaptive time-stepping mechanism, is that PISM can take longer time steps and thus that it can complete model runs in shorter time.
 
@@ -13,7 +13,7 @@ There exists a theory which addresses exactly this situation for the SIA model, 
 -# the parameterized effect of the local bed roughness is to further reduce the diffusivity, giving even longer time-steps.
 
 
-\section schoofstheory Theory
+@section schoofstheory Theory
 
 The theory is in Christian Schoof's (2003) <i>The effect of basal topography on ice sheet dynamics</i> [\ref Schoofbasaltopg2003].  His mathematical technique is to expand the Stokes equations in two levels of horizontal scales, one for the entire ice sheet (denoted \f$[L]\f$) and one for the horizontal scale (wavelength) of bed topography (\f$[S]\f$).  The "inner" scaling assumes that the typical ice sheet thickness \f$[D]\f$ is small compared to \f$[S]\f$, while the "outer" scaling assumes that \f$[S]\f$ is small compared to \f$[L]\f$:
 	\f[\nu = \frac{[D]}{[S]} \ll 1, \qquad \delta = \frac{[S]}{[L]} \ll 1.  \f]
@@ -49,7 +49,7 @@ The formula for \f$\theta\f$ has additional terms if there is basal sliding, but
 The very important fact that \f$0 \le \theta \le 1\f$ is proven in appendix A of [\ref Schoofbasaltopg2003] by a Jensen's inequality argument.  (See also the convexity argument at the bottom of this page.)
 
 
-\section application Practical application, and Taylor approximation
+@section application Practical application, and Taylor approximation
 
 The above formulas already reflect the recommendations Schoof gives on how to apply his formulas ([\ref Schoofbasaltopg2003], subsection 4.2).  The rest of this page is devoted to how the class PISMBedSmoother implements a practical version of this theory, based on these recommendations plus some additional approximation.
 
@@ -98,5 +98,4 @@ and this function turns out to be positive for all \f$s\f$.  In fact we will sho
    \f[ P_4''(s_{min}) =  \frac{k(k+1)(k+4)}{2(k+3)} > 0. \f]
 
 
-*/  /* <--- IF THIS END-OF-COMMENT IS LOST, CONFUSION RESULTS ... */
 

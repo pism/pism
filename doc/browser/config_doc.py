@@ -18,7 +18,8 @@ nc = Dataset(input, 'r')
 var = nc.variables['pism_config']
 
 print """
-# Configuration flags and parameters {#config}
+Configuration flags and parameters {#config}
+=============
 
 \htmlonly
 <p style="text-align: right">

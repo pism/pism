@@ -6,8 +6,10 @@ input  = "ice_bib"
 bbl    = "texput.bbl"
 output = "references.md"
 
-notes = """
-\par Notes
+header = """References {#references}
+==========
+
+@par Notes
 This large list collects all references which the PISM authors have found
 convenient.  There is no claim that all of these references get direct use,
 or even mention, in the PISM project files.<br><br><hr>
@@ -35,8 +37,7 @@ system("bibtex texput")
 f = open(bbl)
 lines = f.readlines()
 f.close()
-header = lines[0]
-body = "".join(lines[1:])
+body = "".join(lines[:])
 
 # NB! The order of substitutions is important.
 subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
@@ -63,6 +64,5 @@ for (regex, substitution) in subs:
 
 f = open(output, 'w')
 f.write(header)
-f.write(notes)
 f.write(body)
 f.close()

@@ -1,4 +1,5 @@
-# Standard names of NetCDF variables, including PISM current and proposed {#std_names}
+Standard names of NetCDF variables, including PISM current and proposed {#std_names}
+========
 
 @section existing Existing standard names
 
@@ -45,7 +46,8 @@ Because of the use of UDUNITS, PISM input files do not have to have fields alrea
 </table>
 
 
-@section proposed PROPOSED standard names
+PROPOSED standard names {#proposed}
+--------
 
 These are merely proposed by Bueler and Aschwanden, for now.
 
@@ -65,7 +67,8 @@ These are merely proposed by Bueler and Aschwanden, for now.
   <tr><td>land_ice_liquid_fraction</td><td>1</td><td>liqfrac</td><td></td><td>liquid water fraction in ice, a pure number between 0 and 1; a diagnostic function of enthalpy which is not stored during run</td></tr>
   </table>
 
-@section orphans Orphans
+Orphans {#orphans}
+-------
 
 Used in PISM but no proposed standard name for now.  This is an incomplete list.
 
@@ -77,7 +80,8 @@ Used in PISM but no proposed standard name for now.  This is an incomplete list.
   <tr><td>subglacial pore water pressure</td><td>Pa</td><td></td><td></td><td>currently neither written as NetCDF or an IceModelVec, but it should be write-able as diagnostic</td></tr>
 </table>
 
-@section finaltech Final technical notes
+Final technical notes {#finaltech}
+-----
 
 - PISM also uses attributes "grid_mapping = "mapping" ;" and "coordinates = "lat lon" ;" on output variables that depend on y,x.
 - Because PISM uses UDUNITS, it will write some variables in "glaciological units" instead of the SI units listed above, for instance velocities in m year-1 instead of m s-1.  This is allowed under CF.  When PISM reads such a field from a NetCDF file, the conversion is handled automatically by UDUNITS.

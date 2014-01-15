@@ -1,4 +1,4 @@
-# PISM Source Code Browser {#index}
+@mainpage
 
 This searchable *Browser* shows the C++ class (object) structure of
 PISM, the [Parallel Ice Sheet Model](http://www.pism-docs.org/).  It
@@ -27,39 +27,34 @@ Just do `"make browser"` in the build directory and look in
 - The website [www.pism-docs.org](http://www.pism-docs.org/) is the
   *root* for all PISM information.
 
-- The "PISM Utility classes" source code browser can also be generated from
-  source; do `"make browser_util"` in the build directory and look in
-  `doc/browser/util/html/`
-
 - You can *get help,* send comments, or ask for new features by email to
   help@pism-docs.org.
 
-- To *download* the PISM source code see
-  https://github.com/pism/pism. Use of [Git](http://git-scm.com/) to
-  download is strongly recommended because, even for the stable
-  branches of the code, bug fixes are easy to distribute by `" git
-  pull "`.
+- To *download* the PISM source code see https://github.com/pism/pism.
+  Use of [Git](http://git-scm.com/) to download is strongly
+  recommended because, even for the stable branches of the code, bug
+  fixes are easy to distribute by `" git pull "`.
 
 - For help *installing* PISM, see the
   [PISM Installation Manual](http://www.pism-docs.org/).
 
-- For help *using* PISM, see the [PISM User's
-  Manual](http://www.pism-docs.org/). The *User's Manual* should
-  suffice for understanding PISM unless one wants to modify it or
-  couple another model to it.
+- For help *using* PISM, see the
+  [PISM User's Manual](http://www.pism-docs.org/). The *User's Manual*
+  should suffice for understanding PISM unless one wants to modify it
+  or couple another model to it.
 
-Copyright (C) 2008-2014 the PISM authors.
+> Copyright (C) 2008-2014 the PISM authors.
 
-This document is part of PISM. PISM is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License as published
-by the Free Software Foundation; either version 3 of the License, or (at your
-option) any later version. PISM is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
-License for more details. You should have received a copy of the GNU General
-Public License along with PISM; see `COPYING` in the PISM source directory; if
-not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-Boston, MA 02110-1301 USA
+> This document is part of PISM. PISM is free software; you can redistribute it
+> and/or modify it under the terms of the GNU General Public License as published
+> by the Free Software Foundation; either version 3 of the License, or (at your
+> option) any later version. PISM is distributed in the hope that it will be
+> useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+> License for more details. You should have received a copy of the GNU General
+> Public License along with PISM; see `COPYING` in the PISM source directory; if
+> not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+> Boston, MA 02110-1301 USA
 
 @page petscID PETSc: An overview for PISM users
 

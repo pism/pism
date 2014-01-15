@@ -556,15 +556,8 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = pism_config.md \
-                         std_names.md \
-                         pages.md \
-                         bombproof_enth.md \
-                         vertchange.md \
-                         bedrough.md \
-                         references.md \
-                         howto.md \
-                         ${PROJECT_SOURCE_DIR}/src/
+INPUT = pism_config.md std_names.md pages.md bombproof_enth.md vertchange.md \
+        bedrough.md references.md howto.md ${PROJECT_SOURCE_DIR}/src/
 
 # The last two files belong in the other (util) browser, but are crucial for
 # understanding PISMSurfaceModel and similar classes.
@@ -1401,7 +1394,7 @@ UML_LOOK               = NO
 # If set to YES, the inheritance and collaboration graphs will show the
 # relations between templates and their instances.
 
-TEMPLATE_RELATIONS     = NO
+TEMPLATE_RELATIONS     = YES
 
 # If the ENABLE_PREPROCESSING, SEARCH_INCLUDES, INCLUDE_GRAPH, and HAVE_DOT
 # tags are set to YES then doxygen will generate a graph for each documented
@@ -1496,7 +1489,7 @@ DOT_TRANSPARENT        = NO
 # makes dot run faster, but since only newer versions of dot (>1.8.10)
 # support this, this feature is disabled by default.
 
-DOT_MULTI_TARGETS      = NO
+DOT_MULTI_TARGETS      = YES
 
 # If the GENERATE_LEGEND tag is set to YES (the default) Doxygen will
 # generate a legend page explaining the meaning of the various boxes and

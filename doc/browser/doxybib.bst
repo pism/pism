@@ -1395,7 +1395,7 @@ FUNCTION {begin.bib}
     'skip$
     { preamble$ write$ newline$ }
   if$
-  "# References {#references}" write$ newline$
+  "" write$ newline$
 }
 EXECUTE {begin.bib}
 EXECUTE {init.state.consts}
