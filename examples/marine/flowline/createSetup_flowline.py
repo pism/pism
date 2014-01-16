@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2011, 2013 Torsten Albrecht and Moritz Huetten
+# Copyright (C) 2011, 2013, 2014 Torsten Albrecht and Moritz Huetten
 
 # ./createSetup_flowline.py -a 0.0 -r 10.0
 
@@ -10,8 +10,8 @@ import numpy as np
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
-
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 # geometry setup flowline
 

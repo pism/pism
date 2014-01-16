@@ -3,7 +3,8 @@
 try:
     import netCDF4 as netCDF
 except:
-    import netCDF3 as netCDF
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 class PISMDataset(netCDF.Dataset):
 

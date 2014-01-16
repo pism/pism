@@ -8,7 +8,8 @@ from argparse import ArgumentParser
 try:
     import netCDF4 as NC
 except:
-    import netCDF3 as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 # Set up the option parser
 parser = ArgumentParser()

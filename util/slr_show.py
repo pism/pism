@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## Copyright (C) 2011-2012 The PISM Authors
+## Copyright (C) 2011-2012, 2014 The PISM Authors
 
 ## script to generate figure: results from SeaRISE experiments
 ## usage:  if UAFX_G_D3_C?_??.nc are result NetCDF files then do
@@ -10,7 +10,8 @@
 try:
     from netCDF4 import Dataset as CDF
 except:
-    from netCDF3 import Dataset as CDF
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 from numpy import zeros
 import pylab as plt

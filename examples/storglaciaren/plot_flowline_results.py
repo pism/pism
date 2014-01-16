@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 try:
-    from netCDF3 import Dataset
-except:
     from netCDF4 import Dataset
+except:
+    print "netCDF4 is not installed!"
+    sys.exit(1)
+
 import numpy as np
 import pylab as plt
 

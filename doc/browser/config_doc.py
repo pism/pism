@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 from numpy import sort
-# try different netCDF modules
 try:
     from netCDF4 import *
 except:
-    try:
-        from netCDF3 import *
-    except:
-        print "ERROR: Neither netCDF3 nor netCDF4 is installed!"
-        import sys
-        sys.exit(1)
+    print "ERROR: netCDF4 is installed!"
+    import sys
+    sys.exit(1)
 
 input = "pism_config.nc"
 

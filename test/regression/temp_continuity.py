@@ -5,9 +5,10 @@ from os import system
 from numpy import squeeze, abs, diff
 
 try:
-    from netCDF3 import Dataset as NC
-except:
     from netCDF4 import Dataset as NC
+except:
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 pism_path=argv[1]
 mpiexec=argv[2]

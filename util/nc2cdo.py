@@ -30,8 +30,8 @@ from pyproj import Proj
 try:
     from netCDF4 import Dataset as CDF
 except:
-    from netCDF3 import Dataset as CDF
-
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 ## Set up the option parser
 parser = ArgumentParser()

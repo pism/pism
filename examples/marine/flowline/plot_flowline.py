@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2011 Torsten Albrecht (torsten.albrecht@pik-potsdam.de)
+# Copyright (C) 2011, 2014 Torsten Albrecht (torsten.albrecht@pik-potsdam.de)
 
 import numpy as np
 from pylab import figure, clf, hold
@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 pism_output = "flowline_result_50km.nc"
 pism_output = "flowline_result_20km.nc"

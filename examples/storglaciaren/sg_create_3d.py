@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011 Andy Aschwanden
+# Copyright (C) 2011, 2014 Andy Aschwanden
 # 
 # This file is part of PISM.
 # 
@@ -32,7 +32,8 @@ write = stderr.write
 try:
     from netCDF4 import Dataset as CDF
 except:
-    from netCDF3 import Dataset as CDF
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 from optparse import OptionParser
 

@@ -8,7 +8,8 @@ from numpy import *
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 GRID_FILE = 'grid20-EISMINT'
 SUAQ_FILE = 'suaq20-EISMINT'

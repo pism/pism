@@ -96,7 +96,8 @@ def compare(file1, file2, variables, exclude, tol, relative):
     try:
         from netCDF4 import Dataset as NC
     except:
-        from netCDF3 import Dataset as NC
+        print "netCDF4 is not installed!"
+        sys.exit(1)
 
     from numpy import unique, r_
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011 Andy Aschwanden
+# Copyright (C) 2011, 2014 Andy Aschwanden
 # 
 # This file is part of PISM.
 # 
@@ -21,9 +21,10 @@
 import numpy as np
 
 try:
-    from netCDF3 import Dataset as CDF
-except:
     from netCDF4 import Dataset as CDF
+except:
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 x,topg,thk = np.loadtxt('sg_35m_flowline.txt',unpack=True)
 

@@ -4,7 +4,8 @@
 try:
     import netCDF4 as NC
 except:
-    import netCDF3 as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 import subprocess
 import numpy as np

@@ -70,7 +70,8 @@ except:
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 def list_completer(text, state, list):
     """Completes strings from the list 'list'. Skips documenting strings."""

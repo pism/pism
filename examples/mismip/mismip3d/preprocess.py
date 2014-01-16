@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012 Moritz Huetten and Torsten Albrecht
+# Copyright (C) 2012, 2014 Moritz Huetten and Torsten Albrecht
 
 # create MISMIP config override file
 
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 filename = "MISMIP3D_conf.nc"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013 the PISM Authors
+# Copyright (C) 2013, 2014 the PISM Authors
 
 # This script sets up the bootstrap file.  It also converts the configuration
 # parameter file into NetCDF:
@@ -16,7 +16,8 @@ import numpy as np
 try:
     from netCDF4 import Dataset as CDF
 except:
-    from netCDF3 import Dataset as CDF
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 import argparse
 

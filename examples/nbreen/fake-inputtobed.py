@@ -8,7 +8,8 @@ from sys import exit
 try:
     import netCDF4 as NC
 except:
-    import netCDF3 as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 inname="pismnbreen.nc"
 outname="fakesummerevent.nc"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013 the PISM Authors
+# Copyright (C) 2013, 2014 the PISM Authors
 
 # This script creates a graph of the modeled margin radius time series
 # by using the iarea variable.  Compare Figure 4(a) in Sayag & Worster (2012).
@@ -13,7 +13,8 @@ from sys import exit
 try:
     import netCDF4 as netCDF
 except:
-    import netCDF3 as netCDF
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 import argparse
 

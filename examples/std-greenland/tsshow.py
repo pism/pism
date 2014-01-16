@@ -11,7 +11,9 @@ import sys
 try:
     import netCDF4 as netCDF
 except:
-    import netCDF3 as netCDF
+    print "netCDF4 is not installed!"
+    sys.exit(1)
+
 NC = netCDF.Dataset
 
 if len(sys.argv) < 5:

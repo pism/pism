@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012 Moritz Huetten
+# Copyright (C) 2012, 2014 Moritz Huetten
 
 import sys
 import getopt
@@ -10,7 +10,8 @@ import numpy as np
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 
 # geometry setup MISMIP3D Stnd-experiment
