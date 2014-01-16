@@ -41,8 +41,8 @@ body = "".join(lines[:])
 
 # NB! The order of substitutions is important.
 subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
-        (r"\\href{([^}]*)}{([^}]*)}", r'<a href="\1">\2</a>'), # hyperref href command
-        (r"\\url{([^}]*)}",           r'<a href="\1">\1</a>'), # hyperref url command
+        (r"\\href{([^}]*)}{([^}]*)}", r'[\2](\1)'), # hyperref href command
+        (r"\\url{([^}]*)}",           r'[\1](\1)'), # hyperref url command
         (r"\\\w*{([^}]*)}",           r" \1 "),                # ignore other LaTeX commands
         (r"[}{]",                     r""),                    # curly braces
         (r"\$\\sim\$",                r"~"),                   # LaTeX \sim used to represent ~
@@ -57,6 +57,7 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         (r"''",                       r'"'),                   # closing quotes
         (r"\\,",                      r""),                    # \, LaTeX math spacing command
         (r"\\ae",                     r"&aelig;"),             # ae ligature
+        (r"\\tt",                     r"\\c"),                 # \tt (in the 'siple' entry)
         ]
 
 for (regex, substitution) in subs:

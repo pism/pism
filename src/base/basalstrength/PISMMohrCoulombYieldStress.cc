@@ -279,24 +279,24 @@ PetscErrorCode PISMMohrCoulombYieldStress::write_variables(std::set<std::string>
 //! Update the till yield stress for use in the pseudo-plastic till basal stress
 //! model.  See also IceBasalResistancePlasticLaw.
 /*!
-Updates yield stress \f$\tau_c\f$ based on modeled till water layer thickness
+Updates yield stress  @f$ \tau_c @f$  based on modeled till water layer thickness
 from a PISMHydrology object.  We implement the Mohr-Coulomb criterion allowing
-a (typically small) till cohesion \f$c_0\f$
+a (typically small) till cohesion  @f$ c_0 @f$ 
 and by expressing the coefficient as the tangent of a till friction angle
-\f$\varphi\f$:
-    \f[   \tau_c = c_0 + (\tan \varphi) N_{til}. \f]
-See [\ref Paterson] table 8.1 regarding values.
+ @f$ \varphi @f$ :
+    @f[   \tau_c = c_0 + (\tan \varphi) N_{til}. @f]
+See [@ref Paterson] table 8.1 regarding values.
 
 The effective pressure on the till is empirically-related
 to the amount of water in the till, namely this formula derived from
-[\ref Tulaczyketal2000]:
-    \f[   N_til = \delta P_o 10^{(e_0/C_c) (1 - W_{til}/W_{til}^{max})}  \f]
-where \f$\delta\f$=`till_effective_fraction_overburden`, \f$P_o\f$ is the
-overburden pressure, \f$e_0\f$=`till_reference_void_ratio` is the void ratio
-at the effective pressure minimum, and \f$C_c\f$==`till_compressibility_coefficient`
-is the coefficient of compressibility of the till.  Constants \f$e_0,C_c\f$ are
-derived by [\ref Tulaczyketal2000] from laboratory experiments on samples of
-till.  Also \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.
+[@ref Tulaczyketal2000]:
+    @f[   N_til = \delta P_o 10^{(e_0/C_c) (1 - W_{til}/W_{til}^{max})}  @f]
+where  @f$ \delta @f$ =`till_effective_fraction_overburden`,  @f$ P_o @f$  is the
+overburden pressure,  @f$ e_0 @f$ =`till_reference_void_ratio` is the void ratio
+at the effective pressure minimum, and  @f$ C_c @f$ ==`till_compressibility_coefficient`
+is the coefficient of compressibility of the till.  Constants  @f$ e_0,C_c @f$  are
+derived by [@ref Tulaczyketal2000] from laboratory experiments on samples of
+till.  Also  @f$ W_{til}^{max} @f$ =`hydrology_tillwat_max`.
  */
 PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;

@@ -11,10 +11,11 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     doxybib.py
     bedrough.md
     bombproof_enth.md
-    pages.md
+    mainpage.md
     std_names.md
     vertchange.md
     howto.md
+    petsc.md
     pism.sty
     )
 

@@ -1,5 +1,5 @@
-# On the vertical coordinate in PISM, and a critical change of variable {#vertchange}
-
+On the vertical coordinate in PISM, and a critical change of variable {#vertchange}
+===================================================================================
 In PISM all fields in the ice, including enthalpy, age, velocity, and so on, evolve within an ice fluid domain of *changing* *geometry*.  See figure @ref freebdry.  In particular, the upper and lower surfaces of the ice fluid move with respect to the geoid.
 
 @image html tempbdryfig.png "**freebdry**:  The ice fluid domain evolves, with both the upper and lower surfaces in motion with respect to the geoid.  FIXME: figure should show floating case too."

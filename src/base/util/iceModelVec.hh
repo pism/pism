@@ -29,20 +29,25 @@
 class PIO;
 class LocalInterpCtx;
 
+//! Named constants for IceModelVec*::create.
+enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
+
 //! \brief Abstract class for reading, writing, allocating, and accessing a
-//! DA-based PETSc Vec from within IceModel.
+//! DA-based PETSc Vec (2D and 3D fields) from within IceModel.
 /*!
- This class represents 2D and 3D fields in PISM. Its methods common to all
- the derived classes can be split (roughly) into six kinds:
+  @anchor icemodelvec_use
 
- \li memory allocation (create)
- \li point-wise access (begin_access, get_array, end_access)
- \li arithmetic (range, norm, add, shift, scale, multiply_by, set)
- \li setting or reading metadata (set_attrs, set_units, etc)
- \li file input/output (read, write, regrid)
- \li tracking whether a field was updated (get_state_counter, inc_state_counter)
+  This class represents 2D and 3D fields in PISM. Its methods common to all
+  the derived classes can be split (roughly) into six kinds:
 
- \section imv_allocation Memory allocation
+ - memory allocation (create)
+ - point-wise access (begin_access(), end_access())
+ - arithmetic (range(), norm(), add(), shift(), scale(), set(), ...)
+ - setting or reading metadata (set_attrs(), metadata())
+ - file input/output (read, write, regrid)
+ - tracking whether a field was updated (get_state_counter(), inc_state_counter())
+
+ ## Memory allocation
 
  Creating an IceModelVec... object does not allocate memory for storing it
  (some IceModelVecs serve as "references" and don't have their own storage).
@@ -50,19 +55,18 @@ class LocalInterpCtx;
 
  \code
  IceModelVec2S var;
- bool has_ghosts = true;
- ierr = var.create(grid, "var_name", has_ghosts); CHKERRQ(ierr);
+ ierr = var.create(grid, "var_name", WITH_GHOSTS); CHKERRQ(ierr);
  // var is ready to use
  \endcode
 
- ("Has ghosts" means "can be used in computations using map-plane neighbors
+ ("WITH_GHOSTS" means "can be used in computations using map-plane neighbors
  of grid points.)
 
  It is usually a good idea to set variable metadata right after creating it.
  The method set_attrs() is used throughout PISM to set commonly used
  attributes.
 
- \section imv_pointwise Pointwise access
+ ## Point-wise access
 
  PETSc performs some pointer arithmetic magic to allow convenient indexing of
  grid point values. Because of this one needs to surround the code using row,
@@ -78,37 +82,37 @@ class LocalInterpCtx;
  ierr = var.end_access(); CHKERRQ(ierr);
  \endcode
 
- Please see \ref computational_grid "this page" for a discussion of the
+ Please see [this page](@ref computational_grid) for a discussion of the
  organization of PISM's computational grid and examples of for-loops you will
  probably put between begin_access() and end_access().
 
- To ensure that ghost values are up to date add the following two lines
+ To ensure that ghost values are up to date add the following call
  before the code using ghosts:
 
  \code
  ierr = var.update_ghosts(); CHKERRQ(ierr);
  \endcode
 
- \section imv_io Reading and writing variables
+ ## Reading and writing variables
 
  PISM can read variables either from files with data on a grid matching the
  current grid (read()) or, using bilinear interpolation, from files
  containing data on a different (but compatible) grid (regrid()).
 
- To write a field to a prepared NetCDF file, use write(). (A file is prepared
+ To write a field to a "prepared" NetCDF file, use write(). (A file is prepared
  if it contains all the necessary dimensions, coordinate variables and global
  metadata.)
 
  If you need to "prepare" a file, do:
  \code
- PIO nc(grid.com, grid.rank, grid.config.get_string("output_format"));
+  PIO nc(grid.com, grid.config.get_string("output_format"));
 
- ierr = nc.open(filename, NC_WRITE); CHKERRQ(ierr);
- ierr = nc.def_time(config.get_string("time_dimension_name"),
-                    grid.time->calendar(),
-                    grid.time->CF_units()); CHKERRQ(ierr);
- ierr = nc.append_time(grid.time->current()); CHKERRQ(ierr);
- ierr = nc.close(); CHKERRQ(ierr);
+  std::string time_name = config.get_string("time_dimension_name");
+  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
+  ierr = nc.def_time(time_name, grid.time->calendar(),
+                     grid.time->CF_units_string()); CHKERRQ(ierr);
+  ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
  \endcode
 
  A note about NetCDF write performance: due to limitations of the NetCDF
@@ -132,7 +136,7 @@ class LocalInterpCtx;
 
  IceModelVec::define() is here so that we can use the first approach.
 
- \section imv_rev_counter Tracking if a field changed
+ ## Tracking if a field changed
 
  It is possible to track if a certain field changed with the help of
  get_state_counter() and inc_state_counter() methods.
@@ -147,15 +151,10 @@ class LocalInterpCtx;
  }
  \endcode
 
- The state counter is \b not updated automatically. For the code snippet above
+ The state counter is **not** updated automatically. For the code snippet above
  to work, a bed deformation model has to call inc_state_counter() after an
  update.
-
- */
-
-//! Named constants for IceModelVec*::create.
-enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
-
+*/
 class IceModelVec {
 public:
   IceModelVec();

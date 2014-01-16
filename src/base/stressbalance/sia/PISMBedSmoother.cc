@@ -380,7 +380,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
 
 /*!
 Implements the strategy for computing \f$\theta(h,x,y)\f$ from previously-
-stored coefficients, described on page \ref bedrough and in [\ref 
+stored coefficients, described on [Bed roughness parameterization](@ref bedrough) page and in [\ref 
 Schoofbasaltopg2003].
 
 Specifically, \f$\theta = \omega^{-n}\f$ where \f$\omega\f$ is a local average

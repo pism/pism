@@ -1,4 +1,7 @@
-# Using Schoof's (2003) parameterized bed roughness technique in PISM {#bedrough}
+Using Schoof's (2003) parameterized bed roughness technique in PISM {#bedrough}
+=====
+
+[TOC]
 
 @section justify An explanation
 

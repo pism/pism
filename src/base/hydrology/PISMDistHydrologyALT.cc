@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,9 +24,11 @@
 
 
 //! Update the model state variables W,P by running the subglacial hydrology model, but use a different update method for pressure than is in PISMDistributedHydrology::update().
-/*! In contrast to PISMDistributedHydrology::update() this method uses the
-hydraulic potential (i.e. it computes the gradient of it) but it does not use
-Qstag, the staggered-grid values of the advective flux. */
+/*!
+  In contrast to PISMDistributedHydrology::update() this method uses
+  the hydraulic potential (i.e. it computes the gradient of it) but it
+  does not use Qstag, the staggered-grid values of the advective flux.
+*/
 PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
   PetscErrorCode ierr;
 

@@ -188,7 +188,7 @@ PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
 The vertical velocity \f$w(x,y,z,t)\f$ is the velocity *relative to the
 location of the base of the ice column*.  That is, the vertical velocity
 computed here is identified as \f$\tilde w(x,y,s,t)\f$ in the page
-\ref vertchange.
+[]@ref vertchange.
 
 Thus \f$w<0\f$ here means that that
 that part of the ice is getting closer to the base of the ice, and so on.

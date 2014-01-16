@@ -13,6 +13,8 @@ except:
 
 input = "pism_config.nc"
 
+allowed_boolean_values = ["yes", "true", "on", "no", "false", "off"]
+
 nc = Dataset(input, 'r')
 
 var = nc.variables['pism_config']
@@ -20,6 +22,8 @@ var = nc.variables['pism_config']
 print """
 Configuration flags and parameters {#config}
 =============
+
+[TOC]
 
 \htmlonly
 <p style="text-align: right">
@@ -97,7 +101,7 @@ for attr in sort(var.ncattrs()):
       docstring = "[missing]"
 
     # ignore anything that does not represent a boolean:
-    if (value not in ["yes", "true", "on", "no", "false", "off"]):
+    if (value not in allowed_boolean_values):
         continue
 
     print '<tr><td class="indexkey">%s</td><td class="indexvalue">\"%s\"</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
@@ -153,7 +157,7 @@ for attr in sort(var.ncattrs()):
       docstring = "[missing]"
 
     # ignore non-strings and strings representing booleans
-    if (type(value) != str) or (value in ["yes", "true", "on", "no", "false", "off"]):
+    if (not isinstance(value, (str, unicode))) or (value in allowed_boolean_values):
         continue
 
     print '<tr><td class="indexkey">%s</td><td class="indexvalue">\'%s\'</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)

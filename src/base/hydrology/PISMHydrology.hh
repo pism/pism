@@ -59,7 +59,7 @@ These models always have a separate, but potentially-coupled, amount of water
 which is held in local till storage.  It is important to note that the
 transportable water (bwat) and till water (tillwat) thicknesses are different.
 Published models with till storage include [\ref BBssasliding, \ref SchoofTill,
-\ref TrufferEchelmeyerHarrison, \ref Tulaczyketal2000b].
+\ref TrufferEchelmeyerHarrison2001, \ref Tulaczyketal2000b].
 
 The till water thickness is can be used, via the theory of
 [\ref Tulaczyketal2000], to compute an effective pressure for the water in the

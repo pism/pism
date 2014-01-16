@@ -70,7 +70,7 @@ class IceModelVec;
   NetCDF variables because defining all the NetCDF variables before writing
   data is a lot faster than defining a variable, writing it, defining the
   second variable, etc. (See <a
-  href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Parts-of-a-NetCDF-Classic-File.html#Parts-of-a-NetCDF-Classic-Filel">The
+  href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Parts-of-a-NetCDF-Classic-File.html#Parts-of-a-NetCDF-Classic-File">The
   NetCDF Users' Guide</a> for a technical explanation.)
 
   Within IceModel the following steps are done to write 2D and 3D fields to an

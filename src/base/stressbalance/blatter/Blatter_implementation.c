@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2014 Jed Brown and the PISM Authors
 
    This file is part of PISM.
 
@@ -762,7 +762,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
           for (l = ls; l < 8; l++) { /* test functions */
             const PetscReal *restrict dp = dphi[l];
-#if USE_SSE2_KERNELS
+#if (USE_SSE2_KERNELS!=0)
             /* gcc (up to my 4.5 snapshot) is really bad at hoisting intrinsics so we do it manually */
             __m128d
               p4 = _mm_set1_pd(4), p2 = _mm_set1_pd(2), p05 = _mm_set1_pd(0.5),
@@ -782,7 +782,7 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 #endif
             for (ll = l; ll < 8; ll++) {
               const PetscReal *restrict dpl = dphi[ll];
-#if !USE_SSE2_KERNELS
+#if (USE_SSE2_KERNELS==0)
               /* The analytic Jacobian in nice, easy-to-read form */
               {
                 PetscScalar dgdu, dgdv;
