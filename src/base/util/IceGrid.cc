@@ -790,8 +790,8 @@ void IceGrid::check_parameters() {
     PetscPrintf(com,
                 "PISM ERROR: The computational grid is too big to fit in a NetCDF-3 file.\n"
                 "            Each 3D variable requires %lu Mb.\n"
-                "            Please use \"-o_format quilt\" or re-build PISM with parallel NetCDF-4 or HDF5\n"
-                "            and use \"-o_format netcdf4_parallel\" or \"-o_format hdf5\" to proceed.\n",
+                "            Please use \"-o_format quilt\" or re-build PISM with parallel NetCDF-4\n"
+                "            and use \"-o_format netcdf4_parallel\" to proceed.\n",
                 Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
     PISMEnd();
   }

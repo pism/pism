@@ -75,15 +75,6 @@ else()
   set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_PNETCDF=0")
 endif()
 
-# Check if HDF5-based parallel I/O is enabled. If so, set compiler flags and add a source code file.
-if (Pism_USE_PARALLEL_HDF5)
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_HDF5=1")
-  list(APPEND PISMUTIL_SRC base/util/io/PISMNC4_HDF5.cc)
-else()
-  set(PISM_PARALLEL_IO_FLAGS "${PISM_PARALLEL_IO_FLAGS} -DPISM_USE_HDF5=0")
-endif()
-
-
 # The list of headers included in PIO.cc depends on parallel I/O settings.
 # These flags determine which headers are included.
 set_source_files_properties (base/util/io/PIO.cc

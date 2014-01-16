@@ -37,10 +37,6 @@
 #include "PISMPNCFile.hh"
 #endif
 
-#if (PISM_USE_HDF5==1)
-#include "PISMNC4_HDF5.hh"
-#endif
-
 static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
   if (mode == "netcdf3") {
     return new PISMNC3File(com);
@@ -69,11 +65,6 @@ static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
 #if (PISM_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
     return new PISMPNCFile(com);
-  }
-#endif
-#if (PISM_USE_HDF5==1)
-  else if (mode == "hdf5") {
-    return new PISMNC4_HDF5(com);
   }
 #endif
   else {

@@ -179,7 +179,6 @@ macro(pism_find_prerequisites)
 
   # Optional libraries
   find_package (PNetCDF)
-  find_package (HDF5 COMPONENTS C HL)
   find_package (FFTW)
   find_package (PROJ4)
   find_package (TAO)
@@ -197,13 +196,6 @@ macro(pism_find_prerequisites)
     set (Pism_USE_PNETCDF OFF CACHE BOOL "Enables parallel NetCDF-3 I/O using PnetCDF." FORCE)
   endif()
 
-  if (NOT HDF5_FOUND)
-    set (Pism_USE_PARALLEL_HDF5 OFF CACHE BOOL "Enables parallel HDF5 I/O." FORCE)
-  elseif(NOT HDF5_IS_PARALLEL)
-    set (Pism_USE_PARALLEL_HDF5 OFF CACHE BOOL "Enables parallel HDF5 I/O." FORCE)
-    message (STATUS "Selected HDF5 library does not support parallel I/O.")
-  endif()
-
   if (NOT FFTW_FOUND)
     set (Pism_USE_FFTW OFF CACHE BOOL "Use FFTW-3 in the bed deformation code." FORCE)
   endif ()
@@ -219,14 +211,6 @@ macro(pism_find_prerequisites)
 
   # Use option values to set compiler and linker flags
   set (Pism_EXTERNAL_LIBS "")
-
-  # Put HDF5 includes near the beginning of the list. (It is possible that the system has
-  # more than one HDF5 library installed--- one serial, built with NetCDF, and one parallel.
-  # We want to use the latter.)
-  if (Pism_USE_PARALLEL_HDF5)
-    include_directories (${HDF5_C_INCLUDE_DIR})
-    list (APPEND Pism_EXTERNAL_LIBS ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
-  endif()
 
   # optional
   if (Pism_USE_FFTW)
@@ -271,6 +255,6 @@ macro(pism_set_dependencies)
   # Hide distracting CMake variables
   mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY
     CMAKE_OSX_ARCHITECTURES CMAKE_OSX_DEPLOYMENT_TARGET CMAKE_OSX_SYSROOT
-    MAKE_EXECUTABLE HDF5_DIR TAO_DIR TAO_INCLUDE_DIRS NETCDF_PAR_H)
+    MAKE_EXECUTABLE TAO_DIR TAO_INCLUDE_DIRS NETCDF_PAR_H)
 
 endmacro()
