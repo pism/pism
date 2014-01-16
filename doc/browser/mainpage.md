@@ -9,35 +9,68 @@ information, including that needed to extend PISM functionality.
 Click on "Classes" above to see the full list of classes in this library.  Some
 key classes include:
 
+### The "manager" class
+
+The IceModel class manages time-stepping, I/O, initialization, and
+contains parts of the model that were not modularized yet.
+
+Many aspects of PISM's behavior can be modified by writing a new class
+derived from IceModel and re-implementing one or more of its methods.
+
+### Major sub-models
+
+See these classes, as well as *the ones derived from these*. (This is
+a summary.)
+
+- PISMStressBalance, ShallowStressBalance, SSB_Modifier (stress
+  balance models)
+- PISMHydrology (sub-glacial hydrology models)
+- PISMBedDef (bed deformation models)
+- PISMYieldStress, IceBasalResistancePlasticLaw (basal strength)
+- PISMCalvingAtThickness, PISMEigenCalving, PISMFloatKill,
+  PISMOceanKill, PISMIcebergRemover (calving and "iceberg removal")
+- IceFlowLaw (rheology)
+
+#### Climatic inputs
+
+- PISMSurfaceModel ("surface" models, i.e. melt and snow processes)
+- PISMAtmosphereModel ("atmosphere", provides inputs to a PISMSurfaceModel)
+- PISMOceanModel ("ocean" model, provides sub-shelf boundary
+  conditions, melange back-pressure, and sea level elevation)
+
+### Infrastructure (utility) classes
+
 - IceGrid (computational grid)
+- PISMComponent and PISMComponent_TS (interface shared by most sub-models)
 - IceModelVec2S, IceModelVec2Stag, IceModelVec2V, and IceModelVec3 (storage)
-- PISMComponent and `PISMComponent_TS` (sub-models)
 - Timeseries (scalar forcing)
+- IceModelVec2T (2D time-dependent forcing)
+- NCVariable (variable metadata such as physical units)
+- PISMConfig (configuration parameter database)
+- PISMTime (time management, including calendars)
 - PIO (file I/O)
 
-The following pages describe some important infrastructure concepts and techniques:
+### Some important infrastructure concepts and techniques:
 
 - [Organization of PISM's computational grid](@ref computational_grid)
 - [IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields](@ref icemodelvec_use)
 - [PISM's model components and their interface](@ref pism_components)
 - [Reading scalar time-series (Timeseries)](@ref timeseries_overview)
 
-
-The
-overall class which implements an ice sheet model is IceModel.
+### Other useful pages
 
 The [Related Pages tab](pages.html) links to some
-overview pages for PISM usage and design.  You will find a
-[table of standard names used by PISM](@ref std_names), a
-[table of configuration parameters for PISM](@ref config), a
-['how do I?' page for developers](@ref howto), a
-[list of References](@ref references), and other helpful material.
+overview pages for PISM usage and design.  You will find
+- [table of standard names used by PISM](@ref std_names),
+- [table of configuration parameters for PISM](@ref config),
+- ['how do I?' page for developers](@ref howto),
+- [list of References](@ref references), and other helpful material.
 
 This doxygen source *Browser* can be regenerated in any source code release.
 Just do `"make browser"` in the build directory and look in
 `doc/browser/html/` therein.
 
-@section other Other PISM documentation
+### Where to go next (other PISM documentation)
 
 - The website [www.pism-docs.org](http://www.pism-docs.org/) is the
   *root* for all PISM information.
