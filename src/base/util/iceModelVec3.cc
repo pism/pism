@@ -34,20 +34,16 @@
 // are in "iceModelVec.cc"
 
 IceModelVec3D::IceModelVec3D() : IceModelVec() {
-  sounding_buffer = NULL;
-  sounding_viewers = new std::map<std::string, PetscViewer>;
 }
 
 IceModelVec3D::~IceModelVec3D() {
-  if (!shallow_copy) {
+  if (shallow_copy == false) {
     destroy();
   }
 }
 
 IceModelVec3D::IceModelVec3D(const IceModelVec3D &other)
   : IceModelVec(other) {
-  sounding_buffer = other.sounding_buffer;
-  sounding_viewers = other.sounding_viewers;
   shallow_copy = true;
 }
 
@@ -57,54 +53,28 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, std::string my_name,
                                         unsigned int stencil_width) {
   PetscErrorCode ierr;
 
-  if (v != NULL) {
-    SETERRQ1(grid->com, 1,"IceModelVec3 with name='%s' already allocated\n",m_name.c_str());
-  }
+  assert(v == NULL);
   
   grid = &my_grid;
 
   zlevels = levels;
-  m_n_levels = (int)zlevels.size();
+  m_n_levels = (unsigned int)zlevels.size();
   m_da_stencil_width = stencil_width;
 
   ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
 
-  if (ghostedp == WITH_GHOSTS) {
+  m_has_ghosts = (ghostedp == WITH_GHOSTS);
+
+  if (m_has_ghosts == true) {
     ierr = DMCreateLocalVector(m_da, &v); CHKERRQ(ierr);
   } else {
     ierr = DMCreateGlobalVector(m_da, &v); CHKERRQ(ierr);
   }
 
-  m_has_ghosts = (ghostedp == WITH_GHOSTS);
   m_name = my_name;
 
-  m_metadata.resize(m_dof,  NCSpatialVariable(grid->get_unit_system()));
+  m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
   m_metadata[0].init_3d(my_name, my_grid, zlevels);
-
-  //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec3D::destroy() {
-  PetscErrorCode ierr;
-  std::map<std::string,PetscViewer>::iterator i;
-
-  // soundings:
-  if (sounding_viewers != NULL) {
-    for (i = (*sounding_viewers).begin(); i != (*sounding_viewers).end(); ++i) {
-      if ((*i).second != NULL) {
-	ierr = PetscViewerDestroy(&(*i).second); CHKERRQ(ierr);
-      }
-    }
-    delete sounding_viewers;
-    sounding_viewers = NULL;
-  }
-
-  if (sounding_buffer != NULL) {
-    ierr = VecDestroy(&sounding_buffer); CHKERRQ(ierr);
-    sounding_buffer = NULL;
-  }
 
   return 0;
 }
@@ -644,75 +614,6 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 
   // IceGrid will dispose of the old DA
 
-  // de-allocate the sounding buffer because we'll need a bigger one
-  if (sounding_buffer != NULL) {
-    ierr = VecDestroy(&sounding_buffer); CHKERRQ(ierr);
-    sounding_buffer = NULL;
-  }
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec3D::view_sounding(int i, int j, PetscInt viewer_size) {
-  PetscErrorCode ierr;
-
-  // create the title:
-  if ((*sounding_viewers)[m_name] == NULL) {
-    std::string title = metadata().get_string("long_name") +
-      " sounding (" + metadata().get_string("glaciological_units") + ")";
-
-    ierr = grid->create_viewer(viewer_size, title, (*sounding_viewers)[m_name]); CHKERRQ(ierr);
-  }
-
-  ierr = view_sounding(i, j, (*sounding_viewers)[m_name]); CHKERRQ(ierr);
-
-  return 0;
-}
-
-//! \brief View a sounding using an existing PETSc viewer.
-PetscErrorCode IceModelVec3D::view_sounding(int i, int j, PetscViewer my_viewer) {
-  PetscErrorCode ierr;
-  PetscScalar *ivals;
-
-#if (PISM_DEBUG==1)
-    check_array_indices(i, j, 0);
-#endif
-
-  const std::string tname = metadata().get_string("long_name"),
-    tunits = " (" + metadata().get_string("glaciological_units") + ")",
-    title = tname + tunits;
-
-  PetscDraw draw;
-  ierr = PetscViewerDrawGetDraw(my_viewer, 0, &draw); CHKERRQ(ierr);
-  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
-
-  // memory allocation:
-  if (sounding_buffer == NULL) {
-    ierr = VecCreateMPI(grid->com, PETSC_DECIDE, m_n_levels, &sounding_buffer); CHKERRQ(ierr);
-  }
-
-  // get the sounding:
-  if ((i >= grid->xs) && (i < grid->xs + grid->xm) && (j >= grid->ys) && (j < grid->ys + grid->ym)) {
-    PetscInt *row = new PetscInt[m_n_levels];
-    for (unsigned int k = 0; k < m_n_levels; k++) row[k] = k;
-
-    ierr = begin_access(); CHKERRQ(ierr);
-    ierr = getInternalColumn(i, j, &ivals); CHKERRQ(ierr);
-    ierr = VecSetValues(sounding_buffer, m_n_levels, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
-    ierr = end_access(); CHKERRQ(ierr);
-
-    delete[] row;
-  }
-  ierr = VecAssemblyBegin(sounding_buffer); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(sounding_buffer); CHKERRQ(ierr);
-
-  // change units:
-  ierr = convert_vec(sounding_buffer,
-                     metadata().get_units(),
-                     metadata().get_glaciological_units()); CHKERRQ(ierr);
-
-  ierr = VecView(sounding_buffer, my_viewer); CHKERRQ(ierr);
-  
   return 0;
 }
 

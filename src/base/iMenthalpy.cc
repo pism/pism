@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2013 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2014 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -346,7 +346,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
         // solve the system
         ierr = esys.solveThisColumn(Enthnew); CHKERRQ(ierr);
 
-        if (viewOneColumn && issounding(i, j)) {
+        if (viewOneColumn && (i == id && j == jd)) {
           ierr = esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine); CHKERRQ(ierr);
         }
       }

@@ -724,14 +724,13 @@ PetscErrorCode IceModelVec::has_nan() {
 void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
   PetscReal ghost_width = 0;
   if (m_has_ghosts) ghost_width = m_da_stencil_width;
-  if ((i < grid->xs - ghost_width) ||
-      (i > grid->xs + grid->xm + ghost_width) ||
-      (j < grid->ys - ghost_width) ||
-      (j > grid->ys + grid->ym + ghost_width) ||
-      (k >= m_dof)) {
-    PetscPrintf(grid->com, "ERROR: indices out of range accessing array '%s'. "
-                "It will probably segfault.\n", m_name.c_str());
-  }
+  bool out_of_range = (i < grid->xs - ghost_width) ||
+    (i > grid->xs + grid->xm + ghost_width) ||
+    (j < grid->ys - ghost_width) ||
+    (j > grid->ys + grid->ym + ghost_width) ||
+    (k >= m_dof);
+
+  assert(out_of_range == false);
 }
 
 //! \brief Compute parameters for 2D loop computations involving 3

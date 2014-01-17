@@ -607,9 +607,6 @@ public:
   PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsOUT);
 
-  PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
-  PetscErrorCode  view_sounding(int i, int j, PetscViewer v);
-
   virtual PetscScalar    getValZ(PetscInt i, PetscInt j, PetscScalar z);
   virtual PetscErrorCode isLegalLevel(PetscScalar z);
 
@@ -624,11 +621,7 @@ protected:
   virtual PetscErrorCode allocate(IceGrid &mygrid, std::string my_short_name,
                                   IceModelVecKind ghostedp, std::vector<double> levels,
                                   unsigned int stencil_width = 1);
-  virtual PetscErrorCode destroy();
   virtual PetscErrorCode has_nan();
-
-  Vec sounding_buffer;
-  std::map<std::string,PetscViewer> *sounding_viewers;
 };
 
 

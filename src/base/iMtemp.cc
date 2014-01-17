@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -285,7 +285,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           // solve the system for this column; melting not addressed yet
           ierr = system.solveThisColumn(x); CHKERRQ(ierr);
 
-          if (viewOneColumn && issounding(i,j)) {
+          if (viewOneColumn && (i == id && j == jd)) {
             ierr = PetscPrintf(grid.com,
               "\n\nin temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
               i, j); CHKERRQ(ierr);

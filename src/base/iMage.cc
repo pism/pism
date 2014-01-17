@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -290,7 +290,7 @@ PetscErrorCode IceModel::ageStep() {
         // solve the system for this column; call checks that params set
         ierr = system.solveThisColumn(x); CHKERRQ(ierr);
 
-        if (viewOneColumn && issounding(i,j)) {
+        if (viewOneColumn && (i == id && j == jd)) {
           ierr = PetscPrintf(PETSC_COMM_SELF,
             "\n\nin ageStep(): viewing ageSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
             i, j); CHKERRQ(ierr);

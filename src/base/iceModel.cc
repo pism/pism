@@ -91,7 +91,7 @@ IceModel::IceModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   gmaxv = 0;
   gmaxw = 0;
 
-  // set default locations of soundings and slices
+  // set default locations of the column used by -view_system
   id = (grid.Mx - 1)/2;
   jd = (grid.My - 1)/2;
 

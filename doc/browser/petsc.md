@@ -231,14 +231,15 @@ may need to use a debugger which is accessible with the command line (PETSc) opt
 `-start_in_debugger` and `-on_error_attach_debugger`.  Option `-log_summary`
 is useful to get some diagnostics written to the terminal.
 
-The `PetscViewer` interface allows PETSc objects to be displayed.  One can "view"
-a `Vec` to a graphical (X) window, but the "view" can be saving the `Vec` to a binary
-file on disk, in plain text to the terminal (standard out), or even by sending to a running
-instance of *Matlab.*  In PISM the X views are available under options -view_map,
--view_slice, and -view_sounding.  See the "User's Manual".
-When viewing `Vec` s graphically in multiprocessor jobs, the display may have to be 
-set on the command line, for instance as `-display :0` or similar; this must be given 
-as the final option.  For example,
+The `PetscViewer` interface allows PETSc objects to be displayed. One
+can "view" a `Vec` to a graphical (X) window, but the "view" can be
+saving the `Vec` to a binary file on disk, in plain text to the
+terminal (standard out), or even by sending to a running instance of
+*Matlab.* In PISM the X views are available using the `-view_map`
+option. See the "User's Manual". When viewing `Vec` s graphically in
+multiprocessor jobs, the display may have to be set on the command
+line, for instance as `-display :0` or similar; this must be given as
+the final option. For example,
 
     mpiexec -n 2 pisms -view_map thk -display :0
 

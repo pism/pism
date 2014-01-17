@@ -322,7 +322,3 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   return 0;
 }
-
-bool IceModel::issounding(const PetscInt i, const PetscInt j){ 
-  return ((i == id) && (j == jd));
-}

@@ -426,7 +426,6 @@ protected:
   virtual PetscErrorCode update_run_stats();
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
-  virtual bool           issounding(const PetscInt i, const PetscInt j);
 
 protected:
   // working space (a convenience)
@@ -489,8 +488,8 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
-  std::set<std::string> map_viewers, slice_viewers, sounding_viewers;
-  PetscInt     id, jd;	     // sounding indices
+  std::set<std::string> map_viewers, slice_viewers;
+  PetscInt     id, jd;	     // sounding indexes
   std::map<std::string,PetscViewer> viewers;
 
   // time step decision helper; see step()

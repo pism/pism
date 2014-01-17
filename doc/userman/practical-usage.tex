@@ -528,9 +528,6 @@ are transposed.
     \midrule
     \listopt{view_map} & Turns on map-plane views of one or several variables, see tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}  \\
     \txtopt{view_size}{number} & desired viewer size, in pixels\\
-    \listopt{view_sounding} &Turns on sounding viewers showing values in a column\\
-    \txtopt{id}{row} & Sounding row-index\\
-    \txtopt{jd}{column} & Sounding column-index\\
     \intextoption{display} & The option \texttt{-display :0} seems to
     frequently be needed to let PETSc use Xwindows when running multiple
     processes.  \emph{It must be given as a \emph{final} option, after all the
@@ -548,14 +545,7 @@ $ pismr -i input.nc -y 1000 -o output.nc -view_map thk,tempsurf
 \end{verbatim}
 shows ice thickness and ice temperature at the surface.
 
-The option \texttt{-view_sounding} allows viewing a \emph{sounding} of a variable at a given grid point:
-\begin{verbatim}
-$ pismr -i input.nc -y 1000 -o output.nc -view_sounding temp
-\end{verbatim}
-shows the dependence of the ice temperature on $z$ (more precisely, on the
-number of the vertical grid layer) at the center of the domain. One can use options \texttt{-id} and \texttt{-jd} to choose a different point.
-
-Related to soundings, one can expose all the linear systems being solved in ice columns by using \texttt{-view_sys} along with the sounding location (\texttt{-id XX} and \texttt{-jd YY}).  For example, if the enthalpy formulation is in use then a \Matlab-format text file \texttt{enth_iXX_jYY.m} will be generated at each time step.  % FIXME:  add year to file name?
+One can also expose all the linear systems being solved in ice columns by using \texttt{-view_sys} along with the map-plane location specified using \intextoption{id XX} and \intextoption{jd YY}.  For example, if the enthalpy formulation is in use then a \Matlab-format text file \texttt{enth_iXX_jYY.m} will be generated at each time step.  % FIXME:  add year to file name?
 This text file can be run as a script in \Matlab.  The linear system will be stored in a matrix, a right-hand-side vector, and the solution in a solution vector.  This way these linear systems can be checked for debugging purposes.
 
 \begin{table}[ht]
