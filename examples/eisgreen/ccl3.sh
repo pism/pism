@@ -35,7 +35,7 @@ snaps="-save_file snaps_ccl3.nc -save_times -240000:10000:-10000"
 
 ts="-ts_file ts_ccl3.nc -ts_times -249900:yearly:0"
 
-PISM="pismr -sia_e 3 -ocean_kill -atmosphere eismint_greenland -surface pdd"
+PISM="pismr -sia_e 3 -calving ocean_kill -atmosphere eismint_greenland -surface pdd"
 
-$SHOW $MPIDO $NN $PISM -bed_def lc -skip -skip_max 20 -i $INFILE -ys -249900 -ye 0 ${forcing} ${snaps} ${ts} -o green_ccl3_year0.nc
+$SHOW $MPIDO $NN $PISM -bed_def lc -skip -skip_max 20 -i $INFILE -ocean_kill_file $INFILE -ys -249900 -ye 0 ${forcing} ${snaps} ${ts} -o green_ccl3_year0.nc
 

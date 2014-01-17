@@ -22,7 +22,7 @@
 
 PISMCalvingAtThickness::PISMCalvingAtThickness(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
-  m_calving_threshold = config.get("calving_at_thickness");
+  m_calving_threshold = config.get("thickness_calving_threshold");
 
   PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
   if (ierr != 0) {

@@ -59,7 +59,7 @@ BCFILE=g5km_bc.nc
 
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
 
-PHYS="-ocean_kill $BOOT -cfbc -kill_icebergs -sia_e 1.0 -ssa_sliding -topg_to_phi 5.0,30.0,-300.0,700.0 -hydrology_pressure_fraction 0.98 -pseudo_plastic -pseudo_plastic_q 0.25"
+PHYS="-calving ocean_kill -ocean_kill_file $BOOT -cfbc -kill_icebergs -sia_e 1.0 -ssa_sliding -topg_to_phi 5.0,30.0,-300.0,700.0 -hydrology_pressure_fraction 0.98 -pseudo_plastic -pseudo_plastic_q 0.25"
 
 SKIP=10
 

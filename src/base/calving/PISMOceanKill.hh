@@ -24,7 +24,7 @@
 #include "iceModelVec.hh"
 
 /**
- * This class implements the "-ocean_kill" mechanism: calving at a
+ * This class implements the "ocean_kill" mechanism: calving at a
  * fixed calving front determined using ice thickness.
  *
  * FIXME: the ice extent computation should depend on the current sea

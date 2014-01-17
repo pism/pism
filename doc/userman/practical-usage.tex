@@ -169,7 +169,7 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \texttt{cumulative_discharge_flux} & \textsl{kg} &  cumulative discharge (calving etc.) flux \\
     \texttt{cumulative_float_kill_flux} & \textsl{kg} &  cumulative \texttt{-float_kill} flux \\
     \texttt{cumulative_nonneg_rule_flux} & \textsl{kg} &  cumulative \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
-    \texttt{cumulative_ocean_kill_flux} & \textsl{kg} &  cumulative \texttt{-ocean_kill} flux \\
+    \texttt{cumulative_ocean_kill_flux} & \textsl{kg} &  cumulative \texttt{-calving ocean_kill} flux \\
     \texttt{cumulative_sub_shelf_ice_flux} & \textsl{kg} &  cumulative total sub-shelf ice flux \\
     \texttt{cumulative_surface_ice_flux} & \textsl{kg} &  cumulative total over ice domain of top surface ice mass flux \\
     \texttt{dimassdt} & \textsl{kg  / s} &  total ice mass rate of change \\
@@ -207,7 +207,7 @@ using this information, grid parameters, and the WGS84 reference ellipsoid. This
     \texttt{max_diffusivity} & \textsl{$m^{2}$  / s} &  maximum diffusivity \\
     \texttt{max_hor_vel} & \textsl{m  / s} &  maximum (absolute) component of horizontal ice velocity over the grid \\
     \texttt{nonneg_rule_flux} & \textsl{kg  / s} &  \emph{numerical} ice flux resulting from enforcing the $\mathrm{thk} \ge 0$ rule \\
-    \texttt{ocean_kill_flux} & \textsl{kg  / s} &  \texttt{-ocean_kill} flux \\
+    \texttt{ocean_kill_flux} & \textsl{kg  / s} &  \texttt{-calving ocean_kill} flux \\
     \texttt{slvol} & \textsl{m} &  total sea-level relevant ice \textbf{in sea-level equivalent} \\
     \texttt{sub_shelf_ice_flux} & \textsl{kg  / s} &  total sub-shelf ice flux \\
     \texttt{surface_ice_flux} & \textsl{kg  / s} &  total over ice domain of top surface ice mass flux \\
@@ -414,7 +414,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \textbf{Name} & \textbf{Units} & \textbf{Description} \\
     \midrule
     \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-2}}\\
-    \texttt{ocean_kill_flux} & \textsl{kg / s} & calving flux due to the ``\texttt{-ocean_kill}'' mechanism \\
+    \texttt{ocean_kill_flux} & \textsl{kg / s} & calving flux due to the ``\texttt{-calving ocean_kill}'' mechanism \\
     \texttt{ocean_kill_flux_cumulative} & \textsl{Gt} & cumulative version of \texttt{ocean_kill_flux} \\
     \texttt{nonneg_flux_cumulative} & \textsl{Gt} & cumulative numerical flux created by enforcing non-negativity of ice thickness \\
     \texttt{grounded_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in grounded areas \\

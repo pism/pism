@@ -25,6 +25,7 @@
 #include "PISMBedDef.hh"
 #include "bedrockThermalUnit.hh"
 #include "PISMYieldStress.hh"
+#include "PISMOceanKill.hh"
 #include "PISMHydrology.hh"
 #include "PISMStressBalance.hh"
 #include "PISMOcean.hh"
@@ -68,10 +69,10 @@ PetscErrorCode  IceModel::setFromOptions() {
       "              -skip only makes sense in runs updating ice geometry.\n"); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("do_thickness_calving") &&
+  if (config.get_string("calving_methods").find("thickness_calving") != std::string::npos &&
       config.get_flag("part_grid") == false) {
     ierr = verbPrintf(2, grid.com,
-      "PISM WARNING: Calving at certain terminal ice thickness (-calving_at_thickness)\n"
+      "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
       "              without application of partially filled grid cell scheme (-part_grid)\n"
       "              may lead to (incorrect) non-moving ice shelf front.\n"); CHKERRQ(ierr);
   }
@@ -184,8 +185,8 @@ PetscErrorCode IceModel::set_output_size(std::string option,
   if (config.get_flag("do_age"))
     result.insert("age");
 
-  if (config.get_flag("ocean_kill"))
-    result.insert("ocean_kill_mask");
+  if (ocean_kill_calving != NULL)
+    ocean_kill_calving->add_vars_to_output(keyword, result);
 
   if (beddef != NULL)
     beddef->add_vars_to_output(keyword, result);

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2013 Andy Aschwanden
+# Copyright (C) 2013, 2014 Andy Aschwanden
 #
 # *****************************************************************************
 # Relax Greenland Topography
@@ -172,7 +172,8 @@ else
 fi
 echo ""
 
-OCEAN="-ocean_kill"
+OCEAN="-calving ocean_kill"
+# FIXME (CK): OCEAN (above) is never used
 COUPLER="-surface given -surface_given_file $PISM_TARGETNAME"
 PISM="${PISM_PREFIX}${PISM_EXEC} -no_energy -bed_def lc"
 # output file size

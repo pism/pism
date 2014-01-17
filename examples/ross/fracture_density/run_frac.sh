@@ -70,8 +70,8 @@ output="-o $NAME -o_order zyx -o_size big"
 ssa="-no_sia -ssa_floating_only -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
 #-pik:-part_grid -cfbc -kill_icebergs -part_redist
 
-#calving="-eigen_calving -eigen_calving_K ${ECALV} -thickness_calving -calving_at_thickness 50.0 "
-calving="-ocean_kill "
+#calving="-calving eigen_calving,thickness_calving -eigen_calving_K ${ECALV} -thickness_calving_threshold 50.0 "
+calving="-calving ocean_kill "
 
 extra="-extra_file ex-${NAME} -extra_times 0:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
@@ -104,7 +104,8 @@ cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file Ross_combined_prog.nc -Mx
   -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
 
 cmd_prog_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface given \
-  ${ssa} -y ${YEARS} ${output} ${calving} ${fractures} ${extra} ${timeseries} -verbose 4 "
+  ${ssa} -y ${YEARS} ${output} ${calving} -ocean_kill_file startfile_Mx${M}.nc \
+  ${fractures} ${extra} ${timeseries} -verbose 4 "
 
 
 

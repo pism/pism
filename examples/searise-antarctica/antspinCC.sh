@@ -73,7 +73,7 @@ SIA_ENHANCEMENT="-sia_e 3.0"
 #PIK-stuff; notes:
 # 1)   '-pik' = '-cfbc -part_grid -part_redist -kill_icebergs'
 # 2)   -meltfactor_pik 5e-3 is default when using -ocean pik
-PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -eigen_calving -eigen_calving_K 2.0e18 -thickness_calving -calving_at_thickness 200.0"
+PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -calving eigen_calving,thickness_calving -eigen_calving_K 2.0e18 -thickness_calving_threshold 200.0"
 PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -surface simple -ocean pik -meltfactor_pik 5e-3"
 
 # sliding related options:
@@ -101,7 +101,7 @@ RUNTIME=1
 echo
 echo "$SCRIPTNAME  bootstrapping on $GRIDNAME grid plus SIA run for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -boot_file ${INNAME} $GRID \
-	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
+	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -calving ocean_kill -ocean_kill_file ${INNAME} \
 	-y $RUNTIME -o $RESNAMEONE"
 $DO $cmd
 #exit # <-- uncomment to stop here
@@ -115,7 +115,7 @@ RUNTIME=100
 echo
 echo "$SCRIPTNAME  short SIA run for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $RESNAMEONE \
-	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -ocean_kill \
+	$SIA_ENHANCEMENT $PIKPHYS_COUPLING -calving ocean_kill -ocean_kill_file $RESNAMEONE \
 	-y $RUNTIME -o $RESNAME"
 $DO $cmd
 

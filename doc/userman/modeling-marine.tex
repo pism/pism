@@ -133,22 +133,27 @@ Option \intextoption{kill_iceberg} turns on the mechanism which cleans this up. 
 \subsection{Calving}
 \label{sec:calving}
 \optsection{Calving}
-At the start, PISM-PIK included a physically based 2D-calving parameterization, further developed in \cite{Levermannetal2012}. This calving parameterization is turned on by option \intextoption{eigen_calving}.  Average calving rates, $c$, are proportional to the product of principal components of the horizontal strain rates, $\dot{\epsilon}_{_\pm}$, derived from SSA-velocities 
+At the start, PISM-PIK included a physically based 2D-calving parameterization, further developed in \cite{Levermannetal2012}. This calving parameterization is turned on by option \intextoption{calving eigen_calving}.  Average calving rates, $c$, are proportional to the product of principal components of the horizontal strain rates, $\dot{\epsilon}_{_\pm}$, derived from SSA-velocities 
 \begin{equation}
 \label{eq: calv2}
 c = K\; \dot{\epsilon}_{_+}\; \dot{\epsilon}_{_-}\quad\text{and}\quad\dot{\epsilon}_{_\pm}>0\:.
 \end{equation}
 The rate $c$ is in $\text{m}\,\text{s}^{-1}$, and the principal strain rates $\dot\eps_\pm$ have units $\text{s}^{-1}$, so $K$ has units $\text{m}\,\text{s}$.  The constant $K$ incorporating material properties of the ice at the front can be set using the \intextoption{eigen_calving_K} option or a configuration parameter (\texttt{eigen_calving_K} in \texttt{src/pism_config.cdl}).
 
-The actual strain rate pattern strongly depends on the geometry and boundary conditions along the the confinements of an ice shelf (coast, ice rises, front position).  The strain rate pattern provides information in which regions preexisting fractures are likely to propagate, forming rifts (in two directions).  These rifts may ultimately intersect, leading to the release of icebergs. This and other ice shelf model calving models are not intended to resolve individual rifts or calving events. This first-order approach produces structurally-stable calving front positions which agree well with observations.  Calving rates balance terminal SSA velocities on average.
+The actual strain rate pattern strongly depends on the geometry and boundary conditions along the the confinements of an ice shelf (coast, ice rises, front position).  The strain rate pattern provides information in which regions preexisting fractures are likely to propagate, forming rifts (in two directions).  These rifts may ultimately intersect, leading to the release of icebergs. This and other ice shelf calving models are not intended to resolve individual rifts or calving events. This first-order approach produces structurally-stable calving front positions which agree well with observations.  Calving rates balance terminal SSA velocities on average.
 
-The partially-filled grid cell formulation (subsection \ref{sec:part-grid}) provides a framework suitable to relate the calving rate produced by \intextoption{eigen_calving} to the mass transport scheme at the ice shelf terminus.  Ice shelf front advance and retreat due to calving are limited to a maximum of one grid cell length per (adaptive) time step.
+The partially-filled grid cell formulation (subsection \ref{sec:part-grid}) provides a framework suitable to relate the calving rate produced by \texttt{eigen_calving} to the mass transport scheme at the ice shelf terminus.  Ice shelf front advance and retreat due to calving are limited to a maximum of one grid cell length per (adaptive) time step.
 
-PISM also includes three more basic calving mechanisms (Table \ref{tab:calving}). The option \intextoption{thickness_calving} is based on the observation that ice shelf calving fronts are commonly thicker than about 150--250\,m (even though the physical reasons are not clear yet). Accordingly, any floating ice thinner than $H_{\textrm{cr}}$ is removed along the front, at a rate at most one grid cell per time step. The value of $H_{\mathrm{cr}}$ can be set using the \intextoption{calving_at_thickness} option or the \texttt{calving_at_thickness} configuration parameter.
+PISM also includes three more basic calving mechanisms (Table \ref{tab:calving}). The option \intextoption{calving thickness_calving} is based on the observation that ice shelf calving fronts are commonly thicker than about 150--250\,m (even though the physical reasons are not clear yet). Accordingly, any floating ice thinner than $H_{\textrm{cr}}$ is removed along the front, at a rate at most one grid cell per time step. The value of $H_{\mathrm{cr}}$ can be set using the \intextoption{thickness_calving_threshold} option or the \texttt{thickness_calving_threshold} configuration parameter.
 
-Option \intextoption{float_kill} removes (calves), at each time step of the run, any ice that satisfies the flotation criterion.  Use of this option implies that there are no ice shelves in the model at all.
+Option \intextoption{calving float_kill} removes (calves), at each time step of the run, any ice that satisfies the flotation criterion.  Use of this option implies that there are no ice shelves in the model at all.
 
-Option \fileopt{ocean_kill} reads in the ice thickness field \texttt{thk} from a file.  Any locations which were ice-free (\texttt{thk}$=0$) and which had bedrock elevation below sea level (\texttt{topg}$<0$), in the provided data set, are marked as ice-free ocean.  The resulting mask is not altered during the run, and is available as diagnostic field \texttt{ocean_kill_mask}.  At these places any floating ice is removed at each step of the run.  Ice shelves can exist in locations where a positive thickness was supplied in the provided data set.  If a file name is omitted then the ice thickness at the beginning of the run is used, that is, \texttt{thk} is read from the input file.
+Option \intextoption{calving ocean_kill} chooses the calving mechanism removing ice in the ``open ocean''. It requires the option \fileopt{ocean_kill_file}, which specifies the file containing the ice thickness field \texttt{thk}. (This can be the input file specified using \texttt{-i} or \texttt{-boot_file}.) Any locations which were ice-free (\texttt{thk}$=0$) and which had bedrock elevation below sea level (\texttt{topg}$<0$), in the provided data set, are marked as ice-free ocean.  The resulting mask is not altered during the run, and is available as diagnostic field \texttt{ocean_kill_mask}.  At these places any floating ice is removed at each step of the run.  Ice shelves can exist in locations where a positive thickness was supplied in the provided data set.
+
+To select several calving mechanisms, use a comma-separated list of keywords mentioned in Table \ref{tab:calving}:
+\begin{verbatim}
+-calving eigen_calving,thickness_calving,ocean_kill
+\end{verbatim}
 
 \begin{table}[ht]
   \centering
@@ -156,12 +161,13 @@ Option \fileopt{ocean_kill} reads in the ice thickness field \texttt{thk} from a
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
-    \intextoption{eigen_calving} & Physically-based calving parameterization \cite{Levermannetal2012,Winkelmannetal2011}.  Where ever the product of principle strain rates is positive, the calving rate is proportional to this product.  \\
+    \intextoption{calving eigen_calving} & Physically-based calving parameterization \cite{Levermannetal2012,Winkelmannetal2011}.  Where ever the product of principle strain rates is positive, the calving rate is proportional to this product.  \\
     \intextoption{eigen_calving_K} ($K$) & Sets the proportionality parameter $K$ in $\text{m}\,\text{s}$. \\
-    \intextoption{thickness_calving} & Calve all near-terminus ice which is thinner than ice threshold thickness $H_{\textrm{cr}}$. \\
-    \intextoption{calving_at_thickness ($H_{\textrm{cr}}$)} & Sets the thickness threshold in $\text{m}$. \\
-    \intextoption{float_kill} & All floating ice is calved off immediately.\\
-    \fileopt{ocean_kill} & All ice flowing into grid cells marked as ``ice free ocean'', according to the ice thickness in the provided file, is calved. \\
+    \intextoption{calving thickness_calving} & Calve all near-terminus ice which is thinner than ice threshold thickness $H_{\textrm{cr}}$. \\
+    \intextoption{thickness_calving_threshold} ($H_{\textrm{cr}}$) & Sets the thickness threshold in $\text{m}$. \\
+    \intextoption{calving float_kill} & All floating ice is calved off immediately.\\
+    \intextoption{calving ocean_kill} & All ice flowing into grid cells marked as ``ice free ocean'', according to the ice thickness in the provided file, is calved. \\
+    \fileopt{ocean_kill_file} & Sets the file with the \texttt{thk} field used to compute maximum ice extent.\\
     \bottomrule
   \end{tabular}
 \caption{Calving models}

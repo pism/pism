@@ -62,9 +62,13 @@ PISMEigenCalving::~PISMEigenCalving() {
 PetscErrorCode PISMEigenCalving::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the 'eigen-calving' mechanism...\n");
+  CHKERRQ(ierr);
+
   if (PetscAbs(grid.dx - grid.dy) / PetscMin(grid.dx, grid.dy) > 1e-2) {
     PetscPrintf(grid.com,
-                "PISM ERROR: -eigen_calving using a non-square grid cell is not implemented (yet);\n"
+                "PISM ERROR: -calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
                 "            dx = %f, dy = %f, relative difference = %f",
                 grid.dx, grid.dy,
                 PetscAbs(grid.dx - grid.dy) / PetscMax(grid.dx, grid.dy));

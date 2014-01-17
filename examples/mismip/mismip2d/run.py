@@ -99,7 +99,7 @@ class Experiment:
             self.Lz = 6000
 
 
-    def physics_options(self, step):
+    def physics_options(self, input_file, step):
         "Options corresponding to modeling choices."
         config_filename = self.config(step)
 
@@ -113,7 +113,8 @@ class Experiment:
                    "-gradient eta",
                    "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
                    "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
-                   "-ocean_kill",               # calving at the present front
+                   "-calving ocean_kill", # calving at the present front
+                   "-ocean_kill_file %s" % input_file,
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",
                    "-cfbc",                # calving front boundary conditions
@@ -182,7 +183,7 @@ class Experiment:
                    "-Mz %d" % self.Mz,
                    "-Lz %d" % self.Lz]
 
-        return options
+        return options, boot_filename
 
     def output_options(self, step):
         output_file = self.output_filename(self.experiment, step)
@@ -207,11 +208,11 @@ class Experiment:
         '''Generates a string of PISM options corresponding to a MISMIP experiment.'''
 
         if input_file is None:
-            input_options = self.bootstrap_options(step)
+            input_options, input_file = self.bootstrap_options(step)
         else:
             input_options = ["-i %s" % input_file]
 
-        physics = self.physics_options(step)
+        physics = self.physics_options(input_file, step)
 
         output_file, output_options  = self.output_options(step)
 

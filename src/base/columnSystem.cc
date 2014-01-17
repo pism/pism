@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -337,7 +337,7 @@ which was modified to have equal spacing in z, when I did this example) to
 generate `g20km_steady.nc`.  Then:
 
 \code
-  $ pismr -ocean_kill -e 3 -atmosphere searise_greenland -surface pdd -config_override  config_269.0_0.001_0.80_-0.500_9.7440.nc \
+  $ pismr -calving ocean_kill -e 3 -atmosphere searise_greenland -surface pdd -config_override  config_269.0_0.001_0.80_-0.500_9.7440.nc \
     -no_mass -y 1 -i g20km_steady.nc -view_sys -id 19 -jd 79
 
     ...

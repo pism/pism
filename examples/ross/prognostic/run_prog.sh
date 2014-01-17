@@ -47,7 +47,7 @@ CTHICK=50.0
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc \
   -surface given -no_sia -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_e ${SSAE} \
   -y ${YEARS} -o $NAME -o_order zyx -o_size big \
-  -eigen_calving -eigen_calving_K ${ECALV} -thickness_calving -calving_at_thickness $CTHICK \
+  -calving eigen_calving,thickness_calving -eigen_calving_K ${ECALV} -thickness_calving_threshold $CTHICK \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
   -extra_file ex-${NAME} -extra_times 0:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask"
 

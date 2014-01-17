@@ -760,8 +760,8 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, PISMConfig &config) {
 
   ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
 
-ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
-                               "part_grid_reduce_frontal_thickness"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
+                                 "part_grid_reduce_frontal_thickness"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
 
@@ -780,20 +780,13 @@ ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
 
   // Calving
 
-  // whether or not to kill ice at locations that were ice-free at
-  // bootstrapping
-  ierr = config.flag_from_option("ocean_kill", "ocean_kill"); CHKERRQ(ierr);
+  ierr = config.string_from_option("calving", "calving_methods"); CHKERRQ(ierr);
 
-  // whether or not to kill ice (zero thickness) if it is (or becomes) floating
-  ierr = config.flag_from_option("float_kill", "floating_ice_killed"); CHKERRQ(ierr);
-
-  ierr = config.flag_from_option("thickness_calving", "do_thickness_calving"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("calving_at_thickness", "calving_at_thickness"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("thickness_calving_threshold", "thickness_calving_threshold"); CHKERRQ(ierr);
 
   // evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
   ierr = config.flag_from_option("cfl_eigencalving", "cfl_eigencalving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("eigen_calving_K", "eigen_calving_K"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("eigen_calving", "do_eigen_calving"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
 
@@ -819,7 +812,7 @@ ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
 
   // Shortcuts
 
-  // option "-pik" turns on a suite of PISMPIK effects (but not -eigen_calving)
+  // option "-pik" turns on a suite of PISMPIK effects (but not "-calving eigen_calving")
   ierr = PISMOptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag); CHKERRQ(ierr);
   if (flag) {
     config.set_flag_from_option("calving_front_stress_boundary_condition", true);
@@ -828,14 +821,12 @@ ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
     config.set_flag_from_option("kill_icebergs", true);
   }
 
-  if (config.get_flag("do_eigen_calving")) {
+  if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
     config.set_flag_from_option("part_grid", true);
   }
 
   // all calving mechanisms require iceberg removal
-  if (config.get_flag("do_eigen_calving") ||
-      config.get_flag("do_thickness_calving") ||
-      config.get_flag("ocean_kill")) {
+  if (config.get_string("calving_methods").empty() == false) {
     config.set_flag_from_option("kill_icebergs", true);
   }
 

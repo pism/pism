@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2013 The PISM Authors
+# Copyright (C) 2009-2014 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -152,9 +152,9 @@ fi
 
 # set stress balance from argument 5
 if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
-  PHYS="-ocean_kill ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
+  PHYS="-calving ocean_kill -ocean_kill_file ${PISM_DATANAME} -sia_e ${PARAM_SIAE}"
 else
-  PHYS="-ocean_kill ${PISM_DATANAME} -sia_e 3.0"
+  PHYS="-calving ocean_kill -ocean_kill_file ${PISM_DATANAME} -sia_e 3.0"
 fi
 # done forming $PHYS if "$5" = "sia"
 if [ "$5" = "hybrid" ]; then

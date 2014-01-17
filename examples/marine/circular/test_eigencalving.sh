@@ -20,7 +20,7 @@ stressbalance="-ssa_method fd -ssa_sliding -ssa_dirichlet_bc -no_sia"
 
 output_basename="test_eigencalving"
 
-calving="-eigen_calving -eigen_calving_K 1e15"
+calving="-calving eigen_calving -eigen_calving_K 1e15"
 
 diagnostics="thk,mask,cbar,Href,velbar,discharge_flux_cumulative"
 

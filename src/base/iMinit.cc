@@ -1092,26 +1092,35 @@ PetscErrorCode IceModel::misc_setup() {
 PetscErrorCode IceModel::init_calving() {
   PetscErrorCode ierr;
 
-  if (config.get_flag("ocean_kill") == true) {
+  std::istringstream arg(config.get_string("calving_methods"));
+  std::string method_name;
+  std::set<std::string> methods;
+
+    while (getline(arg, method_name, ','))
+      methods.insert(method_name);
+
+  if (methods.find("ocean_kill") != methods.end()) {
 
     if (ocean_kill_calving == NULL) {
       ocean_kill_calving = new PISMOceanKill(grid, config);
     }
 
     ierr = ocean_kill_calving->init(variables); CHKERRQ(ierr);
+    methods.erase("ocean_kill");
   }
 
-  if (config.get_flag("do_thickness_calving") == true) {
+  if (methods.find("thickness_calving") != methods.end()) {
 
     if (thickness_threshold_calving == NULL) {
       thickness_threshold_calving = new PISMCalvingAtThickness(grid, config);
     }
 
     ierr = thickness_threshold_calving->init(variables); CHKERRQ(ierr);
+    methods.erase("thickness_calving");
   }
 
 
-  if (config.get_flag("do_eigen_calving")) {
+  if (methods.find("eigen_calving") != methods.end()) {
 
     if (eigen_calving == NULL) {
       eigen_calving = new PISMEigenCalving(grid, config,
@@ -1119,16 +1128,31 @@ PetscErrorCode IceModel::init_calving() {
     }
 
     ierr = eigen_calving->init(variables); CHKERRQ(ierr);
+    methods.erase("eigen_calving");
   }
 
-  if (config.get_flag("floating_ice_killed")) {
+  if (methods.find("float_kill") != methods.end()) {
     if (float_kill_calving == NULL) {
       float_kill_calving = new PISMFloatKill(grid, config);
     }
 
     ierr = float_kill_calving->init(variables); CHKERRQ(ierr);
+    methods.erase("float_kill");
   }
-  
+
+  std::set<std::string>::iterator j = methods.begin();
+  std::string unused;
+  while (j != methods.end()) {
+    unused += *j;
+    ++j;
+  }
+
+  if (unused.empty() == false) {
+    ierr = verbPrintf(2, grid.com,
+                      "PISM ERROR: calving method(s) %s are unknown and are ignored.\n",
+                      unused.c_str()); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 

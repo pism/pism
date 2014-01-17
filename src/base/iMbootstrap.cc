@@ -169,7 +169,7 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
     ierr = vHref.set(0.0); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("do_eigen_calving")) {
+  if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
     ierr = strain_rates.set(0.0); CHKERRQ(ierr);
   }
 

@@ -54,8 +54,8 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-ocean_kill", "Specifies a file to get -ocean_kill thickness from",
-                             filename, flag, true); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-ocean_kill_file", "Specifies a file to get ocean_kill thickness from",
+                             filename, flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -65,12 +65,9 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
 
   IceModelVec2S thickness, *tmp;
 
-  if (filename.empty()) {
-    ierr = verbPrintf(2, grid.com,
-       "  using ice thickness at the beginning of the run\n"
-       "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
-    tmp = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-    assert(tmp != 0);
+  if (flag == false) {
+    PetscPrintf(grid.com, "PISM ERROR: option -ocean_kill_file is required.\n");
+    PISMEnd();
   } else {
     ierr = verbPrintf(2, grid.com,
        "  setting fixed calving front location using\n"

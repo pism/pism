@@ -67,14 +67,11 @@ netcdf pism_config {
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
 
-    pism_config:do_eigen_calving = "false";
-    pism_config:do_eigen_calving_doc = "calculate strain rates and related calving rate";
-
     pism_config:cfl_eigencalving = "false";
     pism_config:cfl_eigencalving_doc = "apply CFL criterion for eigen-calving rate front retreat";
 
-    pism_config:do_thickness_calving = "false";
-    pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
+    pism_config:calving_methods = "";
+    pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
 
     pism_config:do_fracture_density = "no";
     pism_config:do_fracture_density_doc = "Calculation of fracture density according to stresses and strain rate field.";
@@ -90,12 +87,6 @@ netcdf pism_config {
 
     pism_config:bed_def_lc_elastic_model = "no";
     pism_config:bed_def_lc_elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
-
-    pism_config:ocean_kill  = "false";
-    pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
-
-    pism_config:floating_ice_killed = "false";
-    pism_config:floating_ice_killed_doc = "If ice is (or becomes) floating then it is set to thickness zero. This is calving at the grounding line.";
 
     pism_config:is_dry_simulation = "no";
     pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation";
@@ -318,8 +309,8 @@ netcdf pism_config {
     pism_config:eigen_calving_K = 0.0;
     pism_config:eigen_calving_K_doc = "m s; Set proportionality constant to determine calving rate from strain rates.  Note references [@ref Levermannetal2012, @ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s.";
 
-    pism_config:calving_at_thickness = 50.0;
-    pism_config:calving_at_thickness_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
+    pism_config:thickness_calving_threshold = 50.0;
+    pism_config:thickness_calving_threshold_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
 
     pism_config:nuBedrock = 5.0e15;
     pism_config:nuBedrock_doc = "Pa s; Staggered Viscosity used as side friction parameterization.";

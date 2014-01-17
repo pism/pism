@@ -4,7 +4,7 @@ N=6
 
 PREFIX=g10km
 
-climate="-atmosphere searise_greenland -surface pdd -ocean_kill pism_Greenland_5km_v1.1.nc"
+climate="-atmosphere searise_greenland -surface pdd -calving ocean_kill -ocean_kill_file pism_Greenland_5km_v1.1.nc"
 
 hydro="-hydrology routing -report_mass_accounting -hydrology_tillwat_transfer_proportion 200.0"
 

@@ -180,7 +180,6 @@ PetscErrorCode IceCompModel::setFromOptions() {
     config.set_flag("do_energy", false);
 
   config.set_flag("is_dry_simulation", true);
-  config.set_flag("ocean_kill", false);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
@@ -1350,7 +1349,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
  Try
 
- pismv -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -calving_at_thickness 250 -part_grid
+ pismv -test V -y 3000 -ssa_method fd -cfbc -o fig5.nc -thickness_calving_threshold 250 -part_grid
 
  with -Mx 51, -Mx 101, -Mx 201 for figure 5,
 

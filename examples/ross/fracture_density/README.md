@@ -3,7 +3,7 @@ Ross prognostic flow model example with applied fracture softening
 
 This example demonstrates regional modeling of ice shelf evolution with applied calculation of fracture density and respective macroscopic softening.
 
-This example uses `-ocean_kill` calving to hold the calving front in a fixed location.  Compare the example in `examples/ross/prognostic/`.
+This example uses `-calving ocean_kill` calving to hold the calving front in a fixed location.  Compare the example in `examples/ross/prognostic/`.
 
 It is recommended that you run `preprocess.py` in the parent directory `../`.  Then link the needed data files here to avoid downloading them again:
 

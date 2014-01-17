@@ -28,7 +28,7 @@ exs="-extra_file ex_ssl2.nc -extra_times 1000:1000:100000 -extra_vars diffusivit
 
 ts="-ts_file ts_ssl2.nc -ts_times 0:yearly:110000"
 
-PISM="pismr -sia_e 3 -ocean_kill -atmosphere eismint_greenland -surface pdd"
+PISM="pismr -sia_e 3 -calving ocean_kill -atmosphere eismint_greenland -surface pdd"
 
-$SHOW $MPIDO $NN $PISM -skip -skip_max 20 -i $INFILE -ys 0 -ye 110000 ${exs} ${ts} -o green_ssl2_110ka.nc
+$SHOW $MPIDO $NN $PISM -skip -skip_max 20 -i $INFILE -ocean_kill_file $INFILE -ys 0 -ye 110000 ${exs} ${ts} -o green_ssl2_110ka.nc
 

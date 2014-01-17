@@ -13,12 +13,12 @@ default: tongues.nc
 
 extra_calving=-extra_times 5 -extra_file ex.nc -extra_vars taud,cbar,thk,mask,discharge_flux_cumulative,velbar
 eigen_calving: tongues.nc
-	mpiexec -n 4 pismr -boot_file tongues.nc -eigen_calving -eigen_calving_K 2e18 \
+	mpiexec -n 4 pismr -boot_file tongues.nc -calving eigen_calving -eigen_calving_K 2e18 \
                            ${options} ${extra_calving}
 
 eigen_plus_thickness_calving: tongues.nc
-	mpiexec -n 4 pismr -boot_file tongues.nc -eigen_calving -eigen_calving_K 2e18 \
-                           -thickness_calving -calving_at_thickness 50 \
+	mpiexec -n 4 pismr -boot_file tongues.nc -calving eigen_calving,thickness_calving \
+	                   -eigen_calving_K 2e18 -thickness_calving_threshold 50 \
                            ${options} ${extra_calving}
 
 tongues.nc: generate_input.py

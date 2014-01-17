@@ -45,7 +45,7 @@ The script `create_runscript.py` is used to generate a `bash` script performing 
 			     resolutionmode=6: 16.6km
 			     If no option is set, standard resolution of 16.6 km is used. Note that the computational domain is doubled in both directions to 1600km x 100km to omit the implementation of boundary conditions along symmerty lines, but for additional computational cost.
 
-The initial ice sheet configuration from which the Stnd-experiment is started has the constant thickness of 500 meters. For all experiments, the ice shelf is cut off at the distance of x=700 km (option -ocean_kill) from the center of the computational domain, where the stress boundary condition is applied.
+The initial ice sheet configuration from which the Stnd-experiment is started has the constant thickness of 500 meters. For all experiments, the ice shelf is cut off at the distance of x=700 km (option `-calving ocean_kill`) from the center of the computational domain, where the stress boundary condition is applied.
 
 
 Implementation details

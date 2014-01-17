@@ -197,6 +197,15 @@ PetscErrorCode IceModel::createVecs() {
   ierr = verbPrintf(3, grid.com,
                     "Allocating memory...\n"); CHKERRQ(ierr);
 
+  // get the list of selected calving methods:
+  std::istringstream calving_methods_list(config.get_string("calving_methods"));
+  std::string calving_method_name;
+  std::set<std::string> calving_methods;
+
+  while (getline(calving_methods_list, calving_method_name, ','))
+    calving_methods.insert(calving_method_name);
+
+
   // The following code creates (and documents -- to some extent) the
   // variables. The main (and only) principle here is using standard names from
   // the CF conventions; see
@@ -260,7 +269,7 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
-  if(config.get_flag("do_eigen_calving")) {
+  if(calving_methods.find("eigen_calving") != calving_methods.end()) {
     ierr = vMask.create(grid, "mask", WITH_GHOSTS, 3); CHKERRQ(ierr);
     // This wider stencil is required by the calving code when asking
     // for mask values at the ice margin (offset+1)
@@ -354,7 +363,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = variables.add(vHref); CHKERRQ(ierr);
   }
 
-  if (config.get_flag("do_eigen_calving") == true ||
+  if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos ||
       config.get_flag("do_fracture_density") == true) {
 
     ierr = strain_rates.create(grid, "edot", WITH_GHOSTS,

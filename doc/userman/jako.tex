@@ -158,7 +158,7 @@ were not used.  However, the resulting not-very-realistic ice temperatures and s
 \item The calving front of the glacier is handled by the following option combination:
 \begin{quote}\small
 \begin{verbatim}
-   -ocean_kill jako.nc -cfbc -kill_icebergs
+   -calving ocean_kill jako.nc -cfbc -kill_icebergs
 \end{verbatim}
 \normalsize\end{quote}
 This choice uses the present-day ice extent, ultimately as defined by SeaRISE data in \verb|Greenland1km.nc|, to determine the location of the calving front.  It then applies the PIK mechanisms for the stress boundary condition at the calving front (\verb|-cfbc|), and it uses PIK mechanism \verb|-kill_icebergs| to eliminate any stray floating pieces of ice (for which stress balances are ill-posed \cite{Winkelmannetal2011}).
