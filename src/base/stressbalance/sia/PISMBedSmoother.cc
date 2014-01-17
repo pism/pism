@@ -144,7 +144,7 @@ Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
-PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S topg) {
+PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg) {
   PetscErrorCode ierr;
 
   if (m_smoothing_range <= 0.0) {
@@ -173,7 +173,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S topg) {
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
-PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S topg,
+PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg,
                                                PetscInt Nx_in, PetscInt Ny_in) {
   PetscErrorCode ierr;
 
@@ -326,9 +326,9 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
-                                                 IceModelVec2S thk,
-                                                 IceModelVec2Int mask,
+PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
+                                                 IceModelVec2S &thk,
+                                                 IceModelVec2Int &mask,
                                                  IceModelVec2S *thksmooth) { 
   PetscErrorCode ierr;  
 
@@ -399,7 +399,7 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S usurf, IceModelVec2S *theta) {
+PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
   PetscErrorCode ierr;
 
   if ((Nx < 0) || (Ny < 0)) {

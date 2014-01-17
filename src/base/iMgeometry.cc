@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -533,18 +533,16 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // FIXME: use corrected cell areas (when available)
   PetscScalar factor = config.get("ice_density") * (dx * dy);
 
-  if (surface != NULL) {
-    ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
-  } else { SETERRQ(grid.com, 1, "PISM ERROR: surface == NULL"); }
+  assert(surface != NULL);
+  ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
 
-  if (ocean != NULL) {
-    ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
-  } else { SETERRQ(grid.com, 2, "PISM ERROR: ocean == NULL"); }
+  assert(ocean != NULL);
+  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
 
-  IceModelVec2S vHnew = vWork2d[0];
+  IceModelVec2S &vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
-  IceModelVec2S H_residual = vWork2d[1];
+  IceModelVec2S &H_residual = vWork2d[1];
 
   IceModelVec2Stag *Qdiff;
   ierr = stress_balance->get_diffusive_flux(Qdiff); CHKERRQ(ierr);
@@ -879,9 +877,9 @@ PetscErrorCode IceModel::sub_gl_position() {
     ocean_rho = config.get("sea_water_density"),
     rhoq = ice_rho/ocean_rho;
 
-  IceModelVec2S gl_mask_new = vWork2d[0];
-  IceModelVec2S gl_mask_unground_x = vWork2d[0];
-  IceModelVec2S gl_mask_unground_y = vWork2d[0];
+  IceModelVec2S &gl_mask_new = vWork2d[0];
+  IceModelVec2S &gl_mask_unground_x = vWork2d[1];
+  IceModelVec2S &gl_mask_unground_y = vWork2d[2];
 
   ierr =    vH.begin_access(); CHKERRQ(ierr);
   ierr =  vbed.begin_access(); CHKERRQ(ierr);

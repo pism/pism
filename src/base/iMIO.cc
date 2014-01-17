@@ -637,8 +637,8 @@ PetscErrorCode IceModel::init_enthalpy(std::string filename,
       ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
     }
   } else if (temp_exists == true) {
-    IceModelVec3 temp = vWork3d,
-      liqfrac         = Enth3;
+    IceModelVec3 &temp = vWork3d,
+      &liqfrac         = Enth3;
 
     NCSpatialVariable enthalpy_metadata = Enth3.metadata();
     ierr = temp.set_name("temp"); CHKERRQ(ierr);

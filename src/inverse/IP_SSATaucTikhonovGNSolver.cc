@@ -189,7 +189,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec h, PetscReal *value) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, PetscReal *value) {
   PetscErrorCode ierr;
   
   ierr = m_ssaforward.apply_linearization(h,m_tmp_S1Local); CHKERRQ(ierr);

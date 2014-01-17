@@ -158,7 +158,6 @@ enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
 class IceModelVec {
 public:
   IceModelVec();
-  IceModelVec(const IceModelVec &other);
   virtual ~IceModelVec();
 
   virtual bool was_created();
@@ -225,7 +224,6 @@ protected:
   std::vector<double> zlevels;
   unsigned int m_n_levels;                 //!< number of vertical levels
 
-  bool shallow_copy;            //!< True if this IceModelVec is a shallow copy.
   Vec  v;                       //!< Internal storage
   std::string m_name;
 
@@ -242,9 +240,8 @@ protected:
   bool begin_end_access_use_dof;
 
   //! It is a map, because a temporary IceModelVec can be used to view
-  //! different quantities, and a pointer because "shallow copies" should have
-  //! the acces to the original std::map
-  std::map<std::string,PetscViewer> *map_viewers;
+  //! different quantities
+  std::map<std::string,PetscViewer> map_viewers;
 
   void *array;  // will be cast to PetscScalar** or PetscScalar*** in derived classes
 
@@ -258,6 +255,9 @@ protected:
   void check_array_indices(int i, int j, unsigned int k);
   virtual PetscErrorCode reset_attrs(unsigned int N);
 private:
+  // disable copy constructor and the assignment operator:
+  IceModelVec(const IceModelVec &other);
+  IceModelVec& operator=(const IceModelVec&);
   PetscErrorCode dump(const char filename[]);
 };
 
@@ -295,7 +295,6 @@ class IceModelVec2S;
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2() : IceModelVec() {}
-  IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {};
   virtual PetscErrorCode view(PetscInt viewer_size);
   virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
   using IceModelVec::write;
@@ -327,7 +326,6 @@ class IceModelVec2S : public IceModelVec2 {
   friend class IceModelVec2Stag;
 public:
   IceModelVec2S() { begin_end_access_use_dof = false; }
-  IceModelVec2S(const IceModelVec2S &other) : IceModelVec2(other) {}
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
   virtual PetscErrorCode  create(IceGrid &my_grid, std::string my_name,
@@ -500,8 +498,6 @@ inline PISMVector2 operator*(const PetscScalar &a, const PISMVector2 &v1) {
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
-  IceModelVec2V(const IceModelVec2V &other) : IceModelVec2(other) {}
-
   ~IceModelVec2V() {}
 
   using IceModelVec2::create;
@@ -561,7 +557,6 @@ public:
     m_dof = 2;
     begin_end_access_use_dof = true;
   }
-  IceModelVec2Stag(const IceModelVec2Stag &other) : IceModelVec2(other) {}
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
                                 unsigned int stencil_width = 1);
@@ -599,7 +594,6 @@ class IceModelVec3D : public IceModelVec
 {
 public:
   IceModelVec3D();
-  IceModelVec3D(const IceModelVec3D &other);
   virtual ~IceModelVec3D();
 public:
 
@@ -629,8 +623,6 @@ protected:
 class IceModelVec3 : public IceModelVec3D {
 public:
   IceModelVec3() {}
-  IceModelVec3(const IceModelVec3 &other) : IceModelVec3D(other)
-  { begin_end_access_use_dof = true; }
   virtual ~IceModelVec3() {}
 
   virtual PetscErrorCode create(IceGrid &mygrid, std::string my_short_name,

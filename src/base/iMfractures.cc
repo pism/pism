@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2013 Torsten Albrecht
+// Copyright (C) 2011-2014 Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,9 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   const PetscScalar dx = grid.dx, dy = grid.dy, Mx = grid.Mx, My = grid.My;
   PetscErrorCode ierr;
   
-  IceModelVec2S vFDnew = vWork2d[0], vFAnew = vWork2d[1];
+  IceModelVec2S
+    &vFDnew = vWork2d[0],
+    &vFAnew = vWork2d[1];
   
   // get SSA velocities and related strain rates and stresses
   IceModelVec2V *ssa_velocity;

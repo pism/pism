@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2014 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,8 +35,9 @@
 PetscErrorCode IceModel::do_calving() {
   PetscErrorCode ierr;
   bool compute_cumulative_discharge = discharge_flux_2D_cumulative.was_created();
-  IceModelVec2S old_H = vWork2d[0],
-    old_Href = vWork2d[1];
+  IceModelVec2S
+    &old_H    = vWork2d[0],
+    &old_Href = vWork2d[1];
 
   if (compute_cumulative_discharge) {
     ierr = vH.copy_to(old_H); CHKERRQ(ierr);

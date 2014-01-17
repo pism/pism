@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Constantine Khroulev
+// Copyright (C) 2009--2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -96,7 +96,6 @@
 class IceModelVec2T : public IceModelVec2S {
 public:
   IceModelVec2T();
-  IceModelVec2T(const IceModelVec2T &other);
   virtual ~IceModelVec2T();
 
   virtual void set_n_records(unsigned int N);
@@ -135,8 +134,6 @@ protected:
                                 //!< used to compute temporal averages
   int first; //!< in-file index of the first record stored in memory
              //!< ("int" to allow first==-1 as an "invalid" first value)
-
-  LocalInterpCtx *lic;
 
   std::vector<unsigned int> m_interp_indices;
   unsigned int m_period;        // in years

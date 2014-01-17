@@ -195,7 +195,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       SETERRQ(grid.com, 1,"PISM ERROR: ocean == PETSC_NULL");
     }
 
-    IceModelVec2S G0 = vWork2d[0];
+    IceModelVec2S &G0 = vWork2d[0];
     ierr = G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", ""); CHKERRQ(ierr);
     ierr = G0.set_glaciological_units("mW m-2");
     if (btu) {
@@ -204,7 +204,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       SETERRQ(grid.com, 3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in temperatureStep()");
     }
 
-    IceModelVec2S bwatcurr = vWork2d[1];
+    IceModelVec2S &bwatcurr = vWork2d[1];
     ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
     ierr = bwatcurr.set_glaciological_units("m");
     if (subglacial_hydrology) {

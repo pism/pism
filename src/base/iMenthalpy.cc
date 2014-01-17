@@ -242,13 +242,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
   ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
 
-  IceModelVec2S basal_heat_flux = vWork2d[0];
+  IceModelVec2S &basal_heat_flux = vWork2d[0];
   ierr = basal_heat_flux.set_attrs("internal", "upward heat flux at z=0",
                                    "W m-2", ""); CHKERRQ(ierr);
   assert(btu != NULL);
   ierr = btu->get_upward_geothermal_flux(basal_heat_flux); CHKERRQ(ierr);
 
-  IceModelVec2S till_water_thickness = vWork2d[1];
+  IceModelVec2S &till_water_thickness = vWork2d[1];
   ierr = till_water_thickness.set_attrs("internal", "current amount of basal water in the till",
                                          "m", ""); CHKERRQ(ierr);
   assert(subglacial_hydrology != NULL);

@@ -75,14 +75,14 @@ public:
   PISMBedSmoother(IceGrid &g, const PISMConfig &conf, PetscInt MAX_GHOSTS);
   virtual ~PISMBedSmoother();
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S topg);
+  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg);
 
   // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
   virtual PetscErrorCode get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out);
 
-  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S usurf, IceModelVec2S thk,
-                                          IceModelVec2Int mask, IceModelVec2S *thksmooth);
-  virtual PetscErrorCode get_theta(IceModelVec2S usurf, IceModelVec2S *theta);
+  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S &usurf, IceModelVec2S &thk,
+                                          IceModelVec2Int &mask, IceModelVec2S *thksmooth);
+  virtual PetscErrorCode get_theta(IceModelVec2S &usurf, IceModelVec2S *theta);
 
   //! smoothed bed elevation; publicly-available; set by calling preprocess_bed()
   IceModelVec2S topgsmooth;
@@ -108,7 +108,7 @@ protected:
       maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
       C2p0, C3p0, C4p0;
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S topg,
+  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg,
                                         PetscInt Nx_in, PetscInt Ny_in);
 
   PetscErrorCode smooth_the_bed_on_proc0();

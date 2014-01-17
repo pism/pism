@@ -34,39 +34,13 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   N                      = 0;
   n_records              = 50;	// just a default
   m_report_range         = false;
-  lic                    = NULL;
   m_period               = 0;
   m_reference_time       = 0.0;
   n_evaluations_per_year = 53;
 }
 
-IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) {
-  shallow_copy = true;
-
-  array3       = other.array3;
-  da3          = other.da3;
-  filename     = other.filename;
-  first        = other.first;
-  N            = other.N;
-  lic          = other.lic;
-  m_has_ghosts = other.m_has_ghosts;
-  n_records    = other.n_records;
-  time         = other.time;
-  time_bounds  = other.time_bounds;
-  v3           = other.v3;
-
-  m_interp_indices = other.m_interp_indices;
-  m_period         = other.m_period;
-  m_reference_time = other.m_reference_time;
-
-  n_evaluations_per_year = other.n_evaluations_per_year;
-}
-
 IceModelVec2T::~IceModelVec2T() {
-  if (shallow_copy == false) {
-    delete lic;
-    destroy();
-  }
+  destroy();
 }
 
 

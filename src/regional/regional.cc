@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -40,8 +40,8 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
 
   ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 
-  IceModelVec2Int nmm = *no_model_mask;
-  IceModelVec2S hst = *usurfstore; // convenience
+  IceModelVec2Int &nmm = *no_model_mask;
+  IceModelVec2S &hst = *usurfstore; // convenience
 
   const int Mx = grid.Mx, My = grid.My;
   const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
@@ -134,7 +134,7 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
   ierr = SSAFD::compute_driving_stress(result); CHKERRQ(ierr);
 
-  IceModelVec2Int nmm = *no_model_mask;
+  IceModelVec2Int &nmm = *no_model_mask;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = nmm.begin_access(); CHKERRQ(ierr);

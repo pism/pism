@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -121,7 +121,7 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 //! strain heating.
 PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
-  IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
+  IceModelVec2Stag &h_x = work_2d_stag[0], &h_y = work_2d_stag[1];
 
   grid.profiler->begin(event_sia);
 
@@ -218,7 +218,7 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
   const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
-  IceModelVec2S eta = work_2d[0];
+  IceModelVec2S &eta = work_2d[0];
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
   ierr = thickness->begin_access(); CHKERRQ(ierr);
@@ -541,8 +541,8 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
 PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                              IceModelVec2Stag &result, bool fast) {
   PetscErrorCode  ierr;
-  IceModelVec2S thk_smooth = work_2d[0],
-    theta = work_2d[1];
+  IceModelVec2S &thk_smooth = work_2d[0],
+    &theta = work_2d[1];
 
   bool full_update = (fast == false);
 
@@ -727,7 +727,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
  */
 PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  IceModelVec2Stag D_stag = work_2d_stag[0];
+  IceModelVec2Stag &D_stag = work_2d_stag[0];
 
   ierr = this->compute_diffusivity_staggered(D_stag); CHKERRQ(ierr);
 
@@ -747,7 +747,7 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
 
   // delta on the staggered grid:
   PetscScalar *delta_ij;
-  IceModelVec2S thk_smooth = work_2d[0];
+  IceModelVec2S &thk_smooth = work_2d[0];
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         &thk_smooth); CHKERRQ(ierr);
@@ -829,8 +829,8 @@ PetscErrorCode SIAFD::compute_I() {
   PetscErrorCode ierr;
   PetscScalar *I_ij, *delta_ij;
 
-  IceModelVec2S thk_smooth = work_2d[0];
-  IceModelVec3 I[2] = {work_3d[0], work_3d[1]};
+  IceModelVec2S &thk_smooth = work_2d[0];
+  IceModelVec3* I = work_3d;
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         &thk_smooth); CHKERRQ(ierr);
@@ -905,7 +905,7 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
 
   ierr = compute_I(); CHKERRQ(ierr);
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
-  IceModelVec3 I[2] = {work_3d[0], work_3d[1]};
+  IceModelVec3 *I = work_3d;
 
   PetscScalar *u_ij, *v_ij, *IEAST, *IWEST, *INORTH, *ISOUTH;
 

@@ -40,8 +40,6 @@ IceModelVec::IceModelVec() {
 
   m_has_ghosts = true;
 
-  map_viewers = new std::map<std::string,PetscViewer>;
-
   m_n_levels = 1;
   m_name = "unintialized variable";
 
@@ -50,51 +48,12 @@ IceModelVec::IceModelVec() {
   // vars.resize(dof);
   reset_attrs(0);
 
-  shallow_copy = false;
   state_counter = 0;
 
   v = NULL;
 
   zlevels.resize(1);
   zlevels[0] = 0.0;
-}
-
-//! Creates a shallow copy of an `IceModelVec`.
-/*!
-  No data is copied to the new IceModelVec.
-
-  The difference is that such a copy will not free the memory when de-allocated
-  (by "delete" or of it goes out of scope).
- */
-IceModelVec::IceModelVec(const IceModelVec &other) {
-  access_counter = other.access_counter;
-  array = other.array;
-
-  m_da_stencil_width = other.m_da_stencil_width;
-  m_dof = other.m_dof;
-  m_da = other.m_da;
-  begin_end_access_use_dof = other.begin_end_access_use_dof;
-
-  grid = other.grid;
-
-  m_has_ghosts = other.m_has_ghosts;
-
-  map_viewers = other.map_viewers;
-
-  m_n_levels = other.m_n_levels;
-  m_name = other.m_name;
-
-  m_report_range = other.m_report_range;
-
-  shallow_copy = true;
-  state_counter = other.state_counter;
-
-  v = other.v;
-  m_metadata = other.m_metadata;
-
-  write_in_glaciological_units = other.write_in_glaciological_units;
-
-  zlevels = other.zlevels;
 }
 
 //! \brief Get the object state counter.
@@ -123,8 +82,7 @@ void IceModelVec::inc_state_counter() {
 }
 
 IceModelVec::~IceModelVec() {
-  // Only destroy the IceModelVec if it is not a shallow copy:
-  if (!shallow_copy) destroy();
+  destroy();
 }
 
 //! Returns true if create() was called and false otherwise.
@@ -159,21 +117,16 @@ PetscErrorCode  IceModelVec::destroy() {
   }
 
   // map-plane viewers:
-  if (map_viewers != NULL) {
+  {
     std::map<std::string,PetscViewer>::iterator i;
-    for (i = (*map_viewers).begin(); i != (*map_viewers).end(); ++i) {
-      if ((*i).second != NULL) {
-	ierr = PetscViewerDestroy(&(*i).second); CHKERRQ(ierr);
+    for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
+      if (i->second != NULL) {
+	ierr = PetscViewerDestroy(&i->second); CHKERRQ(ierr);
       }
     }
-    delete map_viewers;
-    map_viewers = NULL;
   }
 
-#if (PISM_DEBUG==1)
-  if (access_counter != 0)
-    SETERRQ(grid->com, 1, "begin_access() and end_access() calls are not matched (access_counter != 0)");
-#endif
+  assert(access_counter == 0);
 
   return 0;
 }

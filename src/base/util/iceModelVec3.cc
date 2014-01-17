@@ -37,14 +37,7 @@ IceModelVec3D::IceModelVec3D() : IceModelVec() {
 }
 
 IceModelVec3D::~IceModelVec3D() {
-  if (shallow_copy == false) {
-    destroy();
-  }
-}
-
-IceModelVec3D::IceModelVec3D(const IceModelVec3D &other)
-  : IceModelVec(other) {
-  shallow_copy = true;
+  destroy();
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.

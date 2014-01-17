@@ -264,11 +264,11 @@ PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
       units = m_metadata[j].get_string("glaciological_units"),
       title = long_name + " (" + units + ")";
 
-    if ((*map_viewers)[c_name] == PETSC_NULL) {
-      ierr = grid->create_viewer(viewer_size, title, (*map_viewers)[c_name]); CHKERRQ(ierr);
+    if (map_viewers[c_name] == PETSC_NULL) {
+      ierr = grid->create_viewer(viewer_size, title, map_viewers[c_name]); CHKERRQ(ierr);
     }
 
-    viewers[j] = (*map_viewers)[c_name];
+    viewers[j] = map_viewers[c_name];
   }
 
   ierr = view(viewers[0], viewers[1]); CHKERRQ(ierr); 

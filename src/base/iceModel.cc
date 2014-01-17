@@ -679,7 +679,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   PetscReal sea_level = 0;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
-  IceModelVec2S melange_back_pressure = vWork2d[0];
+  IceModelVec2S &melange_back_pressure = vWork2d[0];
 
   ierr = ocean->melange_back_pressure_fraction(melange_back_pressure); CHKERRQ(ierr);
 

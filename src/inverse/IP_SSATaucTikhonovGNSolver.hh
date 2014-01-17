@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -73,7 +73,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode evaluateGNFunctional(DesignVec h, PetscReal *value);
+  virtual PetscErrorCode evaluateGNFunctional(DesignVec &h, PetscReal *value);
 
   virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
   virtual PetscErrorCode apply_GN(Vec h, Vec out);

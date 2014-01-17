@@ -429,7 +429,7 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const PetscInt nWork2d=2;
+  static const PetscInt nWork2d=3;
   IceModelVec2S vWork2d[nWork2d];
   IceModelVec2V vWork2dV;
 
