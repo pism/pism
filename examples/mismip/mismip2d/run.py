@@ -107,7 +107,7 @@ class Experiment:
                    "-ssa_flow_law isothermal_glen", # isothermal setup
                    "-no_energy",                    # isothermal setup
                    "-ssa_sliding",                  # use SSA
-                   "-hold_tauc",
+                   "-yield_stress constant",
                    "-tauc %e" % MISMIP.C(self.experiment),
                    "-pseudo_plastic",
                    "-gradient eta",

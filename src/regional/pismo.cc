@@ -252,7 +252,6 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
 
 
 PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
-  PetscErrorCode ierr;
 
   if (basal_yield_stress != NULL)
     return 0;
@@ -261,16 +260,19 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
     do_blatter = config.get_flag("do_blatter");
 
   if (use_ssa_velocity || do_blatter) {
-    bool hold_tauc;
-    ierr = PISMOptionsIsSet("-hold_tauc", hold_tauc); CHKERRQ(ierr);
-    
-    if (hold_tauc) {
+    std::string yield_stress_model = config.get_string("yield_stress_model");
+
+    if (yield_stress_model == "constant") {
       basal_yield_stress = new PISMConstantYieldStress(grid, config);
-    } else {
+    } else if (yield_stress_model == "mohr_coulomb") {
       basal_yield_stress = new PISMRegionalDefaultYieldStress(grid, config, subglacial_hydrology);
+    } else {
+      PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
+                  yield_stress_model.c_str());
+      PISMEnd();
     }
   }
-  
+
   return 0;
 }
 

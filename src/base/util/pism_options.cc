@@ -728,6 +728,9 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, PISMConfig &config) {
   ierr = config.flag_from_option("tauc_slippery_grounding_lines",
                                  "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
 
+  ierr = config.keyword_from_option("yield_stress", "yield_stress_model",
+                                    "constant,mohr_coulomb"); CHKERRQ(ierr);
+
   // all basal strength models use this in ice-free areas
   ierr = config.scalar_from_option("high_tauc", "high_tauc");      CHKERRQ(ierr);
 
