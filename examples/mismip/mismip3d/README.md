@@ -11,14 +11,22 @@ Note that the script `createSetup_PXXS.py` needs the result of the Standard (Stn
 Usage
 -------
 
-For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA computation, grounding line interpolation and accumulation rate of 0.5m/a, and a resolution of dx=dy=1km, do:
+For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA computation (model 2), grounding line interpolation, an accumulation rate of 0.5m/a, and a resolution of dx = dy = 2.5 km, do:
 
     $ ./preprocess      # generate MISMIP3D_conf.nc, used by all experiments
-    $ ./create_runscript.py -m 2 -s -a 0.5 -r 2 -e Stnd > runscript.sh
-    $ bash runscript.sh > Stnd.out &
+    $ ./create_runscript.py -m 2 -s -a 0.5 -r 3 -e Stnd > runStnd.sh
+    $ bash runStnd.sh > out.Stnd &
 
-FIXME: with adapted paths for the Python and PISM executables
-FIXME: add P10S
+Three files will be output, `Stnd.nc`, `ts_Stnd.nc`, and `ex_Stnd.nc`.  This `Stnd` run uses `My=3` as would a MISMIP flowline experiment.
+
+Now do the first experiment, which uses information from `ex_Stnd.nc` and builds a `Mx=641` by `My=41` grid, again with 2.5 km resolution:
+
+    $ ./create_runscript.py -m 2 -s -a 0.5 -r 3 -e P10S > runP10S.sh
+    $ bash runP10S.sh > out.P10S &
+
+FIXME: do rest of experiments
+
+Note that the submitted MISMIP3d runs had `-r 2` with 1 km spacing (or finer: `-r 1` with 0.5 km spacing).
 
 
 Options for `create_runscript.py`
@@ -51,12 +59,12 @@ The initial ice sheet configuration from which the Stnd-experiment is started ha
 Implementation details
 ----------------------
 
-We can turn PISM's default sliding law into MISMIP's power law by setting the
-threshold speed to 1 meter per second, which will make it inactive.
+We turn PISM's default sliding law into MISMIP's power law by setting the
+threshold speed to 1 meter per second.
 
 The `-pseudo_plastic_uthreshold` command-line option takes an argument in meters per year, so we use `-pseudo_plastic_uthreshold 3.15569259747e7`, where `3.15569259747e7` is the number of seconds in a year.
 
-The MISMIP parameter C corresponds to `tauc` in PISM. It can be set using `-yield_stress constant -tauc C`.
+The MISMIP parameter C corresponds to `tauc` in PISM.  It can be set using `-yield_stress constant -tauc C`.
 
 The MISMIP power law exponent `m` corresponds to `-pseudo_plastic_q` in PISM.
 

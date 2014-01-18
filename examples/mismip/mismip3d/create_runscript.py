@@ -35,23 +35,13 @@ print '#!/bin/bash'
 print ''
 print '###### MISMIP3D run script for experiment %s, model %d, and resolution mode %d ######' \
       % (args.e, args.m, args.r)
-
-if args.n > 1:
-    print 'pismr="%s"' % (args.mpiname + (' -n %d ' % args.n) + args.pismpath)
-else:
-    print 'pismr="%s"' % args.pismpath
-
-print 'python="%s"' % args.pythonpath
-
-if args.m==1:
-	print 'modelopt="-no_sia" '
-elif args.m==2:
-	print 'modelopt="-sia -sia_flow_law isothermal_glen" '
+print ''
 
 print 'accumrate=%s' % args.accumrate
 
 # note My is ignored if args.e=='Stnd'
 print ''
+print '# grid'
 if args.r==1:
 	print 'resolution=0.5 # resolution in km'
 	print 'Mx=3201'
@@ -78,7 +68,6 @@ elif args.r==6:
 	print 'My=7'
 
 print ''
-
 if args.subgl:
 	print '# subgrid grounding line interpolation is used'
 	print 's="-s"'
@@ -91,41 +80,63 @@ else:
 	print 'gl_mask=" "'
 
 print ''
-
-print 'listexvar="thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,deviatoric_stresses,climatic_mass_balance$gl_mask"'
-
-FIXME
-
-print 'commonopts="$subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding -pseudo_plastic -gradient eta  -calving ocean_kill -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ssafd_ksp_rtol 1e-7"'
+if args.e in {'Stnd','P10S','P75S'}:
+    print '# create bootstrap file using python ...'
+else:
+    print '# NOT creating bootstrap file since experiment %s starts from previously-saved state' % args.e
 
 if args.e=='Stnd':
-    print 'integration_time=3000'
-    print '$python createSetup_Stnd.py -a $accumrate -r $resolution'
-    print 'interval=$(($integration_time/50))'
-    print ''
-    print '$pismr -boot_file MISMIP3D_stnd_initialSetup.nc -Mx $Mx -My 3 -Mz 15 -Lz 6000 $subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding  -pseudo_plastic -gradient eta -pseudo_plastic_q 0.333333333 -tauc 1.0e7 -yield_stress constant -pseudo_plastic_uthreshold 3.155693e+07 -calving ocean_kill -ocean_kill_file MISMIP3D_stnd_initialSetup.nc -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ssafd_ksp_rtol 1e-7 -ys 0 -ye $integration_time -options_left -extra_file ex_Stnd.nc -extra_times 0:50:$integration_time -extra_vars $listexvar -ts_file ts_Stnd.nc -ts_times 0:50:$integration_time -o Stnd.nc -o_order zyx -o_size big'
-
+    print '%s createSetup_Stnd.py -a $accumrate -r $resolution' % args.pythonpath
 elif args.e=='P10S':
-    print 'integration_time=100'
     print 'amplitude=0.1'
-    print '$python createSetup_PXXS.py -a $amplitude -i ex_Stnd.nc $s'
-    print ''
-    print '$pismr -boot_file MISMIP3D_P10S_initialSetup.nc -Mx $Mx -My $My -Mz 15 -Lz 6000 $subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding  -pseudo_plastic -gradient eta -pseudo_plastic_q 0.333333333 -yield_stress constant -pseudo_plastic_uthreshold 3.155693e+07 -calving ocean_kill -ocean_kill_file MISMIP3D_P10S_initialSetup.nc -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ssafd_ksp_rtol 1e-7 -ys 0 -ye $integration_time -options_left -stress_output -o P10S.nc -o_size big -o_order zyx -extra_file ex_P10S.nc -extra_times 0:1:$integration_time -extra_vars $listexvar -ts_file ts_P10S.nc -ts_times 0:1:$integration_time'
-
-elif args.e=='P10R':
-    print 'integration_time=100'
-    print ''
-    print '$pismr -i P10S.nc $subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding  -pseudo_plastic -gradient eta -pseudo_plastic_q 0.333333333 -tauc 1.0e7 -yield_stress constant -pseudo_plastic_uthreshold 3.155693e+07 -calving ocean_kill -ocean_kill_file P10S.nc -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ssafd_ksp_rtol 1e-7 -ys 0 -ye $integration_time -options_left -o_size big -o P10R.nc -o_order zyx -extra_file ex_P10R.nc -extra_times 0:1:$integration_time -stress_output -extra_vars $listexvar -ts_file ts_P10R.nc -ts_times 0:10:$integration_time'
-
+    print '%s createSetup_PXXS.py -a $amplitude -i ex_Stnd.nc $s' % args.pythonpath
 elif args.e=='P75S':
-    print 'integration_time=100'
     print 'amplitude=0.75'
-    print '$python createSetup_PXXS.py -a $amplitude -i ex_Stnd.nc $s'
-    print ''
-    print '$pismr -boot_file MISMIP3D_P75S_initialSetup.nc -Mx $Mx -My $My -Mz 15 -Lz 6000 $subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding  -pseudo_plastic -gradient eta -pseudo_plastic_q 0.333333333 -yield_stress constant -pseudo_plastic_uthreshold 3.155693e+07 -calving ocean_kill -ocean_kill_file MISMIP3D_P75S_initialSetup.nc -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ssafd_ksp_rtol 1e-7 -ys 0 -ye $integration_time -options_left -stress_output -o P75S.nc -o_size big -o_order zyx -extra_file ex_P75S.nc -extra_times 0:1:$integration_time -extra_vars $listexvar -ts_file ts_P75S.nc -ts_times 0:1:$integration_time'
+    print '%s createSetup_PXXS.py -a $amplitude -i ex_Stnd.nc $s' % args.pythonpath
 
-elif args.e=='P75R':
+print ''
+print '# build the PISM command'
+if args.n > 1:
+    print 'pismr="%s"' % (args.mpiname + (' -n %d ' % args.n) + args.pismpath)
+else:
+    print 'pismr="%s"' % args.pismpath
+
+print ''
+
+print 'listexvar="thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,deviatoric_stresses,climatic_mass_balance$gl_mask"'
+if args.e == 'Stnd':
+    print 'integration_time=3000'
+    print 'extrastuff="-extra_times 0:50:$integration_time -extra_vars $listexvar"'
+else:
     print 'integration_time=100'
-    print ''
-    print '$pismr -i P75S.nc $subgl -cold $modelopt -ssa_flow_law isothermal_glen -no_energy -ssa_sliding  -pseudo_plastic -gradient eta -pseudo_plastic_q 0.333333333 -tauc 1.0e7 -yield_stress constant -pseudo_plastic_uthreshold 3.155693e+07 -calving ocean_kill -ocean_kill_file P75S.nc -config_override MISMIP3D_conf.nc -ssa_method fd -cfbc -part_grid -ssafd_ksp_rtol 1e-7 -ys 0 -ye $integration_time -options_left -o_size big -o P10R.nc -o_order zyx -extra_file ex_P75R.nc -extra_times 0:1:$integration_time -stress_output -extra_vars $listexvar -ts_file ts_P75R.nc -ts_times 0:10:$integration_time'
+    print 'extrastuff="-extra_times 0:1:$integration_time -extra_vars $listexvar"'
+
+print ''
+print 'stressbalance="-ssa_sliding -ssa_method fd -ssa_flow_law isothermal_glen -ssafd_ksp_rtol 1e-7"'
+print 'basal="-yield_stress constant -pseudo_plastic -pseudo_plastic_q 0.333333333 -pseudo_plastic_uthreshold 3.155693e+07"'
+print 'calvingfront="-cfbc -part_grid -calving ocean_kill"'
+if args.m==1:
+	print 'modelopt="-no_sia" '
+elif args.m==2:
+	print 'modelopt="-sia -sia_flow_law isothermal_glen" '
+
+print ''
+print 'opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfront $subgl $modelopt -no_energy -cold -gradient eta -options_left -ts_file ts_%s.nc -ts_times 0:1:$integration_time -extra_file ex_%s.nc $extrastuff -ys 0 -ye $integration_time -o_order zyx -o_size big -o %s.nc"' % (args.e,args.e,args.e)
+
+print ''
+if args.e=='Stnd':
+    print 'infile=MISMIP3D_Stnd_initialSetup.nc'
+    print '$pismr -boot_file $infile -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -ocean_kill_file $infile $opts'
+elif args.e=='P10S':
+    print 'infile=MISMIP3D_P10S_initialSetup.nc'
+    print '$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts'
+elif args.e=='P10R':
+    print 'infile=P10S.nc'
+    print '$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts'
+elif args.e=='P75S':
+    print 'infile=MISMIP3D_P75S_initialSetup.nc'
+    print '$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $commonopts'
+elif args.e=='P75R':
+    print 'infile=P75S.nc'
+    print '$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts'
 

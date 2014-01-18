@@ -17,7 +17,7 @@ except:
 # geometry setup MISMIP3D Stnd-experiment
 
 
-WRIT_FILE = 'MISMIP3D_stnd_initialSetup.nc'
+WRIT_FILE = 'MISMIP3D_Stnd_initialSetup.nc'
 
 accumrate = 0.5 # accumulation rate in m/a
 
