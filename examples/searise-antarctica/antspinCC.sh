@@ -82,7 +82,7 @@ TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
 FULLPHYS="-ssa_sliding -hydrology null $PARAMS $TILLPHI"
 
 # use these if KSP "diverged" errors occur
-STRONGKSP="-ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
+STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
 
 
 echo "$SCRIPTNAME             PISM = $PISM_EXEC"
