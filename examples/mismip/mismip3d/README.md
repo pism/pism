@@ -3,57 +3,67 @@ MISMIP3D in PISM
 
 This directory contains scripts that can be used to run MISMIP3d experiments using PISM.  See section 10  .3 of the PISM User's Manual.
 
-In outline, running `preprocess.py` creates a config-override file `MISMIP3D_conf.nc`.  Then running `create_runscript.py` creates a shell script for running the experiments.  This shell script uses  `createSetup_Stnd.py` or `createSetup_PXXS.py` for creating the initial setup `.nc`-files which contain the geometry and basal sliding fields, and then it runs PISM for the experiment.
+In outline, running `preprocess.py` creates a config-override file `MISMIP3D_conf.nc`.  Then running `createscript.py` creates a shell script for running the experiments.  This shell script uses  `setup_Stnd.py` or `setup_PXXS.py` for creating the initial setup `.nc`-files which contain the geometry and basal sliding fields, and then it runs PISM for the experiment.
 
-Note that the script `createSetup_PXXS.py` needs the result of the Standard (Stnd) experiment for creating the setup of the P10S and P75S experiments.  The `PXXR` runs require the output of the corresponding `PXXS` experiment.
+Note that the script `setup_PXXS.py` needs the result of the Standard (Stnd) experiment for creating the setup of the P10S and P75S experiments.  The `PXXR` runs require the output of the corresponding `PXXS` experiment.
 
 
 Usage
 -------
 
-For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA computation (model 2), grounding line interpolation, an accumulation rate of 0.5m/a, and a resolution of dx = dy = 2.5 km, do:
+For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA computation (model 2), grounding line interpolation, a resolution of dx = dy = 2 km, and a (shortened) duration of 3000 years, do:
 
     $ ./preprocess      # generate MISMIP3D_conf.nc, used by all experiments
-    $ ./create_runscript.py -m 2 -s -a 0.5 -r 3 -e Stnd > runStnd.sh
+    $ ./createscript.py -n 2 -r 3 -d 3000 -s -e Stnd > runStnd.sh
     $ bash runStnd.sh > out.Stnd &
 
-Three files will be output, `Stnd.nc`, `ts_Stnd.nc`, and `ex_Stnd.nc`.  This `Stnd` run uses `My=3` as would a MISMIP flowline experiment.
+This 2 process run (`-n 2`) takes about three minutes on a 2013 laptop.
 
-Now do the first experiment, which uses information from `ex_Stnd.nc` and builds a `Mx=641` by `My=41` grid, again with 2.5 km resolution:
+This `Stnd` run uses `My=3` as would a MISMIP flowline experiment, and it uses `Mx=801` because of the 2 km resolution.  Three files will be output, `Stnd.nc`, `ts_Stnd.nc`, and `ex_Stnd.nc`.
 
-    $ ./create_runscript.py -m 2 -s -a 0.5 -r 3 -e P10S > runP10S.sh
-    $ bash runP10S.sh > out.P10S &
+Now do the first experiment, which uses information from `ex_Stnd.nc` and builds a `Mx=801` by `My=51` grid, again with 2 km resolution:
 
-FIXME: do rest of experiments
+    $ ./createscript.py -n 2 -r 3 -d 100 -s -e P75S > runP75S.sh
+    $ bash runP75S.sh > out.P75S &
 
-Note that the submitted MISMIP3d runs had `-r 2` with 1 km spacing (or finer: `-r 1` with 0.5 km spacing).
+This 2 process run and the next each take about 25 minutes on a 2013 laptop.  Next we try a reversibility experiment:
+
+    $ ./createscript.py -n 2 -r 3 -d 100 -s -e P75R > runP75R.sh
+    $ bash runP75R.sh > out.P75R &
+
+Note that more complete reversibility requires longer runs.  In fact, the PISM submission used `-d 30000` for the `Stnd` experiment and `-d 500` for the other experiments.  Also, the submitted MISMIP3d runs used resolution mode (`-r 2`) with 1 km spacing.
+
+The remaining implemented experiments are `P10S` and `P10R`.  They are run with the obvious modification, namely option `-e P10S` or `-e P10R` to the `createscript.py` script.
 
 
-Options for `create_runscript.py`
+Options for `createscript.py`
 -------------------------
 
-The script `create_runscript.py` is used to generate a `bash` script performing the set of MISMIP3d experiments. Following options can be set:
+Run
 
-      -m MODEL, --model=MODEL
-			    Choose SSA only or SIA+SSA computation. model=1 sets SSA only, model=2 SSA+SIA computation. If no option is set, model 2 is used.
+    $ ./createscript.p -h
 
-      -s, --subgl
-                if this option is set, subgrid groundling line interpolation method is used (as defined as "LI" in Gladstone et al., 2010, "Parameterising the grounding line in flow-line ice sheet models; The Cryosphere 4, p.605--619). Also, the field gl_mask is written into the extra file to determine the subgrid groundling line position. The subgrid groundling line interpolation method modifies basal friction in grid cells where the grounding lines position is identified. If no option is set, subgrid groundling line interpolation is not used.
+to see a usage message.
 
-      -a ACCUMRATE, --accumrate=ACCUMRATE
-			    sets the accumulation rate in meters per year. If no option is set, standard accumulation rate of a=0.5 m/a is used.
+Regarding the `-s` or `--subgl` option, if it is set then a subgrid grounding line (SGL) interpolation method is used.  This kind of method is called "LI" in Gladstone et al., 2010, "Parameterising the grounding line in flow-line ice sheet models; The Cryosphere 4, p.605--619.  If this option is set then the field `gl_mask` is written into the extra file to determine the SGL position. The SGL interpolation method modifies basal friction in grid cells where the grounding lines position is identified.  By default this option is not set.
 
-      -r RESOLUTIONMODE, --resolutionmode=RESOLUTIONMODE
-			    sets the grid resolution of the computational domain. Because the MISMP3d domain has the fixed size of 800km x 50km and for ensuring equally spaced boxes in x- and y-direction, only discrete choices of resolution are offered:
-			     resolutionmode=1: 0.5km
-			     resolutionmode=2: 1.0km
-			     resolutionmode=3: 2.5km
-			     resolutionmode=4: 5.0km
-			     resolutionmode=5: 10.0km
-			     resolutionmode=6: 16.6km
-			     If no option is set, standard resolution of 16.6 km is used. Note that the computational domain is doubled in both directions to 1600km x 100km to omit the implementation of boundary conditions along symmerty lines, but for additional computational cost.
+The `-r MODE` option sets the resolution mode.  Because the MISMP3d domain has the fixed size of 800 km x 50 km, and for ensuring equally spaced boxes in x- and y-direction, only discrete choices of resolution are offered:
 
-The initial ice sheet configuration from which the Stnd-experiment is started has the constant thickness of 500 meters. For all experiments, the ice shelf is cut off at the distance of x=700 km (option `-calving ocean_kill`) from the center of the computational domain, where the stress boundary condition is applied.
+    - MODE = 1: 0.5 km
+    - MODE = 2: 1.0 km
+    - MODE = 3: 2.0 km
+    - MODE = 4: 2.5 km
+    - MODE = 5: 5.0 km  [the default]
+    - MODE = 6: 10.0 km
+    - MODE = 7: 16.6 km
+
+Note that the computational domain is doubled in both directions to 1600 km x 100 km.  This avoids implementation of boundary conditions along symmerty lines, though at additional computational cost.
+
+The initial ice sheet configuration, from which the Stnd experiment is started, has constant thickness of 500 meters.
+
+For all the experiments, the ice shelf is cut off at the distance of x=700 km (option `-calving ocean_kill`) from the center of the computational domain.  At this calving front a stress boundary condition (`-cfbc`) is applied.
+
+For more details read the source code of `createscript.py`.
 
 
 Implementation details

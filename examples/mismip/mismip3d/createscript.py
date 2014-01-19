@@ -9,21 +9,22 @@ parser = argparse.ArgumentParser(description='Create run script for a MISMIP3d e
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-a', '--accumrate', metavar='A', type=float, default=0.5,
                    help='accumulation rate in meters/year')
+parser.add_argument('-d', '--duration', metavar='T', type=float, default=-1.0,
+                   help='duration of run in years (if not set, use 3000 years for Stnd and 100 for others)')
 parser.add_argument('-e', default='Stnd',
-                   choices=['Stnd','P10S','P10R','P75S','P75R'],  # P75D using Elmer is
-                                                                  # not implemented yet
-                   help='name of experiment')
+                   choices=['Stnd','P10S','P10R','P75S','P75R'],
+                   help='name of experiment; note P10D and P75D are not implemented yet')
 parser.add_argument('-m', choices=[1,2], type=int, default=2,
                    help='model; 1 = SSA only, 2 = hybrid SIA+SSA')
 parser.add_argument('--mpiname', metavar='NAME', default='mpiexec',
                    help='name of mpi executable')
 parser.add_argument('-n', metavar='N', type=int, default=2,
-                   help='number of MPI processes')
+                   help='number of MPI processes; if N=1 then MPI is not used')
 parser.add_argument('--pismpath', metavar='PATH', default='pismr',
                    help='full path to PISM executable pismr')
 parser.add_argument('--pythonpath', metavar='PATH', default='python',
                    help='full path to python executable')
-parser.add_argument('-r', type=int, choices=[1,2,3,4,5,6], default=6,
+parser.add_argument('-r', type=int, choices=[1,2,3,4,5,6,7], default=5,
                    help='resolution mode; 1 = finest, 6 = coarsest')
 parser.add_argument('-s', '--subgl', action='store_true', # thus defaults to False
                    help='use sub-grid grounding line method')
@@ -51,18 +52,22 @@ elif args.r==2:
 	print 'Mx=1601'
 	print 'My=101'
 elif args.r==3:
+	print 'resolution=2 # resolution in km' 
+	print 'Mx=801'
+	print 'My=51'
+elif args.r==4:
 	print 'resolution=2.5 # resolution in km'
 	print 'Mx=641'
 	print 'My=41'
-elif args.r==4:
+elif args.r==5:
 	print 'resolution=5 # resolution in km'
 	print 'Mx=321'
 	print 'My=21'
-elif args.r==5:
+elif args.r==6:
 	print 'resolution=10 # resolution in km'
 	print 'Mx=161'
 	print 'My=11'
-elif args.r==6:
+elif args.r==7:
 	print 'resolution=16.666 # resolution in km'
 	print 'Mx=97'
 	print 'My=7'
@@ -86,13 +91,13 @@ else:
     print '# NOT creating bootstrap file since experiment %s starts from previously-saved state' % args.e
 
 if args.e=='Stnd':
-    print '%s createSetup_Stnd.py -a $accumrate -r $resolution' % args.pythonpath
+    print '%s setup_Stnd.py -a $accumrate -r $resolution' % args.pythonpath
 elif args.e=='P10S':
     print 'amplitude=0.1'
-    print '%s createSetup_PXXS.py -a $amplitude -i ex_Stnd.nc $s' % args.pythonpath
+    print '%s setup_PXXS.py -a $amplitude -i ex_Stnd.nc $s' % args.pythonpath
 elif args.e=='P75S':
     print 'amplitude=0.75'
-    print '%s createSetup_PXXS.py -a $amplitude -i ex_Stnd.nc $s' % args.pythonpath
+    print '%s setup_PXXS.py -a $amplitude -i ex_Stnd.nc $s' % args.pythonpath
 
 print ''
 print '# build the PISM command'
@@ -102,14 +107,20 @@ else:
     print 'pismr="%s"' % args.pismpath
 
 print ''
-
-print 'listexvar="thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,deviatoric_stresses,climatic_mass_balance$gl_mask"'
-if args.e == 'Stnd':
-    print 'integration_time=3000'
-    print 'extrastuff="-extra_times 0:50:$integration_time -extra_vars $listexvar"'
+if args.duration < 0:
+    if args.e == 'Stnd':
+        print 'duration=3000'
+    else:
+        print 'duration=100'
 else:
-    print 'integration_time=100'
-    print 'extrastuff="-extra_times 0:1:$integration_time -extra_vars $listexvar"'
+    print 'duration=%s' % args.duration
+
+print ''
+print 'listexvar="thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,tauc,deviatoric_stresses,climatic_mass_balance$gl_mask"'
+if args.e == 'Stnd':
+    print 'extrastuff="-extra_times 0:50:$duration -extra_vars $listexvar"'
+else:
+    print 'extrastuff="-extra_times 0:1:$duration -extra_vars $listexvar"'
 
 print ''
 print 'stressbalance="-ssa_sliding -ssa_method fd -ssa_flow_law isothermal_glen -ssafd_ksp_rtol 1e-7"'
@@ -120,23 +131,32 @@ if args.m==1:
 elif args.m==2:
 	print 'modelopt="-sia -sia_flow_law isothermal_glen" '
 
+print 'STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"'
+
 print ''
-print 'opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfront $subgl $modelopt -no_energy -cold -gradient eta -options_left -ts_file ts_%s.nc -ts_times 0:1:$integration_time -extra_file ex_%s.nc $extrastuff -ys 0 -ye $integration_time -o_order zyx -o_size big -o %s.nc"' % (args.e,args.e,args.e)
+print 'opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfront $subgl $modelopt -no_energy -cold -gradient eta -options_left -ts_file ts_%s.nc -ts_times 0:1:$duration -extra_file ex_%s.nc $extrastuff -ys 0 -ye $duration -o_order zyx -o_size big -o %s.nc $STRONGKSP"' % (args.e,args.e,args.e)
 
 print ''
 if args.e=='Stnd':
     print 'infile=MISMIP3D_Stnd_initialSetup.nc'
-    print '$pismr -boot_file $infile -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -ocean_kill_file $infile $opts'
+    print 'cmd="$pismr -boot_file $infile -Mx $Mx -My 3 -Mz 15 -Lz 6000 -tauc 1.0e7 -ocean_kill_file $infile $opts"'
 elif args.e=='P10S':
     print 'infile=MISMIP3D_P10S_initialSetup.nc'
-    print '$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts'
+    print 'cmp="$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"'
 elif args.e=='P10R':
     print 'infile=P10S.nc'
-    print '$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts'
+    print 'cmd="$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts"'
 elif args.e=='P75S':
     print 'infile=MISMIP3D_P75S_initialSetup.nc'
-    print '$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $commonopts'
+    print 'cmd="$pismr -boot_file $infile -Mx $Mx -My $My -Mz 15 -Lz 6000 -ocean_kill_file $infile $opts"'
 elif args.e=='P75R':
     print 'infile=P75S.nc'
-    print '$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts'
+    print 'cmd="$pismr -i $infile -tauc 1.0e7 -ocean_kill_file $infile $opts"'
 
+print ''
+print 'echo "running command:"'
+print 'echo $cmd'
+print 'echo'
+
+print ''
+print '$cmd'

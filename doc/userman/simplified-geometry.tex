@@ -13,7 +13,7 @@ PISM participated in HEINO, but this ability is unmaintained.   We believe\index
 
 There is no current plan to support ISMIP-HOM, but comparison of shallow PISM results to exact Stokes solutions is a goal for PISM evaluation.
 
-A third and fourth ISMIP part is the Marine Ice Sheet Model Intercomparison Project (MISMIP and MISMIP3D)\index{ISMIP!MISMIP}.  It is supported in PISM, as described in subsections \ref{subsect:MISMIP} and \ref{subsect:MISMIP3d} below.
+A third and fourth ISMIP parts are the two parts of the Marine Ice Sheet Model Intercomparison Project (MISMIP and MISMIP3D; \cite{MISMIP2012,MISMIP3d2013})\index{ISMIP!MISMIP}\index{ISMIP!MISMIP3d}.  It is supported in PISM, as described in subsections \ref{subsect:MISMIP} and \ref{subsect:MISMIP3d} below.
 
 
 \subsection{EISMINT II}\label{subsect:EISMINTII}
@@ -91,7 +91,7 @@ See subdirectory \verb|examples/eismintII/| for a simple helper script \verb|run
 
 
 \subsection{MISMIP}\label{subsect:MISMIP}
-\optsection{MISMIP}
+\optsection{MISMIP}\index{ISMIP!MISMIP}
 
 This intercomparison addresses grounding line dynamics by considering an idealized one-dimensional stream-shelf system.  In summary, a flowline ice stream and ice shelf system is modeled, the reversibility of grounding line movement under changes in the ice softness is tested, different sliding laws are tested, and the behavior of grounding lines on reverse-slope beds is tested.  The intercomparison process is described at the website
 
@@ -176,39 +176,43 @@ The effect when we do this at higher resolution is an improvement.  Results from
 
 
 \subsection{MISMIP3d}\label{subsect:MISMIP3d}
-\optsection{MISMIP3d}
-The ice2sea MISMIP3d intercomparison is a two-horizontal-dimensional extension of the flowline case described above.  The initial MISMIP3d setup is very close to MISMIP, with variation only in the flow direction.  As before, in MISMIP3d the grounding line position and its reversibility under changes of physical parameters is analyzed.  Instead of changing the ice softness, however, the spatial distribution and magnitude of basal friction is adjusted between experiments.  The applied basal friction perturbation of the basal friction is a localized gaussian ``bump'' and thus curved grounding line is obtained.  In contrast to the flowline experiments, no (semi-)analytical solutions are available to compare the numerical results against.  A full description of the intent of the MISMIP3d experiments can be found at
+\optsection{MISMIP3d}\index{ISMIP!MISMIP3d}
+The ice2sea MISMIP3d intercomparison is a two-horizontal-dimensional extension of the flowline case described above.  As before, in MISMIP3d the grounding line position and its reversibility under changes of physical parameters is analyzed.  Instead of changing the ice softness, however, the spatial distribution and magnitude of basal friction is adjusted between experiments.  The applied basal friction perturbation of the basal friction is a localized gaussian ``bump'' and thus a curved grounding line is obtained.  In contrast to the flowline experiments, no (semi-)analytical solutions are available to compare to the numerical results.
+
+A full description of the MISMIP3d experiments can be found at
 
 \centerline{\url{http://homepages.ulb.ac.be/~fpattyn/mismip3d/}}
 
 \noindent and the results are published in \cite{MISMIP3d2013}.
 
-A complete set of MISMIP3d experiments consists of three runs: Firstly, an effectively flowline solution on a linearly sloped bed, similar to the MISMIP experiments, is run into a steady state (``standard experiment''). Then the localized sliding perturbation is applied (``perturbation experiment'') for a fixed experiment-runtime of $100$ years, causing the grounding line to shift and lose symmetry.  As a third step, beginning from the final state of the perturbation experiment, the sliding perturbation is removed and the system is run again into a steady state (``reversibility experiment''); the resulting geometry, in particular the grounding line position, is supposed to be identical to the result of the standard experiment.  Such reversibility assumes that a particular stationary ice geometry only depends on its physical parameters and boundary conditions and not on how it is dynamically reached.
+A complete set of MISMIP3d experiments consists of three runs: Firstly, a flowline solution on a linearly-sloped bed, similar to the flowline MISMIP experiments of the previous section, is run into a steady state (``standard experiment \texttt{Stnd}'').  Then the localized sliding perturbation is applied (``perturbation experiment'')  causing the grounding line to shift and lose symmetry.  Two different amplitudes of the perturbation are considered (``\texttt{P10}'' and ``\texttt{P75}'').  Finally, beginning from the final state of the perturbation experiment, the sliding perturbation is removed and the system is run again into steady state (``reversibility experiment'').  The resulting geometry, in particular the grounding line position, is expected to be close to that of the standard experiment.  Expecting such reversibility assumes that a particular stationary ice geometry only depends on its physical parameters and boundary conditions and not on how it is dynamically reached.
 
-For these experiments in PISM, a Python script generates a shell script template with all commands and options for running a complete set of MISMIP3d experiments.  The python script is  is stored in the examples folder in \texttt{examples/mismip/mismip3d/}.  Also, a \texttt{README.md} file with all information of how to generate the shell script can be found in that folder.
+For these experiments in PISM, a Python script generates a shell script which has the commands and options for running a MISMIP3d experiment.  The python script is \texttt{createscript.py} in the folder \texttt{examples/mismip/mismip3d/}.  Run
 
-For the flowline-case standard experiment, as in the MISMIP case, a computational domain with three grid points in the direction orthogonal to the ice flow (arbitrarily chosen as y-direction) is chosen in the template. For the perturbation and reversibility experiments a domain is defined which is symmetric along the ice-divide (mirror symmetry) and along the center line of the ice flow, while the side boundaries are periodic, which corresponds to a free-slip condition for the flow in x-direction. Though this choice of the symmetric computational domain increases computational cost, it allows to use standard PISM without fixing certain boundary conditions in the code.
+\begin{verbatim}
+$ ./createscript.py -h
+\end{verbatim}
 
-PISM participated in the MISMIP3d intercomparison project using version pism0.5. The results are published in \cite{MISMIP3d2013} and can be reproduced by exactly using the mentioned shell script (with code version Stable 0.5). For PISM, $8=2^3$ different sets of results had been submitted for that publication: with and without SIA-computation, with and without subgrid linear grounding line interpolation (LI in \cite{Gladstoneetal2012}) and for two different resolutions (16.6 km and 1 km). For the standard experiment, we chose a computation time of $30000$ years (compare the comments to PISM's missing stopping criterion in the previous chapter). Because of the large computing time, for the reversibility experiment, we accepted a thickness rate of change smaller than $10^{−2}$ m/a as a criterion for having reached a steady state. This rate was reached after a fixed computation time of $500$ years in all cases. Furthermore, as demanded in the MISMIP3D experiment instructions, the grounding line reached a static position after that time.
+\noindent to see a usage message.  A \texttt{README.md} gives a tutorial on how to use \texttt{createscript.py} and do the runs themselves.
 
-We observed a considerable improvement of the results with respect to the absolute grounding line positions compared to other models (e.g. the FE reference model Elmer/Ice) and to the reversibility when applying the subgrid grounding line interpolation method\footnote{The subgrid groundling line interpolation method is available from PISM version v0.5-5-g7f98e2b (commit db132adf671e6cc769f90af8b5577edd6bb04ade on 5/30/12).} (See Figs.~\ref{fig:Subgl}). Furthermore, we observed that only using SSA yields almost the same results as the full hybrid SIA+SSA computation for the MISMIP3D (and also the MISMIP) experiments, but -- by not applying the SIA computation -- after a considerably shorter computation time (about 10 times shorter). We explain the small and almost negligible SIA velocities for the MISMIP(3D) experiments with the comparably small ice surface gradients in the MISMIP(3D) ice geometries. See Fig.~\ref{fig:compSIASSA} for a comparison of SSA and SIA velocities in the MISMIP3D geometry.
+For the flowline \texttt{Stnd} experiment, as in the MISMIP case, a computational domain with three grid points in the direction orthogonal to the ice flow (arbitrarily chosen as y-direction) is chosen by \texttt{createscript.py}.  For the perturbation and reversibility experiments a domain is defined which is symmetric along the ice-divide (mirror symmetry) and along the center line of the ice flow, while the side boundaries are periodic, which corresponds to a free-slip condition for the flow in x-direction. Though this choice of the symmetric computational domain increases computational cost, it allows us to use standard PISM without fixing certain boundary conditions in the code.  (That is, it avoids the issues addressed in the regional mode of PISM; see section \ref{sec:jako}.)
+
+PISM participated in the MISMIP3d intercomparison project \cite{MISMIP3d2013} using version pism0.5, and the exact results can be reproduced using that version.  PISM's results, and the role of resolution and the new subgrid grounding line interpolation scheme are discussed in \cite{Feldmannetal2014}.
+
+We observed a considerable improvement of the results with respect to the absolute grounding line positions compared to other models (e.g. the FE reference model Elmer/Ice) and to the reversibility when applying the subgrid grounding line interpolation method; see Figure \ref{fig:Subgl}.  Furthermore, we observed that only using SSA yields almost the same results as the full hybrid SIA+SSA computation for the MISMIP3D (and also the MISMIP) experiments, but, when not applying the SIA computation, after a considerably shorter computation time (about 10 times shorter).  We explain the small and almost negligible SIA velocities for the MISMIP(3D) experiments with the comparably small ice surface gradients in the MISMIP3d ice geometries.  See Fig.~\ref{fig:compSIASSA} for a comparison of SSA and SIA velocities in the MISMIP3D geometry.  Note that both Figures \ref{fig:Subgl} and \ref{fig:compSIASSA} were generated with resolution of $\Delta x = \Delta y = 1\;$km.
 
 \begin{figure}[ht]
 \centering
-%\subfigure{
-\includegraphics[width=3.0in,keepaspectratio=true]{Subgl}
-%}
-%\subfigure{
-\includegraphics[width=3.0in,keepaspectratio=true]{NoSubgl}
-%}
-\caption{Comparision between the resulting grounding lines of the MISMIP3D experiments performed with PISM when using the subgrid grounding line interpolation method (a) and without (b). In both cases the SIA+SSA hybrid is used for a resolution of $\Delta x = \Delta y = 1\;$km (accumulation rate $0.5\;$m/a).}
+\includegraphics[width=3.3in,keepaspectratio=true]{Subgl}
+\includegraphics[width=3.3in,keepaspectratio=true]{NoSubgl}
+\caption{Comparison between the grounding lines of the higher-amplitude (``\texttt{P75}'') MISMIP3d experiments performed with PISM when using the subgrid grounding line interpolation method (left) or not using it (right).  In both cases the SIA+SSA hybrid is used.}
 \label{fig:Subgl}
 \end{figure}
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=5.0in,keepaspectratio=true]{comp-SIA-SSA}
-\caption{Illustration of the negligible SIA velocities for the MISMIP3D standard experiment. The steady state ice geometry (accumulation rate $0.5\;$m/a, numerical resolution $\Delta x = 1\,$km) is plotted (black) together with the computed SSA velocity (red) and SIA velocity (blue). The SIA velocity is very smalland reaches its maximum value at the grounding line with about $10\,$m/a.}
+\caption{The SIA velocities are negligible in the MISMIP3d standard experiment (``\texttt{Stnd}'').  The steady state ice geometry is plotted (black) together with the computed SSA velocity (red) and SIA velocity (blue). The SIA velocity reaches its maximum value of about $10\,$m/a at the grounding line, about two orders of magnitude less than the maximum of the SSA velocity.}
 \label{fig:compSIASSA}
 \end{figure}
 
