@@ -26,7 +26,7 @@ YEARS=500    # integration time
 if [ $# -gt 3 ] ; then  # if user says "run_prog.sh 8 211 0.6 500" then ... and -y 500
   YEARS="$4"
 fi
-interval=2
+interval=25
 
 ECALV=1e17   #  constant for eigencalving parameterization
 if [ $# -gt 4 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16" then ... and -eigen_calving_K 7e16
@@ -36,15 +36,15 @@ fi
 PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
-cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file Ross_combined_prog.nc -Mx $M -My $M \
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given -no_sia \
   -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_e $SSAE \
-  -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx "
+  -y 0 -ys 0.0 -o Ross_prognostic_startfile_Mx${M}.nc -o_order zyx "
 
-NAME=Mx${M}year${YEARS}.nc
+NAME=Ross_result_prog_Mx${M}_yr-${YEARS}.nc
 CTHICK=50.0
 
-cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc \
+cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i Ross_prognostic_startfile_Mx${M}.nc \
   -surface given -no_sia -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_e ${SSAE} \
   -y ${YEARS} -o $NAME -o_order zyx -o_size big \
   -calving eigen_calving,thickness_calving -eigen_calving_K ${ECALV} -thickness_calving_threshold $CTHICK \

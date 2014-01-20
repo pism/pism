@@ -7,54 +7,54 @@
 # -ssa_method fem will not work as '-pik', including '-cfbc', are not implemented in fem
 
 NN=1  # default number of processors
-if [ $# -gt 0 ] ; then  # if user says "run_prog.sh 8" then NN = 8
+if [ $# -gt 0 ] ; then  # if user says "run_frac.sh 8" then NN = 8
   NN="$1"
 fi
 
 M=211   # for 5km
 # M=526 for 2km,  M=421 for 2.5km,  M=351 for 3km
-if [ $# -gt 1 ] ; then  # if user says "run_prog.sh 8 211" then NN = 8 and M = 211
+if [ $# -gt 1 ] ; then  # if user says "run_frac.sh 8 211" then NN = 8 and M = 211
   M="$2"
 fi
 
 SSAE=0.6   # ssa enhancement factor
-if [ $# -gt 2 ] ; then  # if user says "run_prog.sh 8 211 0.6" then ... and -ssa_e 0.6
+if [ $# -gt 2 ] ; then  # if user says "run_frac.sh 8 211 0.6" then ... and -ssa_e 0.6
   SSAE="$3"
 fi
 
 YEARS=500    # integration time
-if [ $# -gt 3 ] ; then  # if user says "run_prog.sh 8 211 0.6 500" then ... and -y 500
+if [ $# -gt 3 ] ; then  # if user says "run_frac.sh 8 211 0.6 500" then ... and -y 500
   YEARS="$4"
 fi
 interval=25
 
 ECALV=1e17   #  constant for eigencalving parameterization
-if [ $# -gt 4 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16" then ... and -eigen_calving_K 7e16
+if [ $# -gt 4 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16" then ... and -eigen_calving_K 7e16
   ECALV="$5"
 fi
 
-THRESHOLD=7.0e4   #  stress threshold
-if [ $# -gt 5 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16 7.0e4" then ... and -fractures x,7e16,x,x
+THRESHOLD=5.0e4   #  stress threshold
+if [ $# -gt 5 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4" then ... and -fractures x,7e16,x,x
   THRESHOLD="$6"
 fi
 
 FRACRATE=0.5   #  fracture rate
-if [ $# -gt 6 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16 7.0e4 0.5 " then ... and -fractures 0.5,x,x,x
+if [ $# -gt 6 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4 0.5 " then ... and -fractures 0.5,x,x,x
   FRACRATE="$7"
 fi
 
 HEALTHRESHOLD=5.0e-10   #  healing threshold
-if [ $# -gt 7 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16 0.5 5.0e-10" then ... and -fractures x,x,x,5.0e-10
+if [ $# -gt 7 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10" then ... and -fractures x,x,x,5.0e-10
   HEALTHRESHOLD="$8"
 fi
 
-HEALRATE=0.1   #  healing threshold
-if [ $# -gt 8 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1" then ... and -fractures x,x,0.1,x
+HEALRATE=0.0   #  healing threshold
+if [ $# -gt 8 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1" then ... and -fractures x,x,0.1,x
   HEALRATE="$9"
 fi
 
 SOFTRES=1.0   #  healing threshold
-if [ $# -gt 9 ] ; then  # if user says "run_prog.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1 0.001" then ... and -fracture_softening 0.001
+if [ $# -gt 9 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1 0.001" then ... and -fracture_softening 0.001
   SOFTRES="$10"
 fi
 
@@ -63,7 +63,7 @@ fi
 PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
-NAME=Mx${M}year${YEARS}.nc
+NAME=Ross_result_frac_Mx${M}_yr-${YEARS}.nc
 
 output="-o $NAME -o_order zyx -o_size big"
 
@@ -99,12 +99,12 @@ fractures="-fractures ${FRACRATE},${THRESHOLD},${HEALRATE},${HEALTHRESHOLD} -wri
 
 # run commands #############################################################################
 
-cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file Ross_combined_prog.nc -Mx $M -My $M \
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given ${ssa} -kill_icebergs \
-  -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
+  -y 0 -ys 0.0 -o Ross_frac_startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
 
-cmd_prog_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface given \
-  ${ssa} -y ${YEARS} ${output} ${calving} -ocean_kill_file startfile_Mx${M}.nc \
+cmd_frac_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i Ross_frac_startfile_Mx${M}.nc -surface given \
+  ${ssa} -y ${YEARS} ${output} ${calving} -ocean_kill_file Ross_frac_startfile_Mx${M}.nc \
   ${fractures} ${extra} ${timeseries} -verbose 4 "
 
 
@@ -119,8 +119,8 @@ echo "$cmd_diag"
 echo
 ${cmd_diag}
 echo
-echo "$cmd_prog_frac"
+echo "$cmd_frac_frac"
 echo
-${cmd_prog_frac}
+${cmd_frac_frac}
 echo
 echo "... done"

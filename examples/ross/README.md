@@ -1,7 +1,8 @@
 Ross flow model example
 =================
 
-This example demonstrates regional modeling of ice shelves.  We do only one-time step, a "diagnostic run" to compute the flow velocity of the floating ice.  This example is an update of the EISMINT-Ross intercomparison experiment (below), using more recent data, a 5km data set for the entire Antarctic ice sheet.  This example can be modified to build diagnostic models of any Antarctic ice shelf.
+This example demonstrates regional modeling of ice shelves. This example is an update of the EISMINT-Ross intercomparison experiment (below), using more recent data, a 5km data set for the entire Antarctic ice sheet. This example can be modified to build models of any Antarctic ice shelf, both diagnostic (ice thickness prescribed, one short time step) or prognostic (ice thickness evolution), computing flow velocity of the floating ice.
+
 
 These publications show the results of PISM applications to Antarctic ice shelves:
 * T. Albrecht, A. Levermann (2012).  *Fracture field for large-scale ice dynamics*.  Journal of Glaciology 58 (207), 165--176.
@@ -29,18 +30,25 @@ From these data sets, the following fields are used:
 Running the example
 =================
 
-This directory contains two scripts:
-* `preprocess.py`: downloads and preprocessing input data, and
-* `run.sh`: use PISM's SSA stress balance to do a "diagnostic" run which computes flow velocity from geometry, ice hardness (a function of temperature), and observed velocities at the grounding line as boundary conditions.
+This directory contains a script to build the setup in either (basic) diagnostic or prognostic mode:
+* `preprocess.py`: downloads and preprocessing input data
 
-Do:
+    $ ./preprocess.py diag
+or 
+    $ ./preprocess.py prog
 
-    $ ./preprocess.py
-    $ ./run.sh
+You find in the three subdirectories "diagnostic", "prognostic" and "fracture" run-scripts:
 
-A file `out_211.nc` will be produced.  View it with `ncview` or other NetCDF viewer.  If python tools `numpy`, `matplotlib`, and `netcdf4-python` are present, do this
+* `diagnostic/run_diag.sh`: use PISM's SSA stress balance to do a "diagnostic" run which computes flow velocity from geometry, ice hardness (a function of temperature), and observed velocities at the grounding line as boundary conditions.
 
-    $ ./plot.py out_211.nc
+* `prognostic/run_prog.sh`: use PISM's SSA stress balance to do a "prognostic" run, which computes flow velocity and evolving ice thickness with a freely evolving calving front (using eigencalving parameterization)
+
+* `fracture/run_frac.sh`: use PISM's SSA stress balance to do a "prognostic" run which computes flow velocity, evolving ice thickness and the feedback of evolving fracture density on flow, with a prescribed calving front (ocean_kill)
+Follow the instructions and options in the separate README.md files...
+
+A file `Ross_result_x_Mx211.nc` will be produced.  View it with `ncview` or other NetCDF viewer.  If python tools `numpy`, `matplotlib`, and `netcdf4-python` are present, do this
+
+    $ ./plot.py Ross_result_x_Mx211.nc
 
 and view the resulting `.png` images.
 

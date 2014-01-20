@@ -11,6 +11,27 @@ import subprocess
 import numpy as np
 import os
 
+# Set up the option parser
+from argparse import ArgumentParser
+parser = ArgumentParser()
+parser.description = "A script to preprocess a setup of ROSS example."
+parser.add_argument("FILE", nargs='*')
+options = parser.parse_args()
+args = options.FILE
+if len(args) == 0:
+  setup_option = "diag"
+  print("No option set, etup will be preprocessed for option 'diag'!")
+elif len(args) == 1 and args[0] in ("diag","prog"):
+  setup_option = args[0]
+  print("Setup will be preprocessed for option '%s'" % setup_option)
+else:
+    print("wrong number or kind of arguments, expect 'diag' or 'prog'!")
+    import sys
+    exit(1)
+
+smb_name = "climatic_mass_balance"
+temp_name = "ice_surface_temp"
+
 def run(commands):
     """Run a list of commands (or one command given as a string)."""
     if isinstance(commands, (list, tuple)):
@@ -113,8 +134,8 @@ def preprocess_albmap():
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
-    smb_name = "climatic_mass_balance"
-    temp_name = "ice_surface_temp"
+    #smb_name = "climatic_mass_balance"
+    #temp_name = "ice_surface_temp"
 
     commands = ["wget -nc %s" % url,                # download
                 "unzip -n %s.zip" % input_filename, # unpack
@@ -210,17 +231,33 @@ def final_corrections(filename):
 
             if mask[j,i] == floating and np.any(nearest == grounded):
                 bcflag_var[j,i] = 1
+                if setup_option=="prog":
+                  topg[j,i]=-2000
+
+    if setup_option=="prog":
+      #modifications for prognostic run
+      tempma = nc.variables[temp_name][:]
+      for j in xrange(My):
+        for i in xrange(Mx):
+            if bcflag_var[j,i] == 0:
+                topg[j,i]=-2000 # to avoid grounding
+            if tempma[j,i] > -20.0:
+                tempma[j,i]=-20.0 # to adjust open ocean temperatures
+
+      nc.variables[temp_name][:] = tempma
+      nc.variables['topg'][:] = topg
 
     nc.close()
 
 if __name__ == "__main__":
+
     velocity = preprocess_ice_velocity()
     albmap = preprocess_albmap()
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc" # ice velocity on the ALBMAP grid
-    output = "Ross_combined.nc"
+    output = "Ross_combined_"+setup_option+".nc"
 
-    commands = ["nc2cdo.py %s" % velocity,
-                "nc2cdo.py %s" % albmap,
+    commands = ["python2.6 nc2cdo.py %s" % velocity,
+                "python2.6 nc2cdo.py %s" % albmap,
                 "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
                 "ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
