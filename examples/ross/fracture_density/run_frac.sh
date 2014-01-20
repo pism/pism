@@ -28,12 +28,12 @@ if [ $# -gt 3 ] ; then  # if user says "run_frac.sh 8 211 0.6 500" then ... and 
 fi
 interval=25
 
-ECALV=1e17   #  constant for eigencalving parameterization
-if [ $# -gt 4 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16" then ... and -eigen_calving_K 7e16
-  ECALV="$5"
-fi
+#ECALV=1e17   #  constant for eigencalving parameterization
+#if [ $# -gt 4 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16" then ... and -eigen_calving_K 7e16
+#  ECALV="$5"
+#fi
 
-THRESHOLD=5.0e4   #  stress threshold
+THRESHOLD=7.0e4   #  stress threshold
 if [ $# -gt 5 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4" then ... and -fractures x,7e16,x,x
   THRESHOLD="$6"
 fi
@@ -48,12 +48,12 @@ if [ $# -gt 7 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-
   HEALTHRESHOLD="$8"
 fi
 
-HEALRATE=0.0   #  healing threshold
+HEALRATE=0.1   #  healing rate
 if [ $# -gt 8 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1" then ... and -fractures x,x,0.1,x
   HEALRATE="$9"
 fi
 
-SOFTRES=1.0   #  healing threshold
+SOFTRES=1.0   #  softening residual (avoid viscosity from degeneration), value 1 inhibits softening effect
 if [ $# -gt 9 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1 0.001" then ... and -fracture_softening 0.001
   SOFTRES="$10"
 fi

@@ -256,8 +256,8 @@ if __name__ == "__main__":
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc" # ice velocity on the ALBMAP grid
     output = "Ross_combined_"+setup_option+".nc"
 
-    commands = ["python2.6 nc2cdo.py %s" % velocity,
-                "python2.6 nc2cdo.py %s" % albmap,
+    commands = ["nc2cdo.py %s" % velocity,
+                "nc2cdo.py %s" % albmap,
                 "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
                 "ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
