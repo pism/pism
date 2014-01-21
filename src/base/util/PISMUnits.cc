@@ -164,15 +164,13 @@ bool units_are_convertible(PISMUnit from, PISMUnit to) {
 
 //! Check if provided units are convertible and terminate PISM if they are not.
 PetscErrorCode units_check(std::string name, PISMUnit from, PISMUnit to) {
-  PetscErrorCode ierr;
 
   if (units_are_convertible(from, to) == false) {              // can't convert
-    ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "PISM ERROR: processing variable '%s': attempted to convert data from '%s' to '%s'.\n",
-                       name.c_str(), from.format().c_str(), to.format().c_str());
+    PetscPrintf(PETSC_COMM_SELF,
+                "PISM ERROR: processing variable '%s': attempted to convert data from '%s' to '%s'.\n",
+                name.c_str(), from.format().c_str(), to.format().c_str());
     PISMEnd();
   }
-
   return 0;
 }
 
