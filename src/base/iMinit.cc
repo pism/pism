@@ -32,9 +32,7 @@
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
 #include "PISMBedDef.hh"
-#if (PISM_USE_FFTW==1)
 #include "PBLingleClark.hh"
-#endif
 #include "PAFactory.hh"
 #include "POFactory.hh"
 #include "PSFactory.hh"
@@ -1168,9 +1166,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
 
   choices.insert("none");
   choices.insert("iso");
-#if (PISM_USE_FFTW==1)
   choices.insert("lc");
-#endif
 
   ierr = PetscOptionsBegin(grid.com, "", "Bed deformation model", ""); CHKERRQ(ierr);
   {
@@ -1189,12 +1185,10 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
     return 0;
   }
 
-#if (PISM_USE_FFTW==1)
   if ((model == "lc") && (beddef == NULL)) {
     beddef = new PBLingleClark(grid, config);
     return 0;
   }
-#endif
 
   return 0;
 }

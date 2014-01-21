@@ -21,9 +21,7 @@
 
 #include "NCVariable.hh"
 #include <petscvec.h>
-#if (PISM_USE_FFTW==1)
 #include <fftw3.h>
-#endif
 
 //! Class implementing the bed deformation model described in [\ref BLKfastearth].
 /*!

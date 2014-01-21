@@ -179,7 +179,7 @@ macro(pism_find_prerequisites)
 
   # Optional libraries
   find_package (PNetCDF)
-  find_package (FFTW)
+  find_package (FFTW REQUIRED)
   find_package (PROJ4)
   find_package (TAO)
   # Try to find netcdf_par.h. We assume that NetCDF was compiled with
@@ -196,10 +196,6 @@ macro(pism_find_prerequisites)
     set (Pism_USE_PNETCDF OFF CACHE BOOL "Enables parallel NetCDF-3 I/O using PnetCDF." FORCE)
   endif()
 
-  if (NOT FFTW_FOUND)
-    set (Pism_USE_FFTW OFF CACHE BOOL "Use FFTW-3 in the bed deformation code." FORCE)
-  endif ()
-
   if (NOT PROJ4_FOUND)
     set (Pism_USE_PROJ4 OFF CACHE BOOL "Use Proj.4 to compute cell areas, longitude, and latitude." FORCE)
   endif()
@@ -213,11 +209,6 @@ macro(pism_find_prerequisites)
   set (Pism_EXTERNAL_LIBS "")
 
   # optional
-  if (Pism_USE_FFTW)
-    include_directories (${FFTW_INCLUDE_DIRS} ${FFTW_INCLUDES})
-    list (APPEND Pism_EXTERNAL_LIBS ${FFTW_LIBRARIES})
-  endif ()
-
   if (Pism_USE_PROJ4)
     include_directories (${PROJ4_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PROJ4_LIBRARIES})
@@ -240,6 +231,8 @@ macro(pism_set_dependencies)
   # Set include and library directories for *required* libraries.
   include_directories (
     ${PETSC_INCLUDES}
+    ${FFTW_INCLUDE_DIRS}
+    ${FFTW_INCLUDES}
     ${GSL_INCLUDES}
     ${UDUNITS2_INCLUDES}
     ${NETCDF_INCLUDES}
@@ -248,6 +241,7 @@ macro(pism_set_dependencies)
   list (APPEND Pism_EXTERNAL_LIBS
     ${PETSC_LIBRARIES}
     ${UDUNITS2_LIBRARIES}
+    ${FFTW_LIBRARIES}
     ${GSL_LIBRARIES}
     ${NETCDF_LIBRARIES}
     ${MPI_C_LIBRARIES})

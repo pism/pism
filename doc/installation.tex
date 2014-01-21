@@ -117,11 +117,12 @@ This table lists required dependencies for PISM alphabetically.
     \toprule
     \multicolumn{2}{c}{\textbf{Required Program or Library}} & \textbf{Comment}\\
     \midrule
+    FFTW & \url{http://www.fftw.org/} & version $\ge$ 3.0\\
     GSL &\url{http://www.gnu.org/software/gsl/} & version $\ge$ 1.15\\
-    UDUNITS-2 & \url{http://www.unidata.ucar.edu/software/udunits/} & \\
     MPI &\url{http://www-unix.mcs.anl.gov/mpi/} & \\
     NetCDF &\url{http://www.unidata.ucar.edu/software/netcdf/} & version $\ge$ 4.1 \\
     PETSc & \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/} & version $\ge$ \PETSCREL \\
+    UDUNITS-2 & \url{http://www.unidata.ucar.edu/software/udunits/} & \\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -130,14 +131,13 @@ This table lists required dependencies for PISM alphabetically.
 
 Before installing these ``by hand'', check the Debian and Mac OS X sections below for specific how-to.  In particular, if multiple MPI implementations (e.g.~MPICH and Open-MPI) are installed then PETSc can under some situations ``get confused'' and throw MPI-related errors.  Even package systems have been known to allow this confusion.
 
-Optional libraries are needed for certain PISM features, namely earth deformation, cell-area correction, and parallel I/O.  These libraries are recommended, but not strictly required: \bigskip
+Optional libraries are needed for certain PISM features, namely cell-area correction and parallel I/O.  These libraries are recommended, but not strictly required: \bigskip
 
 \begin{center}
   \begin{tabular}{lll}
     \toprule
     \multicolumn{2}{c}{\textbf{Recommended Library}} & \textbf{Comment}\\
     \midrule
-    FFTW & \url{http://www.fftw.org/} & version $\ge$ 3.0\\
     PROJ.4 & \url{http://trac.osgeo.org/proj/} & \\
     PnetCDF & \url{http://trac.mcs.anl.gov/projects/parallel-netcdf} & \\
    \bottomrule

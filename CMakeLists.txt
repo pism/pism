@@ -24,7 +24,6 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
-option (Pism_USE_FFTW "Use FFTW in the bed deformation code." ON)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." ON)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
@@ -104,13 +103,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
     CACHE PATH "Python extension module installation directory." )
 endif ()
-
-# Build the Lingle-Clark bed deformation model if we have FFTW-3.
-if (Pism_USE_FFTW)
-  add_definitions (-DPISM_USE_FFTW=1)
-else()
-  add_definitions (-DPISM_USE_FFTW=0)
-endif()
 
 # Do cell area computations the right way if we have proj.4.
 if (Pism_USE_PROJ4)

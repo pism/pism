@@ -152,17 +152,12 @@ target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalanc
 set(PISMEARTH_SRC
   earth/PBPointwiseIsostasy.cc
   earth/PISMBedDef.cc
+  earth/PBLingleClark.cc
+  earth/deformation.cc
+  earth/greens.cc
+  earth/cubature.c
+  earth/matlablike.cc
   )
-
-if (Pism_USE_FFTW)
-  list (APPEND PISMEARTH_SRC
-    earth/PBLingleClark.cc
-    earth/deformation.cc
-    earth/greens.cc
-    earth/cubature.c
-    earth/matlablike.cc
-    )
-endif()
 
 add_library(pismearth ${PISMEARTH_SRC})
 target_link_libraries (pismearth pismutil)
@@ -258,11 +253,9 @@ if (Pism_BUILD_EXTRA_EXECS)
     target_link_libraries (${EXEC} pismverif)
   endforeach (EXEC)
 
-  if (Pism_USE_FFTW)
-    add_executable (tryLCbd earth/tryLCbd.cc)
-    target_link_libraries (tryLCbd pismearth pismrevision)
-    list (APPEND EXTRA_EXECS tryLCbd)
-  endif()
+  add_executable (tryLCbd earth/tryLCbd.cc)
+  target_link_libraries (tryLCbd pismearth pismrevision)
+  list (APPEND EXTRA_EXECS tryLCbd)
 
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
