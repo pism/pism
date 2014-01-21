@@ -6,19 +6,25 @@
 \optsection{Computational box}
 \optseealso{Grid}
 
-PISM does all simulations in a computational box\index{PISM!computational box} which is rectangular in the PISM coordinates.
+PISM does all simulations in a computational box\index{PISM!computational box} which is rectangular in the PISM coordinates.  The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate $z$.  The $z$ coordinate is measured positive upward from the base of the ice.  The vector of gravity is in the negative $z$ direction.  The surface $z=0$ is the base of the ice, however, and thus is usually not horizontal in the sense of being parallel to the geoid.   The surface $z=0$ is the base of the ice both when the ice is grounded and when the ice is floating.
 
-The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate $z$.  The $z$ coordinate is measured positive upward from the base of the ice and it is exactly opposite to the vector of gravity.  The surface $z=0$ is the base of the ice, however, and thus is usually not horizontal in the sense of being parallel to the geoid.   The surface $z=0$ is the base of the ice both when the ice is grounded and when the ice is floating.
+When the ice is grounded, the true physical vertical coordinate $z'$, namely the coordinate measure relative to a reference geoid, is given by $z'=z+b(x,y)$ where $b(x,y)$ is the bed topography.  The surface $z'=h(x,y)$ is the surface of the ice.  In the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ always applies if $H(x,y)$ is the thickness of the ice.
 
-Bed topography is, of course, allowed.  In fact, when the ice is grounded, the true physical vertical coordinate $z'$, namely the coordinate measure relative to a reference geoid, is given by $z'=z+b(x,y)$ where $b(x,y)$ is the bed topography.  The surface $z'=h(x,y)$ is the surface of the ice.
+In the floating case, the physical vertical coordinate is $z'=z-(\rho_i/\rho_s) H(x,y)$ where $\rho_i$ is the density of ice and $\rho_s$ the density of sea water.  Again $z=0$ is the base of the ice, which is the surface $z' = -(\rho_i/\rho_s) H(x,y)$.  The surface of the ice is $h(x,y) = (1-\rho_i/\rho_s) H(x,y)$.  The \emph{flotation criterion} $-(\rho_i/\rho_s) H(x,y) > b(x,y)$ applies.
 
-In the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ always applies if $H(x,y)$ is the thickness of the ice.  In the floating case, the physical vertical coordinate is $z'=z-(\rho_i/\rho_s) H(x,y)$ where $\rho_i$ is the density of ice and $\rho_s$ the density of sea water.  Again $z=0$ is the base of the ice, which is the surface $z' = -(\rho_i/\rho_s) H(x,y)$.  The surface of the ice is $h(x,y) = (1-\rho_i/\rho_s) H(x,y)$.  All we know about the bed elevations is that they are below the base of the ice when the ice is floating.  That is, the \emph{flotation criterion} $-(\rho_i/\rho_s) H(x,y) > b(x,y)$ applies.
+The computational box can extend downward into the bedrock.  As $z=0$ is the base of the ice, the bedrock corresponds to negative $z$ values regardless of its true (i.e.~$z'$) elevation.
 
-The computational box can extend downward into the bedrock.  As $z=0$ is the base of the ice, the bedrock corresponds to negative $z$ values regardless of the sign of its true (i.e.~$z'$) elevation.
+The extent of the computational box, along with its bedrock extension downward, is determined by four numbers \texttt{Lx}, \texttt{Ly}, \texttt{Lz}, and \texttt{Lbz} (see Figure \ref{fig:rectilinearbox} and Table \ref{tab:compbox}).  The first two of these are half-widths and have units of kilometers when set by options or displayed.
 
-The extent of the computational box, along with its bedrock extension downward, is determined by four numbers \texttt{Lx}, \texttt{Ly}, \texttt{Lz}, and \texttt{Lbz} (see Figure \ref{fig:rectilinearbox}.).  The first two of these are half-widths and have units of kilometers when set by options or displayed.  The extent of the computational box for the ice and bedrock is directly controlled by the following options. 
+\begin{figure}[ht]
+\centering
+\includegraphics[width=4.0in,keepaspectratio=true]{rectilinearbox}
+\caption{PISM's computational box.}
+\label{fig:rectilinearbox}
+\end{figure}
 
-\begin{center}
+\begin{table}
+  \centering
   \begin{tabular}{llp{0.7\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Meaning}
@@ -29,53 +35,45 @@ The extent of the computational box, along with its bedrock extension downward, 
     \txtopt{Lbz}{(meters)} & Depth of the computational domain in the bedrock thermal layer
     \\\bottomrule
   \end{tabular}
-\end{center}
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=4.0in,keepaspectratio=true]{rectilinearbox}
-\caption{PISM's computational box.}
-\label{fig:rectilinearbox}
-\end{figure}
+  \caption{Options defining the extent of PISM's computational box.}
+  \label{tab:compbox}
+\end{table}
 
 
 \subsection{Spatial grid}
 \label{subsect:grid}
 \optsection{Grid!space}
 
-The PISM grid\index{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing in the ice is quadratic by default (see below) but optionally a different spacing scheme can be chosen.  (Choose with options \txtopt{z_spacing}{[quadratic, equal]}.) The bedrock thermal layer model always uses equal vertical spacing.
+The PISM grid\index{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing in the ice is quadratic by default but optionally equal spacing can be chosen; choose with options \txtopt{z_spacing}{[\texttt{quadratic}, \texttt{equal}]} at bootstrapping.  The grid read from a ``\texttt{-i}'' input file is used as is.  The bedrock thermal layer model always uses equal vertical spacing.
 
-The grid is described by four numbers, namely the number of grid points \texttt{Mx} in the $x$ direction, the number \texttt{My} in the $y$ direction, the number \texttt{Mz} in the $z$ direction within the ice, and the number \texttt{Mbz} in the $z$ direction within the bedrock thermal layer.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively. The defaults are 61, 61, 31, and 1, respectively.
+The grid is described by four numbers, namely the number of grid points \texttt{Mx} in the $x$ direction, the number \texttt{My} in the $y$ direction, the number \texttt{Mz} in the $z$ direction within the ice, and the number \texttt{Mbz} in the $z$ direction within the bedrock thermal layer.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively. The defaults are 61, 61, 31, and 1, respectively.  Note that \texttt{Mx}, \texttt{My}, \texttt{Mz}, and \texttt{Mbz} all indicate the number of grid \emph{points} so the number of grid \emph{spaces} are one less, thus 60, 60, 30, and 0 in the default case.
 
-Note that \texttt{Mx}, \texttt{My}, \texttt{Mz}, and \texttt{Mbz} all indicate the number of grid \emph{points}.  The numbers of grid \emph{spaces} are one less, thus 60, 60, 30, and 0 in the default case.  The lowest grid point in a column of ice, at $z=0$, coincides with the highest grid point in the bedrock, so \texttt{Mbz} must always be at least one and \texttt{Mbz}$>1$ is required to use the bedrock thermal model.  Note that this option is unrelated to the bed deformation model (glacial isostasy model); see option \texttt{-bed_def} (section \ref{subsect:beddef}) for that.
+The lowest grid point in a column of ice, at $z=0$, coincides with the highest grid point in the bedrock, so \texttt{Mbz} must always be at least one.  Choosing \texttt{Mbz}$>1$ is required to use the bedrock thermal model.  When a thermal bedrock layer is used, the distance \texttt{Lbz} is controlled by the \texttt{-Lbz} option.  Note that \texttt{Mbz} is unrelated to the bed deformation model (glacial isostasy model); see section \ref{subsect:beddef}.
 
-In the quadratic case, the spacing near the ice/bedrock interface is about four times finer than it would be with equal spacing for the same value of \texttt{Mz}, while the spacing near the top is correspondingly coarser. For a detailed description of the spacing of the grid, see the documentation on \texttt{IceGrid::compute_vertical_levels()} in the PISM class browser.
+In the quadratically-spaced case the spacing near the ice/bedrock interface is about four times finer than it would be with equal spacing for the same value of \texttt{Mz}, while the spacing near the top of the computational box is correspondingly coarser.  For a detailed description of the spacing of the grid, see the documentation on \texttt{IceGrid::compute_vertical_levels()} in the PISM class browser.
 
-When a thermal bedrock layer is used, the distance \texttt{Lbz} is controlled by the \texttt{-Lbz} option.
-
-If one initializes PISM from a saved model state using \texttt{-i} then the input model state controls all computational grid parameters.  For instance, the command
+The user should specify the grid when using \texttt{-boot_file} or when initializing a verification test (section \ref{sec:verif}) or a simplified-geometry experiment (section \ref{sec:simp}).  If one initializes PISM from a saved model state using \texttt{-i} then the input file determines all grid parameters.  For instance, the command
 
 \begin{verbatim}
 $  pismr -i foo.nc -y 100
 \end{verbatim}
 
-\noindent should work fine if \texttt{foo.nc} was a valid PISM model file.  The command
+\noindent should work fine if \texttt{foo.nc} is a PISM output file.  Because \texttt{-i} input files take precedence over options,
 
 \begin{verbatim}
 $  pismr -i foo.nc -Mz 201 -y 100
 \end{verbatim}
 
-\noindent will give a warning that ``\texttt{PISM WARNING: ignoring command-line option '-Mz'}'' because \texttt{-i} input files take precedence.
-
-Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \texttt{-boot_file} or when initializing a simplified-geometry experiment or a verification test, though defaults are generally present in the latter cases.  See sections \ref{sec:start} and \ref{sec:boot} for examples and explanation.
+\noindent will give a warning that ``\texttt{PISM WARNING: ignoring command-line option '-Mz'}''.
 
 
 \subsection{Model time}
 \label{sec:time}
 \optsection{Grid!time}
 
-The following command-line options control PISM time:
+Table \ref{tab:timeoptions} gives the command-line options which control PISM time.  If option \texttt{-ys} is absent then the start year is read from the input file (if present) or it defaults to zero.  The default value for the end year is the start year plus the given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed; this generates an error message.
 
+\begin{table}
 \begin{tabular}{lp{0.8\linewidth}}\\
 \toprule
 \textbf{Option} & \textbf{Meaning}\\
@@ -85,20 +83,24 @@ The following command-line options control PISM time:
 \txtopt{ye}{(years)} & Model year at which to end the run.\\
 \bottomrule
 \end{tabular}
-\\[2em]
-\noindent The default value for the end year is the start year (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.
+\caption{Command-line options controlling PISM time.}
+\label{tab:timeoptions}
+\end{table}
 
 
 \subsection{Calendars}
 \label{sec:calendars}
 \index{Time!calendars}
 
-Most of PISM (and its ice dynamics core in particular) only needs to know the length of the current time-step.  Internally PISM stores time in ``seconds since a specified moment'' and thus PISM generally does not use or need a calendar.\footnote{Note seconds are part of SI units.}  We refer to PISM internal time as \emph{model time}.
+Most of PISM, and its ice dynamics core in particular, only needs to know the length of the current time-step.  Internally PISM stores time in ``seconds since a specified moment'' and thus PISM generally does not use or need a calendar.\footnote{Note seconds are part of SI units.}  We refer to PISM internal time as \emph{model time}.
 
-One can select a calendar for a more precise control of the model time, however.  Choosing a calendar is appropriate for runs for specific temporal periods like ``the 18th-century'' or ``1989--2010''.  The calendar is generally needed because  specific knowledge of lengths of months and years is required to use climate data properly and to facilitate model validation.  A ``calendar'' is a concept that is part of the \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html}{CF Metadata Conventions}.
+One can select a calendar for more precise control of the model time, however.  A ``calendar'' is a concept that is part of the \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html}{CF Metadata Conventions}.  Choosing a calendar is appropriate for runs for specific temporal periods like ``the 18th-century'' or ``1989--2010''.  The calendar is generally needed because  specific knowledge of lengths of months and years is required to use climate data properly or to facilitate model validation.
 
-You can choose a calendar by setting the \config{calendar} configuration
-parameter or the command-line options described below in Table \ref{tab:calendars}.
+PISM uses \href{http://meteora.ucsd.edu/~pierce/calcalcs/index.html}{CalCalcs} by David~W.~Pierce to perform calendric computations.  This lets us support all the calendars \href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#calendar}{defined} by the CF Metadata Conventions document except for the \texttt{366_day} (\texttt{all_leap}) calendar.
+
+Time units in PISM's output files always contain a reference date because it is required by the CF metadata conventions.
+
+By default PISM does not use a calendar. This is appropriate for runs that do not require precise application of forcing data or reporting on particular dates (paleo-climate runs, for example).  In this mode PISM ignores the reference date in time unit specifications (such as ``\texttt{days since 1969-7-20}''), though the value set using \config{reference_date} configuration parameter is saved in (is passed forward into) output files.
 
 \begin{table}
   \centering
@@ -114,29 +116,7 @@ parameter or the command-line options described below in Table \ref{tab:calendar
   \label{tab:calendars}
 \end{table}
 
-PISM uses
-\href{http://meteora.ucsd.edu/~pierce/calcalcs/index.html}{CalCalcs}
-by David~W.~Pierce to perform calendric computations. This lets us
-support all the calendars
-\href{http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#calendar}{defined}
-by the CF Metadata Conventions document except for the
-\texttt{366_day} (\texttt{all_leap}) calendar.
-
-Time units in PISM's output files always contain a reference date
-because it is required by the CF metadata conventions.
-
-By default PISM does not use a calendar. This is appropriate for runs that
-do not require precise application of forcing data or reporting on
-particular dates (paleo-climate runs, for example).
-In this mode PISM ignores the reference date in time unit specifications
-(such as ``\texttt{days since 1969-7-20}''), though the value set using
-\config{reference_date} configuration parameter is saved in
-output files.
-
-Selecting a calendar using the \config{calendar} configuration
-parameter or the \intextoption{-calendar} command-line option enables calendar-based time management.
-
-The implications are:
+Selecting a calendar using the \config{calendar} configuration parameter or the \intextoption{calendar} command-line option enables calendar-based time management; see Table \ref{tab:calendars}.  The implications of selecting a calendar are:
 \begin{itemize}
 \item PISM uses the \texttt{units} attribute of coordinate variables
   \emph{literally} (including the reference date) in unit conversions. Please
@@ -179,35 +159,33 @@ $ pismr -calendar standard -ys 2001-1-1 -ye 2101-1-1 ...
 \end{verbatim}
 (These option combinations are equivalent.)
 
-It is also possible to run PISM for the duration of the available forcing data using the \fileopt{time_file} option.
-This command
+It is also possible to run PISM for the duration of the available forcing data using the \fileopt{time_file} option.  The command
 \begin{verbatim}
 $ pismr -calendar gregorian -time_file forcing.nc
 \end{verbatim} %$
 will extract the reference date and run length from \texttt{forcing.nc}, respecting time bounds.
 
-It is also possible to save spatial and/or scalar time-series daily, monthly or
-yearly (using the calendric computations). See sections~\ref{sec:saving-time-series}
-and~\ref{sec:saving-spat-vari}.
+It is also possible to save spatial and/or scalar time-series daily, monthly or yearly using these calendric computations. See sections~\ref{sec:saving-time-series} and~\ref{sec:saving-spat-vari}.
+
 
 \subsection{Diagnostic computations}
 \label{sec:diagnostic-computations}
 
-A diagnostic computation is one where the internal state does not evolve.  The major way this can happen is if the run duration is zero years.  Such runs are often used to look at lots of fields for the current model state.
+A ``diagnostic'' computation can be defined as one where the internal state does not evolve.  The internal state of PISM is the set of variables read by ``\texttt{-i}''.  You can ask PISM to do a diagnostic computation by setting the run duration to zero years.  Zero-length runs are also used to look at additional fields corresponding to the current model state.
 
-As an example, consider the second of these two runs:
+As an example, consider these two runs:
 \begin{verbatim}
 pisms -y 6000 -o foo.nc
 pismr -i foo.nc -y 0 -o bar.nc -o_size big
 \end{verbatim}
 
-\noindent The result of this zero-length, ``\texttt{-y 0}'', run is a NetCDF file \texttt{bar.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.  The file \texttt{foo.nc} does not contain many of these fields because it was written with the default output size of \texttt{medium}.  The ``\texttt{-y 0}'' run has diagnostically ``filled-in'' all the fields which PISM can model at a time step, but the model state has not evolved.
+\noindent The result of the second zero-length run is a NetCDF file \texttt{bar.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.  The file \texttt{foo.nc} does not contain many of these fields because it was written with the default output size of \texttt{medium}.  The ``\texttt{-y 0}'' run has diagnostically ``filled-in'' all the fields which PISM can model at a time step, but the model state has not evolved.
 
 In fact, during such a run PISM performs one short time-step to compute ``rates of change'' of ice thickness, surface elevation and other fields, but the model state \emph{is reset} after this step, so re-starting from \texttt{foo.nc} above would give the same result as re-starting from \texttt{bar.nc}.
 
 This diagnostic mode is often associated to the modeling of ice shelves and ice streams.  Subsection \ref{sec:ross} describes using a ``\texttt{-y 0}'' diagnostic run to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sec:verif}, are diagnostic calculations using the SSA.
 
-Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, under the default \texttt{-o_size medium} output size, contain the three-dimensional velocity field.  Instead, it contains just a bit more than the variables which are needed to restart the run.  One can  force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.  Or one can go back and do a ``\texttt{-y 0}'' diagnostic run and ask for \texttt{-o_size big}.
+The NetCDF model state saved by PISM at the end of an \emph{evolution} run (i.e.~with ``\texttt{-y }$Y$'' for $Y>0$) does not, under the default \texttt{-o_size medium} output size, contain the three-dimensional velocity field.  Instead, it contains just a few more variables than those which are needed to restart the run with \texttt{-i}.  One can  force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.  Or one can go back and do a ``\texttt{-y 0}'' diagnostic run using \texttt{-o_size big}.
 
 
 \subsection{Disabling PISM components}
@@ -228,11 +206,11 @@ But sometimes one wants to disable particular components, during model spin-up, 
 \subsection{Dealing with more difficult modeling choices}
 \label{subsec:hard-choices}\optsection{Dealing with more difficult modeling choices}
 
-Most uses of an ice sheet model depend on careful modeling choices in situations where there are considerable uncertainties \emph{and} the model results depend strongly on those choices.  There may be, at the present state of knowledge, \emph{no clear default values} that PISM can provide.  Also, the available PISM options and sub-models are known to \emph{not} be sufficient for all users.  Thus there are modeling choices for which we know the user may have to do a great deal more hard work than just choose among PISM runtime options.
+Most uses of an ice sheet model depend on careful modeling choices in situations where there are considerable uncertainties \emph{and} the model results depend strongly on those choices.  There may be, at the present state of knowledge, \emph{no clear default values} that PISM can provide.  Furthermore, the available PISM options and sub-models are known to \emph{not} be sufficient for all users.  Thus there are modelling situations for which we know the user may have to do a great deal more hard work than just choose among PISM runtime options.
 
 Here are example cases where users have worked hard:
 \begin{itemize}
-\item User made use of available data in order to choose parameters for existing PISM models.  These parameters will then override PISM defaults.
+\item User made use of available data in order to choose parameters for existing PISM models.  These parameters then override PISM defaults.
 \begin{center} % our UAF current situation with Greenland
 \fbox{ \begin{minipage}[t]{5.0in}
 \emph{Example}.  Use regional atmosphere model output to identify PDD parameters suitable for modeling surface mass balance on a particular ice sheet.  Then supply these parameters to PISM by a \texttt{-config\_override} file.
@@ -247,7 +225,7 @@ Here are example cases where users have worked hard:
 \item User simplified the model in use, instead of the default which was more elaborate.
 \begin{center} % Nick's -yield_stress constant choice
 \fbox{ \begin{minipage}[t]{5.0in}
-\emph{Example}.  Instead of using the PISM default mechanism connecting basal melt rate and basal strength, bypass this mechanism and impose a map of yield stress \texttt{tauc} directly.
+\emph{Example}.  Instead of using the PISM default mechanism connecting basal melt rate and basal strength, bypass this mechanism by generating a map of yield stress \texttt{tauc} directly and supplying it as input.
 \end{minipage} }
 \end{center}
 \end{itemize}
