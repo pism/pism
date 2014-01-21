@@ -20,6 +20,9 @@ netcdf gumparams {
     pism_overrides:summary_time_unit_name = "second";
     pism_overrides:summary_time_unit_name_doc = "";
 
+    pism_overrides:summary_time_use_calendar = "no";
+    pism_overrides:summary_time_use_calendar_doc = "";
+
     pism_overrides:summary_vol_scale_factor_log10 = -15;
     pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3";
 

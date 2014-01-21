@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -252,6 +252,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   const int log10scalevol  = static_cast<int>(config.get("summary_vol_scale_factor_log10")),
             log10scalearea = static_cast<int>(config.get("summary_area_scale_factor_log10"));
   const std::string tunitstr = config.get_string("summary_time_unit_name");
+  const bool use_calendar = config.get_flag("summary_time_use_calendar");
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));
@@ -287,16 +288,16 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   if ((tempAndAge == PETSC_TRUE) || (!do_energy) || (getVerbosityLevel() > 2)) {
     char tempstr[90]    = "",
          velunitstr[90] = "";
-    const PetscScalar major_dt = grid.time->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
 
+    const PetscScalar major_dt = grid.time->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
     if (mass_cont_sub_counter == 1) {
       snprintf(tempstr,90, " (dt=%.5f)", major_dt);
     } else {
       snprintf(tempstr,90, " (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)",
                major_dt, mass_cont_sub_counter, major_dt / mass_cont_sub_counter);
     }
-
     stdout_flags_count0 += tempstr;
+
     if (delta_t > 0.0) { // avoids printing an empty line if we have not done anything
       stdout_flags_count0 += "\n";
       ierr = verbPrintf(2,grid.com, stdout_flags_count0.c_str()); CHKERRQ(ierr);
@@ -306,12 +307,18 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
       ierr = verbPrintf(2, grid.com, "%s\n", stdout_ssa.c_str()); CHKERRQ(ierr);
     }
 
+    if (use_calendar) {
+      snprintf(tempstr,90, "%s", grid.time->date().c_str());
+    } else {
+      snprintf(tempstr,90, "%.3f", grid.time->convert_time_interval(grid.time->current(), tunitstr));
+    }
+
     snprintf(velunitstr,90, "m/%s", tunitstr.c_str());
     const double maxvel = grid.convert(gmaxu > gmaxv ? gmaxu : gmaxv, "m/s", velunitstr);
 
     ierr = verbPrintf(2,grid.com,
                       "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",
-                      grid.time->date().c_str(),
+                      tempstr,
                       volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
                       max_diffusivity, maxvel); CHKERRQ(ierr);
 

@@ -40,6 +40,9 @@ netcdf pism_config {
     pism_config:count_time_steps = "no";
     pism_config:count_time_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
 
+    pism_config:summary_time_use_calendar = "yes";
+    pism_config:summary_time_use_calendar_doc = "Whether to use the current calendar when printing model time in summary to stdout.";
+
     pism_config:ssa_method = "fd";
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
 
@@ -107,6 +110,7 @@ netcdf pism_config {
     pism_config:use_constant_nuh_for_ssa_doc = "Compute velocities in ice shelves and streams with a constant value for the product of viscosity @f$\\nu@f$ and thickness @f$H@f$, obtained from the shelf extension";
 
     pism_config:compute_surf_grad_inward_ssa = "no";
+    pism_config:compute_surf_grad_inward_ssa_doc = "If yes then use inward first-order differencing in computing surface gradient in the SSA objects.";
 
     pism_config:ssa_dirichlet_bc = "no";
     pism_config:ssa_dirichlet_bc_doc = "apply SSA velocity Dirichlet boundary condition";
