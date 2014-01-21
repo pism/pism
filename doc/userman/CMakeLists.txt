@@ -14,13 +14,14 @@ set (latex_sources
   init-boot.tex                # 4
   modeling-computational.tex   # 5
   modeling-dynamics.tex        # 6
-  modeling-marine.tex          # 7
-  practical-usage.tex          # 8
-  verification.tex             # 9
-  simplified-geometry.tex      # 10
-  ross.tex                     # 11
-  storglaciaren.tex            # 12
-  jako.tex                     # 13
+  modeling-subglacier.tex      # 7
+  modeling-marine.tex          # 8
+  practical-usage.tex          # 9
+  verification.tex             # 10
+  simplified-geometry.tex      # 11
+  ross.tex                     # 12
+  storglaciaren.tex            # 13
+  jako.tex                     # 14
   )
 
 # Find all the figures in figs/
