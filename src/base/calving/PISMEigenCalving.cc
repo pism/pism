@@ -311,8 +311,8 @@ PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
       // Number of cells used in computing eigen1 and eigen2:
       PetscInt M = 0;
 
-      // find partially filled or empty grid boxes on the icefree ocean, which
-      // have floating ice neighbors after massContExplicitStep
+      // find partially filled or empty grid boxes on the ice-free
+      // ocean which have floating ice neighbors
       if ((mask.ice_free_ocean(i, j) &&
            mask.next_to_floating_ice(i, j)) == false)
         continue;

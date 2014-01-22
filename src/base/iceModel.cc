@@ -306,8 +306,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = bedtoptemp.set_glaciological_units("K");
   ierr = variables.add(bedtoptemp); CHKERRQ(ierr);
 
-  if (config.get_flag("use_ssa_velocity")) {
-    // yield stress for basal till (plastic or pseudo-plastic model)
+  // yield stress for basal till (plastic or pseudo-plastic model)
+  {
     ierr = vtauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_basal_material_yield_stress
     ierr = vtauc.set_attrs("diagnostic",
@@ -768,12 +768,17 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   grid.profiler->end(event_hydrology);
 
+  //! \li update the fracture density field; see calculateFractureDensity()
+  if (config.get_flag("do_fracture_density")) {
+    ierr = calculateFractureDensity(); CHKERRQ(ierr);
+  }
+
   grid.profiler->begin(event_mass);
 
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
-    ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
+    ierr = massContExplicitStep(); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
 
     // Note that there are three adaptive time-stepping criteria. Two of them
@@ -788,7 +793,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
     // This is why the following two lines appear here and are executed only
     // if do_mass_continuity == true.
-    if (do_skip == PETSC_TRUE && skipCountDown > 0)
+    if (do_skip == true && skipCountDown > 0)
       skipCountDown--;
     stdout_flags += "h";
   } else {

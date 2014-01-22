@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -91,12 +91,13 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
 
 //! Compute the CFL constant associated to first-order upwinding for the sliding contribution to mass continuity.
 /*!
-This procedure computes the maximum horizontal speed in the SSA areas.  In
-particular it computes CFL constant for the upwinding, in massContExplicitStep(),
-which applies to the basal component of mass flux.
+  This procedure computes the maximum horizontal speed in the icy
+  areas. In particular it computes CFL constant for the upwinding, in
+  massContExplicitStep(), which applies to the basal component of mass
+  flux.
 
-That is, because the map-plane mass continuity is advective in the
-sliding case we have a CFL condition.
+  That is, because the map-plane mass continuity is advective in the
+  sliding case we have a CFL condition.
  */
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;

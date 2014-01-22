@@ -26,6 +26,7 @@
 #include "bedrockThermalUnit.hh"
 #include "pism_options.hh"
 
+#include <assert.h>
 
 //! \file iMtemp.cc Methods of IceModel which implement the cold-ice, temperature-based formulation of conservation of energy.
 
@@ -183,35 +184,26 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = system.initAllColumns(); CHKERRQ(ierr);
 
     // now get map-plane fields, starting with coupler fields
-    if (surface != PETSC_NULL) {
-      ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
-    } else {
-      SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
-    }
-    if (ocean != PETSC_NULL) {
-      ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
-      ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
-    } else {
-      SETERRQ(grid.com, 1,"PISM ERROR: ocean == PETSC_NULL");
-    }
+    assert(surface != NULL);
+    ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
+
+    assert(ocean != NULL);
+    ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
 
     IceModelVec2S &G0 = vWork2d[0];
     ierr = G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", ""); CHKERRQ(ierr);
     ierr = G0.set_glaciological_units("mW m-2");
-    if (btu) {
-      ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
-    } else {
-      SETERRQ(grid.com, 3,"PISM ERROR: PISMBedThermalUnit* btu == PETSC_NULL in temperatureStep()");
-    }
+
+    assert(btu != NULL);
+    ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
 
     IceModelVec2S &bwatcurr = vWork2d[1];
     ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
     ierr = bwatcurr.set_glaciological_units("m");
-    if (subglacial_hydrology) {
-      ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
-    } else {
-      SETERRQ(grid.com, 3,"PISM ERROR: PISMHydrology* subglacial_hydrology is NULL in temperatureStep()");
-    }
+
+    assert(subglacial_hydrology != NULL);
+    ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
 
     ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
     ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
@@ -224,6 +216,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = bwatcurr.begin_access(); CHKERRQ(ierr);
 
     IceModelVec2S *Rb;            // basal frictional heating
+    assert(stress_balance != NULL);
     ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
 
     IceModelVec3 *u3, *v3, *w3, *strain_heating3;
@@ -365,9 +358,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
-        // basal_melt_rate(i,j) is rate of mass loss at bottom of ice; finalize it
-        //   note massContExplicitStep() calls PISMOceanCoupler; FIXME: does there
-        //   need to be a check that shelfbmassflux(i,j) is up to date?
+        // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
         if (mask.ocean(i,j)) {
           if (mask.icy(i,j)) {
             // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)

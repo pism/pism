@@ -144,9 +144,8 @@ public:
   SSAStrengthExtension *strength_extension;
 
   virtual ~SSA() { 
-    PetscErrorCode ierr = deallocate();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
+    if (deallocate() != 0) {
+      PetscPrintf(grid.com, "FATAL ERROR: SSA de-allocation failed.\n");
       PISMEnd();
     }
     delete strength_extension;
