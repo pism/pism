@@ -407,7 +407,7 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
 }
 
 /**
- * Shallow stress balance class that reads =u= and =v= fields from a
+ * Shallow stress balance class that reads `u` and `v` fields from a
  * file and holds them constant.
  *
  * The only use I can think of right now is testing.

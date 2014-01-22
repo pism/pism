@@ -19,6 +19,7 @@
 #include <sstream>
 #include <algorithm>
 #include <string.h>
+#include <assert.h>
 
 #include "pism_options.hh"
 #include "NCVariable.hh"
@@ -581,7 +582,7 @@ PetscErrorCode init_config(MPI_Comm com,
   return 0;
 }
 
-PetscErrorCode set_config_from_options(MPI_Comm /*com*/, PISMConfig &config) {
+PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   PetscErrorCode ierr;
   bool flag;
 
@@ -592,9 +593,35 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, PISMConfig &config) {
 
   ierr = config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity"); CHKERRQ(ierr);
 
-  // if set, use old IceModel::temperatureStep(), and set enthalpy as though
-  //   ice is cold
-  ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
+  {
+    bool energy_set;
+    std::string energy;
+    std::set<std::string> choices;
+    choices.insert("none");
+    choices.insert("cold");
+    choices.insert("enthalpy");
+
+    ierr = PISMOptionsList(com, "-energy",
+                           "choose the energy model (one of 'none', 'cold', 'enthalpy')",
+                           choices, "enthalpy", energy, energy_set); CHKERRQ(ierr);
+
+    if (energy_set == true) {
+      if (energy == "none") {
+        ierr = config.set_flag_from_option("do_energy", false); CHKERRQ(ierr);
+        // Allow selecting cold ice flow laws in isothermal mode. 
+        ierr = config.set_flag_from_option("do_cold_ice_methods", true); CHKERRQ(ierr);
+      } else if (energy == "cold") {
+        ierr = config.set_flag_from_option("do_energy", true); CHKERRQ(ierr);
+        ierr = config.set_flag_from_option("do_cold_ice_methods", true); CHKERRQ(ierr);
+      } else if (energy == "enthalpy") {
+        ierr = config.set_flag_from_option("do_energy", true); CHKERRQ(ierr);
+        ierr = config.set_flag_from_option("do_cold_ice_methods", false); CHKERRQ(ierr);
+      } else {
+        // can't happen (PISMOptionsList validates its input)
+        assert(false);
+      }
+    }
+  }
 
   // at bootstrapping, choose whether the method uses smb as upper boundary for
   // vertical velocity
@@ -608,7 +635,6 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, PISMConfig &config) {
   ierr = config.flag_from_option("blatter", "do_blatter"); CHKERRQ(ierr);
   ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("energy", "do_energy"); CHKERRQ(ierr);
   ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
 
   // hydrology
@@ -838,18 +864,10 @@ PetscErrorCode set_config_from_options(MPI_Comm /*com*/, PISMConfig &config) {
     config.set_flag_from_option("part_grid", true);
   }
 
-
-  ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);
-  if (flag) {
-    config.set_flag_from_option("use_ssa_velocity", true);
-    config.set_flag_from_option("use_ssa_when_grounded", false);
-  }
-
   // check -ssa_sliding
   ierr = PISMOptionsIsSet("-ssa_sliding", flag);  CHKERRQ(ierr);
   if (flag) {
     config.set_flag_from_option("use_ssa_velocity", true);
-    config.set_flag_from_option("use_ssa_when_grounded", true);
   }
 
   bool test_climate_models = false;

@@ -59,7 +59,7 @@ Flow law parameters such as ice softness can be changed using configuration para
 
 The basic stress balance used for all grounded ice in PISM is the non-sliding, thermomechanically-coupled SIA \cite{BBL}.  For the vast majority of most ice sheets, as measured by area or volume, this is an appropriate model which is an $O(\eps^2)$ approximation to the Stokes model if $\eps$ is the depth-to-length ratio of the ice sheet \cite{Fowler}.
 
-The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance applies to floating ice.  Option \texttt{-ssa_floating_only} turns on this stress balance only for floating ice.  See the Ross ice shelf example in section \ref{sec:ross} for an example in which the SSA is only applied to floating ice.
+The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance applies to floating ice.  See the Ross ice shelf example in section \ref{sec:ross} for an example in which the SSA is only applied to floating ice.
 
 The SSA is also used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}.  Specifically for the SSA with ``plastic'' (Coulomb friction) basal resistance, the locations of ice streams are determined as part of a free boundary problem of Schoof \cite{SchoofStream}, a model for emergent ice streams within a ice sheet and ice shelf system.  This model explains ice streams through a combination of plastic till failure and SSA stress balance.  As a combination of SIA and SSA it is a ``hybrid'' approximation of the Stokes model \cite{BBssasliding,Winkelmannetal2011}.  In other words, this SSA description of ice streams is the preferred ``sliding law'' for the SIA, and it should be used in preference to classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}
 
@@ -75,7 +75,6 @@ Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, wh
 \textbf{Option} & \textbf{Semantics}\\ \midrule
     (\emph{NO OPTION}) & Grounded ice flows by the non-sliding SIA.  Floating ice essentially doesn't flow, so this model is not recommended for marine ice sheets. \\
     \intextoption{no_sia} & Do not use the SIA model anywhere. \\
-    \intextoption{ssa_floating_only} & Only floating ice uses SSA.  Grounded ice marked by mask value \texttt{SHEET} uses the nonsliding SIA. \\
     \intextoption{ssa_sliding} & The recommended default sliding law, which gives the SIA+SSA hybrid stress balance.  Combines SSA-computed velocity, using pseudo-plastic till, with SIA-computed velocity according to the combination in \cite{BBssasliding}.  Floating ice uses SSA only. \\
 \bottomrule
 \end{tabular}
@@ -132,7 +131,7 @@ In normal use PISM solves the conservation of energy problem within the ice, the
 
 The state of the full conservation of energy model includes the 3D \texttt{enthalpy} variable seen in output files plus the 2D \texttt{bwat} and \texttt{tillwat} subglacial hydrology state variables (subsection \ref{subsect:subhydro}).  The important basal melt rate computation involves all of these energy state variables, and in fact the basal melt rate (\texttt{bmelt} in output files) comes from conserving energy across the ice-bedrock layer \cite{AschwandenBuelerKhroulevBlatter}.  Fields \texttt{temp}, \texttt{liqfrac}, and \texttt{temp_pa} seen in output files are all actually diagnostic outputs because all of these can be recovered from the enthalpy and the ice geometry.
 
-Because this part of PISM is just a conservation law, there is little need for the user to worry about controlling it.  If desired, however, conservation of energy can be turned off entirely with \intextoption{no_energy}.  The enthalpy-based conservation of energy model can be replaced by the temperature-based (i.e.~``cold ice'') method used in \cite{BBssasliding} and verified in \cite{BBL} by setting option \intextoption{cold}.
+Because this part of PISM is just a conservation law, there is little need for the user to worry about controlling it.  If desired, however, conservation of energy can be turned off entirely with \intextoption{energy none}.  The enthalpy-based conservation of energy model can be replaced by the temperature-based (i.e.~``cold ice'') method used in \cite{BBssasliding} and verified in \cite{BBL} by setting option \intextoption{energy cold}.
 
 The thermal bedrock layer model is turned off by setting \texttt{-Mbz 1} (i.e.~zero spaces) while it is turned on by choosing a depth and number of points, as in \texttt{-Lbz 1000 -Mbz 21}, for example, which gives a layer depth of 1000 m and grid spaces of 50 m (= 1000/20).  The input geothermal flux (\texttt{bheatflx} in output files) is applied at the bottom of the bedrock thermal layer if such a layer is present and otherwise it is applied at the base of the ice.
 

@@ -32,12 +32,20 @@ IceEISModel::IceEISModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_override
 
   // the following flag must be here in constructor because IceModel::createVecs()
   // uses it
-  // non-polythermal methods; can be overridden by the command-line option -no_cold:
+  // non-polythermal methods; can be overridden by the command-line option "-energy enthalpy"
   config.set_flag("do_cold_ice_methods", true);
 
   // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
   config.set_flag("is_dry_simulation", true);
   config.set_flag("use_ssa_velocity", false);
+
+  // Make bedrock thermal material properties into ice properties.  Note that
+  // zero thickness bedrock layer is the default, but we want the ice/rock
+  // interface segment to have geothermal flux applied directly to ice without
+  // jump in material properties at base.
+  config.set_double("bedrock_thermal_density", config.get("ice_density"));
+  config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
+  config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
 }
 
 PetscErrorCode IceEISModel::createVecs() {
@@ -178,22 +186,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
   return 0;
 }
 
-//! \brief Decide which flow law to use.
-PetscErrorCode  IceEISModel::set_default_flowlaw() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::set_default_flowlaw(); CHKERRQ(ierr);
-
-  // Make bedrock thermal material properties into ice properties.  Note that
-  // zero thickness bedrock layer is the default, but we want the ice/rock
-  // interface segment to have geothermal flux applied directly to ice without
-  // jump in material properties at base.
-  config.set_double("bedrock_thermal_density", config.get("ice_density"));
-  config.set_double("bedrock_thermal_conductivity", config.get("ice_thermal_conductivity"));
-  config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
-
-  return 0;
-}
 
 //! \brief Decide which stress balance model to use.
 PetscErrorCode IceEISModel::allocate_stressbalance() {

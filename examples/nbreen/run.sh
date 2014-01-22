@@ -97,7 +97,7 @@ grid="-Mx $myMx -My $myMy -Mz 11 -z_spacing equal -Lz 600"
 
 climate="-surface given -surface_given_file $data"
 
-physics="-config_override nbreen_config.nc -no_mass -no_energy"
+physics="-config_override nbreen_config.nc -no_mass -energy none"
 
 diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
 

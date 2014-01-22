@@ -26,8 +26,8 @@ PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
 cmd="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
-  -Mz 3 -Lz 3000 -z_spacing equal -surface given -no_sia -no_energy \
-  -ssa_floating_only -pik -ssa_dirichlet_bc -ssa_view_nuh \
+  -Mz 3 -Lz 3000 -z_spacing equal -surface given -no_sia -energy none \
+  -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_view_nuh \
   -y 0 -o Ross_result_diag_Mx${M}.nc -o_order zyx -ssa_e $SSAE -ssafd_ksp_monitor"
 
 echo "running command:"

@@ -118,6 +118,19 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
 
   variables = &vars;
 
+  {
+    std::string hydrology_tillwat_max = "hydrology_tillwat_max";
+    bool till_is_present = config.get(hydrology_tillwat_max) > 0.0;
+
+    if (till_is_present == false) {
+      PetscPrintf(grid.com,
+                  "PISM ERROR: The Mohr-Coulomb yield stress model cannot be used without till.\n"
+                  "            Reset %s or choose a different yield stress model.\n",
+                  hydrology_tillwat_max.c_str());
+      PISMEnd();
+    }
+  }
+
   ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
 
   bed_topography = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
@@ -308,37 +321,14 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   m_t = my_t; m_dt = my_dt;
   // this model does no internal time-stepping
 
-  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded"),
-       slipperygl = config.get_flag("tauc_slippery_grounding_lines");
+  bool slipperygl = config.get_flag("tauc_slippery_grounding_lines");
 
-  const PetscReal high_tauc = config.get("high_tauc"),
-                  Wtilmax   = config.get("hydrology_tillwat_max"),
-                  c0        = config.get("till_c_0"),
-                  e0overCc  = config.get("till_reference_void_ratio")
+  const PetscReal high_tauc   = config.get("high_tauc"),
+                  tillwat_max = config.get("hydrology_tillwat_max"),
+                  c0          = config.get("till_c_0"),
+                  e0overCc    = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
-                  delta     = config.get("till_effective_fraction_overburden");
-
-  // apply greatly-simplified model if either no need for tauc on land
-  //   or if the user has turned off till water model by setting
-  //   hydrology_tillwat_max = 0
-  if ((use_ssa_when_grounded == false) || (Wtilmax <= 0.0)) {
-    ierr = mask->begin_access(); CHKERRQ(ierr);
-    ierr = tauc.begin_access(); CHKERRQ(ierr);
-    MaskQuery m(*mask);
-    PetscInt GHOSTS = grid.max_stencil_width;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (m.grounded(i, j)) {
-          tauc(i, j) = high_tauc;
-        } else {
-          tauc(i, j) = 0.0;
-        }
-      }
-    }
-    ierr = mask->end_access(); CHKERRQ(ierr);
-    ierr = tauc.end_access(); CHKERRQ(ierr);
-    return 0;
-  }
+                  delta       = config.get("till_effective_fraction_overburden");
 
   assert(hydrology != NULL);
 
@@ -367,11 +357,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
         PetscReal water;
         if ( slipperygl && ((*bed_topography)(i,j) <= 0.0)
              && (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
-          water = Wtilmax;
+          water = tillwat_max;
         } else {
           water = tillwat(i,j); // usual case
         }
-        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / Wtilmax)));
+        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / tillwat_max)));
         Ntil = PetscMin(Po(i,j), Ntil);
         tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * till_phi(i, j));
       }
@@ -502,11 +492,11 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
 PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
   PetscReal Ntil;
-  const PetscReal c0        = config.get("till_c_0"),
-                  e0overCc  = config.get("till_reference_void_ratio")
+  const PetscReal c0          = config.get("till_c_0"),
+                  e0overCc    = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
-                  delta     = config.get("till_effective_fraction_overburden"),
-                  Wtilmax   = config.get("hydrology_tillwat_max");
+                  delta       = config.get("till_effective_fraction_overburden"),
+                  tillwat_max = config.get("hydrology_tillwat_max");
 
   assert(hydrology != NULL);
 
@@ -529,7 +519,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
       } else if (m.ice_free(i, j)) {
         // no change
       } else { // grounded and there is some ice
-        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / Wtilmax)));
+        Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (tillwat(i,j) / tillwat_max)));
         till_phi(i, j) = 180.0/M_PI * atan((tauc(i, j) - c0) / Ntil);
       }
     }

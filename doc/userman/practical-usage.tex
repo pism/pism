@@ -23,8 +23,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     PISM), \texttt{medium} (the default, includes some diagnostic quantities)
     and \texttt{big} (writes all the variables mentioned in tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa}
-    and \texttt{vbar_ssa} velocities saved by a previous
-    \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run. \\
+    and \texttt{vbar_ssa} velocities saved by a previous \texttt{-ssa_sliding} run. \\
     \bottomrule
  \end{tabular}
 \caption{Basic NetCDF input and output options}
@@ -853,7 +852,7 @@ Alternatively, the file \texttt{.petscrc} is always read, if present, from the d
 % because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put 
 % the Mx, My dimensions in different arguments to the DACreate commands
 
-Now we address controls on how PETSc solves systems of linear equations, which uses the PETSc ``KSP'' component (Krylov methods).  Such linear solves are needed each time the nonlinear SSA stress balance equations are used (e.g.~with options \texttt{-ssa_sliding} and \texttt{-ssa_floating_only}).
+Now we address controls on how PETSc solves systems of linear equations, which uses the PETSc ``KSP'' component (Krylov methods).  Such linear solves are needed each time the nonlinear SSA stress balance equations are used (i.e.~with the option \texttt{-ssa_sliding}).
 
 Especially for solving the SSA equations with high resolution on multiple processors, it is recommended that the option \intextoption{ksp_rtol} be set lower than its default value of $10^{-5}$.  For example, 
 

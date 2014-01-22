@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -68,9 +68,10 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
 
   ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
 
-  const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                  C        = config.get("hydrology_tillwat_decay_rate_null");
-  if (Wtilmax < 0.0) {
+  const PetscReal tillwat_max = config.get("hydrology_tillwat_max"),
+                  C           = config.get("hydrology_tillwat_decay_rate_null");
+
+  if (tillwat_max < 0.0) {
     PetscPrintf(grid.com,
        "PISMNullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
        "            this is not allowed ... ENDING ... \n\n");
@@ -87,7 +88,7 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
         Wtil(i,j) = 0.0;
       } else {
         Wtil(i,j) += icedt * (total_input(i,j) - C);
-        Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), Wtilmax);
+        Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
       }
     }
   }

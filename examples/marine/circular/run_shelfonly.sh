@@ -25,7 +25,7 @@ doit="mpiexec -n $N pismr $pismopts"
 #$doit $pismopts -y $length -o so_old.nc
 
 # check that this result is similar
-#$doit -y $length -cold -o so_old_cold.nc
+#$doit -y $length -energy cold -o so_old_cold.nc
 
 
 # run with strength extension and part_grid but no CFBC

@@ -13,14 +13,14 @@ netcdf pism_config {
     pism_config:interpret_precip_as_snow = "no";
     pism_config:interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
 
-    pism_config:do_cold_ice_methods = "no";
-    pism_config:do_cold_ice_methods_doc = "Use cold ice (i.e. not polythermal) methods.";
-
     pism_config:do_mass_conserve = "yes";
     pism_config:do_mass_conserve_doc = "Solve the mass conservation equation";
 
     pism_config:do_energy = "yes";
     pism_config:do_energy_doc = "Solve energy conservation equations.";
+
+    pism_config:do_cold_ice_methods = "no";
+    pism_config:do_cold_ice_methods_doc = "Use cold ice (i.e. not polythermal) methods.";
 
     pism_config:do_age = "no";
     pism_config:do_age_doc = "Solve age equation (advection equation for ice age).";
@@ -45,9 +45,6 @@ netcdf pism_config {
 
     pism_config:ssa_method = "fd";
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
-
-    pism_config:use_ssa_when_grounded = "no";
-    pism_config:use_ssa_when_grounded_doc = "The SSA can be used as a sliding law for grounded ice [@ref BBssasliding], and it is if this is yes.";
 
     pism_config:do_pseudo_plastic_till = "no";
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
@@ -221,7 +218,7 @@ netcdf pism_config {
     pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
 
     pism_config:high_tauc = 1e6;
-    pism_config:high_tauc_doc = "Pa; the 'high' yield stress value used in two cases: 1) (default): in grounded ice-free areas and 2) in *all* grounded areas if -ssa_floating_only is set.";
+    pism_config:high_tauc_doc = "Pa; the 'high' yield stress value used in grounded ice-free areas.";
 
     pism_config:sliding_scale_factor_reduces_tauc = -1.0;
     pism_config:sliding_scale_factor_reduces_tauc_doc = "; divides pseudo-plastic tauc (yield stress) by given factor; this would increase sliding by given factor in absence of membrane stresses; not used if negative or zero; not used by default";

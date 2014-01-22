@@ -19,7 +19,7 @@ A summary of options to turn on these PISM-PIK mechanisms, other than ``eigencal
 
 The most basic decision about marine ice sheet dynamics made internally by PISM is whether to apply the ``flotation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \texttt{mask} variable.
 
-The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, even when ice is floating (mask value \texttt{MASK_FLOATING}), the user must turn on the usual choice for ice shelf dynamics, namely the SSA stress balance, by either option \intextoption{ssa_floating_only} or \intextoption{ssa_sliding}.
+The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, even when ice is floating (mask value \texttt{MASK_FLOATING}), the user must turn on the usual choice for ice shelf dynamics, namely the SSA stress balance, by using the option \intextoption{ssa_sliding}.
 
 \begin{table}[ht]
   \centering
@@ -31,7 +31,7 @@ The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab
     -1=\texttt{MASK_UNKNOWN} & not set, does not appear in PISM output files \\
     0=\texttt{MASK_ICE_FREE_BEDROCK} & ice free bedrock \\
     2=\texttt{MASK_GROUNDED}& ice is grounded (and the SIA is applied unless \intextoption{no_sia}; the SSA is also applied if \texttt{-ssa_sliding} is given) \\
-    3=\texttt{MASK_FLOATING} & ice is floating (the SIA is never applied; the SSA is applied if one of \texttt{-ssa_sliding} or \texttt{-ssa_floating_only} is given) \\
+    3=\texttt{MASK_FLOATING} & ice is floating (the SIA is never applied; the SSA is applied if \texttt{-ssa_sliding} is given) \\
     4=\texttt{MASK_ICE_FREE_OCEAN} & ice-free ocean \\
     \\\bottomrule
   \end{tabular}

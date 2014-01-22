@@ -44,7 +44,7 @@ oname=lab$myMx.nc
 
 grid="-Mx $myMx -My $myMx -Mz 26 -Lz 0.025 -Mbz 0 -Lbz 0 -z_spacing equal"
 
-physics="-config_override gumparams.nc -no_energy -cold -sia_flow_law isothermal_glen -sia_e 1.0 -gradient mahaffy"
+physics="-config_override gumparams.nc -energy none -sia_flow_law isothermal_glen -sia_e 1.0 -gradient mahaffy"
 
 endtime=2.3640e-05   # = 746 / 31556926 = 746 s;  see data from Sayag
 

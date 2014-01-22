@@ -25,7 +25,6 @@ static char help[] =
 #include "IceGrid.hh"
 #include "iceModel.hh"
 #include "eismint/iceEISModel.hh"
-#include "eismint/icePSTexModel.hh"
 #include "pism_options.hh"
 
 #include "PSDummy.hh"
@@ -51,14 +50,9 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> required;
     required.clear(); // no actually required options; "-eisII A" is default
     ierr = show_usage_check_req_opts(com, "pisms", required,
-      "  pisms [-eisII x|-pst -xxx] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
       "where major option chooses type of simplified experiment:\n"
-      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"
-      "  -pst -xxx   choose plastic till ice stream experiment; see Bueler & Brown (2009);\n"
-      "              (-xxx = -P0A|-P0I|-P1|-P2|-P3|-P4)\n"
-      "notes:\n"
-      "  -pdd        not allowed (because PISMConstAtmosCoupler is always used)\n"
-      ); CHKERRQ(ierr);
+      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"); CHKERRQ(ierr);
 
     PISMUnitSystem unit_system(NULL);
     PISMConfig config(com, "pism_config", unit_system),
@@ -67,40 +61,18 @@ int main(int argc, char *argv[]) {
 
     config.set_string("calendar", "none");
 
-    bool EISIIchosen, PSTexchosen;
-    /* This option determines the single character name of EISMINT II experiments:
-    "-eisII F", for example. */
-    ierr = PISMOptionsIsSet("-eisII", EISIIchosen); CHKERRQ(ierr);
-    /* This option chooses Plastic till ice Stream with Thermocoupling experiment. */
-    ierr = PISMOptionsIsSet("-pst", PSTexchosen); CHKERRQ(ierr);
-
-    int  choiceSum = (int) EISIIchosen + (int) PSTexchosen;
-    if (choiceSum > 1) {
-      ierr = PetscPrintf(com,
-         "PISM ERROR: pisms called with more than one simplified geometry experiment chosen\n");
-         CHKERRQ(ierr);
-      PISMEnd();
-    }
-
-    // actually construct the IceModel
     IceGrid g(com, config);
-    IceModel *m;
-    if (PSTexchosen == PETSC_TRUE) {
-      m = new IcePSTexModel(g, config, overrides);
-    } else {
-      m = new IceEISModel(g, config, overrides);
-    }
+    IceEISModel m(g, config, overrides);
 
-    ierr = m->setExecName("pisms"); CHKERRQ(ierr);
+    ierr = m.setExecName("pisms"); CHKERRQ(ierr);
 
-    ierr = m->init(); CHKERRQ(ierr);
+    ierr = m.init(); CHKERRQ(ierr);
 
-    ierr = m->run(); CHKERRQ(ierr);
+    ierr = m.run(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
-    ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
 
-    delete m;
+    ierr = m.writeFiles("simp_exper.nc"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

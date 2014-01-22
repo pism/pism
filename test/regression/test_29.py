@@ -52,10 +52,16 @@ def generate_config():
     pism_overrides.hydrology_regularizing_porosity = 0.01;
     pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes";
 
+    pism_overrides.yield_stress_model = "constant";
+    pism_overrides.yield_stress_model_doc = "only the constant yield stress model works without till";
+
+    pism_overrides.default_tauc = 1e6;
+    pism_overrides.default_tauc_doc = "set default to 'high tauc'";
+
     nc.close()
 
 def run_pism(opts):
-    cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP_regression.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
+    cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP_regression.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
 
     print cmd
     subprocess.call(shlex.split(cmd))

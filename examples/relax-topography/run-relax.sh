@@ -53,7 +53,7 @@ else
 fi
 
 # set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -cold"
+#  $ export PISM_EXEC="pismr -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
@@ -175,7 +175,7 @@ echo ""
 OCEAN="-calving ocean_kill"
 # FIXME (CK): OCEAN (above) is never used
 COUPLER="-surface given -surface_given_file $PISM_TARGETNAME"
-PISM="${PISM_PREFIX}${PISM_EXEC} -no_energy -bed_def lc"
+PISM="${PISM_PREFIX}${PISM_EXEC} -energy none -bed_def lc"
 # output file size
 OSIZE="big"
 

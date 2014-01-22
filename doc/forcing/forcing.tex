@@ -73,7 +73,7 @@ urlcolor=blue     % only if colorlinks=true
 
 \vspace{0.3in}
 \begin{quote}
-  \textsl{Copyright (C) 2004--2013 The PISM Authors}
+  \textsl{Copyright (C) 2004--2014 The PISM Authors}
   \medskip
 
   \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
@@ -429,7 +429,7 @@ This section describes how to use PISM to inspect climate forcing.
 
 Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). This makes it possible to turn ``off'' the ice dynamics code to visualize the climate mass balance and temperature boundary conditions produced using a combination of options and input files. This is helpful during the process of creating PISM-readable data files, and modeling with such.
 
-To do this, use the option \intextoption{test_climate_models}, which is equivalent to \intextoption{no_sia}, and \intextoption{no_energy} together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
+To do this, use the option \intextoption{test_climate_models}, which is equivalent to \intextoption{no_sia}, and \intextoption{energy none} together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
 
 Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface elevation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
 

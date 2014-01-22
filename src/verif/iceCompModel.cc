@@ -61,7 +61,14 @@ IceCompModel::IceCompModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overri
   config.set_flag("do_mass_conserve", true);
   config.set_flag("use_ssa_velocity", false);
   config.set_flag("include_bmr_in_continuity", false);
-  config.set_flag("use_ssa_when_grounded", false);
+
+  if (testname == 'V') {
+    config.set_string("ssa_flow_law", "isothermal_glen");
+    config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+  } else {
+    // Set the default for IceCompModel:
+    config.set_string("sia_flow_law", "arr");
+  }
 }
 
 PetscErrorCode IceCompModel::createVecs() {
@@ -261,19 +268,6 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
   }
 
   btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);
-
-  return 0;
-}
-
-PetscErrorCode IceCompModel::set_default_flowlaw() {
-
-  if (testname == 'V') {
-    config.set_string("ssa_flow_law", "isothermal_glen");
-    config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
-  } else {
-    // Set the default for IceCompModel:
-    config.set_string("sia_flow_law", "arr");
-  }
 
   return 0;
 }

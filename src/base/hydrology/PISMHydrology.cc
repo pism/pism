@@ -243,7 +243,7 @@ Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
 PetscErrorCode PISMHydrology::check_Wtil_bounds() {
   PetscErrorCode ierr;
-  PetscReal tillwatmax = config.get("hydrology_tillwat_max");
+  PetscReal tillwat_max = config.get("hydrology_tillwat_max");
   ierr = Wtil.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -254,11 +254,11 @@ PetscErrorCode PISMHydrology::check_Wtil_bounds() {
            "ENDING ... \n\n", Wtil(i,j), i, j);
         PISMEnd();
       }
-      if (Wtil(i,j) > tillwatmax) {
+      if (Wtil(i,j) > tillwat_max) {
         PetscPrintf(grid.com,
            "PISMHydrology ERROR: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
            "            hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", Wtil(i,j), tillwatmax, i, j);
+           "ENDING ... \n\n", Wtil(i,j), tillwat_max, i, j);
         PISMEnd();
       }
     }

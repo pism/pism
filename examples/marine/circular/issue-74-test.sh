@@ -28,7 +28,7 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 0"
 
-pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -o_order zyx -no_energy -no_sia"
+pismopts="-boot_file $infile $grid -ssa_sliding -ssa_dirichlet_bc -o_order zyx -energy none -no_sia"
 
 doit="mpiexec -n $N pismr $pismopts"
 

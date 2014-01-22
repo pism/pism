@@ -11,7 +11,7 @@ OPTS="-o_size small "
 set -e -x
 
 # Create a file to start from:
-$MPIEXEC -n 2 $PISM_PATH/pisms -no_cold -y 1000 $OPTS -o foo-03.nc
+$MPIEXEC -n 2 $PISM_PATH/pisms -energy enthalpy -y 1000 $OPTS -o foo-03.nc
 
 # Run for 0 years:
 $MPIEXEC -n 2 $PISM_PATH/pismr -i foo-03.nc -y 0 $OPTS -o bar-03.nc

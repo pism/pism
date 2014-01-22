@@ -659,11 +659,14 @@ The solution satisfies the inequalities
 PetscErrorCode PISMRoutingHydrology::raw_update_Wtil(PetscReal hdt) {
     PetscErrorCode ierr;
     PetscReal tmpmin;
-    const PetscReal Wtilmax  = config.get("hydrology_tillwat_max"),
-                    mu       = config.get("hydrology_tillwat_rate"),
-                    omega    = config.get("hydrology_tillwat_transfer_proportion"),
-                    denom    = 1.0 + mu * hdt;
-    if ((Wtilmax < 0.0) || (mu < 0.0) || (omega < 0.0)) {
+
+    const PetscReal
+      tillwat_max = config.get("hydrology_tillwat_max"),
+      mu          = config.get("hydrology_tillwat_rate"),
+      omega       = config.get("hydrology_tillwat_transfer_proportion"),
+      denom       = 1.0 + mu * hdt;
+
+    if ((tillwat_max < 0.0) || (mu < 0.0) || (omega < 0.0)) {
       PetscPrintf(grid.com,
          "PISMRoutingHydrology ERROR: scalar config parameter is negative in raw_update_Wtil();\n"
          "            this is not allowed ... ENDING ... \n\n");
@@ -674,7 +677,7 @@ PetscErrorCode PISMRoutingHydrology::raw_update_Wtil(PetscReal hdt) {
     ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        tmpmin = PetscMin(omega * W(i,j), Wtilmax);
+        tmpmin = PetscMin(omega * W(i,j), tillwat_max);
         Wtilnew(i,j) = (Wtil(i,j) + mu * hdt * tmpmin) / denom;
       }
     }

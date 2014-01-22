@@ -2,7 +2,7 @@
 
 # Copyright (C) 2012-2014 Moritz Huetten and Torsten Albrecht (and Ed Bueler)
 
-import sys, argparse
+import argparse
 
 # process command line arguments
 parser = argparse.ArgumentParser(description='Create run script for a MISMIP3d experiment.',
@@ -32,45 +32,26 @@ parser.add_argument('-s', '--subgl', action='store_true', # thus defaults to Fal
 args = parser.parse_args()
 #print args   # helpful for debugging
 
-print '#!/bin/bash'
-print ''
-print '###### MISMIP3D run script for experiment %s, model %d, and resolution mode %d ######' \
-      % (args.e, args.m, args.r)
-print ''
+print """#!/bin/bash
+###### MISMIP3D run script for experiment %s, model %d, and resolution mode %d ######
 
-print 'accumrate=%s' % args.accumrate
+accumrate=%s""" % (args.e, args.m, args.r, args.accumrate)
+
+# key: resolution mode; parameters: (resolution in km, Mx, My)
+grid_parameters = {1 : (0.5,    3201, 201),
+                   2 : (1,      1601, 101),
+                   3 : (2,      801,  51),
+                   4 : (2.5,    641,  41),
+                   5 : (5,      321,  21),
+                   6 : (10,     161,  11),
+                   7 : (16.666, 97,   7)}
 
 # note My is ignored if args.e=='Stnd'
-print ''
-print '# grid'
-if args.r==1:
-	print 'resolution=0.5 # resolution in km'
-	print 'Mx=3201'
-	print 'My=201'
-elif args.r==2:
-	print 'resolution=1 # resolution in km' 
-	print 'Mx=1601'
-	print 'My=101'
-elif args.r==3:
-	print 'resolution=2 # resolution in km' 
-	print 'Mx=801'
-	print 'My=51'
-elif args.r==4:
-	print 'resolution=2.5 # resolution in km'
-	print 'Mx=641'
-	print 'My=41'
-elif args.r==5:
-	print 'resolution=5 # resolution in km'
-	print 'Mx=321'
-	print 'My=21'
-elif args.r==6:
-	print 'resolution=10 # resolution in km'
-	print 'Mx=161'
-	print 'My=11'
-elif args.r==7:
-	print 'resolution=16.666 # resolution in km'
-	print 'Mx=97'
-	print 'My=7'
+print """
+# grid
+resolution=%f # resolution in km
+Mx=%d
+My=%d""" % grid_parameters[args.r]
 
 print ''
 if args.subgl:
@@ -134,7 +115,7 @@ elif args.m==2:
 print 'STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"'
 
 print ''
-print 'opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfront $subgl $modelopt -no_energy -cold -gradient eta -options_left -ts_file ts_%s.nc -ts_times 0:1:$duration -extra_file ex_%s.nc $extrastuff -ys 0 -ye $duration -o_order zyx -o_size big -o %s.nc $STRONGKSP"' % (args.e,args.e,args.e)
+print 'opts="-config_override MISMIP3D_conf.nc $stressbalance $basal $calvingfront $subgl $modelopt -energy none -gradient eta -options_left -ts_file ts_%s.nc -ts_times 0:1:$duration -extra_file ex_%s.nc $extrastuff -ys 0 -ye $duration -o_order zyx -o_size big -o %s.nc $STRONGKSP"' % (args.e,args.e,args.e)
 
 print ''
 if args.e=='Stnd':

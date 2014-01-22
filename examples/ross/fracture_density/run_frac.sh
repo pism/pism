@@ -67,7 +67,7 @@ NAME=Ross_result_frac_Mx${M}_yr-${YEARS}.nc
 
 output="-o $NAME -o_order zyx -o_size big"
 
-ssa="-no_sia -ssa_floating_only -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
+ssa="-no_sia -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
 #-pik:-part_grid -cfbc -kill_icebergs -part_redist
 
 #calving="-calving eigen_calving,thickness_calving -eigen_calving_K ${ECALV} -thickness_calving_threshold 50.0 "

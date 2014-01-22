@@ -689,26 +689,6 @@ PetscErrorCode IceModel::set_vars_from_options() {
   return 0;
 }
 
-//! \brief Decide which ice flow law to use by default.
-PetscErrorCode IceModel::set_default_flowlaw() {
-  std::string sia_flow_law = config.get_string("sia_flow_law"),
-    ssa_flow_law = config.get_string("ssa_flow_law");
-
-  if (config.get_flag("do_cold_ice_methods") == false) {
-    // new flowlaw which has dependence on enthalpy, not temperature
-    sia_flow_law = "gpbld";
-    ssa_flow_law = "gpbld";
-  } else {
-    sia_flow_law = "pb";
-    ssa_flow_law = "pb";
-  }
-
-  config.set_string("sia_flow_law", sia_flow_law);
-  config.set_string("ssa_flow_law", ssa_flow_law);
-
-  return 0;
-}
-
 //! \brief Decide which enthalpy converter to use.
 PetscErrorCode IceModel::allocate_enthalpy_converter() {
   PetscErrorCode ierr;
@@ -907,8 +887,6 @@ PetscErrorCode IceModel::allocate_submodels() {
 
   // this has to go first:
   ierr = allocate_enthalpy_converter(); CHKERRQ(ierr);
-  // then this:
-  ierr = set_default_flowlaw(); CHKERRQ(ierr);
 
   ierr = allocate_iceberg_remover(); CHKERRQ(ierr);
 
