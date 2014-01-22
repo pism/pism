@@ -25,8 +25,8 @@ netcdf pism_config {
     pism_config:do_age = "no";
     pism_config:do_age_doc = "Solve age equation (advection equation for ice age).";
 
-    pism_config:do_blatter = "no";
-    pism_config:do_blatter_doc = "Use the Blatter/Pattyn hydrostatic stress balance.";
+    pism_config:stress_balance_model = "sia_only";
+    pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
 
     pism_config:do_stressbalance_constant = "no";
     pism_config:do_stressbalance_constant_doc = "Use the 'constant' stress balance (reads u,v from a file).";

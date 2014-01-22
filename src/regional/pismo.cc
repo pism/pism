@@ -256,10 +256,9 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
   if (basal_yield_stress != NULL)
     return 0;
 
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_blatter = config.get_flag("do_blatter");
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
-  if (use_ssa_velocity || do_blatter) {
+  if (use_ssa_velocity) {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {

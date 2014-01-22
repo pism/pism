@@ -632,7 +632,6 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
 
   // Sub-models
-  ierr = config.flag_from_option("blatter", "do_blatter"); CHKERRQ(ierr);
   ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
   ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);

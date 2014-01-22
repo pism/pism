@@ -306,7 +306,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = bedtoptemp.set_glaciological_units("K");
   ierr = variables.add(bedtoptemp); CHKERRQ(ierr);
 
-  if (config.get_flag("use_ssa_velocity") || config.get_flag("do_blatter")) {
+  if (config.get_flag("use_ssa_velocity")) {
     // yield stress for basal till (plastic or pseudo-plastic model)
     ierr = vtauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_basal_material_yield_stress
