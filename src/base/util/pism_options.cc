@@ -878,8 +878,6 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
     config.set_flag_from_option("do_energy",        false);
   }
 
-  ierr = config.scalar_from_option("blatter_Mz", "blatter_Mz"); CHKERRQ(ierr);
-
   ierr = config.flag_from_option("ssb_constant", "do_stressbalance_constant"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("bed_def_lc_elastic", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
