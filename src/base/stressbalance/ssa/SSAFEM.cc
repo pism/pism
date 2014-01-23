@@ -67,13 +67,6 @@ PetscErrorCode SSAFEM::allocate_fem() {
   PetscInt nElements = element_index.element_count();
   feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
 
-  // hardav IceModelVec2S is not used (so far).
-  const PetscScalar power = 1.0 / flow_law->exponent();
-  char unitstr[TEMPORARY_STRING_LENGTH];
-  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  ierr = hardav.create(grid, "hardav", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = hardav.set_attrs("internal", "vertically-averaged ice hardness", unitstr, ""); CHKERRQ(ierr);
-
   return 0;
 }
 

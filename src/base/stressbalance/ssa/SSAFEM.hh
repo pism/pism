@@ -117,7 +117,6 @@ protected:
 
 
   // objects used internally
-  IceModelVec2S hardav;         // vertically-averaged ice hardness
   SSAFEM_SNESCallbackData callback_data;
 
   SNES         snes;
