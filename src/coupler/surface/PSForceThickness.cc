@@ -26,6 +26,7 @@
 PSForceThickness::PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input)
   : PSModifier(g, conf, input),
     climatic_mass_balance(g.get_unit_system()),
+    climatic_mass_balance_original(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PSForceThickness(); CHKERRCONTINUE(ierr);
@@ -65,6 +66,13 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
 				   "land_ice_surface_specific_mass_balance");
   ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  climatic_mass_balance_original.init_2d("climatic_mass_balance_original", grid);
+  climatic_mass_balance_original.set_string("pism_intent", "diagnostic");
+  climatic_mass_balance_original.set_string("long_name",
+                                            "ice-equivalent surface mass balance rate before the adjustment using -surface ...,forcing");
+  ierr = climatic_mass_balance_original.set_units("m s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_original.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -361,6 +369,7 @@ void PSForceThickness::add_vars_to_output(std::string keyword, std::set<std::str
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
+    result.insert("climatic_mass_balance_original");
   }
 
   result.insert("ftt_mask");
@@ -384,6 +393,10 @@ PetscErrorCode PSForceThickness::define_variables(std::set<std::string> vars, co
 
   if (set_contains(vars, "climatic_mass_balance")) {
     ierr = climatic_mass_balance.define(nc, nctype, true); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "climatic_mass_balance_original")) {
+    ierr = climatic_mass_balance_original.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
   ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -412,6 +425,18 @@ PetscErrorCode PSForceThickness::write_variables(std::set<std::string> vars, con
     ierr = tmp.write(nc); CHKERRQ(ierr);
 
     vars.erase("ice_surface_temp");
+  }
+
+  if (set_contains(vars, "climatic_mass_balance_original")) {
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "climatic_mass_balance_original", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = climatic_mass_balance_original;
+
+    ierr = input_model->ice_surface_mass_flux(tmp); CHKERRQ(ierr);
+    tmp.write_in_glaciological_units = true;
+    ierr = tmp.write(nc); CHKERRQ(ierr);
+
+    vars.erase("climatic_mass_balance_original");
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
