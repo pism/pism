@@ -98,8 +98,7 @@ all the arguments of an SSA constructor and returns a newly constructed instance
 Subclasses of SSA should provide an associated function pointer matching the
 SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &,
-                            EnthalpyConverter &, const PISMConfig &);
+typedef SSA * (*SSAFactory)(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 
 
 //! PISM's SSA solver.
@@ -138,18 +137,10 @@ class SSA : public ShallowStressBalance
   friend class SSA_taub;
   friend class SSA_beta;
 public:
-  SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-      const PISMConfig &c);
+  SSA(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~SSA();
 
   SSAStrengthExtension *strength_extension;
-
-  virtual ~SSA() { 
-    if (deallocate() != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSA de-allocation failed.\n");
-      PISMEnd();
-    }
-    delete strength_extension;
-  }
 
   virtual PetscErrorCode init(PISMVars &vars);
 

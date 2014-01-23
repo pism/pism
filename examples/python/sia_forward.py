@@ -52,7 +52,7 @@ if is_regional:
 grid = PISM.Context().newgrid()
 PISM.model.initGridFromFile(grid,input_file,periodicity);
 
-basal = PISM.IceBasalResistancePlasticLaw(config)
+config.set_flag("do_pseudo_plastic_till", False)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() >3:
@@ -60,7 +60,7 @@ if PISM.getVerbosityLevel() >3:
 
 
 modeldata = PISM.model.ModelData(grid)
-modeldata.setPhysics(basal,enthalpyconverter)
+modeldata.setPhysics(enthalpyconverter)
 
 vecs = modeldata.vecs;
 

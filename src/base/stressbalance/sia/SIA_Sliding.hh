@@ -30,22 +30,9 @@
 class SIA_Sliding : public ShallowStressBalance
 {
 public:
-  SIA_Sliding(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              EnthalpyConverter &e, const PISMConfig &conf)
-    : ShallowStressBalance(g, b, e, conf)
-  {
-    verification_mode = false;
-    eisII_experiment = "";
-    allocate();
-  }
+  SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
 
-  virtual ~SIA_Sliding()
-  {
-    if (flow_law != NULL) {
-      delete flow_law;
-      flow_law = NULL;
-    }
-  }
+  virtual ~SIA_Sliding();
 
   virtual PetscErrorCode init(PISMVars &vars);
 

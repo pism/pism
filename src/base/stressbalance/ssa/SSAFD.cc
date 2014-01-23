@@ -25,11 +25,28 @@
 
 #include <assert.h>
 
-SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                  EnthalpyConverter &ec, const PISMConfig &c)
+SSA *SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
 {
-  return new SSAFD(g,b,ec,c);
+  return new SSAFD(g,ec,c);
 }
+
+SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : SSA(g,e,c) {
+  PetscErrorCode ierr = allocate_fd();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSAFD allocation failed.\n");
+    PISMEnd();
+  }
+}
+
+SSAFD::~SSAFD() {
+  PetscErrorCode ierr = deallocate_fd();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
+    PISMEnd();
+  }
+}
+
 
 PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
@@ -695,7 +712,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       PetscReal beta = 0.0;
       if (include_basal_shear) {
         if (M.grounded_ice(M_ij)) {
-          beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
         } else if (M.ice_free_land(M_ij)) {
           // apply drag even in this case, to help with margins; note ice free
           // areas already have a strength extension
@@ -704,7 +721,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         if (sub_gl){
           // if grounding line interpolation apply here reduced basal drag
           if (M.icy(M_ij)) {
-            beta = (*gl_mask)(i,j) * basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+            beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           }
         }
       }

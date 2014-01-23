@@ -228,9 +228,9 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   }
 
   if (use_ssa_velocity) {
-    my_stress_balance = new SSAFD_Regional(grid, *basal, *EC, config);
+    my_stress_balance = new SSAFD_Regional(grid, *EC, config);
   } else {
-    my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
+    my_stress_balance = new SSB_Trivial(grid, *EC, config);
   }
   
   // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.

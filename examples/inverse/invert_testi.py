@@ -132,7 +132,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
 
   def _initPhysics(self):
     config = self.config
-    basal = PISM.IceBasalResistancePlasticLaw(config)
+    config.set_flag("do_pseudo_plastic_till", False)
 
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
@@ -140,7 +140,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
     config.set_string("ssa_flow_law", "isothermal_glen")
     config.set_double("ice_softness", pow(3.7e8, -config.get("Glen_exponent")))
 
-    self.modeldata.setPhysics(basal,enthalpyconverter)
+    self.modeldata.setPhysics(enthalpyconverter)
 
 
   def _initSSACoefficients(self):

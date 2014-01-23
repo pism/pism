@@ -26,10 +26,8 @@
 #include "PIO.hh"
 #include "enthalpyConverter.hh"
 
-SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
-         EnthalpyConverter &e,
-         const PISMConfig &c)
-  : ShallowStressBalance(g, b, e, c)
+SSA::SSA(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : ShallowStressBalance(g, e, c)
 {
   mask = NULL;
   thickness = NULL;
@@ -43,6 +41,14 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
 
   strength_extension = new SSAStrengthExtension(config);
   allocate();
+}
+
+SSA::~SSA() { 
+  if (deallocate() != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSA de-allocation failed.\n");
+    PISMEnd();
+  }
+  delete strength_extension;
 }
 
 
@@ -533,7 +539,7 @@ PetscErrorCode SSA_taub::compute(IceModelVec* &output) {
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (m.grounded_ice(i,j)) {
-        double beta = model->basal.drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
+        double beta = model->basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
         (*result)(i,j).u = - beta * vel(i,j).u;
         (*result)(i,j).v = - beta * vel(i,j).v;
       } else {
@@ -578,8 +584,8 @@ PetscErrorCode SSA_beta::compute(IceModelVec* &output) {
   ierr = velocity->begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      (*result)(i,j) = model->basal.drag((*tauc)(i,j),
-                                         (*velocity)(i,j).u, (*velocity)(i,j).v);
+      (*result)(i,j) = model->basal_sliding_law->drag((*tauc)(i,j),
+                                                      (*velocity)(i,j).u, (*velocity)(i,j).v);
     }
   }
   ierr = velocity->end_access(); CHKERRQ(ierr);

@@ -64,7 +64,6 @@ IceModel::IceModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
 
   subglacial_hydrology = NULL;
   basal_yield_stress = NULL;
-  basal = NULL;
 
   stress_balance = NULL;
 
@@ -169,7 +168,6 @@ IceModel::~IceModel() {
 
   delete subglacial_hydrology;
   delete basal_yield_stress;
-  delete basal;
   delete EC;
   delete btu;
 

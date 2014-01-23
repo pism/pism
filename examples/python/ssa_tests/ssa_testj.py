@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -29,13 +29,13 @@ class testj(PISM.ssa.SSAExactTestCase):
 
   def _initPhysics(self):
     config = self.modeldata.config
-    basal = PISM.IceBasalResistancePlasticLaw(config)
+    config.set_flag("do_pseudo_plastic_till", False)
 
     enthalpyconverter = PISM.EnthalpyConverter(config)
 
     config.set_string("ssa_flow_law", "isothermal_glen")
 
-    self.modeldata.setPhysics(basal,enthalpyconverter)
+    self.modeldata.setPhysics(enthalpyconverter)
 
 
   def _initSSACoefficients(self):

@@ -48,10 +48,8 @@ protected:
 class SSAFD_Regional : public SSAFD
 {
 public:
-  SSAFD_Regional(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-                 const PISMConfig &c)
-    : SSAFD(g, b, e, c) {}
-  virtual ~SSAFD_Regional() {}
+  SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~SSAFD_Regional();
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 protected:

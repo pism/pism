@@ -23,13 +23,13 @@
 #include "basal_resistance.hh"
 
 
-IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-  EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-  const PISMConfig &c) : SSAFEM(g,b,e,c),
-  m_grid(grid), m_zeta(NULL), 
-  m_fixed_design_locations(NULL), 
-  m_design_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) 
-{
+IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
+                                                       IPDesignVariableParameterization &tp,
+                                                       const PISMConfig &c)
+  : SSAFEM(g,e,c),
+    m_grid(grid), m_zeta(NULL), 
+    m_fixed_design_locations(NULL), 
+    m_design_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
   assert(ierr == 0);

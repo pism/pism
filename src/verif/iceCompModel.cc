@@ -280,7 +280,7 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
 
   if (testname == 'E') {
     config.set_flag("sia_sliding_verification_mode", true);
-    ShallowStressBalance *ssb = new SIA_Sliding(grid, *basal, *EC, config);
+    ShallowStressBalance *ssb = new SIA_Sliding(grid, *EC, config);
     SIAFD *sia = new SIAFD(grid, *EC, config);
 
     stress_balance = new PISMStressBalance(grid, ssb, sia, config);

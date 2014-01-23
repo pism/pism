@@ -51,7 +51,6 @@ class IceGrid;
 class EnthalpyConverter;
 class PISMHydrology;
 class PISMYieldStress;
-class IceBasalResistancePlasticLaw;
 class PISMStressBalance;
 class PISMSurfaceModel;
 class PISMOceanModel;
@@ -134,7 +133,6 @@ public:
 
   virtual PetscErrorCode allocate_submodels();
   virtual PetscErrorCode allocate_enthalpy_converter();
-  virtual PetscErrorCode allocate_basal_resistance_law();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_bed_deformation();
   virtual PetscErrorCode allocate_bedrock_thermal_unit();
@@ -215,7 +213,6 @@ protected:
 
   PISMHydrology   *subglacial_hydrology;
   PISMYieldStress *basal_yield_stress;
-  IceBasalResistancePlasticLaw *basal;
 
   EnthalpyConverter *EC;
   PISMBedThermalUnit *btu;

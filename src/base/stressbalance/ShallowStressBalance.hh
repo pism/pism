@@ -36,16 +36,8 @@ class IceBasalResistancePlasticLaw;
 class ShallowStressBalance : public PISMComponent
 {
 public:
-  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                       EnthalpyConverter &e, const PISMConfig &conf)
-    : PISMComponent(g, conf), basal(b), flow_law(NULL), EC(e)
-  {
-    m_vel_bc = NULL; bc_locations = NULL; variables = NULL;
-    sea_level = 0;
-    allocate();
-  }
-
-  virtual ~ShallowStressBalance() {}
+  ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
 
@@ -108,7 +100,7 @@ protected:
 
   PetscReal sea_level;
   PISMVars *variables;
-  IceBasalResistancePlasticLaw &basal;
+  IceBasalResistancePlasticLaw *basal_sliding_law;
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
 
@@ -144,47 +136,29 @@ public:
 class SSB_Trivial : public ShallowStressBalance
 {
 public:
-  SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              EnthalpyConverter &e, const PISMConfig &conf)
-    : ShallowStressBalance(g, b, e, conf) {
-
-    // Use the SIA flow law.
-    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
-    ice_factory.setType(config.get_string("sia_flow_law"));
-
-    ice_factory.setFromOptions();
-    ice_factory.create(&flow_law);
-  }
-  virtual ~SSB_Trivial() {
-    delete flow_law;
-  }
+  SSB_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  virtual ~SSB_Trivial();
+  
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
-  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
-  { }
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/);
 
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
-    dict["taud"] = new SSB_taud(this, grid, *variables);
-    dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
-  }
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/);
 
   //! Defines requested couplings fields and/or asks an attached model
   //! to do so.
   virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
-  { return 0; }
+                                          PISM_IO_Type /*nctype*/);
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
-  { return 0; }
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/);
 };
 
 class SSB_Constant : public SSB_Trivial {
 public:
-  SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
-               EnthalpyConverter &e, const PISMConfig &conf);
+  SSB_Constant(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
   virtual ~SSB_Constant();
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(PISMVars &vars);

@@ -105,6 +105,15 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   return 0;
 }
 
+SSAFD_Regional::SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : SSAFD(g, e, c) {
+  // empty
+}
+
+SSAFD_Regional::~SSAFD_Regional() {
+  // empty
+}
+
 PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
   PetscErrorCode ierr;
 

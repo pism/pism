@@ -23,12 +23,13 @@
 #include "basal_resistance.hh"
 
 
-IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-  EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-  const PISMConfig &c) : SSAFEM(g,b,e,c),
-  m_grid(grid), m_zeta(NULL), 
-  m_fixed_tauc_locations(NULL), 
-  m_tauc_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) 
+IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
+                                                   IPDesignVariableParameterization &tp,
+                                                   const PISMConfig &c)
+  : SSAFEM(g,e,c),
+    m_grid(grid), m_zeta(NULL), 
+    m_fixed_tauc_locations(NULL), 
+    m_tauc_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) 
 {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
@@ -296,7 +297,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     for (j=ys; j<ys+ym; j++) {
 
       // Zero out the element-local residual in prep for updating it.
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for (PetscInt k=0;k<FEQuadrature::Nk;k++){
         du_e[k].u = 0;
         du_e[k].v = 0;
       }
@@ -322,7 +323,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
       // Compute the change in tau_c with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i,j,zeta_a,zeta_e);
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for (PetscInt k=0;k<FEQuadrature::Nk;k++){
         m_tauc_param.toDesignVariable(zeta_e[k],NULL,dtauc_e + k);
         dtauc_e[k]*=dzeta_e[k];
       }
@@ -336,7 +337,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         // Determine "dbeta/dzeta" at the quadrature point
         PetscReal dbeta = 0;
         if( M.grounded_ice(feS->mask) ) {
-          dbeta = basal.drag(dtauc_q[q],u_qq.u,u_qq.v);
+          dbeta = basal_sliding_law->drag(dtauc_q[q],u_qq.u,u_qq.v);
         }
 
         for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
@@ -473,7 +474,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
       m_quadrature.computeTrialFunctionValues(u_e,u_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for (PetscInt k=0;k<FEQuadrature::Nk;k++){
         dzeta_e[k] = 0;
       }
 
@@ -485,8 +486,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 
         // Determine "dbeta/dtauc" at the quadrature point
         PetscReal dbeta_dtauc = 0;
-        if( M.grounded_ice(feS->mask) ) {
-          dbeta_dtauc = basal.drag(1.,u_qq.u,u_qq.v);
+        if(M.grounded_ice(feS->mask)) {
+          dbeta_dtauc = basal_sliding_law->drag(1.,u_qq.u,u_qq.v);
         }
 
         for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
@@ -499,8 +500,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   } // i
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  for( i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
-    for( j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
+  for (i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
+    for (j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
       PetscReal dtauc_dzeta;
       m_tauc_param.toDesignVariable(zeta_a[i][j],NULL,&dtauc_dzeta);
       dzeta_a[i][j] *= dtauc_dzeta;
@@ -558,7 +559,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzet
   }
   else
   {
-    verbPrintf(4,grid.com,"IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason]);
   }
 
   ierr = du.copy_from(m_du_global); CHKERRQ(ierr);
@@ -617,7 +618,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   }
   else
   {
-    verbPrintf(4,grid.com,"IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason]);
   }
   
   ierr = this->apply_jacobian_design_transpose(m_velocity,m_du_global,dzeta); CHKERRQ(ierr);

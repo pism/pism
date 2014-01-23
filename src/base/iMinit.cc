@@ -729,17 +729,17 @@ PetscErrorCode IceModel::allocate_stressbalance() {
     if (use_ssa_velocity) {
       std::string ssa_method = config.get_string("ssa_method");
       if(ssa_method == "fd") {
-        my_stress_balance = new SSAFD(grid, *basal, *EC, config);
+        my_stress_balance = new SSAFD(grid, *EC, config);
       } else if(ssa_method == "fem") {
-        my_stress_balance = new SSAFEM(grid, *basal, *EC, config);
+        my_stress_balance = new SSAFEM(grid, *EC, config);
       } else {
         SETERRQ(grid.com, 1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
       }
     } else {
       if (do_stressbalance_constant)
-        my_stress_balance = new SSB_Constant(grid, *basal, *EC, config);
+        my_stress_balance = new SSB_Constant(grid, *EC, config);
       else
-        my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
+        my_stress_balance = new SSB_Trivial(grid, *EC, config);
     }
     SSB_Modifier *my_modifier;
     if (do_sia) {
@@ -843,20 +843,6 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
   return 0;
 }
 
-//! \brief Decide which basal resistance law to use.
-PetscErrorCode IceModel::allocate_basal_resistance_law() {
-
-  if (basal != NULL)
-    return 0;
-
-  if (config.get_flag("do_pseudo_plastic_till") == true)
-    basal = new IceBasalResistancePseudoPlasticLaw(config);
-  else
-    basal = new IceBasalResistancePlasticLaw(config);
-
-  return 0;
-}
-
 //! Allocate PISM's sub-models implementing some physical processes.
 /*!
   This method is called after memory allocation but before filling any of
@@ -881,9 +867,6 @@ PetscErrorCode IceModel::allocate_submodels() {
   ierr = allocate_enthalpy_converter(); CHKERRQ(ierr);
 
   ierr = allocate_iceberg_remover(); CHKERRQ(ierr);
-
-  // this has to happen before allocate_stressbalance() is called
-  ierr = allocate_basal_resistance_law(); CHKERRQ(ierr);
 
   ierr = allocate_stressbalance(); CHKERRQ(ierr);
 

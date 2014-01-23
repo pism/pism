@@ -22,31 +22,13 @@
 #include "SSA.hh"
 #include <petscksp.h>
 
-
-//! PISM's SSA solver: the finite difference implementation
+//! PISM's SSA solver: the finite difference implementation.
 class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-        const PISMConfig &c) :
-    SSA(g,b,e,c)
-  {
-    PetscErrorCode ierr = allocate_fd();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFD allocation failed.\n");
-      PISMEnd();
-    }
-  }
-
-  virtual ~SSAFD()
-  {
-    PetscErrorCode ierr = deallocate_fd();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
-      PISMEnd();
-    }
-  }
+  SSAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~SSAFD();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -122,8 +104,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &,
-                   EnthalpyConverter &, const PISMConfig &);
+SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 
 //! \brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.

@@ -54,13 +54,12 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
                              MatStructure *str, SSAFEM_SNESCallbackData *fe);
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &,
-                    EnthalpyConverter &, const PISMConfig &);
+SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
 Jed's original code is in rev 831: src/base/ssaJed/...
-The SSAFEM duplicates the functionality of SSAFD, using the finite element method.
+The SSAFEM duplicates most of the functionality of SSAFD, using the finite element method.
 */
 class SSAFEM : public SSA
 {
@@ -69,22 +68,9 @@ class SSAFEM : public SSA
                                       Mat A, Mat J,
                                       MatStructure *str, SSAFEM_SNESCallbackData *fe);
 public:
-  SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b,
-         EnthalpyConverter &e, const PISMConfig &c)
-  : SSA(g,b,e,c), element_index(g)
-  {
-    quadrature.init(grid);
-    PetscErrorCode ierr = allocate_fem();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFEM allocation failed.\n");
-      PISMEnd();
-    }
-  }
+  SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
 
-  virtual ~SSAFEM()
-  {
-    deallocate_fem();
-  }
+  virtual ~SSAFEM();
 
   virtual PetscErrorCode init(PISMVars &vars);
 

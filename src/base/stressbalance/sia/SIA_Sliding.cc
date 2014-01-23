@@ -49,6 +49,22 @@ PetscErrorCode SIA_Sliding::allocate() {
   return 0;
 }
 
+SIA_Sliding::SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : ShallowStressBalance(g, e, conf)
+{
+  verification_mode = false;
+  eisII_experiment = "";
+  allocate();
+}
+
+SIA_Sliding::~SIA_Sliding()
+{
+  if (flow_law != NULL) {
+    delete flow_law;
+    flow_law = NULL;
+  }
+}
+
 PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
   PetscErrorCode ierr;
 

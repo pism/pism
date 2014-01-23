@@ -57,17 +57,9 @@ A driver uses an SSATestCase by calling 1-3 below and 4,5 as desired:
 class SSATestCase
 {
 public:
-  SSATestCase(MPI_Comm com, PISMConfig &c): 
-    config(c), grid(com, config), 
-    basal(0), enthalpyconverter(0), ssa(0)
-  {  };
+  SSATestCase(MPI_Comm com, PISMConfig &c);
 
-  virtual ~SSATestCase()
-  {
-    delete basal;
-    delete enthalpyconverter;
-    delete ssa;
-  }
+  virtual ~SSATestCase();
 
   virtual PetscErrorCode init(PetscInt Mx, PetscInt My,SSAFactory ssafactory);
 
@@ -107,7 +99,6 @@ protected:
   IceGrid grid;
 
   // SSA model variables.
-  IceBasalResistancePlasticLaw *basal;
   EnthalpyConverter *enthalpyconverter;
 
   // SSA coefficient variables.

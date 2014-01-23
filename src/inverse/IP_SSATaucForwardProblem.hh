@@ -104,9 +104,9 @@ public:
   typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
-  IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-    EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-    const PISMConfig &c);
+  IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
+                           IPDesignVariableParameterization &tp,
+                           const PISMConfig &c);
 
   virtual ~IP_SSATaucForwardProblem();
 

@@ -120,6 +120,17 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   return 0;
 }
 
+SSATestCase::SSATestCase(MPI_Comm com, PISMConfig &c)
+  : config(c), grid(com, config), enthalpyconverter(0), ssa(0)
+{
+  // empty
+}
+
+SSATestCase::~SSATestCase()
+{
+  delete enthalpyconverter;
+  delete ssa;
+}
 
 //! Initialize the test case at the start of a run
 PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory)
@@ -141,7 +152,7 @@ PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory
   ierr = buildSSACoefficients(); CHKERRQ(ierr);
 
   // Allocate the actual SSA solver.
-  ssa = ssafactory(grid, *basal, *enthalpyconverter, config);
+  ssa = ssafactory(grid, *enthalpyconverter, config);
   ierr = ssa->init(vars); CHKERRQ(ierr); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.

@@ -25,10 +25,23 @@
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
 
-SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                   EnthalpyConverter &ec, const PISMConfig &c)
+SSA *SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
 {
-  return new SSAFEM(g,b,ec,c);
+  return new SSAFEM(g,ec,c);
+}
+
+SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : SSA(g,e,c), element_index(g) {
+  quadrature.init(grid);
+  PetscErrorCode ierr = allocate_fem();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSAFEM allocation failed.\n");
+    PISMEnd();
+  }
+}
+
+SSAFEM::~SSAFEM() {
+  deallocate_fem();
 }
 
 //! \brief Allocating SSAFEM-specific objects; called by the constructor.
@@ -393,7 +406,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
 
   if( M.grounded_ice(feS->mask) )
   {
-    basal.dragWithDerivative(feS->tauc,u->u,u->v,beta,dbeta);
+    basal_sliding_law->drag_with_derivative(feS->tauc,u->u,u->v,beta,dbeta);
   } else {  
     *beta = 0;
     if( M.ice_free_land(feS->mask) )

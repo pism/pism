@@ -89,8 +89,7 @@ PetscErrorCode SSATestCasePlug::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCasePlug::initializeSSAModel()
 {
-  // Configuration parameters used by IceBasalResistancePlasticLaw are irrelevant because tauc=0
-  basal = new IceBasalResistancePlasticLaw(config);
+  // Basal sliding law parameters are irrelevant because tauc=0
 
   // Enthalpy converter is irrelevant (but still required) for this test.
   enthalpyconverter = new EnthalpyConverter(config);

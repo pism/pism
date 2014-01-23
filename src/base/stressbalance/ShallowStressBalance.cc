@@ -23,10 +23,30 @@
 #include "basal_resistance.hh"
 #include "pism_options.hh"
 
+ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : PISMComponent(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
+
+  m_vel_bc = NULL;
+  bc_locations = NULL;
+  variables = NULL;
+  sea_level = 0;
+
+  allocate();
+}
+
+ShallowStressBalance::~ShallowStressBalance() {
+  delete basal_sliding_law;
+}
+
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
   PetscErrorCode ierr;
   unsigned int WIDE_STENCIL = 2;
+
+  if (config.get_flag("do_pseudo_plastic_till") == true)
+    basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(config);
+  else
+    basal_sliding_law = new IceBasalResistancePlasticLaw(config);
 
   ierr = m_velocity.create(grid, "bar", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // components ubar, vbar
   ierr = m_velocity.set_attrs("model_state",
@@ -47,6 +67,42 @@ PetscErrorCode ShallowStressBalance::allocate() {
 
   return 0;
 }
+
+SSB_Trivial::SSB_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : ShallowStressBalance(g, e, conf) {
+
+  // Use the SIA flow law.
+  IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+  ice_factory.setType(config.get_string("sia_flow_law"));
+
+  ice_factory.setFromOptions();
+  ice_factory.create(&flow_law);
+}
+
+SSB_Trivial::~SSB_Trivial() {
+  delete flow_law;
+}
+
+void SSB_Trivial::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                                  std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
+  dict["taud"] = new SSB_taud(this, grid, *variables);
+  dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
+}
+
+void SSB_Trivial::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
+{
+  // empty
+}
+
+PetscErrorCode SSB_Trivial::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+                                             PISM_IO_Type /*nctype*/) {
+  return 0;
+}
+
+PetscErrorCode SSB_Trivial::write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/) {
+  return 0;
+}
+
 
 //! \brief Update the trivial shallow stress balance object.
 PetscErrorCode SSB_Trivial::update(bool fast, IceModelVec2S &melange_back_pressure) {
@@ -91,7 +147,7 @@ PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVe
         result(i,j) = 0.0;
       } else {
         const PetscScalar
-          C = basal.drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
+          C = basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
               basal_stress_x = - C * velocity(i,j).u,
               basal_stress_y = - C * velocity(i,j).v;
         result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
@@ -412,9 +468,8 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
  *
  * The only use I can think of right now is testing.
  */
-SSB_Constant::SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                           EnthalpyConverter &e, const PISMConfig &conf)
-  : SSB_Trivial(g, b, e, conf) {
+SSB_Constant::SSB_Constant(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : SSB_Trivial(g, e, conf) {
   // empty
 }
 

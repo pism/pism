@@ -65,7 +65,7 @@ PetscErrorCode SSATestCaseJ::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCaseJ::initializeSSAModel()
 {
-  basal = new IceBasalResistancePlasticLaw(config);
+  config.set_flag("do_pseudo_plastic_till", false);
 
   enthalpyconverter = new EnthalpyConverter(config);
   config.set_string("ssa_flow_law", "isothermal_glen");
