@@ -90,8 +90,8 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
 
   time_name = dims[0];
 
-
-  NCTimeseries tmp_dim(time_name, time_name, m_unit_system);
+  NCTimeseries tmp_dim = dimension;
+  tmp_dim.set_name(time_name);
 
   ierr = nc.read_timeseries(tmp_dim, time_manager, time); CHKERRQ(ierr);
   bool is_increasing = true;
@@ -113,7 +113,9 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
   if (!time_bounds_name.empty()) {
     use_bounds = true;
 
-    NCTimeBounds tmp_bounds(time_bounds_name, time_name,m_unit_system);
+    NCTimeBounds tmp_bounds = bounds;
+    tmp_bounds.set_name(time_bounds_name);
+
     ierr = tmp_bounds.set_units(tmp_dim.get_string("units")); CHKERRQ(ierr);
 
     ierr = nc.read_time_bounds(tmp_bounds, time_manager, time_bounds); CHKERRQ(ierr);
