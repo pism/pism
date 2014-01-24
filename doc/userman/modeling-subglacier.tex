@@ -256,7 +256,7 @@ For most choices of the relevant parameters and most grid spacings, the \texttt{
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}
 
-The option \txtopt{bed_def}{[\texttt{iso, lcn}]} turns one of the two available bed deformation models.
+The option \txtopt{bed_def}{[\texttt{iso, lc}]} turns one of the two available bed deformation models.
 
 The first model \texttt{-bed_def iso}, is instantaneous pointwise isostasy.  This model assumes that the bed at the starting time is in equilibrium with the load.  Then, as the ice geometry evolves, the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle, so its value is determined by setting the values of \texttt{lithosphere_density} and \texttt{ice_density} in the configuration file; see subsection \ref{sec:pism-defaults}.  For an example and verification, see Test H in Verification section. 
 
