@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# -no_sia takes care of high velocities at inland boundaries (SIA "sees"
-#     discontinuities of surface and bedrock elevation fields).
 # -pik sets the calving front boundary condition
 #     (can be reduced to '-cfbc -kill_icebergs')
 # -ssa_method fem seems not to work?
@@ -26,7 +24,7 @@ PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
 cmd="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
-  -Mz 3 -Lz 3000 -z_spacing equal -surface given -no_sia -energy none \
+  -Mz 3 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa -energy none \
   -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_view_nuh \
   -y 0 -o Ross_result_diag_Mx${M}.nc -o_order zyx -ssa_e $SSAE -ssafd_ksp_monitor"
 

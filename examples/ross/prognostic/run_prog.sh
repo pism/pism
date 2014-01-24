@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# -no_sia takes care of high velocities at inland boundaries (SIA "sees"
-#     discontinuities of surface and bedrock elevation fields).
 # -pik sets the calving front boundary condition
 #     (can be reduced to '-cfbc -kill_icebergs')
 # -ssa_method fem will not work as '-pik', including '-cfbc', are not implemented in fem
@@ -37,7 +35,7 @@ PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
 cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
-  -Mz 61 -Lz 3000 -z_spacing equal -surface given -no_sia \
+  -Mz 61 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa \
   -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e $SSAE \
   -y 0 -ys 0.0 -o Ross_prognostic_startfile_Mx${M}.nc -o_order zyx "
 
@@ -45,7 +43,7 @@ NAME=Ross_result_prog_Mx${M}_yr-${YEARS}.nc
 CTHICK=50.0
 
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i Ross_prognostic_startfile_Mx${M}.nc \
-  -surface given -no_sia -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e ${SSAE} \
+  -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e ${SSAE} \
   -y ${YEARS} -o $NAME -o_order zyx -o_size big \
   -calving eigen_calving,thickness_calving -eigen_calving_K ${ECALV} -thickness_calving_threshold $CTHICK \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \

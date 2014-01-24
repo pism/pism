@@ -33,7 +33,7 @@ dorun () {
   EXTRA="-extra_file ex_routing${LABEL}.nc -extra_times 200:100:$ENDTIME -extra_vars bwat,bwp,bwatvel,hydroinput"
 
   #hydrology only run for $ENDTIME years
-  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS -ocean_kill_file pre${LABEL}.nc $HYDRO -no_mass -energy none -no_sia -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o routing${LABEL}.nc"
+  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS -ocean_kill_file pre${LABEL}.nc $HYDRO -no_mass -energy none -stress_balance ssa -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o routing${LABEL}.nc"
   $DOIT $cmd
 }
 

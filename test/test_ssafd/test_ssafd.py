@@ -8,7 +8,7 @@ import subprocess, shlex, sys
 parser = OptionParser()
 
 parser.usage = "%prog [options]"
-parser.description = "Fills missing values in variables selected using -v in the file given by -f."
+parser.description = "Test the SSAFD solver using various geometric configurations."
 parser.add_option("-o", dest="output_file_prefix", default="ssafd_test",
                   help="output file prefix")
 parser.add_option("-L", dest="L", type=float, default=10.0,
@@ -53,7 +53,7 @@ def generate_input(N):
     return output_filename, pism_output_filename
 
 def run_pismr((input_filename, output_filename)):
-    command = "pismr -boot_file %s -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -ssa_sliding -cfbc -y 0 -verbose 1" % (input_filename, output_filename, M, M)
+    command = "pismr -boot_file %s -o %s -Mx %d -My %d -Lz 1000 -Mz 5 -stress_balance ssa+sia -cfbc -y 0 -verbose 1" % (input_filename, output_filename, M, M)
     print "Running %s" % command
     subprocess.call(shlex.split(command))
 

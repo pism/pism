@@ -208,7 +208,7 @@ def generate_pism_input(x, y, xx, yy):
 def run_pism(opts):
   stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
 
-  cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
+  cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
 
   stderr.write(cmd + "\n")
   subprocess.call(cmd, shell=True)
