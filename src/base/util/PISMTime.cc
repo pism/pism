@@ -232,7 +232,7 @@ PetscErrorCode PISMTime::init() {
 
 std::string PISMTime::date(double T) {
   char tmp[256];
-  snprintf(tmp, 256, "%3.3f", seconds_to_years(T));
+  snprintf(tmp, 256, "%012.3f", seconds_to_years(T));
   return std::string(tmp);
 }
 
