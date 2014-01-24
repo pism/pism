@@ -107,14 +107,13 @@ PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
   return 0;
 }
 
-//! \brief Stop if at least one of -version and -pismversion is set.
+//! \brief Stop if -version is set.
 PetscErrorCode stop_on_version_option() {
   PetscErrorCode ierr;
 
-  bool vSet = false, pvSet = false;
+  bool vSet = false;
   ierr = PISMOptionsIsSet("-version", vSet); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-pismversion", pvSet); CHKERRQ(ierr);
-  if ((vSet == false) && (pvSet == false))
+  if (vSet == false)
     return 0;
 
   PISMEndQuiet();
