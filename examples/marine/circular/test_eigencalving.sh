@@ -16,7 +16,7 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 1000"
 
-stressbalance="-ssa_method fd -ssa_sliding -ssa_dirichlet_bc -no_sia"
+stressbalance="-ssa_method fd -stress_balance ssa -ssa_dirichlet_bc"
 
 output_basename="test_eigencalving"
 

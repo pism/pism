@@ -112,7 +112,7 @@ PARAMS="-plastic_phi"
 PETSCSTUFF="-ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
 
 
-FULLPHYS="-ssa_sliding -thk_eff $PARAMS $PETSCSTUFF"
+FULLPHYS="-stress_balance ssa+sia -thk_eff $PARAMS $PETSCSTUFF"
 
 SMOOTHRUNLENGTH=1
 NOMASSRUNLENGTH=500

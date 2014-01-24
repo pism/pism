@@ -46,6 +46,6 @@ echo
 echo "TESTING -hydrology routing ON ${PRESTART}.nc:"
 echo
 
-cmd="mpiexec -n 2 pismr -config_override searise_config.nc -i $STARTFILE -ssa_sliding -topg_to_phi 15.0,40.0,-300.0,700.0 $climate -ys 0 -y $YY $hydro $diagnostics -o $oname"
+cmd="mpiexec -n 2 pismr -config_override searise_config.nc -i $STARTFILE -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 $climate -ys 0 -y $YY $hydro $diagnostics -o $oname"
 $cmd
 

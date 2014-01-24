@@ -17,7 +17,7 @@ echo "$SCRIPTNAME   run preprocess.sh before this..."
 set -e  # exit on error
 
 echo "$SCRIPTNAME   Constant-climate spinup script using SeaRISE-Antarctica data"
-echo "$SCRIPTNAME      and -ssa_sliding and -pik"
+echo "$SCRIPTNAME      and -stress_balance ssa+sia and -pik"
 echo "$SCRIPTNAME   Run as './antspinCC.sh NN' for NN procs and 30km grid"
 
 # naming files, directories, executables
@@ -79,7 +79,7 @@ PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -sur
 # sliding related options:
 PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -till_effective_fraction_overburden 0.02 -tauc_slippery_grounding_lines"
 TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
-FULLPHYS="-ssa_sliding -hydrology null $PARAMS $TILLPHI"
+FULLPHYS="-stress_balance ssa+sia -hydrology null $PARAMS $TILLPHI"
 
 # use these if KSP "diverged" errors occur
 STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"

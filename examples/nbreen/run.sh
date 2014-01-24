@@ -63,13 +63,13 @@ if [ "$4" = "dist" ]; then
 
   # distributed run
   oname=nbreen_y${YY}_${dx}m_dist.nc
-  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc"
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -stress_balance ssa+sia -ssa_dirichlet_bc"
 
 elif [ "$4" = "event" ]; then
 
   # distributed run with summer event
   oname=nbreen_y${YY}_${dx}m_event.nc
-  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc -input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -stress_balance ssa+sia -ssa_dirichlet_bc -input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
 
 elif [ "$4" = "routing" ]; then
 
@@ -82,7 +82,7 @@ elif [ "$4" = "disttill" ]; then
 
   # distributed run with till on (tillwat_max = 2.0)
   oname=nbreen_y${YY}_${dx}m_disttill.nc
-  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -ssa_sliding -ssa_dirichlet_bc -hydrology_tillwat_max 2.0"
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -stress_balance ssa+sia -ssa_dirichlet_bc -hydrology_tillwat_max 2.0"
 
 else
   echo "invalid fourth argument; must be in $TYPELIST"

@@ -104,13 +104,13 @@ else:
     print 'extrastuff="-extra_times 0:1:$duration -extra_vars $listexvar"'
 
 print ''
-print 'stressbalance="-ssa_sliding -ssa_method fd -ssa_flow_law isothermal_glen -ssafd_ksp_rtol 1e-7"'
+print 'stressbalance="-ssa_method fd -ssa_flow_law isothermal_glen -ssafd_ksp_rtol 1e-7"'
 print 'basal="-yield_stress constant -pseudo_plastic -pseudo_plastic_q 0.333333333 -pseudo_plastic_uthreshold 3.155693e+07"'
 print 'calvingfront="-cfbc -part_grid -calving ocean_kill"'
 if args.m==1:
-	print 'modelopt="-no_sia" '
+	print 'modelopt="-stress_balance ssa" '
 elif args.m==2:
-	print 'modelopt="-sia -sia_flow_law isothermal_glen" '
+	print 'modelopt="-stress_balance ssa+sia -sia_flow_law isothermal_glen" '
 
 print 'STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"'
 

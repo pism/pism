@@ -67,7 +67,7 @@ INNAME=$PISM_DATANAME
 
 EB="-e_sia 0.3"
 PARAMS="-plastic_phi"
-FULLPHYS="-ssa_sliding -thk_eff $PARAMS"
+FULLPHYS="-stress_balance ssa+sia -thk_eff $PARAMS"
 COUPLER="-surface given" # FIXME  should be using PSElevation as in flowline example
 COUPLER_FORCING="-surface given,forcing -surface_given_file $PISM_DATANAME"
 
