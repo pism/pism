@@ -36,7 +36,7 @@ public:
   virtual ~IceBasalResistancePlasticLaw() {}
   virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com);
   virtual double drag(double tauc, double vx, double vy);
-  //! The derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
+  //! The derivative of drag with respect to \f$ alpha=\frac 1 2 |u|^2 \f$.
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
