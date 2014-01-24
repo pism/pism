@@ -50,11 +50,11 @@ PetscErrorCode ShallowStressBalance::allocate() {
 
   ierr = m_velocity.create(grid, "bar", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // components ubar, vbar
   ierr = m_velocity.set_attrs("model_state",
-                            "thickness-advective ice velocity (x-component)", 
-                            "m s-1", "", 0); CHKERRQ(ierr);
+                              "thickness-advective ice velocity (x-component)", 
+                              "m s-1", "", 0); CHKERRQ(ierr);
   ierr = m_velocity.set_attrs("model_state",
-                            "thickness-advective ice velocity (y-component)",
-                            "m s-1", "", 1); CHKERRQ(ierr);
+                              "thickness-advective ice velocity (y-component)",
+                              "m s-1", "", 1); CHKERRQ(ierr);
   ierr = m_velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   m_velocity.write_in_glaciological_units = true;
 

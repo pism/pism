@@ -83,7 +83,7 @@ netcdf pism_config {
     pism_config:bed_def_lc_elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
 
     pism_config:is_dry_simulation = "no";
-    pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation";
+    pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
 
     pism_config:stress_balance_model = "sia";
     pism_config:stress_balance_model_doc = "the stress balance model; the choices are 'none', 'prescribed_sliding', 'sia', 'ssa', 'prescribed_sliding+sia', 'ssa+sia'.";

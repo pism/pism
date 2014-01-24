@@ -30,7 +30,7 @@ A diagnostic Ross ice shelf velocity computation from these data initializes fro
 \begin{verbatim}
 $ mpiexec -n 2 pismr -boot_file Ross_combined.nc \
           -Mx 211 -My 211 -Mz 21 -Lz 3000 -z_spacing equal \
-          -no_sia -energy none -yield_stress constant -tauc 1e6 -pik \
+          -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 -pik \
           -ssa_dirichlet_bc -y 0 -o out_211.nc -o_order zyx
 \end{verbatim}%$
 The computational grid here is the ``native'' $5$ km data grid used in ALBMAP.  The maximum thickness of the ice is $2766$ m so we choose a height for the computational box large enough to contain the ice (i.e.~``\texttt{-Lz 3000}'').  There is no need to type in the above command; just do
@@ -41,15 +41,17 @@ $ ./run.sh 2
 
 \noindent Several command-line options require explanation:
 \begin{itemize}
-\item \texttt{-no_sia} turns off the SIA stress balance computation, since our
-  goal is to model the ice shelf. It also side-steps a technical issue: PISM
-  uses periodic boundary conditions at domain boundaries and most fields in
-  this setup are not periodic. Turning off SIA avoids operations such as
-  differencing surface elevation across the domain edges.  For a more complete
-  solution to this technical issue see section \ref{sec:jako} on a regional model using
-  option \verb|-no_model_strip| and executable \verb|pismo|.
+\item \texttt{-stress_balance ssa} selects the SSA stress balance and
+  turns off the SIA stress balance computation, since our goal is to
+  model the ice shelf. It also side-steps a technical issue: PISM uses
+  periodic boundary conditions at domain boundaries and most fields in
+  this setup are not periodic. Turning off SIA avoids operations such
+  as differencing surface elevation across the domain edges. For a
+  more complete solution to this technical issue see section
+  \ref{sec:jako} on a regional model using option
+  \verb|-no_model_strip| and executable \verb|pismo|.
 \item \texttt{-ssa_dirichlet_bc} reads fields \texttt{u_ssa_bc}, \texttt{v_ssa_bc}, \texttt{bcflag}, and \texttt{thk} from an input file and uses them to prescribe Dirichlet boundary conditions for the SSA velocity (\texttt{u_ssa_bc} and \texttt{v_ssa_bc} are components of the SSA B.C., \texttt{bcflag} is $1$ at B.C. locations and $0$ elsewhere) and \texttt{thk} at $\mathtt{bcflag} = 1$ locations is used as the Dirichlet B.C. condition for the ice thickness. The latter (together with Dirichlet B.C. for the SSA velocity) can be thought of as prescribing ``SSA ice flux'' at given locations in an \emph{evolution} run.
-\item \texttt{-yield_stress constant -tauc 1e6} set the constant high yield stress. In this setup the selected yield stress value is irrelevant, because SSA velocities at grounded locations are prescribed.
+\item \texttt{-yield_stress constant -tauc 1e6} sets the constant high yield stress. In this setup the selected yield stress value is irrelevant, because SSA velocities at grounded locations are prescribed.
 \item \texttt{-pik} enables PIK improvements (see section \ref{sec:pism-pik}). The most important one here is the calving front stress boundary condition (CFBC), option \verb|-cfbc|.
 \item \texttt{-y 0} makes PISM stop after the first one-model-second-long ``preliminary'' time-step.  The model state is reset after this time-step, making it equivalent to a ``diagnostic'' run.
 \end{itemize}

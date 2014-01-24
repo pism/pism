@@ -54,28 +54,32 @@ Flow law parameters such as ice softness can be changed using configuration para
 
 \clearpage
 
-\subsection{Choosing the stress balance}  \label{subsect:ssacontrol}
-\optsection{SSA as a sliding law}
+\subsection{Choosing the stress balance}
+\label{subsect:stressbalance}
+\optsection{Stress balance}
 
-The basic stress balance used for all grounded ice in PISM is the non-sliding, thermomechanically-coupled SIA \cite{BBL}.  For the vast majority of most ice sheets, as measured by area or volume, this is an appropriate model which is an $O(\eps^2)$ approximation to the Stokes model if $\eps$ is the depth-to-length ratio of the ice sheet \cite{Fowler}.
+The basic stress balance used for all grounded ice in PISM is the non-sliding, thermomechanically-coupled SIA \cite{BBL}.  For the vast majority of most ice sheets, as measured by area or volume, this is an appropriate model, which is an $O(\eps^2)$ approximation to the Stokes model if $\eps$ is the depth-to-length ratio of the ice sheet \cite{Fowler}.
 
 The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance applies to floating ice.  See the Ross ice shelf example in section \ref{sec:ross} for an example in which the SSA is only applied to floating ice.
 
 The SSA is also used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}.  Specifically for the SSA with ``plastic'' (Coulomb friction) basal resistance, the locations of ice streams are determined as part of a free boundary problem of Schoof \cite{SchoofStream}, a model for emergent ice streams within a ice sheet and ice shelf system.  This model explains ice streams through a combination of plastic till failure and SSA stress balance.  As a combination of SIA and SSA it is a ``hybrid'' approximation of the Stokes model \cite{BBssasliding,Winkelmannetal2011}.  In other words, this SSA description of ice streams is the preferred ``sliding law'' for the SIA, and it should be used in preference to classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}
 
-Option \texttt{-ssa_sliding} turns on such use of the plastic till SSA as a sliding law; floating ice is also subject to the SSA with this option.  Of course there is more to the use of a stress balance than just turning it on!  At all grounded points a yield stress, or a pseudo-yield-stress in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is modeled by the subglacial hydrology mode choice (subsection \ref{subsect:subhydro}) based on the basal melt rate which is, primarily, thermodynamically-determined (subsection \ref{subsect:basestrength}).
+Option \texttt{-stress_balance ssa+sia} turns on such use of the SSA as a sliding law using the ``plastic'' basal resistance law; floating ice is also subject to the SSA with this option.  Of course there is more to the use of a stress balance than just turning it on!  At all grounded points a yield stress, or a pseudo-yield-stress in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is modeled by the subglacial hydrology mode choice (subsection \ref{subsect:subhydro}) based on the basal melt rate which is, primarily, thermodynamically-determined (subsection \ref{subsect:basestrength}).
 
 Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, while Table \ref{tab:ssausage} describes additional controls on the numerical solution of the stress balance equations.  If the ice sheet being modeled has any floating ice then the user is advised to read section \ref{sec:pism-pik} on modeling marine ice sheets.
 
 \begin{table}[ht]
 \centering
 \small
-\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}
+\begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
 \toprule
 \textbf{Option} & \textbf{Semantics}\\ \midrule
-    (\emph{NO OPTION}) & Grounded ice flows by the non-sliding SIA.  Floating ice essentially doesn't flow, so this model is not recommended for marine ice sheets. \\
-    \intextoption{no_sia} & Do not use the SIA model anywhere. \\
-    \intextoption{ssa_sliding} & The recommended default sliding law, which gives the SIA+SSA hybrid stress balance.  Combines SSA-computed velocity, using pseudo-plastic till, with SIA-computed velocity according to the combination in \cite{BBssasliding}.  Floating ice uses SSA only. \\
+  \intextoption{stress_balance none} & Turn off ice flow completely.\\
+  \intextoption{stress_balance sia} \mbox{(default)} & Grounded ice flows by the non-sliding SIA.  Floating ice essentially doesn't flow, so this model is not recommended for marine ice sheets. \\
+  \intextoption{stress_balance ssa} & Use the SSA model exclusively. Horizontal ice velocity is constant throughout ice columns.\\
+  \intextoption{stress_balance \mbox{prescribed_sliding}} & Use the constant-in-time prescribed sliding velocity field read from a file set using \fileopt{prescribed_sliding_file}, variables \texttt{ubar} and \texttt{vbar}. Horizontal ice velocity is constant throughout ice columns. \\
+  \intextoption{stress_balance ssa+sia} & The recommended sliding law, which gives the SIA+SSA hybrid stress balance.  Combines SSA-computed velocity, using pseudo-plastic till, with SIA-computed velocity according to the combination in \cite{BBssasliding}.  Floating ice uses SSA only. \\
+  \intextoption{stress_balance \mbox{prescribed_sliding+sia}} & Use the constant-in-time prescribed sliding velocity in combination with the non-sliding SIA.\\
 \bottomrule
 \end{tabular}
 \normalsize

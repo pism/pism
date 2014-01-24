@@ -24,7 +24,7 @@ $ pismr -i foo.nc -y 100 -o bar.nc
 \end{verbatim}
 but the climate and other parameters use PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
 
-As a technical note about saved states, a PISM run with \texttt{-ssa_sliding} also saves the last SSA velocities to the output file in variables \texttt{u_ssa} and \texttt{v_ssa}.  The presence of these velocities adds efficiency in restarting because an initial estimate speeds up the solution of the SSA stress balance equations.  If you want to use \texttt{-i} but also ignore these velocities then use option \intextoption{dontreadSSAvels}.
+As a technical note about saved states, a PISM run with \texttt{-stress_balance ssa} also saves the last SSA velocities to the output file in variables \texttt{u_ssa} and \texttt{v_ssa}.  The presence of these velocities adds efficiency in restarting because an initial estimate speeds up the solution of the SSA stress balance equations.  If you want to use \texttt{-i} but also ignore these velocities then use option \intextoption{dontreadSSAvels}.
 
 \subsubsection*{\texttt{-i} file format}
 \label{sec:i-format}
