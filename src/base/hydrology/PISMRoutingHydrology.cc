@@ -650,7 +650,7 @@ PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
 //! The computation of Wtilnew, called by update().
 /*!
 Does an implicit (backward Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\omega W,W_{til}^{max} - W_{til}\right)\f]
+  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\omega W,W_{til}^{max}\} - W_{til}\right)\f]
 where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\omega=\f$`hydrology_tillwat_transfer_proportion`,
 and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  There is no time-step restriction.
 The solution satisfies the inequalities
