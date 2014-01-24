@@ -72,7 +72,8 @@ int main(int argc, char *argv[]) {
 
     ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
 
-    ierr = m.writeFiles("simp_exper.nc"); CHKERRQ(ierr);
+    // provide a default output file name if no -o option is given.
+    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

@@ -625,7 +625,7 @@ $ mpiexec -n 4 pismv -test G -y 200
 \end{verbatim}
 
   \noindent If you see some output and a final \texttt{Writing model state}
-  \texttt{to file 'verify.nc'} then PISM completed
+  \texttt{to file 'unnamed.nc'} then PISM completed
   successfully. At the end of this run you get measurements of the difference
   between the numerical result and the exact solution. See the \emph{User's
     Manual} for more on PISM verification.
@@ -633,7 +633,7 @@ $ mpiexec -n 4 pismv -test G -y 200
   The above ``\texttt{-n 4}'' run should work even if there is only one actual
   processor (core) on your machine.  (In that case MPI will just run multiple
   processes on the one processor.)  This run will also produce a NetCDF output
-  file \texttt{verify.nc}, which can be read and viewed by NetCDF tools.
+  file \texttt{unnamed.nc}, which can be read and viewed by NetCDF tools.
 
 \item Try an EISMINT II run using the PETSc viewers (under the X window system):
 
