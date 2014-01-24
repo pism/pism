@@ -10,25 +10,21 @@ digraph pism_init {
 
   subgraph cluster_grid {
     label = "Set computational grid parameters\rIceModel::grid_setup()";
-    URL = "\ref IceModel::grid_setup()";
+    URL = "@ref IceModel::grid_setup()";
     labeljust = r;
 
     is_i_set1 [label = "Is -i set?"];
 
-    //FIXME: ref into browser_util:
-    // grid_from_file [label = "Get ALL grid settings from file" URL="\ref PISMIO::get_grid()"];
-    grid_from_file [label = "Get ALL grid settings from file (PISMIO::get_grid())"];
+    grid_from_file [label = "Get ALL grid settings from file" URL="@ref PIO::inq_grid()"];
 
     subgraph cluster_set_grid_defaults {
       label = "Set default grid parameters\nIceModel::set_grid_defaults()";
       labeljust = r;
-      URL = "\ref IceModel::set_grid_defaults()";
+      URL = "@ref IceModel::set_grid_defaults()";
 
       is_boot_file_set1 [label = "Is -boot_file set?"];
       
-      //FIXME: ref into browser_util:
-      // grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="\ref PISMIO::get_grid()"];
-      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid; see PISMIO::get_grid())"];
+      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="@ref PIO::inq_grid()"];
       
       fail_in_IceModel1 [label = "ERROR in base class IceModel"]
       
@@ -40,23 +36,21 @@ digraph pism_init {
     is_i_set1 -> is_boot_file_set1 [label = "no"];
     is_i_set1 -> grid_from_file [label = "yes"];
 
-    grid_from_options [label = "Complete setting grid from options\nIceModel::set_grid_from_options()" color=darkgreen URL="\ref IceModel::set_grid_from_options()"];
+    grid_from_options [label = "Complete setting grid from options\nIceModel::set_grid_from_options()" color=darkgreen URL="@ref IceModel::set_grid_from_options()"];
       
     grid_from_boot_file -> grid_from_options;
 
-    //FIXME: ref into browser_util:
-    //  createDA [label = "Distribute the model across processors\nIceGrid::createDA()" URL="\ref IceGrid::createDA()"];
-    createDA [label = "Distribute the model across processors\nIceGrid::createDA()"];
+    createDA [label = "Distribute the model across processors\nIceGrid::allocate()" URL="@ref IceGrid::allocate()"];
     {grid_from_file grid_from_options} -> createDA;
   }
 
-  setFromOptions [label = "Process the bulk of physics-related options\nIceModel::setFromOptions()" color=darkgreen URL="\ref IceModel::setFromOptions()"];
+  setFromOptions [label = "Process the bulk of physics-related options\nIceModel::setFromOptions()" color=darkgreen URL="@ref IceModel::setFromOptions()"];
   createDA -> setFromOptions;
   
-  createVecs [label = "Memory allocation\nIceModel::createVecs()" color=darkgreen URL="\ref IceModel::createVecs()"];
+  createVecs [label = "Memory allocation\nIceModel::createVecs()" color=darkgreen URL="@ref IceModel::createVecs()"];
   setFromOptions -> createVecs;
 
-  init_couplers [label = "Init atmosphere and ocean couplers\nIceModel::init_couplers()" color=darkgreen URL="\ref IceModel::init_couplers()"];
+  init_couplers [label = "Init atmosphere and ocean couplers\nIceModel::init_couplers()" color=darkgreen URL="@ref IceModel::init_couplers()"];
   createVecs -> init_couplers;
 
   init_couplers -> is_i_set2;
@@ -64,20 +58,20 @@ digraph pism_init {
   subgraph cluster_model_state {
     label = "Set starting values of\rmodel state variables\rIceModel::model_state_setup()";
     labeljust = r;
-    URL = "\ref IceModel::model_state_setup()";
+    URL = "@ref IceModel::model_state_setup()";
 
     is_i_set2 [label = "Is -i set?"];
 
-    initFromFile [label = "IceModel::initFromFile()" color=darkgreen URL="\ref IceModel::initFromFile()"];
+    initFromFile [label = "IceModel::initFromFile()" color=darkgreen URL="@ref IceModel::initFromFile()"];
     
     subgraph cluster_set_values_from_options {
       label = "Set variables by bootstrap from a file\n(derived classes may set vars in other ways) \nIceModel::set_vars_from_options()";
       labeljust = r;
-      URL = "\ref IceModel::set_vars_from_options()";
+      URL = "@ref IceModel::set_vars_from_options()";
 
       is_boot_file_set [label = "Is -boot_file set?"];
       
-      bootstrap_from_file [label = "IceModel::bootstrapFromFile()" color=darkgreen URL="\ref IceModel::bootstrapFromFile()"];
+      bootstrap_from_file [label = "IceModel::bootstrapFromFile()" color=darkgreen URL="@ref IceModel::bootstrapFromFile()"];
       
       fail_in_IceModel [label = "ERROR in base class IceModel"]
       
@@ -88,20 +82,18 @@ digraph pism_init {
     is_i_set2 -> initFromFile [label = "yes"];
     is_i_set2 -> is_boot_file_set [label = "no"];
 
-    regrid [label = "Regrid other data if -regrid_from\nIceModel::regrid()" color=darkgreen URL="\ref IceModel::regrid()"];
+    regrid [label = "Regrid other data if -regrid_from\nIceModel::regrid()" color=darkgreen URL="@ref IceModel::regrid()"];
     {initFromFile bootstrap_from_file} -> regrid;
   }  
 
 
-  //FIXME: ref into browser_util:
-  // report [label = "IceGrid::report_parameters()" URL="\ref IceGrid::report_parameters()"];
-  report [label = "IceGrid::report_parameters()"];
+  report [label = "IceGrid::report_parameters()" URL="@ref IceGrid::report_parameters()"];
   regrid -> report;
 
-  allocate_internal_objects [label = "Allocate memory for additional internals\nIceModel::allocate_internal_objects()" URL="\ref IceModel::allocate_internal_objects()"];
+  allocate_internal_objects [label = "Allocate memory for additional internals\nIceModel::allocate_internal_objects()" URL="@ref IceModel::allocate_internal_objects()"];
   report -> allocate_internal_objects;
 
-  misc [label = "Miscellaneous initialization tasks\nIceModel::misc_setup()" color=darkgreen URL="\ref IceModel::misc_setup()"];
+  misc [label = "Miscellaneous initialization tasks\nIceModel::misc_setup()" color=darkgreen URL="@ref IceModel::misc_setup()"];
   allocate_internal_objects -> misc;
 
   misc -> done;
