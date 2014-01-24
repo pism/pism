@@ -242,21 +242,19 @@ For most choices of the relevant parameters and most grid spacings, the \texttt{
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}
 
-The option \txtopt{bed_def}{[none, iso, lc]} turns on bed deformation models.
+The option \txtopt{bed_def}{[\texttt{iso, lcn}]} turns one of the two available bed deformation models.
 
 The first model \texttt{-bed_def iso}, is instantaneous pointwise isostasy.  This model assumes that the bed at the starting time is in equilibrium with the load.  Then, as the ice geometry evolves, the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle, so its value is determined by setting the values of \texttt{lithosphere_density} and \texttt{ice_density} in the configuration file; see subsection \ref{sec:pism-defaults}.  For an example and verification, see Test H in Verification section. 
 
-The second model \texttt{-bed_def lc} is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It imposes  essentially no computational burden because the Fast Fourier Transform is used to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and if that uplift field is put in a NetCDF variable with standard name \texttt{tendency_of_bedrock_altitude} in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
+The second model \texttt{-bed_def lc} is much more physical.  It is based on papers by Lingle and Clark \cite{LingleClark} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It imposes  essentially no computational burden because the Fast Fourier Transform is used to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and if that uplift field is put in a NetCDF variable with standard name \texttt{tendency_of_bedrock_altitude} in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
 
-Minimal example runs to compare these models:
+Here are minimal example runs to compare these models:
 \begin{verbatim}
 $ mpiexec -n 4 pisms -eisII A -y 8000 -o eisIIA_nobd.nc
 $ mpiexec -n 4 pisms -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
 $ mpiexec -n 4 pisms -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 \end{verbatim}
-Compare the \texttt{topg}, \texttt{usurf}, and \texttt{dbdt} variables in the resulting output files.
-
-Test H in section \ref{sec:verif} can be used to reproduce the comparison done in \cite{BLKfastearth}.
+Compare the \texttt{topg}, \texttt{usurf}, and \texttt{dbdt} variables in the resulting output files.  See also the comparison done in \cite{BLKfastearth}.
 
 
 \subsection{Parameterization of bed roughness in the SIA} \label{subsect:bedsmooth} \index{Parameterization of bed roughness}
