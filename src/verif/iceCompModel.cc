@@ -59,7 +59,6 @@ IceCompModel::IceCompModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overri
 
   // set values of flags in run()
   config.set_flag("do_mass_conserve", true);
-  config.set_flag("use_ssa_velocity", false);
   config.set_flag("include_bmr_in_continuity", false);
 
   if (testname == 'V') {
@@ -207,9 +206,9 @@ PetscErrorCode IceCompModel::setFromOptions() {
     config.set_flag("do_sia", false);
 
     // do use the SSA solver
-    config.set_flag("use_ssa_velocity", true);
+    config.set_string("stress_balance_model", "ssa");
 
-    // this certainly is not a "dry silumation"
+    // this certainly is not a "dry simulation"
     config.set_flag("is_dry_simulation", false);
 
     config.set_flag("ssa_dirichlet_bc", true);

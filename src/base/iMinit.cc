@@ -717,49 +717,48 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   if (stress_balance != NULL)
     return 0;
 
-  bool
-    use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_sia = config.get_flag("do_sia"),
-    do_stressbalance_constant = config.get_flag("do_stressbalance_constant");
+  std::string model = config.get_string("stress_balance_model");
 
-  // If both SIA and SSA are "on", the SIA and SSA velocities are always added
-  // up (there is no switch saying "do the hybrid").
-  if (stress_balance == NULL) {
-    ShallowStressBalance *my_stress_balance;
-    if (use_ssa_velocity) {
-      std::string ssa_method = config.get_string("ssa_method");
-      if(ssa_method == "fd") {
-        my_stress_balance = new SSAFD(grid, *EC, config);
-      } else if(ssa_method == "fem") {
-        my_stress_balance = new SSAFEM(grid, *EC, config);
-      } else {
-        SETERRQ(grid.com, 1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
-      }
+  ShallowStressBalance *sliding = NULL;
+  if (model == "none" || model == "sia") {
+    sliding = new ZeroSliding(grid, *EC, config);
+  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
+    sliding = new PrescribedSliding(grid, *EC, config);
+  } else if (model == "ssa" || model == "ssa+sia") {
+    std::string method = config.get_string("ssa_method");
+
+    if (method == "fem") {
+      sliding = new SSAFEM(grid, *EC, config);
+    } else if (method == "fd") {
+      sliding = new SSAFD(grid, *EC, config);
     } else {
-      if (do_stressbalance_constant)
-        my_stress_balance = new SSB_Constant(grid, *EC, config);
-      else
-        my_stress_balance = new SSB_Trivial(grid, *EC, config);
+      SETERRQ(grid.com, 1, "invalid ssa method");
     }
-    SSB_Modifier *my_modifier;
-    if (do_sia) {
-      my_modifier = new SIAFD(grid, *EC, config);
-    } else {
-      my_modifier = new SSBM_Trivial(grid, *EC, config);
-    }
-    // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
-    stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                           my_modifier, config);
 
-    // PISM stress balance computations are diagnostic, i.e. do not
-    // have a state that changes in time.  Therefore this call can be here
-    // and not in model_state_setup().  We don't need to re-initialize after
-    // the "diagnostic time step".
-    ierr = stress_balance->init(variables); CHKERRQ(ierr);
+  } else {
+    SETERRQ(grid.com, 1, "invalid stress balance model");
+  }
 
-    if (config.get_flag("include_bmr_in_continuity")) {
-      ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
-    }
+  SSB_Modifier *modifier = NULL;
+  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
+    modifier = new ConstantInColumn(grid, *EC, config);
+  } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
+    modifier = new SIAFD(grid, *EC, config);
+  } else {
+    SETERRQ(grid.com, 1, "invalid stress balance model");
+  }
+
+  // ~PISMStressBalance() will de-allocate sliding and modifier.
+  stress_balance = new PISMStressBalance(grid, sliding, modifier, config);
+
+  // PISM stress balance computations are diagnostic, i.e. do not
+  // have a state that changes in time.  Therefore this call can be here
+  // and not in model_state_setup().  We don't need to re-initialize after
+  // the "diagnostic time step".
+  ierr = stress_balance->init(variables); CHKERRQ(ierr);
+
+  if (config.get_flag("include_bmr_in_continuity")) {
+    ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
   }
 
   return 0;
@@ -824,9 +823,10 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
   if (basal_yield_stress != NULL)
     return 0;
 
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+  std::string model = config.get_string("stress_balance_model");
 
-  if (use_ssa_velocity) {
+  // only these two use the yield stress (so far):
+  if (model == "ssa" || model == "ssa+sia") {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {

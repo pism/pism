@@ -68,7 +68,7 @@ PetscErrorCode ShallowStressBalance::allocate() {
   return 0;
 }
 
-SSB_Trivial::SSB_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
   : ShallowStressBalance(g, e, conf) {
 
   // Use the SIA flow law.
@@ -79,33 +79,33 @@ SSB_Trivial::SSB_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &con
   ice_factory.create(&flow_law);
 }
 
-SSB_Trivial::~SSB_Trivial() {
+ZeroSliding::~ZeroSliding() {
   delete flow_law;
 }
 
-void SSB_Trivial::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+void ZeroSliding::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                                   std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
   dict["taud"] = new SSB_taud(this, grid, *variables);
   dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
 }
 
-void SSB_Trivial::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
+void ZeroSliding::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
 {
   // empty
 }
 
-PetscErrorCode SSB_Trivial::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+PetscErrorCode ZeroSliding::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                              PISM_IO_Type /*nctype*/) {
   return 0;
 }
 
-PetscErrorCode SSB_Trivial::write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/) {
+PetscErrorCode ZeroSliding::write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/) {
   return 0;
 }
 
 
 //! \brief Update the trivial shallow stress balance object.
-PetscErrorCode SSB_Trivial::update(bool fast, IceModelVec2S &melange_back_pressure) {
+PetscErrorCode ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   if (fast)
     return 0;
@@ -468,16 +468,16 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
  *
  * The only use I can think of right now is testing.
  */
-SSB_Constant::SSB_Constant(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
-  : SSB_Trivial(g, e, conf) {
+PrescribedSliding::PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : ZeroSliding(g, e, conf) {
   // empty
 }
 
-SSB_Constant::~SSB_Constant() {
+PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-PetscErrorCode SSB_Constant::update(bool fast, IceModelVec2S &melange_back_pressure) {
+PetscErrorCode PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   if (fast == true)
     return 0;
@@ -488,16 +488,16 @@ PetscErrorCode SSB_Constant::update(bool fast, IceModelVec2S &melange_back_press
   return 0;
 }
 
-PetscErrorCode SSB_Constant::init(PISMVars &vars) {
+PetscErrorCode PrescribedSliding::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   bool flag;
   std::string input_filename;
-  ierr = PISMOptionsString("-ssb_constant_file", "name of the file to read velocity fields from",
+  ierr = PISMOptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
                            input_filename, flag); CHKERRQ(ierr);
   if (flag == false) {
-    PetscPrintf(grid.com, "PISM ERROR: option -ssb_constant_file is required.\n");
+    PetscPrintf(grid.com, "PISM ERROR: option -prescribed_sliding_file is required.\n");
     PISMEnd();
   }
 

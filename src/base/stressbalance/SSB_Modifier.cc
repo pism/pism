@@ -62,7 +62,7 @@ PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
   return 0;
 }
 
-PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
+PetscErrorCode ConstantInColumn::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
@@ -70,7 +70,7 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
   return 0;
 }
 
-SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
   : SSB_Modifier(g, e, c)
 {
   IceFlowLawFactory ice_factory(grid.com, "", config, &EC);
@@ -81,7 +81,7 @@ SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c
   ice_factory.create(&flow_law);
 }
 
-SSBM_Trivial::~SSBM_Trivial()
+ConstantInColumn::~ConstantInColumn()
 {
   if (flow_law != NULL) {
     delete flow_law;
@@ -99,7 +99,7 @@ SSBM_Trivial::~SSBM_Trivial()
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input, bool fast) {
+PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
 
   if (fast)

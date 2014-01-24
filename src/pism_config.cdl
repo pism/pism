@@ -28,12 +28,6 @@ netcdf pism_config {
     pism_config:stress_balance_model = "sia_only";
     pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
 
-    pism_config:do_stressbalance_constant = "no";
-    pism_config:do_stressbalance_constant_doc = "Use the 'constant' stress balance (reads u,v from a file).";
-
-    pism_config:do_sia = "yes";
-    pism_config:do_sia_doc = "Use the SIA stress balance (possibly as a part of a hybrid).";
-
     pism_config:do_skip = "no";
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
 
@@ -47,7 +41,7 @@ netcdf pism_config {
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
 
     pism_config:do_pseudo_plastic_till = "no";
-    pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
+    pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model (basal sliding law).";
 
     pism_config:verbose_pik_messages = "no";
     pism_config:verbose_pik_messages_doc = "Display verbose PIK messages e.g. about iceberg removal.";
@@ -91,8 +85,8 @@ netcdf pism_config {
     pism_config:is_dry_simulation = "no";
     pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation";
 
-    pism_config:use_ssa_velocity = "no";
-    pism_config:use_ssa_velocity_doc = "Use the equations of the shallow shelf approximation [@ref MacAyeal, @ref Morland, @ref SchoofStream, @ref WeisGreveHutter] for ice shelves and dragging ice shelves (%i.e. ice streams) where so-indicated by the mask";
+    pism_config:stress_balance_model = "sia";
+    pism_config:stress_balance_model_doc = "the stress balance model; the choices are 'none', 'prescribed_sliding', 'sia', 'ssa', 'prescribed_sliding+sia', 'ssa+sia'.";
 
     pism_config:write_ssa_system_to_matlab = "no";
     pism_config:write_ssa_system_to_matlab_doc = "Specifies whether to write the SSA system to a matlab file";

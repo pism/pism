@@ -133,11 +133,11 @@ public:
   implementation ignores any basal resistance fields (e.g. yield stress from
   the IceModel or other user of this class).
  */
-class SSB_Trivial : public ShallowStressBalance
+class ZeroSliding : public ShallowStressBalance
 {
 public:
-  SSB_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
-  virtual ~SSB_Trivial();
+  ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  virtual ~ZeroSliding();
   
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
@@ -156,10 +156,10 @@ public:
   virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/);
 };
 
-class SSB_Constant : public SSB_Trivial {
+class PrescribedSliding : public ZeroSliding {
 public:
-  SSB_Constant(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
-  virtual ~SSB_Constant();
+  PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  virtual ~PrescribedSliding();
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(PISMVars &vars);
 };

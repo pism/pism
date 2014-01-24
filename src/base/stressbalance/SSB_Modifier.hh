@@ -76,11 +76,11 @@ protected:
 
 
 //! The trivial Shallow Stress Balance modifier.
-class SSBM_Trivial : public SSB_Modifier
+class ConstantInColumn : public SSB_Modifier
 {
 public:
-  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
-  virtual ~SSBM_Trivial();
+  ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~ConstantInColumn();
 
   virtual PetscErrorCode init(PISMVars &vars);
 

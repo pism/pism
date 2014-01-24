@@ -634,7 +634,6 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   // Sub-models
   ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
-  ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
 
   // hydrology
   ierr = config.keyword_from_option("hydrology", "hydrology_model",
@@ -863,22 +862,16 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
     config.set_flag_from_option("part_grid", true);
   }
 
-  // check -ssa_sliding
-  ierr = PISMOptionsIsSet("-ssa_sliding", flag);  CHKERRQ(ierr);
-  if (flag) {
-    config.set_flag_from_option("use_ssa_velocity", true);
-  }
+  ierr = config.keyword_from_option("stress_balance", "stress_balance_model",
+                                    "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia"); CHKERRQ(ierr);
 
   bool test_climate_models = false;
   ierr = PISMOptionsIsSet("-test_climate_models", "Disable ice dynamics to test climate models",
                           test_climate_models); CHKERRQ(ierr);
   if (test_climate_models) {
-    config.set_flag_from_option("do_sia",           false);
-    config.set_flag_from_option("use_ssa_velocity", false);
-    config.set_flag_from_option("do_energy",        false);
+    config.set_string_from_option("stress_balance_model", "none");
+    config.set_flag_from_option("do_energy", false);
   }
-
-  ierr = config.flag_from_option("ssb_constant", "do_stressbalance_constant"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("bed_def_lc_elastic", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
 

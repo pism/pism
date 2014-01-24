@@ -215,31 +215,38 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
 
 PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   PetscErrorCode ierr;
-  
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_sia = config.get_flag("do_sia");
 
-  ShallowStressBalance *my_stress_balance;
-  SSB_Modifier *modifier;
-  if (do_sia) {
-    modifier = new SIAFD_Regional(grid, *EC, config);
+  if (stress_balance != NULL)
+    return 0;
+
+  std::string model = config.get_string("stress_balance_model");
+
+  ShallowStressBalance *sliding = NULL;
+  if (model == "none" || model == "sia") {
+    sliding = new ZeroSliding(grid, *EC, config);
+  } else if (model == "prescribed_sliding" || "prescribed_sliding+sia") {
+    sliding = new PrescribedSliding(grid, *EC, config);
+  } else if (model == "ssa" || model == "ssa+sia") {
+    sliding = new SSAFD(grid, *EC, config);
   } else {
-    modifier = new SSBM_Trivial(grid, *EC, config);
+    SETERRQ(grid.com, 1, "invalid stress balance model");
   }
 
-  if (use_ssa_velocity) {
-    my_stress_balance = new SSAFD_Regional(grid, *EC, config);
+  SSB_Modifier *modifier = NULL;
+  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
+    modifier = new ConstantInColumn(grid, *EC, config);
+  } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
+    modifier = new SIAFD(grid, *EC, config);
   } else {
-    my_stress_balance = new SSB_Trivial(grid, *EC, config);
+    SETERRQ(grid.com, 1, "invalid stress balance model");
   }
-  
-  // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
-  stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                         modifier, config);
 
-  // Note that in PISM stress balance computations are diagnostic, i.e. do not
-  // have a state that changes in time. This means that this call can be here
-  // and not in model_state_setup() and we don't need to re-initialize after
+  // ~PISMStressBalance() will de-allocate sliding and modifier.
+  stress_balance = new PISMStressBalance(grid, sliding, modifier, config);
+
+  // PISM stress balance computations are diagnostic, i.e. do not
+  // have a state that changes in time.  Therefore this call can be here
+  // and not in model_state_setup().  We don't need to re-initialize after
   // the "diagnostic time step".
   ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
@@ -256,9 +263,10 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
   if (basal_yield_stress != NULL)
     return 0;
 
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+  std::string model = config.get_string("stress_balance_model");
 
-  if (use_ssa_velocity) {
+  // only these two use the yield stress (so far):
+  if (model == "ssa" || model == "ssa+sia") {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {

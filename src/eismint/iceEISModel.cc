@@ -37,7 +37,6 @@ IceEISModel::IceEISModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_override
 
   // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
   config.set_flag("is_dry_simulation", true);
-  config.set_flag("use_ssa_velocity", false);
 
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock
@@ -199,7 +198,7 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
     if (expername == 'G' || expername == 'H') {
       my_stress_balance = new SIA_Sliding(grid, *EC, config);
     } else {
-      my_stress_balance = new SSB_Trivial(grid, *EC, config);
+      my_stress_balance = new ZeroSliding(grid, *EC, config);
     }
   
     // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
