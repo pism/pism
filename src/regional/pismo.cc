@@ -76,26 +76,15 @@ protected:
                                      planeStar<PetscScalar> input_flux,
                                      planeStar<PetscScalar> &output_velocity,
                                      planeStar<PetscScalar> &output_flux);
-  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
+  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
+                                                 PetscScalar* liquifiedVol,
                                                  PetscScalar* bulgeCount);
-  virtual PetscErrorCode setFromOptions();
 private:
   IceModelVec2Int no_model_mask;
   IceModelVec2S   usurfstore, thkstore;
   IceModelVec2S   bmr_stored;
   PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
 };
-
-//! \brief 
-PetscErrorCode IceRegionalModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
-
-  ierr = config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc"); CHKERRQ(ierr);
-
-  return 0;
-}
 
 //! \brief Set no_model_mask variable to have value 1 in strip of width 'strip'
 //! m around edge of computational domain, and value 0 otherwise.
