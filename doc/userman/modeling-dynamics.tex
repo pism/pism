@@ -71,14 +71,14 @@ Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, wh
 \begin{table}[ht]
 \centering
 \small
-\begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
+\begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}
 \toprule
 \textbf{Option} & \textbf{Semantics}\\ \midrule
   \intextoption{stress_balance none} & Turn off ice flow completely.\\
   \intextoption{stress_balance sia} \mbox{(default)} & Grounded ice flows by the non-sliding SIA.  Floating ice essentially doesn't flow, so this model is not recommended for marine ice sheets. \\
   \intextoption{stress_balance ssa} & Use the SSA model exclusively. Horizontal ice velocity is constant throughout ice columns.\\
   \intextoption{stress_balance \mbox{prescribed_sliding}} & Use the constant-in-time prescribed sliding velocity field read from a file set using \fileopt{prescribed_sliding_file}, variables \texttt{ubar} and \texttt{vbar}. Horizontal ice velocity is constant throughout ice columns. \\
-  \intextoption{stress_balance ssa+sia} & The recommended sliding law, which gives the SIA+SSA hybrid stress balance.  Combines SSA-computed velocity, using pseudo-plastic till, with SIA-computed velocity according to the combination in \cite{BBssasliding}.  Floating ice uses SSA only. \\
+  \intextoption{stress_balance ssa+sia} & The recommended sliding law, which gives the SIA+SSA hybrid stress balance.  Combines SSA-computed velocity, using pseudo-plastic till, with SIA-computed velocity according to the combination in \cite{Winkelmannetal2011}; similar to \cite{BBssasliding}.  Floating ice uses SSA only. \\
   \intextoption{stress_balance \mbox{prescribed_sliding+sia}} & Use the constant-in-time prescribed sliding velocity in combination with the non-sliding SIA.\\
 \bottomrule
 \end{tabular}

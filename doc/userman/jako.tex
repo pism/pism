@@ -35,10 +35,17 @@ $ ln -s ~/usr/local/regional-tools/pism_regional.py .  # symbolic link to tool
 Script \texttt{preprocess.sh} downloads and cleans the 1\,km SeaRISE data, an 80 Mb file called \texttt{Greenland1km.nc}.\footnote{If this file is already present then no actual download occurs, and preprocessing proceeds.  Thus:  Do not worry about download time if you need to preprocess again.  The same comment applies to other downloaded files.}  The script also downloads the SeaRISE 5\,km data set \texttt{Greenland_5km_v1.1.nc}, which contains the RACMO surface mass balance field (not present in the 1\,km data set).  If you have already run the example in Section \ref{sec:start} then you already have this file and you can link to it to avoid downloading:
 \begin{quote}\small
 \begin{verbatim}
-$ ln -s ../searise-greenland/Greenland_5km_v1.1.nc
+$ ln -s ../std-greenland/Greenland_5km_v1.1.nc
 \end{verbatim}
 \normalsize\end{quote}
-Finally, the same script also downloads a pre-computed 5\,km grid PISM model result \texttt{g5km_0_ftt.nc} for the whole ice sheet, a 1.3\,GB file (so there may be some delay).  This provides the boundary conditions, and the thermodynamical initial condition, for the regional flow model we are building.
+
+The same script also preprocesses a pre-computed 5\,km grid PISM model result \texttt{g5km_gridseq.nc} for the whole ice sheet.  This provides the boundary conditions, and the thermodynamical initial condition, for the regional flow model we are building.  If you have already generated it by running the script in subsection \ref{subsect:gridseq} then link to it,
+\begin{quote}\small
+\begin{verbatim}
+$ ln -s ../std-greenland/g5km_gridseq.nc
+\end{verbatim}
+\normalsize\end{quote}
+Otherwise running \texttt{preprocess.sh} will download it.  Because it is about 0.6 Gb this may take some time.
 
 So now let's actual run the preprocessing script:
 \begin{quote}\small
@@ -127,6 +134,8 @@ $ ncdump -h jako.nc |head
 The grid has spacing of 1\,km, so our computational domain is a 620\,km by 425\,km rectangle.  A 2\,km resolution, century-scale model run is easily achievable on a desktop or laptop computer, and that is our goal below.  A lower 5\,km resolution spin-up run, matching the resolution of the 5\,km whole ice sheet state which was computed on a supercomputer, is also achievable on a small computer; we do that first.
 
 The boundary condition fields in \verb|g5km_bc.nc|, from the whole ice sheet model result  \verb|g5km_0_ftt.nc|, may or may not, depending on modeler intent, be spun-up adequately for the purposes of the regional model.  For instance, the intention may be to study equilibrium states with model settings special to the region.  Here, however we assume that more regional spin-up is needed.  We will get first an equilibrium\footnote{Determining ``equilibrium'' requires a decision, of course.  A standard satisfied here is that the ice volume in the region changes by less than 0.1 percent in the final 100 model years.  See \texttt{ivol} in \texttt{ts_spunjako_0.nc}.} 5\,km regional model, and then do a century run of a 2\,km model based on that.
+
+FIXME from here: I still haven't gotten this to run; see issues on pism/pism and pism/regional-tools
 
 The 5\,km grid\footnote{Calculate \texttt{620/5 + 1} and \texttt{425/5 + 1}, for example.} uses \verb|-Mx 125 -My 86|.  So now we do a basic run using 4 MPI processes:
 \begin{quote}\small
