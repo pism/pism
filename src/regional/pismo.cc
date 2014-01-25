@@ -224,10 +224,10 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   ShallowStressBalance *sliding = NULL;
   if (model == "none" || model == "sia") {
     sliding = new ZeroSliding(grid, *EC, config);
-  } else if (model == "prescribed_sliding" || "prescribed_sliding+sia") {
+  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
     sliding = new PrescribedSliding(grid, *EC, config);
   } else if (model == "ssa" || model == "ssa+sia") {
-    sliding = new SSAFD(grid, *EC, config);
+    sliding = new SSAFD_Regional(grid, *EC, config);
   } else {
     SETERRQ(grid.com, 1, "invalid stress balance model");
   }
@@ -236,7 +236,7 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
     modifier = new ConstantInColumn(grid, *EC, config);
   } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
-    modifier = new SIAFD(grid, *EC, config);
+    modifier = new SIAFD_Regional(grid, *EC, config);
   } else {
     SETERRQ(grid.com, 1, "invalid stress balance model");
   }
