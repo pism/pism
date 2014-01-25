@@ -274,7 +274,9 @@ protected:
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
   
-  IceModelVec2S gl_mask; //!< mask to determine grounding line position
+  IceModelVec2S gl_mask, //!< mask to determine grounding line position
+    gl_mask_x, //!< mask to determine grounding line position in x-direction
+    gl_mask_y; //!< mask to determine grounding line position in y-direction
 
   IceModelVec3
         T3,		//!< absolute temperature of ice; K (ghosted)

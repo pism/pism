@@ -232,6 +232,12 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = T3.begin_access(); CHKERRQ(ierr);
     ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
+    const bool sub_gl = config.get_flag("sub_groundingline");
+
+    if (sub_gl){
+      ierr = gl_mask.begin_access(); CHKERRQ(ierr);
+    }
+
     // counts unreasonably low temperature values; deprecated?
     PetscInt myLowTempCount = 0;
     PetscInt maxLowTempCount = static_cast<PetscInt>(config.get("max_low_temp_count"));
@@ -374,11 +380,19 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
         }
 
+	if (sub_gl) {
+	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * shelfbmassflux(i,j) + gl_mask(i,j) * basal_melt_rate(i,j);
+	}
+
     }
   }
 
   if (myLowTempCount > maxLowTempCount) {
     SETERRQ(grid.com, 1,"too many low temps");
+  }
+
+  if (sub_gl){
+    ierr = gl_mask.end_access(); CHKERRQ(ierr);
   }
 
   ierr = vH.end_access(); CHKERRQ(ierr);
