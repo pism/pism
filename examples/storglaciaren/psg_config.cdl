@@ -2,9 +2,6 @@ netcdf pism_overrides {
     variables:
     byte pism_overrides;
 
-   pism_overrides:run_title = "PISM Storglaciaren Example";
-   pism_overrides:run_title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the 'title' global attribute.";
-
     pism_overrides:bed_smoother_range = 0.;
     pism_overrides:bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [@ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
@@ -15,24 +12,9 @@ netcdf pism_overrides {
     pism_overrides:summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
 
     pism_overrides:drainage_target_water_frac = 0.02;
-    pism_overrides:drainage_target_water_frac_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [@ref AschwandenBuelerBlatter]";
+    pism_overrides:drainage_target_water_frac_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [@ref AschwandenBuelerKhroulevBlatter]";
 
     pism_overrides:enthalpy_temperate_conductivity_ratio = 0.001;
-    pism_overrides:enthalpy_temperate_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [@ref AschwandenBuelerBlatter]";
-
-    pism_overrides:pseudo_plastic_q = 0.75;
-    pism_overrides:pseudo_plastic_q_doc = "; The exponent of the pseudo-plastic basal resistance model";
-
-    pism_overrides:till_pw_fraction = 0.90;
-    pism_overrides:till_pw_fraction_doc = "pure number; pore water pressure is this fraction of overburden";
-
-    pism_overrides:pseudo_plastic_uthreshold = 10.0;
-    pism_overrides:pseudo_plastic_uthreshold_doc = "m/year; ";
-
-    pism_overrides:default_till_phi = 40.0;
-    pism_overrides:default_till_phi_doc = "degrees; fill value for till friction angle";
-
-    pism_overrides:do_pseudo_plastic_till = "yes";
-    pism_overrides:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
+    pism_overrides:enthalpy_temperate_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [@ref AschwandenBuelerKhroulevBlatter]";
 
 }

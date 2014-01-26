@@ -106,7 +106,8 @@ echo ""
 
 EB="-sia_e 0.3"
 
-PARAMS="-pseudo_plastic"
+#PARAMS="-pseudo_plastic -pseudo_plastic_q 0.75 -pseudo_plastic_uthreshold 10.0 -yield_stress mohr_coulomb -plastic_phi 40.0"
+PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -pseudo_plastic_uthreshold 100.0 -yield_stress mohr_coulomb -plastic_phi 40.0"
 
 PETSCSTUFF="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
 
@@ -137,7 +138,7 @@ EXNAME=ex_${OUTNAME}
 EXTIMES=0:25:${NOMASSRUNLENGTH}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) sia run to achieve approximate enthalpy equilibrium, for ${NOMASSRUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER \
+cmd="$PISM_MPIDO $NN $PISM $EB -i $INNAME $COUPLER \
   -no_mass -y ${NOMASSRUNLENGTH} \
   -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES -o $OUTNAME"
 $PISM_DO $cmd
