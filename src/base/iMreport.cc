@@ -303,10 +303,6 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
       ierr = verbPrintf(2,grid.com, stdout_flags_count0.c_str()); CHKERRQ(ierr);
     }
 
-    if (stdout_ssa.empty() == false) {
-      ierr = verbPrintf(2, grid.com, "%s\n", stdout_ssa.c_str()); CHKERRQ(ierr);
-    }
-
     if (use_calendar) {
       snprintf(tempstr,90, "%s", grid.time->date().c_str());
     } else {

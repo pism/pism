@@ -266,7 +266,6 @@ protected:
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
   
   IceModelVec2 deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
-  IceModelVec2 principal_stresses; //!< major and minor principal components of horizontal stress tensor
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
@@ -307,7 +306,7 @@ protected:
   // flags
   char adaptReasonFlag;
 
-  std::string stdout_flags, stdout_ssa;
+  std::string stdout_flags;
 
   std::string executable_short_name;
   
