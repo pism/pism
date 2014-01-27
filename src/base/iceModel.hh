@@ -344,8 +344,12 @@ protected:
 
   // see iMgeometry.cc
   virtual PetscErrorCode updateSurfaceElevationAndMask();
-  virtual PetscErrorCode update_mask(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2Int &mask);
-  virtual PetscErrorCode update_surface_elevation(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2S &result);
+  virtual PetscErrorCode update_mask(IceModelVec2S &bed,
+                                     IceModelVec2S &ice_thickness,
+                                     IceModelVec2Int &mask);
+  virtual PetscErrorCode update_surface_elevation(IceModelVec2S &bed,
+                                                  IceModelVec2S &ice_thickness,
+                                                  IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> input_velocity,
@@ -356,7 +360,7 @@ protected:
                            planeStar<PetscScalar> &SSA_velocity,
                            planeStar<PetscScalar> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
-  virtual PetscErrorCode sub_gl_position();
+  virtual PetscErrorCode update_floatation_mask();
   virtual PetscErrorCode do_calving();
   virtual PetscErrorCode Href_cleanup();
   virtual PetscErrorCode update_cumulative_discharge(IceModelVec2S &thickness,

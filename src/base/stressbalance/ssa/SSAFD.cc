@@ -719,7 +719,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
           beta = beta_ice_free_bedrock;
         }
         if (sub_gl){
-          // if grounding line interpolation apply here reduced basal drag
+          // reduce the basal drag at grid cells that are partially grounded:
           if (M.icy(M_ij)) {
             beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           }

@@ -258,19 +258,19 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(bed_topography); CHKERRQ(ierr);
 
   if (config.get_flag("sub_groundingline")) {
-    ierr = gl_mask.create(grid, "gl_mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = gl_mask.create(grid, "gl_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask.set_attrs("internal",
                              "fractional grounded/floating mask (floating=0, grounded=1)",
 			     "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask); CHKERRQ(ierr);
 
-    ierr = gl_mask_x.create(grid, "gl_mask_x", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = gl_mask_x.create(grid, "gl_mask_x", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_x.set_attrs("internal",
 			       "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
 			       "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask_x); CHKERRQ(ierr);
 
-    ierr = gl_mask_y.create(grid, "gl_mask_y", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = gl_mask_y.create(grid, "gl_mask_y", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_y.set_attrs("internal",
        			       "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
 			       "", ""); CHKERRQ(ierr);
@@ -701,6 +701,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = basal_yield_stress_model->basal_material_yield_stress(basal_yield_stress); CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
+
+  // Update the fractional grounded/floating mask (used by the SSA
+  // stress balance and the energy code)
+  if (config.get_flag("sub_groundingline")) {
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
+    ierr = update_floatation_mask(); CHKERRQ(ierr);
+  }
 
   grid.profiler->begin(event_velocity);
 
