@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstring>
 #include <sstream>
+#include <algorithm>
 #include <petscdmda.h>
 
 #include "iceModel.hh"
@@ -639,29 +640,48 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
   //! \li determine the maximum time-step boundary models can take
-  double apcc_dt;
-  bool restrict_dt;
-  ierr = surface->max_timestep(grid.time->current(), apcc_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) revise_maxdt(apcc_dt, maxdt_temporary);
 
-  double opcc_dt;
-  ierr = ocean->max_timestep(grid.time->current(), opcc_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) revise_maxdt(opcc_dt, maxdt_temporary);
+  // FIXME: we should probably create a std::vector<PISMComponent_TS*>
+  // (or similar) and iterate over that instead.
+  {
+    bool restrict_dt = false;
+    double current_time = grid.time->current();
+    std::vector<double> dt_restrictions;
+    if (maxdt_temporary > 0)
+      dt_restrictions.push_back(maxdt_temporary);
 
-  double hydro_dt;
-  ierr = subglacial_hydrology->max_timestep(grid.time->current(), hydro_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) revise_maxdt(hydro_dt, maxdt_temporary);
+    double apcc_dt = 0.0;
+    ierr = surface->max_timestep(current_time, apcc_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt)
+      dt_restrictions.push_back(apcc_dt);
 
-  //! \li apply the time-step restriction from the -ts_{times,file,vars} mechanism
-  double ts_dt;
-  ierr = ts_max_timestep(grid.time->current(), ts_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) revise_maxdt(ts_dt, maxdt_temporary);
+    double opcc_dt = 0.0;
+    ierr = ocean->max_timestep(current_time, opcc_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt)
+      dt_restrictions.push_back(opcc_dt);
 
-  //! \li apply the time-step restriction from the -extra_{times,file,vars}
-  //! mechanism
-  double extras_dt;
-  ierr = extras_max_timestep(grid.time->current(), extras_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt) revise_maxdt(extras_dt, maxdt_temporary);
+    double hydro_dt = 0.0;
+    ierr = subglacial_hydrology->max_timestep(current_time, hydro_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt)
+      dt_restrictions.push_back(hydro_dt);
+
+    //! \li apply the time-step restriction from the -ts_{times,file,vars} mechanism
+    double ts_dt = 0.0;
+    ierr = ts_max_timestep(current_time, ts_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt)
+      dt_restrictions.push_back(ts_dt);
+
+    //! \li apply the time-step restriction from the -extra_{times,file,vars}
+    //! mechanism
+    double extras_dt = 0.0;
+    ierr = extras_max_timestep(current_time, extras_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt)
+      dt_restrictions.push_back(extras_dt);
+
+    // find the smallest of the max. time-steps reported by boundary models:
+    if (dt_restrictions.empty() == false)
+      maxdt_temporary = *std::min_element(dt_restrictions.begin(), dt_restrictions.end());
+  }
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
