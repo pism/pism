@@ -47,14 +47,14 @@
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
 
-  ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
-  ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
+  ierr = update_mask(bed_topography, ice_thickness, vMask); CHKERRQ(ierr);
+  ierr = update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation); CHKERRQ(ierr);
 
   if (config.get_flag("kill_icebergs") && iceberg_remover != NULL) {
-    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
+    ierr = iceberg_remover->update(vMask, ice_thickness); CHKERRQ(ierr);
     // the call above modifies ice thickness and updates the mask
     // accordingly
-    ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
+    ierr = update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation); CHKERRQ(ierr);
   }
 
   if (config.get_flag("sub_groundingline")) {
@@ -529,13 +529,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
   PetscScalar factor = config.get("ice_density") * (dx * dy);
 
   assert(surface != NULL);
-  ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
+  ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
 
   assert(ocean != NULL);
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
 
   IceModelVec2S &vHnew = vWork2d[0];
-  ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
+  ierr = ice_thickness.copy_to(vHnew); CHKERRQ(ierr);
 
   IceModelVec2S &H_residual = vWork2d[1];
 
@@ -545,13 +545,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vh.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_elevation.begin_access(); CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = Qdiff->begin_access(); CHKERRQ(ierr);
   ierr = vel_advective->begin_access(); CHKERRQ(ierr);
-  ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
   ierr = vHnew.begin_access(); CHKERRQ(ierr);
@@ -605,7 +605,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // Source terms:
       double
-        surface_mass_balance = acab(i, j),
+        surface_mass_balance = climatic_mass_balance(i, j),
         meltrate_grounded = 0.0,
         meltrate_floating = 0.0,
         H_to_Href_flux    = 0.0,
@@ -630,10 +630,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
         // Plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
-        divQ_SSA += ( v.e * (v.e > 0 ? vH(i, j) : vH(i + 1, j))
-                      - v.w * (v.w > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
-        divQ_SSA += ( v.n * (v.n > 0 ? vH(i, j) : vH(i, j + 1))
-                      - v.s * (v.s > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
+        divQ_SSA += ( v.e * (v.e > 0 ? ice_thickness(i, j) : ice_thickness(i + 1, j))
+                      - v.w * (v.w > 0 ? ice_thickness(i - 1, j) : ice_thickness(i, j)) ) / dx;
+        divQ_SSA += ( v.n * (v.n > 0 ? ice_thickness(i, j) : ice_thickness(i, j + 1))
+                      - v.s * (v.s > 0 ? ice_thickness(i, j - 1) : ice_thickness(i, j)) ) / dy;
       }
 
       // Set source terms
@@ -664,9 +664,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
           }
 
           PetscReal H_threshold = get_threshold_thickness(vMask.int_star(i, j),
-                                                          vH.star(i, j),
-                                                          vh.star(i, j),
-                                                          vbed(i,j),
+                                                          ice_thickness.star(i, j),
+                                                          ice_surface_elevation.star(i, j),
+                                                          bed_topography(i,j),
                                                           reduce_frontal_thickness);
           PetscReal coverage_ratio = 1.0;
           if (H_threshold > 0.0)
@@ -732,9 +732,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       // Track cumulative surface mass balance. Note that this keeps track of
-      // cumulative acab at all the grid cells (including ice-free cells).
+      // cumulative climatic_mass_balance at all the grid cells (including ice-free cells).
       if (compute_cumulative_climatic_mass_balance) {
-        climatic_mass_balance_cumulative(i, j) += acab(i, j) * dt;
+        climatic_mass_balance_cumulative(i, j) += climatic_mass_balance(i, j) * dt;
       }
 
       if (compute_cumulative_grounded_basal_flux) {
@@ -764,11 +764,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = Qdiff->end_access(); CHKERRQ(ierr);
   ierr = vel_advective->end_access(); CHKERRQ(ierr);
-  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
-  ierr = vh.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_elevation.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
   if (compute_flux_divergence) {
@@ -827,8 +827,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
     H_to_Href_flux_cumulative     += total_H_to_Href_flux     * factor;
   }
 
-  // finally copy vHnew into vH and communicate ghosted values
-  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
+  // finally copy vHnew into ice_thickness and communicate ghosted values
+  ierr = vHnew.update_ghosts(ice_thickness); CHKERRQ(ierr);
 
   // the following calls are new routines adopted from PISM-PIK. The place and
   // order is not clear yet!
@@ -877,8 +877,8 @@ PetscErrorCode IceModel::sub_gl_position() {
   IceModelVec2S &gl_mask_x_new = vWork2d[1];
   IceModelVec2S &gl_mask_y_new = vWork2d[2];
   
-  ierr =    vH.begin_access(); CHKERRQ(ierr);
-  ierr =  vbed.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = gl_mask.begin_access(); CHKERRQ(ierr);
   ierr = gl_mask_new.begin_access(); CHKERRQ(ierr);
@@ -897,8 +897,8 @@ PetscErrorCode IceModel::sub_gl_position() {
       
       // grounded part
       if (mask.grounded(i, j) && (mask.floating_ice(i+1, j) || mask.ice_free_ocean(i+1, j))) {
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i+1, j)-sea_level+vH(i+1, j)*rhoq;
+        xpart1=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
+        xpart2=bed_topography(i+1, j)-sea_level+ice_thickness(i+1, j)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
  	// FIXME: sometimes xpart1<0 (slightly below flotation) even though the mask says grounded 
         if (interpol<0.0)
@@ -908,8 +908,8 @@ PetscErrorCode IceModel::sub_gl_position() {
       }
 
       if (mask.grounded(i, j) && (mask.floating_ice(i-1, j) || mask.ice_free_ocean(i-1, j))){
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i-1, j)-sea_level+vH(i-1, j)*rhoq;
+        xpart1=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
+        xpart2=bed_topography(i-1, j)-sea_level+ice_thickness(i-1, j)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
         if (interpol<0.0)
           interpol=0.0;
@@ -918,8 +918,8 @@ PetscErrorCode IceModel::sub_gl_position() {
       }     
 
       if (mask.grounded(i, j) && (mask.floating_ice(i, j+1) || mask.ice_free_ocean(i, j+1))){
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i, j+1)-sea_level+vH(i, j+1)*rhoq;
+        xpart1=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
+        xpart2=bed_topography(i, j+1)-sea_level+ice_thickness(i, j+1)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
         if (interpol<0.0)
           interpol=0.0;
@@ -928,8 +928,8 @@ PetscErrorCode IceModel::sub_gl_position() {
       }
 
       if (mask.grounded(i, j) && (mask.floating_ice(i, j-1) || mask.ice_free_ocean(i, j-1))){
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i, j-1)-sea_level+vH(i, j-1)*rhoq;
+        xpart1=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
+        xpart2=bed_topography(i, j-1)-sea_level+ice_thickness(i, j-1)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
         if (interpol<0.0)
           interpol=0.0;
@@ -945,8 +945,8 @@ PetscErrorCode IceModel::sub_gl_position() {
 
       // floating part
       if (mask.grounded(i-1, j) && mask.floating_ice(i, j)) {
-        xpart1=vbed(i-1, j)-sea_level+vH(i-1, j)*rhoq;
-        xpart2=vbed(i, j)-sea_level+vH(i, j)*rhoq;
+        xpart1=bed_topography(i-1, j)-sea_level+ice_thickness(i-1, j)*rhoq;
+        xpart2=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
         if (interpol<0.0)
           interpol=0.0;
@@ -955,8 +955,8 @@ PetscErrorCode IceModel::sub_gl_position() {
       }
 
       if (mask.grounded(i+1, j) && mask.floating_ice(i, j)){
-        xpart1=vbed(i+1, j)-sea_level+vH(i+1, j)*rhoq;
-        xpart2=vbed(i, j)-sea_level+vH(i, j)*rhoq;
+        xpart1=bed_topography(i+1, j)-sea_level+ice_thickness(i+1, j)*rhoq;
+        xpart2=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
         if (interpol<0.0)
           interpol=0.0;
@@ -965,8 +965,8 @@ PetscErrorCode IceModel::sub_gl_position() {
       }     
 
       if (mask.grounded(i, j-1) && mask.floating_ice(i, j)){
-        xpart1=vbed(i, j-1)-sea_level+vH(i, j-1)*rhoq;
-        xpart2=vbed(i, j)-sea_level+vH(i, j)*rhoq;
+        xpart1=bed_topography(i, j-1)-sea_level+ice_thickness(i, j-1)*rhoq;
+        xpart2=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
         if (interpol<0.0)
           interpol=0.0;
@@ -975,8 +975,8 @@ PetscErrorCode IceModel::sub_gl_position() {
       }
 
       if (mask.grounded(i, j+1) && mask.floating_ice(i, j)){
-        xpart1=vbed(i, j+1)-sea_level+vH(i, j+1)*rhoq;
-        xpart2=vbed(i, j)-sea_level+vH(i, j)*rhoq;
+        xpart1=bed_topography(i, j+1)-sea_level+ice_thickness(i, j+1)*rhoq;
+        xpart2=bed_topography(i, j)-sea_level+ice_thickness(i, j)*rhoq;
         interpol=xpart1/(xpart1-xpart2);
         if (interpol<0.0)
           interpol=0.0;
@@ -993,18 +993,18 @@ PetscErrorCode IceModel::sub_gl_position() {
     } // inner for loop (j)
   } // outer for loop (i)
 
-  ierr =         vH.end_access(); CHKERRQ(ierr);
-  ierr =       vbed.end_access(); CHKERRQ(ierr);
-  ierr =      vMask.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_new.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_x.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_x_new.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_y.end_access(); CHKERRQ(ierr);
-  ierr =     gl_mask_y_new.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_new.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_x.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_x_new.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_y.end_access(); CHKERRQ(ierr);
+  ierr = gl_mask_y_new.end_access(); CHKERRQ(ierr);
 
-  // ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  // ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  // ierr = ice_thickness.beginGhostComm(); CHKERRQ(ierr);
+  // ierr = ice_thickness.endGhostComm(); CHKERRQ(ierr);
   // ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
   // ierr = vbed.endGhostComm(); CHKERRQ(ierr);
   // ierr = vMask.beginGhostComm(); CHKERRQ(ierr);

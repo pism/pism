@@ -85,9 +85,9 @@ PetscErrorCode IceCompModel::createVecs() {
   // back in if -i option is used (they are "model_state", in a sense, since
   // PSDummy is used):
   ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
-  ierr = variables.add(acab); CHKERRQ(ierr);
+  ierr = variables.add(climatic_mass_balance); CHKERRQ(ierr);
   ice_surface_temp.metadata().set_string("pism_intent", "model_state");
-  acab.metadata().set_string("pism_intent", "model_state");
+  climatic_mass_balance.metadata().set_string("pism_intent", "model_state");
 
   return 0;
 }
@@ -342,7 +342,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 
   // all have no uplift
-  ierr = vuplift.set(0.0); CHKERRQ(ierr);
+  ierr = bed_uplift_rate.set(0.0); CHKERRQ(ierr);
 
   ierr = basal_melt_rate.set(0.0); CHKERRQ(ierr); // this is the correct initialization for
                                        // Test O (and every other Test; they
@@ -393,11 +393,11 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
 
   ierr = ice_surface_temp.set(T0); CHKERRQ(ierr);
   ierr = T3.set(T0);               CHKERRQ(ierr);
-  ierr = vGhf.set(Ggeo);           CHKERRQ(ierr);
+  ierr = geothermal_flux.set(Ggeo);           CHKERRQ(ierr);
   ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
 
-  ierr = acab.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar xx = grid.x[i], yy = grid.y[j],
@@ -405,51 +405,51 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
       switch (testname) {
         case 'A':
           exactA(r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'B':
           exactB(grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'C':
           exactC(grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'D':
           exactD(grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'E':
           exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'H':
           exactH(f, grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
       }
     }
   }
-  ierr = acab.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
   if (testname == 'H') {
-    ierr = vH.copy_to(vh); CHKERRQ(ierr);
-    ierr = vh.scale(1-f); CHKERRQ(ierr);
-    ierr = vH.copy_to(vbed); CHKERRQ(ierr);
-    ierr = vbed.scale(-f); CHKERRQ(ierr);
+    ierr = ice_thickness.copy_to(ice_surface_elevation); CHKERRQ(ierr);
+    ierr = ice_surface_elevation.scale(1-f); CHKERRQ(ierr);
+    ierr = ice_thickness.copy_to(bed_topography); CHKERRQ(ierr);
+    ierr = bed_topography.scale(-f); CHKERRQ(ierr);
   } else {  // flat bed case otherwise
-    ierr = vH.copy_to(vh); CHKERRQ(ierr);
-    ierr = vbed.set(0.0); CHKERRQ(ierr);
+    ierr = ice_thickness.copy_to(ice_surface_elevation); CHKERRQ(ierr);
+    ierr = bed_topography.set(0.0); CHKERRQ(ierr);
   }
 
   return 0;
@@ -487,7 +487,7 @@ PetscErrorCode IceCompModel::initTestL() {
 
   ierr = ice_surface_temp.set(T0); CHKERRQ(ierr); 
   ierr = T3.set(T0);               CHKERRQ(ierr); 
-  ierr = vGhf.set(Ggeo);           CHKERRQ(ierr); 
+  ierr = geothermal_flux.set(Ggeo);           CHKERRQ(ierr); 
 
   // setup to evaluate test L; requires solving an ODE numerically using sorted list
   //   of radii, sorted in decreasing radius order
@@ -539,30 +539,30 @@ PetscErrorCode IceCompModel::initTestL() {
   CHKERRQ(ierr);
   delete [] rr;
 
-  ierr = acab.begin_access(); CHKERRQ(ierr); 
-  ierr = vH.begin_access();   CHKERRQ(ierr); 
-  ierr = vbed.begin_access(); CHKERRQ(ierr); 
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr); 
+  ierr = ice_thickness.begin_access();   CHKERRQ(ierr); 
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr); 
   for (k = 0; k < MM; k++) {
-    vH(rrv[k].i, rrv[k].j)   = HH[k];
-    vbed(rrv[k].i, rrv[k].j) = bb[k];
-    acab(rrv[k].i, rrv[k].j) = aa[k];
+    ice_thickness(rrv[k].i, rrv[k].j)   = HH[k];
+    bed_topography(rrv[k].i, rrv[k].j) = bb[k];
+    climatic_mass_balance(rrv[k].i, rrv[k].j) = aa[k];
   }
-  ierr = acab.end_access(); CHKERRQ(ierr); 
-  ierr = vH.end_access();   CHKERRQ(ierr); 
-  ierr = vbed.end_access(); CHKERRQ(ierr); 
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr); 
+  ierr = ice_thickness.end_access();   CHKERRQ(ierr); 
+  ierr = bed_topography.end_access(); CHKERRQ(ierr); 
   delete [] HH;
   delete [] bb;
   delete [] aa;
 
-  ierr = vH.update_ghosts();   CHKERRQ(ierr); 
-  ierr = vbed.update_ghosts(); CHKERRQ(ierr); 
+  ierr = ice_thickness.update_ghosts();   CHKERRQ(ierr); 
+  ierr = bed_topography.update_ghosts(); CHKERRQ(ierr); 
 
-  // store copy of vH for "-eo" runs and for evaluating geometry errors
-  ierr = vH.copy_to(vHexactL); CHKERRQ(ierr);
+  // store copy of ice_thickness for "-eo" runs and for evaluating geometry errors
+  ierr = ice_thickness.copy_to(vHexactL); CHKERRQ(ierr);
 
   // set surface to H+b
-  ierr = vH.add(1.0, vbed, vh); CHKERRQ(ierr);
-  ierr = vh.update_ghosts();    CHKERRQ(ierr);
+  ierr = ice_thickness.add(1.0, bed_topography, ice_surface_elevation); CHKERRQ(ierr);
+  ierr = ice_surface_elevation.update_ghosts();    CHKERRQ(ierr);
   return 0;
 }
 
@@ -572,28 +572,28 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   PetscScalar     accum, dummy;
 
   // before flow step, set accumulation from exact values;
-  ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r = grid.radius(i, j);
       switch (testname) {
         case 'C':
           exactC(grid.time->current(), r, &dummy, &accum);
-          acab(i, j) = accum;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'D':
           exactD(grid.time->current(), r, &dummy, &accum);
-          acab(i, j) = accum;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'H':
           exactH(f, grid.time->current(), r, &dummy, &accum);
-          acab(i, j) = accum;
+          climatic_mass_balance(i, j) = accum;
           break;
         default:  SETERRQ(grid.com, 1, "testname must be C, D, or H");
       }
     }
   }
-  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -602,16 +602,16 @@ PetscErrorCode IceCompModel::reset_thickness_tests_AE() {
   PetscErrorCode ierr;
   const PetscScalar LforAE = 750e3; // m
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (grid.radius(i, j) > LforAE)
-        vH(i, j) = 0;
+        ice_thickness(i, j) = 0;
     }
   }
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -621,57 +621,57 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   PetscErrorCode  ierr;
   PetscScalar     H, accum;
 
-  ierr = acab.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r = grid.radius(i, j);
       switch (testname) {
         case 'A':
           exactA(r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'B':
           exactB(grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'C':
           exactC(grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'D':
           exactD(grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         case 'H':
           exactH(f, grid.time->current(), r, &H, &accum);
-          vH(i, j)   = H;
-          acab(i, j) = accum;
+          ice_thickness(i, j)   = H;
+          climatic_mass_balance(i, j) = accum;
           break;
         default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, or H");
       }
     }
   }
 
-  ierr = acab.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
   if (testname == 'H') {
-    ierr = vH.copy_to(vh); CHKERRQ(ierr);
-    ierr = vh.scale(1-f); CHKERRQ(ierr);
-    ierr = vH.copy_to(vbed); CHKERRQ(ierr);
-    ierr = vbed.scale(-f); CHKERRQ(ierr);
-    ierr = vbed.update_ghosts(); CHKERRQ(ierr);
+    ierr = ice_thickness.copy_to(ice_surface_elevation); CHKERRQ(ierr);
+    ierr = ice_surface_elevation.scale(1-f); CHKERRQ(ierr);
+    ierr = ice_thickness.copy_to(bed_topography); CHKERRQ(ierr);
+    ierr = bed_topography.scale(-f); CHKERRQ(ierr);
+    ierr = bed_topography.update_ghosts(); CHKERRQ(ierr);
   } else {
-    ierr = vH.copy_to(vh); CHKERRQ(ierr);
+    ierr = ice_thickness.copy_to(ice_surface_elevation); CHKERRQ(ierr);
   }
-  ierr = vh.update_ghosts(); CHKERRQ(ierr);
+  ierr = ice_surface_elevation.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -683,24 +683,24 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
-  ierr = acab.begin_access();     CHKERRQ(ierr);
-  ierr = vH.begin_access();       CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access();     CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();       CHKERRQ(ierr);
   ierr = vel_adv->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar xx = grid.x[i], yy = grid.y[j];
       exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
-      vH(i,j)         = H;
-      acab(i,j)       = accum;
+      ice_thickness(i,j)         = H;
+      climatic_mass_balance(i,j)       = accum;
       (*vel_adv)(i,j) = bvel;
     }
   }
-  ierr = acab.end_access();     CHKERRQ(ierr);
-  ierr = vH.end_access();       CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access();     CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();       CHKERRQ(ierr);
   ierr = vel_adv->end_access(); CHKERRQ(ierr);
 
-  ierr = vH.update_ghosts();    CHKERRQ(ierr);
-  ierr = vH.copy_to(vh);        CHKERRQ(ierr);
+  ierr = ice_thickness.update_ghosts();    CHKERRQ(ierr);
+  ierr = ice_thickness.copy_to(ice_surface_elevation);        CHKERRQ(ierr);
 
   return 0;
 }
@@ -710,10 +710,10 @@ PetscErrorCode IceCompModel::fillSolnTestL() {
   PetscErrorCode  ierr;
 
   ierr = vHexactL.update_ghosts(); CHKERRQ(ierr);
-  ierr = vH.copy_from(vHexactL);
+  ierr = ice_thickness.copy_from(vHexactL);
 
-  ierr = vbed.add(1.0, vH, vh);	CHKERRQ(ierr); //  h = H + bed = 1 * H + bed
-  ierr = vh.update_ghosts(); CHKERRQ(ierr);
+  ierr = bed_topography.add(1.0, ice_thickness, ice_surface_elevation);	CHKERRQ(ierr); //  h = H + bed = 1 * H + bed
+  ierr = ice_surface_elevation.update_ghosts(); CHKERRQ(ierr);
 
   // note bed was filled at initialization and hasn't changed
   return 0;
@@ -733,7 +733,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
 
   PetscScalar     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   if (testname == 'L') {
     ierr = vHexactL.begin_access(); CHKERRQ(ierr);
   }
@@ -762,9 +762,9 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
   const PetscScalar   m = (2.0 * Glen_n + 2.0) / Glen_n;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vH(i,j) > 0) {
+      if (ice_thickness(i,j) > 0) {
         area += a;
-        vol += a * vH(i,j) * 1e-3;
+        vol += a * ice_thickness(i,j) * 1e-3;
       }
       PetscScalar xx = grid.x[i], yy = grid.y[j],
         r = grid.radius(i,j);
@@ -827,18 +827,18 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
         volexact += a * Hexact * 1e-3;
       }
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        domeH = vH(i,j);
+        domeH = ice_thickness(i,j);
         domeHexact = Hexact;
       }
       // compute maximum errors
-      Herr = PetscMax(Herr,PetscAbsReal(vH(i,j) - Hexact));
-      etaerr = PetscMax(etaerr,PetscAbsReal(pow(vH(i,j),m) - pow(Hexact,m)));
+      Herr = PetscMax(Herr,PetscAbsReal(ice_thickness(i,j) - Hexact));
+      etaerr = PetscMax(etaerr,PetscAbsReal(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
       // add to sums for average errors
-      avHerr += PetscAbsReal(vH(i,j) - Hexact);
+      avHerr += PetscAbsReal(ice_thickness(i,j) - Hexact);
     }
   }
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   if (testname == 'L') {
     ierr = vHexactL.end_access(); CHKERRQ(ierr);
   }
@@ -883,11 +883,11 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
   ierr = vel_adv->begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (vH(i,j) > 0.0) {
+      if (ice_thickness(i,j) > 0.0) {
         PetscScalar xx = grid.x[i], yy = grid.y[j];
         exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
         // compute maximum errors
@@ -901,7 +901,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
       }
     }
   }
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = vel_adv->end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
@@ -1366,17 +1366,17 @@ PetscErrorCode IceCompModel::test_V_init() {
   ierr = ice_surface_temp.set(273.15); CHKERRQ(ierr);
 
   // initialize mass balance:
-  ierr = acab.set(0.0); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set(0.0); CHKERRQ(ierr);
 
   // initialize the bed topography
-  ierr = vbed.set(-1000); CHKERRQ(ierr);
+  ierr = bed_topography.set(-1000); CHKERRQ(ierr);
 
   // set SSA boundary conditions:
   PetscReal upstream_velocity = grid.convert(300.0, "m/year", "m/second"),
     upstream_thk = 600.0;
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = vBCMask.begin_access(); CHKERRQ(ierr);
   ierr = vBCvel.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
@@ -1386,26 +1386,26 @@ PetscErrorCode IceCompModel::test_V_init() {
         vBCMask(i,j) = 1;
         vBCvel(i,j).u  = upstream_velocity;
         vBCvel(i,j).v  = 0;
-        vH(i, j) = upstream_thk;
+        ice_thickness(i, j) = upstream_thk;
       } else {
         vMask(i,j) = MASK_ICE_FREE_OCEAN;
         vBCMask(i,j) = 0;
         vBCvel(i,j).u  = 0;
         vBCvel(i,j).v  = 0;
-        vH(i, j) = 0;
+        ice_thickness(i, j) = 0;
       }
     }
   }
   ierr = vBCvel.end_access(); CHKERRQ(ierr);
   ierr = vBCMask.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = vBCMask.update_ghosts(); CHKERRQ(ierr);
 
   ierr = vBCvel.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = vH.update_ghosts(); CHKERRQ(ierr);
+  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
   ierr = vMask.update_ghosts(); CHKERRQ(ierr);
 

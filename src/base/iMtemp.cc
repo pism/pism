@@ -209,7 +209,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
     ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
-    ierr = vH.begin_access(); CHKERRQ(ierr);
+    ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
     ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
     ierr = vMask.begin_access(); CHKERRQ(ierr);
     ierr = G0.begin_access(); CHKERRQ(ierr);
@@ -251,7 +251,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
         // this should *not* be replaced by call to grid.kBelowHeight():
-        const PetscInt  ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
+        const PetscInt  ks = static_cast<PetscInt>(floor(ice_thickness(i,j)/fdz));
 
         if (ks>0) { // if there are enough points in ice to bother ...
           ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
@@ -271,8 +271,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
           // if isMarginal then only do vertical conduction for ice; ignore advection
           //   and strain heating if isMarginal
-          const bool isMarginal = checkThinNeigh(vH(i+1,j),vH(i+1,j+1),vH(i,j+1),vH(i-1,j+1),
-                                                 vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1));
+          const bool isMarginal = checkThinNeigh(ice_thickness(i+1,j),ice_thickness(i+1,j+1),ice_thickness(i,j+1),ice_thickness(i-1,j+1),
+                                                 ice_thickness(i-1,j),ice_thickness(i-1,j-1),ice_thickness(i,j-1),ice_thickness(i+1,j-1));
           PismMask mask_value = static_cast<PismMask>(vMask.as_int(i,j));
           ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
           CHKERRQ(ierr);
@@ -302,7 +302,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             Tnew[k] = x[k];
           } else {
             const PetscScalar
-              Tpmp = melting_point_temp - beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME issue #15
+              Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - fzlev[k]); // FIXME issue #15
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k] - Tpmp; // always positive
@@ -330,7 +330,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (allow_above_melting == true) { // ice/rock interface
             Tnew[0] = x[0];
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-            const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * vH(i,j); // FIXME issue #15
+            const PetscScalar Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
             PetscScalar Texcess = x[0] - Tpmp; // positive or negative
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised
@@ -395,7 +395,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     ierr = gl_mask.end_access(); CHKERRQ(ierr);
   }
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = Rb->end_access(); CHKERRQ(ierr);
   ierr = G0.end_access(); CHKERRQ(ierr);

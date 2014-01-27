@@ -44,7 +44,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   ierr = strain_rates.begin_access(); CHKERRQ(ierr);
   ierr = deviatoric_stresses.begin_access(); CHKERRQ(ierr);
     
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = vFD.begin_access(); CHKERRQ(ierr);
   ierr = vFD.copy_to(vFDnew); CHKERRQ(ierr);
   ierr = vFDnew.begin_access(); CHKERRQ(ierr);
@@ -257,7 +257,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   
       //healing
       PetscScalar fdheal = gammaheal*(strain_rates(i,j,0)-healThreshold);
-      if (vH(i,j)>0.0){
+      if (ice_thickness(i,j)>0.0){
         if (constant_healing){
           fdheal = gammaheal*(-healThreshold);
           if (fracture_weighted_healing)
@@ -283,7 +283,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       //################################################################################
       // write related fracture quantities to nc-file
       // if option -write_fd_fields is set
-      if (write_fd && vH(i,j)>0.0) {
+      if (write_fd && ice_thickness(i,j)>0.0) {
         //fracture toughness
         vFT(i,j)=sigmat; 
   
@@ -296,7 +296,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         }
   
         // fracture healing rate    
-        if (vH(i,j)>0.0){
+        if (ice_thickness(i,j)>0.0){
           if (constant_healing || (strain_rates(i,j,0) < healThreshold)){
             if (fracture_weighted_healing)
               vFH(i,j)=fdheal*(1-vFD(i,j)); 
@@ -317,7 +317,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         // additional flow enhancement due to fracture softening
         PetscScalar phi_exp=3.0;//flow_law->exponent();
         PetscScalar softening = pow((1.0-(1.0-soft_residual)*vFDnew(i,j)),-phi_exp);              
-        if (vH(i,j)>0.0) {
+        if (ice_thickness(i,j)>0.0) {
           vFE(i,j)=1.0/pow(softening,1/3.0);
         }      
         else
@@ -339,7 +339,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         }
       }  
       // ice free regions and boundary of computational domain    
-      if (vH(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1){
+      if (ice_thickness(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1){
         vFDnew(i,j)=0.0;
         if (write_fd) {
           vFAnew(i,j)=0.0;
@@ -357,7 +357,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   }
   
   ierr = ssa_velocity->end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = vFD.end_access(); CHKERRQ(ierr);
   ierr = vFDnew.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access();  CHKERRQ(ierr);

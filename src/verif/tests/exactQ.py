@@ -109,7 +109,7 @@ fill_value = nan
 # create initial fields
 topg = zeros((Mx,My)) - 1200.0  # so it is floating
 ice_surface_temp = zeros((Mx,My)) + 263.15  # -10 degrees Celsius; just a guess
-acab = zeros((Mx,My))
+climatic_mass_balance = zeros((Mx,My))
 thk  = zeros((Mx,My))
 thk[rr <= R0] = H0;
 zerossabc = zeros((Mx,My))
@@ -158,9 +158,9 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-acab_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
-acab_var.standard_name = "land_ice_surface_specific_mass_balance"
-acab_var[:] = acab
+climatic_mass_balance_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
+climatic_mass_balance_var.standard_name = "land_ice_surface_specific_mass_balance"
+climatic_mass_balance_var[:] = climatic_mass_balance
 
 ice_surface_temp_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 ice_surface_temp_var[:] = ice_surface_temp

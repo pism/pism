@@ -203,8 +203,8 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
       ierr = btu->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
-    if (basal_yield_stress != NULL) {
-      ierr = basal_yield_stress->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    if (basal_yield_stress_model != NULL) {
+      ierr = basal_yield_stress_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
     if (stress_balance != NULL) {
@@ -273,8 +273,8 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
     ierr = btu->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
-  if (basal_yield_stress != NULL) {
-    ierr = basal_yield_stress->write_variables(vars, nc); CHKERRQ(ierr);
+  if (basal_yield_stress_model != NULL) {
+    ierr = basal_yield_stress_model->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // Write stress balance-related variables:

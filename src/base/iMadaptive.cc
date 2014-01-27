@@ -46,7 +46,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
 
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
@@ -57,7 +57,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       if (mask.icy(i, j)) {
-        const PetscInt ks = grid.kBelowHeight(vH(i, j));
+        const PetscInt ks = grid.kBelowHeight(ice_thickness(i, j));
         ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
         ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
         ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
@@ -79,7 +79,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
@@ -277,13 +277,13 @@ PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
   IceModelVec3 *u3, *v3, *dummy;
   ierr = stress_balance->get_3d_velocity(u3, v3, dummy); CHKERRQ(ierr);
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt  fks = grid.kBelowHeight(vH(i,j));
+      const PetscInt  fks = grid.kBelowHeight(ice_thickness(i,j));
 
       ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
       ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
@@ -296,7 +296,7 @@ PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
     }
   }
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = u3->end_access();  CHKERRQ(ierr);
   ierr = v3->end_access();  CHKERRQ(ierr);
 

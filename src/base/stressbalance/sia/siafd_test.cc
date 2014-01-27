@@ -103,7 +103,7 @@ PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
 
 
 PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
-                                            IceModelVec2S &vH,
+                                            IceModelVec2S &ice_thickness,
                                             IceModelVec3 &u3,
                                             IceModelVec3 &v3,
                                             IceModelVec3 &w3,
@@ -117,7 +117,7 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
 
   const PetscScalar LforFG = 750000; // m
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = w3.begin_access(); CHKERRQ(ierr);
@@ -129,24 +129,24 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
                                                 // and not at central singularity
         PetscScalar radialUex,wex;
         PetscScalar dummy0,dummy1,dummy2,dummy3,dummy4;
-        bothexact(0.0,r,&(vH(i,j)),1,0.0,
+        bothexact(0.0,r,&(ice_thickness(i,j)),1,0.0,
                   &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
 
         const PetscScalar uex = (xx/r) * radialUex;
         const PetscScalar vex = (yy/r) * radialUex;
-        // note that because getValZ does linear interpolation and vH(i,j) is not exactly at
+        // note that because getValZ does linear interpolation and ice_thickness(i,j) is not exactly at
         // a grid point, this causes nonzero errors even with option -eo
-        const PetscScalar Uerr = sqrt(PetscSqr(u3.getValZ(i,j,vH(i,j)) - uex)
-                                      + PetscSqr(v3.getValZ(i,j,vH(i,j)) - vex));
+        const PetscScalar Uerr = sqrt(PetscSqr(u3.getValZ(i,j,ice_thickness(i,j)) - uex)
+                                      + PetscSqr(v3.getValZ(i,j,ice_thickness(i,j)) - vex));
         maxUerr = PetscMax(maxUerr,Uerr);
         avUerr += Uerr;
-        const PetscScalar Werr = PetscAbs(w3.getValZ(i,j,vH(i,j)) - wex);
+        const PetscScalar Werr = PetscAbs(w3.getValZ(i,j,ice_thickness(i,j)) - wex);
         maxWerr = PetscMax(maxWerr,Werr);
         avWerr += Werr;
       }
     }
   }
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = w3.end_access(); CHKERRQ(ierr);
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
     ICMEnthalpyConverter EC(config);
     ThermoGlenArrIce ice(grid.com, "", config, &EC);
 
-    IceModelVec2S vh, vH, vbed;
+    IceModelVec2S ice_surface_elevation, ice_thickness, bed_topography;
     IceModelVec2Int vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
@@ -383,23 +383,23 @@ int main(int argc, char *argv[]) {
     PISMVars vars;
 
     // ice upper surface elevation
-    ierr = vh.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
+    ierr = ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
           "m", "surface_altitude"); CHKERRQ(ierr);
-    ierr = vars.add(vh); CHKERRQ(ierr);
+    ierr = vars.add(ice_surface_elevation); CHKERRQ(ierr);
 
     // land ice thickness
-    ierr = vH.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = vH.set_attrs("model_state", "land ice thickness",
+    ierr = ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = ice_thickness.set_attrs("model_state", "land ice thickness",
           "m", "land_ice_thickness"); CHKERRQ(ierr);
-    vH.metadata().set_double("valid_min", 0.0);
-    ierr = vars.add(vH); CHKERRQ(ierr);
+    ice_thickness.metadata().set_double("valid_min", 0.0);
+    ierr = vars.add(ice_thickness); CHKERRQ(ierr);
 
     // bedrock surface elevation
-    ierr = vbed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
+    ierr = bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = bed_topography.set_attrs("model_state", "bedrock surface elevation",
           "m", "bedrock_altitude"); CHKERRQ(ierr);
-    ierr = vars.add(vbed); CHKERRQ(ierr);
+    ierr = vars.add(bed_topography); CHKERRQ(ierr);
 
     // age of the ice; is not used here
     ierr = age.create(grid, "age", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -441,7 +441,7 @@ int main(int argc, char *argv[]) {
 
     // fill the fields:
     ierr = setInitStateF(grid, EC,
-                         &vbed, &vMask, &vh, &vH,
+                         &bed_topography, &vMask, &ice_surface_elevation, &ice_thickness,
                          &enthalpy); CHKERRQ(ierr);
 
     // Allocate the SIA solver:
@@ -464,7 +464,7 @@ int main(int argc, char *argv[]) {
     ierr = stress_balance.get_volumetric_strain_heating(sigma); CHKERRQ(ierr);
 
     ierr = reportErrors(config, grid,
-                        &vH, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);
+                        &ice_thickness, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);
 
     // Write results to an output file:
     PIO pio(grid, "guess_mode");
@@ -476,10 +476,10 @@ int main(int argc, char *argv[]) {
     ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
     ierr = pio.close(); CHKERRQ(ierr);
 
-    ierr = vh.write(output_file); CHKERRQ(ierr);
-    ierr = vH.write(output_file); CHKERRQ(ierr);
+    ierr = ice_surface_elevation.write(output_file); CHKERRQ(ierr);
+    ierr = ice_thickness.write(output_file); CHKERRQ(ierr);
     ierr = vMask.write(output_file); CHKERRQ(ierr);
-    ierr = vbed.write(output_file); CHKERRQ(ierr);
+    ierr = bed_topography.write(output_file); CHKERRQ(ierr);
     // ierr = enthalpy.write(output_file); CHKERRQ(ierr);
     ierr = u_sia->write(output_file); CHKERRQ(ierr);
     ierr = v_sia->write(output_file); CHKERRQ(ierr);

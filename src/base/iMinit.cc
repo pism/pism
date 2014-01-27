@@ -551,9 +551,9 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = subglacial_hydrology->init(variables); CHKERRQ(ierr);
   }
 
-  // basal_yield_stress->init() needs bwat so this must happen after subglacial_hydrology->init()
-  if (basal_yield_stress) {
-    ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
+  // basal_yield_stress_model->init() needs bwat so this must happen after subglacial_hydrology->init()
+  if (basal_yield_stress_model) {
+    ierr = basal_yield_stress_model->init(variables); CHKERRQ(ierr);
   }
 
   if (climatic_mass_balance_cumulative.was_created()) {
@@ -820,7 +820,7 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
 //! \brief Decide which basal yield stress model to use.
 PetscErrorCode IceModel::allocate_basal_yield_stress() {
 
-  if (basal_yield_stress != NULL)
+  if (basal_yield_stress_model != NULL)
     return 0;
 
   std::string model = config.get_string("stress_balance_model");
@@ -830,9 +830,9 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress = new PISMConstantYieldStress(grid, config);
+      basal_yield_stress_model = new PISMConstantYieldStress(grid, config);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress = new PISMMohrCoulombYieldStress(grid, config, subglacial_hydrology);
+      basal_yield_stress_model = new PISMMohrCoulombYieldStress(grid, config, subglacial_hydrology);
     } else {
       PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
                   yield_stress_model.c_str());

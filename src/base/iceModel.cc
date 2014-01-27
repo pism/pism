@@ -63,7 +63,7 @@ IceModel::IceModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   signal(SIGUSR2, pism_signal_handler);
 
   subglacial_hydrology = NULL;
-  basal_yield_stress = NULL;
+  basal_yield_stress_model = NULL;
 
   stress_balance = NULL;
 
@@ -167,7 +167,7 @@ IceModel::~IceModel() {
   delete beddef;
 
   delete subglacial_hydrology;
-  delete basal_yield_stress;
+  delete basal_yield_stress_model;
   delete EC;
   delete btu;
 
@@ -202,7 +202,6 @@ PetscErrorCode IceModel::createVecs() {
 
   while (getline(calving_methods_list, calving_method_name, ','))
     calving_methods.insert(calving_method_name);
-
 
   // The following code creates (and documents -- to some extent) the
   // variables. The main (and only) principle here is using standard names from
@@ -239,23 +238,23 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // ice upper surface elevation
-  ierr = vh.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
+  ierr = ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
                       "m", "surface_altitude"); CHKERRQ(ierr);
-  ierr = variables.add(vh); CHKERRQ(ierr);
+  ierr = variables.add(ice_surface_elevation); CHKERRQ(ierr);
 
   // land ice thickness
-  ierr = vH.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vH.set_attrs("model_state", "land ice thickness",
-                      "m", "land_ice_thickness"); CHKERRQ(ierr);
-  vH.metadata().set_double("valid_min", 0.0);
-  ierr = variables.add(vH); CHKERRQ(ierr);
+  ierr = ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = ice_thickness.set_attrs("model_state", "land ice thickness",
+                                 "m", "land_ice_thickness"); CHKERRQ(ierr);
+  ice_thickness.metadata().set_double("valid_min", 0.0);
+  ierr = variables.add(ice_thickness); CHKERRQ(ierr);
 
   // bedrock surface elevation
-  ierr = vbed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
-                        "m", "bedrock_altitude"); CHKERRQ(ierr);
-  ierr = variables.add(vbed); CHKERRQ(ierr);
+  ierr = bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = bed_topography.set_attrs("model_state", "bedrock surface elevation",
+                                  "m", "bedrock_altitude"); CHKERRQ(ierr);
+  ierr = variables.add(bed_topography); CHKERRQ(ierr);
 
   if (config.get_flag("sub_groundingline")) {
     ierr = gl_mask.create(grid, "gl_mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
@@ -298,14 +297,14 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
   // upward geothermal flux at bedrock surface
-  ierr = vGhf.create(grid, "bheatflx", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = geothermal_flux.create(grid, "bheatflx", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   // PROPOSED standard_name = lithosphere_upward_heat_flux
-  ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
+  ierr = geothermal_flux.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
                         "W m-2", ""); CHKERRQ(ierr);
-  ierr = vGhf.set_glaciological_units("mW m-2");
-  vGhf.write_in_glaciological_units = true;
-  vGhf.set_time_independent(true);
-  ierr = variables.add(vGhf); CHKERRQ(ierr);
+  ierr = geothermal_flux.set_glaciological_units("mW m-2");
+  geothermal_flux.write_in_glaciological_units = true;
+  geothermal_flux.set_time_independent(true);
+  ierr = variables.add(geothermal_flux); CHKERRQ(ierr);
 
   // temperature seen by top of bedrock thermal layer
   ierr = bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -317,28 +316,28 @@ PetscErrorCode IceModel::createVecs() {
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
-    ierr = vtauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = basal_yield_stress.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_basal_material_yield_stress
-    ierr = vtauc.set_attrs("diagnostic",
-                           "yield stress for basal till (plastic or pseudo-plastic model)",
-                           "Pa", ""); CHKERRQ(ierr);
-    ierr = variables.add(vtauc); CHKERRQ(ierr);
+    ierr = basal_yield_stress.set_attrs("diagnostic",
+                                        "yield stress for basal till (plastic or pseudo-plastic model)",
+                                        "Pa", ""); CHKERRQ(ierr);
+    ierr = variables.add(basal_yield_stress); CHKERRQ(ierr);
   }
 
   // bedrock uplift rate
-  ierr = vuplift.create(grid, "dbdt", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = vuplift.set_attrs("model_state", "bedrock uplift rate",
-                           "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
-  ierr = vuplift.set_glaciological_units("m year-1");
-  vuplift.write_in_glaciological_units = true;
-  ierr = variables.add(vuplift); CHKERRQ(ierr);
+  ierr = bed_uplift_rate.create(grid, "dbdt", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = bed_uplift_rate.set_attrs("model_state", "bedrock uplift rate",
+                                   "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
+  ierr = bed_uplift_rate.set_glaciological_units("m year-1");
+  bed_uplift_rate.write_in_glaciological_units = true;
+  ierr = variables.add(bed_uplift_rate); CHKERRQ(ierr);
 
   // basal melt rate
   ierr = basal_melt_rate.create(grid, "bmelt", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   // ghosted to allow the "redundant" computation of tauc
   ierr = basal_melt_rate.set_attrs("model_state",
-            "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
-            "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
+                                   "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
+                                   "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
   ierr = basal_melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   basal_melt_rate.write_in_glaciological_units = true;
   basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
@@ -479,9 +478,9 @@ PetscErrorCode IceModel::createVecs() {
   ierr = cell_area.create(grid, "cell_area", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = cell_area.set_attrs("diagnostic", "cell areas", "m2", ""); CHKERRQ(ierr);
   cell_area.metadata().set_string("comment",
-                            "values are equal to dx*dy "
-                            "if projection parameters are not available; "
-                            "otherwise WGS84 ellipsoid is used");
+                                  "values are equal to dx*dy "
+                                  "if projection parameters are not available; "
+                                  "otherwise WGS84 ellipsoid is used");
   cell_area.set_time_independent(true);
   ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);
   cell_area.write_in_glaciological_units = true;
@@ -489,25 +488,25 @@ PetscErrorCode IceModel::createVecs() {
 
   // fields owned by IceModel but filled by PISMSurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
-  ierr = acab.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = acab.set_attrs(
+  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
                         "m s-1",  // m *ice-equivalent* per second
                         "land_ice_surface_specific_mass_balance");  // CF standard_name
   CHKERRQ(ierr);
-  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  acab.write_in_glaciological_units = true;
-  acab.metadata().set_string("comment", "positive values correspond to ice gain");
+  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.write_in_glaciological_units = true;
+  climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
   ierr = ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = ice_surface_temp.set_attrs(
-                        "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
-                        "annual average ice surface temperature, below firn processes",
-                        "K",
-                        "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
+                                    "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
+                                    "annual average ice surface temperature, below firn processes",
+                                    "K",
+                                    "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
 
   ierr = liqfrac_surface.create(grid, "liqfrac_surface", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -677,9 +676,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     do_energy_step = updateAtDepth && do_energy;
 
   //! \li update the yield stress for the plastic till model (if appropriate)
-  if (updateAtDepth && basal_yield_stress) {
-    ierr = basal_yield_stress->update(grid.time->current(), dt); CHKERRQ(ierr);
-    ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
+  if (updateAtDepth && basal_yield_stress_model) {
+    ierr = basal_yield_stress_model->update(grid.time->current(), dt); CHKERRQ(ierr);
+    ierr = basal_yield_stress_model->basal_material_yield_stress(basal_yield_stress); CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
 
@@ -819,11 +818,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! and bed elevation
   if (beddef) {
     grid.profiler->begin(event_beddef);
-    int topg_state_counter = vbed.get_state_counter();
+    int topg_state_counter = bed_topography.get_state_counter();
 
     ierr = beddef->update(grid.time->current(), dt); CHKERRQ(ierr);
 
-    if (vbed.get_state_counter() != topg_state_counter) {
+    if (bed_topography.get_state_counter() != topg_state_counter) {
       stdout_flags += "b";
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
     } else

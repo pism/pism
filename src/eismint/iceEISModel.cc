@@ -54,9 +54,9 @@ PetscErrorCode IceEISModel::createVecs() {
   // back in if -i option is used (they are "model_state", in a sense, since
   // PSDummy is used):
   ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
-  ierr = variables.add(acab); CHKERRQ(ierr);
+  ierr = variables.add(climatic_mass_balance); CHKERRQ(ierr);
   ice_surface_temp.metadata().set_string("pism_intent", "model_state");
-  acab.metadata().set_string("pism_intent", "model_state");
+  climatic_mass_balance.metadata().set_string("pism_intent", "model_state");
 
   return 0;
 }
@@ -238,7 +238,7 @@ PetscErrorCode IceEISModel::init_couplers() {
 
   // now fill in accum and surface temp
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
 
   PetscScalar cx = grid.Lx, cy = grid.Ly;
   if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
@@ -248,14 +248,14 @@ PetscErrorCode IceEISModel::init_couplers() {
       const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i)
                                   + PetscSqr(-cy + grid.dy*j) );
       // set accumulation from formula (7) in (Payne et al 2000)
-      acab(i,j) = PetscMin(M_max, S_b * (R_el-r));
+      climatic_mass_balance(i,j) = PetscMin(M_max, S_b * (R_el-r));
       // set surface temperature
       ice_surface_temp(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
     }
   }
 
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -270,19 +270,19 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   const PetscScalar    w = 200.0e3;  // trough width
   const PetscScalar    slope = b0/L;
   const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
       if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
            && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-        vbed(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
+        bed_topography(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
       } else {
-        vbed(i,j) = 1000.0;
+        bed_topography(i,j) = 1000.0;
       }
     }
   }
-  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
                "trough bed topography stored by IceEISModel::generateTroughTopography()\n");
@@ -298,14 +298,14 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   
   const PetscScalar    slope = 250.0;
   const PetscScalar    w = 150.0e3;  // mound width
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
-      vbed(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
+      bed_topography(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
     }
   }
-  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
     "mound bed topography stored by IceEISModel::generateTroughTopography()\n");
@@ -323,7 +323,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
     "initializing variables from EISMINT II experiment %c formulas ... \n", 
     expername); CHKERRQ(ierr);
 
-  ierr = vbed.set(0.0);
+  ierr = bed_topography.set(0.0);
   if ((expername == 'I') || (expername == 'J')) {
     ierr = generateTroughTopography(); CHKERRQ(ierr);
   } 
@@ -331,16 +331,16 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
     ierr = generateMoundTopography(); CHKERRQ(ierr);
   } 
   // communicate b in any case; it will be horizontally-differentiated
-  ierr = vbed.update_ghosts(); CHKERRQ(ierr);
+  ierr = bed_topography.update_ghosts(); CHKERRQ(ierr);
 
   ierr = basal_melt_rate.set(0.0); CHKERRQ(ierr);
-  ierr = vGhf.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
+  ierr = geothermal_flux.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
 
-  ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
+  ierr = bed_uplift_rate.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
   // if no -i file then starts with zero ice
-  ierr = vh.set(0.0); CHKERRQ(ierr);
-  ierr = vH.set(0.0); CHKERRQ(ierr);
+  ierr = ice_surface_elevation.set(0.0); CHKERRQ(ierr);
+  ierr = ice_thickness.set(0.0); CHKERRQ(ierr);
 
   ierr = regrid(2); CHKERRQ(ierr);
   

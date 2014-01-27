@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -138,9 +138,9 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
@@ -149,7 +149,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
         if (mask.ice_free(i,j)) { // no ice: sees air temp
           result(i,j) = ice_surface_temp(i,j);
         } else { // ice: sees temp of base of ice
-          const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));
+          const PetscReal pressure = EC->getPressureFromDepth(ice_thickness(i,j));
           PetscReal temp;
           // ignore return code when getting temperature: we are committed to
           //   this enthalpy field; getAbsTemp() only returns temperatures at or
@@ -158,15 +158,15 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
           result(i,j) = temp;
         }
       } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level - vbed(i,j)) * beta_CC_grad_sea_water;
+        result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
       }
     }
   }
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

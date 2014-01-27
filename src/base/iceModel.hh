@@ -202,7 +202,7 @@ public:
 					 PISM_IO_Type nctype);
 protected:
 
-  IceGrid               &grid;
+  IceGrid &grid;
 
   PISMConfig &config,		//!< configuration flags and parameters
     &overrides;			//!< flags and parameters overriding config, see -config_override
@@ -212,7 +212,7 @@ protected:
     run_stats;                  //!< run statistics
 
   PISMHydrology   *subglacial_hydrology;
-  PISMYieldStress *basal_yield_stress;
+  PISMYieldStress *basal_yield_stress_model;
 
   EnthalpyConverter *EC;
   PISMBedThermalUnit *btu;
@@ -233,15 +233,15 @@ protected:
   PISMVars variables;
 
   // state variables and some diagnostics/internals
-  IceModelVec2S vh,		//!< ice surface elevation; ghosted
-    vH,		//!< ice thickness; ghosted
-    vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
+  IceModelVec2S ice_surface_elevation,		//!< ice surface elevation; ghosted
+    ice_thickness,		//!< ghosted
+    basal_yield_stress,		//!< ghosted
     basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
     vLongitude,	//!< Longitude; ghosted to compute cell areas
     vLatitude,	//!< Latitude; ghosted to compute cell areas
-    vbed,		//!< bed topography; ghosted
-    vuplift,	//!< bed uplift rate; no ghosts
-    vGhf,   //!< geothermal flux; no ghosts
+    bed_topography,		//!< bed topography; ghosted
+    bed_uplift_rate,	//!< bed uplift rate; no ghosts
+    geothermal_flux,   //!< geothermal flux; no ghosts
     vFD,    //!< fracture density
     vFG,    //!< fracture growth rate
     vFH,    //!< fracture healing rate
@@ -250,8 +250,8 @@ protected:
     vFT,    //!< fracture toughness
     bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
     vHref,          //!< accumulated mass advected to a partially filled grid cell
-    acab,		//!< accumulation/ablation rate; no ghosts
-    climatic_mass_balance_cumulative,    //!< cumulative acab
+    climatic_mass_balance,		//!< accumulation/ablation rate; no ghosts
+    climatic_mass_balance_cumulative,    //!< cumulative climatic_mass_balance
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
@@ -302,10 +302,10 @@ protected:
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  PetscInt    skipCountDown;
+  PetscInt skipCountDown;
 
   // flags
-  char        adaptReasonFlag;
+  char adaptReasonFlag;
 
   std::string stdout_flags, stdout_ssa;
 

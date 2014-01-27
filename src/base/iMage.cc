@@ -265,7 +265,7 @@ PetscErrorCode IceModel::ageStep() {
   IceModelVec3 *u3, *v3, *w3;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = tau3.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
@@ -275,7 +275,7 @@ PetscErrorCode IceModel::ageStep() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // this should *not* be replaced by a call to grid.kBelowHeight()
-      const PetscInt  fks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
+      const PetscInt  fks = static_cast<PetscInt>(floor(ice_thickness(i,j)/fdz));
 
       if (fks == 0) { // if no ice, set the entire column to zero age
         ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
@@ -308,7 +308,7 @@ PetscErrorCode IceModel::ageStep() {
     }
   }
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = tau3.end_access();  CHKERRQ(ierr);
   ierr = u3->end_access();  CHKERRQ(ierr);
   ierr = v3->end_access();  CHKERRQ(ierr);
