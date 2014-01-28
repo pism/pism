@@ -7,6 +7,7 @@
 
 import sys
 import time
+import subprocess
 import numpy as np
 
 # try different netCDF modules
@@ -18,12 +19,18 @@ except:
 
 import argparse
 
-parser = argparse.ArgumentParser(description='Create PISM-readable bootstrap file for validation using constant flux experiment from Sayag & Worster (2013).')
-parser.add_argument('Mx',
-                   help='number of points in each direction (square grid)')
-parser.add_argument('ncfile', metavar='FILENAME',
+parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and converts gumparams.cdl.',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('-Mx', default=53,
+                   help='number of points in each direction on a square grid; note MX -> cell width cases: 53 -> 10mm,  105 -> 5mm, 209 -> 2.5mm, 521 -> 1mm')
+parser.add_argument('-o', metavar='FILENAME', default='initlab53.nc',
                    help='output file name to create (NetCDF)')
 args = parser.parse_args()
+
+print "  creating PISM-readable config override file gumparams.nc ..."
+# do "rm -f gumparams.nc"
+subprocess.call(["rm", "-f", "gumparams.nc"])
+# do "ncgen -o gumparams.nc gumparams.cdl"
+subprocess.call(["ncgen", "-o", "gumparams.nc", "gumparams.cdl"])
 
 # lab setup is table with hole in the middle into which is piped the
 # shear-thinning fluid, which is Xanthan gum 1% solution
@@ -63,7 +70,7 @@ else:
 smb = (flux / (rho * smbpos * dx**2) ) * smb
 
 # Write the data:
-nc = CDF(args.ncfile, "w",format='NETCDF3_CLASSIC') # for netCDF4 module
+nc = CDF(args.o, "w",format='NETCDF3_CLASSIC') # for netCDF4 module
 
 # Create dimensions x and y
 nc.createDimension("x", size=Mx)
@@ -112,5 +119,5 @@ setattr(nc, 'history', historystr)
 
 nc.close()
 
-print('  ... PISM-bootable NetCDF file %s written' % args.ncfile)
+print('  ... PISM-bootable NetCDF file %s written' % args.o)
 

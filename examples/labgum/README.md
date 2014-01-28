@@ -1,16 +1,21 @@
 # laboratory validation example
 
-Validation of [PISM's](http://www.pism-docs.org) isothermal SIA numerical model
-using a laboratory experiment with a [Xanthan gum](http://en.wikipedia.org/wiki/Xanthan_gum)
-suspension in water.  This fluid is more strongly shear-thinning than ice
-but at nearly the same density.  This example is documented in section 12.2 of
-the PISM User's Manual.
+This example is a validation of [PISM's](http://www.pism-docs.org) isothermal
+SIA numerical model using a laboratory experiment with a
+[Xanthan gum](http://en.wikipedia.org/wiki/Xanthan_gum) suspension in water.
+This fluid is more strongly shear-thinning than ice but it has nearly the same
+density.  This example is documented in section 12.2 of the PISM User's Manual.
 
 The source of the set-up is the "constant flux" experiment in
 
   R. Sayag and M. G. Worster, 2013. *Axisymmetric gravity currents of
   power-law fluids over a rigid horizontal surface*, J. Fluid Mech. 716,
   [doi:10.1017/jfm.2012.545](http://dx.doi.org/10.1017/jfm.2012.545).
+
+See also
+
+  R. Sayag, S. S. Pegler, and M. G. Worster, 2012. *Floating extensional flows*,
+  Physics of Fluids 24 (9), [doi:10.1063/1.4747184](http://dx.doi.org/10.1063/1.4747184).
 
 They push the fluid through the bottom of a flat table in a tube of radius
 8 mm (R. Sayag, personal communication) at a mass rate of about 3 g / s
@@ -38,9 +43,9 @@ into the center of the "ice" sheet have the correct value given the small size
 of the positive mass flux area.  Also it converts `gumparams.cdl` to
 `gumparams.nc`
 
-    $ ./preprocess.sh 53
+    $ ./preprocess.py
 
-Now view `initgum53.nc`; only the `climatic_mass_balance` variable is
+Now view `initlab53.nc`; only the `climatic_mass_balance` variable is
 interesting.  Now we run for 746 model seconds (compare Sayag & Worster (2013))
 on an 10 mm grid (520 mm / 52 subintervals) using 4 processors:
 
@@ -55,8 +60,14 @@ communication):
     $ ./showradius.py -o r53.png -d constantflux3.txt ts_lab53.nc
 
 Results are better on finer grids because the input pipe radius is only 8 mm.
-For example, this uses a 2.5 mm grid, but will take several hours to run:
+For example, this uses a 5 mm grid, and takes about an hour to run:
 
+    $ ./preprocess.py -Mx 105 -o initlab105.nc
+    $ ./rungum.sh 4 105 &> out.lab105 &
+
+while the next uses a 2.5 mm grid, and takes several hours to run:
+
+    $ ./preprocess.py -Mx 209 -o initlab209.nc
     $ ./rungum.sh 4 209 &> out.lab209 &
 
 Note you can compare multiple runs to the data in one figure:
