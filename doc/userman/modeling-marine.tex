@@ -42,7 +42,6 @@ The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab
     \toprule
     \textbf{Mask value} & \textbf{Meaning}\\
     \midrule
-    -1=\texttt{MASK_UNKNOWN} & not set, does not appear in PISM output files \\
     0=\texttt{MASK_ICE_FREE_BEDROCK} & ice free bedrock \\
     2=\texttt{MASK_GROUNDED}& ice is grounded \\
     3=\texttt{MASK_FLOATING} & ice is floating (the SIA is never applied; the SSA is applied if the \texttt{ssa} or \texttt{ssa+sia} stress balance model is selected\\
@@ -56,6 +55,12 @@ The possible values of the \texttt{mask}\index{mask} are given in Table \ref{tab
 
 Assuming that the geometry of the ice is allowed to evolve (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists so that a sea level is used in the flotation criterion (which can be turned off by option \intextoption{dry}), then at each time step the mask will be updated.
 
+\subsubsection{Sub-grid treatment of the grounding line position}
+\label{sec:subgrid-grounding-line}
+
+The command-line option \intextoption{subgl} turns on a parameterization of the grounding line position based on the ``LI'' parameterization described in \cite{Gladstoneetal2012}. With this option PISM computes an extra floatation mask, available as the \texttt{gl_mask} output variable, which corresponds to the fraction of the cell that is grounded. Cells that are ice-free or fully floating are assigned the value of $0$, fully-grounded icy cells --- the value of $1$, and partially grounded cells (ones containing the grounding line) --- a value between $0$ and $1$.
+
+This field is then used to scale the basal friction in cells containing the grounding line in order to avoid an abrupt change in the basal friction from the ``last'' grounded cell to the ``first'' floating cell. Please see the source code browser for the detailed description and section \ref{subsect:MISMIP3d} for an application.
 
 \subsection{Partially-filled cells at the boundaries of ice shelves}
 \label{sec:part-grid}
