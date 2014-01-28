@@ -2,11 +2,8 @@
 
 # Copyright (C) 2013, 2014 the PISM Authors
 
-# This script sets up the bootstrap file.  It also converts the configuration
-# parameter file into NetCDF:
-#   gumparams.cdl  -->  gumparams.nc
-# See also the run script:
-#   $ ./rungum.sh
+# This script sets up the bootstrap file.
+# See also preprocess.sh.
 
 import sys
 import time
@@ -21,7 +18,7 @@ except:
 
 import argparse
 
-parser = argparse.ArgumentParser(description='Create PISM-readable bootstrap file for validation using constant flux experiment from Sayag & Worster (2012).')
+parser = argparse.ArgumentParser(description='Create PISM-readable bootstrap file for validation using constant flux experiment from Sayag & Worster (2013).')
 parser.add_argument('Mx',
                    help='number of points in each direction (square grid)')
 parser.add_argument('ncfile', metavar='FILENAME',
@@ -32,10 +29,10 @@ args = parser.parse_args()
 # shear-thinning fluid, which is Xanthan gum 1% solution
 Lx = 260.0e-3    # m;  = 260 mm;  maximum observed radius is 25.2 cm so we go out just a bit
 Ly = Lx          # square table
-flux = 3.8173e-3 # kg s-1;  = 3 g s-1; email from Sayag
-pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; email from Sayag
+flux = 3.8173e-3 # kg s-1;  = 3 g s-1; Sayag personal communication
+pipeR = 8.0e-3   # m;  = 8 mm;  input pipe has this radius; Sayag personal communication
 rho = 1000.0     # kg m-3;  density of gum = density of fresh water
-temp = 20.0      # C;  fluid is at 20 deg
+temp = 20.0      # C;  fluid is at 20 deg (though it should not matter)
 
 # set up the grid:
 Mx = int(args.Mx)
@@ -54,8 +51,7 @@ topg = np.zeros((Mx,My))
 thk  = np.zeros((Mx,My))  # no fluid on table at start
 artm = np.zeros((Mx,My)) + 273.15 + temp; # 20 degrees Celsius
 
-# smb = flux as m s-1, but scaled so that the total is actually flux,
-#       even on a coarse grid
+# smb = flux as m s-1, but scaled so that the total is correct even on a coarse grid
 smb = np.zeros((Mx,My));
 smb[xx**2 + yy**2 <= pipeR**2] = 1.0;
 smbpos = sum(sum(smb))
