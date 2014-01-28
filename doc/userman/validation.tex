@@ -1,8 +1,15 @@
 
-\section{Example: Validation of PISM as a flow model for the Ross Ice Shelf in Antarctica}\label{sec:ross} \index{PISM! diagnostic Ross ice shelf setup}\index{Ice Sheets!Antarctic ice sheet!Ross ice shelf} \index{PISM!validation of ice shelf model} \index{Ross ice shelf}
-\optsection{Ross}
+\section{Validation case studies}\label{sec:validation} 
 
-The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, or incompleteness of, the data.
+The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, or incompleteness of, the data.  Because of the difficulty of measuring boundary conditions for real ice flows, this situation is not automatic in glaciology, or even common.\footnote{This explains the rise of ``simplified geometry intercomparisons''; see section \ref{sec:simp}.}
+
+\subsection{An SIA flow model for a table-top laboratory experiment}\label{sec:labgum}
+\index{PISM!validation of SIA flow model} \index{validation!SIA flow model}
+
+FIXME
+
+\subsection{An SSA flow model for the Ross Ice Shelf in Antarctica}\label{sec:ross} \index{PISM!diagnostic Ross ice shelf model}\index{Ice Sheets!Antarctic ice sheet!Ross ice shelf} \index{PISM!validation of SSA ice shelf model}\index{validation!SSA ice shelf model} \index{Ross ice shelf}
+\optsection{Ross ice shelf}
 
 As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} validated several ice shelf numerical models using the Ross ice shelf as an example (i.e.~``EISMINT-Ross'').  The models were compared to velocity data from RIGGS Survey \cite{RIGGS2,RIGGS1}, acquired in the period 1973--1978 and measured at a few hundred locations in a grid across the shelf.  Substantial developments followed EISMINT-Ross, including inverse modeling to recover depth-averaged viscosity \cite{RommelaereMacAyeal} and parameter-sensitivity studies \cite{HumbertGreveHutter}.  Previous PISM versions included a specialized executable \texttt{pross} that set up the EISMINT-Ross flow model and performed the diagnostic computation.
 
