@@ -291,7 +291,13 @@ struct planeStar {
 
 class IceModelVec2S;
 
-//! Class for a 2d DA-based Vec.
+/** Class for a 2d DA-based Vec.
+
+As for the difference between IceModelVec2 and IceModelVec2S, the
+former can store fields with more than 1 "degree of freedom" per grid
+point (such as 2D fields on the "staggered" grid, with the first
+degree of freedom corresponding to the i-offset and second to
+j-offset). */
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2() : IceModelVec() {}
@@ -320,7 +326,8 @@ protected:
   PetscErrorCode set_component(unsigned int n, Vec source);
 };
 
-//! A class for storing and accessing scalar 2D fields.
+/** A class for storing and accessing scalar 2D fields.
+IceModelVec2S is just IceModelVec2 with "dof == 1" */
 class IceModelVec2S : public IceModelVec2 {
   friend class IceModelVec2V;
   friend class IceModelVec2Stag;
@@ -494,7 +501,9 @@ inline PISMVector2 operator*(const PetscScalar &a, const PISMVector2 &v1) {
   return v1 * a;
 }
 
-//! Class for storing and accessing 2D vector fields used in IceModel.
+/** Class for storing and accessing 2D vector fields used in IceModel.
+IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra methods, of course.)
+*/
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();

@@ -164,9 +164,9 @@ public:
   virtual PetscErrorCode run();
   /** Advance the current PISM run to a specific time */
   virtual PetscErrorCode run_to(double time);
-protected:
   /** Do the "preliminary" time-step. */
   virtual PetscErrorCode init_run();
+protected:
   /** Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
   virtual PetscErrorCode continue_run();
 public:
