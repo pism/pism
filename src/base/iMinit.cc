@@ -1096,13 +1096,13 @@ PetscErrorCode IceModel::init_calving() {
   std::set<std::string>::iterator j = methods.begin();
   std::string unused;
   while (j != methods.end()) {
-    unused += *j;
+    unused += (*j + ",");
     ++j;
   }
 
   if (unused.empty() == false) {
     ierr = verbPrintf(2, grid.com,
-                      "PISM ERROR: calving method(s) %s are unknown and are ignored.\n",
+                      "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
                       unused.c_str()); CHKERRQ(ierr);
   }
 
@@ -1113,9 +1113,6 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   PetscErrorCode ierr;
   std::string model = config.get_string("bed_deformation_model");
   std::set<std::string> choices;
-
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_lc",  "-bed_def"); CHKERRQ(ierr);
 
   choices.insert("none");
   choices.insert("iso");

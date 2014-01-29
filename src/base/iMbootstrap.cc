@@ -207,8 +207,8 @@ PetscErrorCode IceModel::bootstrap_3d() {
   }
   
   ierr = verbPrintf(2, grid.com, "  filling ice temperatures using surface temps (and %s)\n",
-     (config.get_flag("bootstrapping_no_smb_in_initial_temp")
-        ? "quartic guess sans smb" : "mass balance for velocity estimate") );
+                    (config.get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
+                     ? "quartic guess sans smb" : "mass balance for velocity estimate") );
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
@@ -243,10 +243,10 @@ Within the column denote the temperature by \f$T(z)\f$ at height \f$z\f$ above
 the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
 thickness.
 
-There are two alternative bootstrap methods determined by the boolean
-`usesmb = !(config.get("bootstrapping_no_smb_in_initial_temp"))`.
+There are two alternative bootstrap methods determined by the configuration parameter
+`config.get("bootstrapping_temperature_heuristic"))`. Allowed values are `"smb"` and `"quartic_guess"`.
 
-1. If `usesmb` is true, which is the default, and if \f$m>0\f$,
+1. If the `smb` method is chosen, which is the default, and if \f$m>0\f$,
 then the method sets the ice
 temperature to the solution of the steady problem [\ref Paterson]
   \f[\rho_i c w \frac{\partial T}{\partial z} = k_i \frac{\partial^2 T}{\partial z^2} \qquad \text{with boundary conditions} \qquad T(H) = T_s \quad \text{and} \quad \frac{\partial T}{\partial z}(0) = - \frac{g}{k_i}, \f]
@@ -268,7 +268,7 @@ to the base, is taken to be zero.  Thus the solution is
   \f[ T(z) = \frac{g}{k_i} \left( H - z \right) + T_s, \f]
 a straight line whose slope is determined by the geothermal flux and whose value
 at the ice surface is the surface temperature, \f$T(H) = T_s\f$.
-2. If `usesmb` is false then the "quartic guess" formula which was in older
+2. If the `quartic_guess` method is chosen, the "quartic guess" formula which was in older
 versions of PISM is used.  Namely, within the ice we set
 \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
 where \f$\alpha,\beta\f$ are chosen so that
@@ -293,7 +293,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   PetscScalar *T = new PetscScalar[grid.Mz];
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
-             usesmb  = config.get_flag("bootstrapping_no_smb_in_initial_temp") == false;
+             usesmb  = config.get_string("bootstrapping_temperature_heuristic") == "smb";
   const PetscScalar
     ice_k = config.get("ice_thermal_conductivity"),
     melting_point_temp = config.get("water_melting_point_temperature"),
@@ -317,11 +317,11 @@ PetscErrorCode IceModel::putTempAtDepth() {
   else
     result = &Enth3;
 
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access();      CHKERRQ(ierr);
   ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  ierr =   ice_thickness.begin_access();   CHKERRQ(ierr);
-  ierr = geothermal_flux.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
+  ierr = geothermal_flux.begin_access();       CHKERRQ(ierr);
+  ierr = result->begin_access();               CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -365,7 +365,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       // above ice
       for (unsigned int k = ks; k < grid.Mz; k++)
         T[k] = ice_surface_temp(i,j);
-      
+
       // convert to enthalpy if that's what we are calculating
       if (!do_cold) {
         for (unsigned int k = 0; k < grid.Mz; ++k) {
@@ -377,15 +377,15 @@ PetscErrorCode IceModel::putTempAtDepth() {
       }
 
       ierr = result->setInternalColumn(i,j,T); CHKERRQ(ierr);
-      
+
     }
   }
 
-  ierr =     ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr =   geothermal_flux.end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr =   ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr =   climatic_mass_balance.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();         CHKERRQ(ierr);
+  ierr = geothermal_flux.end_access();       CHKERRQ(ierr);
+  ierr = result->end_access();               CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access();      CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   delete [] T;
 
