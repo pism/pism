@@ -6,7 +6,50 @@ The term ``validation'' describes the comparison of model output with physical o
 \subsection{An SIA flow model for a table-top laboratory experiment}\label{sec:labgum}
 \index{PISM!validation of SIA flow model} \index{validation!SIA flow model}
 
-FIXME
+An ice sheet is a shear-thinning fluid with a free surface.  Though there are additional complexities to the flow of real ice sheets, PISM ought to be able to model such free surface, shear-thinning flows in generality, and we test that ability here.  The example in this subsection compares PISM's isothermal SIA numerical model to a laboratory observations of a 1\% Xanthan gum suspension in water in a table-top moving-margin experiment \cite{SayagWorster2013,SayagPeglerWorster2012}.  This ``gum'' fluid is more strongly shear-thinning than ice, and it has much lower absolute viscosity values, but it has the same density.  This fluid has total mass $\sim 1$ kg, compared to $\sim 10^{18}$ kg for the Greenland ice sheet.
+
+Specifically we compare our numerical results to the ``constant flux'' experiment performed by R.~Sayag and M.~Worster; see Figures 2(c) and 2(d) in \cite{SayagWorster2013}.  Their experiment pushes the fluid through a round 8 mm hole in the middle of a flat table at a mass rate of about 3 gm/s.
+
+FIXME: reproduce figures 2(c) and (d) from ref here
+
+The closest glaciological analog would be an ice sheet on a flat bed fed by positive \emph{basal} mass balance (i.e.~``refreeze'') underneath the dome, but with zero mass balance elsewhere on the lower and upper surfaces.  However, noting that the mass-continuity equation is vertically-integrated, we model the input flux (mass balance) as arriving at the \emph{top} of the ice sheet, as is usual for PISM.  While this represents a very large change in the vertical component of the velocity field, we will see good agreement in the overall shape of the ``ice sheet'', and specifically in the rate of margin advance.
+
+The flow rate in the input pipe is assumed to be constant across the pipe, so the input ``climate'' has uses \texttt{-surface given} with a field \texttt{climatic_mass_balance} (in the bootstrapping file) which is a positive constant in the pipe and zero outside the pipe.
+
+Sayag \& Worster estimate Glen exponent $n = 5.9$ for the flow law, using regression of laboratory measurements of the radius.  This is one of several changed-from-defaults configuration parameters, compared to PISM ice sheet defaults, which are overridden at run time by using the \texttt{-config_override} option.  See \texttt{examples/gumparams.cdl} for the settings of these parameters.
+
+To run the example, do
+
+\begin{verbatim}
+$ python preprocess.py
+\end{verbatim}%$
+
+Next, do a run for 746 model seconds \cite{SayagWorster2013} on an 10 mm grid (520 mm / 52 subintervals) using 4 processors:
+\begin{verbatim}
+$ ./rungum.sh 4 53 &> out.lab53 &
+\end{verbatim}%$
+This run generates text file \texttt{out.lab53}, diagnostic NetCDF files \texttt{ts_lab53.nc} and \texttt{ex_lab53.nc}, and final output file \texttt{lab53.nc}.  The run took about 5 minutes on a 2013 laptop.
+
+When it is done, you can compare the modeled radius compared to the experimental data:
+\begin{verbatim}
+$ ./showradius.py -o r53.png -d constantflux3.txt ts_lab53.nc
+\end{verbatim}%$
+You can also redo the whole thing on a higher resolution grid (here: 2.5 mm), and when that run is done after several hours, make a combined figure just like Figure \ref{fig:labgumresult}:
+\begin{verbatim}
+$ ./preprocess.py -Mx 209 -o initlab209.nc
+$ ./rungum.sh 4 209 &> out.lab209 &
+$ ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
+\end{verbatim}%$
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=4.0in,keepaspectratio=true]{labgumradius}
+\caption{Time series for ice ``cap'' radius for runs with 10 mm (\texttt{ts_lab53.nc}) and 2.5 mm (\texttt{ts_lab53.nc}) grid spacing, compared with observations from Sayag \& Worster's \cite{SayagWorster2013} table-top experiment.}
+\label{fig:labgumresult}
+\end{figure}
+
+Results are distinctly better on finer grids because the input pipe radius is only 8 mm and the resulting ice ``cap'' is about that radius for the first few model seconds especially.  The early evolution is distinctly non-shallow, but resolution makes most of the difference, while there is little apparent need for ``higher-order'' stresses.
+
 
 \subsection{An SSA flow model for the Ross Ice Shelf in Antarctica}\label{sec:ross} \index{PISM!diagnostic Ross ice shelf model}\index{Ice Sheets!Antarctic ice sheet!Ross ice shelf} \index{PISM!validation of SSA ice shelf model}\index{validation!SSA ice shelf model} \index{Ross ice shelf}
 \optsection{Ross ice shelf}
