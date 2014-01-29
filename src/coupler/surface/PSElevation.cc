@@ -20,7 +20,7 @@
 #include "PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
-
+#include "PISMConfig.hh"
 
 ///// Elevation-dependent temperature and surface mass balance.
 PSElevation::PSElevation(IceGrid &g, const PISMConfig &conf)
@@ -114,8 +114,8 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
                   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -208,6 +208,9 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   }
   ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
+
+  // convert from m/s ice equivalent to kg m-2 s-1:
+  ierr = result.scale(config.get("ice_density")); CHKERRQ(ierr);
 
   return 0;
 }

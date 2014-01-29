@@ -440,6 +440,9 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
   if (testname == 'H') {
@@ -554,6 +557,9 @@ PetscErrorCode IceCompModel::initTestL() {
   delete [] bb;
   delete [] aa;
 
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   ierr = ice_thickness.update_ghosts();   CHKERRQ(ierr); 
   ierr = bed_topography.update_ghosts(); CHKERRQ(ierr); 
 
@@ -594,6 +600,10 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
     }
   }
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -660,6 +670,9 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
   if (testname == 'H') {
@@ -698,6 +711,9 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   ierr = climatic_mass_balance.end_access();     CHKERRQ(ierr);
   ierr = ice_thickness.end_access();       CHKERRQ(ierr);
   ierr = vel_adv->end_access(); CHKERRQ(ierr);
+
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts();    CHKERRQ(ierr);
   ierr = ice_thickness.copy_to(ice_surface_elevation);        CHKERRQ(ierr);

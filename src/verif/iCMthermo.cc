@@ -109,6 +109,9 @@ PetscErrorCode IceCompModel::initTestFG() {
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
 
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
   ierr = T3.update_ghosts(); CHKERRQ(ierr);
@@ -166,6 +169,9 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   }
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
+
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
 
   delete [] dummy1;
   delete [] dummy2;
@@ -263,6 +269,9 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
 
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
 
   delete [] Uradial;
   delete [] T;

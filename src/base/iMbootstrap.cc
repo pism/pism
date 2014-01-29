@@ -308,6 +308,8 @@ PetscErrorCode IceModel::putTempAtDepth() {
     ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     if (usesmb == true) {
       ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
+      // convert from [kg m-2 s-1] to [m / s]
+      ierr = climatic_mass_balance.scale(1.0 / config.get("ice_density")); CHKERRQ(ierr);
     }
   }
 

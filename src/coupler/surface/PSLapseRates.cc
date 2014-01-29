@@ -45,8 +45,8 @@ PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
                   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -86,7 +86,8 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
 
   temp_lapse_rate = grid.convert(temp_lapse_rate, "K/km", "K/m");
 
-  smb_lapse_rate = grid.convert(smb_lapse_rate, "m/year / km", "m/s / m");
+  smb_lapse_rate *= config.get("ice_density"); // convert from [m/year / km] to [kg m-2 / year / km]
+  smb_lapse_rate = grid.convert(smb_lapse_rate, "kg m-2 s-1 / km", "kg m-2 s-1 / m");
 
   return 0;
 }

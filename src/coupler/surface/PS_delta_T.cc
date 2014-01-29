@@ -52,8 +52,8 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
 				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
 				   "land_ice_surface_specific_mass_balance");
-  climatic_mass_balance.set_units("m s-1");
-  climatic_mass_balance.set_glaciological_units("m year-1");
+  climatic_mass_balance.set_units("kg m-2 s-1");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");

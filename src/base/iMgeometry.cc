@@ -522,10 +522,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
     compute_flux_divergence = flux_divergence.was_created();
 
   // FIXME: use corrected cell areas (when available)
-  PetscScalar factor = config.get("ice_density") * (dx * dy);
+  double ice_density = config.get("ice_density"),
+    factor = ice_density * (dx * dy);
 
   assert(surface != NULL);
   ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
+  // convert mass balance from [kg m-2 s-1] to [m / s]
+  ierr = climatic_mass_balance.scale(1.0 / config.get("ice_density")); CHKERRQ(ierr);
 
   assert(ocean != NULL);
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
@@ -730,15 +733,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // Track cumulative surface mass balance. Note that this keeps track of
       // cumulative climatic_mass_balance at all the grid cells (including ice-free cells).
       if (compute_cumulative_climatic_mass_balance) {
-        climatic_mass_balance_cumulative(i, j) += climatic_mass_balance(i, j) * dt;
+        climatic_mass_balance_cumulative(i, j) += climatic_mass_balance(i, j) * dt * ice_density;
       }
 
       if (compute_cumulative_grounded_basal_flux) {
-        grounded_basal_flux_2D_cumulative(i, j) += -meltrate_grounded * dt;
+        grounded_basal_flux_2D_cumulative(i, j) += -meltrate_grounded * dt * ice_density;
       }
 
       if (compute_cumulative_floating_basal_flux) {
-        floating_basal_flux_2D_cumulative(i, j) += -meltrate_floating * dt;
+        floating_basal_flux_2D_cumulative(i, j) += -meltrate_floating * dt * ice_density;
       }
 
       // time-series accounting:
@@ -929,16 +932,16 @@ PetscErrorCode IceModel::update_floatation_mask() {
   assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
-  ierr = gl_mask.set(0.0); CHKERRQ(ierr);
+  ierr = gl_mask.set(0.0);   CHKERRQ(ierr);
   ierr = gl_mask_x.set(0.0); CHKERRQ(ierr);
   ierr = gl_mask_y.set(0.0); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();  CHKERRQ(ierr);
   ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = gl_mask.begin_access(); CHKERRQ(ierr);
-  ierr = gl_mask_x.begin_access(); CHKERRQ(ierr);
-  ierr = gl_mask_y.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access();          CHKERRQ(ierr);
+  ierr = gl_mask.begin_access();        CHKERRQ(ierr);
+  ierr = gl_mask_x.begin_access();      CHKERRQ(ierr);
+  ierr = gl_mask_y.begin_access();      CHKERRQ(ierr);
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
@@ -1064,12 +1067,12 @@ PetscErrorCode IceModel::update_floatation_mask() {
     } // inner for loop (j)
   } // outer for loop (i)
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();  CHKERRQ(ierr);
   ierr = bed_topography.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = gl_mask.end_access(); CHKERRQ(ierr);
-  ierr = gl_mask_x.end_access(); CHKERRQ(ierr);
-  ierr = gl_mask_y.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access();          CHKERRQ(ierr);
+  ierr = gl_mask.end_access();        CHKERRQ(ierr);
+  ierr = gl_mask_x.end_access();      CHKERRQ(ierr);
+  ierr = gl_mask_y.end_access();      CHKERRQ(ierr);
 
   return 0;
 }

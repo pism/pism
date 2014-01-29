@@ -256,6 +256,10 @@ PetscErrorCode IceEISModel::init_couplers() {
 
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+
+  // convert from [m/s] to [kg m-2 s-1]
+  ierr = climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   return 0;
 }
 

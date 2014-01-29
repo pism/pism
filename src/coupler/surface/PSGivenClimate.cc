@@ -57,8 +57,8 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
                                      "Kelvin", ""); CHKERRQ(ierr);
   ierr = climatic_mass_balance->set_attrs("climate_forcing",
                                           "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                          "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance->write_in_glaciological_units = true;
 
   return 0;

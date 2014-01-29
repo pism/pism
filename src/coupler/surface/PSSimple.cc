@@ -20,6 +20,8 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "iceModelVec.hh"
+#include "PISMConfig.hh"
+
 #include <assert.h>
 
 ///// Simple PISM surface model.
@@ -43,8 +45,8 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
 				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
 				   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -87,6 +89,7 @@ PetscErrorCode PSSimple::update(PetscReal my_t, PetscReal my_dt)
 
 PetscErrorCode PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr = atmosphere->mean_precipitation(result); CHKERRQ(ierr);
+  ierr = result.scale(config.get("ice_density")); // convert from m/s ice equivalent to kg m-2 s-1
   return 0;
 }
 
