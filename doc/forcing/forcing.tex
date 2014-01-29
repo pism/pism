@@ -865,8 +865,7 @@ to October 1$^{\text{st}}$.
 
 Our PDD implementation is meant to be used with an atmosphere model
 implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
-\ref{sec:atmosphere-searise-greenland}) and \texttt{eismint_greenland} (section
-\ref{sec:atmosphere-eismint-greenland}), but it is not restricted to
+\ref{sec:atmosphere-searise-greenland}), but it is not restricted to
 parameterizations like these.
 
 This code also implements latitude- and mean July temperature dependent ice and snow
@@ -1180,27 +1179,6 @@ See also the \texttt{-atmosphere ...,paleo_precip} modifier, section
 SeaRISE-Greenland formula for paleo-precipitation correction from
 present; a 7.3\% change of precipitation rate for every one degree
 Celsius of temperature change~\cite{Huybrechts02}.
-
-\subsection{EISMINT-Greenland}
-\label{sec:atmosphere-eismint-greenland}
-\optsection{\atmosphere!\texttt{eismint_greenland}}
-
-\begin{center}
-  \begin{tabular}{rp{0.5\linewidth}}
-    \toprule
-    Command-line option: & \texttt{-atmosphere~eismint_greenland} \index[options]{\atmosphere!\texttt{eismint_greenland}} \\
-    NetCDF variables: & \variable{lon}, \variable{lat},
-    \variable{precipitation} \mbox{[m/s ice equivalent]} \\
-    C++ class: & \class{PAEismintGreenland}\\
-    \bottomrule
-  \end{tabular}
-\end{center}
-
-This model~component implements the latitude, longitude, and surface elevation-dependent
-near-surface air temperature parameterization described in~\cite{RitzEISMINT}.
-
-The time-independent \variable{precipitation} field is read from an input
-(\texttt{-i} or \texttt{-boot_file}) file.
 
 \subsection{PIK}
 \label{sec:atmosphere-pik}
