@@ -44,7 +44,6 @@
 #include "bedrockThermalUnit.hh"
 #include "flowlaw_factory.hh"
 #include "basal_resistance.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
@@ -1022,21 +1021,6 @@ PetscErrorCode IceModel::misc_setup() {
                 "PISM ERROR: output formats netcdf4_parallel and quilt require -o_order xyz.\n");
     PISMEnd();
   }
-
-  event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
-  event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
-
-  event_energy  = grid.profiler->create("energy",   "time spent inside energy time-stepping");
-  event_hydrology = grid.profiler->create("hydrology",   "time spent inside hydrology time-stepping");
-  event_age     = grid.profiler->create("age",      "time spent inside age time-stepping");
-  event_mass    = grid.profiler->create("masscont", "time spent inside mass continuity time-stepping");
-
-  event_beddef  = grid.profiler->create("bed_def",  "time spent updating the bed deformation model");
-
-  event_output    = grid.profiler->create("output", "time spent writing output files");
-  event_output_define = grid.profiler->create("output_define", "time spent defining variables");
-  event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
-  event_backups   = grid.profiler->create("backups", "time spent writing backups");
 
   return 0;
 }

@@ -183,7 +183,6 @@ public:
   unsigned int max_stencil_width;
   //!< maximum stencil width supported by the DA in this IceGrid object
 
-  PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
   PISMTime *time;               //!< The time management object (hides calendar computations)
 protected:
   std::map<int,DM> dms;

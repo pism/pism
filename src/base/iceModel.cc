@@ -33,7 +33,6 @@
 #include "PISMYieldStress.hh"
 #include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "PISMDiagnostic.hh"
@@ -634,8 +633,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
                               bool do_skip) {
   PetscErrorCode ierr;
 
-  grid.profiler->begin(event_step);
-
   //! \li call additionalAtStartTimestep() to let derived classes do more
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
@@ -709,8 +706,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = update_floatation_mask(); CHKERRQ(ierr);
   }
 
-  grid.profiler->begin(event_velocity);
-
   PetscReal sea_level = 0;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
@@ -737,8 +732,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = PetscPrintf(grid.com, "ending...\n");
     PISMEnd();
   }
-
-  grid.profiler->end(event_velocity);
 
   std::string sb_stdout;
   ierr = stress_balance->stdout_report(sb_stdout); CHKERRQ(ierr);
@@ -769,8 +762,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   // other criteria from derived class additionalAtStartTimestep(), and from
   // "-skip" mechanism
 
-  grid.profiler->begin(event_age);
-
   //! \li update the age of the ice (if appropriate)
   if (do_age && updateAtDepth) {
     ierr = ageStep(); CHKERRQ(ierr);
@@ -778,10 +769,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
-
-  grid.profiler->end(event_age);
-
-  grid.profiler->begin(event_energy);
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
@@ -793,22 +780,14 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
-  grid.profiler->end(event_energy);
-
-  grid.profiler->begin(event_hydrology);
-
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   ierr = subglacial_hydrology->update(grid.time->current(), dt); CHKERRQ(ierr);
-
-  grid.profiler->end(event_hydrology);
 
   //! \li update the fracture density field; see calculateFractureDensity()
   if (config.get_flag("do_fracture_density")) {
     ierr = calculateFractureDensity(); CHKERRQ(ierr);
   }
-
-  grid.profiler->begin(event_mass);
 
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
@@ -839,12 +818,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   ierr = Href_cleanup(); CHKERRQ(ierr);
 
-  grid.profiler->end(event_mass);
-
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (beddef) {
-    grid.profiler->begin(event_beddef);
     int topg_state_counter = bed_topography.get_state_counter();
 
     ierr = beddef->update(grid.time->current(), dt); CHKERRQ(ierr);
@@ -854,7 +830,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
     } else
       stdout_flags += " ";
-    grid.profiler->end(event_beddef);
   }
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
@@ -875,8 +850,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 #if (PISM_DEBUG==1)
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
 #endif
-
-  grid.profiler->end(event_step);
 
   return 0;
 }

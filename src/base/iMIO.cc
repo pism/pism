@@ -32,7 +32,6 @@
 #include "PISMStressBalance.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "PISMTime.hh"
@@ -82,21 +81,6 @@ PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
     // the old one aside
     ierr = config.write(config_out, false); CHKERRQ(ierr);
   }
-
-#ifdef PISM_PROFILE
-  bool flag;
-  ierr = PISMOptionsIsSet("-prof", flag); CHKERRQ(ierr);
-  std::string prof_output_name;
-  if (flag) {
-    prof_output_name = pism_filename_add_suffix(filename, "-prof", "");
-
-    ierr = verbPrintf(2, grid.com, "Saving profiling data to '%s'...\n",
-		      prof_output_name.c_str());
-    CHKERRQ(ierr);
-
-    ierr = grid.profiler->save_report(prof_output_name); CHKERRQ(ierr);
-  }
-#endif
 
   return 0;
 }
@@ -167,10 +151,6 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
 					 PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
-
-  grid.profiler->begin(event_output);
-
-  grid.profiler->begin(event_output_define);
 
   // Define all the variables:
   {
@@ -246,8 +226,6 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
     }
 
   }
-  grid.profiler->end(event_output_define);
-
   // Write all the IceModel variables:
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end();) {
@@ -348,8 +326,6 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
     }
     ierr = verbPrintf(threshold, grid.com, "\n"); CHKERRQ(ierr);
   }
-
-  grid.profiler->end(event_output);
 
   return 0;
 }
@@ -780,8 +756,6 @@ PetscErrorCode IceModel::write_snapshot() {
     return 0;
   }
 
-  grid.profiler->begin(event_snapshots);
-
   // flush time-series buffers
   ierr = flush_timeseries(); CHKERRQ(ierr);
 
@@ -839,8 +813,6 @@ PetscErrorCode IceModel::write_snapshot() {
 
   ierr = nc.close(); CHKERRQ(ierr);
 
-  grid.profiler->end(event_snapshots);
-
   return 0;
 }
 
@@ -888,8 +860,6 @@ PetscErrorCode IceModel::write_backup() {
   if (wall_clock_hours - last_backup_time < backup_interval)
     return 0;
 
-  grid.profiler->begin(event_backups);
-
   last_backup_time = wall_clock_hours;
 
   // create a history string:
@@ -923,8 +893,6 @@ PetscErrorCode IceModel::write_backup() {
 
   // Also flush time-series:
   ierr = flush_timeseries(); CHKERRQ(ierr);
-
-  grid.profiler->end(event_backups);
 
   return 0;
 }

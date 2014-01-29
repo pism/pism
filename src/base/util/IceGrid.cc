@@ -21,7 +21,6 @@
 #include "pism_const.hh"
 #include "PISMTime.hh"
 #include "PISMTime_Calendar.hh"
-#include "PISMProf.hh"
 #include "PISMConfig.hh"
 #include "pism_options.hh"
 
@@ -83,8 +82,6 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
 
   compute_vertical_levels();
   compute_horizontal_spacing();
-
-  profiler = new PISMProf(com, rank, size);
 
   std::string calendar;
   PetscErrorCode ierr = init_calendar(calendar);
@@ -149,7 +146,6 @@ IceGrid::~IceGrid() {
   destroy_dms();
 
   delete time;
-  delete profiler;
 }
 
 //! \brief Set the vertical levels in the ice according to values in Mz, Lz,
@@ -414,10 +410,6 @@ PetscErrorCode IceGrid::allocate() {
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
-
-  profiler->Nx = Nx;
-  profiler->Ny = Ny;
-  profiler->set_grid_size(xm*ym);
 
   return 0;
 }

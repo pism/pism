@@ -20,7 +20,6 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "flowlaw_factory.hh"
 #include "PIO.hh"
@@ -138,8 +137,6 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     if (m_vel_bc == NULL) SETERRQ(grid.com, 1, "vel_ssa_bc is not available");
   }
 
-  event_ssa = grid.profiler->create("ssa_update", "time spent solving the SSA");
-
   return 0;
 }
 
@@ -210,8 +207,6 @@ PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
 
   (void) melange_back_pressure;
 
-  grid.profiler->begin(event_ssa);
-
   ierr = solve();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: SSA solver failed.\n");
@@ -221,8 +216,6 @@ PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
   ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
 					  basal_frictional_heating); CHKERRQ(ierr);
   
-  grid.profiler->end(event_ssa);
-
   return 0;
 }
 
