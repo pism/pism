@@ -528,7 +528,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   assert(surface != NULL);
   ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
   // convert mass balance from [kg m-2 s-1] to [m / s]
-  ierr = climatic_mass_balance.scale(1.0 / config.get("ice_density")); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.scale(1.0 / ice_density); CHKERRQ(ierr);
 
   assert(ocean != NULL);
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);

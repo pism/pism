@@ -66,6 +66,7 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
 
 void PSGivenClimate::attach_atmosphere_model(PISMAtmosphereModel *input) {
   delete input;
+  input = NULL;
 }
 
 PetscErrorCode PSGivenClimate::init(PISMVars &) {

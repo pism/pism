@@ -69,7 +69,6 @@ protected:
 
   // related to tests A B C D E H
   PetscErrorCode initTestABCDEH();
-  PetscErrorCode getCompSourcesTestCDH();  // only for time-dependent compensatory sources
   PetscErrorCode fillSolnTestABCDH();  // only used with exactOnly == PETSC_TRUE
   
   // related to test E
@@ -122,8 +121,6 @@ protected:
 private:
   PetscScalar        f;       // ratio of ice density to bedrock density
   PetscBool         bedrock_is_ice_forK;
-
-  static const PetscScalar ablationRateOutside;
 
   // see iCMthermo.cc
   static const PetscScalar Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant
