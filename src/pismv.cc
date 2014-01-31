@@ -29,7 +29,6 @@ static char help[] =
 #include "IceGrid.hh"
 #include "verif/iceCompModel.hh"
 
-#include "PSDummy.hh"
 #include "POConstant.hh"
 #include "pism_options.hh"
 

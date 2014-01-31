@@ -27,7 +27,6 @@ static char help[] =
 #include "eismint/iceEISModel.hh"
 #include "pism_options.hh"
 
-#include "PSDummy.hh"
 #include "POConstant.hh"
 
 int main(int argc, char *argv[]) {

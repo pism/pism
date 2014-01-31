@@ -85,7 +85,6 @@ PetscErrorCode PSVerification::init(PISMVars &vars) {
 
 void PSVerification::attach_atmosphere_model(PISMAtmosphereModel *input) {
   delete input;
-  input = NULL;
 }
 
 PetscErrorCode PSVerification::ice_surface_mass_flux(IceModelVec2S &result) {
