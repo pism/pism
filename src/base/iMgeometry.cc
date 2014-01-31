@@ -620,8 +620,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
         nonneg_rule_flux     = 0.0; // units: [m]
 
       if (include_bmr_in_continuity) {
-        // FIXME: sub-shelf mass flux should use in [kg m-2 s-1], just as the surface mass flux
-        meltrate_floating = shelfbmassflux(i, j);
+        // convert from [kg m-2 s-1] to [m s-1]:
+        meltrate_floating = shelfbmassflux(i, j) / ice_density;
+        // basal melt rate is computed by PISM itself and has units of
+        // [m s-1] already
         meltrate_grounded = basal_melt_rate(i, j);
       }
 

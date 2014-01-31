@@ -364,11 +364,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
+        // convert from [kg m-2 s-1] to [m s-1]:
+        double sub_shelf_flux = shelfbmassflux(i,j) / ice_density;
+
         // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
         if (mask.ocean(i,j)) {
           if (mask.icy(i,j)) {
-            // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
-            basal_melt_rate(i,j) = shelfbmassflux(i,j); // set by PISMOceanCoupler
+            basal_melt_rate(i,j) = sub_shelf_flux;
           } else {
             basal_melt_rate(i,j) = 0.0;
           }
@@ -381,7 +383,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         }
 
 	if (sub_gl) {
-	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * shelfbmassflux(i,j) + gl_mask(i,j) * basal_melt_rate(i,j);
+	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
 	}
 
     }

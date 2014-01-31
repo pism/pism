@@ -208,7 +208,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
     ice_rho      = config.get("ice_density"), // kg m-3
     L            = config.get("water_latent_heat_fusion"), // J kg-1
     // constants controlling the numerical method:
-    bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
+    bulgeEnthMax = config.get("enthalpy_cold_bulge_max"), // J kg-1
+    ice_density = config.get("ice_density");
 
   bool viewOneColumn;
   ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
@@ -306,7 +307,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
       if (ice_free_column) {
         ierr = vWork3d.setColumn(i, j, Enth_ks); CHKERRQ(ierr);
         if (mask.floating_ice(i, j)) {
-          basal_melt_rate(i, j) = shelfbmassflux(i, j);
+          // convert from [kg m-2 s-1] to [m s-1]:
+          basal_melt_rate(i, j) = shelfbmassflux(i, j) / ice_density;
         } else {
           // no basal melt rate on ice free land and ice free ocean
           basal_melt_rate(i, j) = 0.0;
@@ -393,7 +395,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
         // drainage, from heat flux out of bedrock, heat flux into
         // ice, and frictional heating
         if (is_floating) {
-          basal_melt_rate(i, j) = shelfbmassflux(i, j);
+          // convert from [kg m-2 s-1] to [m s-1]:
+          basal_melt_rate(i, j) = shelfbmassflux(i, j) / ice_density;
         } else {
           if (base_is_cold) {
             basal_melt_rate(i, j) = 0.0;  // zero melt rate if cold base
