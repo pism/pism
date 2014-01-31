@@ -539,7 +539,7 @@ PetscErrorCode IceModel::createVecs() {
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
 
   // take care of 2D cumulative fluxes: we need to allocate special storage if
-  // the user asked for climatic_mass_balance_cumulative or
+  // the user asked for climatic_mass_balance_cumulative or some others (below).
 
   std::string vars;
   bool extra_vars_set;
@@ -557,7 +557,7 @@ PetscErrorCode IceModel::createVecs() {
                                                      "climatic_mass_balance_cumulative",
                                                      WITHOUT_GHOSTS); CHKERRQ(ierr);
       ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                                        "cumulative ice-equivalent surface mass balance",
+                                                        "cumulative surface mass balance",
                                                         "kg m-2", ""); CHKERRQ(ierr);
     }
 
