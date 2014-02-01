@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # '-pik' sets the calving front boundary condition
-#     (can be reduced to '-cfbc -kill_icebergs')
+#     (is equivalent to '-cfbc -kill_icebergs')
 # '-ssa_method fem' will not work because it lacks '-cfbc'
 
 NN=2  # default number of processors
@@ -23,7 +23,7 @@ PISMPREFIX=""
 
 cmd="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My $M \
   -Mz 3 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa -energy none \
-  -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_view_nuh \
+  -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc \
   -y 0 -o diag_Mx${M}.nc -o_order zyx -ssa_e $SSAE -ssafd_ksp_monitor"
 
 echo "running command:"
