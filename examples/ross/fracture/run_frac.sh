@@ -97,7 +97,7 @@ fractures="-fractures ${FRACRATE},${THRESHOLD},${HEALRATE},${HEALTHRESHOLD} -wri
 
 # run commands #############################################################################
 
-cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given ${ssa} -kill_icebergs \
   -y 0 -ys 0.0 -o Ross_frac_startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
 

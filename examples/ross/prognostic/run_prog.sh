@@ -34,7 +34,7 @@ fi
 PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
-cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa \
   -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e $SSAE \
   -y 0 -ys 0.0 -o Ross_prognostic_startfile_Mx${M}.nc -o_order zyx "

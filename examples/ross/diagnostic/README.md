@@ -1,7 +1,7 @@
 Ross diagnostic flow model example
 =================
 
-This example demonstrates regional modeling of ice shelves for prescribed geometry (basic diagnostic mode).
+FIXME This example demonstrates regional modeling of ice shelves for prescribed geometry (basic diagnostic mode).
 
 You can modify three parameters as options in a row: 
 
