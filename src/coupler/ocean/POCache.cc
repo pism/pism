@@ -41,7 +41,7 @@ PetscErrorCode POCache::allocate_POCache() {
   ierr = m_shelf_base_mass_flux.set_attrs("climate_state",
                                           "ice mass flux from ice shelf base"
                                           " (positive flux is loss from ice shelf)",
-                                          "m s-1", ""); CHKERRQ(ierr);
+                                          "kg m-2 s-1", ""); CHKERRQ(ierr);
   ierr = m_shelf_base_mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 

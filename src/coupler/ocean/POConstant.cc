@@ -41,7 +41,7 @@ PetscErrorCode POConstant::allocate_POConstant() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("m s-1");
+  shelfbmassflux.set_units("kg m-2 s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
@@ -112,12 +112,14 @@ PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-//! Computes mass flux in ice-equivalent m s-1, from assumption that basal heat flux rate converts to mass flux.
+//! @brief Computes mass flux in [kg m-2 s-1], from assumption that
+//! basal heat flux rate converts to mass flux.
 PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal L = config.get("water_latent_heat_fusion"),
-    rho = config.get("ice_density"),
-    meltrate;
+  double
+    L           = config.get("water_latent_heat_fusion"),
+    ice_density = config.get("ice_density"),
+    meltrate    = 0.0;
 
   if (meltrate_set) {
 
@@ -126,9 +128,12 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   } else {
 
     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-    meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * rho); // m s-1
+    meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * ice_density); // m s-1
 
   }
+
+  // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
+  meltrate = meltrate * ice_density;
 
   ierr = result.set(meltrate); CHKERRQ(ierr);
 

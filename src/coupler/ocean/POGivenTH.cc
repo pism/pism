@@ -101,8 +101,9 @@ PetscErrorCode POGivenTH::init(PISMVars &vars) {
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
-  ierr = theta_ocean   -> init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = salinity_ocean-> init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+
+  ierr = theta_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = salinity_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
@@ -129,16 +130,21 @@ PetscErrorCode POGivenTH::shelf_base_temperature(IceModelVec2S &result) {
   return 0;
 }
 
+PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
+  PetscErrorCode ierr = shelfbmassflux->copy_to(result); CHKERRQ(ierr);
+  return 0;
+}
+
 PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
 
   PetscErrorCode ierr;
 
-  const PetscScalar rhoi = config.get("ice_density");
-  const PetscScalar rhow = config.get("sea_water_density");
-  const PetscScalar reference_pressure = 1.01325; // pressure of atmosphere in bar
+  const double rhoi = config.get("ice_density");
+  const double rhow = config.get("sea_water_density");
+  const double reference_pressure = 1.01325; // pressure of atmosphere in bar
 
 
-  PetscReal pressure_at_shelf_base, bmeltrate, temp_insitu, temp_base;
+  double pressure_at_shelf_base, bmeltrate, temp_insitu, temp_base;
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = theta_ocean->begin_access(); CHKERRQ(ierr);
@@ -157,9 +163,6 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
 
       btemp_bmelt_3eqn(rhow, rhoi,(*salinity_ocean)(i,j), temp_insitu, (*ice_thickness)(i,j), temp_base, bmeltrate);
 
-      //ierr = verbPrintf(2, grid.com, "temp_insitu=%f, salt_ocean=%f\n", temp_insitu,(*salinity_ocean)(i,j)); CHKERRQ(ierr);
-      //ierr = verbPrintf(2, grid.com, "bound temp=%f, salt=%f,bmelt=%f\n", temp_base,sal_base,bmeltrate); CHKERRQ(ierr);
-
       // the ice/ocean boundary layer temperature is seen by PISM as shelfbtemp.
       (*shelfbtemp)(i,j)     = temp_base + 273.15; // to Kelvin
       (*shelfbmassflux)(i,j) = -1 * bmeltrate;
@@ -176,14 +179,9 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
   return 0;
 }
 
-PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbmassflux->copy_to(result); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
-                                           PetscReal sal_ocean, PetscReal temp_insitu, PetscReal zice,
-                                           PetscReal &temp_base, PetscReal &meltrate){
+PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
+                                           double sal_ocean, double temp_insitu, double zice,
+                                           double &temp_base, double &meltrate) {
 
   // This function solves the three equation model of ice-shelf ocean interaction (Hellmer and Olbers, 1989).
   // Equations are
@@ -206,25 +204,25 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
   //        We could do this better by usings PISMs ice temperature or heat flux
   //        calculus at the bottom layers of the ice shelf.
 
-  PetscReal rhor, sal_base;
-  PetscReal ep1,ep2,ep3,ep4,ep5;
-  PetscReal ex1,ex2,ex3,ex4,ex5;
-  PetscReal sr1,sr2,sf1,sf2,tf1,tf2,tf,sf;
+  double rhor, sal_base;
+  double ep1,ep2,ep3,ep4,ep5;
+  double ex1,ex2,ex3,ex4,ex5;
+  double sr1,sr2,sf1,sf2,tf1,tf2,tf,sf;
 
-  PetscReal a   = -0.0575;                // Foldvik&Kvinge (1974) [°C/psu]
-  PetscReal b   =  0.0901;                // [°C]
-  PetscReal c   =  7.61e-4;               // [°C/m]
+  double a   = -0.0575;                // Foldvik&Kvinge (1974) [°C/psu]
+  double b   =  0.0901;                // [°C]
+  double c   =  7.61e-4;               // [°C/m]
 
-  PetscReal tob=  -20.;                   //temperature at the ice surface
-  PetscReal cpw =  4180.0;                //Barnier et al. (1995)
-  PetscReal lhf =  3.33e+5;               //latent heat of fusion
-  PetscReal atk =  273.15;                //0 deg C in Kelvin
+  double tob=  -20.;                   //temperature at the ice surface
+  double cpw =  4180.0;                //Barnier et al. (1995)
+  double lhf =  3.33e+5;               //latent heat of fusion
+  double atk =  273.15;                //0 deg C in Kelvin
   //FIXME: can use PISMs surface temp for tob?
-  PetscReal cpi =  152.5+7.122*(atk+tob); //Paterson:"The Physics of Glaciers"
+  double cpi =  152.5+7.122*(atk+tob); //Paterson:"The Physics of Glaciers"
 
   // Prescribe the turbulent heat and salt transfer coeff. GAT and GAS
-  PetscReal gat  = 1.00e-4;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
-  PetscReal gas  = 5.05e-7;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
+  double gat  = 1.00e-4;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
+  double gas  = 5.05e-7;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
 
   // calculate salinity and in situ temperature of ice/ocean boundary layer,
   // by solving a quadratic equation in salinity (sf).
@@ -248,7 +246,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
 
   // sf is solution of quadratic equation in salinity.
   // salinities < 0 psu are not defined, therefore pick the positive of the two solutions.
-  if(sf1 > 0.){
+  if(sf1 > 0.) {
     tf = tf1;
     sf = sf1;
   }else{
@@ -279,7 +277,8 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
 }
 
 
-PetscErrorCode POGivenTH::adiabatic_temperature_gradient(PetscReal salinity,PetscReal temp_insitu, PetscReal pressure, PetscReal &adlprt_out){
+PetscErrorCode POGivenTH::adiabatic_temperature_gradient(double salinity, double temp_insitu,
+                                                         double pressure, double &adlprt_out) {
 
   // calculates the adiabatic temperature gradient  in (K Dbar^-1) from
   // salinity (psu), in situ temperature (degC) and in situ pressure (dbar)
@@ -289,13 +288,13 @@ PetscErrorCode POGivenTH::adiabatic_temperature_gradient(PetscReal salinity,Pets
   //     temp_insitu   =    40.0 degC
   //         pressure  = 10000.000 dbar
 
-  PetscReal ds;
-  const PetscReal s0 = 35.0;
-  const PetscReal a0 = 3.5803e-5,   a1 = 8.5258e-6,   a2 = -6.8360e-8, a3 = 6.6228e-10;
-  const PetscReal b0 = 1.8932e-6,   b1 = -4.2393e-8;
-  const PetscReal c0 = 1.8741e-8,   c1 = -6.7795e-10, c2 = 8.7330e-12, c3 = -5.4481e-14;
-  const PetscReal d0 = -1.1351e-10, d1 = 2.7759e-12;
-  const PetscReal e0 = -4.6206e-13, e1 = 1.8676e-14,  e2 = -2.1687e-16;
+  double ds;
+  const double s0 = 35.0;
+  const double a0 = 3.5803e-5,   a1 = 8.5258e-6,   a2 = -6.8360e-8, a3 = 6.6228e-10;
+  const double b0 = 1.8932e-6,   b1 = -4.2393e-8;
+  const double c0 = 1.8741e-8,   c1 = -6.7795e-10, c2 = 8.7330e-12, c3 = -5.4481e-14;
+  const double d0 = -1.1351e-10, d1 = 2.7759e-12;
+  const double e0 = -4.6206e-13, e1 = 1.8676e-14,  e2 = -2.1687e-16;
 
   ds = salinity-s0;
   adlprt_out = (( ( (e2*temp_insitu + e1)*temp_insitu + e0 )*pressure + ( (d1*temp_insitu + d0)*ds
@@ -305,8 +304,8 @@ PetscErrorCode POGivenTH::adiabatic_temperature_gradient(PetscReal salinity,Pets
   return 0;
 }
 
-PetscErrorCode POGivenTH::potential_temperature(PetscReal salinity,PetscReal temp_insitu,PetscReal pressure,
-                                                PetscReal reference_pressure, PetscReal& thetao){
+PetscErrorCode POGivenTH::potential_temperature(double salinity, double temp_insitu, double pressure,
+                                                double reference_pressure, double& thetao) {
 
   // Calculates the potential temperature (thetao) from
   // in situ temperature, salinity, insitu pressure and reference pressure
@@ -318,11 +317,11 @@ PetscErrorCode POGivenTH::potential_temperature(PetscReal salinity,PetscReal tem
   //        pressure           = 10000.0 dbar
   //        reference_pressure =     0.0 dbar
 
-  PetscReal ct2  = 0.29289322 , ct3  = 1.707106781;
-  PetscReal cq2a = 0.58578644 , cq2b = 0.121320344;
-  PetscReal cq3a = 3.414213562, cq3b = -4.121320344;
+  double ct2  = 0.29289322 , ct3  = 1.707106781;
+  double cq2a = 0.58578644 , cq2b = 0.121320344;
+  double cq3a = 3.414213562, cq3b = -4.121320344;
 
-  PetscReal p,t,dp,dt,q, dd;
+  double p,t,dp,dt,q, dd;
 
   p  = pressure;
   t  = temp_insitu;
@@ -348,25 +347,27 @@ PetscErrorCode POGivenTH::potential_temperature(PetscReal salinity,PetscReal tem
   return 0;
 }
 
-PetscErrorCode POGivenTH::insitu_temperature(PetscReal salinity, PetscReal thetao,
-                                                  PetscReal pressure,PetscReal reference_pressure,
-                                                  PetscReal &temp_insitu_out){
+PetscErrorCode POGivenTH::insitu_temperature(double salinity, double thetao,
+                                             double pressure, double reference_pressure,
+                                             double &temp_insitu_out) {
 
   // Calculates the in situ temperature from salinity, potential temperature and pressure
   // by iteration.
 
-  PetscReal tpmd = 0.001, epsi = 0., tin, pt1, ptd;
+  double tpmd = 0.001, epsi = 0., tin, pt1, ptd;
 
-  for (PetscInt iter=0; iter<101; ++iter){
+  for (PetscInt iter=0; iter<101; ++iter) {
     tin  = thetao+epsi;
     potential_temperature(salinity,tin,pressure,reference_pressure,pt1);
     ptd  = pt1-thetao;
-    if(PetscAbs(ptd) < tpmd){
+    if(PetscAbs(ptd) < tpmd) {
       break;
     }else{
       epsi = epsi-ptd;
     }
-    if(iter==100){ SETERRQ(grid.com, 1, "in situ temperature calculation not converging."); }
+    if(iter==100) {
+      SETERRQ(grid.com, 1, "in situ temperature calculation not converging.");
+    }
   }
 
   temp_insitu_out = tin;

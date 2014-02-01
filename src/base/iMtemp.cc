@@ -142,13 +142,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     bool viewOneColumn;
     ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-    const PetscScalar
-      ice_rho   = config.get("ice_density"),
-      ice_k     = config.get("ice_thermal_conductivity"),
-      ice_c     = config.get("ice_specific_heat_capacity"),
-      L         = config.get("water_latent_heat_fusion"),
+    const double
+      ice_density        = config.get("ice_density"),
+      ice_k              = config.get("ice_thermal_conductivity"),
+      ice_c              = config.get("ice_specific_heat_capacity"),
+      L                  = config.get("water_latent_heat_fusion"),
       melting_point_temp = config.get("water_melting_point_temperature"),
-      beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity");
+      beta_CC_grad       = config.get("beta_CC") * ice_density * config.get("standard_gravity");
 
     const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
 
@@ -157,7 +157,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     system.dy              = grid.dy;
     system.dtTemp          = dt_TempAge; // same time step for temp and age, currently
     system.dzEQ            = fdz;
-    system.ice_rho         = ice_rho;
+    system.ice_rho         = ice_density;
     system.ice_k           = ice_k;
     system.ice_c_p         = ice_c;
 
@@ -265,7 +265,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           // go through column and find appropriate lambda for BOMBPROOF
           PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
           for (PetscInt k = 1; k < ks; k++) {
-            const PetscScalar denom = (PetscAbs(system.w[k]) + epsilon) * ice_rho * ice_c * fdz;
+            const PetscScalar denom = (PetscAbs(system.w[k]) + epsilon) * ice_density * ice_c * fdz;
             lambda = PetscMin(lambda, 2.0 * ice_k / denom);
           }
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
@@ -306,7 +306,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k] - Tpmp; // always positive
-              excessToFromBasalMeltLayer(ice_rho, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_density, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
               // Texcess  will always come back zero here; ignore it
             } else {
               Tnew[k] = x[k];
@@ -335,9 +335,9 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised
               // above Tpmp
-              excessToFromBasalMeltLayer(ice_rho, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
             } else {
-              excessToFromBasalMeltLayer(ice_rho, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
             }
             Tnew[0] = Tpmp + Texcess;
             if (Tnew[0] > (Tpmp + 0.00001)) {
