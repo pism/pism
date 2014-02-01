@@ -1,4 +1,4 @@
-Ross prognostic flow model example
+Ross ice shelf model (prognostic eigencalving mode)
 =================
 
 This example demonstrates regional evolutionary modeling of ice shelves.
