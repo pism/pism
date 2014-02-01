@@ -42,7 +42,7 @@ PetscErrorCode POCache::allocate_POCache() {
                                           "ice mass flux from ice shelf base"
                                           " (positive flux is loss from ice shelf)",
                                           "kg m-2 s-1", ""); CHKERRQ(ierr);
-  ierr = m_shelf_base_mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = m_shelf_base_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
   ierr = m_shelf_base_temperature.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
