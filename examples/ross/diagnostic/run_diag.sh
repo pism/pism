@@ -29,7 +29,5 @@ cmd="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My
 echo "running command:"
 echo
 echo "$cmd"
-echo
 $cmd
-echo
-echo "... done"
+
