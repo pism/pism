@@ -60,14 +60,14 @@ Results are better on finer grids, especially at small times, because the input 
 
 As part of the EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} successfully validated early-1990s ice shelf numerical models using velocity data for the Ross ice shelf.  The data were from the RIGGS survey \cite{RIGGS2}, acquired in the period 1973--1978 and measured at a few hundred locations in a grid across the shelf.  Substantial modelling developments followed EISMINT-Ross, including inverse modeling to recover depth-averaged viscosity \cite{RommelaereMacAyeal} and parameter-sensitivity studies \cite{HumbertGreveHutter}.  Previous PISM versions set up the EISMINT-Ross flow model and performed the diagnostic computation, with RIGGS data for validation.
 
-However, availability of rich new data sets for ice sheet modeling, including the ALBMAP v1 \cite{LeBrocqetal2010} ice sheet geometry, bedrock, and climate data set, and the radar-derived (InSAR) MEaSUREs Antarctica Velocity Map \cite{Rignotetal2011}, allows us to use more complete, recent, and higher-resolution data for the same basic job.  Furthermore we extend the diagnostic ice shelf calculation to time-evolving (``prognostic'') cases, using the eigencalving \cite{Levermannetal2012} and/or fracture-density-tracking \cite{AlbrechtLevermann2012} mechanisms; see below.
+However, availability of rich new data sets for ice sheet modeling, including the ALBMAP v1 \cite{LeBrocqetal2010} ice sheet geometry, bedrock, and climate data set, and the radar-derived (InSAR) MEaSUREs Antarctica Velocity Map \cite{Rignotetal2011}, allows us to use more complete, recent, and higher-resolution data for the same basic job.  Furthermore one can extend the diagnostic Ross ice shelf calculation both to other ice shelves around Antarctica and to time-evolving (``prognostic'') cases using the eigencalving \cite{Levermannetal2012} mechanisms.
 
 The scripts in this subsection are found in directory \texttt{examples/ross/}.  In summary, the script \texttt{preprocess.py} downloads data and builds a NetCDF input file for PISM.  For the diagnostic computation we document first, the script \texttt{run_diag.sh} (in subdirectory \texttt{examples/ross/diagnostic/}) runs PISM.  The script \texttt{plot.py} shows a comparison of observations and model results, as in Figure \ref{fig:rosspython}.
-
 
 \subsubsection*{Preprocessing the data}  The script \texttt{preprocess.py} downloads ALBMAP and MEaSUREs NetCDF files using \texttt{wget}; these files total around 100 Mb.  Then it uses NCO to cut out the relevant portion of the grid and CDO to conservatively-interpolate the high-resolution (500 m) velocity data onto the coarser (5 km) geometry grid used in ALBMAP.  The script \texttt{nc2cdo.py} from directory \texttt{util/}, prepares the NetCDF file for the application of CDO, which requires complete projection information.  Do
 
 \begin{verbatim}
+$ cd examples/ross/
 $ ./preprocess.py
 \end{verbatim}%$
 
@@ -130,13 +130,14 @@ $ ../plot.py diag_Mx211.nc
 
 Simply choose a different rectangular domain, within the area covered by the whole-Antarctic data-sets used here, at the preprocessing stage.  In particular you should modify the lines ``\texttt{ncks -O -d x1,439,649 -d y1,250,460 ...}'' (for ALBMAP data) and ``\texttt{ncks -d x,2200,3700 -d y,3500,4700 ...}'' (for MEaSUREs velocity data) in the script \texttt{examples/ross/preprocess.py}.
 
-\subsubsection*{Prognostic modelling of the ice shelf geometry and velocity, using eigencalving}  Next we summarize how you can create an evolving-geometry model of the Ross ice shelf with constant-in-time inflow across the fixed grounding line.  See \texttt{README.md} and \texttt{run_prog.sh} in \texttt{examples/ross/prognostic/}.  This example demonstrates the \txtopt{calving eigen_calving} model for a moving calving front \cite{Levermannetal2012}.
+\subsubsection*{Prognostic modelling using eigencalving}  Next we summarize how you can create an evolving-geometry model of the Ross ice shelf with constant-in-time inflow across the fixed grounding line.  See \texttt{README.md} and \texttt{run_prog.sh} in \texttt{examples/ross/prognostic/}.  This example also demonstrates the \txtopt{calving eigen_calving} model for a moving calving front \cite{Levermannetal2012}.
 
-Start by running \texttt{preprocess.py} in \texttt{examples/ross/} as described above.  If you have already done the diagnostic example above, then you have already done this preprocessing stage.
+Start by running \texttt{preprocess.py} in \texttt{examples/ross/} as described above.  If you have already done the diagnostic example above, then this stage is complete.
 
 Then change to the \texttt{prognostic/} directory and run the default example:
 
 \begin{verbatim}
+$ cd examples/ross/prognostic/
 $ ./run_prog.sh 2 211 0.6 100
 \end{verbatim}%$    
 
@@ -154,13 +155,23 @@ pismr -i startfile_Mx211.nc -surface given -stress_balance ssa \
     -ssafd_pc_type asm -ssafd_sub_pc_type lu
 \end{verbatim}%$    
 
-A few of these options are different from those used in the diagnostic case.  First, while the command \texttt{-pik} is the same as before, now its equivalent \texttt{-cfbc -kill_icebergs -part_grid -part_redist} is all important.  As the calving front evolves (i.e.~regardless of the calving law choices), option \texttt{-part_grid} correctly moves the calving front only when a cell at the front is ``full'' of ice flowing into it.  The option \texttt{-kill_icebergs} is essential to maintain well-posedness of the SSA velocity problem at each time step.  See section \ref{sec:pism-pik}.
+A few of these options are different from those used in the diagnostic case.  First, while the command \texttt{-pik} is the same as before, now each part of its expansion, namely \texttt{-cfbc -kill_icebergs -part_grid -part_redist}, is important.  As the calving front evolves (i.e.~regardless of the calving law choices), option \texttt{-part_grid} moves the calving front by one grid cell only when the cell is full of the ice flowing into it; see \cite{Albrechtetal2011}.  The option \texttt{-kill_icebergs} is essential to maintain well-posedness of the SSA velocity problem at each time step \cite{Winkelmannetal2011}.  See section \ref{sec:pism-pik}.
 
-Option combination \texttt{-calving eigen_calving,thickness_calving -eigen_calving_K 1e17 -thickness_calving_threshold 50.0} specifies that ice at the calving front will be removed if either a criterion on the product of principal stresses is satisfied \cite{Levermannetal2012}, or if the ice thickness goes below the given threshold of 50 meters.  See subsection \ref{sec:calving}.
+Option combination
+\begin{verbatim}
+    -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
+    -thickness_calving_threshold 50.0
+\end{verbatim}%$
+specifies that ice at the calving front will be removed if either a criterion on the product of principal stresses is satisfied \cite{Levermannetal2012}, namely \texttt{eigen_calving} with the given constant $K$, or if the ice thickness goes below the given threshold of 50 meters.  See subsection \ref{sec:calving}.
 
-FIXME comment on STRONGKSP options
+There is also an extended option combination
+\begin{verbatim}
+    -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
+    -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
+\end{verbatim}%$
+which tells the PETSc KSP object used by the SSA solver to solve in the most robust, though not necessarily fastest, way.  In particular, the linear problem is spread across processors using an additive Schwarz domain decomposition preconditioning method (\texttt{pc_type asm}) \cite{Smithetal1996}, along with the standard \texttt{gmres} KSP solver, and then on each processor the local part of the linear system is solved by a direct method by the preconditioner (\texttt{sub_pc_type lu}).  These choices seem to be effective for solving SSA stress balances on the complicated-geometry domains which arise from nontrivial calving laws.
 
-FIXME \textbf{Evolving fracture density.}  See \texttt{README.md}, \texttt{preprocess_frac.py}, and \texttt{run_frac.sh} in directory \texttt{examples/ross/fracture_density/}.  This example demonstrates the fracture density transport model in \cite{AlbrechtLevermann2012}.
+%FIXME \textbf{Evolving fracture density.}  See \texttt{README.md}, \texttt{preprocess_frac.py}, and \texttt{run_frac.sh} in directory \texttt{examples/ross/fracture_density/}.  This example demonstrates the fracture density transport model in \cite{AlbrechtLevermann2012}.
 
 
 %%% Local Variables:

@@ -44,12 +44,11 @@ This will download the data sets `ALBMAPv1.nc.zip` and `antarctica_ice_velocity.
 
 Now, depending on your intent you will choose among the three subdirectories:
 
-* `diagnostic/`: Use PISM's SSA stress balance to compute flow velocity from geometry, ice hardness (a function of temperature), and observed velocities at the grounding line as boundary conditions.  This case is documented in subsection 12.2 of the PISM User's Manual.  
-in the current directory and then see `README.m` and `run_diag.sh` in the subdirectory.
+* `diagnostic/`: Use PISM's SSA stress balance to compute flow velocity from geometry, ice hardness (a function of temperature), and observed velocities at the grounding line as boundary conditions.  This case is documented in subsection 12.2 of the PISM User's Manual.  See `README.m` and `run_diag.sh` in the subdirectory.
 
 * `prognostic/`: Use PISM's SSA stress balance to do a time-stepping run, which computes evolcing flow velocity and evolving ice thickness.  There is an evolving calving front using the eigencalving parameterization (Levermann et al., 2012).  See `README.m` and `run_prog.sh` in the subdirectory.
 
-* `fracture/`: Use PISM's SSA stress balance to do a prognostic run, adding feedback of evolving fracture density on flow, with a prescribed calving front (`-calving ocean_kill`).  See `README.m` and `run_frac.sh` in the subdirectory.  See `README.m` and `run_frac.sh` in the subdirectory.
+* `fracture/`: Use PISM's SSA stress balance to do a prognostic run, adding feedback of evolving fracture density on flow, but with a prescribed calving front (`-calving ocean_kill`).  See `README.m` and `run_frac.sh` in the subdirectory.
 
 For each of the three examples an output `.nc` file is produced.  View it with `ncview` or other NetCDF viewer.  If python tools `numpy`, `matplotlib`, and `netcdf4-python` are present, do this
 

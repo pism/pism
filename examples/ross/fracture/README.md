@@ -1,15 +1,17 @@
-Ross prognostic flow model example with applied fracture softening
+Ross ice shelf model (prognostic fracture softening mode)
 =================
 
-This example demonstrates regional modeling of ice shelf evolution with applied calculation of fracture density and respective macroscopic softening.
+This example demonstrates a model of ice shelf evolution with a calculation of
+fracture density and macroscopic softening.  This example uses
+`-calving ocean_kill` calving to hold the calving front in a fixed location;
+compare the example in `examples/ross/prognostic/`.
 
-This example uses `-calving ocean_kill` calving to hold the calving front in a fixed location.  Compare the example in `examples/ross/prognostic/`.
+The user should probably run the example in `../diagnostic/` before this one,
+and read the documentation for diagnostic example in section 12.2 of the PISM
+User's Manual.
 
-It is recommended that you run `preprocess.py prog` in the parent directory.
-
-Now run the script for simulations. Modify fracture options in the runscript or as additional options:
+As in the diagnostic example, start by running `preprocess.py` in the parent
+directory.  Then do
 
     $ ./run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1 1.0
-
-    $ ncview ex-Ross_result_frac_Mx211_yr-500.nc        # view "movie" of evolving fracture_density,thk,csurf
 

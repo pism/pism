@@ -1,8 +1,8 @@
 Ross ice shelf model (prognostic eigencalving mode)
 =================
 
-This example demonstrates regional prognostic (geometry-evolving) modeling of
-ice shelves using the `-calving eigen_calving,thickness_calving` combination.
+This example demonstrates prognostic (geometry-evolving) modeling of an
+ice shelf using the `-calving eigen_calving,thickness_calving` combination.
 
 The user should probably run the example in `../diagnostic/` before this one,
 and read the documentation for diagnostic example in section 12.2 of the PISM
@@ -24,7 +24,7 @@ minutes.  It starts with a bootstrapping stage which does a `y 0` run and then
 generates `startfile_Mx211.nc`.  It then re-initializes to start the prognostic
 run itself.
 
-Note `run_prog.sh` accepts four arguments: `run_diag.sh N Mx E Y` does
+Note `run_prog.sh` accepts four arguments: `run_prog.sh N Mx E Y` does
 a run with `N` MPI processes, a `Mx`x`Mx` grid, option `-ssa_e E`, and duration
 `-y Y`.
 
