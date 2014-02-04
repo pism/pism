@@ -388,7 +388,6 @@ int main(int argc,char **argv)
 
   SNES                   snes;                 /* nonlinear solver */
   Vec                    Hu,r;                 /* solution, residual vectors */
-  Mat                    J;                    /* Jacobian matrix */
   AppCtx                 user;                 /* user-defined work context */
   PetscInt               its, i, tmpxs, tmpxm; /* iteration count, index, etc. */
   PetscReal              tmp1, tmp2, tmp3, tmp4, tmp5,
@@ -516,10 +515,6 @@ int main(int argc,char **argv)
   ierr = DMDASetLocalFunction(user.da,(DMDALocalFunction1)scshell);CHKERRQ(ierr);
   ierr = DMDASetLocalJacobian(user.da,(DMDALocalFunction1)BodJacobianMatrixLocal);CHKERRQ(ierr);
 
-
-  /* setting up a matrix is only actually needed for -snes_fd case */
-  ierr = DMGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
-
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
   /* the the Bodvardsson (1955) exact solution allows setting M(x), B(x), beta(x), T(xc) */
@@ -575,8 +570,6 @@ int main(int argc,char **argv)
   ierr = VecDestroy(&(user.M));CHKERRQ(ierr);
   ierr = VecDestroy(&(user.Bstag));CHKERRQ(ierr);
   ierr = VecDestroy(&(user.beta));CHKERRQ(ierr);
-
-  ierr = MatDestroy(&J); CHKERRQ(ierr);
 
   ierr = SNESDestroy(&snes);CHKERRQ(ierr);
 
