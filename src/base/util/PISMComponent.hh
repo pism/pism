@@ -142,7 +142,7 @@ public:
 
   //! \brief Reports the maximum time-step the model can take at t. Sets
   //! dt to -1 if any time-step is OK.
-  virtual PetscErrorCode max_timestep(PetscReal t, PetscReal &dt, bool &restrict)
+  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict)
   {
     (void)t;
     dt = -1;
@@ -193,10 +193,10 @@ public:
    *
    * @return 0 on success
    */
-  virtual PetscErrorCode update(PetscReal t, PetscReal dt) = 0;
+  virtual PetscErrorCode update(double t, double dt) = 0;
 
 protected:
-  PetscReal m_t,			//!< Last time used as an argument for the update() method.
+  double m_t,			//!< Last time used as an argument for the update() method.
     m_dt;				//!< Last time-step used as an argument for the update() method.
 };
 
@@ -253,7 +253,7 @@ public:
     }
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
@@ -264,7 +264,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  virtual PetscErrorCode update(double my_t, double my_dt)
   {
     Model::m_t = my_t;
     Model::m_dt = my_dt;

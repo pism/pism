@@ -54,7 +54,7 @@ public:
 
   //! \brief Set the sea level used to check for floatation. (Units: meters,
   //! relative to the geoid.)
-  void set_sea_level_elevation(PetscReal new_sea_level)
+  void set_sea_level_elevation(double new_sea_level)
   { sea_level = new_sea_level; }
 
   virtual PetscErrorCode update(bool fast,
@@ -84,7 +84,7 @@ public:
   // helpers:
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt /*old_Mz*/)
+  virtual PetscErrorCode extend_the_grid(int /*old_Mz*/)
   { return 0; }
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(std::string &result)
@@ -98,7 +98,7 @@ public:
 protected:
   virtual PetscErrorCode allocate();
 
-  PetscReal sea_level;
+  double sea_level;
   PISMVars *variables;
   IceBasalResistancePlasticLaw *basal_sliding_law;
   IceFlowLaw *flow_law;

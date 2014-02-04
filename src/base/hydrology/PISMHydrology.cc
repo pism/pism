@@ -64,7 +64,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   std::string itbfilename;  // itb = input_to_bed
   bool itbfile_set, itbperiod_set, itbreference_set;
   bool i_set, bootstrap;
-  PetscReal itbperiod_years = 0.0, itbreference_year = 0.0;
+  double itbperiod_years = 0.0, itbreference_year = 0.0;
 
   ierr = verbPrintf(4, grid.com,
     "entering PISMHydrology::init() ...\n"); CHKERRQ(ierr);
@@ -243,10 +243,10 @@ Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
 PetscErrorCode PISMHydrology::check_Wtil_bounds() {
   PetscErrorCode ierr;
-  PetscReal tillwat_max = config.get("hydrology_tillwat_max");
+  double tillwat_max = config.get("hydrology_tillwat_max");
   ierr = Wtil.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (Wtil(i,j) < 0.0) {
         PetscPrintf(grid.com,
            "PISMHydrology ERROR: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
@@ -283,10 +283,10 @@ may be called many times per IceModel time step.  See update() method
 in derived classes of PISMHydrology.
  */
 PetscErrorCode PISMHydrology::get_input_rate(
-                  PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result) {
+                  double hydro_t, double hydro_dt, IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
-  PetscReal const_bmelt = config.get("hydrology_const_bmelt");
+  double const_bmelt = config.get("hydrology_const_bmelt");
 
   if (inputtobed != NULL) {
     ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
@@ -297,8 +297,8 @@ PetscErrorCode PISMHydrology::get_input_rate(
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (m.icy(i, j)) {
         result(i,j) = (use_const) ? const_bmelt : (*bmelt)(i,j);
         if (inputtobed != NULL) {

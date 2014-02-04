@@ -37,14 +37,14 @@ PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::stri
                                     std::set<std::string>& result, bool &flag);
 
 PetscErrorCode PISMOptionsInt(std::string option, std::string text,
-			      PetscInt &result, bool &is_set);
+			      int &result, bool &is_set);
 PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
-				   std::vector<PetscInt> &result, bool &is_set);
+				   std::vector<int> &result, bool &is_set);
 
 PetscErrorCode PISMOptionsReal(std::string option, std::string text,
-			       PetscReal &result, bool &is_set);
+			       double &result, bool &is_set);
 PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
-				    std::vector<PetscReal> &result, bool &is_set);
+				    std::vector<double> &result, bool &is_set);
 
 PetscErrorCode PISMOptionsIsSet(std::string option, bool &result);
 PetscErrorCode PISMOptionsIsSet(std::string option, std::string descr, bool &result);

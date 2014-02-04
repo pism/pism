@@ -181,10 +181,10 @@ bool PISMUnit::is_valid() const {
 PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to) {
   PetscErrorCode ierr;
 
-  PetscInt data_size = 0;
+  int data_size = 0;
   ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
 
-  PetscScalar *data = NULL;
+  double *data = NULL;
   ierr = VecGetArray(v, &data); CHKERRQ(ierr);
   ierr = convert_doubles(data, data_size, from, to); CHKERRQ(ierr);
   ierr = VecRestoreArray(v, &data); CHKERRQ(ierr);

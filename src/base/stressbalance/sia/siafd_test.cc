@@ -41,45 +41,45 @@ PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
                                   IceModelVec3 &strain_heating,
                                   IceModelVec2S &thickness,
                                   IceGrid &grid,
-                                  PetscScalar &gmax_strain_heating_err,
-                                  PetscScalar &gav_strain_heating_err) {
+                                  double &gmax_strain_heating_err,
+                                  double &gav_strain_heating_err) {
 
   PetscErrorCode ierr;
-  PetscScalar    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
-  const PetscInt Mz = grid.Mz;
+  double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
+  const int Mz = grid.Mz;
 
-  const PetscScalar LforFG = 750000; // m
+  const double LforFG = 750000; // m
 
-  const PetscScalar
+  const double
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  PetscScalar   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
-  PetscScalar   junk0, junk1;
+  double   *dummy1, *dummy2, *dummy3, *dummy4, *strain_heating_exact;
+  double   junk0, junk1;
 
-  strain_heating_exact = new PetscScalar[Mz];
-  dummy1 = new PetscScalar[Mz];  dummy2 = new PetscScalar[Mz];
-  dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
+  strain_heating_exact = new double[Mz];
+  dummy1 = new double[Mz];  dummy2 = new double[Mz];
+  dummy3 = new double[Mz];  dummy4 = new double[Mz];
 
-  PetscScalar *strain_heating_ij;
+  double *strain_heating_ij;
 
   ierr = thickness.begin_access(); CHKERRQ(ierr);
   ierr = strain_heating.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar xx = grid.x[i], yy = grid.y[j],
+  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+      double xx = grid.x[i], yy = grid.y[j],
         r = sqrt(PetscSqr(xx) + PetscSqr(yy));
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
                                                 // and not at central singularity
         bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                   &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
 
-        for (PetscInt k = 0; k < Mz; k++)
+        for (int k = 0; k < Mz; k++)
           strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
-        const PetscInt ks = grid.kBelowHeight(thickness(i,j));
+        const int ks = grid.kBelowHeight(thickness(i,j));
         ierr = strain_heating.getInternalColumn(i,j,&strain_heating_ij); CHKERRQ(ierr);
-        for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
-          const PetscScalar _strain_heating_error = PetscAbs(strain_heating_ij[k] - strain_heating_exact[k]);
+        for (int k = 0; k < ks; k++) {  // only eval error if below num surface
+          const double _strain_heating_error = PetscAbs(strain_heating_ij[k] - strain_heating_exact[k]);
           max_strain_heating_error = PetscMax(max_strain_heating_error,_strain_heating_error);
           avcount += 1.0;
           av_strain_heating_error += _strain_heating_error;
@@ -95,7 +95,7 @@ PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
 
   ierr = PISMGlobalMax(&max_strain_heating_error, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalSum(&av_strain_heating_error, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
-  PetscScalar  gavcount;
+  double  gavcount;
   ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
@@ -107,40 +107,40 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
                                             IceModelVec3 &u3,
                                             IceModelVec3 &v3,
                                             IceModelVec3 &w3,
-                                            PetscScalar &gmaxUerr,
-                                            PetscScalar &gavUerr,
-                                            PetscScalar &gmaxWerr,
-                                            PetscScalar &gavWerr) {
+                                            double &gmaxUerr,
+                                            double &gavUerr,
+                                            double &gmaxWerr,
+                                            double &gavWerr) {
 
   PetscErrorCode ierr;
-  PetscScalar    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
+  double    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
 
-  const PetscScalar LforFG = 750000; // m
+  const double LforFG = 750000; // m
 
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = w3.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar xx = grid.x[i], yy = grid.y[j],
+  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+      double xx = grid.x[i], yy = grid.y[j],
         r = sqrt(PetscSqr(xx) + PetscSqr(yy));
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
                                                 // and not at central singularity
-        PetscScalar radialUex,wex;
-        PetscScalar dummy0,dummy1,dummy2,dummy3,dummy4;
+        double radialUex,wex;
+        double dummy0,dummy1,dummy2,dummy3,dummy4;
         bothexact(0.0,r,&(ice_thickness(i,j)),1,0.0,
                   &dummy0,&dummy1,&dummy2,&radialUex,&wex,&dummy3,&dummy4);
 
-        const PetscScalar uex = (xx/r) * radialUex;
-        const PetscScalar vex = (yy/r) * radialUex;
+        const double uex = (xx/r) * radialUex;
+        const double vex = (yy/r) * radialUex;
         // note that because getValZ does linear interpolation and ice_thickness(i,j) is not exactly at
         // a grid point, this causes nonzero errors even with option -eo
-        const PetscScalar Uerr = sqrt(PetscSqr(u3.getValZ(i,j,ice_thickness(i,j)) - uex)
+        const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,ice_thickness(i,j)) - uex)
                                       + PetscSqr(v3.getValZ(i,j,ice_thickness(i,j)) - vex));
         maxUerr = PetscMax(maxUerr,Uerr);
         avUerr += Uerr;
-        const PetscScalar Werr = PetscAbs(w3.getValZ(i,j,ice_thickness(i,j)) - wex);
+        const double Werr = PetscAbs(w3.getValZ(i,j,ice_thickness(i,j)) - wex);
         maxWerr = PetscMax(maxWerr,Werr);
         avWerr += Werr;
       }
@@ -172,14 +172,14 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
   ierr = enthalpy.begin_access(); CHKERRQ(ierr);
   ierr = thickness.begin_access(); CHKERRQ(ierr);
 
-  PetscScalar *T_ij, *E_ij; // columns of these values
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  double *T_ij, *E_ij; // columns of these values
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = temperature.getInternalColumn(i,j,&T_ij); CHKERRQ(ierr);
       ierr = enthalpy.getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
 
       for (unsigned int k=0; k<grid.Mz; ++k) {
-        PetscReal depth = thickness(i,j) - grid.zlevels[k];
+        double depth = thickness(i,j) - grid.zlevels[k];
         ierr = EC.getEnthPermissive(T_ij[k], 0.0,
                                     EC.getPressureFromDepth(depth),
                                     E_ij[k]); CHKERRQ(ierr);
@@ -206,33 +206,33 @@ PetscErrorCode setInitStateF(IceGrid &grid,
                              IceModelVec2S *thickness,
                              IceModelVec3 *enthalpy) {
   PetscErrorCode ierr;
-  PetscInt        Mz=grid.Mz;
-  PetscScalar     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
+  int        Mz=grid.Mz;
+  double     *dummy1, *dummy2, *dummy3, *dummy4, *dummy5;
 
-  PetscReal ST = 1.67e-5,
+  double ST = 1.67e-5,
     Tmin = 223.15,  // K
     LforFG = 750000; // m
 
-  dummy1=new PetscScalar[Mz];  dummy2=new PetscScalar[Mz];
-  dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
-  dummy5=new PetscScalar[Mz];
+  dummy1=new double[Mz];  dummy2=new double[Mz];
+  dummy3=new double[Mz];  dummy4=new double[Mz];
+  dummy5=new double[Mz];
 
   ierr = bed->set(0); CHKERRQ(ierr);
   ierr = mask->set(MASK_GROUNDED); CHKERRQ(ierr);
 
-  PetscScalar *T;
-  T = new PetscScalar[grid.Mz];
+  double *T;
+  T = new double[grid.Mz];
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r = grid.radius(i, j),
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double r = grid.radius(i, j),
         Ts = Tmin + ST * r;
       if (r > LforFG - 1.0) { // if (essentially) outside of sheet
         (*thickness)(i, j) = 0.0;
-        for (PetscInt k = 0; k < Mz; k++)
+        for (int k = 0; k < Mz; k++)
           T[k]=Ts;
       } else {
         r = PetscMax(r, 1.0); // avoid singularity at origin
@@ -270,7 +270,7 @@ PetscErrorCode reportErrors(const PISMConfig &config,
   PetscErrorCode ierr;
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
-  PetscScalar max_strain_heating_error, av_strain_heating_error;
+  double max_strain_heating_error, av_strain_heating_error;
   ierr = compute_strain_heating_errors(config, *strain_heating, *thickness,
                             grid,
                             max_strain_heating_error, av_strain_heating_error); CHKERRQ(ierr);
@@ -281,7 +281,7 @@ PetscErrorCode reportErrors(const PISMConfig &config,
                     max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6); CHKERRQ(ierr);
 
   // surface velocity errors if exact values are available; reported in m/year
-  PetscScalar maxUerr, avUerr, maxWerr, avWerr;
+  double maxUerr, avUerr, maxWerr, avWerr;
   ierr = computeSurfaceVelocityErrors(grid, *thickness,
                                       *u_sia,
                                       *v_sia,
@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2Int vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
-    const PetscInt WIDE_STENCIL = grid.max_stencil_width;
+    const int WIDE_STENCIL = grid.max_stencil_width;
 
     PISMVars vars;
 

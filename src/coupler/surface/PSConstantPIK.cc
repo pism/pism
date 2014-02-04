@@ -97,7 +97,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
+PetscErrorCode PSConstantPIK::update(double my_t, double my_dt)
 {
   PetscErrorCode ierr;
 
@@ -111,8 +111,8 @@ PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
   ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
     }
   }

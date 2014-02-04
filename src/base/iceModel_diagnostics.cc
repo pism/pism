@@ -296,7 +296,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
   // set metadata:
   vars[0].init_2d("hardav", grid);
 
-  const PetscScalar power = 1.0 / grid.config.get("Glen_exponent");
+  const double power = 1.0 / grid.config.get("Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 
@@ -310,8 +310,8 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
 //! \brief Computes vertically-averaged ice hardness.
 PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  const PetscScalar fillval = grid.config.get("fill_value");
-  PetscScalar *Eij; // columns of enthalpy values
+  const double fillval = grid.config.get("fill_value");
+  double *Eij; // columns of enthalpy values
 
   IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
   if (flow_law == NULL) {
@@ -329,10 +329,10 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = model->Enth3.getInternalColumn(i,j,&Eij); CHKERRQ(ierr);
-      const PetscScalar H = model->ice_thickness(i,j);
+      const double H = model->ice_thickness(i,j);
       if (H > 0.0) {
         (*result)(i,j) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
                                                      &grid.zlevels[0], Eij);
@@ -368,8 +368,8 @@ PetscErrorCode IceModel_rank::compute(IceModelVec* &output) {
   result->metadata() = vars[0];
 
   ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i)
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j)
       (*result)(i,j) = grid.rank;
   ierr = result->end_access();
 
@@ -426,19 +426,19 @@ PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
   ierr = result->create(grid, "proc_ice_area", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  PetscInt ice_filled_cells = 0;
+  int ice_filled_cells = 0;
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i)
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j)
       if ((*thickness)(i,j) > 0) {
         ice_filled_cells += 1;
       }
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
   ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i)
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j)
       (*result)(i,j) = ice_filled_cells;
   ierr = result->end_access();
 
@@ -476,16 +476,16 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
   enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
-  PetscScalar *Tij, *Enthij; // columns of these values
+  double *Tij, *Enthij; // columns of these values
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result->getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (unsigned int k=0; k <grid.Mz; ++k) {
-        const PetscScalar depth = (*thickness)(i,j) - grid.zlevels[k];
+        const double depth = (*thickness)(i,j) - grid.zlevels[k];
         ierr = model->EC->getAbsTemp(Enthij[k],
                                      model->EC->getPressureFromDepth(depth),
                                      Tij[k]);
@@ -521,7 +521,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   bool cold_mode = grid.config.get_flag("do_cold_ice_methods");
-  PetscReal melting_point_temp = grid.config.get("water_melting_point_temperature");
+  double melting_point_temp = grid.config.get("water_melting_point_temperature");
 
   // update vertical levels (in case the grid was extended
   vars[0].set_levels(grid.zlevels);
@@ -539,16 +539,16 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
-  PetscScalar *Tij, *Enthij; // columns of these values
+  double *Tij, *Enthij; // columns of these values
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result->getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (unsigned int k=0; k < grid.Mz; ++k) {
-        const PetscScalar depth = (*thickness)(i,j) - grid.zlevels[k],
+        const double depth = (*thickness)(i,j) - grid.zlevels[k],
           p = model->EC->getPressureFromDepth(depth);
         ierr = model->EC->getPATemp(Enthij[k], p, Tij[k]);
         if (ierr) {
@@ -592,7 +592,7 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   bool cold_mode = grid.config.get_flag("do_cold_ice_methods");
-  PetscReal melting_point_temp = grid.config.get("water_melting_point_temperature");
+  double melting_point_temp = grid.config.get("water_melting_point_temperature");
 
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "temp_pa_base", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -607,15 +607,15 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
-  PetscScalar *Enthij; // columns of these values
+  double *Enthij; // columns of these values
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
 
-      const PetscScalar depth = (*thickness)(i,j),
+      const double depth = (*thickness)(i,j),
         p = model->EC->getPressureFromDepth(depth);
       ierr = model->EC->getPATemp(Enthij[0], p,
                                   (*result)(i,j));
@@ -662,14 +662,14 @@ PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
   ierr = result->create(grid, "enthalpysurf", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  PetscScalar fill_value = grid.config.get("fill_value");
+  double fill_value = grid.config.get("fill_value");
 
   // compute levels corresponding to 1 m below the ice surface:
 
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       (*result)(i,j) = PetscMax(model->ice_thickness(i,j) - 1.0, 0.0);
     }
   }
@@ -678,8 +678,8 @@ PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
   ierr = model->Enth3.getSurfaceValues(*result, *result); CHKERRQ(ierr);  // z=0 slice
 
   ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (model->ice_thickness(i,j) <= 1.0)
         (*result)(i,j) = fill_value;
     }
@@ -750,9 +750,9 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscReal depth = (*thickness)(i,j),
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double depth = (*thickness)(i,j),
         pressure = model->EC->getPressureFromDepth(depth);
       if (depth > 0) {
         ierr = model->EC->getAbsTemp((*result)(i,j),
@@ -804,10 +804,10 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscReal depth = 1.0,
+  double depth = 1.0,
     pressure = model->EC->getPressureFromDepth(depth);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if ((*thickness)(i,j) > 1) {
         ierr = model->EC->getAbsTemp((*result)(i,j),
                                      pressure,
@@ -879,27 +879,27 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
   ierr = result->create(grid, "tempicethk", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  PetscScalar *Enth;
+  double *Enth;
 
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (model->ice_thickness(i,j) > 0.) {
         ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-        PetscScalar tithk = 0.;
+        double tithk = 0.;
         const unsigned int ks = grid.kBelowHeight(model->ice_thickness(i,j));
 
         for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
-          PetscReal pressure = model->EC->getPressureFromDepth(model->ice_thickness(i,j) - grid.zlevels[k]);
+          double pressure = model->EC->getPressureFromDepth(model->ice_thickness(i,j) - grid.zlevels[k]);
 
           if (model->EC->isTemperate(Enth[k], pressure)) {
             tithk += grid.zlevels[k+1] - grid.zlevels[k];
           }
         }
 
-        PetscReal pressure = model->EC->getPressureFromDepth(model->ice_thickness(i,j) - grid.zlevels[ks]);
+        double pressure = model->EC->getPressureFromDepth(model->ice_thickness(i,j) - grid.zlevels[ks]);
         if (model->EC->isTemperate(Enth[ks], pressure)) {
           tithk += model->ice_thickness(i,j) - grid.zlevels[ks];
         }
@@ -939,15 +939,15 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   ierr = result->create(grid, "tempicethk_basal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  PetscScalar *Enth;
+  double *Enth;
   EnthalpyConverter *EC = model->EC;
 
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscReal thk = model->ice_thickness(i,j);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double thk = model->ice_thickness(i,j);
 
       // if we have no ice, go on to the next grid point (this cell will be
       // marked as "missing" later)
@@ -955,7 +955,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
         continue;
 
       ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-      PetscReal pressure;
+      double pressure;
       unsigned int ks = grid.kBelowHeight(thk),
         k = 0;
 
@@ -983,7 +983,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
         continue;
       }
 
-      PetscReal
+      double
         pressure_0 = EC->getPressureFromDepth(thk - grid.zlevels[k-1]),
         dz = grid.zlevels[k] - grid.zlevels[k-1],
         slope1 = (Enth[k] - Enth[k-1]) / dz,
@@ -1072,9 +1072,9 @@ IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_ivol::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_ivol::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_volume(value); CHKERRQ(ierr);
 
@@ -1096,9 +1096,9 @@ IceModel_slvol::IceModel_slvol(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_slvol::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_slvol::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_sealevel_volume(value); CHKERRQ(ierr);
 
@@ -1120,9 +1120,9 @@ IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("long_name", "total ice volume rate of change");
 }
 
-PetscErrorCode IceModel_divoldt::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_divoldt::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_volume(value); CHKERRQ(ierr);
 
@@ -1146,9 +1146,9 @@ IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_iarea::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_iarea::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_area(value); CHKERRQ(ierr);
 
@@ -1170,9 +1170,9 @@ IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_imass::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_imass::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_volume(value); CHKERRQ(ierr);
 
@@ -1196,9 +1196,9 @@ IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_dimassdt::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_dimassdt::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_volume(value); CHKERRQ(ierr);
 
@@ -1220,9 +1220,9 @@ IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_ivoltemp::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_ivoltemp::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_volume_temperate(value); CHKERRQ(ierr);
 
@@ -1245,9 +1245,9 @@ IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_ivolcold::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_ivolcold::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_volume_cold(value); CHKERRQ(ierr);
 
@@ -1269,9 +1269,9 @@ IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_var
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_iareatemp::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_iareatemp::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_area_temperate(value); CHKERRQ(ierr);
 
@@ -1292,9 +1292,9 @@ IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_var
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_iareacold::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_iareacold::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_area_cold(value); CHKERRQ(ierr);
 
@@ -1315,9 +1315,9 @@ IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m, IceGrid &g, PISMVars &my_var
   ts->set_attr("valid_min", 0.0);
 }
 
-PetscErrorCode IceModel_ienthalpy::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_ienthalpy::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_enthalpy(value); CHKERRQ(ierr);
 
@@ -1337,9 +1337,9 @@ IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("long_name", "total grounded ice area");
 }
 
-PetscErrorCode IceModel_iareag::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_iareag::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_area_grounded(value); CHKERRQ(ierr);
 
@@ -1359,9 +1359,9 @@ IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("long_name", "total floating ice area");
 }
 
-PetscErrorCode IceModel_iareaf::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_iareaf::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->compute_ice_area_floating(value); CHKERRQ(ierr);
 
@@ -1381,7 +1381,7 @@ IceModel_dt::IceModel_dt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("long_name", "mass continuity time step");
 }
 
-PetscErrorCode IceModel_dt::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_dt::update(double a, double b) {
   PetscErrorCode ierr;
 
   ierr = ts->append(model->dt, a, b); CHKERRQ(ierr);
@@ -1400,9 +1400,9 @@ IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m, IceGrid &g, PISM
   ts->set_attr("long_name", "maximum diffusivity");
 }
 
-PetscErrorCode IceModel_max_diffusivity::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_max_diffusivity::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   ierr = model->stress_balance->get_max_diffusivity(value); CHKERRQ(ierr);
 
@@ -1423,9 +1423,9 @@ IceModel_surface_flux::IceModel_surface_flux(IceModel *m, IceGrid &g, PISMVars &
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_surface_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_surface_flux::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->surface_ice_flux_cumulative;
 
@@ -1445,9 +1445,9 @@ IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m, 
   ts->set_attr("long_name", "cumulative total over ice domain of top surface ice mass flux");
 }
 
-PetscErrorCode IceModel_surface_flux_cumulative::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_surface_flux_cumulative::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->surface_ice_flux_cumulative;
 
@@ -1468,9 +1468,9 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m, IceGrid 
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_grounded_basal_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_grounded_basal_flux::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->grounded_basal_ice_flux_cumulative;
 
@@ -1490,9 +1490,9 @@ IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative
   ts->set_attr("long_name", "cumulative total grounded basal mass flux");
 }
 
-PetscErrorCode IceModel_grounded_basal_flux_cumulative::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->grounded_basal_ice_flux_cumulative;
 
@@ -1513,9 +1513,9 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, PISMVa
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_sub_shelf_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_sub_shelf_flux::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->sub_shelf_ice_flux_cumulative;
 
@@ -1535,9 +1535,9 @@ IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel 
   ts->set_attr("long_name", "cumulative total sub-shelf ice flux");
 }
 
-PetscErrorCode IceModel_sub_shelf_flux_cumulative::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->sub_shelf_ice_flux_cumulative;
 
@@ -1558,9 +1558,9 @@ IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m, IceGrid &g, PISMVars &my
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_nonneg_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_nonneg_flux::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->nonneg_rule_flux_cumulative;
 
@@ -1580,9 +1580,9 @@ IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m, Ic
   ts->set_attr("long_name", "cumulative 'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
 }
 
-PetscErrorCode IceModel_nonneg_flux_cumulative::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_nonneg_flux_cumulative::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value;
+  double value;
 
   value = model->nonneg_rule_flux_cumulative;
 
@@ -1603,9 +1603,9 @@ IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, PISMVa
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_discharge_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_discharge_flux::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value = model->discharge_flux_cumulative;
+  double value = model->discharge_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1623,9 +1623,9 @@ IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel 
   ts->set_attr("long_name", "cumulative discharge (calving etc.) flux");
 }
 
-PetscErrorCode IceModel_discharge_flux_cumulative::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_discharge_flux_cumulative::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal value = model->discharge_flux_cumulative;
+  double value = model->discharge_flux_cumulative;
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1670,9 +1670,9 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
     ierr = last_ice_thickness.begin_access(); CHKERRQ(ierr);
     ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
 
-    PetscReal dt = grid.time->current() - last_report_time;
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+    double dt = grid.time->current() - last_report_time;
+    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
         (*result)(i, j) = (model->ice_thickness(i, j) - last_ice_thickness(i, j)) / dt;
       }
     }
@@ -1695,8 +1695,8 @@ PetscErrorCode IceModel_dHdt::update_cumulative() {
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = last_ice_thickness.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       last_ice_thickness(i, j) = model->ice_thickness(i, j);
     }
   }
@@ -1720,17 +1720,17 @@ IceModel_ivolg::IceModel_ivolg(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("long_name", "total grounded ice volume");
 }
 
-PetscErrorCode IceModel_ivolg::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_ivolg::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal volume=0.0, value;
+  double volume=0.0, value;
 
   MaskQuery mask(model->vMask);
 
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = model->vMask.begin_access(); CHKERRQ(ierr);
   ierr = model->cell_area.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.grounded_ice(i,j))
         volume += model->cell_area(i,j) * model->ice_thickness(i,j);;
     }
@@ -1757,17 +1757,17 @@ IceModel_ivolf::IceModel_ivolf(IceModel *m, IceGrid &g, PISMVars &my_vars)
   ts->set_attr("long_name", "total floating ice volume");
 }
 
-PetscErrorCode IceModel_ivolf::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_ivolf::update(double a, double b) {
   PetscErrorCode ierr;
-  PetscReal volume=0.0, value;
+  double volume=0.0, value;
 
   MaskQuery mask(model->vMask);
 
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = model->vMask.begin_access(); CHKERRQ(ierr);
   ierr = model->cell_area.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.floating_ice(i,j))
         volume += model->cell_area(i,j) * model->ice_thickness(i,j);;
     }
@@ -1805,7 +1805,7 @@ IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m, IceGrid &g, PISMVars &my
   ts->set_attr("long_name", "maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval");
 }
 
-PetscErrorCode IceModel_max_hor_vel::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_max_hor_vel::update(double a, double b) {
   PetscErrorCode ierr;
 
   double gmaxu = model->gmaxu, gmaxv = model->gmaxv;
@@ -1826,7 +1826,7 @@ IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, PISMVa
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_H_to_Href_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_H_to_Href_flux::update(double a, double b) {
   PetscErrorCode ierr;
 
   ierr = ts->append(model->H_to_Href_flux_cumulative, a, b); CHKERRQ(ierr);
@@ -1846,7 +1846,7 @@ IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, PISMVa
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_Href_to_H_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_Href_to_H_flux::update(double a, double b) {
   PetscErrorCode ierr;
 
   ierr = ts->append(model->Href_to_H_flux_cumulative, a, b); CHKERRQ(ierr);
@@ -1867,7 +1867,7 @@ IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, PISMVars
   ts->rate_of_change = true;
 }
 
-PetscErrorCode IceModel_sum_divQ_flux::update(PetscReal a, PetscReal b) {
+PetscErrorCode IceModel_sum_divQ_flux::update(double a, double b) {
   PetscErrorCode ierr;
 
   ierr = ts->append(model->sum_divQ_SIA_cumulative + model->sum_divQ_SSA_cumulative,
@@ -2047,10 +2047,10 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
     latitude = false;
 
   ierr =  result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       double x0 = grid.x[i], y0 = grid.y[j];
-      PetscScalar *values;
+      double *values;
 
       ierr = result->getInternalColumn(i,j,&values); CHKERRQ(ierr);
 

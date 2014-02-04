@@ -44,7 +44,7 @@ protected:
   char        expername;
   virtual PetscErrorCode set_expername_from_options();
 
-  PetscScalar M_max, R_el, T_min, S_b, S_T;
+  double M_max, R_el, T_min, S_b, S_T;
 
   virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
   virtual PetscErrorCode generateMoundTopography();   // for experiments K,L

@@ -169,7 +169,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
     z_spacing_set, periodicity_set;
-  PetscReal x_scale = grid.Lx / 1000.0,
+  double x_scale = grid.Lx / 1000.0,
     y_scale = grid.Ly / 1000.0,
     z_scale = grid.Lz;
 
@@ -421,7 +421,7 @@ PetscErrorCode IceModel::grid_setup() {
     }
 
     bool procs_x_set, procs_y_set;
-    std::vector<PetscInt> tmp_x, tmp_y;
+    std::vector<int> tmp_x, tmp_y;
     ierr = PISMOptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
                                tmp_x, procs_x_set); CHKERRQ(ierr);
     ierr = PISMOptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
@@ -452,10 +452,10 @@ PetscErrorCode IceModel::grid_setup() {
       grid.procs_x.resize(grid.Nx);
       grid.procs_y.resize(grid.Ny);
 
-      for (PetscInt j=0; j < grid.Nx; j++)
+      for (int j=0; j < grid.Nx; j++)
         grid.procs_x[j] = tmp_x[j];
 
-      for (PetscInt j=0; j < grid.Ny; j++)
+      for (int j=0; j < grid.Ny; j++)
         grid.procs_y[j] = tmp_y[j];
     } else {
       grid.compute_ownership_ranges();
@@ -523,7 +523,7 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    PetscReal max_dt = 0;
+    double max_dt = 0;
     bool restrict = false;
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
@@ -973,7 +973,7 @@ PetscErrorCode IceModel::init_couplers() {
 //! Allocates work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   // various internal quantities
   // 2d work vectors

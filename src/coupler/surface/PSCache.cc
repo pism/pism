@@ -100,7 +100,7 @@ PetscErrorCode PSCache::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSCache::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSCache::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if (my_t + my_dt > m_next_update_time) {

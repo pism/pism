@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -68,7 +68,7 @@ PISMHydrology_bwprel::PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVar
 
 PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  PetscReal fill = grid.config.get("fill_value");
+  double fill = grid.config.get("fill_value");
   IceModelVec2S *Po     = new IceModelVec2S,
                 *result = new IceModelVec2S;
   ierr = result->create(grid, "bwprel", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -80,8 +80,8 @@ PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
 
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = Po->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if ((*Po)(i,j) > 0.0)
         (*result)(i,j) /= (*Po)(i,j);
       else

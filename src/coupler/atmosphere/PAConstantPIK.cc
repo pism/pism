@@ -86,13 +86,13 @@ PetscErrorCode PAConstantPIK::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, double *values) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = air_temp(i,j);
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, double *values) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = precipitation(i,j);
   return 0;
@@ -193,7 +193,7 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::update(PetscReal, PetscReal) {
+PetscErrorCode PAConstantPIK::update(double, double) {
   PetscErrorCode ierr;
 
   // Compute near-surface air temperature using a latitude- and
@@ -202,8 +202,8 @@ PetscErrorCode PAConstantPIK::update(PetscReal, PetscReal) {
   ierr = air_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
 
@@ -216,7 +216,7 @@ PetscErrorCode PAConstantPIK::update(PetscReal, PetscReal) {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PAConstantPIK::init_timeseries(double *ts, unsigned int N) {
   (void)ts;
   m_ts_times.resize(N);
   return 0;

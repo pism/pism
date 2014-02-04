@@ -72,7 +72,7 @@ PetscErrorCode PA_delta_T::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_delta_T::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PA_delta_T::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
@@ -90,7 +90,7 @@ PetscErrorCode PA_delta_T::mean_annual_temp(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PA_delta_T::temp_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PA_delta_T::temp_time_series(int i, int j, double *values) {
   PetscErrorCode ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)

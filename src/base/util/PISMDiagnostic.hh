@@ -151,9 +151,9 @@ public:
     delete ts;
   }
 
-  virtual PetscErrorCode update(PetscReal a, PetscReal b) = 0;
+  virtual PetscErrorCode update(double a, double b) = 0;
 
-  virtual PetscErrorCode save(PetscReal a, PetscReal b) {
+  virtual PetscErrorCode save(double a, double b) {
     if (ts)
       return ts->interp(a, b);
 

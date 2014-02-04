@@ -74,7 +74,7 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
                                      IceModelVec2S &thickness,
                                      IceModelVec2Int &result) {
   PetscErrorCode ierr;
-  PetscReal sea_level;
+  double sea_level;
 
   assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
@@ -85,9 +85,9 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
   ierr = bed.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access();         CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 2;
-  for (PetscInt i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 2;
+  for (int i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       result(i, j) = gc.mask(bed(i, j), thickness(i,j));
     } // inner for loop (j)
   } // outer for loop (i)
@@ -116,7 +116,7 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
                                                   IceModelVec2S &thickness,
                                                   IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal sea_level;
+  double sea_level;
 
   assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
@@ -127,9 +127,9 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
   ierr = thickness.begin_access();  CHKERRQ(ierr);
   ierr = bed.begin_access(); CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 2;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 2;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       // take this opportunity to check that thickness(i, j) >= 0
       if (thickness(i, j) < 0) {
         SETERRQ2(grid.com, 1, "Thickness negative at point i=%d, j=%d", i, j);
@@ -167,8 +167,8 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
  * @param[in,out] SIA_flux SIA flux to be adjusted
  */
 void IceModel::adjust_flow(planeStar<int> mask,
-                           planeStar<PetscScalar> &SSA_velocity,
-                           planeStar<PetscScalar> &SIA_flux) {
+                           planeStar<double> &SSA_velocity,
+                           planeStar<double> &SIA_flux) {
 
   // Prepare to loop over neighbors:
   // directions
@@ -307,9 +307,9 @@ void IceModel::adjust_flow(planeStar<int> mask,
 void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> in_SSA_velocity,
-                                     planeStar<PetscScalar> in_SIA_flux,
-                                     planeStar<PetscScalar> &out_SSA_velocity,
-                                     planeStar<PetscScalar> &out_SIA_flux) {
+                                     planeStar<double> in_SIA_flux,
+                                     planeStar<double> &out_SSA_velocity,
+                                     planeStar<double> &out_SIA_flux) {
 
   planeStar<int> mask = vMask.int_star(i,j);
   PISM_Direction dirs[4] = {North, East, South, West};
@@ -492,7 +492,7 @@ earlier. (CK)
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
   
-  PetscScalar
+  double
     // totals over the processor's domain:
     proc_H_to_Href_flux = 0,
     proc_Href_to_H_flux = 0,
@@ -512,7 +512,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     total_sum_divQ_SSA = 0,
     total_surface_ice_flux = 0;
 
-  const PetscScalar dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx, dy = grid.dy;
   bool
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
@@ -522,7 +522,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     compute_flux_divergence = flux_divergence.was_created();
 
   // FIXME: use corrected cell areas (when available)
-  PetscScalar factor = config.get("ice_density") * (dx * dy);
+  double factor = config.get("ice_density") * (dx * dy);
 
   assert(surface != NULL);
   ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
@@ -593,8 +593,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   MaskQuery mask(vMask);
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       // Divergence terms:
       double divQ_SIA = 0.0, divQ_SSA = 0.0;
@@ -613,7 +613,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         meltrate_grounded = basal_melt_rate(i, j);
       }
 
-      planeStar<PetscScalar> Q, v;
+      planeStar<double> Q, v;
       cell_interface_fluxes(dirichlet_bc, i, j,
                             vel_advective->star(i, j), Qdiff->star(i, j),
                             v, Q);
@@ -659,12 +659,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          PetscReal H_threshold = get_threshold_thickness(vMask.int_star(i, j),
+          double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
                                                           ice_thickness.star(i, j),
                                                           ice_surface_elevation.star(i, j),
                                                           bed_topography(i,j),
                                                           reduce_frontal_thickness);
-          PetscReal coverage_ratio = 1.0;
+          double coverage_ratio = 1.0;
           if (H_threshold > 0.0)
             coverage_ratio = vHref(i, j) / H_threshold;
 
@@ -940,8 +940,8 @@ PetscErrorCode IceModel::update_floatation_mask() {
   ierr = gl_mask_x.begin_access(); CHKERRQ(ierr);
   ierr = gl_mask_y.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       double
         alpha        = 0.0,

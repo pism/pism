@@ -44,16 +44,16 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   IceModelVec2S &hst = *usurfstore; // convenience
 
   const int Mx = grid.Mx, My = grid.My;
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx, dy = grid.dy;  // convenience
 
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
   ierr = nmm.begin_access(); CHKERRQ(ierr);
   ierr = hst.begin_access(); CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 1;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 1;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
       // x-component, i-offset
       if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
@@ -149,9 +149,9 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   ierr = nmm.begin_access(); CHKERRQ(ierr);
   ierr = usurfstore->begin_access(); CHKERRQ(ierr);
   ierr = thkstore->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar pressure = EC.getPressureFromDepth((*thkstore)(i,j));
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double pressure = EC.getPressureFromDepth((*thkstore)(i,j));
       if (pressure <= 0) pressure = 0;
 
       if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
@@ -179,7 +179,7 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
 PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  PetscInt v = getVerbosityLevel(); // turn off second, redundant init message
+  int v = getVerbosityLevel(); // turn off second, redundant init message
   ierr = setVerbosityLevel(1); CHKERRQ(ierr);
   ierr = PISMMohrCoulombYieldStress::init(vars); CHKERRQ(ierr);
   ierr = setVerbosityLevel(v); CHKERRQ(ierr);
@@ -201,8 +201,8 @@ PetscErrorCode PISMRegionalDefaultYieldStress::basal_material_yield_stress(IceMo
   // now set result=tauc to a big value in no_model_strip
   ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if ((*no_model_mask)(i,j) > 0.5) {
         result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
       }

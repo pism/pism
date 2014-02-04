@@ -37,7 +37,7 @@ public:
       delete offset;
   }
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  virtual PetscErrorCode update(double my_t, double my_dt)
   {
     Mod::m_t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
     Mod::m_dt = my_dt;
@@ -54,7 +54,7 @@ protected:
 
     IceGrid &g = Mod::grid;
 
-    PetscReal bc_period_years = 0,
+    double bc_period_years = 0,
       bc_reference_year = 0;
 
     ierr = PetscOptionsBegin(g.com, "", "Scalar forcing options", ""); CHKERRQ(ierr);
@@ -112,7 +112,7 @@ protected:
   std::string filename, offset_name, option_prefix;
 
   unsigned int bc_period;       // in years
-  PetscReal bc_reference_time;  // in seconds
+  double bc_reference_time;  // in seconds
 };
 
 

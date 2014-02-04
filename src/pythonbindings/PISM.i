@@ -83,22 +83,13 @@
 %include std_vector.i
 %include std_set.i
 
+#define SWIG_SHARED_PTR_NAMESPACE std
+#if (PISM_USE_TR1==1)
 #define SWIG_SHARED_PTR_SUBNAMESPACE tr1
+#endif
 %include <std_shared_ptr.i>
 
-// Tell SWIG that PetscReal and a double are the same thing so that we can reuse
-// the DoubleVector template declared above.  I don't know why SWIG doesn't figure this out.
-// Without the typedef below, if I add %template(PestsRealVector) vector<PetscReal>; then
-// the SWIG wrappers contain two attempts to wrap a vector<double>.  If I leave out the 
-// PetscRealVector template and the typedef, then SWIG doesn't do the type conversion between
-// Python lists and vector<PetscReal> arguments.   The typedef below is the WRONG thing to do
-// because the actual definition of a PetscReal (from petscmath.h) depends on a compiler flag.
-// So this needs to get fixed properly at some point.  Do I have access to the Petsc compiler flags?
-// If so, maybe just copy the code block from petscmath.h here for the PetscReal typedefs.
-#define PETSC_USE_REAL_DOUBLE
-typedef double PetscReal; // YUCK.
-typedef int PetscInt; // YUCK.
-typedef int NormType; // YUCK.
+ // #define PETSC_USE_REAL_DOUBLE
 
 // SWIG seems convinced that it might need to convert a PetscScalar into a 
 // complex number at some point, even though it never will.  It issues undesired
@@ -113,12 +104,10 @@ typedef int NormType; // YUCK.
 }
 
 
-namespace std {
-   %template(IntVector) std::vector<PetscInt>;
-   %template(DoubleVector) std::vector<PetscReal>;
-   %template(StringVector) std::vector<std::string>;
-   %template(StringSet) std::set<std::string>;
-}
+%template(IntVector) std::vector<int>;
+%template(DoubleVector) std::vector<double>;
+%template(StringVector) std::vector<std::string>;
+%template(StringSet) std::set<std::string>;
 
 // Why did I include this?
 %include "cstring.i"
@@ -212,10 +201,10 @@ namespace std {
 }
 %apply std::string &OUTPUT { std::string &result}
 
-%typemap(in, numinputs=0,noblock=1) std::vector<PetscInt> & OUTPUT (std::vector<PetscInt> temp) {
+%typemap(in, numinputs=0,noblock=1) std::vector<int> & OUTPUT (std::vector<int> temp) {
     $1 = &temp;
 }
-%typemap(argout,noblock=1) std::vector<PetscInt> & OUTPUT
+%typemap(argout,noblock=1) std::vector<int> & OUTPUT
 {
     int len;
     len = $1->size();
@@ -227,10 +216,10 @@ namespace std {
      }
 }
 
-%typemap(in, numinputs=0,noblock=1) std::vector<PetscReal> & OUTPUT (std::vector<PetscReal> temp) {
+%typemap(in, numinputs=0,noblock=1) std::vector<double> & OUTPUT (std::vector<double> temp) {
     $1 = &temp;
 }
-%typemap(argout,noblock=1) std::vector<PetscReal> & OUTPUT
+%typemap(argout,noblock=1) std::vector<double> & OUTPUT
 {
     int len;
     len = $1->size();
@@ -243,6 +232,8 @@ namespace std {
 }
 
 %shared_ptr(TerminationReason)
+
+#if (PISM_USE_TR1==1)
 %typemap(in, numinputs=0, noblock=1) std::tr1::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
   $1 = &temp;
 }
@@ -254,19 +245,30 @@ namespace std {
   }
 };
 %apply std::tr1::shared_ptr<TerminationReason> & OUTPUT { std::tr1::shared_ptr<TerminationReason> &reason };
+#else
+%typemap(in, numinputs=0, noblock=1) std::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
+  $1 = &temp;
+}
+%typemap(argout,noblock=1) std::shared_ptr<TerminationReason> & OUTPUT
+{
+  {
+    std::shared_ptr<  TerminationReason > *smartresult = new std::shared_ptr<  TerminationReason >(*$1);
+    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
+  }
+};
+%apply std::shared_ptr<TerminationReason> & OUTPUT { std::shared_ptr<TerminationReason> &reason };
+#endif
 
-%apply std::vector<PetscInt> & OUTPUT {std::vector<PetscInt> &result};
-%apply std::vector<PetscReal> & OUTPUT {std::vector<PetscReal> &result};
+%apply std::vector<int> & OUTPUT {std::vector<int> &result};
+%apply std::vector<double> & OUTPUT {std::vector<double> &result};
 %apply std::vector<std::string> & OUTPUT {std::vector<std::string> & result};
  
 %apply int &OUTPUT {int &result};
 %apply int *OUTPUT {int *out_mask};
 
-%apply PetscInt & OUTPUT {PetscInt & result};
-%apply PetscReal & OUTPUT {PetscReal & result};
-%apply PetscScalar & OUTPUT {PetscScalar & result};
-%apply PetscReal & OUTPUT {PetscReal & out};
-%apply double & OUTPUT {double &};
+%apply double & OUTPUT {double & result};
+%apply double & OUTPUT {double & out};
+%apply double * OUTPUT {double * result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
@@ -344,12 +346,12 @@ namespace std {
 // elegant solution.
 %extend IceModelVec2S
 {
-    PetscReal getitem(int i, int j)
+    double getitem(int i, int j)
     {
         return (*($self))(i,j);
     }
 
-    void setitem(int i, int j, PetscReal val)
+    void setitem(int i, int j, double val)
     {
         (*($self))(i,j) = val;
     }
@@ -368,7 +370,7 @@ namespace std {
 %rename(__mult__) PISMVector2::operator*;
 %rename(__add__) PISMVector2::operator+;
 %ignore PISMVector2::operator=;
-%ignore operator*(const PetscScalar &a, const PISMVector2 &v1);
+%ignore operator*(const double &a, const PISMVector2 &v1);
 %extend PISMVector2
 {
   %pythoncode
@@ -416,12 +418,12 @@ namespace std {
 %extend IceModelVec3D
 {
 
-  PetscReal getitem(int i, int j, int k)
+  double getitem(int i, int j, int k)
   {
       return (*($self))(i,j,k);
   }
 
-  void setitem(int i, int j, int k, PetscReal val)
+  void setitem(int i, int j, int k, double val)
   {
       (*($self))(i,j,k) = val;
   }
@@ -542,7 +544,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 
 
 %include "stressbalance/ssa/SNESProblem.hh"
-%template(SNESScalarProblem) SNESProblem<1,PetscScalar>;
+%template(SNESScalarProblem) SNESProblem<1,double>;
 %template(SNESVectorProblem) SNESProblem<2,PISMVector2>;
 
 // Now the header files for the PISM source code we want to wrap.

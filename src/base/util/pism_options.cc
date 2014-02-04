@@ -42,7 +42,7 @@ See verbPrintf().
  */
 PetscErrorCode verbosityLevelFromOptions() {
   PetscErrorCode ierr;
-  PetscInt       myLevel;
+  int       myLevel;
   PetscBool     verbose, levelSet;
 
   ierr = setVerbosityLevel(2);
@@ -358,7 +358,7 @@ PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::stri
 
 //! \brief Process a command-line option taking an integer as an argument.
 PetscErrorCode PISMOptionsInt(std::string option, std::string text,
-                              PetscInt &result, bool &is_set) {
+                              int &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -392,7 +392,7 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
 
 //! \brief Process a command-line option taking a real number as an argument.
 PetscErrorCode PISMOptionsReal(std::string option, std::string text,
-                               PetscReal &result, bool &is_set) {
+                               double &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -429,7 +429,7 @@ PetscErrorCode PISMOptionsReal(std::string option, std::string text,
 //! \brief Process a command-line option taking a comma-separated list of reals
 //! as an argument.
 PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
-                                    std::vector<PetscReal> &result, bool &is_set) {
+                                    std::vector<double> &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -467,15 +467,15 @@ PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
 //! \brief Process a command-line option taking a comma-separated list of
 //! integers as an argument.
 PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
-                                    std::vector<PetscInt> &result, bool &is_set) {
+                                    std::vector<int> &result, bool &is_set) {
   PetscErrorCode ierr;
-  std::vector<PetscReal> tmp;
+  std::vector<double> tmp;
 
   ierr = PISMOptionsRealArray(option, text, tmp, is_set); CHKERRQ(ierr);
 
   result.clear();
   for (unsigned int j = 0; j < tmp.size(); ++j)
-    result.push_back(static_cast<PetscInt>(tmp[j]));
+    result.push_back(static_cast<int>(tmp[j]));
 
   return 0;
 }

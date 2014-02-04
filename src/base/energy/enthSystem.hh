@@ -37,60 +37,60 @@ class enthSystemCtx : public columnSystemCtx {
 public:
   enthSystemCtx(const PISMConfig &config,
                 IceModelVec3 &my_Enth3,
-                PetscScalar my_dx,  PetscScalar my_dy,
-                PetscScalar my_dt,  PetscScalar my_dz,
+                double my_dx,  double my_dy,
+                double my_dt,  double my_dz,
                 int my_Mz, std::string my_prefix,
                 EnthalpyConverter *my_EC);
   virtual ~enthSystemCtx();
 
   PetscErrorCode initThisColumn(int i, int j, bool my_ismarginal,
-                                PetscReal ice_thickness,
-                                PetscReal till_water_thickness,
+                                double ice_thickness,
+                                double till_water_thickness,
                                 IceModelVec3 *u3,
                                 IceModelVec3 *v3,
                                 IceModelVec3 *w3,
                                 IceModelVec3 *strain_heating3);
 
-  PetscScalar k_from_T(PetscScalar T);
+  double k_from_T(double T);
 
-  PetscErrorCode setDirichletSurface(PetscScalar my_Enth_surface);
-  PetscErrorCode setDirichletBasal(PetscScalar Y);
-  PetscErrorCode setBasalHeatFlux(PetscScalar hf);
+  PetscErrorCode setDirichletSurface(double my_Enth_surface);
+  PetscErrorCode setDirichletBasal(double Y);
+  PetscErrorCode setBasalHeatFlux(double hf);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
   PetscErrorCode viewSystem(PetscViewer viewer) const;
 
-  PetscErrorCode solveThisColumn(PetscScalar *x);
+  PetscErrorCode solveThisColumn(double *x);
 
   int ks()
   { return m_ks; }
 
-  PetscReal lambda()
+  double lambda()
   { return m_lambda; }
 public:
   // arrays must be filled before calling solveThisColumn():
-  PetscScalar  *Enth,   // enthalpy in ice at prev time step
+  double  *Enth,   // enthalpy in ice at prev time step
     *Enth_s; // enthalpy level for CTS; function only of pressure
 protected:
-  PetscScalar *u, *v, *w, *strain_heating;
+  double *u, *v, *w, *strain_heating;
 
-  PetscInt Mz, m_ks;
+  int Mz, m_ks;
 
-  PetscReal ice_rho, ice_c, ice_k, ice_K, ice_K0, p_air,
+  double ice_rho, ice_c, ice_k, ice_K, ice_K0, p_air,
     dx, dy, dz, dt, nu, R_cold, R_temp, R_factor;
 
-  PetscReal ice_thickness,
+  double ice_thickness,
     m_lambda,              //!< implicit FD method parameter
     Enth_ks;             //!< top surface Dirichlet B.C.
-  PetscReal a0, a1, b;   // coefficients of the first (basal) equation
+  double a0, a1, b;   // coefficients of the first (basal) equation
   bool ismarginal, c_depends_on_T, k_depends_on_T;
-  std::vector<PetscScalar> R; // values of k \Delta t / (\rho c \Delta x^2)
+  std::vector<double> R; // values of k \Delta t / (\rho c \Delta x^2)
 
   IceModelVec3 *Enth3;
   EnthalpyConverter *EC;  // conductivity has known dependence on T, not enthalpy
 
   PetscErrorCode compute_enthalpy_CTS();
-  PetscReal compute_lambda();
+  double compute_lambda();
 
   virtual PetscErrorCode assemble_R();
   PetscErrorCode checkReadyToSolve();

@@ -26,9 +26,9 @@
 
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
-  PetscReal H,tauc,b,B;
+  double H,tauc,b,B;
   PISMVector2 driving_stress;
-  PetscInt mask;
+  int mask;
 };
 
 
@@ -79,10 +79,10 @@ public:
 protected:
 
   virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
-                                             const PISMVector2 *,const PetscReal[],
-                                             PetscReal *,PetscReal *,PetscReal *,PetscReal *);
+                                             const PISMVector2 *,const double[],
+                                             double *,double *,double *,double *);
 
-  void FixDirichletValues(PetscReal local_bc_mask[],PISMVector2 **BC_vel,
+  void FixDirichletValues(double local_bc_mask[],PISMVector2 **BC_vel,
                           PISMVector2 x[], FEDOFMap &my_dofmap);
 
   virtual PetscErrorCode allocate_fem();
@@ -107,11 +107,11 @@ protected:
 
   SNES         snes;
   FEStoreNode *feStore;
-  PetscReal    dirichletScale;
-  PetscReal    ocean_rho;
-  PetscReal    earth_grav;
-  PetscReal    m_beta_ice_free_bedrock;
-  PetscReal    m_epsilon_ssa;
+  double    dirichletScale;
+  double    ocean_rho;
+  double    earth_grav;
+  double    m_beta_ice_free_bedrock;
+  double    m_epsilon_ssa;
 
   FEElementMap element_index;
   FEQuadrature quadrature;

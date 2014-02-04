@@ -41,13 +41,13 @@ public:
 
   virtual ~PLapseRates() {}
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  virtual PetscErrorCode update(double my_t, double my_dt)
   {
     PetscErrorCode ierr;
 
     // a convenience
-    PetscReal &t = Mod::m_t;
-    PetscReal &dt = Mod::m_dt;
+    double &t = Mod::m_t;
+    double &dt = Mod::m_dt;
 
     // "Periodize" the climate:
     my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);
@@ -69,9 +69,9 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal t, PetscReal &dt, bool &restrict) {
+  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict) {
     PetscErrorCode ierr;
-    PetscReal max_dt = -1;
+    double max_dt = -1;
 
     // "Periodize" the climate:
     t = Mod::grid.time->mod(t - bc_reference_time, bc_period);
@@ -98,7 +98,7 @@ protected:
   IceModelVec2T reference_surface;
   IceModelVec2S *surface, *thk;
   unsigned int bc_period;
-  PetscReal bc_reference_time,          // in seconds
+  double bc_reference_time,          // in seconds
     temp_lapse_rate;
   std::string option_prefix;
 
@@ -110,7 +110,7 @@ protected:
 
     IceGrid &g = Mod::grid;
 
-    PetscReal bc_period_years = 0,
+    double bc_period_years = 0,
       bc_reference_year = 0;
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
@@ -192,7 +192,7 @@ protected:
     return 0;
   }
 
-  PetscErrorCode lapse_rate_correction(IceModelVec2S &result, PetscReal lapse_rate)
+  PetscErrorCode lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
   {
     PetscErrorCode ierr;
 
@@ -206,8 +206,8 @@ protected:
 
     IceGrid &g = Mod::grid;
 
-    for (PetscInt   i = g.xs; i < g.xs + g.xm; ++i) {
-      for (PetscInt j = g.ys; j < g.ys + g.ym; ++j) {
+    for (int   i = g.xs; i < g.xs + g.xm; ++i) {
+      for (int j = g.ys; j < g.ys + g.ym; ++j) {
         if ((*thk)(i,j) > 0)
           result(i,j) -= lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
       }

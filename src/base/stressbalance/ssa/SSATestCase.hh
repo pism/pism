@@ -27,8 +27,8 @@
 //! Helper function for initializing a grid with the given dimensions and periodicity.
 //! The grid is shallow (3 z-layers).
 PetscErrorCode init_shallow_grid(IceGrid &grid, 
-                                 PetscReal Lx, PetscReal Ly, 
-                                 PetscInt Mx, PetscInt My, Periodicity p);
+                                 double Lx, double Ly, 
+                                 int Mx, int My, Periodicity p);
 
 
 
@@ -61,7 +61,7 @@ public:
 
   virtual ~SSATestCase();
 
-  virtual PetscErrorCode init(PetscInt Mx, PetscInt My,SSAFactory ssafactory);
+  virtual PetscErrorCode init(int Mx, int My,SSAFactory ssafactory);
 
   virtual PetscErrorCode run();
 
@@ -74,7 +74,7 @@ protected:
   virtual PetscErrorCode buildSSACoefficients();
 
   //! Initialize the member variable grid as appropriate for the test case.
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My) = 0;
+  virtual PetscErrorCode initializeGrid(int Mx,int My) = 0;
 
   //! Allocate the member variables basal, ice, and enthalpyconverter as
   //! appropriate for the test case.
@@ -85,8 +85,8 @@ protected:
 
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j,
+    double x, double y, double *u, double *v );
 
   PetscErrorCode report_netcdf(std::string testname,
                                double max_vector,

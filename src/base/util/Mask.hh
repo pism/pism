@@ -45,7 +45,7 @@ public:
 class GeometryCalculator
 {
 public:
-  GeometryCalculator(PetscReal seaLevel, const PISMConfig &config)
+  GeometryCalculator(double seaLevel, const PISMConfig &config)
   {
     sea_level = seaLevel;
     alpha = 1 - config.get("ice_density") / config.get("sea_water_density");
@@ -57,16 +57,16 @@ public:
   void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
                IceModelVec2Int &out_mask, IceModelVec2S &out_surface);
 
-  inline void compute(PetscReal bed, PetscReal thickness,
-                      int *out_mask, PetscReal *out_surface) {
-    const PetscReal  hgrounded = bed + thickness; // FIXME issue #15
-    const PetscReal  hfloating = sea_level + alpha*thickness;
+  inline void compute(double bed, double thickness,
+                      int *out_mask, double *out_surface) {
+    const double  hgrounded = bed + thickness; // FIXME issue #15
+    const double  hfloating = sea_level + alpha*thickness;
 
     const bool is_floating = (hfloating > hgrounded + is_floating_thickness),
                ice_free    = (thickness < icefree_thickness);
 
     int mask_result;
-    PetscReal surface_result;
+    double surface_result;
 
     if (is_floating && (!is_dry_simulation)) {
       surface_result = hfloating;
@@ -89,22 +89,22 @@ public:
     if (out_mask != NULL) *out_mask = mask_result;
   }
 
-  inline int mask(PetscReal bed, PetscReal thickness)
+  inline int mask(double bed, double thickness)
   {
     int result;
     compute(bed, thickness, &result, NULL);
     return result;
   }
 
-  inline PetscReal surface(PetscReal bed, PetscReal thickness)
+  inline double surface(double bed, double thickness)
   {
-    PetscReal result;
+    double result;
     compute(bed, thickness, NULL, &result);
     return result;
   }
 
 protected:
-  PetscReal alpha, sea_level, icefree_thickness, is_floating_thickness;
+  double alpha, sea_level, icefree_thickness, is_floating_thickness;
   bool is_dry_simulation;
 };
 

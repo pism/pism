@@ -100,14 +100,14 @@ protected:
   std::string filename, option_prefix;
 
   unsigned int bc_period;       // in years
-  PetscReal bc_reference_time;  // in seconds
+  double bc_reference_time;  // in seconds
 
   PetscErrorCode process_options()
   {
     PetscErrorCode ierr;
     bool bc_file_set, bc_period_set, bc_ref_year_set;
 
-    PetscReal bc_period_years = 0,
+    double bc_period_years = 0,
       bc_reference_year = 0;
 
     bc_period = 0;
@@ -196,7 +196,7 @@ protected:
     return 0;
   }
 
-  virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt)
+  virtual PetscErrorCode update_internal(double my_t, double my_dt)
   {
     PetscErrorCode ierr;
 

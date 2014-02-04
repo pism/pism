@@ -54,7 +54,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   assert(surface != NULL);
 
   {
-    PetscReal max_dt = 0;
+    double max_dt = 0;
     bool restrict = false;
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
@@ -70,7 +70,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   assert(ocean != NULL);
 
   {
-    PetscReal max_dt = 0;
+    double max_dt = 0;
     bool restrict = false;
     // FIXME: this will break if an ocean model requires contiguous update intervals
     ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
@@ -182,7 +182,7 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   }
 
   // check if Lz is valid
-  PetscReal thk_min, thk_max;
+  double thk_min, thk_max;
   ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
 
   if (thk_max > grid.Lz) {
@@ -291,10 +291,10 @@ bootstrap temperature profile in the bedrock.
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
 
-  PetscScalar *T = new PetscScalar[grid.Mz];
+  double *T = new double[grid.Mz];
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
              usesmb  = config.get_string("bootstrapping_temperature_heuristic") == "smb";
-  const PetscScalar
+  const double
     ice_k = config.get("ice_thermal_conductivity"),
     melting_point_temp = config.get("water_melting_point_temperature"),
     ice_density = config.get("ice_density"),
@@ -323,39 +323,39 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = geothermal_flux.begin_access();       CHKERRQ(ierr);
   ierr = result->begin_access();               CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar HH = ice_thickness(i,j),
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double HH = ice_thickness(i,j),
                         Ts = ice_surface_temp(i,j),
                         gg = geothermal_flux(i,j);
       const unsigned int ks = grid.kBelowHeight(HH);
 
       // within ice
       if (usesmb == true) { // method 1:  includes surface mass balance in estimate
-        const PetscScalar mm = climatic_mass_balance(i,j);
+        const double mm = climatic_mass_balance(i,j);
         if (mm <= 0.0) { // negative or zero surface mass balance case: linear
           for (unsigned int k = 0; k < ks; k++) {
-            const PetscScalar z = grid.zlevels[k],
+            const double z = grid.zlevels[k],
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = gg / ice_k * (HH - z) + Ts;
             T[k] = PetscMin(Tpmp,T[k]);
           }
         } else { // positive surface mass balance case
-          const PetscScalar C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+          const double C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
             gamma0 = sqrt(mm * HH / (2.0 * KK));
 
           for (unsigned int k = 0; k < ks; k++) {
-            const PetscScalar z = grid.zlevels[k],
+            const double z = grid.zlevels[k],
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = Ts + C0 * ( erf(gamma0) - erf(gamma0 * z / HH) );
             T[k] = PetscMin(Tpmp,T[k]);
           }
         }
       } else { // method 2:  does not use smb
-        const PetscScalar beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
+        const double beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
                           alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
         for (unsigned int k = 0; k < ks; k++) {
-          const PetscScalar depth = HH - grid.zlevels[k],
+          const double depth = HH - grid.zlevels[k],
                             Tpmp = melting_point_temp - beta_CC_grad * depth,
                             d2 = depth * depth;
           T[k] = PetscMin(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
@@ -369,8 +369,8 @@ PetscErrorCode IceModel::putTempAtDepth() {
       // convert to enthalpy if that's what we are calculating
       if (!do_cold) {
         for (unsigned int k = 0; k < grid.Mz; ++k) {
-          const PetscScalar depth = HH - grid.zlevels[k];
-          const PetscScalar pressure = EC->getPressureFromDepth(depth);
+          const double depth = HH - grid.zlevels[k];
+          const double pressure = EC->getPressureFromDepth(depth);
           // reuse T to store enthalpy; assume that the ice is cold
           ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
         }

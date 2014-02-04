@@ -121,7 +121,7 @@ PetscErrorCode PISMSurfaceModel::write_variables(std::set<std::string> vars, con
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+PetscErrorCode PISMSurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {

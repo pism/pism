@@ -77,7 +77,7 @@ PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
+PetscErrorCode PO_delta_SL::sea_level_elevation(double &result) {
   PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
 
   if (offset)

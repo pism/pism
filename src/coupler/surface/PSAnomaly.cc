@@ -101,7 +101,7 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSAnomaly::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSAnomaly::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   ierr = climatic_mass_balance_anomaly->average(m_t, m_dt); CHKERRQ(ierr);

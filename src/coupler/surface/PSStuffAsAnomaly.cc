@@ -97,7 +97,7 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSStuffAsAnomaly::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSStuffAsAnomaly::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if ((fabs(my_t - m_t) < 1e-12) &&
@@ -129,8 +129,8 @@ PetscErrorCode PSStuffAsAnomaly::update(PetscReal my_t, PetscReal my_dt) {
   ierr = temp_0.begin_access(); CHKERRQ(ierr);
   ierr = temp_input.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
       temp(i, j) = temp(i, j) - temp_0(i, j) + temp_input(i, j);
     }

@@ -69,11 +69,11 @@ PetscErrorCode POConstantPIK::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POConstantPIK::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode POConstantPIK::update(double my_t, double my_dt) {
   m_t = my_t; m_dt = my_dt; return 0;
 }
 
-PetscErrorCode POConstantPIK::sea_level_elevation(PetscReal &result) {
+PetscErrorCode POConstantPIK::sea_level_elevation(double &result) {
   result = sea_level;
   return 0;
 }
@@ -81,16 +81,16 @@ PetscErrorCode POConstantPIK::sea_level_elevation(PetscReal &result) {
 PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  const PetscScalar T0 = config.get("water_melting_point_temperature"), // K
+  const double T0 = config.get("water_melting_point_temperature"), // K
     beta_CC = config.get("beta_CC"),
     g = config.get("standard_gravity"),
     rho_ice = config.get("ice_density");
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = rho_ice * g * (*ice_thickness)(i,j); // FIXME task #7297
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double pressure = rho_ice * g * (*ice_thickness)(i,j); // FIXME task #7297
 
       // temp is set to melting point at depth
       result(i,j) = T0 - beta_CC * pressure;
@@ -109,23 +109,23 @@ PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
 PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  PetscReal L = config.get("water_latent_heat_fusion"),
+  double L = config.get("water_latent_heat_fusion"),
     rho_ocean = config.get("sea_water_density"),
     rho_ice = config.get("ice_density");
 
-  const PetscScalar c_p_ocean	  = 3974.0,   // J/(K*kg), specific heat capacity of ocean mixed layer
+  const double c_p_ocean	  = 3974.0,   // J/(K*kg), specific heat capacity of ocean mixed layer
     gamma_T	  = 1e-4;     // m/s, thermal exchange velocity
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
-  PetscScalar ocean_salinity = 35.0; 
+  double ocean_salinity = 35.0; 
 
-  PetscScalar T_water = -1.7, //Default in PISM-PIK
+  double T_water = -1.7, //Default in PISM-PIK
     T_ocean = 273.15 + T_water;
 
   // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-  // PetscReal meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * rho_ice); // m s-1
+  // double meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * rho_ice); // m s-1
 
-  PetscReal meltfactor = 5e-3;
+  double meltfactor = 5e-3;
   bool meltfactorSet;
   double meltfactor_pik;
   ierr = PISMOptionsReal("-meltfactor_pik",
@@ -140,21 +140,21 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   ierr = result.begin_access(); CHKERRQ(ierr);
 
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // compute T_f[i][j] according to beckmann_goosse03, which has the
       // meaning of the freezing temperature of the ocean water directly
       // under the shelf, (of salinity 35psu) [this is related to the
       // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
       // details]
-      PetscScalar shelfbaseelev = - (rho_ice / rho_ocean) * (*ice_thickness)(i,j),
+      double shelfbaseelev = - (rho_ice / rho_ocean) * (*ice_thickness)(i,j),
         T_f= 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
       // add 273.15 to get it in Kelvin
 
       // compute ocean_heat_flux according to beckmann_goosse03
       // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
-      PetscScalar oceanheatflux = meltfactor * rho_ocean * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
+      double oceanheatflux = meltfactor * rho_ocean * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
       // TODO: T_ocean -> field!
 
       // shelfbmassflux is positive if ice is freezing on; here it is always negative:

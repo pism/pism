@@ -259,7 +259,7 @@ PetscErrorCode PISMConfig::flag_from_option(std::string name, std::string flag) 
 */
 PetscErrorCode PISMConfig::scalar_from_option(std::string name, std::string parameter) {
   PetscErrorCode ierr;
-  PetscReal value = get_quiet(parameter);
+  double value = get_quiet(parameter);
   bool flag;
 
   ierr = PISMOptionsReal("-" + name,
@@ -354,7 +354,7 @@ PetscErrorCode PISMConfig::set_keyword_from_option(std::string name, std::string
 
 
 //! Print all the attributes of a configuration variable.
-PetscErrorCode PISMConfig::print_to_stdout(PetscInt vt) const {
+PetscErrorCode PISMConfig::print_to_stdout(int vt) const {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(vt, m_com, "PISM parameters read from %s:\n",

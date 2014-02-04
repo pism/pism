@@ -39,7 +39,7 @@ PISMBedDef::PISMBedDef(IceGrid &g, const PISMConfig &conf)
 
 PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   ierr = topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
@@ -98,7 +98,7 @@ PetscErrorCode PISMBedDef::init(PISMVars &vars) {
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).
-PetscErrorCode PISMBedDef::compute_uplift(PetscScalar dt_beddef) {
+PetscErrorCode PISMBedDef::compute_uplift(double dt_beddef) {
   PetscErrorCode ierr;
 
   ierr = topg->add(-1, topg_last, *uplift); CHKERRQ(ierr);

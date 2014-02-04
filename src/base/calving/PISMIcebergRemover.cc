@@ -54,7 +54,7 @@ PetscErrorCode PISMIcebergRemover::init(PISMVars &vars) {
 PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
                                           IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
-  PetscScalar **iceberg_mask;
+  double **iceberg_mask;
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
@@ -65,8 +65,8 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
   ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
   ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
   ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.grounded_ice(i,j) == true)
         iceberg_mask[i][j] = mask_grounded_ice;
       else if (M.floating_ice(i,j) == true)
@@ -79,8 +79,8 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
   // them removed.
   if (m_bcflag) {
     ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
         if (m_bcflag->as_int(i,j) == 1)
           iceberg_mask[i][j] = mask_grounded_ice;
       }
@@ -92,7 +92,7 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
   ierr = transfer_to_proc0(); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
-    PetscScalar *mask;
+    double *mask;
     ierr = VecGetArray(m_mask_p0, &mask); CHKERRQ(ierr);
 
     cc(mask, grid.Mx, grid.My, true, mask_grounded_ice);
@@ -105,8 +105,8 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
   ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (iceberg_mask[i][j] > 0.5) {
         ice_thickness(i,j) = 0.0;
         pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;

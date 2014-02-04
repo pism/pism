@@ -88,7 +88,7 @@ PetscErrorCode POCache::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POCache::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode POCache::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
   if (my_t + my_dt > m_next_update_time) {
     ierr = input_model->update(my_t + 0.5*my_dt,
@@ -106,7 +106,7 @@ PetscErrorCode POCache::update(PetscReal my_t, PetscReal my_dt) {
 }
 
 
-PetscErrorCode POCache::sea_level_elevation(PetscReal &result) {
+PetscErrorCode POCache::sea_level_elevation(double &result) {
   result = m_sea_level;
   return 0;
 }

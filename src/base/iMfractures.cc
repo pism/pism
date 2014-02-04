@@ -28,7 +28,7 @@
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
 PetscErrorCode IceModel::calculateFractureDensity() {
-  const PetscScalar dx = grid.dx, dy = grid.dy, Mx = grid.Mx, My = grid.My;
+  const double dx = grid.dx, dy = grid.dy, Mx = grid.Mx, My = grid.My;
   PetscErrorCode ierr;
 
   IceModelVec2S
@@ -68,11 +68,11 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   }
 
   MaskQuery M(vMask);
-  PetscScalar tempFD;
+  double tempFD;
 
   //options
   /////////////////////////////////////////////////////////
-  PetscScalar soft_residual = 1.0;
+  double soft_residual = 1.0;
   PetscBool fracture_soft;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-fracture_softening", &soft_residual, &fracture_soft);
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
@@ -90,8 +90,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
-  PetscInt  Nparamf=4;
-  PetscReal inarrayf[4] = {1.0, 7.0e4, 0.0, 2.0e-10};
+  int  Nparamf=4;
+  double inarrayf[4] = {1.0, 7.0e4, 0.0, 2.0e-10};
   PetscBool  fractures_set;
   ierr = PetscOptionsGetRealArray(PETSC_NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);
   CHKERRQ(ierr);
@@ -101,7 +101,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     CHKERRQ(ierr);
     PISMEnd();
   }
-  PetscReal gamma = inarrayf[0],
+  double gamma = inarrayf[0],
     initThreshold = inarrayf[1],
     gammaheal     = inarrayf[2],
     healThreshold = inarrayf[3];
@@ -114,7 +114,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   PetscBool do_fracground;
   ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground); CHKERRQ(ierr);
 
-  PetscScalar fdBoundaryValue = 0.0;
+  double fdBoundaryValue = 0.0;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-phi0", &fdBoundaryValue, PETSC_NULL);
 
   PetscBool constant_healing;
@@ -136,14 +136,14 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   PetscBool fd2d_scheme;
   ierr = PetscOptionsHasName(NULL,"-scheme_fd2d",&fd2d_scheme); CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       tempFD=0;
       //SSA: v . grad memField
 
-      PetscScalar uvel=(*ssa_velocity)(i,j).u;
-      PetscScalar vvel=(*ssa_velocity)(i,j).v;
+      double uvel=(*ssa_velocity)(i,j).u;
+      double vvel=(*ssa_velocity)(i,j).v;
 
       if (fd2d_scheme){
 
@@ -178,7 +178,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
       //sources /////////////////////////////////////////////////////////////////
       ///von mises criterion
-      PetscScalar txx = deviatoric_stresses(i , j, 0),
+      double txx = deviatoric_stresses(i , j, 0),
         tyy = deviatoric_stresses(i , j, 1),
         txy = deviatoric_stresses(i , j, 2),
 
@@ -189,7 +189,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
       ///max shear stress criterion (more stringent than von mises)
       if (max_shear_stress){
-        PetscScalar maxshear=PetscAbs(T1);
+        double maxshear=PetscAbs(T1);
         maxshear=PetscMax(maxshear,PetscAbs(T2));
         maxshear=PetscMax(maxshear,PetscAbs(T1-T2));
 
@@ -198,14 +198,14 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
       ///lefm mixed-mode criterion
       if (lefm){
-        PetscScalar sigmamu = 0.1; //friction coefficient between crack faces
+        double sigmamu = 0.1; //friction coefficient between crack faces
 
-        PetscScalar sigmac = 0.64/M_PI; //initial crack depth 20cm
+        double sigmac = 0.64/M_PI; //initial crack depth 20cm
 
-        PetscScalar sigmabetatest, sigmanor, sigmatau, Kone, Ktwo,
+        double sigmabetatest, sigmanor, sigmatau, Kone, Ktwo,
           KSI, KSImax = 0.0, sigmatetanull;
 
-        for (PetscInt l = 46; l <= 90; ++l) { //optimize for various precursor angles beta
+        for (int l = 46; l <= 90; ++l) { //optimize for various precursor angles beta
           sigmabetatest = l*M_PI/180.0;
 
           //rist_sammonds99
@@ -243,13 +243,13 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       //////////////////////////////////////////////////////////////////////////////
 
       //fracture density
-      PetscScalar fdnew = gamma*(strain_rates(i,j,0)-0.0)*(1-vFDnew(i,j));
+      double fdnew = gamma*(strain_rates(i,j,0)-0.0)*(1-vFDnew(i,j));
       if (sigmat > initThreshold) {
         vFDnew(i,j)+= fdnew*dt;
       }
 
       //healing
-      PetscScalar fdheal = gammaheal*(strain_rates(i,j,0)-healThreshold);
+      double fdheal = gammaheal*(strain_rates(i,j,0)-healThreshold);
       if (ice_thickness(i,j)>0.0){
         if (constant_healing){
           fdheal = gammaheal*(-healThreshold);
@@ -307,8 +307,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
           vFAnew(i,j) = 0.0;
 
         // additional flow enhancement due to fracture softening
-        PetscScalar phi_exp=3.0;//flow_law->exponent();
-        PetscScalar softening = pow((1.0-(1.0-soft_residual)*vFDnew(i,j)),-phi_exp);
+        double phi_exp=3.0;//flow_law->exponent();
+        double softening = pow((1.0-(1.0-soft_residual)*vFDnew(i,j)),-phi_exp);
         if (ice_thickness(i,j)>0.0) {
           vFE(i,j)=1.0/pow(softening,1/3.0);
         }

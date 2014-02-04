@@ -78,8 +78,8 @@ int main(int argc, char *argv[]) {
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
     //            100 * sin(2 * pi * (xx + 1.5 * yy) / 40e3);
     ierr = topg.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x[i] / 600.0e3) +
           100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
       }
@@ -93,13 +93,13 @@ int main(int argc, char *argv[]) {
     config.set_double("bed_smoother_range", 50.0e3);
     PISMBedSmoother smoother(grid, config, 1);
     ierr = smoother.preprocess_bed(topg); CHKERRQ(ierr);
-    PetscInt Nx,Ny;
+    int Nx,Ny;
     ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
     ierr = smoother.get_theta(usurf, &theta); CHKERRQ(ierr);
 
     if (show) {
-      const PetscInt  window = 400;
+      const int  window = 400;
       ierr = topg.view(window);  CHKERRQ(ierr);
       ierr = smoother.topgsmooth.view(window);  CHKERRQ(ierr);
       ierr = theta.view(window);  CHKERRQ(ierr);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
       ierr = PetscSleep(10); CHKERRQ(ierr);
     }
 
-    PetscReal topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
+    double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
     ierr = topg.min(topg_min); CHKERRQ(ierr);
     ierr = topg.max(topg_max); CHKERRQ(ierr);
     ierr = smoother.topgsmooth.min(topgs_min); CHKERRQ(ierr);

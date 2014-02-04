@@ -47,9 +47,9 @@ class PSTemperatureIndex : public PISMSurfaceModel {
 public:
   PSTemperatureIndex(IceGrid &g, const PISMConfig &conf);
   virtual ~PSTemperatureIndex();
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
@@ -61,7 +61,7 @@ protected:
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
   DegreeDayFactors base_ddf;          //!< holds degree-day factors in location-independent case
-  PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
+  double  base_pddStdDev,        //!< K; daily amount of randomness
     base_pddThresholdTemp, //!< K; temps are positive above this
     m_next_balance_year_start;
   IceModelVec2S

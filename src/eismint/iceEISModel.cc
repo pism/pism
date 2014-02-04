@@ -152,7 +152,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
   ierr = PISMOptionsReal("-Tmin", "T min, Kelvin",
 			 T_min, paramSet); CHKERRQ(ierr);
 
-  PetscReal
+  double
     myMmax = grid.convert(M_max, "m/s",        "m/year"),
     mySb   = grid.convert(S_b,   "m/second/m", "m/year/km"),
     myST   = grid.convert(S_T,   "K/m",        "K/km"),
@@ -240,12 +240,12 @@ PetscErrorCode IceEISModel::init_couplers() {
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
   ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
 
-  PetscScalar cx = grid.Lx, cy = grid.Ly;
+  double cx = grid.Lx, cy = grid.Ly;
   if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // r is distance from center of grid; if E then center is shifted (above)
-      const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i)
+      const double r = sqrt( PetscSqr(-cx + grid.dx*i)
                                   + PetscSqr(-cy + grid.dy*j) );
       // set accumulation from formula (7) in (Payne et al 2000)
       climatic_mass_balance(i,j) = PetscMin(M_max, S_b * (R_el-r));
@@ -265,15 +265,15 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   // computation based on code by Tony Payne, 6 March 1997:
   //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
   
-  const PetscScalar    b0 = 1000.0;  // plateau elevation
-  const PetscScalar    L = 750.0e3;  // half-width of computational domain
-  const PetscScalar    w = 200.0e3;  // trough width
-  const PetscScalar    slope = b0/L;
-  const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
+  const double    b0 = 1000.0;  // plateau elevation
+  const double    L = 750.0e3;  // half-width of computational domain
+  const double    w = 200.0e3;  // trough width
+  const double    slope = b0/L;
+  const double    dx61 = (2*L) / 60; // = 25.0e3
   ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double nsd = i * grid.dx, ewd = j * grid.dy;
       if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
            && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
         bed_topography(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
@@ -296,12 +296,12 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   // computation based on code by Tony Payne, 6 March 1997:
   //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
   
-  const PetscScalar    slope = 250.0;
-  const PetscScalar    w = 150.0e3;  // mound width
+  const double    slope = 250.0;
+  const double    w = 150.0e3;  // mound width
   ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double nsd = i * grid.dx, ewd = j * grid.dy;
       bed_topography(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
     }
   }

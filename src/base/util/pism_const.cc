@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,10 +35,10 @@
 
 //! \brief PISM verbosity level; determines how much gets printed to the
 //! standard out.
-static PetscInt verbosityLevel;
+static int verbosityLevel;
 
 //! \brief Set the PISM verbosity level.
-PetscErrorCode setVerbosityLevel(PetscInt level) {
+PetscErrorCode setVerbosityLevel(int level) {
   if ((level < 0) || (level > 5)) {
     SETERRQ(PETSC_COMM_SELF, 1,"verbosity level invalid");
   }
@@ -47,7 +47,7 @@ PetscErrorCode setVerbosityLevel(PetscInt level) {
 }
 
 //! \brief Get the verbosity level.
-PetscInt getVerbosityLevel() {
+int getVerbosityLevel() {
   return verbosityLevel;
 }
 
@@ -75,7 +75,7 @@ PetscErrorCode verbPrintf(const int thresh,
   size_t         len;
   char           *buffer,*sub1,*sub2;
   const char     *nformat;
-  PetscReal      value;
+  double      value;
 
   extern FILE *petsc_history;
 
@@ -162,7 +162,7 @@ bool ends_with(std::string str, std::string suffix) {
 //! Checks if a vector of doubles is strictly increasing.
 bool is_increasing(const std::vector<double> &a) {
   int len = (int)a.size();
-  for (PetscInt k = 0; k < len-1; k++) {
+  for (int k = 0; k < len-1; k++) {
     if (a[k] >= a[k+1])  return false;
   }
   return true;
@@ -211,7 +211,7 @@ std::string pism_username_prefix(MPI_Comm com) {
 //! \brief Uses argc and argv to create the string with current PISM
 //! command-line arguments.
 std::string pism_args_string() {
-  PetscInt argc;
+  int argc;
   char **argv;
   PetscGetArgs(&argc, &argv);
 

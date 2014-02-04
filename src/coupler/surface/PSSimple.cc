@@ -74,7 +74,7 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSSimple::update(PetscReal my_t, PetscReal my_dt)
+PetscErrorCode PSSimple::update(double my_t, double my_dt)
 {
   m_t = my_t;
   m_dt = my_dt;

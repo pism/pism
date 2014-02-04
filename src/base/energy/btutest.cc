@@ -48,13 +48,13 @@ PetscErrorCode BTU_Test::bootstrap() {
     std::vector<double> zlevels = temp.get_levels();
 
     ierr = temp.begin_access(); CHKERRQ(ierr);
-    PetscScalar *Tb; // columns of these values
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    double *Tb; // columns of these values
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
         for (unsigned int k=0; k < Mbz; k++) {
-          const PetscReal z = zlevels[k];
-          PetscReal FF; // Test K:  use Tb[k], ignore FF
+          const double z = zlevels[k];
+          double FF; // Test K:  use Tb[k], ignore FF
           ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
         }
       }
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com,
 	"  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
     bool flag;
-    PetscReal dt_years = 1.0;
+    double dt_years = 1.0;
     std::string outname="unnamed_btutest.nc";
     int tmp = grid.Mz;
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
-    PetscReal dt_seconds = unit_system.convert(dt_years, "years", "seconds");
+    double dt_seconds = unit_system.convert(dt_years, "years", "seconds");
 
     // worry about time step
     int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
                       "  user set timestep of %.4f years ...\n"
                       "  reset to %.4f years to get integer number of steps ... \n",
                       dt_years, unit_system.convert(dt_seconds, "seconds", "years")); CHKERRQ(ierr);
-    PetscReal max_dt;
+    double max_dt;
     bool restrict_dt;
     ierr = btu.max_timestep(0.0, max_dt, restrict_dt); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
@@ -233,14 +233,14 @@ int main(int argc, char *argv[]) {
 
     // actually do the time-stepping
     ierr = verbPrintf(2,com,"  running ...\n  "); CHKERRQ(ierr);
-    for (PetscInt n = 0; n < N; n++) {
-      const PetscReal time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
+    for (int n = 0; n < N; n++) {
+      const double time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
 
       // compute exact ice temperature at z=0 at time y
       ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          PetscReal TT, FF; // Test K:  use TT, ignore FF
+      for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+        for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+          double TT, FF; // Test K:  use TT, ignore FF
           ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
           (*bedtoptemp)(i,j) = TT;
         }
@@ -263,14 +263,14 @@ int main(int argc, char *argv[]) {
     ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
     // get, and tell stdout, the correct answer from Test K
-    PetscReal TT, FF; // Test K:  use FF, ignore TT
+    double TT, FF; // Test K:  use FF, ignore TT
     ierr = exactK(grid.time->end(), 0.0, &TT, &FF, 0); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
                       grid.time->end_date().c_str(), FF); CHKERRQ(ierr);
 
     // compute numerical error
-    PetscReal maxghferr, avghferr;
+    double maxghferr, avghferr;
     ierr = ghf->shift(-FF); CHKERRQ(ierr);
     ierr = ghf->norm(NORM_INFINITY,maxghferr); CHKERRQ(ierr);
     ierr = ghf->norm(NORM_1,avghferr); CHKERRQ(ierr);

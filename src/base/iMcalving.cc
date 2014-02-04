@@ -91,8 +91,8 @@ PetscErrorCode IceModel::Href_cleanup() {
   ierr = vHref.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
 
       if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
         ice_thickness(i, j) += vHref(i, j);
@@ -135,7 +135,7 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
   const bool
     update_2d_discharge = discharge_flux_2D_cumulative.was_created(),
     use_Href = Href.was_created() && Href_old.was_created();
-  PetscReal my_total_discharge = 0.0, total_discharge;
+  double my_total_discharge = 0.0, total_discharge;
 
   ierr = thickness.begin_access(); CHKERRQ(ierr);
   ierr = thickness_old.begin_access(); CHKERRQ(ierr);
@@ -151,8 +151,8 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
     ierr = Href_old.begin_access(); CHKERRQ(ierr);
   }
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (mask.ice_free_ocean(i,j)) {
         double
           delta_H    = thickness(i,j) - thickness_old(i,j),

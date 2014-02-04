@@ -73,27 +73,27 @@ protected:
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> input_velocity,
-                                     planeStar<PetscScalar> input_flux,
-                                     planeStar<PetscScalar> &output_velocity,
-                                     planeStar<PetscScalar> &output_flux);
-  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
-                                                 PetscScalar* liquifiedVol,
-                                                 PetscScalar* bulgeCount);
+                                     planeStar<double> input_flux,
+                                     planeStar<double> &output_velocity,
+                                     planeStar<double> &output_flux);
+  virtual PetscErrorCode enthalpyAndDrainageStep(double* vertSacrCount,
+                                                 double* liquifiedVol,
+                                                 double* bulgeCount);
 private:
   IceModelVec2Int no_model_mask;
   IceModelVec2S   usurfstore, thkstore;
   IceModelVec2S   bmr_stored;
-  PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
+  PetscErrorCode  set_no_model_strip(double stripwidth);
 };
 
 //! \brief Set no_model_mask variable to have value 1 in strip of width 'strip'
 //! m around edge of computational domain, and value 0 otherwise.
-PetscErrorCode IceRegionalModel::set_no_model_strip(PetscReal strip) {
+PetscErrorCode IceRegionalModel::set_no_model_strip(double strip) {
   PetscErrorCode ierr;
 
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
         if (grid.x[i] <= grid.x[0]+strip || grid.x[i] >= grid.x[grid.Mx-1]-strip) {
           no_model_mask(i, j) = 1;
         } else if (grid.y[j] <= grid.y[0]+strip || grid.y[j] >= grid.y[grid.My-1]-strip) {
@@ -187,7 +187,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   }
 
   bool nmstripSet;
-  PetscReal stripkm = 0.0;
+  double stripkm = 0.0;
   ierr = PISMOptionsReal("-no_model_strip", 
                          "width in km of strip near boundary in which modeling is turned off",
 			 stripkm, nmstripSet);
@@ -386,9 +386,9 @@ PetscErrorCode IceRegionalModel::massContExplicitStep() {
 void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
                                              int i, int j,
                                              planeStar<PISMVector2> input_velocity,
-                                             planeStar<PetscScalar> input_flux,
-                                             planeStar<PetscScalar> &output_velocity,
-                                             planeStar<PetscScalar> &output_flux) {
+                                             planeStar<double> input_flux,
+                                             planeStar<double> &output_velocity,
+                                             planeStar<double> &output_flux) {
 
   IceModel::cell_interface_fluxes(dirichlet_bc, i, j,
                                   input_velocity,
@@ -411,10 +411,10 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
   //
 }
 
-PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
-                                                         PetscScalar* bulgeCount) {
+PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, double* liquifiedVol,
+                                                         double* bulgeCount) {
   PetscErrorCode ierr;
-  PetscScalar *new_enthalpy, *old_enthalpy;
+  double *new_enthalpy, *old_enthalpy;
 
   ierr = IceModel::enthalpyAndDrainageStep(vertSacrCount, liquifiedVol, bulgeCount); CHKERRQ(ierr);
 
@@ -424,8 +424,8 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (no_model_mask(i, j) < 0.5)
         continue;
 
@@ -442,8 +442,8 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
   ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = bmr_stored.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (no_model_mask(i, j) < 0.5)
         continue;
 

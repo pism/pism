@@ -30,7 +30,7 @@ public:
   virtual ~PSAnomaly();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);

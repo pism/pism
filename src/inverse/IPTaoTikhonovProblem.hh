@@ -49,8 +49,8 @@ public:
   //! The method called after each minimization iteration.
   virtual PetscErrorCode 
   iteration( IPTaoTikhonovProblem<ForwardProblem> &problem,
-             PetscReal eta, PetscInt iter,
-             PetscReal objectiveValue, PetscReal designValue,
+             double eta, int iter,
+             double objectiveValue, double designValue,
              DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
              StateVec &u,  StateVec &diff_u,  DesignVec &grad_u,
              DesignVec &gradient) = 0;
@@ -85,7 +85,7 @@ L2NormFunctional2S designFunctional(grid); //J_X
 L2NormFunctional2V stateFunctional(grid);  //J_Y
 IceModelVec2V u_obs;     // Set this to the surface velocity observations.
 IceModelVec2S tauc_0;    // Set this to the initial guess for tauc.
-PetscReal eta;           // Set this to the desired penalty parameter.
+double eta;           // Set this to the desired penalty parameter.
 
 typedef InvSSATauc IPTaoTikhonovProblem<SSATaucForwardProblem>;
 InvSSATauc tikhonovProblem(forwardProblem,tauc_0,u_obs,eta,designFunctional,stateFunctional);
@@ -171,7 +171,7 @@ public:
       @param    stateFunctional The functional \f$J_S\f$
   */
 
-  IPTaoTikhonovProblem( ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
+  IPTaoTikhonovProblem( ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, double eta, 
                   IPFunctional<DesignVec>&designFunctional, IPFunctional<StateVec>&stateFunctional);
 
   virtual ~IPTaoTikhonovProblem();
@@ -186,7 +186,7 @@ public:
   }
 
   //! Callback provided to TAO for objective evaluation.
-  virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient);
+  virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, double *value, Vec gradient);
 
   //! Add an object to the list of objects to be called after each iteration.
   virtual void addListener( typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr listener) {
@@ -244,18 +244,18 @@ protected:
   DesignVec m_grad;        /**< Weighted sum of the design and state gradients
                                 corresponding to the gradient of the Tikhonov functional \f$J\f$. */
 
-  PetscReal m_eta;         ///<  Penalty paramter/Lagrange multiplier.
+  double m_eta;         ///<  Penalty paramter/Lagrange multiplier.
 
-  PetscReal m_val_design;  ///<  Value of \f$J_D\f$ at the current iterate.
-  PetscReal m_val_state;   ///<  Value of \f$J_S\f$ at the current iterate.
+  double m_val_design;  ///<  Value of \f$J_D\f$ at the current iterate.
+  double m_val_state;   ///<  Value of \f$J_S\f$ at the current iterate.
 
   IPFunctional<IceModelVec2S> &m_designFunctional;  //<! Implementation of \f$J_D\f$.
   IPFunctional<IceModelVec2V> &m_stateFunctional;   //<! Implementation of \f$J_S\f$.
 
   std::vector<typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners; ///< List of iteration callbacks.
 
-  PetscReal m_tikhonov_atol;  ///< Convergence paramter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
-  PetscReal m_tikhonov_rtol;  /**< Convergence paramter: convergence stops when \f$||J_D||_2 \f$ is 
+  double m_tikhonov_atol;  ///< Convergence paramter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
+  double m_tikhonov_rtol;  /**< Convergence paramter: convergence stops when \f$||J_D||_2 \f$ is 
                                   less than m_tikhonov_rtol times the maximum of the gradient of \f$J_S\f$ and
                                   \f$(1/\eta)J_D\f$.  This occurs when the two terms forming the sum of the gradient
                                   of \f$J\f$ point in roughly opposite directions with the same magnitude. */
@@ -263,7 +263,7 @@ protected:
 };
 
 template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem( ForwardProblem &forward,
-                 DesignVec &d0, StateVec &u_obs, PetscReal eta,
+                 DesignVec &d0, StateVec &u_obs, double eta,
                  IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional ):
                   m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
                   m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
@@ -282,8 +282,8 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   m_tikhonov_atol = m_grid->config.get("tikhonov_atol");
   m_tikhonov_rtol = m_grid->config.get("tikhonov_rtol");
 
-  PetscInt design_stencil_width = m_d0.get_stencil_width();
-  PetscInt state_stencil_width = m_u_obs.get_stencil_width();
+  int design_stencil_width = m_d0.get_stencil_width();
+  int state_stencil_width = m_u_obs.get_stencil_width();
   ierr = m_d.create(*m_grid, "design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dGlobal.create(*m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dGlobal.copy_from(m_d0); CHKERRQ(ierr);
@@ -309,8 +309,8 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   ierr = TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
   ierr = TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this); CHKERRQ(ierr);
 
-  PetscReal fatol = 1e-10, frtol = 1e-20;
-  PetscReal gatol = PETSC_DEFAULT, grtol = PETSC_DEFAULT, gttol = PETSC_DEFAULT;
+  double fatol = 1e-10, frtol = 1e-20;
+  double gatol = PETSC_DEFAULT, grtol = PETSC_DEFAULT, gttol = PETSC_DEFAULT;
   ierr = TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol); CHKERRQ(ierr);
 
   return 0;
@@ -319,7 +319,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::monitorTao(TaoSolver tao) {
   PetscErrorCode ierr;
   
-  PetscInt its;
+  int its;
   ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL ); CHKERRQ(ierr);
   
   int nListeners = m_listeners.size();
@@ -336,8 +336,8 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::convergenceTest(TaoSolver tao) {
   PetscErrorCode ierr;
-  PetscReal designNorm, stateNorm, sumNorm;
-  PetscReal dWeight, sWeight;
+  double designNorm, stateNorm, sumNorm;
+  double dWeight, sWeight;
   dWeight = 1/m_eta;
   sWeight = 1;
   
@@ -357,7 +357,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   return 0;
 }
 
-template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient) {
+template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(TaoSolver tao, Vec x, double *value, Vec gradient) {
   PetscErrorCode ierr;
 
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
@@ -388,7 +388,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 
   ierr = m_grad.copy_to(gradient); CHKERRQ(ierr);      
 
-  PetscReal valDesign, valState;
+  double valDesign, valState;
   ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);
   ierr = m_stateFunctional.valueAt(m_u_diff,&valState); CHKERRQ(ierr);
 

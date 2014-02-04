@@ -199,8 +199,8 @@ void PISMRoutingHydrology::get_diagnostics(std::map<std::string, PISMDiagnostic*
 PetscErrorCode PISMRoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
   PetscErrorCode ierr;
   ierr = waterthk.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (waterthk(i,j) < 0.0) {
         PetscPrintf(grid.com,
            "PISMRoutingHydrology ERROR: disallowed negative water layer thickness\n"
@@ -231,19 +231,19 @@ This method does no reporting at stdout; the calling routine can do that.
  */
 PetscErrorCode PISMRoutingHydrology::boundary_mass_changes(
             IceModelVec2S &newthk,
-            PetscReal &icefreelost, PetscReal &oceanlost,
-            PetscReal &negativegain, PetscReal &nullstriplost) {
+            double &icefreelost, double &oceanlost,
+            double &negativegain, double &nullstriplost) {
   PetscErrorCode ierr;
-  PetscReal fresh_water_density = config.get("fresh_water_density");
-  PetscReal my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
+  double fresh_water_density = config.get("fresh_water_density");
+  double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
   MaskQuery M(*mask);
 
   ierr = newthk.begin_access(); CHKERRQ(ierr);
   ierr = cellarea->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscReal dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
       if (newthk(i,j) < 0.0) {
         my_negativegain += -newthk(i,j) * dmassdz;
         newthk(i,j) = 0.0;
@@ -273,10 +273,10 @@ PetscErrorCode PISMRoutingHydrology::boundary_mass_changes(
   }
   ierr = newthk.begin_access(); CHKERRQ(ierr);
   ierr = cellarea->begin_access(); CHKERRQ(ierr);
-  PetscReal my_nullstriplost = 0.0;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscReal dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+  double my_nullstriplost = 0.0;
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
       if (in_null_strip(i,j)) {
         my_nullstriplost += newthk(i,j) * dmassdz;
         newthk(i,j) = 0.0;
@@ -314,7 +314,7 @@ Calls subglacial_water_pressure() method to get water pressure.
 PetscErrorCode PISMRoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  const PetscReal
+  const double
     rg = config.get("fresh_water_density") * config.get("standard_gravity");
 
   ierr = subglacial_water_pressure(result); CHKERRQ(ierr);
@@ -327,8 +327,8 @@ PetscErrorCode PISMRoutingHydrology::subglacial_hydraulic_potential(IceModelVec2
   ierr = Pover.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.ocean(i,j))
         result(i,j) = Pover(i,j);
     }
@@ -350,8 +350,8 @@ PetscErrorCode PISMRoutingHydrology::water_thickness_staggered(IceModelVec2Stag 
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       // east
       if (M.grounded_ice(i,j))
         if (M.grounded_ice(i+1,j))
@@ -395,9 +395,9 @@ stencil of width 1.
 Also returns the maximum over all staggered points of \f$ K W \f$.
  */
 PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
-                       IceModelVec2Stag &result, PetscReal &maxKW) {
+                       IceModelVec2Stag &result, double &maxKW) {
   PetscErrorCode ierr;
-  const PetscReal
+  const double
     k     = config.get("hydrology_hydraulic_conductivity"),
     alpha = config.get("hydrology_thickness_power_in_flux"),
     beta  = config.get("hydrology_gradient_power_in_flux"),
@@ -417,11 +417,11 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
     ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
     ierr = R.update_ghosts(); CHKERRQ(ierr);
 
-    PetscReal dRdx, dRdy;
+    double dRdx, dRdy;
     ierr = R.begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
         dRdx = ( R(i+1,j) - R(i,j) ) / grid.dx;
         dRdy = ( R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1) ) / (4.0 * grid.dy);
         result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
@@ -434,17 +434,17 @@ PetscErrorCode PISMRoutingHydrology::conductivity_staggered(
     ierr = result.end_access(); CHKERRQ(ierr);
   }
 
-  PetscReal betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
+  double betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      for (PetscInt o = 0; o < 2; ++o) {
-        PetscReal Ktmp = k * pow(Wstag(i,j,o),alpha-1.0);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      for (int o = 0; o < 2; ++o) {
+        double Ktmp = k * pow(Wstag(i,j,o),alpha-1.0);
         if (beta < 2.0) {
           // regularize negative power |\grad psi|^{beta-2} by adding eps because
           //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
-          const PetscReal eps = 1.0;   // Pa m-1
+          const double eps = 1.0;   // Pa m-1
           result(i,j,o) = Ktmp * pow(result(i,j,o) + eps * eps,betapow);
         } else if (beta > 2.0) {
           result(i,j,o) = Ktmp * pow(result(i,j,o),betapow);
@@ -480,7 +480,7 @@ At the current state of the code, this is a diagnostic calculation only.
 PetscErrorCode PISMRoutingHydrology::wall_melt(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  const PetscReal
+  const double
     k     = config.get("hydrology_hydraulic_conductivity"),
     L     = config.get("water_latent_heat_fusion"),
     alpha = config.get("hydrology_thickness_power_in_flux"),
@@ -502,12 +502,12 @@ PetscErrorCode PISMRoutingHydrology::wall_melt(IceModelVec2S &result) {
   ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
   ierr = R.update_ghosts(); CHKERRQ(ierr);
 
-  PetscReal dRdx, dRdy;
+  double dRdx, dRdy;
   ierr = R.begin_access(); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (W(i,j) > 0.0) {
         dRdx = 0.0;
         if (W(i+1,j) > 0.0) {
@@ -558,8 +558,8 @@ Calls subglacial_water_pressure() method to get water pressure.
  */
 PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
-  const PetscReal  rg = config.get("standard_gravity") * config.get("fresh_water_density");
-  PetscReal dbdx, dbdy, dPdx, dPdy;
+  const double  rg = config.get("standard_gravity") * config.get("fresh_water_density");
+  double dbdx, dbdy, dPdx, dPdy;
 
   ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // R=P; yes, it updates ghosts
 
@@ -568,8 +568,8 @@ PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result
   ierr = Kstag.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (Wstag(i,j,0) > 0.0) {
         dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
         dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
@@ -608,8 +608,8 @@ PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) 
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = V.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j  );
       result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
     }
@@ -623,16 +623,16 @@ PetscErrorCode PISMRoutingHydrology::advective_fluxes(IceModelVec2Stag &result) 
 
 //! Compute the adaptive time step for evolution of W.
 PetscErrorCode PISMRoutingHydrology::adaptive_for_W_evolution(
-                  PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-                  PetscReal &dt_result,
-                  PetscReal &maxV_result, PetscReal &maxD_result,
-                  PetscReal &dtCFL_result, PetscReal &dtDIFFW_result) {
+                  double t_current, double t_end, double maxKW,
+                  double &dt_result,
+                  double &maxV_result, double &maxD_result,
+                  double &dtCFL_result, double &dtDIFFW_result) {
   PetscErrorCode ierr;
-  const PetscReal
+  const double
     dtmax = config.get("hydrology_maximum_time_step_years",
                        "years", "seconds"),
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
-  PetscReal tmp[2];
+  double tmp[2];
   ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   maxD_result = rg * maxKW;
@@ -656,11 +656,11 @@ and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  There is no time-step restrict
 The solution satisfies the inequalities
   \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
  */
-PetscErrorCode PISMRoutingHydrology::raw_update_Wtil(PetscReal hdt) {
+PetscErrorCode PISMRoutingHydrology::raw_update_Wtil(double hdt) {
     PetscErrorCode ierr;
-    PetscReal tmpmin;
+    double tmpmin;
 
-    const PetscReal
+    const double
       tillwat_max = config.get("hydrology_tillwat_max"),
       mu          = config.get("hydrology_tillwat_rate"),
       omega       = config.get("hydrology_tillwat_transfer_proportion"),
@@ -675,8 +675,8 @@ PetscErrorCode PISMRoutingHydrology::raw_update_Wtil(PetscReal hdt) {
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wtil.begin_access(); CHKERRQ(ierr);
     ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         tmpmin = PetscMin(omega * W(i,j), tillwat_max);
         Wtilnew(i,j) = (Wtil(i,j) + mu * hdt * tmpmin) / denom;
       }
@@ -690,13 +690,13 @@ PetscErrorCode PISMRoutingHydrology::raw_update_Wtil(PetscReal hdt) {
 
 
 //! The computation of Wnew, called by update().
-PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
+PetscErrorCode PISMRoutingHydrology::raw_update_W(double hdt) {
     PetscErrorCode ierr;
-    const PetscReal
+    const double
       wux  = 1.0 / (grid.dx * grid.dx),
       wuy  = 1.0 / (grid.dy * grid.dy),
       rg   = config.get("standard_gravity") * config.get("fresh_water_density");
-    PetscReal divadflux, diffW;
+    double divadflux, diffW;
 
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wtil.begin_access(); CHKERRQ(ierr);
@@ -706,11 +706,11 @@ PetscErrorCode PISMRoutingHydrology::raw_update_W(PetscReal hdt) {
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
     ierr = total_input.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
                     + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
-        const PetscReal  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
+        const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
                          Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
                          Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
                          Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
@@ -742,7 +742,7 @@ own shorter time steps, perhaps hours to weeks.
 For updating W = `bwat`, calls raw_update_W().  For updating Wtil = `tillwat`,
 calls raw_update_Wtil().
  */
-PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
+PetscErrorCode PISMRoutingHydrology::update(double icet, double icedt) {
   PetscErrorCode ierr;
 
   // if asked for the identical time interval versus last time, then
@@ -758,11 +758,11 @@ PetscErrorCode PISMRoutingHydrology::update(PetscReal icet, PetscReal icedt) {
   ierr = W.update_ghosts(); CHKERRQ(ierr);
 
   MaskQuery M(*mask);
-  PetscReal ht = m_t, hdt, // hydrology model time and time step
+  double ht = m_t, hdt, // hydrology model time and time step
             maxKW, maxV, maxD, dtCFL, dtDIFFW;
-  PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
+  double icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
-  PetscInt hydrocount = 0; // count hydrology time steps
+  int hydrocount = 0; // count hydrology time steps
 
   while (ht < m_t + m_dt) {
     hydrocount++;

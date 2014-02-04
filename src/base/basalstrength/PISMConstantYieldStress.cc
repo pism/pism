@@ -23,7 +23,7 @@
 PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   bool i_set, bootstrap, tauc_set;
-  PetscReal constant_tauc;
+  double constant_tauc;
   std::string filename;
   int start;
 
@@ -83,7 +83,7 @@ PetscErrorCode PISMConstantYieldStress::write_variables(std::set<std::string> va
 }
 
 
-PetscErrorCode PISMConstantYieldStress::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PISMConstantYieldStress::update(double my_t, double my_dt) {
   m_t = my_t; m_dt = my_dt;
   return 0;
 }

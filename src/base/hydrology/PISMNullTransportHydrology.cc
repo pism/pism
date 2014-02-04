@@ -57,7 +57,7 @@ not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal icedt) {
+PetscErrorCode PISMNullTransportHydrology::update(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6))
     return 0;
@@ -68,7 +68,7 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
 
   ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
 
-  const PetscReal tillwat_max = config.get("hydrology_tillwat_max"),
+  const double tillwat_max = config.get("hydrology_tillwat_max"),
                   C           = config.get("hydrology_tillwat_decay_rate_null");
 
   if (tillwat_max < 0.0) {
@@ -82,8 +82,8 @@ PetscErrorCode PISMNullTransportHydrology::update(PetscReal icet, PetscReal iced
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = Wtil.begin_access(); CHKERRQ(ierr);
   ierr = total_input.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (M.ocean(i,j)) {
         Wtil(i,j) = 0.0;
       } else {

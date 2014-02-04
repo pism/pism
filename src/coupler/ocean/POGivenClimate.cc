@@ -81,7 +81,7 @@ PetscErrorCode POGiven::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode POGiven::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   ierr = shelfbmassflux->average(m_t, m_dt); CHKERRQ(ierr);
@@ -90,7 +90,7 @@ PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
   return 0;
 }
 
-PetscErrorCode POGiven::sea_level_elevation(PetscReal &result) {
+PetscErrorCode POGiven::sea_level_elevation(double &result) {
   result = sea_level;
   return 0;
 }

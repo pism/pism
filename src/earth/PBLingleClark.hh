@@ -31,7 +31,7 @@ public:
   virtual ~PBLingleClark();
 
   PetscErrorCode init(PISMVars &vars);
-  PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  PetscErrorCode update(double my_t, double my_dt);
 protected:
   PetscErrorCode correct_topg();
   PetscErrorCode allocate();

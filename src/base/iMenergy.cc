@@ -44,10 +44,10 @@ do_cold_ice_methods == true.
 PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
 
-  PetscScalar  myCFLviolcount = 0.0,   // these are counts but they are type "PetscScalar"
+  double  myCFLviolcount = 0.0,   // these are counts but they are type "double"
                myVertSacrCount = 0.0,  //   because that type works with PISMGlobalSum()
                myBulgeCount = 0.0;
-  PetscScalar gVertSacrCount, gBulgeCount;
+  double gVertSacrCount, gBulgeCount;
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
@@ -72,7 +72,7 @@ PetscErrorCode IceModel::energyStep() {
 
   } else {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
-    PetscScalar myLiquifiedVol = 0.0, gLiquifiedVol;
+    double myLiquifiedVol = 0.0, gLiquifiedVol;
 
     ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
     CHKERRQ(ierr);
@@ -95,8 +95,8 @@ PetscErrorCode IceModel::energyStep() {
 
   ierr = PISMGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-    const PetscScalar bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
-    const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
+    const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
+    const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (   (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT) 
         && (getVerbosityLevel() > 2)                    ) {
       char tempstr[50] = "";
@@ -121,7 +121,7 @@ PetscErrorCode IceModel::energyStep() {
 //! the bedrock thermal layer will see.
 PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   PetscErrorCode  ierr;
-  PetscReal sea_level = 0,
+  double sea_level = 0,
     T0 = config.get("water_melting_point_temperature"),
     beta_CC_grad_sea_water = (config.get("beta_CC") * config.get("sea_water_density") *
                               config.get("standard_gravity")); // K m-1
@@ -143,14 +143,14 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (mask.grounded(i,j)) {
         if (mask.ice_free(i,j)) { // no ice: sees air temp
           result(i,j) = ice_surface_temp(i,j);
         } else { // ice: sees temp of base of ice
-          const PetscReal pressure = EC->getPressureFromDepth(ice_thickness(i,j));
-          PetscReal temp;
+          const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
+          double temp;
           // ignore return code when getting temperature: we are committed to
           //   this enthalpy field; getAbsTemp() only returns temperatures at or
           //   below pressure melting
@@ -174,10 +174,10 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
 //! \brief Is one of my neighbors below a critical thickness to apply advection
 //! in enthalpy or temperature equation?
-bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
-                              PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE) {
+bool IceModel::checkThinNeigh(double E, double NE, double N, double NW, 
+                              double W, double SW, double S, double SE) {
   // FIXME: silly hard-wired critical level, but we want to avoid config.get() in loops.
-  const PetscScalar THIN = 100.0;  // thin = (at most 100m thick)
+  const double THIN = 100.0;  // thin = (at most 100m thick)
   return (   (E < THIN) || (NE < THIN) || (N < THIN) || (NW < THIN)
           || (W < THIN) || (SW < THIN) || (S < THIN) || (SE < THIN) );
 }

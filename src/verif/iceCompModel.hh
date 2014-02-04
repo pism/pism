@@ -61,10 +61,10 @@ protected:
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
   PetscErrorCode computeGeometryErrors(    // all tests except K
-        PetscScalar &gvolexact, PetscScalar &gareaexact, PetscScalar &gdomeHexact,
-        PetscScalar &volerr, PetscScalar &areaerr,
-        PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
-        PetscScalar &centerHerr);
+        double &gvolexact, double &gareaexact, double &gdomeHexact,
+        double &volerr, double &areaerr,
+        double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
+        double &centerHerr);
   virtual PetscErrorCode summary(bool tempAndAge);
 
   // related to tests A B C D E H
@@ -75,9 +75,9 @@ protected:
   // related to test E
   PetscErrorCode fillSolnTestE();  // only used with exactOnly == PETSC_TRUE
   PetscErrorCode computeBasalVelocityErrors(    // test E only
-        PetscScalar &exactmaxspeed,
-        PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
-        PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
+        double &exactmaxspeed,
+        double &gmaxvecerr, double &gavvecerr,
+        double &gmaxuberr, double &gmaxvberr);
 
   PetscErrorCode reset_thickness_tests_AE();
 
@@ -87,19 +87,19 @@ protected:
   PetscErrorCode fillSolnTestL();  // only used with exactOnly == PETSC_TRUE
 
   // related to tests F G; see iCMthermo.cc
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+  virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
   PetscErrorCode initTestFG();
   PetscErrorCode getCompSourcesTestFG();
   PetscErrorCode fillSolnTestFG();  // only used with exactOnly == PETSC_TRUE
   PetscErrorCode computeTemperatureErrors(      // tests F and G
-                   PetscScalar &gmaxTerr, PetscScalar &gavTerr);
+                   double &gmaxTerr, double &gavTerr);
   PetscErrorCode computeBasalTemperatureErrors( // tests F and G
-                   PetscScalar &gmaxTerr, PetscScalar &gavTerr, PetscScalar &centerTerr);
+                   double &gmaxTerr, double &gavTerr, double &centerTerr);
   PetscErrorCode compute_strain_heating_errors(            // tests F and G
-                   PetscScalar &gmax_strain_heating_err, PetscScalar &gav_strain_heating_err);
+                   double &gmax_strain_heating_err, double &gav_strain_heating_err);
   PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
-                   PetscScalar &gmaxUerr, PetscScalar &gavUerr,  // 2D vector errors
-                   PetscScalar &gmaxWerr, PetscScalar &gavWerr); // scalar errors
+                   double &gmaxUerr, double &gavUerr,  // 2D vector errors
+                   double &gmaxWerr, double &gavWerr); // scalar errors
   
   IceModelVec3   strain_heating3_comp;
 
@@ -109,10 +109,10 @@ protected:
                                                 //   and with exactOnly == PETSC_TRUE
   PetscErrorCode fillBasalMeltRateSolnTestO();  // used only with exactOnly == PETSC_TRUE
   PetscErrorCode computeIceBedrockTemperatureErrors( // tests K and O only
-                   PetscScalar &gmaxTerr, PetscScalar &gavTerr,
-                   PetscScalar &gmaxTberr, PetscScalar &gavTberr);
+                   double &gmaxTerr, double &gavTerr,
+                   double &gmaxTberr, double &gavTberr);
   PetscErrorCode computeBasalMeltRateErrors( // test O only
-                   PetscScalar &gmaxbmelterr, PetscScalar &gminbmelterr);
+                   double &gmaxbmelterr, double &gminbmelterr);
 
   // using Van der Veen's exact solution to test CFBC and the part-grid code
   PetscErrorCode test_V_init();
@@ -120,17 +120,17 @@ protected:
   static const double secpera;
 
 private:
-  PetscScalar        f;       // ratio of ice density to bedrock density
+  double        f;       // ratio of ice density to bedrock density
   PetscBool         bedrock_is_ice_forK;
 
-  static const PetscScalar ablationRateOutside;
+  static const double ablationRateOutside;
 
   // see iCMthermo.cc
-  static const PetscScalar Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant
-  static const PetscScalar ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static const PetscScalar Tmin;    // K;       minimum temperature (at center)
-  static const PetscScalar LforFG;  // m;  exact radius of tests F&G ice sheet
-  static const PetscScalar ApforG;  // m;  magnitude A_p of annular perturbation for test G;
+  static const double Ggeo;    // J/m^2 s; geothermal heat flux, assumed constant
+  static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const double Tmin;    // K;       minimum temperature (at center)
+  static const double LforFG;  // m;  exact radius of tests F&G ice sheet
+  static const double ApforG;  // m;  magnitude A_p of annular perturbation for test G;
   // period t_p is set internally to 2000 years
 };
 

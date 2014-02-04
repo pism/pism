@@ -119,7 +119,7 @@ PetscErrorCode IceModel::update_run_stats() {
 
   // timing stats
   PetscLogDouble current_time, my_current_time;
-  PetscReal wall_clock_hours, proc_hours, mypph;
+  double wall_clock_hours, proc_hours, mypph;
   ierr = PISMGetTime(&my_current_time); CHKERRQ(ierr);
   MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
@@ -196,7 +196,7 @@ PetscErrorCode  IceModel::stampHistory(std::string str) {
  */
 PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;
-  PetscReal H_min, H_max, dz_top;
+  double H_min, H_max, dz_top;
   std::vector<double> new_zlevels;
   const int old_Mz = grid.Mz;
   int N = 0; 			// the number of new levels
@@ -266,12 +266,12 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 
   // for extending the variables Enth3 and vWork3d vertically, put into
   //   vWork2d[0] the enthalpy of the air
-  PetscReal p_air = EC->getPressureFromDepth(0.0);
+  double p_air = EC->getPressureFromDepth(0.0);
   ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
                                    vWork2d[0](i,j));
          CHKERRQ(ierr);

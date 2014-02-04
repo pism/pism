@@ -37,7 +37,7 @@ public:
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:
-  PetscReal smb_lapse_rate;
+  double smb_lapse_rate;
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
 private:
   PetscErrorCode allocate_PSLapseRates();

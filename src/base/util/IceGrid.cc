@@ -68,9 +68,9 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
 
   lambda = config.get("grid_lambda");
 
-  Mx  = static_cast<PetscInt>(config.get("grid_Mx"));
-  My  = static_cast<PetscInt>(config.get("grid_My"));
-  Mz  = static_cast<PetscInt>(config.get("grid_Mz"));
+  Mx  = static_cast<int>(config.get("grid_Mx"));
+  My  = static_cast<int>(config.get("grid_My"));
+  Mz  = static_cast<int>(config.get("grid_Mz"));
 
   Nx = Ny = 0;			// will be set to a correct value in allocate()
   initial_Mz = 0;		// will be set to a correct value in
@@ -187,12 +187,12 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
 
   switch (ice_vertical_spacing) {
   case EQUAL: {
-    dzMIN = Lz / ((PetscScalar) Mz - 1);
+    dzMIN = Lz / ((double) Mz - 1);
     dzMAX = dzMIN;
 
     // Equal spacing
     for (unsigned int k=0; k < Mz - 1; k++) {
-      zlevels[k] = dzMIN * ((PetscScalar) k);
+      zlevels[k] = dzMIN * ((double) k);
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     break;
@@ -200,7 +200,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < Mz - 1; k++) {
-      const PetscScalar zeta = ((PetscScalar) k) / ((PetscScalar) Mz - 1);
+      const double zeta = ((double) k) / ((double) Mz - 1);
       zlevels[k] = Lz * ( (zeta / lambda) * (1.0 + (lambda - 1.0) * zeta) );
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
@@ -255,7 +255,7 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
 
 
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
-unsigned int IceGrid::kBelowHeight(PetscScalar height) {
+unsigned int IceGrid::kBelowHeight(double height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(com,
        "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be non-negative)\n",
@@ -287,7 +287,7 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
   dzMIN = Lz;
   dzMAX = 0.0;
   for (unsigned int k = 0; k < Mz - 1; k++) {
-    const PetscScalar mydz = zlevels[k+1] - zlevels[k];
+    const double mydz = zlevels[k+1] - zlevels[k];
     dzMIN = PetscMin(mydz,dzMIN);
     dzMAX = PetscMax(mydz,dzMAX);
   }
@@ -308,7 +308,7 @@ void IceGrid::compute_nprocs() {
     PISMEnd();
   }
 
-  Nx = (PetscInt)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
+  Nx = (int)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
 
   if (Nx == 0) Nx = 1;
 
@@ -318,7 +318,7 @@ void IceGrid::compute_nprocs() {
     Nx--;
   }
 
-  if (Mx > My && Nx < Ny) {PetscInt _Nx = Nx; Nx = Ny; Ny = _Nx;}
+  if (Mx > My && Nx < Ny) {int _Nx = Nx; Nx = Ny; Ny = _Nx;}
 
   if ((Mx / Nx) < 2) {		// note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
@@ -344,11 +344,11 @@ void IceGrid::compute_ownership_ranges() {
   procs_x.resize(Nx);
   procs_y.resize(Ny);
 
-  for (PetscInt i=0; i < Nx; i++) {
+  for (int i=0; i < Nx; i++) {
     procs_x[i] = Mx/Nx + ((Mx % Nx) > i);
   }
 
-  for (PetscInt i=0; i < Ny; i++) {
+  for (int i=0; i < Ny; i++) {
     procs_y[i] = My/Ny + ((My % Ny) > i);
   }
 }
@@ -490,9 +490,9 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
   PetscErrorCode ierr;
 
   // the smallest of the spacings used in ice and bedrock:
-  PetscScalar my_dz_fine = dzMIN;
+  double my_dz_fine = dzMIN;
 
-  Mz_fine = static_cast<PetscInt>(ceil(Lz / my_dz_fine) + 1);
+  Mz_fine = static_cast<int>(ceil(Lz / my_dz_fine) + 1);
   my_dz_fine = Lz / (Mz_fine - 1);
 
   // both ice and bedrock will have this spacing
@@ -503,7 +503,7 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
 
   // compute levels in the ice:
   for (unsigned int k = 0; k < Mz_fine; k++)
-    zlevels_fine[k] = ((PetscScalar) k) * dz_fine;
+    zlevels_fine[k] = ((double) k) * dz_fine;
   // Note that it's allowed to go over Lz.
 
   ierr = init_interpolation(); CHKERRQ(ierr);
@@ -578,7 +578,7 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
 }
 
 //! \brief Returns the distance from the point (i,j) to the origin.
-PetscReal IceGrid::radius(PetscInt i, PetscInt j) {
+double IceGrid::radius(int i, int j) {
   return sqrt(PetscSqr(x[i]) + PetscSqr(y[j]));
 }
 
@@ -645,18 +645,18 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
   const double  yTOx = Ly / Lx;
   if (Ly > Lx) {
     X = target_size;
-    Y = (PetscInt) ((double)target_size * yTOx);
+    Y = (int) ((double)target_size * yTOx);
   } else {
     Y = target_size;
-    X = (PetscInt) ((double)target_size / yTOx);
+    X = (int) ((double)target_size / yTOx);
   }
 
   // if either dimension is larger than twice the target, shrink appropriately
   if (X > 2 * target_size) {
-    Y = (PetscInt) ( (double)(Y) * (2.0 * (double)target_size / (double)(X)) );
+    Y = (int) ( (double)(Y) * (2.0 * (double)target_size / (double)(X)) );
     X = 2 * target_size;
   } else if (Y > 2 * target_size) {
-    X = (PetscInt) ( (double)(X) * (2.0 * (double)target_size / (double)(Y)) );
+    X = (int) ( (double)(X) * (2.0 * (double)target_size / (double)(Y)) );
     Y = 2 * target_size;
   }
 
@@ -667,7 +667,7 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
 }
 
 //! Creates a run-time diagnostic viewer.
-PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, std::string title, PetscViewer &viewer) {
+PetscErrorCode IceGrid::create_viewer(int viewer_size, std::string title, PetscViewer &viewer) {
   PetscErrorCode ierr;
   int X, Y;
 
@@ -703,8 +703,8 @@ PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, std::string title, P
  * Does not if the resulting i and j are valid or in the current processor's
  * domain.
  */
-void IceGrid::compute_point_neighbors(PetscReal X, PetscReal Y,
-                                      PetscInt &i, PetscInt &j) {
+void IceGrid::compute_point_neighbors(double X, double Y,
+                                      int &i, int &j) {
   i = (int)floor((X - x[0])/dx);
   j = (int)floor((Y - y[0])/dy);
 }
@@ -712,8 +712,8 @@ void IceGrid::compute_point_neighbors(PetscReal X, PetscReal Y,
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
-std::vector<PetscReal> IceGrid::compute_interp_weights(PetscReal X, PetscReal Y) {
-  std::vector<PetscReal> result;
+std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
+  std::vector<double> result;
   int i,j;
   double alpha, beta;
 
@@ -790,7 +790,7 @@ void IceGrid::check_parameters() {
 
 }
 
-PetscErrorCode IceGrid::get_dm(PetscInt da_dof, PetscInt stencil_width, DM &result) {
+PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, DM &result) {
   PetscErrorCode ierr;
 
   if (da_dof < 0 || da_dof > 10000) {
@@ -833,7 +833,7 @@ void IceGrid::destroy_dms() {
 
 }
 
-PetscErrorCode IceGrid::create_dm(PetscInt da_dof, PetscInt stencil_width, DM &result) {
+PetscErrorCode IceGrid::create_dm(int da_dof, int stencil_width, DM &result) {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, com,

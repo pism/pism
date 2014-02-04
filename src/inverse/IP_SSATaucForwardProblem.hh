@@ -152,7 +152,7 @@ public:
 
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta);
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta);
-  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta);
+  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,double **dzeta);
 
   virtual PetscErrorCode apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
   virtual PetscErrorCode apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);

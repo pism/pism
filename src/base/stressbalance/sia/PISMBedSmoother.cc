@@ -20,7 +20,7 @@
 #include "Mask.hh"
 
 
-PISMBedSmoother::PISMBedSmoother(IceGrid &g, const PISMConfig &conf, PetscInt MAX_GHOSTS)
+PISMBedSmoother::PISMBedSmoother(IceGrid &g, const PISMConfig &conf, int MAX_GHOSTS)
     : grid(g), config(conf) {
 
   if (allocate(MAX_GHOSTS) != 0) {
@@ -158,8 +158,8 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg) {
   }
     
   // determine Nx, Ny, which are always at least one if m_smoothing_range > 0
-  Nx = static_cast<PetscInt>(ceil(m_smoothing_range / grid.dx));
-  Ny = static_cast<PetscInt>(ceil(m_smoothing_range / grid.dy));
+  Nx = static_cast<int>(ceil(m_smoothing_range / grid.dx));
+  Ny = static_cast<int>(ceil(m_smoothing_range / grid.dy));
   if (Nx < 1)  Nx = 1;
   if (Ny < 1)  Ny = 1;
   //PetscPrintf(grid.com,"PISMBedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
@@ -174,7 +174,7 @@ Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
 PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg,
-                                               PetscInt Nx_in, PetscInt Ny_in) {
+                                               int Nx_in, int Ny_in) {
   PetscErrorCode ierr;
 
   if ((Nx_in >= grid.Mx) || (Ny_in >= grid.My)) {
@@ -202,7 +202,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg,
 /*!
 Call preprocess_bed() first.
  */
-PetscErrorCode PISMBedSmoother::get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out) {
+PetscErrorCode PISMBedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
   Nx_out = Nx;
   Ny_out = Ny;
   return 0;
@@ -214,25 +214,25 @@ PetscErrorCode PISMBedSmoother::smooth_the_bed_on_proc0() {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
-    PetscScalar **b0, **bs;
+    double **b0, **bs;
     ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0); CHKERRQ(ierr);
     ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs); CHKERRQ(ierr);
 
-    for (PetscInt i=0; i < grid.Mx; i++) {
-      for (PetscInt j=0; j < grid.My; j++) {
+    for (int i=0; i < grid.Mx; i++) {
+      for (int j=0; j < grid.My; j++) {
         // average only over those points which are in the grid; do not wrap
         //   periodically
-        PetscReal sum   = 0.0;
-        PetscInt  count = 0;
-        for (PetscInt r = -Nx; r <= Nx; r++) {
-          for (PetscInt s = -Ny; s <= Ny; s++) {
+        double sum   = 0.0;
+        int  count = 0;
+        for (int r = -Nx; r <= Nx; r++) {
+          for (int s = -Ny; s <= Ny; s++) {
             if ((i+r >= 0) && (i+r < grid.Mx) && (j+s >= 0) && (j+s < grid.My)) {
               sum += b0[i+r][j+s];
               count++;
             }
           }
         }
-        bs[i][j] = sum / static_cast<PetscReal>(count);
+        bs[i][j] = sum / static_cast<double>(count);
       }
     }
 
@@ -248,7 +248,7 @@ PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0() {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
-    PetscScalar **b0, **bs, **c2, **c3, **c4, **mt;
+    double **b0, **bs, **c2, **c3, **c4, **mt;
     ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0); CHKERRQ(ierr);
     ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs); CHKERRQ(ierr);
     ierr = VecGetArray2d(maxtlp0,      grid.Mx, grid.My, 0, 0, &mt); CHKERRQ(ierr);
@@ -256,24 +256,24 @@ PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0() {
     ierr = VecGetArray2d(C3p0,         grid.Mx, grid.My, 0, 0, &c3); CHKERRQ(ierr);
     ierr = VecGetArray2d(C4p0,         grid.Mx, grid.My, 0, 0, &c4); CHKERRQ(ierr);
 
-    for (PetscInt i=0; i < grid.Mx; i++) {
-      for (PetscInt j=0; j < grid.My; j++) {
+    for (int i=0; i < grid.Mx; i++) {
+      for (int j=0; j < grid.My; j++) {
         // average only over those points which are in the grid
         // do not wrap periodically
-        PetscReal topgs     = bs[i][j],
+        double topgs     = bs[i][j],
                   maxtltemp = 0.0,
                   sum2      = 0.0,
                   sum3      = 0.0,
                   sum4      = 0.0;
-        PetscInt  count     = 0;
-        for (PetscInt r = -Nx; r <= Nx; r++) {
-          for (PetscInt s = -Ny; s <= Ny; s++) {
+        int  count     = 0;
+        for (int r = -Nx; r <= Nx; r++) {
+          for (int s = -Ny; s <= Ny; s++) {
             if ((i+r >= 0) && (i+r < grid.Mx) && (j+s >= 0) && (j+s < grid.My)) {
               // tl is elevation of local topography at a pt in patch
-              const PetscReal tl  = b0[i+r][j+s] - topgs;  
+              const double tl  = b0[i+r][j+s] - topgs;  
               maxtltemp = PetscMax(maxtltemp, tl);
               // accumulate 2nd, 3rd, and 4th powers with only 3 mults
-              const PetscReal tl2 = tl * tl;
+              const double tl2 = tl * tl;
               sum2 += tl2;
               sum3 += tl2 * tl;
               sum4 += tl2 * tl2;
@@ -283,9 +283,9 @@ PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0() {
         }
         mt[i][j] = maxtltemp;
         // unprotected division by count but r=0,s=0 case guarantees count>=1
-        c2[i][j] = sum2 / static_cast<PetscReal>(count);
-        c3[i][j] = sum3 / static_cast<PetscReal>(count);
-        c4[i][j] = sum4 / static_cast<PetscReal>(count);
+        c2[i][j] = sum2 / static_cast<double>(count);
+        c3[i][j] = sum3 / static_cast<double>(count);
+        c4[i][j] = sum4 / static_cast<double>(count);
       }
     }
 
@@ -297,7 +297,7 @@ PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0() {
     ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0); CHKERRQ(ierr);
 
     // scale the coeffs in Taylor series
-    const PetscReal
+    const double
       n = m_Glen_exponent,
       k  = (n + 2) / n,
       s2 = k * (2 * n + 2) / (2 * n),
@@ -343,8 +343,8 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
   ierr = usurf.begin_access(); CHKERRQ(ierr);
   ierr = thk.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (int i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       if (thk(i,j) < 0.0) {
         SETERRQ2(grid.com, 2,
           "PISM ERROR:  PISMBedSmoother detects negative original thickness\n"
@@ -357,7 +357,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
         if (M.grounded(i,j)) {
           // if grounded, compute smoothed thickness as the difference of ice
           // surface elevation and smoothed bed elevation
-          const PetscScalar thks_try = usurf(i,j) - topgsmooth(i,j);
+          const double thks_try = usurf(i,j) - topgsmooth(i,j);
           result(i,j) = (thks_try > 0.0) ? thks_try : 0.0;
         } else {
           // if floating, use original thickness (note: surface elevation was
@@ -418,14 +418,14 @@ PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *t
   ierr = C2.begin_access(); CHKERRQ(ierr);
   ierr = C3.begin_access(); CHKERRQ(ierr);
   ierr = C4.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      const PetscScalar H = usurf(i,j) - topgsmooth(i,j);
+  for (int i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      const double H = usurf(i,j) - topgsmooth(i,j);
       if (H > maxtl(i,j)) { 
         // thickness exceeds maximum variation in patch of local topography,
         // so ice buries local topography; note maxtl >= 0 always
-        const PetscReal Hinv = 1.0 / PetscMax(H, 1.0);
-        PetscReal omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
+        const double Hinv = 1.0 / PetscMax(H, 1.0);
+        double omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
         if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
           SETERRQ2(grid.com, 1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
                      "    in PISMBedSmoother.get_theta() ... ending\n",i,j);

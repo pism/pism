@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "tempSystem.hh"
 #include "Mask.hh"
 
-tempSystemCtx::tempSystemCtx(PetscInt my_Mz, std::string my_prefix)
+tempSystemCtx::tempSystemCtx(int my_Mz, std::string my_prefix)
   : columnSystemCtx(my_Mz, my_prefix), Mz(my_Mz) {
 
   // set flags to indicate nothing yet set
@@ -78,7 +78,7 @@ PetscErrorCode tempSystemCtx::initAllColumns() {
 
 
 PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(PismMask my_mask,
-                                                        bool my_isMarginal, PetscScalar my_lambda) {
+                                                        bool my_isMarginal, double my_lambda) {
   assert(initAllDone == true);
   // allow setting scheme parameters only once:
   assert(schemeParamsValid == false);
@@ -91,7 +91,7 @@ PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(PismMask my_mask,
 }
 
 
-PetscErrorCode tempSystemCtx::setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts) {
+PetscErrorCode tempSystemCtx::setSurfaceBoundaryValuesThisColumn(double my_Ts) {
   assert(initAllDone == true);
   // allow setting surface BCs only once:
   assert(surfBCsValid == false);
@@ -102,8 +102,8 @@ PetscErrorCode tempSystemCtx::setSurfaceBoundaryValuesThisColumn(PetscScalar my_
 }
 
 
-PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(PetscScalar my_G0,
-                                                               PetscScalar my_Tshelfbase, PetscScalar my_Rb) {
+PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0,
+                                                               double my_Tshelfbase, double my_Rb) {
   assert(initAllDone == true);
   // allow setting basal BCs only once:
   assert(basalBCsValid == false);
@@ -116,7 +116,7 @@ PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(PetscScalar my_G0
 }
 
 
-PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar *x) {
+PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
 
   assert(initAllDone == true);
   assert(schemeParamsValid == true);
@@ -150,11 +150,11 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar *x) {
       rhs[0] = T[0] + dtTemp * (Rb / (rho_c_I * dzEQ));
       if (!isMarginal) {
         rhs[0] += dtTemp * 0.5 * strain_heating[0]/ rho_c_I;
-        planeStar<PetscScalar> ss;
+        planeStar<double> ss;
         T3->getPlaneStar(i,j,0,&ss);
-        const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
+        const double UpTu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
                                               u[0] * (ss.ij  - ss.w) / dx;
-        const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
+        const double UpTv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
                                               v[0] * (ss.ij  - ss.s) / dy;
         rhs[0] -= dtTemp  * (0.5 * (UpTu + UpTv));
       }
@@ -163,7 +163,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar *x) {
       D[0] = 1.0 + 2.0 * iceR;
       U[0] = - 2.0 * iceR;
       if (w[0] < 0.0) { // velocity downward: add velocity contribution
-        const PetscScalar AA = dtTemp * w[0] / (2.0 * dzEQ);
+        const double AA = dtTemp * w[0] / (2.0 * dzEQ);
         D[0] -= AA;
         U[0] += AA;
       }
@@ -173,14 +173,14 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar *x) {
   }
 
   // generic ice segment; build 1:ks-1 eqns
-  for (PetscInt k = 1; k < ks; k++) {
-    planeStar<PetscScalar> ss;
+  for (int k = 1; k < ks; k++) {
+    planeStar<double> ss;
     T3->getPlaneStar_fine(i,j,k,&ss);
-    const PetscScalar UpTu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
+    const double UpTu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
                                           u[k] * (ss.ij  - ss.w) / dx;
-    const PetscScalar UpTv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
+    const double UpTv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
                                           v[k] * (ss.ij  - ss.s) / dy;
-    const PetscScalar AA = nuEQ * w[k];      
+    const double AA = nuEQ * w[k];      
     if (w[k] >= 0.0) {  // velocity upward
       L[k] = - iceR - AA * (1.0 - lambda/2.0);
       D[k] = 1.0 + 2.0 * iceR + AA * (1.0 - lambda);

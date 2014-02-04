@@ -190,7 +190,7 @@ IceModel::~IceModel() {
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   ierr = verbPrintf(3, grid.com,
                     "Allocating memory...\n"); CHKERRQ(ierr);
@@ -706,7 +706,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = update_floatation_mask(); CHKERRQ(ierr);
   }
 
-  PetscReal sea_level = 0;
+  double sea_level = 0;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   IceModelVec2S &melange_back_pressure = vWork2d[0];
@@ -871,7 +871,7 @@ PetscErrorCode IceModel::init_run() {
       dt_TempAge); CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
-  PetscInt tmp_verbosity = getVerbosityLevel();
+  int tmp_verbosity = getVerbosityLevel();
   // if user says '-verbose 3' or higher, some feedback during prelim step
   ierr = setVerbosityLevel(tmp_verbosity > 2 ? 2 : 1); CHKERRQ(ierr);
 
@@ -880,7 +880,7 @@ PetscErrorCode IceModel::init_run() {
   skipCountDown = 0;
   t_TempAge = grid.time->start();
   dt = 0.0;
-  PetscReal run_end = grid.time->end();
+  double run_end = grid.time->end();
 
   // FIXME:  In the case of derived class diagnostic time series this fixed
   //         step-length can be problematic.  The fix may have to be in the derived class.
@@ -1016,7 +1016,7 @@ PetscErrorCode IceModel::continue_run() {
   } // end of the time-stepping loop
 
   bool flag;
-  PetscInt pause_time = 0;
+  int pause_time = 0;
   ierr = PISMOptionsInt("-pause", "Pause after the run, seconds",
                         pause_time, flag); CHKERRQ(ierr);
   if (pause_time > 0) {
@@ -1094,7 +1094,7 @@ PetscErrorCode IceModel::init() {
   // across all processors.
   {
     MPI_Datatype mpi_type;
-    PetscReal my_start_time;
+    double my_start_time;
     ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
 
     ierr = PISMGetTime(&my_start_time); CHKERRQ(ierr);

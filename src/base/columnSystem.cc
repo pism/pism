@@ -43,12 +43,12 @@ columnSystemCtx::columnSystemCtx(unsigned int my_nmax, std::string my_prefix)
   : nmax(my_nmax), prefix(my_prefix) {
   assert(nmax >= 1 && nmax < 1e6);
 
-  Lp   = new PetscScalar[nmax-1];
+  Lp   = new double[nmax-1];
   L    = Lp-1; // ptr arithmetic; note L[0]=Lp[-1] not allocated
-  D    = new PetscScalar[nmax];
-  U    = new PetscScalar[nmax-1];
-  rhs  = new PetscScalar[nmax];
-  work = new PetscScalar[nmax];
+  D    = new double[nmax];
+  U    = new double[nmax-1];
+  rhs  = new double[nmax];
+  work = new double[nmax];
 
   resetColumn();
 
@@ -69,24 +69,24 @@ columnSystemCtx::~columnSystemCtx() {
 PetscErrorCode columnSystemCtx::resetColumn() {
   PetscErrorCode ierr;
 #if PISM_DEBUG==1
-  ierr = PetscMemzero(Lp,   (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
-  ierr = PetscMemzero(U,    (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
-  ierr = PetscMemzero(D,    (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
-  ierr = PetscMemzero(rhs,  (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
-  ierr = PetscMemzero(work, (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(Lp,   (nmax-1)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(U,    (nmax-1)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(D,    (nmax)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(rhs,  (nmax)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(work, (nmax)*sizeof(double)); CHKERRQ(ierr);
 #endif
   return 0;
 }
 
 
 //! Compute 1-norm, which is max sum of absolute values of columns.
-PetscScalar columnSystemCtx::norm1(unsigned int n) const {
+double columnSystemCtx::norm1(unsigned int n) const {
   if (n > nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1()\n");
     PISMEnd();
   }
   if (n == 1)  return fabs(D[0]);   // only 1x1 case is special
-  PetscScalar z = fabs(D[0]) + fabs(L[1]);
+  double z = fabs(D[0]) + fabs(L[1]);
   for (unsigned int k = 1; k < n; k++) {  // k is column index (zero-based)
     z = PetscMax(z, fabs(U[k-1])) + fabs(D[k]) + fabs(L[k+1]);
   }
@@ -108,19 +108,19 @@ succeed.
 We return -1.0 if the absolute value of any diagonal element is less than
 1e-12 of the 1-norm of the matrix.
  */
-PetscScalar columnSystemCtx::ddratio(unsigned int n) const {
+double columnSystemCtx::ddratio(unsigned int n) const {
   if (n > nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::ddratio()\n");
     PISMEnd();
   }
-  const PetscScalar scale = norm1(n);
+  const double scale = norm1(n);
 
   if ( (fabs(D[0]) / scale) < 1.0e-12)  return -1.0;
-  PetscScalar z = fabs(U[0]) / fabs(D[0]);
+  double z = fabs(U[0]) / fabs(D[0]);
 
   for (unsigned int k = 1; k < n-1; k++) {  // k is row index (zero-based)
     if ( (fabs(D[k]) / scale) < 1.0e-12)  return -1.0;
-    const PetscScalar s = fabs(L[k]) + fabs(U[k]);
+    const double s = fabs(L[k]) + fabs(U[k]);
     z = PetscMax(z, s / fabs(D[k]) );
   }
 
@@ -131,8 +131,8 @@ PetscScalar columnSystemCtx::ddratio(unsigned int n) const {
 }
 
 
-PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(PetscInt my_i, PetscInt my_j,
-                                                             PetscInt my_ks) {
+PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
+                                                             int my_ks) {
 #if PISM_DEBUG==1
   if (indicesValid && i == my_i && j == my_j) {
     SETERRQ(PETSC_COMM_SELF, 3, "setIndicesAndClearThisColumn() called twice in same column");
@@ -159,7 +159,7 @@ Give description string as `info` argument.
 Result should be executable as part of a Matlab/Octave script.
  */
 PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
-                                                 const PetscScalar *v, PetscInt m, const char* info) const {
+                                                 const double *v, int m, const char* info) const {
   PetscErrorCode ierr;
 
   assert(v != NULL);
@@ -177,7 +177,7 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
      info); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
       "%s_with_index = [...\n",info); CHKERRQ(ierr);
-  for (PetscInt k=0; k<m; k++) {
+  for (int k=0; k<m; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,
       "  %5d %.12f",k,v[k]); CHKERRQ(ierr);
     if (k == m-1) {
@@ -287,7 +287,7 @@ Solution of system in x.
 Success is return code zero.  Positive return code gives location of zero pivot.
 Negative return code indicates a software problem.
  */
-PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, PetscScalar *x) {
+PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, double *x) {
   assert(x != NULL);
   assert(indicesValid == true);
   assert(n >= 1);
@@ -296,7 +296,7 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, PetscScal
   if (D[0] == 0.0)
     return 1;
 
-  PetscScalar b = D[0];
+  double b = D[0];
 
   x[0] = rhs[0] / b;
   for (unsigned int k = 1; k < n; ++k) {
@@ -358,7 +358,7 @@ generate `g20km_steady.nc`.  Then:
 Of course we can also do `spy(A)`, `eig(A)`, and look at individual entries,
 and row and column sums, and so on.
  */
-PetscErrorCode columnSystemCtx::viewColumnInfoMFile(PetscScalar *x, unsigned int n) {
+PetscErrorCode columnSystemCtx::viewColumnInfoMFile(double *x, unsigned int n) {
   PetscErrorCode ierr;
   char fname[PETSC_MAX_PATH_LEN];
 
@@ -378,7 +378,7 @@ PetscErrorCode columnSystemCtx::viewColumnInfoMFile(PetscScalar *x, unsigned int
 Because this may be called on only one processor, it builds a viewer on MPI
 communicator PETSC_COMM_SELF.
  */
-PetscErrorCode columnSystemCtx::viewColumnInfoMFile(char *filename, PetscScalar *x, unsigned int n) {
+PetscErrorCode columnSystemCtx::viewColumnInfoMFile(char *filename, double *x, unsigned int n) {
   PetscErrorCode ierr;
   PetscViewer viewer;
   ierr = PetscViewerCreate(PETSC_COMM_SELF, &viewer);CHKERRQ(ierr);

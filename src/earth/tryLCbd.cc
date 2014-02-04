@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     
     PetscBool  include_elastic = PETSC_FALSE,
                 do_uplift = PETSC_FALSE;
-    PetscScalar H0 = 1000.0;            // ice disc load thickness
+    double H0 = 1000.0;            // ice disc load thickness
 
     if (argc >= 2) {
       // FIXME:  should use PETSC-style options
@@ -92,17 +92,17 @@ int main(int argc, char *argv[]) {
           break; // accept default which is scenario 1
       }
     }
-    const PetscScalar R0 = 1000.0e3;          // ice disc load radius
-    const PetscScalar tfinalyears = 150.0e3;  // total run time
+    const double R0 = 1000.0e3;          // ice disc load radius
+    const double tfinalyears = 150.0e3;  // total run time
 
     // FIXME: should accept options here
-    const PetscInt    Mx = 193, 
+    const int    Mx = 193, 
                       My = 129;
 
-    const PetscScalar Lx = 3000.0e3, 
+    const double Lx = 3000.0e3, 
                       Ly = 2000.0e3;
-    const PetscInt    Z = 2;
-    const PetscScalar dtyears = 100.0;
+    const int    Z = 2;
+    const double dtyears = 100.0;
     
     if (rank == 0) { // only runs on proc 0; all sequential
       // allocate the variables needed before BedDeformLC can work:
@@ -123,8 +123,8 @@ int main(int argc, char *argv[]) {
       // create a bed viewer
       PetscViewer viewer;
       PetscDraw   draw;
-      const PetscInt  windowx = 500,
-                      windowy = (PetscInt) (((float) windowx) * Ly / Lx);
+      const int  windowx = 500,
+                      windowy = (int) (((float) windowx) * Ly / Lx);
       ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, PETSC_NULL, "bed elev (m)",
            PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &viewer);  CHKERRQ(ierr);
       // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
@@ -136,14 +136,14 @@ int main(int argc, char *argv[]) {
       // make disc load
       ierr = PetscPrintf(PETSC_COMM_SELF,"creating disc load\n"); CHKERRQ(ierr);
       // see "Results: Earth deformation only" section of Bueler et al "Fast computation ..."
-      const PetscScalar dx = (2.0*Lx)/((PetscScalar) Mx - 1), 
-                        dy = (2.0*Ly)/((PetscScalar) My - 1);
-      const PetscInt    imid = (Mx-1)/2, jmid = (My-1)/2;
-      PetscScalar **HH;
+      const double dx = (2.0*Lx)/((double) Mx - 1), 
+                        dy = (2.0*Ly)/((double) My - 1);
+      const int    imid = (Mx-1)/2, jmid = (My-1)/2;
+      double **HH;
       ierr = VecGetArray2d(H, Mx, My, 0, 0, &HH); CHKERRQ(ierr);
-      for (PetscInt i=0; i<Mx; i++) {
-        for (PetscInt j=0; j<My; j++) {
-          const PetscScalar r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
+      for (int i=0; i<Mx; i++) {
+        for (int j=0; j<My; j++) {
+          const double r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
           if (r < R0) {
             HH[i][j] = H0;
           } else {
@@ -155,14 +155,14 @@ int main(int argc, char *argv[]) {
       ierr = VecSet(Hstart, 0.0); CHKERRQ(ierr);    // load was zero up till t=0
       ierr = VecSet(bedstart, 0.0); CHKERRQ(ierr);       // initially flat bed
       
-      const PetscScalar peak_up = unit_system.convert(10, "mm/year", "m/s");  // 10 mm/year
+      const double peak_up = unit_system.convert(10, "mm/year", "m/s");  // 10 mm/year
       // initialize uplift
       if (do_uplift == PETSC_TRUE) {
-        PetscScalar **upl;
+        double **upl;
         ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
-        for (PetscInt i=0; i<Mx; i++) {
-          for (PetscInt j=0; j<My; j++) {
-            const PetscScalar r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
+        for (int i=0; i<Mx; i++) {
+          for (int j=0; j<My; j++) {
+            const double r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
             if (r < 1.5 * R0) {
               upl[i][j] = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0; 
             } else {
@@ -188,19 +188,19 @@ int main(int argc, char *argv[]) {
       ierr = bdlc.uplift_init(); CHKERRQ(ierr);
       
       ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n"); CHKERRQ(ierr);
-      const PetscInt     KK = (PetscInt) (tfinalyears / dtyears);
-      PetscScalar **b;
+      const int     KK = (int) (tfinalyears / dtyears);
+      double **b;
       ierr = VecGetArray2d(bedstart, Mx, My, 0, 0, &b); CHKERRQ(ierr);
-      PetscScalar b0old = b[imid][jmid];
+      double b0old = b[imid][jmid];
       ierr = VecRestoreArray2d(bedstart, Mx, My, 0, 0, &b); CHKERRQ(ierr);
-      for (PetscInt k=0; k<KK; k++) {
-        const PetscScalar tyears = k*dtyears;
+      for (int k=0; k<KK; k++) {
+        const double tyears = k*dtyears;
         ierr = bdlc.step(dtyears, tyears); CHKERRQ(ierr);
         ierr = VecView(bed,viewer); CHKERRQ(ierr);
         ierr = VecGetArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
-        const PetscScalar b0new = b[imid][jmid];
+        const double b0new = b[imid][jmid];
         ierr = VecRestoreArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
-        const PetscScalar dbdt0 = (b0new - b0old) / (dtyears);
+        const double dbdt0 = (b0new - b0old) / (dtyears);
 
         ierr = PetscPrintf(PETSC_COMM_SELF,
                   "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/year)\n",

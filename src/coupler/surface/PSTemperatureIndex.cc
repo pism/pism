@@ -220,7 +220,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+PetscErrorCode PSTemperatureIndex::max_timestep(double my_t, double &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
   ierr = atmosphere->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
@@ -230,7 +230,7 @@ PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal my_t, PetscReal &my_dt
 
 double PSTemperatureIndex::compute_next_balance_year_start(double time) {
     // compute the time corresponding to the beginning of the next balance year
-    PetscReal
+    double
       balance_year_start_day = config.get("pdd_balance_year_start_day"),
       one_day                = grid.convert(1.0, "days", "seconds"),
       year_start             = grid.time->calendar_year_start(time),
@@ -243,7 +243,7 @@ double PSTemperatureIndex::compute_next_balance_year_start(double time) {
 }
 
 
-PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if ((fabs(my_t - m_t) < 1e-12) &&
@@ -258,7 +258,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
   // set up air temperature and precipitation time series
-  PetscInt Nseries = mbscheme->get_timeseries_length(my_dt);
+  int Nseries = mbscheme->get_timeseries_length(my_dt);
 
   const double dtseries = my_dt / Nseries;
   std::vector<double> ts(Nseries), T(Nseries), P(Nseries), PDDs(Nseries);
@@ -279,7 +279,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
     ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
   }
 
-  const PetscScalar sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
+  const double sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
     sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
     assert(lat != NULL);
@@ -297,8 +297,8 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
 
   ierr = atmosphere->init_timeseries(&ts[0], Nseries); CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // the temperature time series from the PISMAtmosphereModel and its modifiers
       ierr = atmosphere->temp_time_series(i, j, &T[0]); CHKERRQ(ierr);
@@ -317,7 +317,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
       // Use temperature time series, the "positive" threshhold, and
       // the standard deviation of the daily variability to get the
       // number of positive degree days (PDDs)
-      PetscScalar sigma = base_pddStdDev;
+      double sigma = base_pddStdDev;
       if (sigmalapserate != 0.0) {
         sigma += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
       }

@@ -163,7 +163,7 @@ PetscErrorCode SSA::allocate() {
   long_names.push_back("SSA model ice velocity in the Y direction");
   ierr = m_velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
 
-  PetscInt dof=2, stencil_width=1;
+  int dof=2, stencil_width=1;
   ierr = grid.get_dm(dof, stencil_width, SSADA); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
@@ -237,12 +237,12 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
-  const PetscScalar n = flow_law->exponent(), // frequently n = 3
+  const double n = flow_law->exponent(), // frequently n = 3
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,  // = 3/8
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
-  const PetscScalar minThickEtaTransform = 5.0; // m
-  const PetscScalar dx=grid.dx, dy=grid.dy;
+  const double minThickEtaTransform = 5.0; // m
+  const double dx=grid.dx, dy=grid.dy;
 
   bool cfbc = config.get_flag("calving_front_stress_boundary_condition");
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
@@ -257,21 +257,21 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   ierr = result.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;
       } else {
-        PetscScalar h_x = 0.0, h_y = 0.0;
+        double h_x = 0.0, h_y = 0.0;
         // FIXME: we need to handle grid periodicity correctly.
         if (m.grounded(i,j) && (use_eta == true)) {
 	        // in grounded case, differentiate eta = H^{8/3} by chain rule
           if (thk(i,j) > 0.0) {
-            const PetscScalar myH = (thk(i,j) < minThickEtaTransform ?
+            const double myH = (thk(i,j) < minThickEtaTransform ?
                                      minThickEtaTransform : thk(i,j));
-            const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
+            const double eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
             h_x = factor * (pow(thk(i+1,j),etapow) - pow(thk(i-1,j),etapow)) / (2*dx);
             h_y = factor * (pow(thk(i,j+1),etapow) - pow(thk(i,j-1),etapow)) / (2*dy);
           }
@@ -529,8 +529,8 @@ PetscErrorCode SSA_taub::compute(IceModelVec* &output) {
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = vel.begin_access(); CHKERRQ(ierr);
   ierr = mask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (m.grounded_ice(i,j)) {
         double beta = model->basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
         (*result)(i,j).u = - beta * vel(i,j).u;
@@ -575,8 +575,8 @@ PetscErrorCode SSA_beta::compute(IceModelVec* &output) {
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = tauc->begin_access(); CHKERRQ(ierr);
   ierr = velocity->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       (*result)(i,j) = model->basal_sliding_law->drag((*tauc)(i,j),
                                                       (*velocity)(i,j).u, (*velocity)(i,j).v);
     }

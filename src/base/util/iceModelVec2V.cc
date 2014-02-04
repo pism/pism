@@ -50,13 +50,13 @@ PetscErrorCode IceModelVec2V::get_array(PISMVector2** &a) {
 PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PISMVector2** a;
-  PetscScalar **mag;
+  double **mag;
 
   ierr = result.get_array(mag); CHKERRQ(ierr);
   ierr = get_array(a);
 
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
       mag[i][j] = a[i][j].magnitude();
     }
   }
@@ -137,11 +137,11 @@ PetscErrorCode IceModelVec2V::rename(std::string short_name,
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::add(PetscScalar alpha, IceModelVec &x) {
+PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }
 
-PetscErrorCode IceModelVec2V::add(PetscScalar alpha, IceModelVec &x, IceModelVec &result) {
+PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) {
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 
