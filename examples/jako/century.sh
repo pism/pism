@@ -59,7 +59,8 @@ BCFILE=g5km_bc.nc
 
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
 
-PHYS="-calving ocean_kill -ocean_kill_file $BOOT -cfbc -kill_icebergs -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 5.0,30.0,-300.0,700.0 -hydrology_pressure_fraction 0.98 -pseudo_plastic -pseudo_plastic_q 0.25"
+# regarding physics: match choices in spinup.sh
+PHYS="-calving ocean_kill -ocean_kill_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
 
 SKIP=10
 
