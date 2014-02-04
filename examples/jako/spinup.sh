@@ -69,7 +69,7 @@ cmd="$PISM_MPIDO $NN $PISM -boot_file $BOOT -no_model_strip 10 \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
   -no_model_strip 10 $PHYS \
   -extra_file ex_spunjako_0.nc -extra_times -$LENGTH:$EXDT:0 \
-  -extra_vars thk,cbase,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
+  -extra_vars thk,cbase,tillwat,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
   -ts_file ts_spunjako_0.nc -ts_times -$LENGTH:yearly:0 \
   -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o spunjako_0.nc"
