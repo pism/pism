@@ -179,38 +179,45 @@ def final_corrections(filename):
 
     # compute the grounded/floating mask:
     mask = np.zeros(thk.shape, dtype='i')
-    rho_ice = 910.0
-    rho_seawater = 1028.0
 
-    ice_free = 0
-    grounded = 1
-    floating = 2
+    def is_grounded(thickness, bed):
+        rho_ice = 910.0
+        rho_seawater = 1028.0
+        return bed + thickness > 0 + (1 - rho_ice/rho_seawater) * thickness
+
+    grounded_icy      = 0
+    grounded_ice_free = 1
+    ocean_icy         = 2
+    ocean_ice_free    = 3
 
     My, Mx = thk.shape
     for j in xrange(My):
         for i in xrange(Mx):
-            if topg[j,i] + thk[j,i] > 0 + (1 - rho_ice/rho_seawater) * thk[j,i]:
-                mask[j,i] = grounded
-            else:
-                if thk[j,i] < 1:
-                    mask[j,i] = ice_free
+            if is_grounded(thk[j,i], topg[j,i]):
+                if thk[j,k] > 1.0:
+                    mask[j,i] = grounded_icy
                 else:
-                    mask[j,i] = floating
+                    mask[j,i] = grounded_ice_free
+            else:
+                if thk[j,i] > 1.0:
+                    mask[j,i] = ocean_icy
+                else:
+                    mask[j,i] = ocean_ice_free
 
     # compute the B.C. locations:
     bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
-    bcflag_var[:] = mask == grounded
+    bcflag_var[:] = mask == grounded_icy
 
-    # mark floating cells next to grounded ones too:
-    row = np.array([-1,  0,  1, -1, 1, -1, 0, 1])
-    col = np.array([-1, -1, -1,  0, 0,  1, 1, 1])
+    # mark ocean_icy cells next to grounded_icy ones too:
+    row = np.array([ 0, -1, 1,  0])
+    col = np.array([-1,  0, 0,  1])
     for j in xrange(1, My-1):
         for i in xrange(1, Mx-1):
             nearest = mask[j + row, i + col]
 
-            if mask[j,i] == floating and np.any(nearest == grounded):
+            if mask[j,i] == ocean_icy and np.any(nearest == grounded_icy):
                 bcflag_var[j,i] = 1
-                topg[j,i]=-2000
+                topg[j,i]       = -2000
 
     #modifications for to allow run
     tempma = nc.variables[temp_name][:]
