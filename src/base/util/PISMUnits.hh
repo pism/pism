@@ -22,8 +22,14 @@
 
 #include <udunits2.h>
 #include <string>
-#include <tr1/memory>
 #include <petscvec.h>
+
+#if (PISM_USE_TR1==1)
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
+
 
 /** @file PISMUnits.hh This file contains thin wrappers around
  * UDUNITS-2 objects. Nothing fancy. The only purpose is to simplify
@@ -36,7 +42,7 @@
  * One thing is worth mentioning, though: in UDUNITS-2, every ut_unit
  * object contains a pointer to the unit system that was used to create it.
  *
- * We use C++ (TR1) shared pointers to make sure that the system a
+ * We use C++ shared pointers to make sure that the system a
  * PISMUnit instance needs is allocated during the whole life span of
  * this instance. (De-allocating the unit system too early results in
  * having a "dangling" pointer.)
@@ -46,7 +52,11 @@ class PISMUnitSystem {
   friend class PISMUnit;
 public:
   PISMUnitSystem(const char *path);
+#if (PISM_USE_TR1==1)
   typedef std::tr1::shared_ptr<ut_system> Ptr;
+#else
+  typedef std::shared_ptr<ut_system> Ptr;
+#endif
 
   PISMUnitSystem::Ptr get() const;
 

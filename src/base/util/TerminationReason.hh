@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,15 +21,24 @@
 
 #include <petscsnes.h>
 #include <petscksp.h>
-#include <tr1/memory>
 #include <string>
 #include <sstream>
+
+#if (PISM_USE_TR1==1)
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
 
 class TerminationReason {
 public:
   TerminationReason() :m_reason(0) {};
   
+#if (PISM_USE_TR1==1)
   typedef std::tr1::shared_ptr<TerminationReason> Ptr;
+#else
+  typedef std::shared_ptr<TerminationReason> Ptr;
+#endif
   
   virtual int reason() {
     return m_reason;
