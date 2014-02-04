@@ -61,7 +61,7 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
+				   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
 				   "land_ice_surface_specific_mass_balance");
   ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
@@ -70,7 +70,7 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   climatic_mass_balance_original.init_2d("climatic_mass_balance_original", grid);
   climatic_mass_balance_original.set_string("pism_intent", "diagnostic");
   climatic_mass_balance_original.set_string("long_name",
-                                            "ice-equivalent surface mass balance rate before the adjustment using -surface ...,forcing");
+                                            "surface mass balance rate before the adjustment using -surface ...,forcing");
   ierr = climatic_mass_balance_original.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance_original.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 

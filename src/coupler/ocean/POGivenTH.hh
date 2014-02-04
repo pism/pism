@@ -37,7 +37,7 @@ public:
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
 private:
-  IceModelVec2T *shelfbtemp, *shelfbmassflux;
+  IceModelVec2S shelfbtemp, shelfbmassflux;
   IceModelVec2S *ice_thickness;
   IceModelVec2T *theta_ocean, *salinity_ocean;
 

@@ -99,7 +99,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("diagnostic",
-					 "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+					 "instantaneous surface mass balance (accumulation/ablation) rate",
 					 "kg m-2 s-1",
 					 "land_ice_surface_specific_mass_balance");  // CF standard_name
   CHKERRQ(ierr);
@@ -111,7 +111,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = accumulation_rate.set_attrs("diagnostic",
-                                     "instantaneous ice-equivalent surface accumulation rate"
+                                     "instantaneous surface accumulation rate"
                                      " (precipitation minus rain)",
                                      "kg m-2 s-1",
                                      ""); CHKERRQ(ierr);
@@ -120,7 +120,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = melt_rate.set_attrs("diagnostic",
-                             "instantaneous ice-equivalent surface melt rate",
+                             "instantaneous surface melt rate",
                              "kg m-2 s-1",
                              ""); CHKERRQ(ierr);
   ierr = melt_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
@@ -128,7 +128,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = runoff_rate.set_attrs("diagnostic",
-                               "instantaneous ice-equivalent surface meltwater runoff rate",
+                               "instantaneous surface meltwater runoff rate",
                                "kg m-2 s-1",
                                ""); CHKERRQ(ierr);
   ierr = runoff_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
@@ -352,7 +352,7 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal my_t, PetscReal my_dt) {
                          snow_depth(i,j), melt_rate(i,j), runoff_rate(i,j),
                          climatic_mass_balance(i,j));
         }
-        // convert to kg m-2 s-1
+        // convert from [m during the current time-step] to kg m-2 s-1
         accumulation_rate(i,j)     *= (ice_density/m_dt);
         melt_rate(i,j)             *= (ice_density/m_dt);
         runoff_rate(i,j)           *= (ice_density/m_dt);

@@ -870,8 +870,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   if (test_climate_models) {
     config.set_string_from_option("stress_balance_model", "none");
     config.set_flag_from_option("do_energy", false);
-    config.set_flag_from_option("do_mass_conserve", false);
     config.set_flag_from_option("do_age", false);
+    // let the user decide if they want to use "-no_mass" or not
   }
 
   ierr = config.flag_from_option("bed_def_lc_elastic", "bed_def_lc_elastic_model"); CHKERRQ(ierr);

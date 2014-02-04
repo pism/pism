@@ -44,7 +44,7 @@ PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
 
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("climate_state",
-                                         "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                         "constant-in-time surface mass balance (accumulation/ablation) rate",
                                          "kg m-2 s-1",
                                          "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
@@ -82,7 +82,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
-    "    reading ice-equivalent surface mass balance rate 'climatic_mass_balance' from %s ... \n",
+    "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
   if (do_regrid) {
     ierr = climatic_mass_balance.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!

@@ -40,7 +40,7 @@ PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
 
   offset->set_units("m s-1", "");
   offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "ice-shelf-base mass flux offsets");
+  offset->set_attr("long_name", "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
 
   shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");
@@ -71,6 +71,9 @@ PetscErrorCode PO_delta_SMB::init(PISMVars &vars) {
                     "* Initializing ice shelf base mass flux forcing using scalar offsets...\n"); CHKERRQ(ierr);
 
   ierr = init_internal(); CHKERRQ(ierr);
+
+  // convert from [m s-1] to [kg m-2 s-1]:
+  offset->scale(config.get("ice_density"));
 
   return 0;
 }

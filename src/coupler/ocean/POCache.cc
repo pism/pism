@@ -124,7 +124,8 @@ PetscErrorCode POCache::shelf_base_mass_flux(IceModelVec2S &result) {
 }
 
 
-PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc,
+                                         PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {

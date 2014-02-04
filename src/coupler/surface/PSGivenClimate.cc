@@ -56,7 +56,7 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
                                      "temperature of the ice at the ice surface but below firn processes",
                                      "Kelvin", ""); CHKERRQ(ierr);
   ierr = climatic_mass_balance->set_attrs("climate_forcing",
-                                          "ice-equivalent surface mass balance (accumulation/ablation) rate",
+                                          "surface mass balance (accumulation/ablation) rate",
                                           "kg m-2 s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = climatic_mass_balance->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance->write_in_glaciological_units = true;

@@ -429,7 +429,7 @@ This section describes how to use PISM to inspect climate forcing.
 
 Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). This makes it possible to turn ``off'' the ice dynamics code to visualize the climate mass balance and temperature boundary conditions produced using a combination of options and input files. This is helpful during the process of creating PISM-readable data files, and modeling with such.
 
-To do this, use the option \intextoption{test_climate_models}, which is equivalent to \intextoption{no_sia}, and \intextoption{energy none} together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
+To do this, use the option \intextoption{test_climate_models} (which is equivalent to \intextoption{stress_balance none} and \intextoption{energy none}) together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
 
 Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface elevation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
 
@@ -500,7 +500,7 @@ $ pismr -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
           -extra_vars climatic_mass_balance,air_temp_snapshot
 \end{verbatim}%$
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
-(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{air_temp_snapshot}
+(instantaneous net accumulation (ablation) rate), \texttt{air_temp_snapshot}
 (instantaneous near-surface air temperature), \texttt{precipitation} (mean annual
 ice-equivalent precipitation rate) and some others.
 
@@ -594,7 +594,7 @@ is negligible and heat from firn processes is ignored.
     Command-line option: & \texttt{-surface~given}
     \index[options]{SA@\surface!\texttt{given}}\\
     NetCDF variables: & \variable{ice_surface_temp}, \\
-    &\variable{climatic_mass_balance} [m/s ice equivalent]\\
+    &\variable{climatic_mass_balance} [kg/m$^2$/s]\\
     C++ class: & \class{PSGivenClimate}\\
     \bottomrule
   \end{tabular}
@@ -847,7 +847,7 @@ By default, the computation summarized in Figure \ref{fig:pdd-model}
 is performed every week. (This frequency is controlled by the
 \config{pdd_max_evals_per_year} parameter.) To compute mass balance
 during each week-long time-step, PISM keeps track of the current snow
-depth (units of ice-equivalent thickness). This is necessary to
+depth (using units of ice-equivalent thickness). This is necessary to
 determine if melt should be computed using the degree day factor for
 snow (\config{pdd_factor_snow}) or the corresponding factor for ice
 (\config{pdd_factor_ice}).
@@ -882,8 +882,7 @@ parameters with the \texttt{pdd_fausto} prefix.
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~pik} \index[options]{SA@\surface!\texttt{pik}} \\
-    NetCDF variables: & \variable{climatic_mass_balance} [m/s ice
-    equivalent],\\
+    NetCDF variables: & \variable{climatic_mass_balance} [kg/m$^2$/s],\\
     &\variable{lat} (latitude), [degrees north]\\
     C++ class: & \class{PSConstantPIK}\\
     \bottomrule
@@ -1026,7 +1025,7 @@ default value specified in the \emph{Source Code Browser}
     \toprule
     Command-line option: & \texttt{-surface~...,anomaly} \index[options]{SB@\surfacemods!\texttt{anomaly}} \\
     NetCDF variables: & \variable{ice_surface_temp_anomaly}, \\
-    &\variable{climatic_mass_balance_anomaly} \mbox{[m/s ice equivalent]}\\
+    &\variable{climatic_mass_balance_anomaly} \mbox{[kg/m$^2$/s]}\\
     C++ class: & \class{PSAnomaly}\\
     \bottomrule
   \end{tabular}
