@@ -65,11 +65,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
     if(Pism_USE_TAO)
-      SET(CMAKE_SWIG_FLAGS "-DPISM_USE_TAO ${CMAKE_SWIG_FLAGS}")
+      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TAO" APPEND)
     endif()
 
     if(Pism_USE_TR1)
-      SET(CMAKE_SWIG_FLAGS "-DPISM_USE_TR1 ${CMAKE_SWIG_FLAGS}")
+      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TR1" APPEND)
     endif()
 
     set_source_files_properties(PISM.i PROPERTIES
