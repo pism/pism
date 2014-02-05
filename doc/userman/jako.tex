@@ -172,23 +172,20 @@ This choice uses the present-day ice extent, defined by SeaRISE data in \verb|Gr
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.95\textwidth,keepaspectratio=true]{jako-csurf}
-%FIXME: regenerate
+  \includegraphics[width=1.05\textwidth,keepaspectratio=true]{jako-csurf}
   \caption{Left: modeled surface speed at the end of a 2\,km grid, 100 model year, steady present-day climate run.  Right: observed surface speed, an average of four winter velocity maps (2000,2006--2008) derived from RADARSAT data, as included in the SeaRISE  5\,km data set \cite{Joughinetal2010}, for the same region.  Scales are in meters per year.}
   \label{fig:jako-csurf}
 \end{figure}
 
 
 \subsection*{Century run on a 2\,km grid}
-Now that we have a spun-up state, here is a 100 model year run on a 2\,km grid:
+Now that we have a spun-up state, here is a 100 model year run on a 2\,km grid with a 10 m grid in the vertical:
 \begin{quote}\small
 \begin{verbatim}
 $ ./century.sh 4 311 213 spunjako_0.nc &> out.2km_100a &
 \end{verbatim}
 \normalsize\end{quote}
-This run requires at least 6\,GB of memory, and it takes about 25 processor-hours.
-% FIXME: report new
-% OLD:  17.77 proc-hours on bueler-lemur with Mz=201, 23.27 on bueler-leopard with Mz=401
+This run requires at least 6\,GB of memory, and it takes about 16 processor-hours.
 
 It produces a file \verb|jakofine_short.nc| almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5\,km regional run (in \verb|spunjako_0.nc|) and then to ``go back'' and regrid the SSA boundary conditions from the 5\,km whole ice sheet results \verb|g5km_bc.nc|.  At the end of the run the final file \verb|jakofine.nc| is produced.  Also there is a time-series file \verb|ts_jakofine.nc| with monthly scalar time-series and a spatial time-dependent file \verb|ex_jakofine.nc|.  The surface speed at the end of this run is shown in Figure \ref{fig:jako-csurf}, with a comparison to observations.
 
@@ -207,12 +204,12 @@ are a topic for a parameter study (compare \cite{AschwandenAdalgeirsdottirKhroul
 \begin{comment}
 \subsection*{Plotting the results}
 
-Figure \ref{fig:jako-csurf} was generated using \href{https://github.com/pism/PyPISMTools}{PyPISMTools} and \href{http://nco.sourceforge.net/}{NCO} and \href{http://code.zmaw.de/projects/cdo}{CDO}.  Do
+Figure \ref{fig:jako-csurf} was generated using \href{https://github.com/pism/pypismtools}{pypismtools} and \href{http://nco.sourceforge.net/}{NCO} and \href{http://code.zmaw.de/projects/cdo}{CDO}.  Do
 \begin{quote}\small
 \begin{verbatim}
 $ ncpdq -a time,z,y,x spunjako_0.nc jako5km.nc
 $ nc2cdo.py jako5km.nc
-$ cdo remapbil,jako5km.nc Greenland_5km_v1.1.nc Greenland_5km_v1.1_jako.nc
+$ cdo remapbil,jako5km.nc Greenland_5km_v1.1.nc Greenland_5km_v1.1_jako.nc  # FIXME: if fails, proceed?
 $ ncap2 -O -s "csurf=surfvelmag*1.;" Greenland_5km_v1.1_jako.nc \
     Greenland_5km_v1.1_jako.nc
 $ basemap-plot.py -v csurf --singlerow -o jako-csurf.png jakofine.nc \
