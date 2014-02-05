@@ -24,7 +24,7 @@
 #include <string>
 #include <petscvec.h>
 
-#if (PISM_USE_TR1==1)
+#ifdef PISM_USE_TR1
 #include <tr1/memory>
 #else
 #include <memory>
@@ -52,7 +52,7 @@ class PISMUnitSystem {
   friend class PISMUnit;
 public:
   PISMUnitSystem(const char *path);
-#if (PISM_USE_TR1==1)
+#ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<ut_system> Ptr;
 #else
   typedef std::shared_ptr<ut_system> Ptr;

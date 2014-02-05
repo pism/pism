@@ -43,7 +43,7 @@
 #include "inverse/functional/IPLogRelativeFunctional.hh"
 #include "inverse/functional/IPLogRatioFunctional.hh"
 #include "inverse/IP_SSATaucTikhonovGNSolver.hh"
-#if (PISM_USE_TAO==1)
+#ifdef PISM_USE_TAO
 #include "inverse/TaoUtil.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
@@ -83,13 +83,10 @@
 %include std_vector.i
 %include std_set.i
 
-#define SWIG_SHARED_PTR_NAMESPACE std
-#if (PISM_USE_TR1==1)
+#ifdef PISM_USE_TR1
 #define SWIG_SHARED_PTR_SUBNAMESPACE tr1
 #endif
 %include <std_shared_ptr.i>
-
- // #define PETSC_USE_REAL_DOUBLE
 
 // SWIG seems convinced that it might need to convert a PetscScalar into a 
 // complex number at some point, even though it never will.  It issues undesired
@@ -231,33 +228,24 @@
      }
 }
 
-%shared_ptr(TerminationReason)
+%typemap(in, numinputs=0, noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
+  $1 = &temp;
+}
+%typemap(argout,noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT
+{
+  {
+    SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  TerminationReason > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  TerminationReason >(*$1);
+    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
+  }
+};
+%apply SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT { SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> &reason };
 
-#if (PISM_USE_TR1==1)
-%typemap(in, numinputs=0, noblock=1) std::tr1::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
-  $1 = &temp;
-}
-%typemap(argout,noblock=1) std::tr1::shared_ptr<TerminationReason> & OUTPUT
-{
-  {
-    std::tr1::shared_ptr<  TerminationReason > *smartresult = new std::tr1::shared_ptr<  TerminationReason >(*$1);
-    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
-  }
-};
-%apply std::tr1::shared_ptr<TerminationReason> & OUTPUT { std::tr1::shared_ptr<TerminationReason> &reason };
-#else
-%typemap(in, numinputs=0, noblock=1) std::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
-  $1 = &temp;
-}
-%typemap(argout,noblock=1) std::shared_ptr<TerminationReason> & OUTPUT
-{
-  {
-    std::shared_ptr<  TerminationReason > *smartresult = new std::shared_ptr<  TerminationReason >(*$1);
-    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
-  }
-};
-%apply std::shared_ptr<TerminationReason> & OUTPUT { std::shared_ptr<TerminationReason> &reason };
-#endif
+%shared_ptr(TerminationReason)
+%shared_ptr(KSPTerminationReason)
+%shared_ptr(SNESTerminationReason)
+%shared_ptr(GenericTerminationReason)
+%include "TerminationReason.hh"
+
 
 %apply std::vector<int> & OUTPUT {std::vector<int> &result};
 %apply std::vector<double> & OUTPUT {std::vector<double> &result};
@@ -582,11 +570,6 @@ in fact be equal to PETSC_NULL, and this is OK. */
 
 %include "iceModel.hh"
 
-%shared_ptr(KSPTerminationReason)
-%shared_ptr(SNESTerminationReason)
-%shared_ptr(GenericTerminationReason)
-%include "TerminationReason.hh"
-
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
 %template(PISMDiag_SSA) PISMDiag<SSA>;
@@ -620,7 +603,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "inverse/IP_SSAHardavForwardProblem.hh"
 %include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
-#if (PISM_USE_TAO==1)
+#ifdef PISM_USE_TAO
 %ignore TaoConvergedReasons;
 %shared_ptr(TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
@@ -668,7 +651,8 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %template(IP_SSAHardavTaoTikhonovSolver)
           TaoBasicSolver<IP_SSAHardavTaoTikhonovProblem>;
 
-#endif
+#endif  /* end of ifdef PISM_USE_TAO */
+
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,
 // and that int return values are to be error checked as per a PetscErrorCode.

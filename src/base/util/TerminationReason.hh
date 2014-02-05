@@ -24,7 +24,7 @@
 #include <string>
 #include <sstream>
 
-#if (PISM_USE_TR1==1)
+#ifdef PISM_USE_TR1
 #include <tr1/memory>
 #else
 #include <memory>
@@ -34,7 +34,7 @@ class TerminationReason {
 public:
   TerminationReason() :m_reason(0) {};
   
-#if (PISM_USE_TR1==1)
+#ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<TerminationReason> Ptr;
 #else
   typedef std::shared_ptr<TerminationReason> Ptr;

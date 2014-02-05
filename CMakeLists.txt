@@ -115,16 +115,11 @@ endif()
 # Use TAO in inverse solvers.
 if (Pism_USE_TAO)
   add_definitions (-DPISM_USE_TAO=1)
-else()
-  add_definitions (-DPISM_USE_TAO=0)
 endif()
 
 if (Pism_USE_TR1)
   message (STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
   add_definitions (-DPISM_USE_TR1=1)
-else()
-  message (STATUS "Adding -DPISM_USE_TR1=0 to compiler flags.")
-  add_definitions (-DPISM_USE_TR1=0)
 endif ()
 
 add_custom_target (etags
