@@ -129,12 +129,14 @@ def preprocess_albmap():
     nc = NC.Dataset(output_filename, 'a')
 
     # fix acab
+    rho_ice = 910.0             # kg m-3
     acab = nc.variables[smb_name]
-    acab.units = "m / year"
     acab.standard_name = "land_ice_surface_specific_mass_balance"
     SMB = acab[:]
     SMB[SMB == -9999] = 0
-    acab[:] = SMB
+    # convert from m/year to kg m-2 / year:
+    acab[:] = SMB * rho_ice
+    acab.units = "kg m-2 / year"
 
     # fix artm and topg
     nc.variables[temp_name].units = "Celsius"
@@ -205,8 +207,7 @@ def final_corrections(filename):
                     mask[j,i] = ocean_ice_free
 
     # compute the B.C. locations:
-    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
-    bcflag_var[:] = mask == grounded_icy
+    bcflag = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
 
     # mark ocean_icy cells next to grounded_icy ones too:
     row = np.array([ 0, -1, 1,  0])
@@ -216,20 +217,30 @@ def final_corrections(filename):
             nearest = mask[j + row, i + col]
 
             if mask[j,i] == ocean_icy and np.any(nearest == grounded_icy):
-                bcflag_var[j,i] = 1
-                topg[j,i]       = -2000
+                bcflag[j,i] = 1
 
-    #modifications for to allow run
-    tempma = nc.variables[temp_name][:]
-    for j in xrange(My):
-      for i in xrange(Mx):
-          if bcflag_var[j,i] == 0:
-              topg[j,i]=-2000 # to avoid grounding
-          if tempma[j,i] > -20.0:
-              tempma[j,i]=-20.0 # to adjust open ocean temperatures
+    # Do not prescribe SSA Dirichlet B.C. in ice-free ocean areas:
+    bcflag[thk < 1.0] = 0
 
-    nc.variables[temp_name][:] = tempma
+    # modifications for the prognostic run
+    # this is to avoid grounding (Why? -- CK)
+    topg[np.logical_or(mask == ocean_icy, mask == ocean_ice_free)] = -2000.0
+
+    # cap temperature out in the ocean:
+    temperature = nc.variables[temp_name][:]
+    temperature[temperature > -20.0] = -20.0
+
+    nc.variables[temp_name][:] = temperature
     nc.variables['topg'][:] = topg
+    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
+    bcflag_var[:] = bcflag
+
+    bad_bcflag_mask = np.logical_and(thk < 1.0, bcflag == 1)
+    bad_bcflag_var = nc.createVariable('bad_bcflag', 'i', ('y', 'x'))
+    bad_bcflag_var[:] = bad_bcflag_mask
+
+    mask_var = nc.createVariable('mask', 'i', ('y', 'x'))
+    mask_var[:] = mask
 
     nc.close()
 
