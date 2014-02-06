@@ -68,10 +68,12 @@ acab[:5] = 0
 acab[5:105] = np.linspace(acab_max,acab_min,100)
 acab[105:] = acab_min
 
+ice_density = 910.0             # kg m-3
 acab_var = nc.createVariable("climatic_mass_balance", 'f', dimensions=("x",))
-acab_var.units = "m year-1";
+acab_var.units = "kg m-2 year-1";
 acab_var.standard_name = "land_ice_surface_specific_mass_balance"
-acab_var[:] = acab
+# convert from m/year ice equivalent into [kg m-2 year-1]:
+acab_var[:] = acab * ice_density
 
 # Set boundary conditions
 # ------------------------------------------------------------------------------
