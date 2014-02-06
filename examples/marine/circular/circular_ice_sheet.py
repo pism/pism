@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2013 Ricarda Winkelmann, Torsten Albrecht,
+# Copyright (C) 2012, 2013, 2014 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
@@ -23,7 +23,7 @@ r_cf = np.sqrt(x_cf**2 + y_cf**2) # calving front position in m
 thk   = np.zeros((options.My, options.Mx)) # sheet/shelf thickness
 bed   = np.zeros_like(thk)                 # bedrock surface elevation
 Ts    = np.zeros_like(thk) + p.air_temperature
-accum = np.zeros_like(thk) + p.accumulation_rate
+accum = np.zeros_like(thk) + p.accumulation_rate * p.rho_ice
 
 def MISMIP_bed(r):
     s  = r / 1000.0
