@@ -19,7 +19,7 @@ def bed_topography(experiment, x):
 
 def surface_mass_balance(x):
     """Computes the surface mass balance."""
-    return np.tile(np.zeros_like(x) + MISMIP.a(), (3, 1))
+    return np.tile(np.zeros_like(x) + MISMIP.a(), (3, 1)) * MISMIP.rho_i()
 
 def ice_surface_temp(x):
     """Computes the ice surface temperature (irrelevant)."""
@@ -88,7 +88,7 @@ def pism_bootstrap_file(filename, experiment, step, mode,
     nc.write('thk', thk)
 
     nc.define_2d_field('climatic_mass_balance',
-                       attrs={'units' : 'm / s',
+                       attrs={'units' : 'kg m-2 / s',
                               'long_name' : 'ice-equivalent surface mass balance (accumulation/ablation) rate',
                               'standard_name' : 'land_ice_surface_specific_mass_balance'})
     nc.write('climatic_mass_balance', smb)
