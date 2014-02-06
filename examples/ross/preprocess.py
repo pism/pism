@@ -194,7 +194,7 @@ def final_corrections(filename):
     for j in xrange(My):
         for i in xrange(Mx):
             if is_grounded(thk[j,i], topg[j,i]):
-                if thk[j,k] > 1.0:
+                if thk[j,i] > 1.0:
                     mask[j,i] = grounded_icy
                 else:
                     mask[j,i] = grounded_ice_free
