@@ -46,6 +46,7 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:
   PetscErrorCode allocate_POConstantPIK();
+  double meltfactor;
 };
 
 #endif /* _POCONSTANTPIK_H_ */

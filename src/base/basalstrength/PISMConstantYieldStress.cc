@@ -23,7 +23,7 @@
 PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   bool i_set, bootstrap, tauc_set;
-  double constant_tauc;
+  double constant_tauc = config.get("default_tauc");
   std::string filename;
   int start;
 

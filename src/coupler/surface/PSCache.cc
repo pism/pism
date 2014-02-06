@@ -39,10 +39,10 @@ PetscErrorCode PSCache::allocate_PSCache() {
 
   ierr = m_mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_mass_flux.set_attrs("climate_state",
-                               "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                               "m s-1",
+                               "surface mass balance (accumulation/ablation) rate",
+                               "kg m-2 s-1",
                                "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = m_mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = m_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   m_mass_flux.write_in_glaciological_units = true;
 
   ierr = m_temperature.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);

@@ -36,8 +36,7 @@ const double IceCompModel::ApforG = 200; // m
 
 
 /*! Re-implemented so that we can add compensatory strain_heating in Tests F and G. */
-PetscErrorCode IceCompModel::temperatureStep(
-       double* vertSacrCount, double* bulgeCount) {
+PetscErrorCode IceCompModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   PetscErrorCode  ierr;
 
   if ((testname == 'F') || (testname == 'G')) {
@@ -56,58 +55,49 @@ PetscErrorCode IceCompModel::temperatureStep(
 
 PetscErrorCode IceCompModel::initTestFG() {
   PetscErrorCode  ierr;
-  int        Mz=grid.Mz;
+  int        Mz = grid.Mz;
   double     H, accum;
   double     *dummy1, *dummy2, *dummy3, *dummy4;
 
-  dummy1=new double[Mz];  dummy2=new double[Mz];
-  dummy3=new double[Mz];  dummy4=new double[Mz];
+  dummy1 = new double[Mz];  dummy2 = new double[Mz];
+  dummy3 = new double[Mz];  dummy4 = new double[Mz];
 
   ierr = bed_topography.set(0); CHKERRQ(ierr);
   ierr = geothermal_flux.set(Ggeo); CHKERRQ(ierr);
 
-  double *T;
-  T = new double[grid.Mz];
-
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
+  double *T = new double[grid.Mz];
 
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = T3.begin_access();            CHKERRQ(ierr);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
       double r = grid.radius(i, j);
-      ice_surface_temp(i, j) = Tmin + ST * r;
+
       if (r > LforFG - 1.0) { // if (essentially) outside of sheet
         ice_thickness(i, j) = 0.0;
-        climatic_mass_balance(i, j) = -ablationRateOutside/secpera;
         for (int k = 0; k < Mz; k++)
-          T[k]=ice_surface_temp(i, j);
+          T[k] = Tmin + ST * r;
       } else {
         r = PetscMax(r, 1.0); // avoid singularity at origin
         if (testname == 'F') {
           bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
                      &H, &accum, T, dummy1, dummy2, dummy3, dummy4);
-          ice_thickness(i, j)   = H;
-          climatic_mass_balance(i, j) = accum;
+          ice_thickness(i, j) = H;
+
         } else {
           bothexact(grid.time->current(), r, &grid.zlevels[0], Mz, ApforG,
                      &H, &accum, T, dummy1, dummy2, dummy3, dummy4);
-          ice_thickness(i, j)   = H;
-          climatic_mass_balance(i, j) = accum;
+          ice_thickness(i, j) = H;
+
         }
       }
       ierr = T3.setInternalColumn(i, j, T); CHKERRQ(ierr);
-
     }
   }
 
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = T3.end_access(); CHKERRQ(ierr);
-
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -138,25 +128,21 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  // before temperature and flow step, set strain_heating_c and accumulation from exact values
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  // before temperature and flow step, set strain_heating_c from exact values
   ierr = strain_heating3_comp.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       double r = grid.radius(i, j);
       if (r > LforFG - 1.0) {  // outside of sheet
-        climatic_mass_balance(i, j) = -ablationRateOutside/secpera;
         ierr = strain_heating3_comp.setColumn(i, j, 0.0); CHKERRQ(ierr);
       } else {
         r = PetscMax(r, 1.0); // avoid singularity at origin
         if (testname == 'F') {
           bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
                     &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
-          climatic_mass_balance(i, j) = accum;
         } else {
           bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
                     &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
-          climatic_mass_balance(i, j) = accum;
         }
         for (unsigned int k=0;  k<grid.Mz;  k++) // scale strain_heating to J/(s m^3)
           strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
@@ -164,7 +150,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
       }
     }
   }
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+
   ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
 
   delete [] dummy1;
@@ -202,7 +188,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
     ice_c     = config.get("ice_specific_heat_capacity");
 
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+
 
   ierr = T3.begin_access(); CHKERRQ(ierr);
 
@@ -216,7 +202,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       double xx = grid.x[i], yy = grid.y[j], r = grid.radius(i, j);
       if (r > LforFG - 1.0) {  // outside of sheet
-        climatic_mass_balance(i, j) = -ablationRateOutside/secpera;
+
         ice_thickness(i, j) = 0.0;
         Ts = Tmin + ST * r;
         ierr = T3.setColumn(i, j, Ts); CHKERRQ(ierr);
@@ -231,12 +217,12 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
           bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
                     &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
           ice_thickness(i,j)   = H;
-          climatic_mass_balance(i,j) = accum;
+
         } else {
           bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
                     &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
           ice_thickness(i,j)   = H;
-          climatic_mass_balance(i,j) = accum;
+
         }
         for (unsigned int k = 0; k < grid.Mz; k++) {
           u[k] = Uradial[k]*(xx/r);
@@ -262,7 +248,6 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   delete [] Uradial;
   delete [] T;
@@ -722,9 +707,6 @@ PetscErrorCode IceCompModel::initTestsKO() {
       PISMEnd();
     }
   }
-
-  ierr = climatic_mass_balance.set(0.0); CHKERRQ(ierr);
-  ierr = ice_surface_temp.set(223.15); CHKERRQ(ierr);
 
   ierr = bed_topography.set(0.0); CHKERRQ(ierr);
   ierr = geothermal_flux.set(0.042); CHKERRQ(ierr);

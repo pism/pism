@@ -99,11 +99,11 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("diagnostic",
-					 "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
-					 "m s-1",  // m *ice-equivalent* per second
+					 "instantaneous surface mass balance (accumulation/ablation) rate",
+					 "kg m-2 s-1",
 					 "land_ice_surface_specific_mass_balance");  // CF standard_name
   CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
   climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
@@ -111,27 +111,27 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = accumulation_rate.set_attrs("diagnostic",
-                                     "instantaneous ice-equivalent surface accumulation rate"
+                                     "instantaneous surface accumulation rate"
                                      " (precipitation minus rain)",
-                                     "m s-1",
+                                     "kg m-2 s-1",
                                      ""); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = accumulation_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   accumulation_rate.write_in_glaciological_units = true;
 
   ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = melt_rate.set_attrs("diagnostic",
-                             "instantaneous ice-equivalent surface melt rate",
-                             "m s-1",
+                             "instantaneous surface melt rate",
+                             "kg m-2 s-1",
                              ""); CHKERRQ(ierr);
-  ierr = melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = melt_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   melt_rate.write_in_glaciological_units = true;
 
   ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = runoff_rate.set_attrs("diagnostic",
-                               "instantaneous ice-equivalent surface meltwater runoff rate",
-                               "m s-1",
+                               "instantaneous surface meltwater runoff rate",
+                               "kg m-2 s-1",
                                ""); CHKERRQ(ierr);
-  ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = runoff_rate.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   runoff_rate.write_in_glaciological_units = true;
 
   ierr = snow_depth.create(grid, "snow_depth", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -297,7 +297,9 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
 
   ierr = atmosphere->init_timeseries(&ts[0], Nseries); CHKERRQ(ierr);
 
-  for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
+  const double ice_density = config.get("ice_density");
+
+   for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // the temperature time series from the PISMAtmosphereModel and its modifiers
@@ -347,12 +349,14 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
           accumulation_rate(i,j) += accumulation;
 
           mbscheme->step(ddf, PDDs[k], accumulation,
-                         snow_depth(i,j), melt_rate(i,j), runoff_rate(i,j), climatic_mass_balance(i,j));
+                         snow_depth(i,j), melt_rate(i,j), runoff_rate(i,j),
+                         climatic_mass_balance(i,j));
         }
-        accumulation_rate(i,j)     /= m_dt;
-        melt_rate(i,j)             /= m_dt;
-        runoff_rate(i,j)           /= m_dt;
-        climatic_mass_balance(i,j) /= m_dt;
+        // convert from [m during the current time-step] to kg m-2 s-1
+        accumulation_rate(i,j)     *= (ice_density/m_dt);
+        melt_rate(i,j)             *= (ice_density/m_dt);
+        runoff_rate(i,j)           *= (ice_density/m_dt);
+        climatic_mass_balance(i,j) *= (ice_density/m_dt);
       }
 
       if (m.ocean(i,j)) {

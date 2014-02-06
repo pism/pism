@@ -155,7 +155,7 @@ def generate_pism_input(x, y, xx, yy):
                               "standard_name" : "bedrock_altitude"})
   nc.define_2d_field("climatic_mass_balance", time_dependent = False,
                      attrs = {"long_name"   : "climatic mass balance for -surface given",
-                              "units"       : "m year-1",
+                              "units"       : "kg m-2 year-1",
                               "standard_name" : "land_ice_surface_specific_mass_balance"})
   nc.define_2d_field("ice_surface_temp", time_dependent = False,
                      attrs = {"long_name"   : "ice surface temp (K) for -surface given",

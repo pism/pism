@@ -73,6 +73,9 @@ VecScatterBegin/End() to scatter the natural vector onto process 0.
 PetscErrorCode PISMBedSmoother::allocate(int maxGHOSTS) {
   PetscErrorCode ierr;
   DM da2;
+  // FIXME: this relies on the fact that IceModel::bed_topography has
+  // max_stencil_width ghosts. We should *not* use
+  // IceModel::bed_topography directly (i.e. we should use a copy).
   ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(da2, &g2); CHKERRQ(ierr);

@@ -37,10 +37,10 @@ PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
 
   ierr = mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_state",
-                             "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                             "m s-1",
+                             "surface mass balance (accumulation/ablation) rate",
+                             "kg m-2 s-1",
                              "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   mass_flux.write_in_glaciological_units = true;
 
   ierr = temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -50,11 +50,11 @@ PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
   // create special variables
   ierr = mass_flux_0.create(grid, "mass_flux_0", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = mass_flux_0.set_attrs("internal", "surface mass flux at the beginning of a run",
-                               "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+                               "kg m-2 s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
   ierr = mass_flux_input.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = mass_flux_input.set_attrs("model_state", "surface mass flux to apply anomalies to",
-                                   "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+                                   "kg m-2 s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
 
   ierr = temp_0.create(grid, "ice_surface_temp_0", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = temp_0.set_attrs("internal", "ice-surface temperature and the beginning of a run", "K",

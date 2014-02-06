@@ -22,20 +22,9 @@
 
 /* TO DO:
  *
- * Translate all comments into English.
- *
  * Add detailed references ("this implements equations (3)-(7) in Smith and
  * Jones, 2001" and similar).
  *
- * Give meaningful names to class methods (potit? pttmpr? adlprt?). Long names
- * are OK.
- *
- * All computationally expensive code should be called from the update() method.
- *
- * Make sure that the code compiles without warnings.
- *
- * Remove unused code. (It can always be recovered from an earlier version of
- * the code.)
  */
 
 POGivenTH::POGivenTH(IceGrid &g, const PISMConfig &conf)
@@ -57,8 +46,6 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
   // will be de-allocated by the parent's destructor
   theta_ocean    = new IceModelVec2T;
   salinity_ocean = new IceModelVec2T;
-  shelfbtemp     = new IceModelVec2T;
-  shelfbmassflux = new IceModelVec2T;
 
   m_fields["theta_ocean"]     = theta_ocean;
   m_fields["salinity_ocean"]  = salinity_ocean;
@@ -69,24 +56,25 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = theta_ocean->create(grid, "theta_ocean", false); CHKERRQ(ierr);
-  ierr = salinity_ocean->create(grid, "salinity_ocean", false); CHKERRQ(ierr);
-  ierr = shelfbtemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr);
-  ierr = shelfbmassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
-
   ierr = theta_ocean->set_attrs("climate_forcing",
-                        "absolute potential temperature of the adjacent ocean",
-                        "Kelvin", ""); CHKERRQ(ierr);
+                                "absolute potential temperature of the adjacent ocean",
+                                "Kelvin", ""); CHKERRQ(ierr);
+
+  ierr = salinity_ocean->create(grid, "salinity_ocean", false); CHKERRQ(ierr);
   ierr = salinity_ocean->set_attrs("climate_forcing",
-           "salinity of the adjacent ocean",
-           "g/kg", ""); CHKERRQ(ierr);
-  ierr = shelfbtemp->set_attrs("climate_forcing",
-                        "absolute temperature at ice shelf base",
-                        "Kelvin", ""); CHKERRQ(ierr);
-  ierr = shelfbmassflux->set_attrs("climate_forcing",
-           "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-           "m s-1", ""); CHKERRQ(ierr);
+                                   "salinity of the adjacent ocean",
+                                   "g/kg", ""); CHKERRQ(ierr);
 
+  ierr = shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = shelfbtemp.set_attrs("climate_forcing",
+                              "absolute temperature at ice shelf base",
+                              "Kelvin", ""); CHKERRQ(ierr);
 
+  ierr = shelfbmassflux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = shelfbmassflux.set_attrs("climate_forcing",
+                                  "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                                  "kg m-2 s-1", ""); CHKERRQ(ierr);
+  ierr = shelfbmassflux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -101,8 +89,9 @@ PetscErrorCode POGivenTH::init(PISMVars &vars) {
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
-  ierr = theta_ocean   -> init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = salinity_ocean-> init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+
+  ierr = theta_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = salinity_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
@@ -121,11 +110,19 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
 
   ierr = calc_shelfbtemp_shelfbmassflux(); CHKERRQ(ierr);
 
+  // convert from [m s-1] to [kg m-2 s-1]:
+  ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   return 0;
 }
 
 PetscErrorCode POGivenTH::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbtemp->copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = shelfbtemp.copy_to(result); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
+  PetscErrorCode ierr = shelfbmassflux.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -137,14 +134,13 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
   const double rhow = config.get("sea_water_density");
   const double reference_pressure = 1.01325; // pressure of atmosphere in bar
 
-
   double pressure_at_shelf_base, bmeltrate, temp_insitu, temp_base;
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = theta_ocean->begin_access(); CHKERRQ(ierr);
   ierr = salinity_ocean->begin_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux->begin_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp->begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -153,37 +149,32 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
 
       // convert potential to insitu temperature
       // FIXME: this has 3 nested functions in it which may not be efficient.
-      insitu_temperature((*salinity_ocean)(i,j), (*theta_ocean)(i,j) - 273.15, pressure_at_shelf_base, reference_pressure, temp_insitu);
+      insitu_temperature((*salinity_ocean)(i,j),
+                         (*theta_ocean)(i,j) - 273.15, // convert from Kelvin to Celsius
+                         pressure_at_shelf_base, reference_pressure, temp_insitu);
 
       btemp_bmelt_3eqn(rhow, rhoi,(*salinity_ocean)(i,j), temp_insitu, (*ice_thickness)(i,j), temp_base, bmeltrate);
 
-      //ierr = verbPrintf(2, grid.com, "temp_insitu=%f, salt_ocean=%f\n", temp_insitu,(*salinity_ocean)(i,j)); CHKERRQ(ierr);
-      //ierr = verbPrintf(2, grid.com, "bound temp=%f, salt=%f,bmelt=%f\n", temp_base,sal_base,bmeltrate); CHKERRQ(ierr);
-
       // the ice/ocean boundary layer temperature is seen by PISM as shelfbtemp.
-      (*shelfbtemp)(i,j)     = temp_base + 273.15; // to Kelvin
-      (*shelfbmassflux)(i,j) = -1 * bmeltrate;
+      shelfbtemp(i,j) = temp_base + 273.15; // convert from Celsius to Kelvin
 
+      // FIXME: do we need this "-1"? (note the definition of the sub-shelf mass flux above).
+      shelfbmassflux(i,j) = -1 * bmeltrate;
     }
   }
 
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = theta_ocean->end_access(); CHKERRQ(ierr);
   ierr = salinity_ocean->end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux->end_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp->end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
-  return 0;
-}
-
-PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbmassflux->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
                                            double sal_ocean, double temp_insitu, double zice,
-                                           double &temp_base, double &meltrate){
+                                           double &temp_base, double &meltrate) {
 
   // This function solves the three equation model of ice-shelf ocean interaction (Hellmer and Olbers, 1989).
   // Equations are
@@ -248,7 +239,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
 
   // sf is solution of quadratic equation in salinity.
   // salinities < 0 psu are not defined, therefore pick the positive of the two solutions.
-  if(sf1 > 0.){
+  if(sf1 > 0.) {
     tf = tf1;
     sf = sf1;
   }else{
@@ -279,12 +270,13 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
 }
 
 
-PetscErrorCode POGivenTH::adiabatic_temperature_gradient(double salinity,double temp_insitu, double pressure, double &adlprt_out){
+PetscErrorCode POGivenTH::adiabatic_temperature_gradient(double salinity, double temp_insitu,
+                                                         double pressure, double &result) {
 
   // calculates the adiabatic temperature gradient  in (K Dbar^-1) from
   // salinity (psu), in situ temperature (degC) and in situ pressure (dbar)
 
-  // check: adlprt_out =     3.255976E-4 K dbar^-1
+  // check: result =     3.255976E-4 K dbar^-1
   //    for salinity   =    40.0 psu
   //     temp_insitu   =    40.0 degC
   //         pressure  = 10000.000 dbar
@@ -298,15 +290,15 @@ PetscErrorCode POGivenTH::adiabatic_temperature_gradient(double salinity,double 
   const double e0 = -4.6206e-13, e1 = 1.8676e-14,  e2 = -2.1687e-16;
 
   ds = salinity-s0;
-  adlprt_out = (( ( (e2*temp_insitu + e1)*temp_insitu + e0 )*pressure + ( (d1*temp_insitu + d0)*ds
+  result = (( ( (e2*temp_insitu + e1)*temp_insitu + e0 )*pressure + ( (d1*temp_insitu + d0)*ds
                                                                       + ( (c3*temp_insitu + c2)*temp_insitu + c1 )*temp_insitu + c0 ) )*pressure
                 + (b1*temp_insitu + b0)*ds +  ( (a3*temp_insitu + a2)*temp_insitu + a1 )*temp_insitu + a0);
 
   return 0;
 }
 
-PetscErrorCode POGivenTH::potential_temperature(double salinity,double temp_insitu,double pressure,
-                                                double reference_pressure, double& thetao){
+PetscErrorCode POGivenTH::potential_temperature(double salinity, double temp_insitu, double pressure,
+                                                double reference_pressure, double& thetao) {
 
   // Calculates the potential temperature (thetao) from
   // in situ temperature, salinity, insitu pressure and reference pressure
@@ -349,24 +341,26 @@ PetscErrorCode POGivenTH::potential_temperature(double salinity,double temp_insi
 }
 
 PetscErrorCode POGivenTH::insitu_temperature(double salinity, double thetao,
-                                                  double pressure,double reference_pressure,
-                                                  double &temp_insitu_out){
+                                             double pressure, double reference_pressure,
+                                             double &temp_insitu_out) {
 
   // Calculates the in situ temperature from salinity, potential temperature and pressure
   // by iteration.
 
   double tpmd = 0.001, epsi = 0., tin, pt1, ptd;
 
-  for (int iter=0; iter<101; ++iter){
-    tin  = thetao+epsi;
-    potential_temperature(salinity,tin,pressure,reference_pressure,pt1);
-    ptd  = pt1-thetao;
-    if(PetscAbs(ptd) < tpmd){
+  for (int iter = 0; iter < 101; ++iter) {
+    tin = thetao + epsi;
+    potential_temperature(salinity, tin, pressure, reference_pressure, pt1);
+    ptd = pt1 - thetao;
+    if (PetscAbs(ptd) < tpmd) {
       break;
-    }else{
-      epsi = epsi-ptd;
+    } else {
+      epsi = epsi - ptd;
     }
-    if(iter==100){ SETERRQ(grid.com, 1, "in situ temperature calculation not converging."); }
+    if (iter == 100) {
+      SETERRQ(grid.com, 1, "in situ temperature calculation not converging.");
+    }
   }
 
   temp_insitu_out = tin;
@@ -377,5 +371,3 @@ PetscErrorCode POGivenTH::sea_level_elevation(double &result) {
   result = sea_level;
   return 0;
 }
-
-

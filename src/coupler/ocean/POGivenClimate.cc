@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -52,11 +52,13 @@ PetscErrorCode POGiven::allocate_POGiven() {
   ierr = shelfbmassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
 
   ierr = shelfbtemp->set_attrs("climate_forcing",
-                        "absolute temperature at ice shelf base",
-                        "Kelvin", ""); CHKERRQ(ierr);
+                               "absolute temperature at ice shelf base",
+                               "Kelvin", ""); CHKERRQ(ierr);
   ierr = shelfbmassflux->set_attrs("climate_forcing",
-			     "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-			     "m s-1", ""); CHKERRQ(ierr);
+                                   "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                                   "kg m-2 s-1", ""); CHKERRQ(ierr);
+  ierr = shelfbmassflux->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  shelfbmassflux->write_in_glaciological_units = true;
 
   return 0;
 }

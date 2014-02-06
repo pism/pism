@@ -208,8 +208,10 @@ protected:
 
     for (int   i = g.xs; i < g.xs + g.xm; ++i) {
       for (int j = g.ys; j < g.ys + g.ym; ++j) {
-        if ((*thk)(i,j) > 0)
-          result(i,j) -= lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
+        if ((*thk)(i,j) > 0) {
+          const double correction = lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
+          result(i,j) -= correction;
+        }
       }
     }
 

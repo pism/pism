@@ -143,12 +143,12 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
     const double
-      ice_rho   = config.get("ice_density"),
-      ice_k     = config.get("ice_thermal_conductivity"),
-      ice_c     = config.get("ice_specific_heat_capacity"),
-      L         = config.get("water_latent_heat_fusion"),
+      ice_density        = config.get("ice_density"),
+      ice_k              = config.get("ice_thermal_conductivity"),
+      ice_c              = config.get("ice_specific_heat_capacity"),
+      L                  = config.get("water_latent_heat_fusion"),
       melting_point_temp = config.get("water_melting_point_temperature"),
-      beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity");
+      beta_CC_grad       = config.get("beta_CC") * ice_density * config.get("standard_gravity");
 
     const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
 
@@ -157,7 +157,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     system.dy              = grid.dy;
     system.dtTemp          = dt_TempAge; // same time step for temp and age, currently
     system.dzEQ            = fdz;
-    system.ice_rho         = ice_rho;
+    system.ice_rho         = ice_density;
     system.ice_k           = ice_k;
     system.ice_c_p         = ice_c;
 
@@ -265,7 +265,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           // go through column and find appropriate lambda for BOMBPROOF
           double lambda = 1.0;  // start with centered implicit for more accuracy
           for (int k = 1; k < ks; k++) {
-            const double denom = (PetscAbs(system.w[k]) + epsilon) * ice_rho * ice_c * fdz;
+            const double denom = (PetscAbs(system.w[k]) + epsilon) * ice_density * ice_c * fdz;
             lambda = PetscMin(lambda, 2.0 * ice_k / denom);
           }
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
@@ -306,7 +306,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               double Texcess = x[k] - Tpmp; // always positive
-              excessToFromBasalMeltLayer(ice_rho, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_density, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
               // Texcess  will always come back zero here; ignore it
             } else {
               Tnew[k] = x[k];
@@ -335,9 +335,9 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised
               // above Tpmp
-              excessToFromBasalMeltLayer(ice_rho, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
             } else {
-              excessToFromBasalMeltLayer(ice_rho, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
+              excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
             }
             Tnew[0] = Tpmp + Texcess;
             if (Tnew[0] > (Tpmp + 0.00001)) {
@@ -364,11 +364,13 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
+        // convert from [kg m-2 s-1] to [m s-1]:
+        double sub_shelf_flux = shelfbmassflux(i,j) / ice_density;
+
         // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
         if (mask.ocean(i,j)) {
           if (mask.icy(i,j)) {
-            // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
-            basal_melt_rate(i,j) = shelfbmassflux(i,j); // set by PISMOceanCoupler
+            basal_melt_rate(i,j) = sub_shelf_flux;
           } else {
             basal_melt_rate(i,j) = 0.0;
           }
@@ -381,7 +383,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         }
 
 	if (sub_gl) {
-	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * shelfbmassflux(i,j) + gl_mask(i,j) * basal_melt_rate(i,j);
+	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
 	}
 
     }

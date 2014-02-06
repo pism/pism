@@ -492,10 +492,10 @@ PetscErrorCode IceModel::createVecs() {
   ierr = climatic_mass_balance.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                        "m s-1",  // m *ice-equivalent* per second
+                        "kg m-2 s-1",
                         "land_ice_surface_specific_mass_balance");  // CF standard_name
   CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
   climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
@@ -539,7 +539,7 @@ PetscErrorCode IceModel::createVecs() {
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
 
   // take care of 2D cumulative fluxes: we need to allocate special storage if
-  // the user asked for climatic_mass_balance_cumulative or
+  // the user asked for climatic_mass_balance_cumulative or some others (below).
 
   std::string vars;
   bool extra_vars_set;
@@ -557,8 +557,8 @@ PetscErrorCode IceModel::createVecs() {
                                                      "climatic_mass_balance_cumulative",
                                                      WITHOUT_GHOSTS); CHKERRQ(ierr);
       ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                                        "cumulative ice-equivalent surface mass balance",
-                                                        "m", ""); CHKERRQ(ierr);
+                                                        "cumulative surface mass balance",
+                                                        "kg m-2", ""); CHKERRQ(ierr);
     }
 
     std::string o_size = get_output_size("-o_size");
@@ -577,9 +577,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
                                                          "cumulative basal flux into the ice "
                                                          "in grounded areas (positive means ice gain)",
-                                                         "kg", ""); CHKERRQ(ierr);
+                                                         "kg m-2", ""); CHKERRQ(ierr);
       grounded_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
     }
 
@@ -588,9 +588,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
                                                          "cumulative basal flux into the ice "
                                                          "in floating areas (positive means ice gain)",
-                                                         "kg", ""); CHKERRQ(ierr);
+                                                         "kg m-2", ""); CHKERRQ(ierr);
       floating_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
     }
 
@@ -598,9 +598,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
       ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
                                                  "cumulative nonnegative rule flux (positive means ice gain)",
-                                                 "kg", ""); CHKERRQ(ierr);
+                                                 "kg m-2", ""); CHKERRQ(ierr);
       nonneg_flux_2D_cumulative.set_time_independent(false);
-      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
     }
 
@@ -608,9 +608,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
       ierr = discharge_flux_2D_cumulative.set_attrs("diagnostic",
                                                     "cumulative discharge (calving) flux (positive means ice loss)",
-                                                    "kg", ""); CHKERRQ(ierr);
+                                                    "kg m-2", ""); CHKERRQ(ierr);
       discharge_flux_2D_cumulative.set_time_independent(false);
-      ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       discharge_flux_2D_cumulative.write_in_glaciological_units = true;
     }
   }

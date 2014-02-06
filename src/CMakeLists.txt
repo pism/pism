@@ -171,6 +171,7 @@ set_source_files_properties (base/util/pism_default_config.cc
 add_library (pismverif
   verif/iCMthermo.cc
   verif/iceCompModel.cc
+  verif/PSVerification.cc
   verif/tests/exactTestH.c
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
@@ -186,7 +187,8 @@ add_executable (pismr pismr.cc)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
-  eismint/iceEISModel.cc)
+  eismint/iceEISModel.cc
+  eismint/PS_EISMINTII.cc)
 
 # All of the following are linked against pismbase
 foreach (EXEC pismr pisms)

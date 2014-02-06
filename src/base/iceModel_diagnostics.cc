@@ -1042,7 +1042,7 @@ IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumula
   vars[0].init_2d("climatic_mass_balance_cumulative", grid);
 
   set_attrs("cumulative ice-equivalent climatic mass balance", "",
-            "m", "m", 0);
+            "kg m-2", "kg m-2", 0);
 }
 
 PetscErrorCode IceModel_climatic_mass_balance_cumulative::compute(IceModelVec* &output) {
@@ -1137,7 +1137,6 @@ IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iarea", time_dimension_name);
 
   ts->set_units("m2", "");
@@ -1160,7 +1159,6 @@ PetscErrorCode IceModel_iarea::update(double a, double b) {
 IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
-  // set metadata:
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "imass", time_dimension_name);
 
@@ -1185,7 +1183,6 @@ PetscErrorCode IceModel_imass::update(double a, double b) {
 IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
-  // set metadata:
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "dimassdt", time_dimension_name);
 
@@ -1236,7 +1233,6 @@ IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
-  // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolcold", time_dimension_name);
 
   ts->set_units("m3", "");
@@ -1259,7 +1255,6 @@ PetscErrorCode IceModel_ivolcold::update(double a, double b) {
 IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMTSDiag<IceModel>(m, g, my_vars) {
 
-  // set metadata:
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareatemp", time_dimension_name);
 
@@ -1885,7 +1880,7 @@ IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel 
 
   set_attrs("cumulative non-negative rule (thk >= 0) flux (positive means ice gain)",
             "",                 // no standard name
-            "kg", "Gt", 0);
+            "kg m-2", "Gt m-2", 0);
 }
 
 PetscErrorCode IceModel_nonneg_flux_2D_cumulative::compute(IceModelVec* &output) {
@@ -1910,7 +1905,7 @@ IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumu
 
   set_attrs("cumulative grounded basal flux (positive means ice gain)",
             "",                 // no standard name
-            "kg", "Gt", 0);
+            "kg m-2", "Gt m-2", 0);
 }
 
 PetscErrorCode IceModel_grounded_basal_flux_2D_cumulative::compute(IceModelVec* &output) {
@@ -1935,7 +1930,7 @@ IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumu
 
   set_attrs("cumulative floating basal flux (positive means ice gain)",
             "",                 // no standard name
-            "kg", "Gt", 0);
+            "kg m-2", "Gt m-2", 0);
 }
 
 PetscErrorCode IceModel_floating_basal_flux_2D_cumulative::compute(IceModelVec* &output) {
@@ -1961,7 +1956,7 @@ IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(Ice
 
   set_attrs("cumulative ice discharge (calving) flux (negative means ice loss)",
             "",                 // no standard name
-            "kg", "Gt", 0);
+            "kg m-2", "Gt m-2", 0);
 }
 
 PetscErrorCode IceModel_discharge_flux_2D_cumulative::compute(IceModelVec* &output) {
