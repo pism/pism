@@ -90,7 +90,7 @@ plt.setp(axUpperLeft, xticks=[])
 if (plot_acab == True):
     acab = np.squeeze(nc.variables["climatic_mass_balance"][:])
     axUpperRight = axUpperLeft.twinx()
-    axUpperRight.plot(x,acab,color='#984EA3',lw=1.5)
+    axUpperRight.plot(x, acab / 910.0, color='#984EA3',lw=1.5)
     axUpperRight.axes.set_ylabel("mass balance [m a$^{-1}$]")
     axUpperRight.axes.set_xlim(-250, 3500)
 axLower.plot(x,b,color='black', lw = 1.5)
