@@ -23,7 +23,7 @@
 #include "PSVerification.hh"
 #include "PISMAtmosphere.hh"
 #include "flowlaws.hh"
-#include "EnthalpyConverter.hh"
+#include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 #include "PISMConfig.hh"
 
