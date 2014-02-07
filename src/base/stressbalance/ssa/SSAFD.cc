@@ -52,6 +52,9 @@ PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
   PC pc;
 
+  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+
   // Get the PC from the KSP solver:
   ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
 
@@ -72,6 +75,7 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
 
   ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
     
   // Switch to using the "unpreconditioned" norm.
   ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
@@ -493,6 +497,7 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 */
 PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
+  int zero_pivot_flag = 0;
 
   const double   dx=grid.dx, dy=grid.dy;
   const double   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
@@ -733,10 +738,12 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // check diagonal entries:
       const double eps = 1e-16;
       if (fabs(eq1[4]) < eps) {
-        fprintf(stderr, "PISM WARNING: first (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+        fprintf(stderr, "PISM ERROR: first  (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+        zero_pivot_flag = 1;
       }
       if (fabs(eq2[13]) < eps) {
-        fprintf(stderr, "PISM WARNING: second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+        fprintf(stderr, "PISM ERROR: second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+        zero_pivot_flag = 1;
       }
 
       // build equations: NOTE TRANSPOSE
@@ -752,8 +759,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // set coefficients of the second equation:
       row.c = 1;
       ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
+    } // j-loop
+  } // i-loop
 
   if (m_vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
@@ -779,6 +786,13 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 #if (PISM_DEBUG==1)
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 #endif
+
+  int zero_pivot_flag_global = 0;
+  MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, grid.com);
+  if (zero_pivot_flag_global != 0) {
+    fprintf(stderr, "PISM ERROR: zero pivot detected.\n");
+    return 1;
+  }
 
   return 0;
 }
