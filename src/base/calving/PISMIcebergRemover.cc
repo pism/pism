@@ -62,60 +62,86 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
 
   // prepare the mask that will be handed to the connected component
   // labeling code:
-  ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.grounded_ice(i,j) == true)
-        iceberg_mask[i][j] = mask_grounded_ice;
-      else if (M.floating_ice(i,j) == true)
-        iceberg_mask[i][j] = mask_floating_ice;
-    }
-  }
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
+  {
+    ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
 
-  // Mark SSA Dirichlet B.C. cells as "grounded" because we don't want
-  // them removed.
-  if (m_bcflag) {
-    ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
+    ierr = pism_mask.begin_access(); CHKERRQ(ierr);
     for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
       for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if (m_bcflag->as_int(i,j) == 1)
+        if (M.grounded_ice(i,j) == true)
           iceberg_mask[i][j] = mask_grounded_ice;
+        else if (M.floating_ice(i,j) == true)
+          iceberg_mask[i][j] = mask_floating_ice;
       }
     }
-    ierr = m_bcflag->end_access(); CHKERRQ(ierr);
+
+    // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
+    // don't want them removed.
+    if (m_bcflag) {
+      ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
+      for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+        for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+          if (m_bcflag->as_int(i,j) == 1 && M.icy(i,j))
+            iceberg_mask[i][j] = mask_grounded_ice;
+        }
+      }
+      ierr = m_bcflag->end_access(); CHKERRQ(ierr);
+    }
+    ierr = pism_mask.end_access(); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
   }
-  ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
 
-  ierr = transfer_to_proc0(); CHKERRQ(ierr);
+  // identify icebergs using serial code on processor 0:
+  {
+    ierr = transfer_to_proc0(); CHKERRQ(ierr);
 
-  if (grid.rank == 0) {
-    double *mask;
-    ierr = VecGetArray(m_mask_p0, &mask); CHKERRQ(ierr);
+    if (grid.rank == 0) {
+      double *mask;
+      ierr = VecGetArray(m_mask_p0, &mask); CHKERRQ(ierr);
 
-    cc(mask, grid.Mx, grid.My, true, mask_grounded_ice);
+      cc(mask, grid.Mx, grid.My, true, mask_grounded_ice);
 
-    ierr = VecRestoreArray(m_mask_p0, &mask); CHKERRQ(ierr);
+      ierr = VecRestoreArray(m_mask_p0, &mask); CHKERRQ(ierr);
+    }
+
+    ierr = transfer_from_proc0(); CHKERRQ(ierr);
   }
 
-  ierr = transfer_from_proc0(); CHKERRQ(ierr);
+  // correct ice thickness and the cell type mask using the resulting
+  // "iceberg" mask:
+  {
+    ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
+    ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+    ierr = pism_mask.begin_access(); CHKERRQ(ierr);
 
-  ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (iceberg_mask[i][j] > 0.5) {
-        ice_thickness(i,j) = 0.0;
-        pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
+    if (m_bcflag != NULL) {
+      // if SSA Dirichlet B.C. are in use, do not modify mask and ice
+      // thickness at Dirichlet B.C. locations
+      ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
+      for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+        for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+          if (iceberg_mask[i][j] > 0.5 && (*m_bcflag)(i,j) < 0.5) {
+            ice_thickness(i,j) = 0.0;
+            pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
+          }
+        }
+      }
+      ierr = m_bcflag->end_access(); CHKERRQ(ierr);
+    } else {
+      for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+        for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+          if (iceberg_mask[i][j] > 0.5) {
+            ice_thickness(i,j) = 0.0;
+            pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
+          }
+        }
       }
     }
+    ierr = pism_mask.end_access(); CHKERRQ(ierr);
+    ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
   }
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
 
   // update ghosts of the mask and the ice thickness (then surface
   // elevation can be updated redundantly)
