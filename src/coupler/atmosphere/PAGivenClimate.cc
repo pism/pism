@@ -89,7 +89,7 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PAGivenClimate::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   // compute mean precipitation
@@ -129,7 +129,7 @@ PetscErrorCode PAGivenClimate::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, double *result) {
   PetscErrorCode ierr;
 
   ierr = air_temp->interp(i, j, &result[0]); CHKERRQ(ierr);
@@ -137,7 +137,7 @@ PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result)
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr;
 
   ierr = precipitation->interp(i, j, &result[0]); CHKERRQ(ierr);
@@ -145,7 +145,7 @@ PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *resul
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PAGivenClimate::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = air_temp->init_interpolation(ts, N); CHKERRQ(ierr);

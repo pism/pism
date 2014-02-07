@@ -32,8 +32,8 @@ public:
   virtual ~POConstantPIK();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual PetscErrorCode sea_level_elevation(double &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
@@ -46,6 +46,7 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:
   PetscErrorCode allocate_POConstantPIK();
+  double meltfactor;
 };
 
 #endif /* _POCONSTANTPIK_H_ */

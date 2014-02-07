@@ -311,7 +311,7 @@ is the coefficient of compressibility of the till.  Constants  @f$ e_0,C_c @f$  
 derived by [@ref Tulaczyketal2000] from laboratory experiments on samples of
 till.  Also  @f$ W_{til}^{max} @f$ =`hydrology_tillwat_max`.
  */
-PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if ((fabs(my_t - m_t) < 1e-12) &&
@@ -323,7 +323,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
 
   bool slipperygl = config.get_flag("tauc_slippery_grounding_lines");
 
-  const PetscReal high_tauc   = config.get("high_tauc"),
+  const double high_tauc   = config.get("high_tauc"),
                   tillwat_max = config.get("hydrology_tillwat_max"),
                   c0          = config.get("till_c_0"),
                   e0overCc    = config.get("till_reference_void_ratio")
@@ -344,9 +344,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
   ierr = bed_topography->begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
-  PetscReal Ntil;
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  double Ntil;
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (m.ocean(i, j)) {
         tauc(i, j) = 0.0;
       } else if (m.ice_free(i, j)) {
@@ -354,7 +354,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(PetscReal my_t, PetscReal my_d
       } else { // grounded and there is some ice
         // user can ask that marine grounding lines get special treatment
         // FIXME: get sea-level from correct PISM source
-        PetscReal water;
+        double water;
         if ( slipperygl && ((*bed_topography)(i,j) <= 0.0)
              && (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
           water = tillwat_max;
@@ -434,7 +434,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
     PISMEnd();
   }
 
-  PetscReal phi_min = inarray[0], phi_max = inarray[1],
+  double phi_min = inarray[0], phi_max = inarray[1],
     topg_min = inarray[2], topg_max = inarray[3];
 
   if (phi_min >= phi_max) {
@@ -458,14 +458,14 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
                     phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
                     phi_max, topg_max); CHKERRQ(ierr);
 
-  PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
+  double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
   ierr = bed_topography->begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      PetscScalar bed = (*bed_topography)(i, j);
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      double bed = (*bed_topography)(i, j);
 
       if (bed <= topg_min) {
         till_phi(i, j) = phi_min;
@@ -491,8 +491,8 @@ PetscErrorCode PISMMohrCoulombYieldStress::topg_to_phi() {
 
 PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
-  PetscReal Ntil;
-  const PetscReal c0          = config.get("till_c_0"),
+  double Ntil;
+  const double c0          = config.get("till_c_0"),
                   e0overCc    = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
                   delta       = config.get("till_effective_fraction_overburden"),
@@ -511,9 +511,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
   ierr = Po.begin_access(); CHKERRQ(ierr);
   ierr = till_phi.begin_access(); CHKERRQ(ierr);
   MaskQuery m(*mask);
-  PetscInt GHOSTS = grid.max_stencil_width;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = grid.max_stencil_width;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       if (m.ocean(i, j)) {
         // no change
       } else if (m.ice_free(i, j)) {

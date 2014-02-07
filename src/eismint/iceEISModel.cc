@@ -24,19 +24,28 @@
 #include "PISMStressBalance.hh"
 #include "pism_options.hh"
 #include "POConstant.hh"
-#include "PSDummy.hh"
+#include "PS_EISMINTII.hh"
 
 IceEISModel::IceEISModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
-  expername = 'A';
+  m_experiment = 'A';
 
-  // the following flag must be here in constructor because IceModel::createVecs()
-  // uses it
-  // non-polythermal methods; can be overridden by the command-line option "-energy enthalpy"
+  // the following flag must be here in constructor because
+  // IceModel::createVecs() uses it non-polythermal methods; can be
+  // overridden by the command-line option "-energy enthalpy"
   config.set_flag("do_cold_ice_methods", true);
 
-  // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
+  // see EISMINT II description; choose no ocean interaction, 
   config.set_flag("is_dry_simulation", true);
+
+  // purely SIA, and E=1
+  config.set_double("sia_enhancement_factor", 1.0);
+
+  // none use bed smoothing & bed roughness parameterization
+  config.set_double("bed_smoother_range", 0.0);
+
+  // basal melt does not change computation of mass continuity or vertical velocity:
+  config.set_flag("include_bmr_in_continuity", false);
 
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock
@@ -47,21 +56,6 @@ IceEISModel::IceEISModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_override
   config.set_double("bedrock_thermal_specific_heat_capacity", config.get("ice_specific_heat_capacity"));
 }
 
-PetscErrorCode IceEISModel::createVecs() {
-  PetscErrorCode ierr = IceModel::createVecs(); CHKERRQ(ierr);
-
-  // this ensures that these variables are saved to an output file and are read
-  // back in if -i option is used (they are "model_state", in a sense, since
-  // PSDummy is used):
-  ierr = variables.add(ice_surface_temp); CHKERRQ(ierr);
-  ierr = variables.add(climatic_mass_balance); CHKERRQ(ierr);
-  ice_surface_temp.metadata().set_string("pism_intent", "model_state");
-  climatic_mass_balance.metadata().set_string("pism_intent", "model_state");
-
-  return 0;
-}
-
-//! Only executed if NOT initialized from file (-i).
 PetscErrorCode IceEISModel::set_grid_defaults() {
   grid.Lx = 750e3;
   grid.Ly = 750e3;
@@ -72,113 +66,32 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
   return 0;
 }
 
-
-//! Option -eisII determines the single character name of EISMINT II experiments.
-/*! Example is "-eisII F".   Defaults to experiment A.  */
-PetscErrorCode IceEISModel::set_expername_from_options() {
-  PetscErrorCode      ierr;
-
-  std::string eisIIexpername = "A";
-  char temp = expername;
-  bool EISIIchosen;
-  ierr = PISMOptionsString("-eisII", "EISMINT II experiment name",
-			   eisIIexpername, EISIIchosen);
-            CHKERRQ(ierr);
-  if (EISIIchosen == PETSC_TRUE) {
-    temp = (char)toupper(eisIIexpername.c_str()[0]);
-    if ((temp >= 'A') && (temp <= 'L')) {
-      expername = temp;
-    } else {
-      ierr = PetscPrintf(grid.com,
-        "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
-        CHKERRQ(ierr);
-      PISMEnd();
-    }
-  }
-
-  char tempstr[TEMPORARY_STRING_LENGTH];
-  snprintf(tempstr, TEMPORARY_STRING_LENGTH, "%c", temp);
-
-  config.set_string("EISMINT_II_experiment", tempstr);
-
-  return 0;
-}
-
-
 PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
 
-  ierr = PetscOptionsBegin(grid.com, "", "IceEISModel options", ""); CHKERRQ(ierr);
+  // set experiment name using command-line options
+  {
+    std::string name = "A";
+    char temp = m_experiment;
+    bool EISIIchosen;
+    ierr = PISMOptionsString("-eisII", "EISMINT II experiment name",
+                             name, EISIIchosen);
+    CHKERRQ(ierr);
+    if (EISIIchosen == PETSC_TRUE) {
+      temp = (char)toupper(name.c_str()[0]);
+      if ((temp >= 'A') && (temp <= 'L')) {
+        m_experiment = temp;
+      } else {
+        ierr = PetscPrintf(grid.com,
+                           "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
+        CHKERRQ(ierr);
+        PISMEnd();
+      }
+    }
 
-  ierr = set_expername_from_options(); CHKERRQ(ierr);
-
-  config.set_double("sia_enhancement_factor", 1.0);
-  config.set_double("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
-                                          // parameterization
-  // basal melt does not change computation of mass continuity or vertical velocity:
-  config.set_flag("include_bmr_in_continuity", false);
-
-  ierr = verbPrintf(2,grid.com, 
-    "setting parameters for surface mass balance and temperature in EISMINT II experiment %c ... \n", 
-    expername); CHKERRQ(ierr);
-  // EISMINT II specified values for parameters
-  S_b = grid.convert(1.0e-2 * 1e-3, "1/year", "1/s");    // Grad of accum rate change
-  S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
-  // these are for A,E,G,H,I,K:
-  M_max = grid.convert(0.5, "m/year", "m/s");  // Max accumulation
-  R_el = 450.0e3;           // Distance to equil line (accum=0)
-  T_min = 238.15;
-  switch (expername) {
-    case 'B':  // supposed to start from end of experiment A and:
-      T_min = 243.15;
-      break;
-    case 'C':
-    case 'J':
-    case 'L':  // supposed to start from end of experiment A (for C;
-               //   resp I and K for J and L) and:
-      M_max = grid.convert(0.25, "m/year", "m/s");
-      R_el = 425.0e3;
-      break;
-    case 'D':  // supposed to start from end of experiment A and:
-      R_el = 425.0e3;
-      break;
-    case 'F':  // start with zero ice and:
-      T_min = 223.15;
-      break;
+    char tempstr[2] = {temp, 0};
+    config.set_string("EISMINT_II_experiment", tempstr);
   }
-
-  // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  bool paramSet;
-  ierr = PISMOptionsReal("-Tmin", "T min, Kelvin",
-			 T_min, paramSet); CHKERRQ(ierr);
-
-  PetscReal
-    myMmax = grid.convert(M_max, "m/s",        "m/year"),
-    mySb   = grid.convert(S_b,   "m/second/m", "m/year/km"),
-    myST   = grid.convert(S_T,   "K/m",        "K/km"),
-    myRel  = grid.convert(R_el,  "m",          "km");
-
-  ierr = PISMOptionsReal("-Mmax", "Maximum accumulation, m/year",
-			 myMmax, paramSet); CHKERRQ(ierr);
-  if (paramSet)
-    M_max = grid.convert(myMmax, "m/year", "m/second");
-
-  ierr = PISMOptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
-			 mySb, paramSet); CHKERRQ(ierr);
-  if (paramSet)
-    S_b = grid.convert(mySb, "m/year/km", "m/second/m");
-
-  ierr = PISMOptionsReal("-ST", "radial gradient of surface temperature, K/km",
-			 myST, paramSet); CHKERRQ(ierr);
-  if (paramSet)
-    S_T = grid.convert(myST, "K/km", "K/m");
-
-  ierr = PISMOptionsReal("-Rel", "radial distance to equilibrium line, km",
-			 myRel, paramSet); CHKERRQ(ierr);
-  if (paramSet)
-    R_el = grid.convert(myRel, "km", "m");
-
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
 
@@ -195,7 +108,7 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
 
     SSB_Modifier *modifier = new SIAFD(grid, *EC, config);
 
-    if (expername == 'G' || expername == 'H') {
+    if (m_experiment == 'G' || m_experiment == 'H') {
       my_stress_balance = new SIA_Sliding(grid, *EC, config);
     } else {
       my_stress_balance = new ZeroSliding(grid, *EC, config);
@@ -220,62 +133,34 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
 }
 
 PetscErrorCode IceEISModel::allocate_couplers() {
+
   // Climate will always come from intercomparison formulas.
-  surface = new PSDummy(grid, config);
-  ocean   = new POConstant(grid, config);
+  if (surface == NULL)
+    surface = new PS_EISMINTII(grid, config, m_experiment);
+
+  if (ocean == NULL)
+    ocean = new POConstant(grid, config);
 
   return 0;
 }
-
-PetscErrorCode IceEISModel::init_couplers() {
-  PetscErrorCode      ierr;
-
-  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2,grid.com,
-    "  setting surface mass balance and surface temperature variables from formulas...\n");
-  CHKERRQ(ierr);
-
-  // now fill in accum and surface temp
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-
-  PetscScalar cx = grid.Lx, cy = grid.Ly;
-  if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // r is distance from center of grid; if E then center is shifted (above)
-      const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i)
-                                  + PetscSqr(-cy + grid.dy*j) );
-      // set accumulation from formula (7) in (Payne et al 2000)
-      climatic_mass_balance(i,j) = PetscMin(M_max, S_b * (R_el-r));
-      // set surface temperature
-      ice_surface_temp(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
-    }
-  }
-
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 PetscErrorCode IceEISModel::generateTroughTopography() {
   PetscErrorCode  ierr;
   // computation based on code by Tony Payne, 6 March 1997:
-  //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
+  // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
   
-  const PetscScalar    b0 = 1000.0;  // plateau elevation
-  const PetscScalar    L = 750.0e3;  // half-width of computational domain
-  const PetscScalar    w = 200.0e3;  // trough width
-  const PetscScalar    slope = b0/L;
-  const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
+  const double b0    = 1000.0;  // plateau elevation
+  const double L     = 750.0e3; // half-width of computational domain
+  const double w     = 200.0e3; // trough width
+  const double slope = b0/L;
+  const double dx61  = (2*L) / 60; // = 25.0e3
+
   ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
-      if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
-           && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double nsd = i * grid.dx, ewd = j * grid.dy;
+      if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
+          (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
         bed_topography(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
       } else {
         bed_topography(i,j) = 1000.0;
@@ -284,9 +169,6 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   }
   ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com,
-               "trough bed topography stored by IceEISModel::generateTroughTopography()\n");
-               CHKERRQ(ierr);
   return 0;
 }
 
@@ -294,22 +176,20 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
 PetscErrorCode IceEISModel::generateMoundTopography() {
   PetscErrorCode  ierr;
   // computation based on code by Tony Payne, 6 March 1997:
-  //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
+  // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
   
-  const PetscScalar    slope = 250.0;
-  const PetscScalar    w = 150.0e3;  // mound width
+  const double slope = 250.0;
+  const double w     = 150.0e3; // mound width
+
   ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double nsd = i * grid.dx, ewd = j * grid.dy;
       bed_topography(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
     }
   }
   ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com,
-    "mound bed topography stored by IceEISModel::generateTroughTopography()\n");
-    CHKERRQ(ierr);
   return 0;
 }
 
@@ -319,37 +199,33 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
   // initialize from EISMINT II formulas
-  ierr = verbPrintf(2,grid.com, 
-    "initializing variables from EISMINT II experiment %c formulas ... \n", 
-    expername); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "initializing variables from EISMINT II experiment %c formulas... \n", 
+                    m_experiment); CHKERRQ(ierr);
 
-  ierr = bed_topography.set(0.0);
-  if ((expername == 'I') || (expername == 'J')) {
+  if ((m_experiment == 'I') || (m_experiment == 'J')) {
     ierr = generateTroughTopography(); CHKERRQ(ierr);
   } 
-  if ((expername == 'K') || (expername == 'L')) {
+  if ((m_experiment == 'K') || (m_experiment == 'L')) {
     ierr = generateMoundTopography(); CHKERRQ(ierr);
   } 
+
   // communicate b in any case; it will be horizontally-differentiated
   ierr = bed_topography.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = basal_melt_rate.set(0.0); CHKERRQ(ierr);
-  ierr = geothermal_flux.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
+  ierr = basal_melt_rate.set(0.0);   CHKERRQ(ierr); 
+  ierr = geothermal_flux.set(0.042); CHKERRQ(ierr); // EISMINT II value; J m-2 s-1
+  ierr = bed_uplift_rate.set(0.0);   CHKERRQ(ierr); // no experiments have uplift at start
+  ierr = ice_thickness.set(0.0);     CHKERRQ(ierr); // start with zero ice
 
-  ierr = bed_uplift_rate.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
-
-  // if no -i file then starts with zero ice
-  ierr = ice_surface_elevation.set(0.0); CHKERRQ(ierr);
-  ierr = ice_thickness.set(0.0); CHKERRQ(ierr);
-
+  // regrid 2D variables
   ierr = regrid(2); CHKERRQ(ierr);
   
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-
-  // this IceModel bootstrap method should do right thing because of variable
-  //   settings above and init of coupler above
+  // this IceModel bootstrap method should do right thing because of
+  // variable settings above and init of coupler above
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
+  // regrid 3D variables
   ierr = regrid(3); CHKERRQ(ierr);
 
   return 0;

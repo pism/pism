@@ -36,7 +36,7 @@ public:
 
   bool is_set(std::string name) const;
 
-  PetscErrorCode print_to_stdout(PetscInt verbosity_threshhold = 4) const;
+  PetscErrorCode print_to_stdout(int verbosity_threshhold = 4) const;
   PetscErrorCode warn_about_unused_parameters() const;
   PetscErrorCode read(const PIO &nc);
   PetscErrorCode write(const PIO &nc) const;

@@ -59,7 +59,7 @@ public:
 
   //! Set strength = (viscosity times thickness).
   /*! Determines nu by input strength and current min_thickness. */
-  virtual PetscErrorCode set_notional_strength(PetscReal my_nuH) {
+  virtual PetscErrorCode set_notional_strength(double my_nuH) {
      if (my_nuH <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"nuH must be positive");
      constant_nu = my_nuH / min_thickness;
      return 0;
@@ -67,27 +67,27 @@ public:
 
   //! Set minimum thickness to trigger use of extension.
   /*! Preserves strength (nuH) by also updating using current nu.  */
-  virtual PetscErrorCode set_min_thickness(PetscReal my_min_thickness) {
+  virtual PetscErrorCode set_min_thickness(double my_min_thickness) {
      if (my_min_thickness <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"min_thickness must be positive");
-     PetscReal nuH = constant_nu * min_thickness;
+     double nuH = constant_nu * min_thickness;
      min_thickness = my_min_thickness;
      constant_nu = nuH / min_thickness;
      return 0;
   }
 
   //! Returns strength = (viscosity times thickness).
-  PetscReal get_notional_strength() const {
+  double get_notional_strength() const {
     return constant_nu * min_thickness;
   }
 
   //! Returns minimum thickness to trigger use of extension.
-  PetscReal get_min_thickness() const {
+  double get_min_thickness() const {
     return min_thickness;
   }
 
 private:
   const PISMConfig &config;
-  PetscReal  min_thickness, constant_nu;
+  double  min_thickness, constant_nu;
 };
 
 //! Callback for constructing a new SSA subclass.  The caller is

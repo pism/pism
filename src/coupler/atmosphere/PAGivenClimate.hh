@@ -29,7 +29,7 @@ public:
   virtual ~PAGivenClimate();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
@@ -38,9 +38,9 @@ public:
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
 
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
-  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
-  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
+  virtual PetscErrorCode temp_time_series(int i, int j, double *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 protected:
   IceModelVec2T *precipitation, *air_temp;
 private:

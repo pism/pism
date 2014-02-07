@@ -49,8 +49,8 @@ PetscErrorCode PO_delta_MBP::allocate_PO_delta_MBP() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("m s-1");
-  shelfbmassflux.set_glaciological_units("m year-1");
+  shelfbmassflux.set_units("kg m-2 s-1");
+  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");

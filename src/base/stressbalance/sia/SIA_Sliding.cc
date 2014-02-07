@@ -24,7 +24,7 @@
 
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
@@ -132,15 +132,15 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
 
   ierr = m_velocity.begin_access(); CHKERRQ(ierr);
   ierr = basal_frictional_heating.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
       if (m.ocean(i,j)) {
         m_velocity(i,j).u = 0.0;
         m_velocity(i,j).v = 0.0;
         basal_frictional_heating(i,j) = 0.0;
       } else {
         // basal velocity from SIA-type sliding law: not recommended!
-        const PetscScalar
+        const double
           myx = grid.x[i],
           myy = grid.y[j],
           myhx = 0.25 * (  h_x(i,j,0) + h_x(i-1,j,0)
@@ -148,10 +148,10 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
           myhy = 0.25 * (  h_y(i,j,0) + h_y(i-1,j,0)
                            + h_y(i,j,1) + h_y(i,j-1,1)),
           alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
-        PetscScalar T, basalC;
+        double T, basalC;
 
         // change r1200: new meaning of H
-        const PetscScalar H = (*surface)(i,j) - (*bed)(i,j);
+        const double H = (*surface)(i,j) - (*bed)(i,j);
 
         ierr = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0),
                              EC.getPressureFromDepth(H), T); CHKERRQ(ierr);
@@ -164,7 +164,7 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
         // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
         // in ice streams this result will be *overwritten* by
         //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-        const PetscScalar P = ice_rho * standard_gravity * H;
+        const double P = ice_rho * standard_gravity * H;
         basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
       }
     }
@@ -208,21 +208,21 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
 
   The returned coefficient is used in update() (above).
 */
-PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
-                                          PetscScalar H, PetscScalar T,
-                                          PetscScalar /*alpha*/, PetscScalar mu,
-                                          PetscScalar min_T) const {
-  PetscReal ice_rho = config.get("ice_density"),
+double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
+                                          double H, double T,
+                                          double /*alpha*/, double mu,
+                                          double min_T) const {
+  double ice_rho = config.get("ice_density"),
     beta_CC_grad = config.get("beta_CC") * ice_rho * config.get("standard_gravity"),
     secpera = grid.convert(1.0, "year", "seconds");
 
   if (verification_mode) {
     // test 'E' mode
-    const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
+    const double r1 = 200e3, r2 = 700e3,   /* define region of sliding */
       theta1 = 10 * (M_PI/180), theta2 = 40 * (M_PI/180);
-    const PetscScalar x = fabs(xIN), y = fabs(yIN);
-    const PetscScalar r = sqrt(x * x + y * y);
-    PetscScalar       theta;
+    const double x = fabs(xIN), y = fabs(yIN);
+    const double r = sqrt(x * x + y * y);
+    double       theta;
     if (x < 1.0)
       theta = M_PI / 2.0;
     else
@@ -230,10 +230,10 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
 
     if ((r > r1) && (r < r2) && (theta > theta1) && (theta < theta2)) {
       // now INSIDE sliding region
-      const PetscScalar rbot = (r2 - r1) * (r2 - r1),
+      const double rbot = (r2 - r1) * (r2 - r1),
         thetabot = (theta2 - theta1) * (theta2 - theta1);
-      const PetscScalar mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
-      PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot)
+      const double mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
+      double muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot)
         * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
       return muE * ice_rho * standard_gravity * H;
     } else
@@ -241,8 +241,8 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
   }
 
   if ((eisII_experiment == "G") || (eisII_experiment == "H")) {
-    const PetscScalar  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
-    PetscReal pressure = EC.getPressureFromDepth(H), E;
+    const double  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
+    double pressure = EC.getPressureFromDepth(H), E;
     EC.getEnthPermissive(T, 0.0, pressure, E);
 
     if (eisII_experiment == "G") {
@@ -259,7 +259,7 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
 
   // the "usual" case:
   if (T + beta_CC_grad * H > min_T) {
-    const PetscScalar p_over = ice_rho * standard_gravity * H;
+    const double p_over = ice_rho * standard_gravity * H;
     return mu * p_over;
   } else {
     return 0;
@@ -297,19 +297,19 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
 PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  const PetscScalar n = flow_law->exponent(), // presumably 3.0
+  const double n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx, dy = grid.dy;  // convenience
   IceModelVec2S &eta = work_2d;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = eta.begin_access(); CHKERRQ(ierr);
-  PetscInt GHOSTS = 2;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 2;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       eta(i,j) = pow((*thickness)(i,j), etapow);
     }
   }
@@ -323,15 +323,15 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = eta.begin_access(); CHKERRQ(ierr);
-  for (PetscInt o=0; o<2; o++) {
+  for (int o=0; o<2; o++) {
 
     GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
-          const PetscScalar mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
+          const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
           if (mean_eta > 0.0) {
-            const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
+            const double factor = invpow * pow(mean_eta, dinvpow);
             h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
             h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
                                    - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
@@ -343,9 +343,9 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
           h_x(i,j,o) += bed->diff_x_stagE(i,j);
           h_y(i,j,o) += bed->diff_y_stagE(i,j);
         } else {        // J-offset
-          const PetscScalar mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
+          const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
           if (mean_eta > 0.0) {
-            const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
+            const double factor = invpow * pow(mean_eta, dinvpow);
             h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
             h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
                                    - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
@@ -377,8 +377,8 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
 PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  const PetscScalar Hicefree = 0.0;  // standard for ice-free, in Haseloff
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const double Hicefree = 0.0;  // standard for ice-free, in Haseloff
+  const double dx = grid.dx, dy = grid.dy;  // convenience
 
   IceModelVec2S
     &b = *bed,
@@ -390,11 +390,11 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
   ierr = bed->begin_access();       CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = surface->begin_access();   CHKERRQ(ierr);
-  for (PetscInt o=0; o<2; o++) {
+  for (int o=0; o<2; o++) {
 
-    PetscInt GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+    int GHOSTS = 1;
+    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
           const bool icefreeP  = (H(i,j)     <= Hicefree),
             icefreeE  = (H(i+1,j)   <= Hicefree),
@@ -403,21 +403,21 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
             icefreeNE = (H(i+1,j+1) <= Hicefree),
             icefreeSE = (H(i+1,j-1) <= Hicefree);
 
-          PetscScalar hhE = h(i+1,j);  // east pseudo-surface elevation
+          double hhE = h(i+1,j);  // east pseudo-surface elevation
           if (icefreeE  && (b(i+1,j)   > h(i,j)    ))  hhE  = h(i,j);
           if (icefreeP  && (b(i,j)     > h(i+1,j)  ))  hhE  = h(i,j);
           h_x(i,j,o) = (hhE - h(i,j)) / dx;
 
-          PetscScalar hhN  = h(i,j+1);  // north pseudo-surface elevation
+          double hhN  = h(i,j+1);  // north pseudo-surface elevation
           if (icefreeN  && (b(i,j+1)   > h(i,j)    ))  hhN  = h(i,j);
           if (icefreeP  && (b(i,j)     > h(i,j+1)  ))  hhN  = h(i,j);
-          PetscScalar hhS  = h(i,j-1);  // south pseudo-surface elevation
+          double hhS  = h(i,j-1);  // south pseudo-surface elevation
           if (icefreeS  && (b(i,j-1)   > h(i,j)    ))  hhS  = h(i,j);
           if (icefreeP  && (b(i,j)     > h(i,j-1)  ))  hhS  = h(i,j);
-          PetscScalar hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
+          double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
           if (icefreeNE && (b(i+1,j+1) > h(i+1,j)  ))  hhNE = h(i+1,j);
           if (icefreeE  && (b(i+1,j)   > h(i+1,j+1)))  hhNE = h(i+1,j);
-          PetscScalar hhSE = h(i+1,j-1);// southeast pseudo-surface elevation
+          double hhSE = h(i+1,j-1);// southeast pseudo-surface elevation
           if (icefreeSE && (b(i+1,j-1) > h(i+1,j)  ))  hhSE = h(i+1,j);
           if (icefreeE  && (b(i+1,j)   > h(i+1,j-1)))  hhSE = h(i+1,j);
           h_y(i,j,o) = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
@@ -429,21 +429,21 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
             icefreeNE = (H(i+1,j+1) <= Hicefree),
             icefreeNW = (H(i-1,j+1) <= Hicefree);
 
-          PetscScalar hhN  = h(i,j+1);  // north pseudo-surface elevation
+          double hhN  = h(i,j+1);  // north pseudo-surface elevation
           if (icefreeN  && (b(i,j+1)   > h(i,j)    ))  hhN  = h(i,j);
           if (icefreeP  && (b(i,j)     > h(i,j+1)  ))  hhN  = h(i,j);
           h_y(i,j,o) = (hhN - h(i,j)) / dy;
 
-          PetscScalar hhE  = h(i+1,j);  // east pseudo-surface elevation
+          double hhE  = h(i+1,j);  // east pseudo-surface elevation
           if (icefreeE  && (b(i+1,j)   > h(i,j)    ))  hhE  = h(i,j);
           if (icefreeP  && (b(i,j)     > h(i+1,j)  ))  hhE  = h(i,j);
-          PetscScalar hhW  = h(i-1,j);  // west pseudo-surface elevation
+          double hhW  = h(i-1,j);  // west pseudo-surface elevation
           if (icefreeW  && (b(i-1,j)   > h(i,j)    ))  hhW  = h(i,j);
           if (icefreeP  && (b(i,j)     > h(i-1,j)  ))  hhW  = h(i,j);
-          PetscScalar hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
+          double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
           if (icefreeNE && (b(i+1,j+1) > h(i,j+1)  ))  hhNE = h(i,j+1);
           if (icefreeN  && (b(i,j+1)   > h(i+1,j+1)))  hhNE = h(i,j+1);
-          PetscScalar hhNW = h(i-1,j+1);// northwest pseudo-surface elevation
+          double hhNW = h(i-1,j+1);// northwest pseudo-surface elevation
           if (icefreeNW && (b(i-1,j+1) > h(i,j+1)  ))  hhNW = h(i,j+1);
           if (icefreeN  && (b(i,j+1)   > h(i-1,j+1)))  hhNW = h(i,j+1);
           h_x(i,j,o) = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
@@ -466,17 +466,17 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
 //! see [\ref Mahaffy].
 PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx, dy = grid.dy;  // convenience
 
   IceModelVec2S &h = *surface;
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
   ierr = surface->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt o=0; o<2; o++) {
-    PetscInt GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (int o=0; o<2; o++) {
+    int GHOSTS = 1;
+    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
           h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
           h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)

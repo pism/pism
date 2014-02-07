@@ -29,8 +29,8 @@ public:
   virtual ~PACosineYearlyCycle();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   Timeseries *A;                 // amplitude scaling

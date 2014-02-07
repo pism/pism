@@ -44,7 +44,7 @@ static char help[] =
 class SSATestCasePlug: public SSATestCase
 {
 public:
-  SSATestCasePlug(MPI_Comm com, PISMConfig &c, PetscScalar n)
+  SSATestCasePlug(MPI_Comm com, PISMConfig &c, double n)
     : SSATestCase(com, c)
   { 
     H0 = 2000.; //m
@@ -57,31 +57,31 @@ public:
   }
   
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j, 
+    double x, double y, double *u, double *v );
 
 
-  PetscScalar H0; // Thickness
-  PetscScalar L;  // Half-width
-  PetscScalar dhdx; // surface slope
-  PetscScalar tauc0; // zero basal shear stress
-  PetscScalar B0;  // hardness
-  PetscScalar glen_n;
+  double H0; // Thickness
+  double L;  // Half-width
+  double dhdx; // surface slope
+  double tauc0; // zero basal shear stress
+  double B0;  // hardness
+  double glen_n;
 
   bool dimensionless;
   
 };
 
 
-PetscErrorCode SSATestCasePlug::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
 {
-  PetscReal Lx=L, Ly = L; 
+  double Lx=L, Ly = L; 
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -122,10 +122,10 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = bed.begin_access(); CHKERRQ(ierr);
   ierr = surface.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar myu, myv;
-      const PetscScalar myx = grid.x[i], myy=grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double myu, myv;
+      const double myx = grid.x[i], myy=grid.y[j];
 
       bed(i,j) = -myx*(dhdx);
       surface(i,j) = bed(i,j) + H0;
@@ -154,14 +154,14 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCasePlug::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
-                                              PetscReal /*x*/, PetscReal y,
-                                              PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/, 
+                                              double /*x*/, double y,
+                                              double *u, double *v)
 {
-  PetscScalar earth_grav = config.get("standard_gravity"),
+  double earth_grav = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
-  PetscScalar f = ice_rho * earth_grav * H0* dhdx;
-  PetscScalar ynd = y/L;
+  double f = ice_rho * earth_grav * H0* dhdx;
+  double ynd = y/L;
 
   *u = 0.5*pow(f,3)*pow(L,4)/pow(B0*H0,3)*(1-pow(ynd,4));
   *v = 0;
@@ -198,8 +198,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=11;
-    PetscInt My=61;
+    int Mx=11;
+    int My=61;
     std::string output_file = "ssa_test_plug.nc";
 
     std::set<std::string> ssa_choices;
@@ -207,8 +207,8 @@ int main(int argc, char *argv[]) {
     ssa_choices.insert("fd");
     std::string driver = "fem";
 
-    // PetscScalar H0dim = 1.;
-    PetscScalar glen_n = 3.;
+    // double H0dim = 1.;
+    double glen_n = 3.;
 
     ierr = PetscOptionsBegin(com, "", "SSA_TEST_PLUG options", ""); CHKERRQ(ierr);
     {
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }

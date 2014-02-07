@@ -52,7 +52,7 @@ PetscErrorCode SSB_Modifier::allocate() {
   return 0;
 }
 
-PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
+PetscErrorCode SSB_Modifier::extend_the_grid(int old_Mz) {
   PetscErrorCode ierr;
 
   ierr =     u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
@@ -109,8 +109,8 @@ PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   ierr = u.begin_access(); CHKERRQ(ierr);
   ierr = v.begin_access(); CHKERRQ(ierr);
   ierr = vel_input->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
       ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
     }

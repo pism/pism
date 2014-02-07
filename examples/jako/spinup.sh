@@ -54,10 +54,11 @@ BCFILE=g5km_bc.nc
 
 CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
 
-# regarding physics: '-hydrology_pressure_fraction 0.98 -pseudo_plastic -pseudo_plastic_q 0.25' matches
-#   spinup.sh in examples/searise-greenland/spinup.sh.  but here we do not use -sia_e 3.0
-#   and we use a particular calving model that is different
-PHYS="-calving ocean_kill -ocean_kill_file $BOOT -cfbc -kill_icebergs -diffuse_bwat -thk_eff -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 5.0,30.0,-300.0,700.0 -hydrology_pressure_fraction 0.98 -pseudo_plastic -pseudo_plastic_q 0.25"
+# regarding physics: '-till_effective_fraction_overburden 0.02' plus
+#   '-pseudo_plastic -pseudo_plastic_q 0.25' plus '-tauc_slippery_grounding_lines'
+#   matches default choices in spinup.sh in examples/std-greenland/
+# but here we do not use -sia_e 3.0 but instead -sia_e 1.0
+PHYS="-calving ocean_kill -ocean_kill_file $BOOT -pik -sia_e 1.0 -stress_balance ssa+sia -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 -pseudo_plastic -pseudo_plastic_q 0.25 -tauc_slippery_grounding_lines"
 
 SKIP=5
 
@@ -68,9 +69,9 @@ cmd="$PISM_MPIDO $NN $PISM -boot_file $BOOT -no_model_strip 10 \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz 201 -Mbz 51 -z_spacing equal \
   -no_model_strip 10 $PHYS \
   -extra_file ex_spunjako_0.nc -extra_times -$LENGTH:$EXDT:0 \
-  -extra_vars thk,cbase,bwp,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
+  -extra_vars thk,cbase,tillwat,tauc,dhdt,hardav,csurf,temppabase,diffusivity,bmelt,tempicethk_basal \
   -ts_file ts_spunjako_0.nc -ts_times -$LENGTH:yearly:0 \
-  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,bwat,enthalpy,litho_temp,vel_ssa_bc \
+  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc \
   $CLIMATE -ys -$LENGTH -ye 0 -skip -skip_max $SKIP -o spunjako_0.nc"
 $PISM_DO $cmd
 

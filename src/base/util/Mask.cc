@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2014 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -27,9 +27,9 @@ void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
   out_surface.begin_access();
   IceGrid *grid = bed.get_grid();
   
-  PetscInt GHOSTS = grid->max_stencil_width;
-  for (PetscInt   i = grid->xs - GHOSTS; i < grid->xs+grid->xm + GHOSTS; ++i) {
-    for (PetscInt j = grid->ys - GHOSTS; j < grid->ys+grid->ym + GHOSTS; ++j) {
+  int GHOSTS = grid->max_stencil_width;
+  for (int   i = grid->xs - GHOSTS; i < grid->xs+grid->xm + GHOSTS; ++i) {
+    for (int j = grid->ys - GHOSTS; j < grid->ys+grid->ym + GHOSTS; ++j) {
       int mask_value;
       compute(bed(i,j),thickness(i,j),&mask_value,&out_surface(i,j));
       out_mask(i,j) = mask_value;

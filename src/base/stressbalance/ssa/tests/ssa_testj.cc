@@ -43,22 +43,22 @@ public:
   { };
 
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j,
+    double x, double y, double *u, double *v );
 
 };
 
-PetscErrorCode SSATestCaseJ::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
 {
 
-  PetscReal halfWidth = 300.0e3;  // 300.0 km half-width
-  PetscReal Lx = halfWidth, Ly = halfWidth;
+  double halfWidth = 300.0e3;  // 300.0 km half-width
+  double Lx = halfWidth, Ly = halfWidth;
   init_shallow_grid(grid,Lx,Ly,Mx,My,XY_PERIODIC);
   return 0;
 }
@@ -85,8 +85,8 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
-  const PetscScalar nu0 = grid.convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
-  const PetscScalar H0 = 500.;       /* 500 m typical thickness */
+  const double nu0 = grid.convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
+  const double H0 = 500.;       /* 500 m typical thickness */
 
   // Test J has a viscosity that is independent of velocity.  So we force a
   // constant viscosity by settting the strength_extension
@@ -99,10 +99,10 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk1, myu, myv, H;
-      const PetscScalar myx = grid.x[i], myy = grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double junk1, myu, myv, H;
+      const double myx = grid.x[i], myy = grid.y[j];
 
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
@@ -136,11 +136,11 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCaseJ::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
-                                           PetscReal x, PetscReal y,
-                                           PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
+                                           double x, double y,
+                                           double *u, double *v)
 {
-  PetscReal junk1, junk2;
+  double junk1, junk2;
   exactJ(x, y, &junk1, &junk2, u, v);
   return 0;
 }
@@ -176,8 +176,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=61;
-    PetscInt My=61;
+    int Mx=61;
+    int My=61;
     std::string output_file = "ssa_test_j.nc";
 
     std::set<std::string> ssa_choices;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }

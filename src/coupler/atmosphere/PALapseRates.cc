@@ -121,7 +121,7 @@ PetscErrorCode PALapseRates::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PALapseRates::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
   ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
@@ -132,9 +132,9 @@ PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PALapseRates::temp_time_series(int i, int j, double *values) {
   PetscErrorCode ierr;
-  std::vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<double> usurf(m_ts_times.size());
 
   ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
 
@@ -147,9 +147,9 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::precip_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PALapseRates::precip_time_series(int i, int j, double *values) {
   PetscErrorCode ierr;
-  std::vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<double> usurf(m_ts_times.size());
 
   ierr = input_model->precip_time_series(i, j, values); CHKERRQ(ierr);
 

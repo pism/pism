@@ -87,14 +87,14 @@ PetscErrorCode PISMEigenCalving::init(PISMVars &vars) {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-PetscErrorCode PISMEigenCalving::update(PetscReal dt,
+PetscErrorCode PISMEigenCalving::update(double dt,
                                         IceModelVec2Int &pism_mask,
                                         IceModelVec2S &Href,
                                         IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
-  PetscInt offset = m_stencil_width;
+  int offset = m_stencil_width;
 
   ierr = m_thk_loss.set(0.0); CHKERRQ(ierr);
 
@@ -107,19 +107,19 @@ PetscErrorCode PISMEigenCalving::update(PetscReal dt,
   ierr = Href.begin_access(); CHKERRQ(ierr);
   ierr = m_strain_rates.begin_access(); CHKERRQ(ierr);
   ierr = m_thk_loss.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       // Average of strain-rate eigenvalues in adjacent floating grid
       // cells to be used for eigen-calving:
-      PetscScalar
+      double
         eigen1    = 0.0,
         eigen2    = 0.0;
       // Neighbor-averaged ice thickness:
-      PetscScalar
+      double
         H_average = 0.0;
 
-      PetscInt N_floating_neighbors = 0, M = 0;
+      int N_floating_neighbors = 0, M = 0;
       // M is the number of cells used to compute averages of strain
       // rate components.
 
@@ -176,7 +176,7 @@ PetscErrorCode PISMEigenCalving::update(PetscReal dt,
           eigen2 /= M;
         }
 
-        PetscScalar
+        double
           calving_rate_horizontal = 0.0,
           eigenCalvOffset         = 0.0;
         // eigenCalvOffset allows adjusting the transition from
@@ -192,7 +192,7 @@ PetscErrorCode PISMEigenCalving::update(PetscReal dt,
         }
 
         // calculate mass loss with respect to the associated ice thickness and the grid size:
-        PetscScalar calving_rate = calving_rate_horizontal * H_average / grid.dx; // in m/s
+        double calving_rate = calving_rate_horizontal * H_average / grid.dx; // in m/s
 
         // apply calving rate at partially filled or empty grid cells
         if (calving_rate > 0.0) {
@@ -219,9 +219,9 @@ PetscErrorCode PISMEigenCalving::update(PetscReal dt,
   ierr = m_thk_loss.update_ghosts(); CHKERRQ(ierr);
 
   ierr = m_thk_loss.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      PetscScalar thk_loss_ij = 0.0;
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      double thk_loss_ij = 0.0;
 
       if (mask.floating_ice(i, j) &&
           (m_thk_loss(i + 1, j) > 0.0 || m_thk_loss(i - 1, j) > 0.0 ||
@@ -273,8 +273,8 @@ PetscErrorCode PISMEigenCalving::update(PetscReal dt,
  *
  * @return 0 on success
  */
-PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
-                                              PetscReal &my_dt, bool &restrict) {
+PetscErrorCode PISMEigenCalving::max_timestep(double /*my_t*/,
+                                              double &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
   if (m_restrict_timestep == false) {
@@ -286,12 +286,12 @@ PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
   restrict = true;
 
   // About 9 hours which corresponds to 10000 km/year on a 10 km grid
-  PetscScalar dt_min = grid.convert(0.001, "years", "seconds");
+  double dt_min = grid.convert(0.001, "years", "seconds");
 
   // Distance (grid cells) from calving front where strain rate is evaluated
-  PetscInt offset = m_stencil_width,
+  int offset = m_stencil_width,
     i0 = 0, j0 = 0;
-  PetscScalar
+  double
     my_calving_rate_max     = 0.0,
     my_calving_rate_mean    = 0.0,
     my_calving_rate_counter = 0.0;
@@ -303,13 +303,13 @@ PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
   ierr = m_mask->begin_access(); CHKERRQ(ierr);
   ierr = m_strain_rates.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
       // Average of strain-rate eigenvalues in adjacent floating grid cells to
       // be used for eigencalving
-      PetscScalar eigen1 = 0.0, eigen2 = 0.0;
+      double eigen1 = 0.0, eigen2 = 0.0;
       // Number of cells used in computing eigen1 and eigen2:
-      PetscInt M = 0;
+      int M = 0;
 
       // find partially filled or empty grid boxes on the ice-free
       // ocean which have floating ice neighbors
@@ -317,7 +317,7 @@ PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
            mask.next_to_floating_ice(i, j)) == false)
         continue;
 
-      PetscScalar
+      double
         calving_rate_horizontal = 0.0,
         eigenCalvOffset = 0.0;
 
@@ -364,14 +364,14 @@ PetscErrorCode PISMEigenCalving::max_timestep(PetscReal /*my_t*/,
   ierr = m_mask->end_access(); CHKERRQ(ierr);
   ierr = m_strain_rates.end_access(); CHKERRQ(ierr);
 
-  PetscScalar calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
+  double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
   ierr = PISMGlobalSum(&my_calving_rate_mean, &calving_rate_mean, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalSum(&my_calving_rate_counter, &calving_rate_counter, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&my_calving_rate_max, &calving_rate_max, grid.com); CHKERRQ(ierr);
 
   calving_rate_mean /= calving_rate_counter;
 
-  PetscScalar denom = calving_rate_max / grid.dx;
+  double denom = calving_rate_max / grid.dx;
   const double epsilon = grid.convert(0.001 / (grid.dx + grid.dy), "seconds", "years");
 
   my_dt = 1.0 / (denom + epsilon);
@@ -461,8 +461,8 @@ PetscErrorCode PISMEigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mas
 
   ierr = pism_mask.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
       if (mask.floating_ice(i, j) == false)
         continue;
 

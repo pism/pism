@@ -173,12 +173,23 @@ PetscErrorCode Timeseries::write(const PIO &nc) {
   // write the dimensional variable; this call should go first
   ierr = nc.write_timeseries(dimension, 0, time); CHKERRQ(ierr);
   ierr = nc.write_timeseries(var, 0, values); CHKERRQ(ierr);
-  
+
   if (use_bounds) {
     ierr = nc.write_time_bounds(bounds, 0, time_bounds); CHKERRQ(ierr);
   }
 
   return 0;
+}
+
+/** Scale all values stored in this instance by `scaling_factor`.
+ *
+ * This is used to convert mass balance offsets from [m s-1] to [kg m-2 s-1].
+ *
+ * @param[in] scaling_factor multiplicative scaling factor
+ */
+void Timeseries::scale(double scaling_factor) {
+  for (unsigned int i = 0; i < values.size(); ++i)
+    values[i] *= scaling_factor;
 }
 
 //! Get a value of timeseries at time `t`.

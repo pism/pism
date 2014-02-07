@@ -158,7 +158,7 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-climatic_mass_balance_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
+climatic_mass_balance_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", fill_value)
 climatic_mass_balance_var.standard_name = "land_ice_surface_specific_mass_balance"
 climatic_mass_balance_var[:] = climatic_mass_balance
 

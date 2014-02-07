@@ -29,7 +29,7 @@
   the hydraulic potential (i.e. it computes the gradient of it) but it
   does not use Qstag, the staggered-grid values of the advective flux.
 */
-PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
+PetscErrorCode PISMDistHydrologyALT::update(double icet, double icedt) {
   PetscErrorCode ierr;
 
   // if asked for the identical time interval versus last time, then
@@ -48,7 +48,7 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
   // from current ice geometry/velocity variables, initialize Po and cbase
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
-  const PetscReal
+  const double
             rg = config.get("fresh_water_density") * config.get("standard_gravity"),
             nglen = config.get("Glen_exponent"),
             Aglen = config.get("ice_softness"),
@@ -57,17 +57,17 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
             Wr = config.get("hydrology_roughness_scale"),
             phi0 = config.get("hydrology_regularizing_porosity");
 
-  const PetscReal  omegax = 1.0 / (grid.dx * grid.dx),
+  const double  omegax = 1.0 / (grid.dx * grid.dx),
                    omegay = 1.0 / (grid.dy * grid.dy);
 
-  PetscReal ht = m_t, hdt, // hydrology model time and time step
+  double ht = m_t, hdt, // hydrology model time and time step
             maxKW, maxV, maxD;
-  PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
+  double icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree, delta_ocean, delta_neggain, delta_nullstrip;
 
-  PetscReal PtoCFLratio,  // for reporting ratio of dtCFL to dtDIFFP
+  double PtoCFLratio,  // for reporting ratio of dtCFL to dtDIFFP
             cumratio = 0.0;
-  PetscInt hydrocount = 0; // count hydrology time steps
+  int hydrocount = 0; // count hydrology time steps
 
   while (ht < m_t + m_dt) {
     hydrocount++;
@@ -110,8 +110,8 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
     }
 
     // update Pnew from time step
-    const PetscReal  CC = (rg * hdt) / phi0;
-    PetscReal  Open, Close, divflux, ZZ,
+    const double  CC = (rg * hdt) / phi0;
+    double  Open, Close, divflux, ZZ,
                dpsie, dpsiw, dpsin, dpsis;
     ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
@@ -129,8 +129,8 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
     ierr = mask->begin_access(); CHKERRQ(ierr);
     ierr = Pover.begin_access(); CHKERRQ(ierr);
     ierr = Pnew.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (M.ice_free_land(i,j))
           Pnew(i,j) = 0.0;
         else if (M.ocean(i,j))
@@ -165,16 +165,16 @@ PetscErrorCode PISMDistHydrologyALT::update(PetscReal icet, PetscReal icedt) {
           }
           divflux = 0.0;
           if (!knowne && !knownw) {
-            const PetscReal We = Wstag(i,  j,0),
+            const double We = Wstag(i,  j,0),
                             Ww = Wstag(i-1,j,0),
                             Ke = Kstag(i,  j,0),
                             Kw = Kstag(i-1,j,0);
             divflux += omegax * ( Ke * We * dpsie - Kw * Ww * dpsiw );
           }
           if (!knownn && !knowns) {
-            const PetscReal Wn = Wstag(i,j  ,1),
+            const double Wn = Wstag(i,j  ,1),
                             Ws = Wstag(i,j-1,1);
-            const PetscReal Kn = Kstag(i,j  ,1),
+            const double Kn = Kstag(i,j  ,1),
                             Ks = Kstag(i,j-1,1);
             divflux += omegay * ( Kn * Wn * dpsin - Ks * Ws * dpsis );
           }

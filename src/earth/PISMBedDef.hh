@@ -31,15 +31,15 @@ public:
   PISMBedDef(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMBedDef() {}
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt) = 0;
+  virtual PetscErrorCode update(double my_t, double my_dt) = 0;
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
-  PetscErrorCode compute_uplift(PetscScalar dt_beddef);
-  PetscReal t_beddef_last;		//!< last bed deformation update year
+  PetscErrorCode compute_uplift(double dt_beddef);
+  double t_beddef_last;		//!< last bed deformation update year
 
   IceModelVec2S topg_initial;
   IceModelVec2S topg_last;	//!< last bed elevation
@@ -54,7 +54,7 @@ public:
   PBPointwiseIsostasy(IceGrid &g, const PISMConfig &conf); 
   virtual ~PBPointwiseIsostasy() {}
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 protected:
   PetscErrorCode allocate();
   IceModelVec2S thk_last;	//!< last ice thickness

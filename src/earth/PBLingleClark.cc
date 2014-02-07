@@ -250,7 +250,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
 
 //! Update the Lingle-Clark bed deformation model.
-PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if ((fabs(my_t - m_t)   < 1e-12) &&
@@ -260,10 +260,10 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  PetscReal t_final = m_t + m_dt;
+  double t_final = m_t + m_dt;
 
   // Check if it's time to update:
-  PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
+  double dt_beddef = t_final - t_beddef_last; // in seconds
   if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < grid.time->end()) ||
       dt_beddef < 1e-12)

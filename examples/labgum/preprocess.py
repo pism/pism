@@ -68,6 +68,8 @@ if smbpos==0:
 else:
   print "  input flux > 0 at %d cells ..." % smbpos
 smb = (flux / (rho * smbpos * dx**2) ) * smb
+# convert to [kg m-2 s-1]
+smb = smb * rho
 
 # Write the data:
 nc = CDF(args.o, "w",format='NETCDF3_CLASSIC') # for netCDF4 module
@@ -104,7 +106,7 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-smb_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
+smb_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", fill_value)
 smb_var.standard_name = "land_ice_surface_specific_mass_balance"
 smb_var[:] = smb
 

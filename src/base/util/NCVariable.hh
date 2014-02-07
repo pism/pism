@@ -138,12 +138,12 @@ public:
   PetscErrorCode regrid(const PIO &file,
                         RegriddingFlag flag,
                         bool report_range,
-                        PetscScalar default_value, Vec v);
+                        double default_value, Vec v);
   PetscErrorCode regrid(const PIO &file,
                         unsigned int t_start,
                         RegriddingFlag flag,
                         bool report_range,
-                        PetscScalar default_value, Vec v);
+                        double default_value, Vec v);
 
   PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                         bool write_in_glaciological_units);

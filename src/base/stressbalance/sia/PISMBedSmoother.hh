@@ -60,7 +60,7 @@ internal fields, and update them in the return fields `thksmooth`, `theta`,
 if asked.  In IceModel::velocitySIAStaggered()
 \code
     PISMBedSmoother smoother(grid, config, 2);
-    const PetscReal n = 3.0,
+    const double n = 3.0,
                     lambda = 50.0e3;
     ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
     ierr = smoother.get_smoothed_thk(usurf, thk, 1, &thksmooth); CHKERRQ(ierr);
@@ -72,13 +72,13 @@ are all created IceModelVec2S instances.
  */
 class PISMBedSmoother {
 public:
-  PISMBedSmoother(IceGrid &g, const PISMConfig &conf, PetscInt MAX_GHOSTS);
+  PISMBedSmoother(IceGrid &g, const PISMConfig &conf, int MAX_GHOSTS);
   virtual ~PISMBedSmoother();
 
   virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg);
 
   // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
-  virtual PetscErrorCode get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out);
+  virtual PetscErrorCode get_smoothing_domain(int &Nx_out, int &Ny_out);
 
   virtual PetscErrorCode get_smoothed_thk(IceModelVec2S &usurf, IceModelVec2S &thk,
                                           IceModelVec2Int &mask, IceModelVec2S *thksmooth);
@@ -92,11 +92,11 @@ protected:
   const PISMConfig &config;
   IceModelVec2S maxtl, C2, C3, C4;
 
-  PetscInt Nx, Ny;  //!< number of grid points to smooth over; e.g.
+  int Nx, Ny;  //!< number of grid points to smooth over; e.g.
                     //!i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1
                     //!always, unless lambda<=0
 
-  PetscReal m_Glen_exponent, m_smoothing_range;
+  double m_Glen_exponent, m_smoothing_range;
 
   PetscErrorCode allocate(int MAX_GHOSTS);
   PetscErrorCode deallocate();
@@ -109,7 +109,7 @@ protected:
       C2p0, C3p0, C4p0;
 
   virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg,
-                                        PetscInt Nx_in, PetscInt Ny_in);
+                                        int Nx_in, int Ny_in);
 
   PetscErrorCode smooth_the_bed_on_proc0();
   PetscErrorCode compute_coefficients_on_proc0();

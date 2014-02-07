@@ -61,18 +61,18 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
+				   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
 				   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   climatic_mass_balance_original.init_2d("climatic_mass_balance_original", grid);
   climatic_mass_balance_original.set_string("pism_intent", "diagnostic");
   climatic_mass_balance_original.set_string("long_name",
-                                            "ice-equivalent surface mass balance rate before the adjustment using -surface ...,forcing");
-  ierr = climatic_mass_balance_original.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance_original.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                            "surface mass balance rate before the adjustment using -surface ...,forcing");
+  ierr = climatic_mass_balance_original.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_original.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -87,7 +87,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   PetscErrorCode ierr;
   char fttfile[PETSC_MAX_PATH_LEN] = "";
   PetscBool opt_set;
-  PetscScalar fttalpha;
+  double fttalpha;
   PetscBool  fttalphaSet;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -309,8 +309,8 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = target_thickness.begin_access(); CHKERRQ(ierr);
   ierr = ftt_mask.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (ftt_mask(i,j) > 0.5) {
         result(i,j) += alpha * (target_thickness(i,j) - (*ice_thickness)(i,j));
       }
@@ -341,9 +341,9 @@ Equivalently (since \f$\alpha \Delta t>0\f$),
 Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
-PetscErrorCode PSForceThickness::max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+PetscErrorCode PSForceThickness::max_timestep(double my_t, double &my_dt, bool &restrict) {
   PetscErrorCode ierr;
-  PetscReal max_dt = grid.convert(2.0 / alpha, "years", "seconds");
+  double max_dt = grid.convert(2.0 / alpha, "years", "seconds");
 
   ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
 

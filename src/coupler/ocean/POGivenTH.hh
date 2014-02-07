@@ -24,38 +24,35 @@
 
 class POGivenTH : public PGivenClimate<POModifier,PISMOceanModel>
 {
-
 public:
   POGivenTH(IceGrid &g, const PISMConfig &conf);
   virtual ~POGivenTH();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode sea_level_elevation(double &result);
 
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual PetscErrorCode calc_shelfbtemp_shelfbmassflux();
-
-  virtual PetscErrorCode btemp_bmelt_3eqn( PetscReal rhow, PetscReal rhoi,
-                                                        PetscReal sal_ocean, PetscReal temp_insitu, PetscReal zice,
-                                                        PetscReal &temp_base, PetscReal &meltrate);
-
-  virtual PetscErrorCode adiabatic_temperature_gradient(PetscReal salinity, PetscReal temp_insitu, PetscReal pressure, PetscReal &adlprt_out);
-  virtual PetscErrorCode potential_temperature(PetscReal salinity,PetscReal temp_insitu,PetscReal pressure,
-                                                    PetscReal reference_pressure, PetscReal& thetao);
-  virtual PetscErrorCode insitu_temperature(PetscReal salinity, PetscReal thetao,
-                                                 PetscReal pressure,PetscReal reference_pressure,
-                                                 PetscReal &temp_insitu_out);
-
-protected:
-  IceModelVec2T *shelfbtemp, *shelfbmassflux;
+private:
+  IceModelVec2S shelfbtemp, shelfbmassflux;
   IceModelVec2S *ice_thickness;
   IceModelVec2T *theta_ocean, *salinity_ocean;
 
-private:
+  PetscErrorCode calc_shelfbtemp_shelfbmassflux();
+
+  PetscErrorCode btemp_bmelt_3eqn(double rhow, double rhoi,
+                                  double sal_ocean, double temp_insitu, double zice,
+                                  double &temp_base, double &meltrate);
+
+  PetscErrorCode adiabatic_temperature_gradient(double salinity, double temp_insitu, double pressure, double &adlprt_out);
+  PetscErrorCode potential_temperature(double salinity,double temp_insitu,double pressure,
+                                       double reference_pressure, double& thetao);
+  PetscErrorCode insitu_temperature(double salinity, double thetao,
+                                    double pressure,double reference_pressure,
+                                    double &temp_insitu_out);
   PetscErrorCode allocate_POGivenTH();
 };
 

@@ -45,7 +45,7 @@ public:
 
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:

@@ -16,7 +16,7 @@ grid="-Mx $xx -My $yy -Mz 3 -Mbz 1 -Lz 1500 -Lbz 0"
 
 stressbalance="-ssa_method fd -stress_balance ssa -ssa_dirichlet_bc $pc"
 
-calving="-calving thickness_calving -thickness_calving_threshold 250"
+calving="-calving thickness_calving -thickness_calving_threshold 300"
 
 diagnostics="thk,mask,cbar,Href,velbar,discharge_flux_cumulative"
 

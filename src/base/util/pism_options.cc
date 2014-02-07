@@ -42,7 +42,7 @@ See verbPrintf().
  */
 PetscErrorCode verbosityLevelFromOptions() {
   PetscErrorCode ierr;
-  PetscInt       myLevel;
+  int       myLevel;
   PetscBool     verbose, levelSet;
 
   ierr = setVerbosityLevel(2);
@@ -358,7 +358,7 @@ PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::stri
 
 //! \brief Process a command-line option taking an integer as an argument.
 PetscErrorCode PISMOptionsInt(std::string option, std::string text,
-                              PetscInt &result, bool &is_set) {
+                              int &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -392,7 +392,7 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
 
 //! \brief Process a command-line option taking a real number as an argument.
 PetscErrorCode PISMOptionsReal(std::string option, std::string text,
-                               PetscReal &result, bool &is_set) {
+                               double &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -429,7 +429,7 @@ PetscErrorCode PISMOptionsReal(std::string option, std::string text,
 //! \brief Process a command-line option taking a comma-separated list of reals
 //! as an argument.
 PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
-                                    std::vector<PetscReal> &result, bool &is_set) {
+                                    std::vector<double> &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -467,15 +467,15 @@ PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
 //! \brief Process a command-line option taking a comma-separated list of
 //! integers as an argument.
 PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
-                                    std::vector<PetscInt> &result, bool &is_set) {
+                                    std::vector<int> &result, bool &is_set) {
   PetscErrorCode ierr;
-  std::vector<PetscReal> tmp;
+  std::vector<double> tmp;
 
   ierr = PISMOptionsRealArray(option, text, tmp, is_set); CHKERRQ(ierr);
 
   result.clear();
   for (unsigned int j = 0; j < tmp.size(); ++j)
-    result.push_back(static_cast<PetscInt>(tmp[j]));
+    result.push_back(static_cast<int>(tmp[j]));
 
   return 0;
 }
@@ -624,8 +624,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   // at bootstrapping, choose whether the method uses smb as upper boundary for
   // vertical velocity
-  ierr = config.flag_from_option("boot_no_smb_in_temp",
-                                 "bootstrapping_no_smb_in_initial_temp"); CHKERRQ(ierr);
+  ierr = config.keyword_from_option("boot_temperature_heuristic",
+                                    "bootstrapping_temperature_heuristic", "smb,quartic_guess"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
@@ -682,7 +682,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("gradient", "surface_gradient_method",
-                                    "eta,haseloff,mahaffy,new"); CHKERRQ(ierr);
+                                    "eta,haseloff,mahaffy"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("sia_e", "sia_enhancement_factor"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_e", "ssa_enhancement_factor"); CHKERRQ(ierr);
@@ -870,11 +870,29 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   if (test_climate_models) {
     config.set_string_from_option("stress_balance_model", "none");
     config.set_flag_from_option("do_energy", false);
+    config.set_flag_from_option("do_age", false);
+    // let the user decide if they want to use "-no_mass" or not
   }
 
   ierr = config.flag_from_option("bed_def_lc_elastic", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
+
+  // old options
+  ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",
+                                   "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-ssa_sliding", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-ssa_floating_only", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-sia", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-no_sia", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-hold_tauc", "-yield_stress constant"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-calving_at_thickness",
+                                   "-calving thickness_calving -thickness_calving_threshold XXX"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-float_kill", "-calving float_kill"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-no_energy", "-energy none"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(com, "-cold", "-energy cold"); CHKERRQ(ierr);
 
   return 0;
 }

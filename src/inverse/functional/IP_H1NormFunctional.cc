@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,30 +18,30 @@
 
 #include "IP_H1NormFunctional.hh"
 
-PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
+PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **x_a;
-  PetscReal x_e[FEQuadrature::Nk];
-  PetscReal x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
+  double **x_a;
+  double x_e[FEQuadrature::Nk];
+  double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   DirichletData dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
 
   // Loop through all LOCAL elements.
-  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
+  int xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
-  for (PetscInt i=xs; i<xs+xm; i++) {
-    for (PetscInt j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
       m_dofmap.reset(i,j,m_grid);
 
       // Obtain values of x at the quadrature points for the element.
@@ -49,7 +49,7 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPU
       if(dirichletBC) dirichletBC.updateHomogeneous(m_dofmap,x_e);
       m_quadrature.computeTrialFunctionValues(x_e,x_q,dxdx_q,dxdy_q);
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
         value += JxW[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
       } // q
     } // j
@@ -64,35 +64,35 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPU
   return 0;
 }
 
-PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT) {
+PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
 
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **a_a;
-  PetscReal a_e[FEQuadrature::Nk];
-  PetscReal a_q[FEQuadrature::Nq], dadx_q[FEQuadrature::Nq], dady_q[FEQuadrature::Nq];
+  double **a_a;
+  double a_e[FEQuadrature::Nk];
+  double a_q[FEQuadrature::Nq], dadx_q[FEQuadrature::Nq], dady_q[FEQuadrature::Nq];
   ierr = a.get_array(a_a); CHKERRQ(ierr);
 
-  PetscReal **b_a;
-  PetscReal b_e[FEQuadrature::Nk];
-  PetscReal b_q[FEQuadrature::Nq], dbdx_q[FEQuadrature::Nq], dbdy_q[FEQuadrature::Nq];
+  double **b_a;
+  double b_e[FEQuadrature::Nk];
+  double b_q[FEQuadrature::Nq], dbdx_q[FEQuadrature::Nq], dbdy_q[FEQuadrature::Nq];
   ierr = b.get_array(b_a); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   DirichletData dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
   
   // Loop through all LOCAL elements.
-  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
+  int xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
-  for (PetscInt i=xs; i<xs+xm; i++) {
-    for (PetscInt j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
       m_dofmap.reset(i,j,m_grid);
 
       // Obtain values of x at the quadrature points for the element.
@@ -106,7 +106,7 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, Pe
       if(dirichletBC) dirichletBC.updateHomogeneous(m_dofmap,b_e);
       m_quadrature.computeTrialFunctionValues(b_e,b_q,dbdx_q,dbdy_q);
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
         value += JxW[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
       } // q
     } // j
@@ -130,30 +130,30 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   // Clear the gradient before doing anything with it!
   ierr = gradient.set(0); CHKERRQ(ierr);
 
-  PetscReal **x_a;
-  PetscReal x_e[FEQuadrature::Nk];
-  PetscReal x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
+  double **x_a;
+  double x_e[FEQuadrature::Nk];
+  double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
-  PetscReal **gradient_a;
-  PetscReal gradient_e[FEQuadrature::Nk];
+  double **gradient_a;
+  double gradient_e[FEQuadrature::Nk];
   ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   DirichletData dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
 
   // Loop through all local and ghosted elements.
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (PetscInt i=xs; i<xs+xm; i++) {
-    for (PetscInt j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
 
       // Reset the DOF map for this element.
       m_dofmap.reset(i,j,m_grid);
@@ -167,14 +167,14 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
       m_quadrature.computeTrialFunctionValues(x_e,x_q,dxdx_q,dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for(int k=0;k<FEQuadrature::Nk;k++){
         gradient_e[k] = 0;
       }
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        const PetscReal &x_qq=x_q[q];
-        const PetscReal &dxdx_qq=dxdx_q[q],  &dxdy_qq=dxdy_q[q]; 
-        for(PetscInt k=0; k<FEQuadrature::Nk; k++ ) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
+        const double &x_qq=x_q[q];
+        const double &dxdx_qq=dxdx_q[q],  &dxdy_qq=dxdy_q[q]; 
+        for(int k=0; k<FEQuadrature::Nk; k++ ) {
           gradient_e[k] += 2*JxW[q]*(m_cL2*x_qq*test[q][k].val +
             m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
@@ -190,14 +190,14 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 }
 
 PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
-  PetscInt         i,j;
+  int         i,j;
   PetscErrorCode   ierr;
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(form);CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   DirichletData zeroLocs;
@@ -208,14 +208,14 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Loop through all the elements.
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
       // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
       // entries in the local Jacobian.
-      PetscReal      K[FEQuadrature::Nk][FEQuadrature::Nk];
+      double      K[FEQuadrature::Nk][FEQuadrature::Nk];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i,j,m_grid);
@@ -225,9 +225,9 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        for (PetscInt k=0; k<4; k++) {   // Test functions
-          for (PetscInt l=0; l<4; l++) { // Trial functions
+      for (int q=0; q<FEQuadrature::Nq; q++) {
+        for (int k=0; k<4; k++) {   // Test functions
+          for (int l=0; l<4; l++) { // Trial functions
             const FEFunctionGerm &test_qk=test[q][k];
             const FEFunctionGerm &test_ql=test[q][l];
             K[k][l]     += JxW[q]*(m_cL2*test_qk.val*test_ql.val

@@ -57,6 +57,7 @@ else:
 ### CONSTANTS ###
 
 secpera   = 31556926.
+ice_density = 910.0
 
 yExtent = 2*50 # in km
 xExtent = 2*800 # in km
@@ -159,7 +160,7 @@ for i in range(0,nx):
 
 for i in range(0,nx):
     for j in range(0,ny):
-       precip[j,i]=precip_stnd[0,0]/secpera
+       precip[j,i]=precip_stnd[0,0]/secpera/ice_density
 print "snow per year in meters"
 print precip_stnd[0,0]
 
@@ -253,10 +254,10 @@ vars = {'y':   	['m',
 		'surface_temperature',
 		248.0,
 		ice_surface_temp],
-	'climatic_mass_balance': ['m s-1',
+	'climatic_mass_balance': ['kg m-2 year-1',
 		'mean annual net ice equivalent accumulation rate',
 		'land_ice_surface_specific_mass_balance',
-		0.2/3e7,
+		0.2 * ice_density,
 		precip],
 	'tauc': ['Pa',
 		'yield stress for basal till (plastic or pseudo-plastic model)',

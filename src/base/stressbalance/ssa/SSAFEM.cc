@@ -68,7 +68,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
-  PetscInt snes_max_it = 200;
+  int snes_max_it = 200;
   ierr = SNESSetTolerances(snes,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,
                            snes_max_it,PETSC_DEFAULT);
   // ierr = SNESSetOptionsPrefix(snes,((PetscObject)this)->prefix);CHKERRQ(ierr);
@@ -77,7 +77,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   // Allocate feStore, which contains coefficient data at the quadrature points of all the elements.
   // There are nElement elements, and FEQuadrature::Nq quadrature points.
-  PetscInt nElements = element_index.element_count();
+  int nElements = element_index.element_count();
   feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
 
   return 0;
@@ -245,7 +245,7 @@ element so that these interpolated values do not need to be computed
 during each outer iteration of the nonlinear solve.*/
 PetscErrorCode SSAFEM::cacheQuadPtValues()
 {
-  PetscReal      **h,
+  double      **h,
                  **H,
                  **topg,
                  **tauc_array,
@@ -253,15 +253,15 @@ PetscErrorCode SSAFEM::cacheQuadPtValues()
                   *Enth_q[4],
                   **ds_x,
                   **ds_y;
-  PetscInt         i,j,k,q,p,
+  int         i,j,k,q,p,
                    Mz = grid.Mz;
   PetscErrorCode   ierr;
 
-  PetscReal ice_rho = config.get("ice_density");
+  double ice_rho = config.get("ice_density");
 
   for(q=0;q<FEQuadrature::Nq;q++)
   {
-    Enth_q[q] = new PetscReal[Mz];
+    Enth_q[q] = new double[Mz];
   }
 
   GeometryCalculator gc(sea_level, config);
@@ -282,12 +282,12 @@ PetscErrorCode SSAFEM::cacheQuadPtValues()
   ierr = bed->get_array(topg);CHKERRQ(ierr);
   ierr = tauc->get_array(tauc_array);CHKERRQ(ierr);
 
-  PetscInt xs = element_index.xs, xm = element_index.xm,
+  int xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
-      PetscReal hq[FEQuadrature::Nq],hxq[FEQuadrature::Nq],hyq[FEQuadrature::Nq];
-      PetscReal ds_xq[FEQuadrature::Nq], ds_yq[FEQuadrature::Nq];
+      double hq[FEQuadrature::Nq],hxq[FEQuadrature::Nq],hyq[FEQuadrature::Nq];
+      double ds_xq[FEQuadrature::Nq], ds_yq[FEQuadrature::Nq];
       if(driving_stress_explicit) {
         quadrature.computeTrialFunctionValues(i,j,dofmap,ds_x,ds_xq);
         quadrature.computeTrialFunctionValues(i,j,dofmap,ds_y,ds_yq);
@@ -296,12 +296,12 @@ PetscErrorCode SSAFEM::cacheQuadPtValues()
         quadrature.computeTrialFunctionValues(i,j,dofmap,h,hq,hxq,hyq);
       }
 
-      PetscReal Hq[FEQuadrature::Nq], bq[FEQuadrature::Nq], taucq[FEQuadrature::Nq];
+      double Hq[FEQuadrature::Nq], bq[FEQuadrature::Nq], taucq[FEQuadrature::Nq];
       quadrature.computeTrialFunctionValues(i,j,dofmap,H,Hq);
       quadrature.computeTrialFunctionValues(i,j,dofmap,topg,bq);
       quadrature.computeTrialFunctionValues(i,j,dofmap,tauc_array,taucq);
 
-      const PetscInt ij = element_index.flatten(i,j);
+      const int ij = element_index.flatten(i,j);
       FEStoreNode *feS = &feStore[4*ij];
       for (q=0; q<4; q++) {
         feS[q].H  = Hq[q];
@@ -384,9 +384,9 @@ to the solution in the output variables \a nuH, \a dNuH, \a beta, and \a dbeta.
 Use NULL pointers if no derivatives are desired.
 */
 inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
-                                                  const PISMVector2 *u,const PetscReal Du[],
-                                                  PetscReal *nuH, PetscReal *dNuH,
-                                                  PetscReal *beta, PetscReal *dbeta)
+                                                  const PISMVector2 *u,const double Du[],
+                                                  double *nuH, double *dNuH,
+                                                  double *beta, double *dbeta)
 {
 
   Mask M;
@@ -427,12 +427,12 @@ This last step ensures that the residual and Jacobian entries
 corresponding to a Dirichlet unknown are not set in the main loops of
 SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
 */
-void SSAFEM::FixDirichletValues( PetscReal local_bc_mask[],PISMVector2 **BC_vel,
+void SSAFEM::FixDirichletValues( double local_bc_mask[],PISMVector2 **BC_vel,
                                 PISMVector2 x[], FEDOFMap &my_dofmap)
 {
-  for (PetscInt k=0; k<4; k++) {
+  for (int k=0; k<4; k++) {
     if (local_bc_mask[k] > 0.5) { // Dirichlet node
-      PetscInt ii, jj;
+      int ii, jj;
       my_dofmap.localToGlobal(k,&ii,&jj);
       x[k].u = BC_vel[ii][jj].u;
       x[k].v = BC_vel[ii][jj].v;
@@ -448,8 +448,8 @@ void SSAFEM::FixDirichletValues( PetscReal local_bc_mask[],PISMVector2 **BC_vel,
 is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg)
 {
-  PetscInt         i,j,k,q;
-  PetscReal        **bc_mask;
+  int         i,j,k,q;
+  double        **bc_mask;
   PISMVector2        **BC_vel;
   PetscErrorCode   ierr;
 
@@ -469,29 +469,29 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
   }
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
 
   // Storage for the current solution at quadrature points.
   PISMVector2 u[FEQuadrature::Nq];
-  PetscScalar Du[FEQuadrature::Nq][3];
+  double Du[FEQuadrature::Nq][3];
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
 
   // Flags for each vertex in an element that determine if explicit Dirichlet data has
   // been set.
-  PetscReal local_bc_mask[FEQuadrature::Nk];
+  double local_bc_mask[FEQuadrature::Nk];
 
   // Iterate over the elements.
-  PetscInt xs = element_index.xs, xm = element_index.xm,
+  int xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Storage for element-local solution and residuals.
       PISMVector2     x[4],y[4];
       // Index into coefficient storage in feStore
-      const PetscInt ij = element_index.flatten(i,j);
+      const int ij = element_index.flatten(i,j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.reset(i,j,grid);
@@ -517,12 +517,12 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
 
         // Symmetric gradient at the quadrature point.
-        PetscScalar *Duq = Du[q];
+        double *Duq = Du[q];
 
         // Coefficients and weights for this quadrature point.
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
-        const PetscReal    jw  = JxW[q];
-        PetscReal nuH, beta;
+        const double    jw  = JxW[q];
+        double nuH, beta;
         ierr = PointwiseNuHAndBeta(feS,u+q,Duq,&nuH,NULL,&beta,NULL);CHKERRQ(ierr);
 
         // The next few lines compute the actual residual for the element.
@@ -584,9 +584,9 @@ the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVector2 **xg, Mat Jac )
 {
 
-  PetscReal      **bc_mask;
+  double      **bc_mask;
   PISMVector2    **BC_vel;
-  PetscInt         i,j;
+  int         i,j;
   PetscErrorCode   ierr;
 
   // Avoid compiler warning.
@@ -602,12 +602,12 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
   }
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
 
   // Storage for the current solution at quadrature points.
   PISMVector2 w[FEQuadrature::Nq];
-  PetscScalar Dw[FEQuadrature::Nq][3];
+  double Dw[FEQuadrature::Nq][3];
 
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
@@ -615,10 +615,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
 
   // Flags for each vertex in an element that determine if explicit Dirichlet data has
   // been set.
-  PetscReal local_bc_mask[FEQuadrature::Nk];
+  double local_bc_mask[FEQuadrature::Nk];
 
   // Loop through all the elements.
-  PetscInt xs = element_index.xs, xm = element_index.xm,
+  int xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
@@ -628,10 +628,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
       // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
       // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
       // entries in the local Jacobian.
-      PetscReal      K[(2*FEQuadrature::Nk)*(2*FEQuadrature::Nk)];
+      double      K[(2*FEQuadrature::Nk)*(2*FEQuadrature::Nk)];
 
       // Index into the coefficient storage array.
-      const PetscInt ij = element_index.flatten(i,j);
+      const int ij = element_index.flatten(i,j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.reset(i,j,grid);
@@ -651,26 +651,26 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
 
         // Shorthand for values and derivatives of the solution at the single quadrature point.
         PISMVector2 &wq = w[q];
-        PetscReal *Dwq = Dw[q];
+        double *Dwq = Dw[q];
 
         // Coefficients evaluated at the single quadrature point.
         const FEStoreNode *feS = &feStore[ij*4+q];
-        const PetscReal    jw  = JxW[q];
-        PetscReal nuH,dNuH,beta,dbeta;
+        const double    jw  = JxW[q];
+        double nuH,dNuH,beta,dbeta;
         ierr = PointwiseNuHAndBeta(feS,&wq,Dwq,&nuH,&dNuH,&beta,&dbeta);CHKERRQ(ierr);
 
-        for (PetscInt k=0; k<4; k++) {   // Test functions
-          for (PetscInt l=0; l<4; l++) { // Trial functions
+        for (int k=0; k<4; k++) {   // Test functions
+          for (int l=0; l<4; l++) { // Trial functions
 
             // FIXME (DAM 2/28/11) The following computations could be a little better documented.
             const FEFunctionGerm &test_qk=test[q][k];
             const FEFunctionGerm &test_ql=test[q][l];
 
-            const PetscReal ht = test_qk.val,h = test_ql.val,
+            const double ht = test_qk.val,h = test_ql.val,
                   dxt = test_qk.dx, dyt = test_qk.dy,
                   dx = test_ql.dx, dy = test_ql.dy,
 
@@ -709,7 +709,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (bc_locations->as_int(i,j) == 1) {
-          const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
+          const double ident[4] = {dirichletScale,0,0,dirichletScale};
           MatStencil row;
           // FIXME: Transpose shows up here!
           row.j = i; row.i = j;
@@ -735,7 +735,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info, const PISMVec
     PetscViewer    viewer;
 
     char           file_name[PETSC_MAX_PATH_LEN];
-    PetscInt iter;
+    int iter;
     ierr = SNESGetIterationNumber(snes,&iter);
     snprintf(file_name,  PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m",iter);
 

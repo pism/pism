@@ -35,7 +35,7 @@ public:
   virtual ~DrainageCalculator() {}
 
   //! Return D(omega), as in figure in [\ref AschwandenBuelerKhroulevBlatter].
-  virtual PetscReal get_drainage_rate(PetscReal omega) {
+  virtual double get_drainage_rate(double omega) {
     if (omega > OM1) {
       if (omega > OM2) {
         if (omega > OM3) {
@@ -50,7 +50,7 @@ public:
   }
 
 private:
-  PetscReal OM1, OM2, OM3, DR2, DR3;
+  double OM1, OM2, OM3, DR2, DR3;
 };
 
 

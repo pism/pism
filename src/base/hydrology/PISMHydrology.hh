@@ -118,7 +118,7 @@ public:
   // these methods MUST be implemented in the derived class
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
+  virtual PetscErrorCode update(double icet, double icedt) = 0;
 
 protected:
   // this model's state
@@ -135,11 +135,11 @@ protected:
 
   IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
   unsigned int inputtobed_period;      // in years
-  PetscReal inputtobed_reference_time; // in seconds
+  double inputtobed_reference_time; // in seconds
 
   PISMVars *variables;
 
-  virtual PetscErrorCode get_input_rate(PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
+  virtual PetscErrorCode get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
 
   virtual PetscErrorCode check_Wtil_bounds();
 };
@@ -171,7 +171,7 @@ public:
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
   // solves an implicit step of a highly-simplified ODE
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+  virtual PetscErrorCode update(double icet, double icedt);
 };
 
 
@@ -252,7 +252,7 @@ public:
 
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+  virtual PetscErrorCode update(double icet, double icedt);
 
 protected:
   // this model's state
@@ -267,7 +267,7 @@ protected:
   // this model's workspace variables
   IceModelVec2S Wnew, Wtilnew, Pover, R;
 
-  PetscReal stripwidth; // width in m of strip around margin where V and W are set to zero;
+  double stripwidth; // width in m of strip around margin where V and W are set to zero;
                         // if negative then the strip mechanism is inactive inactive
 
   virtual PetscErrorCode allocate();
@@ -278,29 +278,29 @@ protected:
   // temporary during the update
   bool report_mass_accounting;
   virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
-             PetscReal &icefreelost, PetscReal &oceanlost,
-             PetscReal &negativegain, PetscReal &nullstriplost);
+             double &icefreelost, double &oceanlost,
+             double &negativegain, double &nullstriplost);
 
   virtual PetscErrorCode check_water_thickness_nonnegative(IceModelVec2S &thk);
 
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
   virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
 
-  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, PetscReal &maxKW);
+  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
   friend class PISMRoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
-            PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-            PetscReal &dt_result,
-            PetscReal &maxV_result, PetscReal &maxD_result,
-            PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
+            double t_current, double t_end, double maxKW,
+            double &dt_result,
+            double &maxV_result, double &maxD_result,
+            double &dtCFL_result, double &dtDIFFW_result);
 
-  PetscErrorCode raw_update_W(PetscReal hdt);
-  PetscErrorCode raw_update_Wtil(PetscReal hdt);
+  PetscErrorCode raw_update_W(double hdt);
+  PetscErrorCode raw_update_Wtil(double hdt);
 
-  inline bool in_null_strip(PetscInt i, PetscInt j) {
+  inline bool in_null_strip(int i, int j) {
     if (stripwidth < 0.0) return false;
     return ((grid.x[i] <= grid.x[0] + stripwidth) || (grid.x[i] >= grid.x[grid.Mx-1] - stripwidth)
             || (grid.y[j] <= grid.y[0] + stripwidth) || (grid.y[j] >= grid.y[grid.My-1] - stripwidth));
@@ -335,7 +335,7 @@ public:
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+  virtual PetscErrorCode update(double icet, double icedt);
 
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
@@ -359,10 +359,10 @@ protected:
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
-                           PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-                           PetscReal &dt_result,
-                           PetscReal &maxV_result, PetscReal &maxD_result,
-                           PetscReal &PtoCFLratio);
+                           double t_current, double t_end, double maxKW,
+                           double &dt_result,
+                           double &maxV_result, double &maxD_result,
+                           double &PtoCFLratio);
 };
 
 
@@ -372,7 +372,7 @@ public:
   PISMDistHydrologyALT(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb)
     : PISMDistributedHydrology(g,conf,sb) {}
   virtual ~PISMDistHydrologyALT() {}
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+  virtual PetscErrorCode update(double icet, double icedt);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

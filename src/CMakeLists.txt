@@ -34,7 +34,6 @@ set(PISMUTIL_SRC
   base/util/NCVariable.cc
   base/util/PISMConfig.cc
   base/util/PISMComponent.cc
-  base/util/PISMProf.cc
   base/util/PISMTime.cc
   base/util/PISMTime_Calendar.cc
   base/util/PISMVars.cc
@@ -172,6 +171,7 @@ set_source_files_properties (base/util/pism_default_config.cc
 add_library (pismverif
   verif/iCMthermo.cc
   verif/iceCompModel.cc
+  verif/PSVerification.cc
   verif/tests/exactTestH.c
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
@@ -187,7 +187,8 @@ add_executable (pismr pismr.cc)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
-  eismint/iceEISModel.cc)
+  eismint/iceEISModel.cc
+  eismint/PS_EISMINTII.cc)
 
 # All of the following are linked against pismbase
 foreach (EXEC pismr pisms)
@@ -258,18 +259,6 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil pismrevision)
   list (APPEND EXTRA_EXECS btutest)
-
-  set (netcdf_test_libraries pismutil ${NETCDF_LIBRARIES} ${PETSC_LIBRARIES} ${MPI_LIBRARIES})
-
-  if (Pism_USE_PNETCDF)
-    list(APPEND netcdf_test_libraries ${PNETCDF_LIBRARIES})
-  endif()
-
- add_executable (pism_netcdf_test software_tests/pism_netcdf_test.cc)
- target_link_libraries (pism_netcdf_test ${netcdf_test_libraries})
-
- set_source_files_properties (software_tests/pism_netcdf_test.cc
-   PROPERTIES COMPILE_FLAGS ${PISM_PARALLEL_IO_FLAGS})
 
   install (TARGETS
     ${EXTRA_EXECS}

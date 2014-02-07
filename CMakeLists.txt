@@ -34,6 +34,7 @@ option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
+option (Pism_USE_TR1 "Use the std::tr1 namespace to access shared pointer definitions. Disable to get shared pointers from the std namespace (might be needed with some compilers)." ON)
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
@@ -114,12 +115,15 @@ endif()
 # Use TAO in inverse solvers.
 if (Pism_USE_TAO)
   add_definitions (-DPISM_USE_TAO=1)
-else()
-  add_definitions (-DPISM_USE_TAO=0)
 endif()
 
+if (Pism_USE_TR1)
+  message (STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
+  add_definitions (-DPISM_USE_TR1=1)
+endif ()
+
 add_custom_target (etags
-  COMMAND find -E . -regex ".*\\.(c|cc|h|hh|py)" | xargs etags
+  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh|py)" | xargs etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )

@@ -56,9 +56,9 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
                                      "temperature of the ice at the ice surface but below firn processes",
                                      "Kelvin", ""); CHKERRQ(ierr);
   ierr = climatic_mass_balance->set_attrs("climate_forcing",
-                                          "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                          "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                          "surface mass balance (accumulation/ablation) rate",
+                                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance->write_in_glaciological_units = true;
 
   return 0;
@@ -66,6 +66,7 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
 
 void PSGivenClimate::attach_atmosphere_model(PISMAtmosphereModel *input) {
   delete input;
+  input = NULL;
 }
 
 PetscErrorCode PSGivenClimate::init(PISMVars &) {
@@ -88,7 +89,7 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSGivenClimate::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   ierr = climatic_mass_balance->average(m_t, m_dt); CHKERRQ(ierr);

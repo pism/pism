@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 David Maxwell
+// Copyright (C) 2011, 2012, 2014 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -73,7 +73,7 @@ private:
 
 };
 
-typedef SNESProblem<1,PetscScalar> SNESScalarProblem;
+typedef SNESProblem<1,double> SNESScalarProblem;
 typedef SNESProblem<2,PISMVector2> SNESVectorProblem;
 
 
@@ -122,7 +122,7 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   PetscErrorCode ierr;
 
   // mimic IceGrid::createDA() with TRANSPOSE :
-  PetscInt stencil_width=1;
+  int stencil_width=1;
   ierr = DMDACreate2d(m_grid.com,
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                       DMDA_STENCIL_BOX,

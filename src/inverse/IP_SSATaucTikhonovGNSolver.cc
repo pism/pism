@@ -22,7 +22,7 @@
 #include "pism_options.hh"
 
 IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward,
-DesignVec &d0, StateVec &u_obs, PetscReal eta,
+DesignVec &d0, StateVec &u_obs, double eta,
 IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
 m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
@@ -80,7 +80,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 
   ierr = KSPCreate(grid.com, &m_ksp); CHKERRQ(ierr);
   ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_"); CHKERRQ(ierr);
-  PetscReal ksp_rtol = 1e-5; // Soft tolerance
+  double ksp_rtol = 1e-5; // Soft tolerance
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   ierr = KSPSetType(m_ksp, KSPCG); CHKERRQ(ierr);
   PC pc;
@@ -88,8 +88,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   ierr = PCSetType(pc, PCNONE); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);  
 
-  PetscInt nLocalNodes  = grid.xm*grid.ym;
-  PetscInt nGlobalNodes = grid.Mx*grid.My;
+  int nLocalNodes  = grid.xm*grid.ym;
+  int nGlobalNodes = grid.Mx*grid.My;
   ierr = MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN); CHKERRQ(ierr);
 
   typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
@@ -189,21 +189,21 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, PetscReal *value) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
   PetscErrorCode ierr;
   
   ierr = m_ssaforward.apply_linearization(h,m_tmp_S1Local); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.update_ghosts(); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.add(1,m_u_diff);
   
-  PetscReal sValue;
+  double sValue;
   ierr =  m_stateFunctional.valueAt(m_tmp_S1Local,&sValue); CHKERRQ(ierr);
   
   
   ierr = m_tmp_D1Local.copy_from(m_d_diff); CHKERRQ(ierr);
   ierr = m_tmp_D1Local.add(1,h); CHKERRQ(ierr);
   
-  PetscReal dValue;
+  double dValue;
   ierr =  m_designFunctional.valueAt(m_tmp_D1Local,&dValue); CHKERRQ(ierr);
   
   *value = m_alpha*dValue + sValue;
@@ -215,8 +215,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, Pe
 PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
-  PetscReal designNorm, stateNorm, sumNorm;
-  PetscReal dWeight, sWeight;
+  double designNorm, stateNorm, sumNorm;
+  double dWeight, sWeight;
   dWeight = m_alpha;
   sWeight = 1;
 
@@ -232,13 +232,13 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
   if(m_tikhonov_adaptive) {
     ierr = verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha); CHKERRQ(ierr);
   }
-  PetscReal relsum = (sumNorm/PetscMax(designNorm,stateNorm));
+  double relsum = (sumNorm/PetscMax(designNorm,stateNorm));
   ierr = verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",designNorm,stateNorm,sumNorm,relsum); CHKERRQ(ierr);
 
   // If we have an adaptive tikhonov parameter, check if we have met
   // this constraint first.
   if(m_tikhonov_adaptive) {
-    PetscReal disc_ratio = fabs( (sqrt(m_val_state)/m_target_misfit) - 1.);
+    double disc_ratio = fabs( (sqrt(m_val_state)/m_target_misfit) - 1.);
     if(disc_ratio > m_tikhonov_ptol) {
       reason = GenericTerminationReason::keep_iterating();
       return 0;
@@ -288,7 +288,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(Termi
   ierr = m_gradient.scale(m_alpha); CHKERRQ(ierr);    
   ierr = m_gradient.add(1,m_grad_state); CHKERRQ(ierr);
 
-  PetscReal valDesign, valState;
+  double valDesign, valState;
   ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);
   ierr = m_stateFunctional.valueAt(m_u_diff,&valState); CHKERRQ(ierr);
 
@@ -305,9 +305,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
 
   TerminationReason::Ptr step_reason;
 
-  PetscReal old_value = m_val_design * m_alpha + m_val_state;
+  double old_value = m_val_design * m_alpha + m_val_state;
 
-  PetscReal descent_derivative;
+  double descent_derivative;
 
   ierr = m_tmp_D1Global.copy_from(m_h); CHKERRQ(ierr);
   ierr = VecDot(m_gradient.get_vec(),m_tmp_D1Global.get_vec(),&descent_derivative);
@@ -318,7 +318,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
     return 0;
   }
 
-  PetscReal alpha = 1;
+  double alpha = 1;
   ierr = m_tmp_D1Local.copy_from(m_d); CHKERRQ(ierr);
   while(true) {
     ierr = m_d.add(alpha,m_h); CHKERRQ(ierr);  // Replace with line search.
@@ -355,7 +355,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   m_iter = 0;
   ierr = m_d.copy_from(m_d0); CHKERRQ(ierr);
 
-  PetscReal dlogalpha = 0;
+  double dlogalpha = 0;
 
   TerminationReason::Ptr step_reason;
 
@@ -408,7 +408,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalpha, TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
 
@@ -436,7 +436,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
   ierr = m_tmp_S1Local.add(1,m_u_diff); CHKERRQ(ierr);
 
   // Compute linearized discrepancy.
-  PetscReal disc_sq;
+  double disc_sq;
   ierr = m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S1Local,&disc_sq); CHKERRQ(ierr);
 
   // There are a number of equivalent ways to compute the derivative of the 
@@ -448,7 +448,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
   // If this fails, we compute by a harder way that inherently yields a 
   // positive number.
 
-  PetscReal ddisc_sq_dalpha;
+  double ddisc_sq_dalpha;
   ierr = m_designFunctional.dot(m_dh_dalpha,m_d_diff_lin,&ddisc_sq_dalpha);
   ddisc_sq_dalpha *= -2*m_alpha;
 
@@ -461,9 +461,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
     ierr = m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local); CHKERRQ(ierr);
     ierr = m_tmp_S2Local.update_ghosts(); CHKERRQ(ierr);
 
-    PetscReal ddisc_sq_dalpha_a;
+    double ddisc_sq_dalpha_a;
     ierr = m_stateFunctional.dot(m_tmp_S2Local,m_tmp_S2Local,&ddisc_sq_dalpha_a); CHKERRQ(ierr);
-    PetscReal ddisc_sq_dalpha_b;
+    double ddisc_sq_dalpha_b;
     ierr = m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha_b); CHKERRQ(ierr);
     ddisc_sq_dalpha = 2*m_alpha*(ddisc_sq_dalpha_a+m_alpha*ddisc_sq_dalpha_b);
 
@@ -479,9 +479,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
 
   // It's easy to take steps that are too big when we are far from the solution.
   // So we limit the step size.
-  PetscReal stepmax = 3;
+  double stepmax = 3;
   if(fabs(*dlogalpha)> stepmax) {
-    PetscReal sgn = *dlogalpha > 0 ? 1 : -1;
+    double sgn = *dlogalpha > 0 ? 1 : -1;
     *dlogalpha = stepmax*sgn;
   }
   

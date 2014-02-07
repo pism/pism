@@ -84,7 +84,7 @@ public:
   virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result);
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(PetscReal &D);
+  virtual PetscErrorCode get_max_diffusivity(double &D);
 
   // for the energy/age time step:
 
@@ -110,7 +110,7 @@ public:
   virtual PetscErrorCode stdout_report(std::string &result);
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+  virtual PetscErrorCode extend_the_grid(int old_Mz);
 
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                                std::map<std::string, PISMTSDiagnostic*> &ts_dict);

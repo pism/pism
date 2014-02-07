@@ -88,11 +88,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   }
 
-
-  // old options
-  ierr = check_old_option_and_stop(grid.com, "-sliding_scale_brutal",
-                                   "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
-
   return 0;
 }
 

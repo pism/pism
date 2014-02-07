@@ -44,10 +44,10 @@ PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
 
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("climate_state",
-                                         "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                         "m s-1",
+                                         "constant-in-time surface mass balance (accumulation/ablation) rate",
+                                         "kg m-2 s-1",
                                          "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
 
   ierr = ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -82,7 +82,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
-    "    reading ice-equivalent surface mass balance rate 'climatic_mass_balance' from %s ... \n",
+    "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
   if (do_regrid) {
     ierr = climatic_mass_balance.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
@@ -97,7 +97,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
+PetscErrorCode PSConstantPIK::update(double my_t, double my_dt)
 {
   PetscErrorCode ierr;
 
@@ -111,8 +111,8 @@ PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
   ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
     }
   }

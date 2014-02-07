@@ -44,7 +44,6 @@
 #include "bedrockThermalUnit.hh"
 #include "flowlaw_factory.hh"
 #include "basal_resistance.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
@@ -170,7 +169,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
     z_spacing_set, periodicity_set;
-  PetscReal x_scale = grid.Lx / 1000.0,
+  double x_scale = grid.Lx / 1000.0,
     y_scale = grid.Ly / 1000.0,
     z_scale = grid.Lz;
 
@@ -422,7 +421,7 @@ PetscErrorCode IceModel::grid_setup() {
     }
 
     bool procs_x_set, procs_y_set;
-    std::vector<PetscInt> tmp_x, tmp_y;
+    std::vector<int> tmp_x, tmp_y;
     ierr = PISMOptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
                                tmp_x, procs_x_set); CHKERRQ(ierr);
     ierr = PISMOptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
@@ -453,10 +452,10 @@ PetscErrorCode IceModel::grid_setup() {
       grid.procs_x.resize(grid.Nx);
       grid.procs_y.resize(grid.Ny);
 
-      for (PetscInt j=0; j < grid.Nx; j++)
+      for (int j=0; j < grid.Nx; j++)
         grid.procs_x[j] = tmp_x[j];
 
-      for (PetscInt j=0; j < grid.Ny; j++)
+      for (int j=0; j < grid.Ny; j++)
         grid.procs_y[j] = tmp_y[j];
     } else {
       grid.compute_ownership_ranges();
@@ -524,7 +523,7 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    PetscReal max_dt = 0;
+    double max_dt = 0;
     bool restrict = false;
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
@@ -974,7 +973,7 @@ PetscErrorCode IceModel::init_couplers() {
 //! Allocates work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   // various internal quantities
   // 2d work vectors
@@ -1022,21 +1021,6 @@ PetscErrorCode IceModel::misc_setup() {
                 "PISM ERROR: output formats netcdf4_parallel and quilt require -o_order xyz.\n");
     PISMEnd();
   }
-
-  event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
-  event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
-
-  event_energy  = grid.profiler->create("energy",   "time spent inside energy time-stepping");
-  event_hydrology = grid.profiler->create("hydrology",   "time spent inside hydrology time-stepping");
-  event_age     = grid.profiler->create("age",      "time spent inside age time-stepping");
-  event_mass    = grid.profiler->create("masscont", "time spent inside mass continuity time-stepping");
-
-  event_beddef  = grid.profiler->create("bed_def",  "time spent updating the bed deformation model");
-
-  event_output    = grid.profiler->create("output", "time spent writing output files");
-  event_output_define = grid.profiler->create("output_define", "time spent defining variables");
-  event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
-  event_backups   = grid.profiler->create("backups", "time spent writing backups");
 
   return 0;
 }
@@ -1096,13 +1080,13 @@ PetscErrorCode IceModel::init_calving() {
   std::set<std::string>::iterator j = methods.begin();
   std::string unused;
   while (j != methods.end()) {
-    unused += *j;
+    unused += (*j + ",");
     ++j;
   }
 
   if (unused.empty() == false) {
     ierr = verbPrintf(2, grid.com,
-                      "PISM ERROR: calving method(s) %s are unknown and are ignored.\n",
+                      "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
                       unused.c_str()); CHKERRQ(ierr);
   }
 
@@ -1113,9 +1097,6 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   PetscErrorCode ierr;
   std::string model = config.get_string("bed_deformation_model");
   std::set<std::string> choices;
-
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_lc",  "-bed_def"); CHKERRQ(ierr);
 
   choices.insert("none");
   choices.insert("iso");

@@ -341,7 +341,7 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
   - uses the last record in the file
  */
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
-                                         PetscScalar default_value, Vec v) {
+                                         double default_value, Vec v) {
   PetscErrorCode ierr;
   unsigned int t_length = 0;
 
@@ -355,7 +355,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, boo
 
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                                          RegriddingFlag flag, bool do_report_range,
-                                         PetscScalar default_value, Vec v) {
+                                         double default_value, Vec v) {
   PetscErrorCode ierr;
 
   assert(m_grid != NULL);
@@ -439,7 +439,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 //! Report the range of a \b global Vec `v`.
 PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_name) {
   PetscErrorCode ierr;
-  PetscReal min, max;
+  double min, max;
 
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
@@ -485,7 +485,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 
 //! Check if the range of a \b global Vec `v` is in the range specified by valid_min and valid_max attributes.
 PetscErrorCode NCSpatialVariable::check_range(std::string filename, Vec v) {
-  PetscScalar min, max;
+  double min, max;
   PetscErrorCode ierr;
   bool failed = false;
 

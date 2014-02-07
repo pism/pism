@@ -3,7 +3,6 @@ include_directories (./util)
 # Boundary models (surface, atmosphere, ocean).
 add_library (pismboundary
   ./atmosphere/PAConstantPIK.cc
-  ./atmosphere/PAEismintGreenland.cc
   ./atmosphere/PASeariseGreenland.cc
   ./atmosphere/PAYearlyCycle.cc
   ./atmosphere/PACosineYearlyCycle.cc

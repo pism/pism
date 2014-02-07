@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ protected:
 
   Vec m_ab;
   
-  PetscInt m_na_local, m_na_global, m_nb_local, m_nb_global;
+  int m_na_local, m_na_global, m_nb_local, m_nb_global;
   
   IS m_a_in_ab;
   IS m_b_in_ab;

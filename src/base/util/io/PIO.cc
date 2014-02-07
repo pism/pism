@@ -565,15 +565,15 @@ PetscErrorCode PIO::inq_grid(std::string var_name, IceGrid *grid, Periodicity pe
   // The grid dimensions Lx/Ly are computed differently depending on the grid's
   // periodicity. For x-periodic grids, e.g., the length Lx is a little longer
   // than the difference between the maximum and minimum x-coordinates.
-  PetscReal x_max = input.x_max, x_min = input.x_min;
+  double x_max = input.x_max, x_min = input.x_min;
   if (periodicity & X_PERIODIC) {
-    PetscReal dx = (x_max-x_min)/(grid->Mx-1);
+    double dx = (x_max-x_min)/(grid->Mx-1);
     x_max += dx;
   }
 
-  PetscReal y_max = input.y_max, y_min = input.y_min;
+  double y_max = input.y_max, y_min = input.y_min;
   if (periodicity & Y_PERIODIC) {
-    PetscReal dy = (y_max-y_min)/(grid->My-1);
+    double dy = (y_max-y_min)/(grid->My-1);
     y_max += dy;
   }
 
@@ -920,7 +920,7 @@ PetscErrorCode PIO::get_att_text(std::string var_name, std::string att_name, std
 
 //! \brief Read a PETSc Vec using the grid "grid".
 /*!
- * Assumes that PetscScalar corresponds to C++ double.
+ * Assumes that double corresponds to C++ double.
  *
  * Vec g has to be "global" (i.e. without ghosts).
  */
@@ -938,7 +938,7 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, std::string var_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  PetscScalar *a_petsc;
+  double *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
 
   // We always use "mapped" I/O here, because we don't know where the input
@@ -971,7 +971,7 @@ PetscErrorCode PIO::inq_atttype(std::string var_name, std::string att_name, PISM
 
 //! \brief Write a PETSc Vec using the grid "grid".
 /*!
- * Assumes that PetscScalar corresponds to C++ double.
+ * Assumes that double corresponds to C++ double.
  *
  * Vec g has to be "global" (i.e. without ghosts).
  *
@@ -998,7 +998,7 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, std::string var_name, unsigned int z_
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  PetscScalar *a_petsc;
+  double *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
 
   if (grid->config.get_string("output_variable_order") == "xyz") {
@@ -1080,7 +1080,7 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, std::string var_name,
 
 int PIO::k_below(double z, const std::vector<double> &zlevels) const {
   double z_min = zlevels.front(), z_max = zlevels.back();
-  PetscInt mcurr = 0;
+  int mcurr = 0;
 
   if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
     PetscPrintf(m_com,
@@ -1123,7 +1123,7 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const std::vector<double> &zlevels_out
 
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
-  PetscScalar *output_array;
+  double *output_array;
   ierr = VecGetArray(g, &output_array); CHKERRQ(ierr);
 
   for (int i = grid->xs; i < grid->xs + grid->xm; i++) {

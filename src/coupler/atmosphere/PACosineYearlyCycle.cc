@@ -103,7 +103,7 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PACosineYearlyCycle::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PACosineYearlyCycle::update(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
   return 0;
@@ -112,7 +112,7 @@ PetscErrorCode PACosineYearlyCycle::update(PetscReal my_t, PetscReal my_dt) {
 PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  const PetscReal
+  const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
     T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
@@ -126,8 +126,8 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       result(i,j) = air_temp_mean_annual(i,j) + (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * scaling * cos_T;
     }
   }
@@ -139,7 +139,7 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PACosineYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PACosineYearlyCycle::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAYearlyCycle::init_timeseries(ts, N); CHKERRQ(ierr);

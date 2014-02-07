@@ -77,8 +77,8 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S *thickness;
   IceModelVec2V *result;
-  PetscScalar *u_ij, *v_ij;
-  PetscReal icefree_thickness = grid.config.get("mask_icefree_thickness_standard");
+  double *u_ij, *v_ij;
+  double icefree_thickness = grid.config.get("mask_icefree_thickness_standard");
 
   result = new IceModelVec2V;
   ierr = result->create(grid, "bar", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -95,11 +95,11 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscReal u_sum = 0, v_sum = 0,
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double u_sum = 0, v_sum = 0,
         thk = (*thickness)(i,j);
-      PetscInt ks = grid.kBelowHeight(thk);
+      int ks = grid.kBelowHeight(thk);
 
       // an "ice-free" cell:
       if (thk < icefree_thickness) {
@@ -218,8 +218,8 @@ PetscErrorCode PSB_cflx::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i)
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j)
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i)
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j)
       (*result)(i,j) *= (*thickness)(i,j);
 
   ierr = result->end_access(); CHKERRQ(ierr);
@@ -343,7 +343,7 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
   IceModelVec2V *result;
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S *thickness, tmp;
-  PetscScalar fill_value = grid.config.get("fill_value", "m/year", "m/s");
+  double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2V;
   ierr = result->create(grid, "surf", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -370,8 +370,8 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.ice_free(i, j)) {
         (*result)(i, j).u = fill_value;
         (*result)(i, j).v = fill_value;
@@ -403,7 +403,7 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   IceModelVec3 *result, *u3, *v3, *w3;
   IceModelVec2S *bed, *uplift, *thickness;
   IceModelVec2Int *mask;
-  PetscScalar *u, *v, *w, *res;
+  double *u, *v, *w, *res;
 
   result = new IceModelVec3;
   ierr = result->create(grid, "wvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -438,8 +438,8 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
     sea_water_density = grid.config.get("sea_water_density"),
     R = ice_density / sea_water_density;
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
       ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
       ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
@@ -500,7 +500,7 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   IceModelVec *tmp;
   IceModelVec3 *w3;
   IceModelVec2S *result, *thickness;
-  PetscScalar fill_value = grid.config.get("fill_value", "m/year", "m/s");
+  double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "wvelsurf", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -525,8 +525,8 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.ice_free(i, j))
         (*result)(i, j) = fill_value;
     }
@@ -558,7 +558,7 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   IceModelVec *tmp;
   IceModelVec3 *w3;
   IceModelVec2S *result;
-  PetscScalar fill_value = grid.config.get("fill_value", "m/year", "m/s");
+  double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "wvelbase", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -580,8 +580,8 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.ice_free(i, j))
         (*result)(i, j) = fill_value;
     }
@@ -624,7 +624,7 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
   IceModelVec2V *result;
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S tmp;            // will be de-allocated automatically
-  PetscScalar fill_value = grid.config.get("fill_value", "m/year", "m/s");
+  double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2V;
   ierr = result->create(grid, "base", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -648,8 +648,8 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.ice_free(i, j)) {
         (*result)(i, j).u = fill_value;
         (*result)(i, j).v = fill_value;
@@ -720,9 +720,9 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar *u_ij, *u_out_ij;
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  double *u_ij, *u_out_ij;
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       int ks = grid.kBelowHeight((*thickness)(i,j));
 
       ierr = u3->getInternalColumn(i,j,&u_ij); CHKERRQ(ierr);
@@ -775,9 +775,9 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar *v_ij, *v_out_ij;
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  double *v_ij, *v_out_ij;
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       int ks = grid.kBelowHeight((*thickness)(i,j));
 
       ierr = v3->getInternalColumn(i,j,&v_ij); CHKERRQ(ierr);
@@ -830,9 +830,9 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar *w_ij, *w_out_ij;
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  double *w_ij, *w_out_ij;
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       int ks = grid.kBelowHeight((*thickness)(i,j));
 
       ierr = w3->getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);

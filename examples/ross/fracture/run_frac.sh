@@ -1,16 +1,11 @@
 #!/bin/bash
 
-# -pik sets the calving front boundary condition
-#     (can be reduced to '-cfbc -kill_icebergs')
-# -ssa_method fem will not work as '-pik', including '-cfbc', are not implemented in fem
-
-NN=1  # default number of processors
+NN=2  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "run_frac.sh 8" then NN = 8
   NN="$1"
 fi
 
-M=211   # for 5km
-# M=526 for 2km,  M=421 for 2.5km,  M=351 for 3km
+M=211   # for 5km;  note M=526 for 2km,  M=421 for 2.5km,  M=351 for 3km
 if [ $# -gt 1 ] ; then  # if user says "run_frac.sh 8 211" then NN = 8 and M = 211
   M="$2"
 fi
@@ -25,11 +20,6 @@ if [ $# -gt 3 ] ; then  # if user says "run_frac.sh 8 211 0.6 500" then ... and 
   YEARS="$4"
 fi
 interval=25
-
-#ECALV=1e17   #  constant for eigencalving parameterization
-#if [ $# -gt 4 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16" then ... and -eigen_calving_K 7e16
-#  ECALV="$5"
-#fi
 
 THRESHOLD=7.0e4   #  stress threshold
 if [ $# -gt 5 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4" then ... and -fractures x,7e16,x,x
@@ -59,30 +49,23 @@ fi
 # options ###############################
 
 PISMPREFIX=""
-#PISMPREFIX="../../../bin/"
 
-NAME=Ross_result_frac_Mx${M}_yr-${YEARS}.nc
+NAME=frac_Mx${M}_yr-${YEARS}.nc
 
 output="-o $NAME -o_order zyx -o_size big"
 
 ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa_e ${SSAE} -part_grid -cfbc "
 #-pik:-part_grid -cfbc -kill_icebergs -part_redist
 
-#calving="-calving eigen_calving,thickness_calving -eigen_calving_K ${ECALV} -thickness_calving_threshold 50.0 "
 calving="-calving ocean_kill "
 
 extra="-extra_file ex-${NAME} -extra_times 0:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
 timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 
-# fractures ##############################################################################
-
 criterion=""
-#criterion="-lefm"
-#criterion="-max_shear"
 
 boundary="-do_frac_on_grounded"
-#boundary="-phi0"
 
 healing=""
 #healing="-constant_healing" #independent of strain rates
@@ -93,19 +76,17 @@ softening="-fracture_softening ${SOFTRES}" #residual eps=0.001
 
 fractures="-fractures ${FRACRATE},${THRESHOLD},${HEALRATE},${HEALTHRESHOLD} -write_fd_fields -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening}"
 
-#-constant_fd
 
 # run commands #############################################################################
 
-cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined_prog.nc -Mx $M -My $M \
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given ${ssa} -kill_icebergs \
-  -y 0 -ys 0.0 -o Ross_frac_startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
+  -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures 0,0,0,0 -write_fd_fields "
 
-cmd_frac_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i Ross_frac_startfile_Mx${M}.nc -surface given \
-  ${ssa} -y ${YEARS} ${output} ${calving} -ocean_kill_file Ross_frac_startfile_Mx${M}.nc \
-  ${fractures} ${extra} ${timeseries} -verbose 4 "
-
-
+# add "-verbose 4" to this command for additional internal info
+cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface given \
+  ${ssa} -y ${YEARS} ${output} ${calving} -ocean_kill_file startfile_Mx${M}.nc \
+  ${fractures} ${extra} ${timeseries}"
 
 # -ssa_rtol 1.0e-3 -ssa_eps 5.0e15
 # -cfl_eigencalving
@@ -117,8 +98,8 @@ echo "$cmd_diag"
 echo
 ${cmd_diag}
 echo
-echo "$cmd_frac_frac"
+echo "$cmd_frac"
 echo
-${cmd_frac_frac}
+${cmd_frac}
 echo
 echo "... done"

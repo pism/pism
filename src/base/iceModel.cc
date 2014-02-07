@@ -33,7 +33,6 @@
 #include "PISMYieldStress.hh"
 #include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "PISMDiagnostic.hh"
@@ -191,7 +190,7 @@ IceModel::~IceModel() {
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   ierr = verbPrintf(3, grid.com,
                     "Allocating memory...\n"); CHKERRQ(ierr);
@@ -493,10 +492,10 @@ PetscErrorCode IceModel::createVecs() {
   ierr = climatic_mass_balance.set_attrs(
                         "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                        "m s-1",  // m *ice-equivalent* per second
+                        "kg m-2 s-1",
                         "land_ice_surface_specific_mass_balance");  // CF standard_name
   CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
   climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
 
@@ -540,7 +539,7 @@ PetscErrorCode IceModel::createVecs() {
   // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
 
   // take care of 2D cumulative fluxes: we need to allocate special storage if
-  // the user asked for climatic_mass_balance_cumulative or
+  // the user asked for climatic_mass_balance_cumulative or some others (below).
 
   std::string vars;
   bool extra_vars_set;
@@ -558,8 +557,8 @@ PetscErrorCode IceModel::createVecs() {
                                                      "climatic_mass_balance_cumulative",
                                                      WITHOUT_GHOSTS); CHKERRQ(ierr);
       ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                                        "cumulative ice-equivalent surface mass balance",
-                                                        "m", ""); CHKERRQ(ierr);
+                                                        "cumulative surface mass balance",
+                                                        "kg m-2", ""); CHKERRQ(ierr);
     }
 
     std::string o_size = get_output_size("-o_size");
@@ -578,9 +577,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
                                                          "cumulative basal flux into the ice "
                                                          "in grounded areas (positive means ice gain)",
-                                                         "kg", ""); CHKERRQ(ierr);
+                                                         "kg m-2", ""); CHKERRQ(ierr);
       grounded_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
     }
 
@@ -589,9 +588,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
                                                          "cumulative basal flux into the ice "
                                                          "in floating areas (positive means ice gain)",
-                                                         "kg", ""); CHKERRQ(ierr);
+                                                         "kg m-2", ""); CHKERRQ(ierr);
       floating_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
     }
 
@@ -599,9 +598,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
       ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
                                                  "cumulative nonnegative rule flux (positive means ice gain)",
-                                                 "kg", ""); CHKERRQ(ierr);
+                                                 "kg m-2", ""); CHKERRQ(ierr);
       nonneg_flux_2D_cumulative.set_time_independent(false);
-      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
     }
 
@@ -609,9 +608,9 @@ PetscErrorCode IceModel::createVecs() {
       ierr = discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
       ierr = discharge_flux_2D_cumulative.set_attrs("diagnostic",
                                                     "cumulative discharge (calving) flux (positive means ice loss)",
-                                                    "kg", ""); CHKERRQ(ierr);
+                                                    "kg m-2", ""); CHKERRQ(ierr);
       discharge_flux_2D_cumulative.set_time_independent(false);
-      ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt"); CHKERRQ(ierr);
+      ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
       discharge_flux_2D_cumulative.write_in_glaciological_units = true;
     }
   }
@@ -633,8 +632,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
                               bool do_age,
                               bool do_skip) {
   PetscErrorCode ierr;
-
-  grid.profiler->begin(event_step);
 
   //! \li call additionalAtStartTimestep() to let derived classes do more
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
@@ -709,9 +706,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = update_floatation_mask(); CHKERRQ(ierr);
   }
 
-  grid.profiler->begin(event_velocity);
-
-  PetscReal sea_level = 0;
+  double sea_level = 0;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   IceModelVec2S &melange_back_pressure = vWork2d[0];
@@ -737,8 +732,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = PetscPrintf(grid.com, "ending...\n");
     PISMEnd();
   }
-
-  grid.profiler->end(event_velocity);
 
   std::string sb_stdout;
   ierr = stress_balance->stdout_report(sb_stdout); CHKERRQ(ierr);
@@ -769,8 +762,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   // other criteria from derived class additionalAtStartTimestep(), and from
   // "-skip" mechanism
 
-  grid.profiler->begin(event_age);
-
   //! \li update the age of the ice (if appropriate)
   if (do_age && updateAtDepth) {
     ierr = ageStep(); CHKERRQ(ierr);
@@ -778,10 +769,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
-
-  grid.profiler->end(event_age);
-
-  grid.profiler->begin(event_energy);
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
@@ -793,22 +780,14 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
-  grid.profiler->end(event_energy);
-
-  grid.profiler->begin(event_hydrology);
-
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   ierr = subglacial_hydrology->update(grid.time->current(), dt); CHKERRQ(ierr);
-
-  grid.profiler->end(event_hydrology);
 
   //! \li update the fracture density field; see calculateFractureDensity()
   if (config.get_flag("do_fracture_density")) {
     ierr = calculateFractureDensity(); CHKERRQ(ierr);
   }
-
-  grid.profiler->begin(event_mass);
 
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
@@ -839,12 +818,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   ierr = Href_cleanup(); CHKERRQ(ierr);
 
-  grid.profiler->end(event_mass);
-
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (beddef) {
-    grid.profiler->begin(event_beddef);
     int topg_state_counter = bed_topography.get_state_counter();
 
     ierr = beddef->update(grid.time->current(), dt); CHKERRQ(ierr);
@@ -854,7 +830,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
     } else
       stdout_flags += " ";
-    grid.profiler->end(event_beddef);
   }
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
@@ -876,8 +851,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
 #endif
 
-  grid.profiler->end(event_step);
-
   return 0;
 }
 
@@ -898,7 +871,7 @@ PetscErrorCode IceModel::init_run() {
       dt_TempAge); CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
-  PetscInt tmp_verbosity = getVerbosityLevel();
+  int tmp_verbosity = getVerbosityLevel();
   // if user says '-verbose 3' or higher, some feedback during prelim step
   ierr = setVerbosityLevel(tmp_verbosity > 2 ? 2 : 1); CHKERRQ(ierr);
 
@@ -907,7 +880,7 @@ PetscErrorCode IceModel::init_run() {
   skipCountDown = 0;
   t_TempAge = grid.time->start();
   dt = 0.0;
-  PetscReal run_end = grid.time->end();
+  double run_end = grid.time->end();
 
   // FIXME:  In the case of derived class diagnostic time series this fixed
   //         step-length can be problematic.  The fix may have to be in the derived class.
@@ -1043,7 +1016,7 @@ PetscErrorCode IceModel::continue_run() {
   } // end of the time-stepping loop
 
   bool flag;
-  PetscInt pause_time = 0;
+  int pause_time = 0;
   ierr = PISMOptionsInt("-pause", "Pause after the run, seconds",
                         pause_time, flag); CHKERRQ(ierr);
   if (pause_time > 0) {
@@ -1121,7 +1094,7 @@ PetscErrorCode IceModel::init() {
   // across all processors.
   {
     MPI_Datatype mpi_type;
-    PetscReal my_start_time;
+    double my_start_time;
     ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
 
     ierr = PISMGetTime(&my_start_time); CHKERRQ(ierr);

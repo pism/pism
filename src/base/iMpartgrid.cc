@@ -31,18 +31,18 @@
 
 //! @brief Compute threshold thickness used when deciding if a
 //! partially-filled cell should be considered 'full'.
-PetscReal IceModel::get_threshold_thickness(planeStar<int> M,
-                                            planeStar<PetscScalar> H,
-                                            planeStar<PetscScalar> h,
-                                            PetscScalar bed_elevation,
+double IceModel::get_threshold_thickness(planeStar<int> M,
+                                            planeStar<double> H,
+                                            planeStar<double> h,
+                                            double bed_elevation,
                                             bool reduce_frontal_thickness) {
   // get mean ice thickness and surface elevation over adjacent
   // icy cells
-  PetscReal
+  double
     H_average   = 0.0,
     h_average   = 0.0,
     H_threshold = 0.0;
-  PetscInt N = 0;
+  int N = 0;
   Mask m;
 
   if (m.icy(M.e)) {
@@ -87,7 +87,7 @@ PetscReal IceModel::get_threshold_thickness(planeStar<int> M,
       // FIXME: Magic numbers without references to the literature are bad.
       // for declining front C / Q0 according to analytical flowline profile in
       //   vandeveen with v0 = 300m / yr and H0 = 600m
-      const PetscReal
+      const double
         H0 = 600.0,                   // 600 m
         V0 = 300.0 / 3.15569259747e7, // 300 m/year (hard-wired for efficiency)
         mslope = 2.4511e-18 * grid.dx / (H0 * V0);
@@ -111,7 +111,7 @@ PetscReal IceModel::get_threshold_thickness(planeStar<int> M,
 */
 PetscErrorCode IceModel::residual_redistribution(IceModelVec2S &H_residual) {
   PetscErrorCode ierr;
-  const PetscInt max_loopcount = 3;
+  const int max_loopcount = 3;
 
   bool done = false;
   int i = 0;
@@ -146,14 +146,14 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
   ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
   ierr = vHref.begin_access();      CHKERRQ(ierr);
   ierr = H_residual.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       if (H_residual(i,j) <= 0.0)
         continue;
 
       planeStar<int> m = vMask.int_star(i,j);
-      PetscInt N = 0; // number of empty or partially filled neighbors
+      int N = 0; // number of empty or partially filled neighbors
       planeStar<bool> neighbors;
       neighbors.set(false);
 
@@ -207,7 +207,7 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
   // and the surface elevation:
   ierr = update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation); CHKERRQ(ierr);
 
-  PetscScalar remaining_residual_thickness = 0.0,
+  double remaining_residual_thickness = 0.0,
     remaining_residual_thickness_global    = 0.0;
 
   // Second step: we need to redistribute residual ice volume if
@@ -216,18 +216,18 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
   ierr = ice_surface_elevation.begin_access();         CHKERRQ(ierr);
   ierr = bed_topography.begin_access();       CHKERRQ(ierr);
   ierr = vMask.begin_access();      CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
       if (vHref(i,j) <= 0.0)
         continue;
 
-      PetscReal H_threshold = get_threshold_thickness(vMask.int_star(i, j),
+      double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
                                                       ice_thickness.star(i, j),
                                                       ice_surface_elevation.star(i, j),
                                                       bed_topography(i,j),
                                                       reduce_frontal_thickness);
 
-      PetscReal coverage_ratio = 1.0;
+      double coverage_ratio = 1.0;
       if (H_threshold > 0.0)
         coverage_ratio = vHref(i, j) / H_threshold;
       if (coverage_ratio >= 1.0) {

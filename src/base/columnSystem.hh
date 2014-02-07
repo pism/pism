@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -41,28 +41,28 @@ public:
   columnSystemCtx(unsigned int my_nmax, std::string my_prefix);
   virtual ~columnSystemCtx();
 
-  PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
+  PetscErrorCode setIndicesAndClearThisColumn(int i, int j, int ks);  
 
-  PetscScalar    norm1(unsigned int n) const;
-  PetscScalar    ddratio(unsigned int n) const;
+  double    norm1(unsigned int n) const;
+  double    ddratio(unsigned int n) const;
 
   PetscErrorCode viewVectorValues(PetscViewer viewer,
-                                  const PetscScalar *v, PetscInt m, const char* info) const;
+                                  const double *v, int m, const char* info) const;
   PetscErrorCode viewMatrix(PetscViewer viewer, const char* info) const;
   virtual PetscErrorCode viewSystem(PetscViewer viewer) const;
 
   PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex);
-  PetscErrorCode viewColumnInfoMFile(PetscScalar *x, unsigned int n);
-  PetscErrorCode viewColumnInfoMFile(char *filename, PetscScalar *x, unsigned int n);
+  PetscErrorCode viewColumnInfoMFile(double *x, unsigned int n);
+  PetscErrorCode viewColumnInfoMFile(char *filename, double *x, unsigned int n);
 
 protected:
   unsigned int nmax;
-  PetscScalar *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
+  double *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
 
-  PetscInt    i, j, ks;
+  int    i, j, ks;
 
   // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(unsigned int n, PetscScalar *x);
+  PetscErrorCode solveTridiagonalSystem(unsigned int n, double *x);
   
   std::string      prefix;
 private:

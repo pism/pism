@@ -254,14 +254,14 @@ ierr = temperature.init(filename); CHKERRQ(ierr);
 
 @section using_vars Using fields managed by IceModel in a surface model to implement a parameterization
 
-Please see PA_EISMINT_Greenland::init() and PA_EISMINT_Greenland::update() for an example.
+Please see PA_SeaRISE_Greenland::init() and PA_SeaRISE_Greenland::update() for an example.
 
 @section writing_components Managing I/O in a PISMComponent derived class
 
 A PISM component needs to implement the following I/O methods:
 
 - init(). It is not an I/O method per se, but most PISM components
-  read their input fields there; see PA_EISMINT_Greenland::init().
+  read their input fields there; see PA_SeaRISE_Greenland::init().
 - add_vars_to_output(), which adds variable names to the list of
   fields that need to be written. See
   PSTemperatureIndex::add_vars_to_output() for an example.

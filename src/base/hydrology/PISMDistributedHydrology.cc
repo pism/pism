@@ -197,8 +197,8 @@ PetscErrorCode PISMDistributedHydrology::check_P_bounds(bool enforce_upper) {
 
   ierr = P.begin_access(); CHKERRQ(ierr);
   ierr = Pover.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (P(i,j) < 0.0) {
         PetscPrintf(grid.com,
            "PISM ERROR: disallowed negative subglacial water pressure\n"
@@ -234,7 +234,7 @@ model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
 PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal CC = config.get("hydrology_cavitation_opening_coefficient") /
+  double CC = config.get("hydrology_cavitation_opening_coefficient") /
                     (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
             powglen = 1.0 / config.get("Glen_exponent"),
             Wr = config.get("hydrology_roughness_scale"),
@@ -244,8 +244,8 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
   ierr = Pover.begin_access(); CHKERRQ(ierr);
   ierr = cbase.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       sb     = pow(CC * cbase(i,j),powglen);
       if (W(i,j) == 0.0) {
         // see P(W) formula in steady state; note P(W) is continuous (in steady
@@ -288,17 +288,17 @@ PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbas
 
 //! Computes the adaptive time step for this (W,P) state space model.
 PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
-                  PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-                  PetscReal &dt_result,
-                  PetscReal &maxV_result, PetscReal &maxD_result,
-                  PetscReal &PtoCFLratio) {
+                  double t_current, double t_end, double maxKW,
+                  double &dt_result,
+                  double &maxV_result, double &maxD_result,
+                  double &PtoCFLratio) {
   PetscErrorCode ierr;
-  PetscReal dtCFL, dtDIFFW, dtDIFFP;
+  double dtCFL, dtDIFFW, dtDIFFP;
 
   ierr = adaptive_for_W_evolution(t_current,t_end, maxKW,
               dt_result,maxV_result,maxD_result,dtCFL,dtDIFFW); CHKERRQ(ierr);
 
-  const PetscReal phi0 = config.get("hydrology_regularizing_porosity");
+  const double phi0 = config.get("hydrology_regularizing_porosity");
   dtDIFFP = 2.0 * phi0 * dtDIFFW;
 
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
@@ -327,7 +327,7 @@ Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
  */
-PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt) {
+PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
   PetscErrorCode ierr;
 
   // if asked for the identical time interval versus last time, then
@@ -346,7 +346,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
   // from current ice geometry/velocity variables, initialize Po and cbase
   ierr = update_cbase(cbase); CHKERRQ(ierr);
 
-  const PetscReal
+  const double
             rg    = config.get("fresh_water_density") * config.get("standard_gravity"),
             nglen = config.get("Glen_exponent"),
             Aglen = config.get("ice_softness"),
@@ -355,14 +355,14 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
             Wr    = config.get("hydrology_roughness_scale"),
             phi0  = config.get("hydrology_regularizing_porosity");
 
-  PetscReal ht = m_t, hdt = 0, // hydrology model time and time step
+  double ht = m_t, hdt = 0, // hydrology model time and time step
             maxKW = 0, maxV = 0, maxD = 0;
-  PetscReal icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
+  double icefreelost = 0, oceanlost = 0, negativegain = 0, nullstriplost = 0,
             delta_icefree = 0, delta_ocean = 0, delta_neggain = 0, delta_nullstrip = 0;
 
-  PetscReal PtoCFLratio = 0,  // for reporting ratio of dtCFL to dtDIFFP
+  double PtoCFLratio = 0,  // for reporting ratio of dtCFL to dtDIFFP
             cumratio = 0.0;
-  PetscInt hydrocount = 0; // count hydrology time steps
+  int hydrocount = 0; // count hydrology time steps
 
   while (ht < m_t + m_dt) {
     hydrocount++;
@@ -406,10 +406,10 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     }
 
     // update Pnew from time step
-    const PetscReal  CC = (rg * hdt) / phi0,
+    const double  CC = (rg * hdt) / phi0,
                      wux  = 1.0 / (grid.dx * grid.dx),
                      wuy  = 1.0 / (grid.dy * grid.dy);
-    PetscReal  Open, Close, divflux, ZZ,
+    double  Open, Close, divflux, ZZ,
                divadflux, diffW;
     ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
@@ -427,8 +427,8 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
     ierr = mask->begin_access(); CHKERRQ(ierr);
     ierr = Pover.begin_access(); CHKERRQ(ierr);
     ierr = Pnew.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (M.ice_free_land(i,j))
           Pnew(i,j) = 0.0;
         else if (M.ocean(i,j))
@@ -448,7 +448,7 @@ PetscErrorCode PISMDistributedHydrology::update(PetscReal icet, PetscReal icedt)
           // compute the flux divergence the same way as in raw_update_W()
           divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
                       + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
-          const PetscReal  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
+          const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
                            Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
                            Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
                            Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);

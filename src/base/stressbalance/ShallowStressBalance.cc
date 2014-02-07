@@ -141,12 +141,12 @@ PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVe
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = mask.begin_access(); CHKERRQ(ierr);
   
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (m.ocean(i,j)) {
         result(i,j) = 0.0;
       } else {
-        const PetscScalar
+        const double
           C = basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
               basal_stress_x = - C * velocity(i,j).u,
               basal_stress_y = - C * velocity(i,j).v;
@@ -185,7 +185,7 @@ update_ghosts() to ensure that ghost values are up to date.
 PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar    dx = grid.dx, dy = grid.dy;
+  double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
   if (result.get_dof() != 2)
@@ -195,8 +195,8 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = mask.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       if (M.ice_free(mask.as_int(i,j))) {
         result(i,j,0) = 0.0;
@@ -248,7 +248,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
         v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
       }
 
-      const PetscScalar A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
+      const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
         B   = 0.5 * (u_x - v_y),
         Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
         q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
@@ -270,7 +270,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
 PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar    dx = grid.dx, dy = grid.dy;
+  double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
   if (result.get_dof() != 3)
@@ -283,8 +283,8 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = mask.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       if (M.ice_free(mask.as_int(i,j))) {
         result(i,j,0) = 0.0;
@@ -396,16 +396,16 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
-  PetscReal standard_gravity = grid.config.get("standard_gravity"),
+  double standard_gravity = grid.config.get("standard_gravity"),
     ice_density = grid.config.get("ice_density");
 
   ierr =    result->begin_access(); CHKERRQ(ierr);
   ierr =   surface->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar pressure = ice_density * standard_gravity * (*thickness)(i,j);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double pressure = ice_density * standard_gravity * (*thickness)(i,j);
       if (pressure <= 0.0) {
         (*result)(i,j).u = 0.0;
         (*result)(i,j).v = 0.0;

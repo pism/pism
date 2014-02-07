@@ -44,7 +44,7 @@ IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
 
 PetscErrorCode IP_SSATaucForwardProblem::construct() {
   PetscErrorCode ierr;
-  PetscInt stencil_width = 1;
+  int stencil_width = 1;
 
   ierr = m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencil_width); CHKERRQ(ierr);
 
@@ -54,7 +54,7 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   ierr = DMCreateMatrix(SSADA, "baij", &m_J_state); CHKERRQ(ierr);
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
-  PetscReal ksp_rtol = 1e-12;
+  double ksp_rtol = 1e-12;
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT); CHKERRQ(ierr);
   PC pc;
   ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
@@ -84,7 +84,7 @@ kept.
 PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
-  PetscInt i,j,q;
+  int i,j,q;
 
   IceModelVec2S *m_tauc = tauc;
 
@@ -94,15 +94,15 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
   m_tauc_param.convertToDesignVariable(*m_zeta,*m_tauc);
 
   // Cache tauc at the quadrature points in feStore.
-  PetscReal **tauc_a;
-  PetscReal tauc_q[FEQuadrature::Nq];
+  double **tauc_a;
+  double tauc_q[FEQuadrature::Nq];
   ierr = m_tauc->get_array(tauc_a); CHKERRQ(ierr);
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
       quadrature.computeTrialFunctionValues(i,j,dofmap,tauc_a,tauc_q);
-      const PetscInt ij = m_element_index.flatten(i,j);
+      const int ij = m_element_index.flatten(i,j);
       FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq];
       for (q=0; q<4; q++) {
         feS[q].tauc = tauc_q[q];
@@ -233,13 +233,13 @@ to this method.
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, PISMVector2 **du_a) {
   PetscErrorCode ierr;
 
-  PetscReal **zeta_a;
+  double **zeta_a;
   ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
 
   PISMVector2 **u_a;
   ierr = u.get_array(u_a); CHKERRQ(ierr);
 
-  PetscReal **dzeta_a;
+  double **dzeta_a;
   IceModelVec2S *dzeta_local;
   if(dzeta.has_ghosts()) {
     dzeta_local = &dzeta;
@@ -249,7 +249,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   }
   ierr = dzeta_local->get_array(dzeta_a); CHKERRQ(ierr);
 
-  PetscInt         i,j;
+  int         i,j;
 
   // Zero out the portion of the function we are responsible for computing.
   for (i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -261,19 +261,19 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  PetscReal        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = dirichletScale;
 
   PISMVector2 u_e[FEQuadrature::Nk];
   PISMVector2 u_q[FEQuadrature::Nq];
 
   PISMVector2 du_e[FEQuadrature::Nk];
 
-  PetscReal dzeta_e[FEQuadrature::Nk];
+  double dzeta_e[FEQuadrature::Nk];
 
-  PetscReal zeta_e[FEQuadrature::Nk];
+  double zeta_e[FEQuadrature::Nk];
 
-  PetscReal dtauc_e[FEQuadrature::Nk];
-  PetscReal dtauc_q[FEQuadrature::Nq];
+  double dtauc_e[FEQuadrature::Nk];
+  double dtauc_q[FEQuadrature::Nq];
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -284,26 +284,26 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   ierr = fixedZeta.init(m_fixed_tauc_locations);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   // Mask (query?) for determining where ice is grounded.
   Mask M;
 
   // Loop through all elements.
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
 
       // Zero out the element-local residual in prep for updating it.
-      for (PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for (int k=0;k<FEQuadrature::Nk;k++){
         du_e[k].u = 0;
         du_e[k].v = 0;
       }
 
       // Index into coefficient storage in feStore
-      const PetscInt ij = element_index.flatten(i,j);
+      const int ij = element_index.flatten(i,j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i,j,m_grid);
@@ -323,24 +323,24 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
       // Compute the change in tau_c with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i,j,zeta_a,zeta_e);
-      for (PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for (int k=0;k<FEQuadrature::Nk;k++){
         m_tauc_param.toDesignVariable(zeta_e[k],NULL,dtauc_e + k);
         dtauc_e[k]*=dzeta_e[k];
       }
       m_quadrature.computeTrialFunctionValues(dtauc_e,dtauc_q);
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
         PISMVector2 u_qq = u_q[q];
 
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
 
         // Determine "dbeta/dzeta" at the quadrature point
-        PetscReal dbeta = 0;
+        double dbeta = 0;
         if( M.grounded_ice(feS->mask) ) {
           dbeta = basal_sliding_law->drag(dtauc_q[q],u_qq.u,u_qq.v);
         }
 
-        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+        for (int k=0; k<FEQuadrature::Nk; k++) {
           du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
           du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
         }
@@ -367,7 +367,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 */
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta) {
   PetscErrorCode ierr;
-  PetscReal **dzeta_a;
+  double **dzeta_a;
   ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design_transpose(u,du,dzeta_a);CHKERRQ(ierr);
   ierr = dzeta.end_access(); CHKERRQ(ierr);
@@ -379,7 +379,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 \overload */
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta) {
   PetscErrorCode ierr;
-  PetscReal **dzeta_a;
+  double **dzeta_a;
   DM da2;
   ierr = m_grid.get_dm(1, m_grid.max_stencil_width, da2); CHKERRQ(ierr);
 
@@ -401,11 +401,11 @@ to this method.
 
   Typically this method is called via one of its overloads.
 */
-PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta_a) {
-  PetscInt         i,j;
+PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,double **dzeta_a) {
+  int         i,j;
   PetscErrorCode ierr;
 
-  PetscReal **zeta_a;
+  double **zeta_a;
   ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
 
   PISMVector2 **u_a;
@@ -427,7 +427,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   PISMVector2 du_e[FEQuadrature::Nk];
   PISMVector2 du_q[FEQuadrature::Nq];
 
-  PetscReal dzeta_e[FEQuadrature::Nk];
+  double dzeta_e[FEQuadrature::Nk];
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -436,11 +436,11 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   // Aliases to help with notation consistency.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  PetscReal        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = dirichletScale;
   ierr = dirichletBC.init(m_dirichletLocations,m_dirichletValues,m_dirichletWeight); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   // Mask query for determining where ice is grounded.
@@ -453,12 +453,12 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
     }
   }
 
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Index into coefficient storage in feStore
-      const PetscInt ij = element_index.flatten(i,j);
+      const int ij = element_index.flatten(i,j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i,j,m_grid);
@@ -474,23 +474,23 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
       m_quadrature.computeTrialFunctionValues(u_e,u_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for (PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for (int k=0;k<FEQuadrature::Nk;k++){
         dzeta_e[k] = 0;
       }
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
         PISMVector2 du_qq = du_q[q];
         PISMVector2 u_qq = u_q[q];
 
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
 
         // Determine "dbeta/dtauc" at the quadrature point
-        PetscReal dbeta_dtauc = 0;
+        double dbeta_dtauc = 0;
         if(M.grounded_ice(feS->mask)) {
           dbeta_dtauc = basal_sliding_law->drag(1.,u_qq.u,u_qq.v);
         }
 
-        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+        for (int k=0; k<FEQuadrature::Nk; k++) {
           dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
         }
       } // q
@@ -502,7 +502,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 
   for (i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
     for (j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
-      PetscReal dtauc_dzeta;
+      double dtauc_dzeta;
       m_tauc_param.toDesignVariable(zeta_a[i][j],NULL,&dtauc_dzeta);
       dzeta_a[i][j] *= dtauc_dzeta;
     }
@@ -595,7 +595,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  PetscReal        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = dirichletScale;
   
   ierr = m_du_global.copy_from(du); CHKERRQ(ierr);
   PISMVector2 **du_a;

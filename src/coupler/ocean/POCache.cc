@@ -41,8 +41,8 @@ PetscErrorCode POCache::allocate_POCache() {
   ierr = m_shelf_base_mass_flux.set_attrs("climate_state",
                                           "ice mass flux from ice shelf base"
                                           " (positive flux is loss from ice shelf)",
-                                          "m s-1", ""); CHKERRQ(ierr);
-  ierr = m_shelf_base_mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                          "kg m-2 s-1", ""); CHKERRQ(ierr);
+  ierr = m_shelf_base_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
   ierr = m_shelf_base_temperature.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -88,7 +88,7 @@ PetscErrorCode POCache::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POCache::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode POCache::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
   if (my_t + my_dt > m_next_update_time) {
     ierr = input_model->update(my_t + 0.5*my_dt,
@@ -106,7 +106,7 @@ PetscErrorCode POCache::update(PetscReal my_t, PetscReal my_dt) {
 }
 
 
-PetscErrorCode POCache::sea_level_elevation(PetscReal &result) {
+PetscErrorCode POCache::sea_level_elevation(double &result) {
   result = m_sea_level;
   return 0;
 }
@@ -124,7 +124,8 @@ PetscErrorCode POCache::shelf_base_mass_flux(IceModelVec2S &result) {
 }
 
 
-PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc,
+                                         PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {

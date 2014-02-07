@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2013 Ricarda Winkelmann, Torsten Albrecht,
+# Copyright (C) 2012, 2013, 2014 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
@@ -30,12 +30,12 @@ else:
 
 # Bed topography
 bed = np.zeros_like(thk)                 # bedrock surface elevation
-bed[radius <= p.r_gl] = -p.H0 * (910.0 / 1028.0) + 1.0
+bed[radius <= p.r_gl] = -p.H0 * (p.rho_ice / p.rho_ocean) + 1.0
 bed[radius >  p.r_gl] = p.topg_min
 
 # Surface mass balance
 accum = np.zeros_like(thk)                 # accumulation/ ablation
-accum[radius > p.r_gl] = p.accumulation_rate
+accum[radius > p.r_gl] = p.accumulation_rate * p.rho_ice # convert to [kg m-2 s-1]
 
 # Surface temperature (irrelevant)
 Ts = np.zeros_like(thk) + p.air_temperature

@@ -283,7 +283,7 @@ protected:
         tau3;		//!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
-  PetscReal   dt,     //!< mass continuity time step, s
+  double   dt,     //!< mass continuity time step, s
               t_TempAge,  //!< time of last update for enthalpy/temperature
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
@@ -301,7 +301,7 @@ protected:
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  PetscInt skipCountDown;
+  int skipCountDown;
 
   // flags
   char adaptReasonFlag;
@@ -319,7 +319,7 @@ protected:
   virtual PetscErrorCode computeMax2DSlidingSpeed();
   virtual PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
-  virtual PetscErrorCode countCFLViolations(PetscScalar* CFLviol);
+  virtual PetscErrorCode countCFLViolations(double* CFLviol);
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
@@ -328,8 +328,8 @@ protected:
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
   virtual bool checkThinNeigh(
-       PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
-       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
+       double E, double NE, double N, double NW, 
+       double W, double SW, double S, double SE);
 
   // see iMenthalpy.cc
   virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
@@ -339,8 +339,8 @@ protected:
 
   virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &result);
 
-  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
-                                                 PetscScalar* liquifiedVol, PetscScalar* bulgeCount);
+  virtual PetscErrorCode enthalpyAndDrainageStep(double* vertSacrCount,
+                                                 double* liquifiedVol, double* bulgeCount);
 
   // see iMgeometry.cc
   virtual PetscErrorCode updateSurfaceElevationAndMask();
@@ -353,12 +353,12 @@ protected:
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> input_velocity,
-                                     planeStar<PetscScalar> input_flux,
-                                     planeStar<PetscScalar> &output_velocity,
-                                     planeStar<PetscScalar> &output_flux);
+                                     planeStar<double> input_flux,
+                                     planeStar<double> &output_velocity,
+                                     planeStar<double> &output_flux);
   virtual void adjust_flow(planeStar<int> mask,
-                           planeStar<PetscScalar> &SSA_velocity,
-                           planeStar<PetscScalar> &SIA_flux);
+                           planeStar<double> &SSA_velocity,
+                           planeStar<double> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode update_floatation_mask();
   virtual PetscErrorCode do_calving();
@@ -379,45 +379,45 @@ protected:
   virtual PetscErrorCode calculateFractureDensity();
 
   // see iMpartgrid.cc
-  PetscReal get_threshold_thickness(planeStar<int> Mask,
-                                    planeStar<PetscScalar> thickness,
-                                    planeStar<PetscScalar> surface_elevation,
-                                    PetscScalar bed_elevation,
+  double get_threshold_thickness(planeStar<int> Mask,
+                                    planeStar<double> thickness,
+                                    planeStar<double> surface_elevation,
+                                    double bed_elevation,
                                     bool reduce_frontal_thickness);
   virtual PetscErrorCode residual_redistribution(IceModelVec2S &residual);
   virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(
-                       PetscScalar& gvolume,PetscScalar& garea);
+                       double& gvolume,double& garea);
   virtual PetscErrorCode energyStats(
-                       PetscScalar iarea,PetscScalar &gmeltfrac);
-  virtual PetscErrorCode ageStats(PetscScalar ivol, PetscScalar &gorigfrac);
+                       double iarea,double &gmeltfrac);
+  virtual PetscErrorCode ageStats(double ivol, double &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
-                                          PetscScalar delta_t,
-                                          PetscScalar volume, PetscScalar area,
-                                          PetscScalar meltfrac, PetscScalar max_diffusivity);
+                                          double delta_t,
+                                          double volume, double area,
+                                          double meltfrac, double max_diffusivity);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
-  virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
-  virtual PetscErrorCode compute_sealevel_volume(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_volume_temperate(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_volume_cold(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_temperate(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_cold(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_volume(double &result);
+  virtual PetscErrorCode compute_sealevel_volume(double &result);
+  virtual PetscErrorCode compute_ice_volume_temperate(double &result);
+  virtual PetscErrorCode compute_ice_volume_cold(double &result);
+  virtual PetscErrorCode compute_ice_area(double &result);
+  virtual PetscErrorCode compute_ice_area_temperate(double &result);
+  virtual PetscErrorCode compute_ice_area_cold(double &result);
+  virtual PetscErrorCode compute_ice_area_grounded(double &result);
+  virtual PetscErrorCode compute_ice_area_floating(double &result);
+  virtual PetscErrorCode compute_ice_enthalpy(double &result);
 
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
-                      const PetscScalar rho, const PetscScalar c, const PetscScalar L,
-                      const PetscScalar z, const PetscScalar dz,
-                      PetscScalar *Texcess, PetscScalar *bwat);
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+                      const double rho, const double c, const double L,
+                      const double z, const double dz,
+                      double *Texcess, double *bwat);
+  virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
 
   // see iMutil.cc
   virtual int            endOfTimeStepHook();
@@ -430,7 +430,7 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const PetscInt nWork2d=3;
+  static const int nWork2d=3;
   IceModelVec2S vWork2d[nWork2d];
   IceModelVec2V vWork2dV;
 
@@ -481,7 +481,7 @@ protected:
   // automatic backups
   double backup_interval;
   std::string backup_filename;
-  PetscReal last_backup_time;
+  double last_backup_time;
   std::set<std::string> backup_vars;
   PetscErrorCode init_backups();
   PetscErrorCode write_backup();
@@ -490,7 +490,7 @@ protected:
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
   std::set<std::string> map_viewers, slice_viewers;
-  PetscInt     id, jd;	     // sounding indexes
+  int     id, jd;	     // sounding indexes
   std::map<std::string,PetscViewer> viewers;
 
 private:

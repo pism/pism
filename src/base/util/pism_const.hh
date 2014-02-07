@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,12 +35,12 @@ enum PismMask {
   MASK_ICE_FREE_OCEAN   = 4
 };
 
-const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
+const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 bool is_increasing(const std::vector<double> &a);
 
-PetscErrorCode setVerbosityLevel(PetscInt level);
-PetscInt       getVerbosityLevel();
+PetscErrorCode setVerbosityLevel(int level);
+int       getVerbosityLevel();
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 
 void endPrintRank();
@@ -64,17 +64,17 @@ inline bool set_contains(std::set<std::string> S, std::string name) {
   return (S.find(name) != S.end());
 }
 
-inline PetscErrorCode PISMGlobalMin(PetscReal *local, PetscReal *result, MPI_Comm comm)
+inline PetscErrorCode PISMGlobalMin(double *local, double *result, MPI_Comm comm)
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MIN,comm);
 }
 
-inline PetscErrorCode PISMGlobalMax(PetscReal *local, PetscReal *result, MPI_Comm comm)
+inline PetscErrorCode PISMGlobalMax(double *local, double *result, MPI_Comm comm)
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MAX,comm);
 }
 
-inline PetscErrorCode PISMGlobalSum(PetscReal *local, PetscReal *result, MPI_Comm comm)
+inline PetscErrorCode PISMGlobalSum(double *local, double *result, MPI_Comm comm)
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_SUM,comm);
 }
