@@ -305,6 +305,8 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
                     "    updating surface mass balance using -force_to_thk mechanism ...");
   CHKERRQ(ierr);
 
+  double ice_density = config.get("ice_density");
+
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = target_thickness.begin_access(); CHKERRQ(ierr);
   ierr = ftt_mask.begin_access(); CHKERRQ(ierr);
@@ -312,7 +314,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (ftt_mask(i,j) > 0.5) {
-        result(i,j) += alpha * (target_thickness(i,j) - (*ice_thickness)(i,j));
+        result(i,j) += ice_density * alpha * (target_thickness(i,j) - (*ice_thickness)(i,j));
       }
     }
   }
