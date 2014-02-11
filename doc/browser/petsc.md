@@ -3,7 +3,7 @@ PETSc: An overview for PISM users {#petscID}
 
 ## Preamble
 
-In v0.5, because of abstractions especially in IceModelVec and its derived
+In v0.6, because of abstractions especially in IceModelVec and its derived
 classes, programmers building derived classes of IceModel now need minimal
 knowledge of PETSc and especially PETSc DMs.  What *is* important to know is
 that solving the SSA in parallel is relatively deep technology.  Very
