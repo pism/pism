@@ -69,19 +69,6 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
     ierr = PISMOptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
 			    fausto_params); CHKERRQ(ierr);
-
-    ierr = PISMOptionsReal("-pdd_factor_snow", "PDD snow factor",
-                           base_ddf.snow, flag); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-pdd_factor_ice", "PDD ice factor",
-                           base_ddf.ice, flag); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-pdd_refreeze", "PDD refreeze fraction",
-                           base_ddf.refreezeFrac, flag); CHKERRQ(ierr);
-
-    ierr = PISMOptionsReal("-pdd_std_dev", "PDD standard deviation",
-                           base_pddStdDev, flag); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-pdd_positive_threshold_temp",
-                           "PDD uses this temp in K to determine 'positive' temperatures",
-                           base_pddThresholdTemp, flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

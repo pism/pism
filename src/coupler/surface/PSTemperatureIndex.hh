@@ -37,11 +37,6 @@ pointer to an instance of the LocalMassBalance class.  This class has method
 LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
 precipitation during the ice sheet model time step, plus a variable temperature
 over that time step, to compute melt, refreeze, and surface balance.
-
-This base class reads options `-pdd_factor_snow`, `-pdd_factor_ice`,
-and `-pdd_refreeze` and sets these factors accordingly, in the case where
-the factors are independent of location.  If option `-pdd_fausto` is used
-then an object is called which updates these values based on the location.
 */
 class PSTemperatureIndex : public PISMSurfaceModel {
 public:
