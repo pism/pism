@@ -211,19 +211,18 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     bulgeEnthMax = config.get("enthalpy_cold_bulge_max"), // J kg-1
     ice_density = config.get("ice_density");
 
-  bool viewOneColumn;
+  bool viewOneColumn = false;
   ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   DrainageCalculator dc(config);
 
-  IceModelVec2S *Rb;
-  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
+  IceModelVec2S *Rb = NULL;
+  IceModelVec3 *u3 = NULL, *v3 = NULL, *w3 = NULL, *strain_heating3 = NULL;
   ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
   ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
-  double *Enthnew;
-  Enthnew = new double[grid.Mz_fine];  // new enthalpy in column
+  std::vector<double> Enthnew(grid.Mz_fine); // new enthalpy in column
 
   enthSystemCtx esys(config, Enth3, grid.dx, grid.dy, dt_TempAge,
                      grid.dz_fine, grid.Mz_fine, "enth", EC);
@@ -251,7 +250,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   IceModelVec2S &till_water_thickness = vWork2d[1];
   ierr = till_water_thickness.set_attrs("internal", "current amount of basal water in the till",
-                                         "m", ""); CHKERRQ(ierr);
+                                        "m", ""); CHKERRQ(ierr);
   assert(subglacial_hydrology != NULL);
   ierr = subglacial_hydrology->till_water_thickness(till_water_thickness); CHKERRQ(ierr);
 
@@ -277,7 +276,12 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
-  int liquifiedCount = 0;
+  const bool sub_gl = config.get_flag("sub_groundingline");
+  if (sub_gl == true) {
+    ierr = gl_mask.begin_access(); CHKERRQ(ierr);
+  }
+
+  unsigned int liquifiedCount = 0;
 
   MaskQuery mask(vMask);
 
@@ -346,10 +350,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         }
 
         // solve the system
-        ierr = esys.solveThisColumn(Enthnew); CHKERRQ(ierr);
+        ierr = esys.solveThisColumn(&Enthnew[0]); CHKERRQ(ierr);
 
         if (viewOneColumn && (i == id && j == jd)) {
-          ierr = esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine); CHKERRQ(ierr);
+          ierr = esys.viewColumnInfoMFile(&Enthnew[0], grid.Mz_fine); CHKERRQ(ierr);
         }
       }
 
@@ -440,12 +444,25 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         if (is_floating == false) {
           basal_melt_rate(i, j) += Hdrainedtotal / dt_TempAge;
         }
+
+        // Use the fractional floatation mask to adjust the basal melt
+        // rate near the grounding line:
+        if (sub_gl == true) {
+          double lambda  = gl_mask(i,j),
+            M_grounded   = basal_melt_rate(i,j),
+            M_shelf_base = shelfbmassflux(i,j);
+          basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
+        }
       } // end of the basal melt rate computation
 
-      ierr = vWork3d.setValColumnPL(i, j, Enthnew); CHKERRQ(ierr);
+      ierr = vWork3d.setValColumnPL(i, j, &Enthnew[0]); CHKERRQ(ierr);
 
     } // j-loop
   } // i-loop
+
+  if (sub_gl == true){
+    ierr = gl_mask.end_access(); CHKERRQ(ierr);
+  }
 
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
@@ -466,8 +483,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
-  delete [] Enthnew;
-
+  // FIXME: use cell areas
   *liquifiedVol = ((double) liquifiedCount) * grid.dz_fine * grid.dx * grid.dy;
   return 0;
 }

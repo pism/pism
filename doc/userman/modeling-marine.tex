@@ -57,10 +57,15 @@ Assuming that the geometry of the ice is allowed to evolve (which can be turned 
 
 \subsubsection{Sub-grid treatment of the grounding line position}
 \label{sec:subgrid-grounding-line}
+\optsection{Marine ice sheets!Grounding line}
 
 The command-line option \intextoption{subgl} turns on a parameterization of the grounding line position based on the ``LI'' parameterization described in \cite{Gladstoneetal2012}. With this option PISM computes an extra floatation mask, available as the \texttt{gl_mask} output variable, which corresponds to the fraction of the cell that is grounded. Cells that are ice-free or fully floating are assigned the value of $0$, fully-grounded icy cells --- the value of $1$, and partially grounded cells (ones containing the grounding line) --- a value between $0$ and $1$.
 
-This field is then used to scale the basal friction in cells containing the grounding line in order to avoid an abrupt change in the basal friction from the ``last'' grounded cell to the ``first'' floating cell. Please see the source code browser for the detailed description and section \ref{subsect:MISMIP3d} for an application.
+This field has two uses in PISM:
+\begin{itemize}
+\item It is used to scale the basal friction in cells containing the grounding line in order to avoid an abrupt change in the basal friction from the ``last'' grounded cell to the ``first'' floating cell. Please see the source code browser for the detailed description and section \ref{subsect:MISMIP3d} for an application.
+\item It is used to adjust the basal melt rate in cells containing the grounding line: in such cells the basal melt rate is set to $M_{b,\text{ adjusted}} = \lambda M_{b,\text{ grounded}} + (1 - \lambda)M_{b,\text{ shelf base}}.$, where $\lambda$ is the value of the floatation mask.
+\end{itemize}
 
 \subsection{Partially-filled cells at the boundaries of ice shelves}
 \label{sec:part-grid}

@@ -233,8 +233,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
     const bool sub_gl = config.get_flag("sub_groundingline");
-
-    if (sub_gl){
+    if (sub_gl == true) {
       ierr = gl_mask.begin_access(); CHKERRQ(ierr);
     }
 
@@ -382,7 +381,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
         }
 
-	if (sub_gl) {
+	if (sub_gl == true) {
 	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
 	}
 
@@ -393,7 +392,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     SETERRQ(grid.com, 1,"too many low temps");
   }
 
-  if (sub_gl){
+  if (sub_gl == true) {
     ierr = gl_mask.end_access(); CHKERRQ(ierr);
   }
 

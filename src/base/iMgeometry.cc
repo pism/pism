@@ -865,13 +865,20 @@ PetscErrorCode IceModel::massContExplicitStep() {
    Currently it is used to adjust the basal drag near the grounding
    line in the SSAFD stress balance model and the basal melt rate
    computation in the temperature-based energy balance code
-   (IceModel::temperatureStep()).
+   (IceModel::temperatureStep() and IceModel::enthalpyAndDrainageStep()).
 
    We use the 1D (flow line) parameterization of the sub-grid
    grounding line position due to [@ref Gladstoneetal2012], (section
    3.1.1) and generalize it to the case of arbitrary sea level
    elevation. Then this sub-grid grounding line position is used to
    compute the grounded area fraction for each cell.
+
+   We use the "LI" 1D grounding line position parameterization in "x"
+   and "y" directions *independently*. The grounding line positions in
+   the "x" and "y" directions (@f$ \lambda_x @f$ and @f$ \lambda_y
+   @f$) are then interpreted as *width* and *height* of a rectangular
+   sub-set of the cell. The grounded area is computed as the product
+   of these two: @f$ A_g = \lambda_x \times \lambda_y. @f$
 
    Consider a cell at `(i,j)` and assume that the ice is grounded
    there and floating at `(i+1,j)`.
