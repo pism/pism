@@ -144,7 +144,6 @@ public:
            EnthalpyConverter *EC);
   virtual ~GPBLDIce() {}
 
-  virtual PetscErrorCode setFromOptions();
   virtual double softness_parameter(double enthalpy,
                                        double pressure) const;
   virtual std::string name() const

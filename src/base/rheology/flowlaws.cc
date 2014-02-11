@@ -197,28 +197,6 @@ GPBLDIce::GPBLDIce(MPI_Comm c, const char pre[],
                    = config.get("gpbld_water_frac_observed_limit");
 }
 
-PetscErrorCode GPBLDIce::setFromOptions() {
-  PetscErrorCode ierr;
-  bool flag;
-
-  ierr = IceFlowLaw::setFromOptions(); CHKERRQ(ierr);
-
-  ierr = PetscOptionsBegin(com, prefix, "GPBLDIce options", NULL); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsReal("-ice_gpbld_water_frac_coeff",
-                           "coefficient of softness factor in temperate ice, "
-                           " as function of liquid water fraction; no units",
-                           water_frac_coeff, flag); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-ice_gpbld_water_frac_observed_limit",
-                           "maximum value of liquid water fraction 'omega' for"
-                           " which softness values are parameterized by Lliboutry and"
-                           " Duval (1985); no units",
-                           water_frac_observed_limit, flag); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-  return 0;
-}
-
 //! The softness factor in the Glen-Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
 /*!
 This is a modification of Glen-Paterson-Budd ice, which is ThermoGlenIce.  In particular, if
