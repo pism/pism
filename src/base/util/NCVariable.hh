@@ -106,7 +106,7 @@ protected:
   unsigned int m_n_spatial_dims;
 
 private:
-  PISMUnit m_units,		      //!< internal (PISM) units
+  PISMUnit m_units,                   //!< internal (PISM) units
     m_glaciological_units; //!< \brief for diagnostic variables: units
   //!< to use when writing to a NetCDF file and for standard out reports
   std::map<std::string, std::string> m_strings;  //!< string and boolean attributes

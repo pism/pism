@@ -59,13 +59,13 @@ PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
   {
     ierr = PISMOptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
     ierr = PISMOptionsString("-dump_config", "File to write the config to",
-			     config_out, dump_config); CHKERRQ(ierr);
+                             config_out, dump_config); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (!ends_with(filename, ".nc")) {
     ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+                      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
     CHKERRQ(ierr);
   }
 
@@ -148,7 +148,7 @@ PetscErrorCode IceModel::dumpToFile(std::string filename) {
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> vars,
-					 PISM_IO_Type nctype) {
+                                         PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
 
@@ -236,7 +236,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
     } else {
       ierr = v->write(nc); CHKERRQ(ierr); // use the default data type
 
-      vars.erase(i++);		// note that it only erases variables that were
+      vars.erase(i++);          // note that it only erases variables that were
                                 // found (and saved)
     }
   }
@@ -730,7 +730,7 @@ PetscErrorCode IceModel::write_snapshot() {
   ierr = flush_timeseries(); CHKERRQ(ierr);
 
   if (split_snapshots) {
-    snapshots_file_is_ready = false;	// each snapshot is written to a separate file
+    snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
              snapshots_filename.c_str(), grid.time->date().c_str());
   } else {

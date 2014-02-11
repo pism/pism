@@ -39,4 +39,4 @@ protected:
 };
 
 
-#endif	// __PASeariseGreenland_hh
+#endif  // __PASeariseGreenland_hh

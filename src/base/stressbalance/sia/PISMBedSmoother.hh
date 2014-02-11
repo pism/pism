@@ -115,5 +115,5 @@ protected:
   PetscErrorCode compute_coefficients_on_proc0();
 };
 
-#endif	// __PISMBedSmoother_hh
+#endif  // __PISMBedSmoother_hh
 

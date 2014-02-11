@@ -36,7 +36,7 @@ PO_delta_SMB::~PO_delta_SMB() {
 
 PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
   option_prefix = "-ocean_delta_mass_flux";
-  offset_name	= "delta_mass_flux";
+  offset_name   = "delta_mass_flux";
 
   offset->set_units("m s-1", "");
   offset->set_dimension_units(grid.time->units_string(), "");

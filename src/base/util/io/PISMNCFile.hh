@@ -25,13 +25,13 @@
 
 // This is a subset of NetCDF data-types.
 enum PISM_IO_Type {
-  PISM_NAT =	0,	/* NAT = 'Not A Type' (c.f. NaN) */
-  PISM_BYTE =	1,	/* signed 1 byte integer */
-  PISM_CHAR =	2,	/* ISO/ASCII character */
-  PISM_SHORT =	3,	/* signed 2 byte integer */
-  PISM_INT =	4,	/* signed 4 byte integer */
-  PISM_FLOAT =	5,	/* single precision floating point number */
-  PISM_DOUBLE =	6	/* double precision floating point number */
+  PISM_NAT =    0,      /* NAT = 'Not A Type' (c.f. NaN) */
+  PISM_BYTE =   1,      /* signed 1 byte integer */
+  PISM_CHAR =   2,      /* ISO/ASCII character */
+  PISM_SHORT =  3,      /* signed 2 byte integer */
+  PISM_INT =    4,      /* signed 4 byte integer */
+  PISM_FLOAT =  5,      /* single precision floating point number */
+  PISM_DOUBLE = 6       /* double precision floating point number */
 };
 
 // This is a subset of NetCDF file modes. Gets cast to "int", so it should

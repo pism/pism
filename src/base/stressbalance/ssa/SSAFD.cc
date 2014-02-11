@@ -336,7 +336,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         if (is_marginal(i, j, bedrock_boundary)) {
           int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
           // direct neighbors
-	  if (bedrock_boundary) {
+          if (bedrock_boundary) {
             if (M.ice_free_ocean(M_e)) aPP = 0;
             if (M.ice_free_ocean(M_w)) aMM = 0;
             if (M.ice_free_ocean(M_n)) bPP = 0;
@@ -652,7 +652,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
             if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
             if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
             if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
-            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;				}
+            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;                           }
         }
       } // end of "if (use_cfbc)"
 

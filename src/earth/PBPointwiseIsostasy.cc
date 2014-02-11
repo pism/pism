@@ -47,7 +47,7 @@ PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
   ierr = PISMBedDef::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the pointwise isostasy bed deformation model...\n"); CHKERRQ(ierr);
+                    "* Initializing the pointwise isostasy bed deformation model...\n"); CHKERRQ(ierr);
 
   ierr = thk->copy_to(thk_last);   CHKERRQ(ierr);
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);

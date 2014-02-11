@@ -31,7 +31,7 @@ class PISMConfig;
 // This uses the definition of squared second invariant from Hutter and several others, namely the output is
 // \f$ D^2 = \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
 static inline double secondInvariant_2D(double u_x, double u_y,
-					   double v_x, double v_y)
+                                           double v_x, double v_y)
 { return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
 
 // The squared second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
@@ -304,7 +304,7 @@ public:
                          double pressure, double grainsize) const;
 
   virtual void effective_viscosity(double hardness, double gamma,
-				   double *nu, double *dnu) const;
+                                   double *nu, double *dnu) const;
 
   virtual double averaged_hardness(double thickness,
                                       int kbelowH,

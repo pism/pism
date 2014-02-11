@@ -79,7 +79,7 @@ PetscErrorCode IceCompModel::createVecs() {
 
   ierr = strain_heating3_comp.create(grid,"strain_heating_comp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
-			      "W m-3", ""); CHKERRQ(ierr);
+                              "W m-3", ""); CHKERRQ(ierr);
 
   return 0;
 }

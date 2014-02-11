@@ -133,7 +133,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
   for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
       if (M(i,j) <= 0.0)
-	a[i][j] = fill;
+        a[i][j] = fill;
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
@@ -147,8 +147,8 @@ PetscErrorCode IceModelVec2::write(const PIO &nc, PISM_IO_Type nctype) {
 
   assert(v != NULL);
 
-  Vec tmp;			// a temporary one-component vector,
-				// distributed across processors the same way v is
+  Vec tmp;                      // a temporary one-component vector,
+                                // distributed across processors the same way v is
 
   // The simplest case:
   if ((m_dof == 1) && (m_has_ghosts == false)) {
@@ -193,8 +193,8 @@ PetscErrorCode IceModelVec2::read(const PIO &nc, const unsigned int time) {
   DM da2;
   ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
 
-  Vec tmp;			// a temporary one-component vector,
-				// distributed across processors the same way v is
+  Vec tmp;                      // a temporary one-component vector,
+                                // distributed across processors the same way v is
   ierr = DMGetGlobalVector(da2, &tmp); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < m_dof; ++j) {
@@ -230,8 +230,8 @@ PetscErrorCode IceModelVec2::regrid(const PIO &nc, RegriddingFlag flag,
   DM da2;
   ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
 
-  Vec tmp;			// a temporary one-component vector,
-				// distributed across processors the same way v is
+  Vec tmp;                      // a temporary one-component vector,
+                                // distributed across processors the same way v is
   ierr = DMGetGlobalVector(da2, &tmp); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < m_dof; ++j) {
@@ -336,13 +336,13 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   // add Matlab comment before listing, using short title
 
   ierr = PetscViewerASCIIPrintf(my_viewer, "\n%%%% %s = %s\n",
-				m_name.c_str(), long_name.c_str()); CHKERRQ(ierr);
+                                m_name.c_str(), long_name.c_str()); CHKERRQ(ierr);
   ierr = PetscObjectSetName((PetscObject) tmp, m_name.c_str()); CHKERRQ(ierr);
 
   ierr = VecView(tmp, my_viewer); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(my_viewer,"\n%s = reshape(%s,%d,%d);\n\n",
-				m_name.c_str(), m_name.c_str(), grid->My, grid->Mx); CHKERRQ(ierr);
+                                m_name.c_str(), m_name.c_str(), grid->My, grid->Mx); CHKERRQ(ierr);
 
   ierr = DMRestoreGlobalVector(da2, &tmp); CHKERRQ(ierr);
 

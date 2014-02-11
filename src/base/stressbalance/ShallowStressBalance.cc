@@ -129,9 +129,9 @@ PetscErrorCode ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressu
   \param[out] result
  */
 PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVec2V &velocity,
-								      IceModelVec2S &tauc,
-								      IceModelVec2Int &mask,
-								      IceModelVec2S &result) {
+                                                                      IceModelVec2S &tauc,
+                                                                      IceModelVec2Int &mask,
+                                                                      IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   MaskQuery m(mask);
@@ -339,8 +339,8 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
 
       double nu;
       flow_law->effective_viscosity(hardness,
-				    secondInvariant_2D(u_x, u_y, v_x, v_y),
-				    &nu, NULL);
+                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                    &nu, NULL);
 
       //get deviatoric stresses
       result(i,j,0) = nu*u_x;

@@ -47,7 +47,7 @@ PetscErrorCode PISMBedDef::pismbeddef_allocate() {
 
   ierr = topg_last.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_last.set_attrs("model_state", "bedrock surface elevation",
-			     "m", "bedrock_altitude"); CHKERRQ(ierr);
+                             "m", "bedrock_altitude"); CHKERRQ(ierr);
 
   return 0;
 }

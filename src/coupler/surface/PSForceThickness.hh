@@ -41,7 +41,7 @@ public:
 protected:
   std::string input_file;
   double alpha;
-  IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
+  IceModelVec2S *ice_thickness; //!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask;
   NCSpatialVariable climatic_mass_balance, climatic_mass_balance_original, ice_surface_temp;
 private:

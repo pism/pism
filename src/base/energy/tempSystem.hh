@@ -93,5 +93,5 @@ protected: // used internally
               basalBCsValid;
 };
 
-#endif	/* __tempSystem_hh */
+#endif  /* __tempSystem_hh */
 

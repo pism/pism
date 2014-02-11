@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     std::vector<std::string> required;

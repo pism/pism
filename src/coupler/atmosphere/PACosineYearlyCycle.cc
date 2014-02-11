@@ -42,7 +42,7 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   variables = &vars;
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
+                    "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
   CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling '-atmosphere yearly_cycle'",

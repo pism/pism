@@ -230,7 +230,7 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer, bool show_col_de
                      nu); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                      "  R_cold,R_temp = %10.3e,%10.3e,\n",
-		     R_cold,R_temp); CHKERRQ(ierr);
+                     R_cold,R_temp); CHKERRQ(ierr);
   if (show_col_dependent) {
     ierr = PetscViewerASCIIPrintf(viewer,
                      "for THIS column:\n"

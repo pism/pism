@@ -48,12 +48,12 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   PetscErrorCode ierr;
   bool flag;
 
-  mbscheme		= NULL;
-  faustogreve		= NULL;
-  base_ddf.snow		= config.get("pdd_factor_snow");
-  base_ddf.ice		= config.get("pdd_factor_ice");
+  mbscheme              = NULL;
+  faustogreve           = NULL;
+  base_ddf.snow         = config.get("pdd_factor_snow");
+  base_ddf.ice          = config.get("pdd_factor_ice");
   base_ddf.refreezeFrac = config.get("pdd_refreeze");
-  base_pddStdDev	= config.get("pdd_std_dev");
+  base_pddStdDev        = config.get("pdd_std_dev");
   base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
 
   ierr = PetscOptionsBegin(grid.com, "",
@@ -62,13 +62,13 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   {
     ierr = PISMOptionsIsSet("-pdd_rand",
                             "Use a PDD implementation based on simulating a random process",
-			    randomized); CHKERRQ(ierr);
+                            randomized); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-pdd_rand_repeatable",
                             "Use a PDD implementation based on simulating a repeatable random process",
-			    randomized_repeatable); CHKERRQ(ierr);
+                            randomized_repeatable); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
-			    fausto_params); CHKERRQ(ierr);
+                            fausto_params); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -86,9 +86,9 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("diagnostic",
-					 "instantaneous surface mass balance (accumulation/ablation) rate",
-					 "kg m-2 s-1",
-					 "land_ice_surface_specific_mass_balance");  // CF standard_name
+                                         "instantaneous surface mass balance (accumulation/ablation) rate",
+                                         "kg m-2 s-1",
+                                         "land_ice_surface_specific_mass_balance");  // CF standard_name
   CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
@@ -123,8 +123,8 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = snow_depth.create(grid, "snow_depth", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = snow_depth.set_attrs("diagnostic",
-			      "snow cover depth (set to zero once a year)",
-			      "m", ""); CHKERRQ(ierr);
+                              "snow cover depth (set to zero once a year)",
+                              "m", ""); CHKERRQ(ierr);
   ierr = snow_depth.set(0.0); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
@@ -198,8 +198,8 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
-		    "    reading snow depth (ice equivalent meters) from %s ... \n",
-		    input_file.c_str()); CHKERRQ(ierr);
+                    "    reading snow depth (ice equivalent meters) from %s ... \n",
+                    input_file.c_str()); CHKERRQ(ierr);
   ierr = snow_depth.regrid(input_file, OPTIONAL, 0.0); CHKERRQ(ierr);
 
   m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
@@ -296,9 +296,9 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
       ierr = atmosphere->precip_time_series(i, j, &P[0]); CHKERRQ(ierr);
 
       if (faustogreve != NULL) {
-	// we have been asked to set mass balance parameters according to
-	//   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-	ierr = faustogreve->setDegreeDayFactors(i, j, (*usurf)(i, j),
+        // we have been asked to set mass balance parameters according to
+        //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
+        ierr = faustogreve->setDegreeDayFactors(i, j, (*usurf)(i, j),
                                                 (*lat)(i, j), (*lon)(i, j), ddf);
         CHKERRQ(ierr);
       }

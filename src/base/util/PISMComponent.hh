@@ -196,8 +196,8 @@ public:
   virtual PetscErrorCode update(double t, double dt) = 0;
 
 protected:
-  double m_t,			//!< Last time used as an argument for the update() method.
-    m_dt;				//!< Last time-step used as an argument for the update() method.
+  double m_t,                   //!< Last time used as an argument for the update() method.
+    m_dt;                               //!< Last time-step used as an argument for the update() method.
 };
 
 //! \brief This template allows creating PISMComponent_TS (PISMAtmosphereModel,

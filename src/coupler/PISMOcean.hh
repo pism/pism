@@ -38,4 +38,4 @@ protected:
   double sea_level;
 };
 
-#endif	// __PISMOceanModel_hh
+#endif  // __PISMOceanModel_hh

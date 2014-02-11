@@ -45,7 +45,7 @@ PetscErrorCode PSStuffAsAnomaly::allocate_PSStuffAsAnomaly() {
 
   ierr = temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = temp.set_attrs("climate_state", "ice temperature at the ice surface",
-			"K", ""); CHKERRQ(ierr);
+                        "K", ""); CHKERRQ(ierr);
 
   // create special variables
   ierr = mass_flux_0.create(grid, "mass_flux_0", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -82,7 +82,7 @@ PetscErrorCode PSStuffAsAnomaly::init(PISMVars &vars) {
   ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the 'turn_into_anomaly' modifier\n"
+                    "* Initializing the 'turn_into_anomaly' modifier\n"
                     "  (it applies climate data as anomalies relative to 'ice_surface_temp' and 'climatic_mass_balance'\n"
                     "  read from '%s'.\n", input_file.c_str()); CHKERRQ(ierr);
 

@@ -72,8 +72,8 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
   My  = static_cast<int>(config.get("grid_My"));
   Mz  = static_cast<int>(config.get("grid_Mz"));
 
-  Nx = Ny = 0;			// will be set to a correct value in allocate()
-  initial_Mz = 0;		// will be set to a correct value in
+  Nx = Ny = 0;                  // will be set to a correct value in allocate()
+  initial_Mz = 0;               // will be set to a correct value in
                                 // IceModel::check_maximum_thickness()
 
   max_stencil_width = 2;
@@ -320,13 +320,13 @@ void IceGrid::compute_nprocs() {
 
   if (Mx > My && Nx < Ny) {int _Nx = Nx; Nx = Ny; Ny = _Nx;}
 
-  if ((Mx / Nx) < 2) {		// note: integer division
+  if ((Mx / Nx) < 2) {          // note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
                 Mx, My, size);
     PISMEnd();
   }
 
-  if ((My / Ny) < 2) {		// note: integer division
+  if ((My / Ny) < 2) {          // note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
                 Mx, My, size);
     PISMEnd();

@@ -723,7 +723,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       if (compute_flux_divergence == true) {
-	flux_divergence(i, j) = divQ_SIA + divQ_SSA;
+        flux_divergence(i, j) = divQ_SIA + divQ_SSA;
       }
 
       vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation

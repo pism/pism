@@ -278,13 +278,13 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const PISMConfig &myconfi
   beta_ice_w  = config.get("pdd_fausto_beta_ice_w");
   beta_snow_w = config.get("pdd_fausto_beta_snow_w");
 
-  T_c	      = config.get("pdd_fausto_T_c");
-  T_w	      = config.get("pdd_fausto_T_w");
+  T_c         = config.get("pdd_fausto_T_c");
+  T_w         = config.get("pdd_fausto_T_w");
   beta_ice_c  = config.get("pdd_fausto_beta_ice_c");
   beta_snow_c = config.get("pdd_fausto_beta_snow_c");
 
-  fresh_water_density	     = config.get("fresh_water_density");
-  ice_density		     = config.get("ice_density");
+  fresh_water_density        = config.get("fresh_water_density");
+  ice_density                = config.get("ice_density");
   pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
 
   temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);

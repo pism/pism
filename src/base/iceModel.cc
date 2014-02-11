@@ -260,19 +260,19 @@ PetscErrorCode IceModel::createVecs() {
     ierr = gl_mask.create(grid, "gl_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask.set_attrs("internal",
                              "fractional grounded/floating mask (floating=0, grounded=1)",
-			     "", ""); CHKERRQ(ierr);
+                             "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask); CHKERRQ(ierr);
 
     ierr = gl_mask_x.create(grid, "gl_mask_x", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_x.set_attrs("internal",
-			       "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
-			       "", ""); CHKERRQ(ierr);
+                               "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
+                               "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask_x); CHKERRQ(ierr);
 
     ierr = gl_mask_y.create(grid, "gl_mask_y", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_y.set_attrs("internal",
-       			       "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
-			       "", ""); CHKERRQ(ierr);
+                               "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
+                               "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask_y); CHKERRQ(ierr);
   }
 
@@ -452,12 +452,12 @@ PetscErrorCode IceModel::createVecs() {
 
     if (config.get_flag("write_fd_fields")) {
       ierr = vFG.create(grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFG.set_attrs("model_state", "fracture growth rate",	"1/s", ""); CHKERRQ(ierr);
+      ierr = vFG.set_attrs("model_state", "fracture growth rate",       "1/s", ""); CHKERRQ(ierr);
       vFG.metadata().set_double("valid_min", 0.0);
       ierr = variables.add(vFG); CHKERRQ(ierr);
 
       ierr = vFH.create(grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFH.set_attrs("model_state", "fracture healing rate",	"1/s", ""); CHKERRQ(ierr);
+      ierr = vFH.set_attrs("model_state", "fracture healing rate",      "1/s", ""); CHKERRQ(ierr);
       ierr = variables.add(vFH); CHKERRQ(ierr);
 
       ierr = vFE.create(grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
@@ -465,11 +465,11 @@ PetscErrorCode IceModel::createVecs() {
       ierr = variables.add(vFE); CHKERRQ(ierr);
 
       ierr = vFA.create(grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFA.set_attrs("model_state", "age since fracturing",	"years", ""); CHKERRQ(ierr);
+      ierr = vFA.set_attrs("model_state", "age since fracturing",       "years", ""); CHKERRQ(ierr);
       ierr = variables.add(vFA); CHKERRQ(ierr);
       
       ierr = vFT.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFT.set_attrs("model_state", "fracture toughness",	"Pa", ""); CHKERRQ(ierr);
+      ierr = vFT.set_attrs("model_state", "fracture toughness", "Pa", ""); CHKERRQ(ierr);
       ierr = variables.add(vFT); CHKERRQ(ierr);
     }
   }

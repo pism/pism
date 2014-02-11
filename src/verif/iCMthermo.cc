@@ -43,7 +43,7 @@ PetscErrorCode IceCompModel::temperatureStep(double* vertSacrCount, double* bulg
     IceModelVec3 *strain_heating3;
     ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
-    ierr = strain_heating3->add(1.0, strain_heating3_comp); CHKERRQ(ierr);	// strain_heating = strain_heating + strain_heating_c
+    ierr = strain_heating3->add(1.0, strain_heating3_comp); CHKERRQ(ierr);      // strain_heating = strain_heating + strain_heating_c
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount); CHKERRQ(ierr);
     ierr = strain_heating3->add(-1.0, strain_heating3_comp); CHKERRQ(ierr); // strain_heating = strain_heating - strain_heating_c
   } else {

@@ -281,9 +281,9 @@ PetscErrorCode IceModel::ageStep() {
         ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case: solve advection PDE; start by getting 3D velocity ...
 
-	ierr = u3->getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
-	ierr = v3->getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
-	ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
+        ierr = u3->getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
+        ierr = v3->getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
+        ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
 
         ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
 

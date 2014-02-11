@@ -390,13 +390,13 @@ PetscErrorCode PISMMohrCoulombYieldStress::basal_material_yield_stress(IceModelV
 Computes the till friction angle \f$\phi(x,y)\f$ at a location, namely
 `IceModel::vtillphi`, as the following increasing, piecewise-linear function of
 the bed elevation \f$b(x,y)\f$.  Let
-	\f[ M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}}) \f]
+        \f[ M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}}) \f]
 be the slope of the nontrivial part.  Then
-	\f[ \phi(x,y) = \begin{cases}
-	        \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
-	        \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
-	                          &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
-	        \phi_{\text{max}}, & b_{\text{max}} \le b(x,y), \end{cases} \f]
+        \f[ \phi(x,y) = \begin{cases}
+                \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
+                \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
+                                  &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
+                \phi_{\text{max}}, & b_{\text{max}} \le b(x,y), \end{cases} \f]
 The exception is if the point is marked as floating, in which case the till friction angle
 is set to the value `phi_ocean`.
 

@@ -290,7 +290,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
             ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
           }
 
-        }	// end of "if there are enough points in ice to bother ..."
+        }       // end of "if there are enough points in ice to bother ..."
 
         // prepare for melting/refreezing
         double bwatnew = bwatcurr(i,j);
@@ -381,9 +381,9 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
         }
 
-	if (sub_gl == true) {
-	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
-	}
+        if (sub_gl == true) {
+          basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
+        }
 
     }
   }

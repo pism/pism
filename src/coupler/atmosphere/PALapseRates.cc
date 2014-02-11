@@ -25,7 +25,7 @@ PALapseRates::PALapseRates(IceGrid &g, const PISMConfig &conf, PISMAtmosphereMod
     air_temp(g.get_unit_system())
 {
   precip_lapse_rate = 0;
-  option_prefix	    = "-atmosphere_lapse_rate";
+  option_prefix     = "-atmosphere_lapse_rate";
 
   PetscErrorCode ierr = allocate_PALapseRates(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -43,7 +43,7 @@ PetscErrorCode PALapseRates::allocate_PALapseRates() {
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name",
-			   "ice-equivalent precipitation rate with a lapse-rate correction");
+                           "ice-equivalent precipitation rate with a lapse-rate correction");
   ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 

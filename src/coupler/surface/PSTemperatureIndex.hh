@@ -51,7 +51,7 @@ public:
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);  
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
-  LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
+  LocalMassBalance *mbscheme;         //!< mass balance scheme to use
 
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
@@ -65,7 +65,7 @@ protected:
     melt_rate,             //!< diagnostic output melt rate (rate at which snow
                            //!< and ice is melted, but some snow melt refreezes)
     runoff_rate,           //!< diagnostic output meltwater runoff rate
-    snow_depth;		   //!< snow depth (reset once a year)
+    snow_depth;            //!< snow depth (reset once a year)
 
   IceModelVec2S *lat, *lon, *usurf;
   //!< PSTemperatureIndex must hold these pointers in order to use

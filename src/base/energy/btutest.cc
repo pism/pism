@@ -75,14 +75,14 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   ierr = ghf->create(grid, "bheatflx", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = ghf->set_attrs("",
                        "upward geothermal flux at bedrock thermal layer base",
-		       "W m-2", ""); CHKERRQ(ierr);
+                       "W m-2", ""); CHKERRQ(ierr);
   ierr = ghf->set_glaciological_units("mW m-2");
   ierr = variables.add(*ghf); CHKERRQ(ierr);
 
   ierr = bedtoptemp->create(grid, "bedtoptemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = bedtoptemp->set_attrs("",
                        "temperature at top of bedrock thermal layer",
-		       "K", ""); CHKERRQ(ierr);
+                       "K", ""); CHKERRQ(ierr);
   ierr = variables.add(*bedtoptemp); CHKERRQ(ierr);
 
   return 0;
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "BTUTEST %s (test program for PISMBedThermalUnit)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     // check required options
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
     config.set_double("grid_Lbz", 1000); 
 
     ierr = verbPrintf(2,com,
-	"  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
+        "  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
     bool flag;
     double dt_years = 1.0;
     std::string outname="unnamed_btutest.nc";
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
     ierr = ghf->set_name("bheatflx0"); CHKERRQ(ierr);
     ierr = ghf->set_attrs("",
                        "upward geothermal flux at ice/bedrock interface",
-		       "W m-2", ""); CHKERRQ(ierr);
+                       "W m-2", ""); CHKERRQ(ierr);
     ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
     // get, and tell stdout, the correct answer from Test K

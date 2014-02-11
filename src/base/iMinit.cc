@@ -673,10 +673,10 @@ PetscErrorCode IceModel::set_vars_from_options() {
   std::string filename;
 
   ierr = verbPrintf(3, grid.com,
-		    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
+                    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
 
   ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
-			   filename, boot_file_set); CHKERRQ(ierr);
+                           filename, boot_file_set); CHKERRQ(ierr);
 
   if (boot_file_set) {
     ierr = bootstrapFromFile(filename); CHKERRQ(ierr);
@@ -958,7 +958,7 @@ PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, grid.com,
-		    "Initializing boundary models...\n"); CHKERRQ(ierr);
+                    "Initializing boundary models...\n"); CHKERRQ(ierr);
 
   assert(surface != PETSC_NULL);
   ierr = surface->init(variables); CHKERRQ(ierr);
@@ -1001,7 +1001,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
-			 "medium", output_vars); CHKERRQ(ierr);
+                         "medium", output_vars); CHKERRQ(ierr);
 
   ierr = init_calving(); CHKERRQ(ierr);
   ierr = init_diagnostics(); CHKERRQ(ierr);
@@ -1106,7 +1106,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   {
     bool dummy;
     ierr = PISMOptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
-			 choices, model, model, dummy); CHKERRQ(ierr);
+                         choices, model, model, dummy); CHKERRQ(ierr);
 
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);

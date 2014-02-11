@@ -288,7 +288,7 @@ double HookeIce::softness_parameter_from_temp(double T_pa) const {
 // Goldsby-Kohlstedt (forward) ice flow law
 
 GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const char pre[],
-		     const PISMConfig &config, EnthalpyConverter *my_EC)
+                     const PISMConfig &config, EnthalpyConverter *my_EC)
   : IceFlowLaw(c, pre, config, my_EC) {
 
   V_act_vol    = -13.e-6;  // m^3/mol
@@ -335,9 +335,9 @@ double GoldsbyKohlstedtIce::flow(double stress, double E,
 }
 
 void GoldsbyKohlstedtIce::effective_viscosity(double, double,
-					      double *, double *) const {
+                                              double *, double *) const {
   PetscPrintf(com,
-	      "ERROR: GoldsbyKohlstedtIce::effective_viscosity is not implemented\n");
+              "ERROR: GoldsbyKohlstedtIce::effective_viscosity is not implemented\n");
   PISMEnd();
 }
 

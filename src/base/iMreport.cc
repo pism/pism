@@ -84,14 +84,14 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (ice_thickness(i,j) > 0) {
-	// accumulate area of base which is at melt point
-	if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)) )) // FIXME issue #15
-	  meltarea += a;
+        // accumulate area of base which is at melt point
+        if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)) )) // FIXME issue #15
+          meltarea += a;
       }
       // if you happen to be at center, record absolute basal temp there
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-	ierr = EC->getAbsTemp(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j)), temp0); // FIXME issue #15
-	CHKERRQ(ierr);
+        ierr = EC->getAbsTemp(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j)), temp0); // FIXME issue #15
+        CHKERRQ(ierr);
       }
     }
   }

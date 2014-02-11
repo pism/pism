@@ -396,7 +396,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
     if (dNuH) *dNuH = 0;
   } else {
     flow_law->effective_viscosity(feS->B, secondInvariantDu_2D(Du),
-				  nuH, dNuH);
+                                  nuH, dNuH);
     *nuH  *= feS->H;
     *nuH  += m_epsilon_ssa;
     if (dNuH) *dNuH *= feS->H;

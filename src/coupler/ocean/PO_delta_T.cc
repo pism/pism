@@ -36,7 +36,7 @@ PO_delta_T::~PO_delta_T() {
 
 PetscErrorCode PO_delta_T::allocate_PO_delta_T() {
   option_prefix = "-ocean_delta_T";
-  offset_name	= "delta_T";
+  offset_name   = "delta_T";
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 

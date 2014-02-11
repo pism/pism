@@ -32,8 +32,8 @@ static double triangle_area(double *A, double *B, double *C) {
   }
 
   return 0.5*sqrt(PetscSqr(V1[1]*V2[2] - V2[1]*V1[2]) +
-		  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
-		  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
+                  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
+                  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
 }
 
 PetscErrorCode IceModel::compute_cell_areas() {
@@ -72,7 +72,7 @@ PetscErrorCode IceModel::compute_cell_areas() {
   }
 
   ierr = verbPrintf(2,grid.com,
-		    "* Computing cell areas, latitude and longitude\n"
+                    "* Computing cell areas, latitude and longitude\n"
                     "  using projection parameters...\n"); CHKERRQ(ierr);
 
 // Cell layout:

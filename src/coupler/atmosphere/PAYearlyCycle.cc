@@ -45,23 +45,23 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   // Allocate internal IceModelVecs:
   ierr = air_temp_mean_annual.create(grid, "air_temp_mean_annual", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.set_attrs("diagnostic",
-			   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
-			   "K", 
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
+                           "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
+                           "K", 
+                           ""); CHKERRQ(ierr);  // no CF standard_name ??
   air_temp_mean_annual.metadata().set_string("source", reference);
 
   ierr = air_temp_mean_july.create(grid, "air_temp_mean_july", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = air_temp_mean_july.set_attrs("diagnostic",
-			   "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
-			   "Kelvin",
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
+                           "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
+                           "Kelvin",
+                           ""); CHKERRQ(ierr);  // no CF standard_name ??
   air_temp_mean_july.metadata().set_string("source", reference);
 
   ierr = precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = precipitation.set_attrs("climate_state", 
-			      "mean annual ice-equivalent precipitation rate",
-			      "m s-1", 
-			      ""); CHKERRQ(ierr); // no CF standard_name ??
+                              "mean annual ice-equivalent precipitation rate",
+                              "m s-1", 
+                              ""); CHKERRQ(ierr); // no CF standard_name ??
   ierr = precipitation.set_glaciological_units("m year-1");
   precipitation.write_in_glaciological_units = true;
   precipitation.set_time_independent(true);
@@ -89,9 +89,9 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 
   // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-		    "      from %s ... \n",
-		    precip_filename.c_str()); CHKERRQ(ierr); 
+                    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+                    "      from %s ... \n",
+                    precip_filename.c_str()); CHKERRQ(ierr); 
   if (do_regrid) {
     ierr = precipitation.regrid(precip_filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {

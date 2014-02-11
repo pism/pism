@@ -166,7 +166,7 @@ double IceModelVec3D::getValZ(int i, int j, double z) {
 
 //! Return values on planar star stencil of scalar quantity at level z (by linear interpolation).
 PetscErrorCode   IceModelVec3::getPlaneStarZ(int i, int j, double z,
-					     planeStar<double> *star) {
+                                             planeStar<double> *star) {
 #if (PISM_DEBUG==1)
   assert(array != NULL);
   assert(m_has_ghosts == true);
@@ -229,7 +229,7 @@ PetscErrorCode IceModelVec3::getPlaneStar(int i, int j, unsigned int k,
 
 //! Gets a map-plane star stencil on the fine vertical grid.
 PetscErrorCode IceModelVec3::getPlaneStar_fine(int i, int j, unsigned int k,
-					       planeStar<double> *star) {
+                                               planeStar<double> *star) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
@@ -258,7 +258,7 @@ PetscErrorCode IceModelVec3::getPlaneStar_fine(int i, int j, unsigned int k,
  * ks is the top-most fine vertical grid level within the ice
  */
 PetscErrorCode IceModelVec3::getValColumnPL(int i, int j, unsigned int ks,
-					    double *result) {
+                                            double *result) {
 #if (PISM_DEBUG==1)
   assert(v != NULL);
   check_array_indices(i, j, 0);
@@ -292,7 +292,7 @@ PetscErrorCode IceModelVec3::getValColumnPL(int i, int j, unsigned int ks,
 //! \brief Return values of ice scalar quantity on the fine
 //! computational grid, using local quadratic interpolation.
 PetscErrorCode  IceModelVec3::getValColumnQUAD(int i, int j, unsigned int ks,
-					       double *result) {
+                                               double *result) {
 #if (PISM_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
@@ -367,7 +367,7 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(int i, int j, unsigned int ks,
 
 //! If the grid is equally spaced in the ice then use PL, otherwise use QUAD.
 PetscErrorCode  IceModelVec3::getValColumn(int i, int j, unsigned int ks,
-					   double *result) {
+                                           double *result) {
   if (grid->ice_vertical_spacing == EQUAL) {
     return getValColumnPL(i, j, ks, result);
   } else {
@@ -521,7 +521,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, double fill_value) {
   for (int i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (int j=grid->ys; j<grid->ys+grid->ym; j++) {
       for (unsigned int k = old_Mz; k < m_n_levels; k++)
-	a[i][j][k] = fill_value;
+        a[i][j][k] = fill_value;
     }
   }
   ierr = DMDAVecRestoreArrayDOF(m_da, v, &a); CHKERRQ(ierr);
@@ -550,7 +550,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
   for (int i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (int j=grid->ys; j<grid->ys+grid->ym; j++) {
       for (unsigned int k = old_Mz; k < m_n_levels; k++)
-	a[i][j][k] = filler[i][j];
+        a[i][j][k] = filler[i][j];
     }
   }
   ierr = DMDAVecRestoreArrayDOF(m_da, v, &a); CHKERRQ(ierr);
@@ -594,7 +594,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   for (int i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (int j=grid->ys; j<grid->ys+grid->ym; j++) {
       for (int k=0; k < old_Mz; k++)
-	a_new[i][j][k] = a_old[i][j][k];
+        a_new[i][j][k] = a_old[i][j][k];
     }
   }
   ierr = DMDAVecRestoreArrayDOF(m_da, v, &a_old); CHKERRQ(ierr);
@@ -626,15 +626,15 @@ PetscErrorCode  IceModelVec3D::has_nan() {
     for (j=grid->ys; j<grid->ys+grid->ym; ++j) {
       ierr = getInternalColumn(i, j, &tmp); CHKERRQ(ierr);
       for (k = 0; k < m_n_levels; k++) {
-	if (gsl_isnan(tmp[k])) {
-	  retval++;
+        if (gsl_isnan(tmp[k])) {
+          retval++;
           if (retval <= max_print_this_rank) {
             ierr = PetscSynchronizedPrintf(grid->com, 
                "IceModelVec3 %s: NAN (or uninitialized) at i = %d, j = %d, k = %d on rank = %d\n",
                m_name.c_str(), i, j, k, grid->rank); CHKERRQ(ierr);
           }
-	  break;
-	}
+          break;
+        }
       }
     }
   }

@@ -47,7 +47,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); 
 
   ierr = verbPrintf(2, grid.com,
-		    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+                    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
 
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
@@ -82,7 +82,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
+                    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
 
   // Fill 3D fields using heuristics:
   ierr = bootstrap_3d(); CHKERRQ(ierr);
@@ -101,7 +101,7 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
-		    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
+                    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
 
   // report on resulting computational box, rescale grid, actually create a
   // local interpolation context
@@ -133,17 +133,17 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
 
   if (maskExists) {
     ierr = verbPrintf(2, grid.com, 
-		      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
+                      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
 
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
-		      CHKERRQ(ierr);
+                      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
+                      CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(2, grid.com, 
-		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
+                    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, OPTIONAL); CHKERRQ(ierr);
   if (!lonExists) {
@@ -214,7 +214,7 @@ PetscErrorCode IceModel::bootstrap_3d() {
 
   if (config.get_flag("do_cold_ice_methods") == false) {
     ierr = verbPrintf(2, grid.com,
-		      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+                      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
     CHKERRQ(ierr);
   }
 

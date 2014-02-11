@@ -70,5 +70,5 @@ private:
   PetscErrorCode resetColumn();
 };
 
-#endif	/* __columnSystem_hh */
+#endif  /* __columnSystem_hh */
 
