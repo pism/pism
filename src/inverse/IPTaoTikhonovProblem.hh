@@ -67,7 +67,7 @@ finding minimizers of an associated Tikhonov functional
 J(d) = J_{S}(F(d)-u) + \frac{1}{\eta}J_{D}(d-d_0)
 \f]
 where \$J_{D}\$ and \$J_{S}\$ are functionals on the spaces \f$D\f$ and \f$S\f$ respectively,
-\f$\eta\f$ is a penalty paramter, and \f$d_0\f$ is a best a-priori guess for the the solution.
+\f$\eta\f$ is a penalty parameter, and \f$d_0\f$ is a best a-priori guess for the the solution.
 The IPTaoTikhonovProblem class encapuslates all of the data required to formulate the minimization
 problem as a Problem tha can be solved using a TaoBasicSolver. It is templated on the
 the class ForwardProblem which defines the class of the forward map \f$F\f$ as well as the
@@ -164,7 +164,7 @@ public:
       that can be solved with a TaoBasicSolver.
       
       @param forward Class defining the map F.  See class-level documentation for requirements of F.
-      @param      d0 Best a-priori guess for the design paramter.
+      @param      d0 Best a-priori guess for the design parameter.
       @param   u_obs State parameter to match (i.e. approximately solve F(d)=u_obs)
       @param     eta Penalty parameter/Lagrange multiplier.  Take eta to zero to impose more regularization to an ill posed problem.
       @param   designFunctional The functional \f$J_D\f$
@@ -178,7 +178,7 @@ public:
 
 
   //! Sets the initial guess for minimization iterations. If this isn't set explicitly,
-  //  the paramter \f$d0\f$ appearing the in the Tikhonov functional will be used.
+  //  the parameter \f$d0\f$ appearing the in the Tikhonov functional will be used.
   virtual PetscErrorCode setInitialGuess( DesignVec &d) {
     PetscErrorCode ierr;
     ierr = m_dGlobal.copy_from(d); CHKERRQ(ierr);
@@ -234,7 +234,7 @@ protected:
   DesignVec &m_d0;         ///< A-priori estimate of design parameter
   DesignVec m_d_diff;      ///< Storage for (m_d-m_d0)
 
-  StateVec &m_u_obs;       ///< State paramter to match via F(d)=u_obs 
+  StateVec &m_u_obs;       ///< State parameter to match via F(d)=u_obs 
   StateVec m_u_diff;       ///< Storage for F(d)-u_obs
 
   StateVec m_adjointRHS;   ///< Temporary storage used in gradient computation.
@@ -244,7 +244,7 @@ protected:
   DesignVec m_grad;        /**< Weighted sum of the design and state gradients
                                 corresponding to the gradient of the Tikhonov functional \f$J\f$. */
 
-  double m_eta;         ///<  Penalty paramter/Lagrange multiplier.
+  double m_eta;         ///<  Penalty parameter/Lagrange multiplier.
 
   double m_val_design;  ///<  Value of \f$J_D\f$ at the current iterate.
   double m_val_state;   ///<  Value of \f$J_S\f$ at the current iterate.
@@ -254,8 +254,8 @@ protected:
 
   std::vector<typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners; ///< List of iteration callbacks.
 
-  double m_tikhonov_atol;  ///< Convergence paramter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
-  double m_tikhonov_rtol;  /**< Convergence paramter: convergence stops when \f$||J_D||_2 \f$ is 
+  double m_tikhonov_atol;  ///< Convergence parameter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
+  double m_tikhonov_rtol;  /**< Convergence parameter: convergence stops when \f$||J_D||_2 \f$ is 
                                   less than m_tikhonov_rtol times the maximum of the gradient of \f$J_S\f$ and
                                   \f$(1/\eta)J_D\f$.  This occurs when the two terms forming the sum of the gradient
                                   of \f$J\f$ point in roughly opposite directions with the same magnitude. */
