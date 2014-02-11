@@ -74,7 +74,7 @@ to turn \texttt{bad.nc} (with any inconvenient storage order) into \texttt{good.
 PISM also supports NetCDF-4 parallel I/O, which gives better performance in
 high-resolution runs and avoids NetCDF-3 file format limitations. (In a
 NetCDF-3 file a variable record cannot exceed 4 gigabytes.) Build PISM with
-parallel NetCDF-4 and use \txtopt{o_format}{\texttt{netcdf4_parallel}} to
+parallel NetCDF-4 and use \intextoption{o_format} \texttt{netcdf4_parallel} to
 enable this code.
 
 In addition to \texttt{-o_format netcdf4_parallel} and \texttt{netcdf3}

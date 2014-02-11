@@ -92,7 +92,7 @@ pismr -boot_file ../Ross_combined.nc -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing e
 
 \item Option \texttt{-pik} is equivalent to \texttt{-cfbc -kill_icebergs} in this non-evolving example.  Note that \texttt{-kill_icebergs} removes effectively-detached bits of ice, especially in McMurdo sound area, so that the SSA problem is well-posed for the grounded-ice-sheet-connected ice shelf.
 
-\item Option \texttt{-ssa_dirichlet_bc} forces the use of fields \texttt{u_ssa_bc,v_ssa_bc,bcflag} described above.  The field \texttt{bcflag} is $1$ at boundary condition locations, and $0$ elsewhere.  For the prognostic runs below, the ice thickness is also fixed at boundary condition locations, so as to prescribe ice flux as an ice shelf input.
+\item Option \intextoption{ssa_dirichlet_bc} forces the use of fields \texttt{u_ssa_bc,v_ssa_bc,bcflag} described above.  The field \texttt{bcflag} is $1$ at boundary condition locations, and $0$ elsewhere.  For the prognostic runs below, the ice thickness is also fixed at boundary condition locations, so as to prescribe ice flux as an ice shelf input.
 
 \item Options \texttt{-yield_stress constant -tauc 1e6} essentially just turn off the grounded-ice evolving yield stress mechanism, which is inactive anyway, and force a high resistance under grounded ice so it does not slide.  
 
@@ -130,7 +130,7 @@ $ ../plot.py diag_Mx211.nc
 
 Simply choose a different rectangular domain, within the area covered by the whole-Antarctic data-sets used here, at the preprocessing stage.  In particular you should modify the lines ``\texttt{ncks -O -d x1,439,649 -d y1,250,460 ...}'' (for ALBMAP data) and ``\texttt{ncks -d x,2200,3700 -d y,3500,4700 ...}'' (for MEaSUREs velocity data) in the script \texttt{examples/ross/preprocess.py}.
 
-\subsubsection*{Prognostic modelling using eigencalving}  Next we summarize how you can create an evolving-geometry model of the Ross ice shelf with constant-in-time inflow across the fixed grounding line.  See \texttt{README.md} and \texttt{run_prog.sh} in \texttt{examples/ross/prognostic/}.  This example also demonstrates the \txtopt{calving eigen_calving} model for a moving calving front \cite{Levermannetal2012}.
+\subsubsection*{Prognostic modelling using eigencalving}  Next we summarize how you can create an evolving-geometry model of the Ross ice shelf with constant-in-time inflow across the fixed grounding line.  See \texttt{README.md} and \texttt{run_prog.sh} in \texttt{examples/ross/prognostic/}.  This example also demonstrates the \intextoption{calving eigen_calving} model for a moving calving front \cite{Levermannetal2012}.
 
 Start by running \texttt{preprocess.py} in \texttt{examples/ross/} as described above.  If you have already done the diagnostic example above, then this stage is complete.
 
