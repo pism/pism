@@ -52,7 +52,7 @@ PISMEigenCalving::PISMEigenCalving(IceGrid &g, const PISMConfig &conf,
                            "1/s", "", 1);
 
   m_K = config.get("eigen_calving_K");
-  m_restrict_timestep = config.get_flag("cfl_eigencalving");
+  m_restrict_timestep = config.get_flag("cfl_eigen_calving");
 }
 
 PISMEigenCalving::~PISMEigenCalving() {

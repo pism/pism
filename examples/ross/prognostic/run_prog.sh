@@ -39,15 +39,16 @@ ${cmd_diag}
 # prognostic run
 NAME=prog_Mx${M}_yr${YEARS}.nc
 ECALV=1e17   #  constant for eigen_calving parameterization
-CTHICK=50.0  #  constant thickness for thickness_calving
-dt=5
+CTHICK=150.0  #  constant thickness for thickness_calving
+exdt=5
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
   -ssa_dirichlet_bc -ssa_e $SSAE -y $YEARS -o $NAME -o_order zyx -o_size big \
-  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV \
+  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -cfl_eigen_calving \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
-  -extra_file ex-${NAME} -extra_times 0:${dt}:${YEARS} -extra_vars thk,mask,csurf"
+  -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,csurf,strain_rates \
+  -options_left"
 echo "running command:"
 echo
 echo "$cmd_prog"

@@ -138,10 +138,10 @@ Then change to the \texttt{prognostic/} directory and run the default example:
 
 \begin{verbatim}
 $ cd examples/ross/prognostic/
-$ ./run_prog.sh 2 211 0.6 100
+$ ./run_prog.sh 4 211 0.6 100
 \end{verbatim}%$    
 
-\noindent This 100 model year run on 2 processes and a 5 km grid took about nine minutes on a 2013 laptop.  It starts with a bootstrapping stage which does a \texttt{y 0} run, which generates \texttt{startfile_Mx211.nc}.  It then re-initializes to start the prognostic run itself.  See the \texttt{README.md} for a bit more on the arguments taken by \texttt{run_prog.sh} and on viewing the output files.
+\noindent This 100 model year run on 4 processes and a 5 km grid took about twenty minutes on a 2013 laptop.  It starts with a bootstrapping stage which does a \texttt{y 0} run, which generates \texttt{startfile_Mx211.nc}.  It then re-initializes to start the prognostic run itself.  See the \texttt{README.md} for a bit more on the arguments taken by \texttt{run_prog.sh} and on viewing the output files.
 
 The PISM command done here is (essentially, and without showing diagnostic output choices)
 
@@ -150,19 +150,19 @@ pismr -i startfile_Mx211.nc -surface given -stress_balance ssa \
     -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e 0.6 \
     -y 100 -o prog_Mx211_yr100.nc -o_order zyx -o_size big \
     -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
-    -thickness_calving_threshold 50.0 -ssafd_ksp_type gmres \
-    -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right \
-    -ssafd_pc_type asm -ssafd_sub_pc_type lu
+    -cfl_eigen_calving -thickness_calving_threshold 150.0 \
+    -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
+    -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
 \end{verbatim}%$    
 
-A few of these options are different from those used in the diagnostic case.  First, while the command \texttt{-pik} is the same as before, now each part of its expansion, namely \texttt{-cfbc -kill_icebergs -part_grid -part_redist}, is important.  As the calving front evolves (i.e.~regardless of the calving law choices), option \texttt{-part_grid} moves the calving front by one grid cell only when the cell is full of the ice flowing into it; see \cite{Albrechtetal2011}.  The option \texttt{-kill_icebergs} is essential to maintain well-posedness of the SSA velocity problem at each time step \cite{Winkelmannetal2011}.  See section \ref{sec:pism-pik}.
+Several of these options are different from those used in the diagnostic case.  First, while the command \texttt{-pik} is the same as before, now each part of its expansion, namely \texttt{-cfbc -kill_icebergs -part_grid -part_redist}, is important.  As the calving front evolves (i.e.~regardless of the calving law choices), option \texttt{-part_grid} moves the calving front by one grid cell only when the cell is full of the ice flowing into it; see \cite{Albrechtetal2011}.  The option \texttt{-kill_icebergs} is essential to maintain well-posedness of the SSA velocity problem at each time step \cite{Winkelmannetal2011}.  See section \ref{sec:pism-pik}.
 
 Option combination
 \begin{verbatim}
     -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
-    -thickness_calving_threshold 50.0
+    -cfl_eigen_calving -thickness_calving_threshold 150.0
 \end{verbatim}%$
-specifies that ice at the calving front will be removed if either a criterion on the product of principal stresses is satisfied \cite{Levermannetal2012}, namely \texttt{eigen_calving} with the given constant $K$, or if the ice thickness goes below the given threshold of 50 meters.  See subsection \ref{sec:calving}.
+specifies that ice at the calving front will be removed if either a criterion on the product of principal stresses is satisfied \cite{Levermannetal2012}, namely \texttt{eigen_calving} with the given constant $K$, or if the ice thickness goes below the given threshold of 150 meters.  See subsection \ref{sec:calving}.
 
 There is also an extended option combination
 \begin{verbatim}

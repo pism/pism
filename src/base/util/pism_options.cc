@@ -811,7 +811,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.scalar_from_option("thickness_calving_threshold", "thickness_calving_threshold"); CHKERRQ(ierr);
 
   // evaluates the adaptive timestep based on a CFL criterion with respect to the eigenCalving rate
-  ierr = config.flag_from_option("cfl_eigencalving", "cfl_eigencalving"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("cfl_eigen_calving", "cfl_eigen_calving"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("eigen_calving_K", "eigen_calving_K"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);

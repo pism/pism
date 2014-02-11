@@ -61,8 +61,8 @@ netcdf pism_config {
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
 
-    pism_config:cfl_eigencalving = "false";
-    pism_config:cfl_eigencalving_doc = "apply CFL criterion for eigen-calving rate front retreat";
+    pism_config:cfl_eigen_calving = "false";
+    pism_config:cfl_eigen_calving_doc = "apply CFL criterion for eigen-calving rate front retreat";
 
     pism_config:calving_methods = "";
     pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
