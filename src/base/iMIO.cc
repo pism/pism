@@ -355,17 +355,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
     }
   }
 
-  // if user wants it, give it to them (ignore -o_size, except "none")
-  bool userWantsCTS;
-  ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
-  if (userWantsCTS) {
-    ierr = verbPrintf(4, grid.com,
-                      "  writing CTS (= E/Es) scalar field 'cts' ...\n"); CHKERRQ(ierr);
-    output_vars.insert("cts");
-  }
-
 #if (PISM_USE_PROJ4==1)
-
   if (mapping.has_attribute("proj4")) {
     output_vars.insert("lon_bounds");
     output_vars.insert("lat_bounds");
