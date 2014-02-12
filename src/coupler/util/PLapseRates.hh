@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,66 +25,68 @@
 #include "PIO.hh"
 #include "PISMVars.hh"
 #include "PISMTime.hh"
+#include "PISMConfig.hh"
 #include <assert.h>
 
 template <class Model, class Mod>
 class PLapseRates : public Mod
 {
 public:
-  PLapseRates(IceGrid &g, const NCConfigVariable &conf, Model* in)
+  PLapseRates(IceGrid &g, const PISMConfig &conf, Model* in)
     : Mod(g, conf, in)
   {
     surface = thk = NULL;
-    temp_lapse_rate = 0;
+    temp_lapse_rate = 0.0;
   }
 
   virtual ~PLapseRates() {}
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  virtual PetscErrorCode update(double my_t, double my_dt)
   {
     PetscErrorCode ierr;
 
     // a convenience
-    PetscReal &m_t = Mod::t;
-    PetscReal &m_dt = Mod::dt;
+    double &t = Mod::m_t;
+    double &dt = Mod::m_dt;
 
     // "Periodize" the climate:
     my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);
 
-    if ((fabs(my_t - m_t) < 1e-12) &&
-        (fabs(my_dt - m_dt) < 1e-12))
+    if ((fabs(my_t - t) < 1e-12) &&
+        (fabs(my_dt - dt) < 1e-12))
       return 0;
 
-    m_t = my_t;
-    m_dt = my_dt;
+    t  = my_t;
+    dt = my_dt;
 
+    // NB! Input model uses original t and dt
     ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
 
-    ierr = reference_surface.update(m_t, m_dt); CHKERRQ(ierr);
+    ierr = reference_surface.update(t, dt); CHKERRQ(ierr);
 
-    ierr = reference_surface.interp(m_t + 0.5*m_dt); CHKERRQ(ierr);
+    ierr = reference_surface.interp(t + 0.5*dt); CHKERRQ(ierr);
 
     return 0;
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict) {
+  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict) {
     PetscErrorCode ierr;
-    PetscReal max_dt = -1;
+    double max_dt = -1;
 
     // "Periodize" the climate:
-    my_t = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
+    t = Mod::grid.time->mod(t - bc_reference_time, bc_period);
 
-    ierr = Mod::input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+    ierr = Mod::input_model->max_timestep(t, dt, restrict); CHKERRQ(ierr);
 
-    max_dt = reference_surface.max_timestep(my_t);
+    max_dt = reference_surface.max_timestep(t);
 
     if (restrict == true) {
       if (max_dt > 0)
-        my_dt = PetscMin(max_dt, my_dt);
+        dt = PetscMin(max_dt, dt);
     }
-    else my_dt = max_dt;
+    else dt = max_dt;
 
-    if (my_dt > 0)
+    if (dt > 0)
       restrict = true;
     else
       restrict = false;
@@ -96,19 +98,19 @@ protected:
   IceModelVec2T reference_surface;
   IceModelVec2S *surface, *thk;
   unsigned int bc_period;
-  PetscReal bc_reference_time,          // in seconds
+  double bc_reference_time,          // in seconds
     temp_lapse_rate;
-  string option_prefix;
+  std::string option_prefix;
 
   virtual PetscErrorCode init_internal(PISMVars &vars)
   {
     PetscErrorCode ierr;
-    string filename;
+    std::string filename;
     bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
     IceGrid &g = Mod::grid;
 
-    PetscReal bc_period_years = 0,
+    double bc_period_years = 0,
       bc_reference_year = 0;
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
@@ -140,7 +142,7 @@ protected:
     }
 
     if (bc_period_set) {
-      bc_period = bc_period_years;
+      bc_period = (unsigned int)bc_period_years;
     } else {
       bc_period = 0;
     }
@@ -149,7 +151,7 @@ protected:
       unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
         ref_surface_n_records = 1;
 
-      PIO nc(g.com, g.rank, "netcdf3", g.get_unit_system());
+      PIO nc(g.com, "netcdf3", g.get_unit_system());
       ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
       ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
@@ -190,7 +192,7 @@ protected:
     return 0;
   }
 
-  PetscErrorCode lapse_rate_correction(IceModelVec2S &result, PetscReal lapse_rate)
+  PetscErrorCode lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
   {
     PetscErrorCode ierr;
 
@@ -204,10 +206,12 @@ protected:
 
     IceGrid &g = Mod::grid;
 
-    for (PetscInt   i = g.xs; i < g.xs + g.xm; ++i) {
-      for (PetscInt j = g.ys; j < g.ys + g.ym; ++j) {
-        if ((*thk)(i,j) > 0)
-          result(i,j) -= lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
+    for (int   i = g.xs; i < g.xs + g.xm; ++i) {
+      for (int j = g.ys; j < g.ys + g.ym; ++j) {
+        if ((*thk)(i,j) > 0) {
+          const double correction = lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
+          result(i,j) -= correction;
+        }
       }
     }
 

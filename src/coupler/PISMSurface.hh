@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,7 +33,7 @@ class IceModelVec2S;
 //! \brief The interface of PISM's surface models.
 class PISMSurfaceModel : public PISMComponent_TS {
 public:
-  PISMSurfaceModel(IceGrid &g, const NCConfigVariable &conf);
+  PISMSurfaceModel(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMSurfaceModel();
 
   // the interface:
@@ -46,15 +46,15 @@ public:
 
   // provide default re-implementations of these parent's methods:
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
 protected:
   PISMAtmosphereModel *atmosphere;
 };
 
-#endif	// __PISMSurfaceModel_hh
+#endif  // __PISMSurfaceModel_hh
 

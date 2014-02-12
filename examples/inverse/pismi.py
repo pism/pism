@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013 David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -33,7 +33,7 @@ class SSAForwardRun(PISM.invert.ssa.SSAForwardRunFromInputFile):
       grid = self.grid
       vecs = self.modeldata.vecs
 
-      pio = PISM.PIO(grid.com,grid.rank,"netcdf3", grid.get_unit_system())
+      pio = PISM.PIO(grid.com,"netcdf3", grid.get_unit_system())
       pio.open(filename,PISM.NC_WRITE,True) #append mode!
 
       self.modeldata.vecs.write(filename)
@@ -324,8 +324,8 @@ if __name__ == "__main__":
   # a) tauc/hardav from the input file (default)
   # b) tauc/hardav_prior from the inv_datafile if -inv_use_design_prior is set
   design_prior = createDesignVec(grid,design_var,'%s_prior' % design_var)
-  long_name = design_prior.string_attr("long_name")
-  units = design_prior.string_attr("units")
+  long_name = design_prior.metadata().get_string("long_name")
+  units = design_prior.metadata().get_string("units")
   design_prior.set_attrs("", "best prior estimate for %s (used for inversion)" % long_name, units, "");
   if PISM.util.fileHasVariable(inv_data_filename,"%s_prior" % design_var) and use_design_prior:
     PISM.logging.logMessage("  Reading '%s_prior' from inverse data file %s.\n" % (design_var,inv_data_filename));
@@ -368,7 +368,7 @@ if __name__ == "__main__":
 
   # Convert design_prior -> zeta_prior
   zeta_prior = PISM.IceModelVec2S();
-  zeta_prior.create(grid, "zeta_prior", PISM.kHasGhosts, WIDE_STENCIL)
+  zeta_prior.create(grid, "zeta_prior", PISM.WITH_GHOSTS, WIDE_STENCIL)
   design_param.convertFromDesignVariable(design_prior,zeta_prior)
   vecs.add(zeta_prior,writing=True)
 
@@ -376,7 +376,7 @@ if __name__ == "__main__":
   # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
   # If none of the above, copy from 'zeta_prior'.
   zeta = PISM.IceModelVec2S();
-  zeta.create(grid, "zeta_inv", PISM.kHasGhosts, WIDE_STENCIL)
+  zeta.create(grid, "zeta_inv", PISM.WITH_GHOSTS, WIDE_STENCIL)
   zeta.set_attrs("diagnostic", "zeta_inv", "1", "zeta_inv")
   if do_restart:
     # Just to be sure, verify that we have a 'zeta_inv' in the output file.
@@ -431,7 +431,7 @@ if __name__ == "__main__":
   
   # Prep the output file from the grid so that we can save zeta to it during the runs.
   if not append_mode:
-    pio = PISM.PIO(grid.com,grid.rank,"netcdf3", grid.get_unit_system())
+    pio = PISM.PIO(grid.com,"netcdf3", grid.get_unit_system())
     pio.open(output_filename,PISM.NC_WRITE,False)
     pio.def_time(grid.config.get_string("time_dimension_name"),
                  grid.config.get_string("calendar"), grid.time.units_string())
@@ -513,12 +513,12 @@ if __name__ == "__main__":
   residual.add(-1,vel_ssa_observed);
   
   r_mag = PISM.IceModelVec2S();
-  r_mag.create(grid,"inv_ssa_residual", PISM.kNoGhosts,0);
+  r_mag.create(grid,"inv_ssa_residual", PISM.WITHOUT_GHOSTS,0);
   
   r_mag.set_attrs("diagnostic","magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
             "m s-1", "inv_ssa_residual", 0);
-  r_mag.set_attr("_FillValue", grid.convert(-0.01,'m/year','m/s'));
-  r_mag.set_attr("valid_min", 0.0);
+  r_mag.metadata().set_double("_FillValue", grid.convert(-0.01,'m/year','m/s'));
+  r_mag.metadata().set_double("valid_min", 0.0);
   r_mag.set_glaciological_units("m year-1")
   r_mag.write_in_glaciological_units = True
 

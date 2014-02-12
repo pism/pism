@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -23,8 +23,9 @@
 #include "PAYearlyCycle.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
-PAYearlyCycle::PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
+PAYearlyCycle::PAYearlyCycle(IceGrid &g, const PISMConfig &conf)
   : PISMAtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -42,28 +43,28 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   snow_temp_july_day = config.get("snow_temp_july_day");
 
   // Allocate internal IceModelVecs:
-  ierr = air_temp_mean_annual.create(grid, "air_temp_mean_annual", false); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.create(grid, "air_temp_mean_annual", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.set_attrs("diagnostic",
-			   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
-			   "K", 
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = air_temp_mean_annual.set_attr("source", reference);
+                           "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
+                           "K", 
+                           ""); CHKERRQ(ierr);  // no CF standard_name ??
+  air_temp_mean_annual.metadata().set_string("source", reference);
 
-  ierr = air_temp_mean_july.create(grid, "air_temp_mean_july", false); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.create(grid, "air_temp_mean_july", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = air_temp_mean_july.set_attrs("diagnostic",
-			   "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
-			   "Kelvin",
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = air_temp_mean_july.set_attr("source", reference);
+                           "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
+                           "Kelvin",
+                           ""); CHKERRQ(ierr);  // no CF standard_name ??
+  air_temp_mean_july.metadata().set_string("source", reference);
 
-  ierr = precipitation.create(grid, "precipitation", false); CHKERRQ(ierr);
+  ierr = precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = precipitation.set_attrs("climate_state", 
-			      "mean annual ice-equivalent precipitation rate",
-			      "m s-1", 
-			      ""); CHKERRQ(ierr); // no CF standard_name ??
+                              "mean annual ice-equivalent precipitation rate",
+                              "m s-1", 
+                              ""); CHKERRQ(ierr); // no CF standard_name ??
   ierr = precipitation.set_glaciological_units("m year-1");
   precipitation.write_in_glaciological_units = true;
-  precipitation.time_independent = true;
+  precipitation.set_time_independent(true);
 
   air_temp_snapshot.init_2d("air_temp_snapshot", grid);
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
@@ -77,30 +78,30 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
 //! Allocates memory and reads in the precipitaion data.
 PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = -1;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   variables = &vars;
 
-  ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(precip_filename, do_regrid, start); CHKERRQ(ierr);
 
   // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-		    "      from %s ... \n",
-		    precip_filename.c_str()); CHKERRQ(ierr); 
-  if (regrid) {
-    ierr = precipitation.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
+                    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+                    "      from %s ... \n",
+                    precip_filename.c_str()); CHKERRQ(ierr); 
+  if (do_regrid) {
+    ierr = precipitation.regrid(precip_filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = precipitation.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.read(precip_filename, start); CHKERRQ(ierr); // fails if not found!
   }
 
   return 0;
 }
 
-void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
+void PAYearlyCycle::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   result.insert("precipitation");
 
   if (keyword == "big") {
@@ -111,7 +112,7 @@ void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 
-PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PAYearlyCycle::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
@@ -134,13 +135,13 @@ PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const PIO &nc, 
 }
 
 
-PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PAYearlyCycle::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp_snapshot", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp_snapshot, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp_snapshot", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = air_temp_snapshot;
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
@@ -176,7 +177,7 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PAYearlyCycle::init_timeseries(double *ts, unsigned int N) {
   // constants related to the standard yearly cycle
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day);
@@ -193,13 +194,13 @@ PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, double *values) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = precipitation(i,j);
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, double *values) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     values[k] = air_temp_mean_annual(i,j) + (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
@@ -213,15 +214,15 @@ PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
 
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
-    T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
+    T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       result(i,j) = air_temp_mean_annual(i,j) + (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos_T;
     }
   }

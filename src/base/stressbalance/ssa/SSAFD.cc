@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2014 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -21,21 +21,98 @@
 #include "basal_resistance.hh"
 #include "pism_options.hh"
 #include "flowlaws.hh"
+#include "PISMVars.hh"
 
-#include "pism_petsc32_compat.hh"
+#include <assert.h>
 
-SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                  EnthalpyConverter &ec, const NCConfigVariable &c)
+SSA *SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
 {
-  return new SSAFD(g,b,ec,c);
+  return new SSAFD(g,ec,c);
 }
 
+SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : SSA(g,e,c) {
+  PetscErrorCode ierr = allocate_fd();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSAFD allocation failed.\n");
+    PISMEnd();
+  }
+}
+
+SSAFD::~SSAFD() {
+  PetscErrorCode ierr = deallocate_fd();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
+    PISMEnd();
+  }
+}
+
+
+PetscErrorCode SSAFD::pc_setup_bjacobi() {
+  PetscErrorCode ierr;
+  PC pc;
+
+  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+
+  // Get the PC from the KSP solver:
+  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
+
+  // Set the PC type:
+  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
+
+  // Process options:
+  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode SSAFD::pc_setup_asm() {
+  PetscErrorCode ierr;
+  PC pc, sub_pc;
+
+  // Set parameters equivalent to
+  // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
+
+  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    
+  // Switch to using the "unpreconditioned" norm.
+  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
+
+  // Switch to "right" preconditioning.
+  ierr = KSPSetPCSide(m_KSP, PC_RIGHT); CHKERRQ(ierr);
+
+  // Get the PC from the KSP solver:
+  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
+  
+  // Set the PC type:
+  ierr = PCSetType(pc, PCASM); CHKERRQ(ierr);
+
+  // Set the sub-KSP object to "preonly"
+  KSP *sub_ksp;
+  ierr = PCSetUp(pc); CHKERRQ(ierr);
+  ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp); CHKERRQ(ierr);
+
+  ierr = KSPSetType(*sub_ksp, KSPPREONLY); CHKERRQ(ierr);
+
+  // Set the PC of the sub-KSP to "LU".
+  ierr = KSPGetPC(*sub_ksp, &sub_pc); CHKERRQ(ierr);
+
+  ierr = PCSetType(sub_pc, PCLU); CHKERRQ(ierr);
+    
+  // Let the user override all this:
+  // Process options:
+  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! \brief Allocate objects specific to the SSAFD object.
 /*!
 Because the FD implementation of the SSA uses Picard iteration, a PETSc KSP
 and Mat are used directly.  In particular we set up \f$A\f$
-(Mat SSAStiffnessMatrix) and a \f$b\f$ (= Vec SSARHS) and iteratively solve
+(Mat m_A) and a \f$b\f$ (= Vec m_b) and iteratively solve
 linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
@@ -43,38 +120,47 @@ where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
 PetscErrorCode SSAFD::allocate_fd() {
   PetscErrorCode ierr;
 
+  fracture_density = NULL;
+  m_melange_back_pressure = NULL;
+
   // note SSADA and SSAX are allocated in SSA::allocate()
-  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
+  ierr = VecDuplicate(SSAX, &m_b); CHKERRQ(ierr);
 
-  ierr = DMCreateMatrix(SSADA, MATAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA, MATAIJ, &m_A); CHKERRQ(ierr);
 
-  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
-  // the default PC type somehow is ILU, which now fails (?) while block jacobi
-  //   seems to work; runtime options can override (see test J in vfnow.py)
-  PC pc;
-  ierr = KSPGetPC(SSAKSP,&pc); CHKERRQ(ierr);
-  ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
+  ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
+  ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_"); CHKERRQ(ierr);
 
-  const PetscScalar power = 1.0 / flow_law->exponent();
+  // Use non-zero initial guess (i.e. SSA velocities from the last
+  // solve() call).
+  ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE); CHKERRQ(ierr);
+  
+  const double power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  ierr = hardness.create(grid, "hardness", false); CHKERRQ(ierr);
+  ierr = hardness.create(grid, "hardness", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = hardness.set_attrs("diagnostic",
                             "vertically-averaged ice hardness",
                             unitstr, ""); CHKERRQ(ierr);
 
-  ierr = nuH.create(grid, "nuH", true); CHKERRQ(ierr);
+  ierr = nuH.create(grid, "nuH", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = nuH.set_attrs("internal",
                        "ice thickness times effective viscosity",
                        "Pa s m", ""); CHKERRQ(ierr);
 
-  ierr = nuH_old.create(grid, "nuH_old", true); CHKERRQ(ierr);
+  ierr = nuH_old.create(grid, "nuH_old", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = nuH_old.set_attrs("internal",
                            "ice thickness times effective viscosity (before an update)",
                            "Pa s m", ""); CHKERRQ(ierr);
 
-  scaling = 1.0e9;  // comparable to typical beta for an ice stream;
+  ierr = m_work.create(grid, "m_work", WITH_GHOSTS,
+                       2, /* stencil width */
+                       6  /* dof */); CHKERRQ(ierr);
+  ierr = m_work.set_attrs("internal",
+                          "temporary storage used to compute nuH",
+                          "", ""); CHKERRQ(ierr);
+
+  m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
   // The nuH viewer:
   view_nuh = false;
@@ -90,16 +176,16 @@ PetscErrorCode SSAFD::allocate_fd() {
 PetscErrorCode SSAFD::deallocate_fd() {
   PetscErrorCode ierr;
 
-  if (SSAKSP != PETSC_NULL) {
-    ierr = KSPDestroy(&SSAKSP); CHKERRQ(ierr);
+  if (m_KSP != PETSC_NULL) {
+    ierr = KSPDestroy(&m_KSP); CHKERRQ(ierr);
   }
 
-  if (SSAStiffnessMatrix != PETSC_NULL) {
-    ierr = MatDestroy(&SSAStiffnessMatrix); CHKERRQ(ierr);
+  if (m_A != PETSC_NULL) {
+    ierr = MatDestroy(&m_A); CHKERRQ(ierr);
   }
 
-  if (SSARHS != PETSC_NULL) {
-    ierr = VecDestroy(&SSARHS); CHKERRQ(ierr);
+  if (m_b != PETSC_NULL) {
+    ierr = VecDestroy(&m_b); CHKERRQ(ierr);
   }
 
   return 0;
@@ -138,9 +224,28 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  string tempPrefix;
+  std::string tempPrefix;
   ierr = PISMOptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
-			  dump_system_matlab); CHKERRQ(ierr);
+                          dump_system_matlab); CHKERRQ(ierr);
+
+  m_default_pc_failure_count     = 0;
+  m_default_pc_failure_max_count = 5;
+
+  if (config.get_flag("do_fracture_density")) {
+    fracture_density = dynamic_cast<IceModelVec2S*>(vars.get("fracture_density"));
+    if (fracture_density == NULL)
+      SETERRQ(grid.com, 1, "fracture density is not available");
+  }
+
+  return 0;
+}
+
+PetscErrorCode SSAFD::update(bool fast, IceModelVec2S& melange_back_pressure) {
+  PetscErrorCode ierr;
+
+  m_melange_back_pressure = &melange_back_pressure;
+
+  ierr = SSA::update(fast, melange_back_pressure); CHKERRQ(ierr);
 
   return 0;
 }
@@ -166,11 +271,13 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   PISMVector2 **rhs_uv;
   const double dx = grid.dx, dy = grid.dy;
 
+  const double ice_free_default_velocity = 0.0;
+
   Mask M;
 
   const double standard_gravity = config.get("standard_gravity"),
-    ocean_rho = config.get("sea_water_density"),
-    ice_rho = config.get("ice_density");
+    rho_ocean = config.get("sea_water_density"),
+    rho_ice = config.get("ice_density");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
@@ -194,18 +301,23 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     ierr = mask->begin_access(); CHKERRQ(ierr);
   }
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  if (use_cfbc && m_melange_back_pressure != NULL) {
+    ierr = m_melange_back_pressure->begin_access(); CHKERRQ(ierr);
+  }
 
-      if (m_vel_bc && (bc_locations->as_int(i, j) == 1)) {
-        rhs_uv[i][j].u = scaling * (*m_vel_bc)(i, j).u;
-        rhs_uv[i][j].v = scaling * (*m_vel_bc)(i, j).v;
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
+
+      if (m_vel_bc != NULL &&
+          bc_locations->as_int(i, j) == 1) {
+        rhs_uv[i][j].u = m_scaling * (*m_vel_bc)(i, j).u;
+        rhs_uv[i][j].v = m_scaling * (*m_vel_bc)(i, j).v;
         continue;
       }
 
       if (use_cfbc) {
-        PetscScalar H_ij = (*thickness)(i,j);
-        PetscInt M_ij = mask->as_int(i,j),
+        double H_ij = (*thickness)(i,j);
+        int M_ij = mask->as_int(i,j),
           M_e = mask->as_int(i + 1,j),
           M_w = mask->as_int(i - 1,j),
           M_n = mask->as_int(i,j + 1),
@@ -216,15 +328,15 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
         if (M.ice_free(M_ij)) {
-          rhs_uv[i][j].u = 0.0;
-          rhs_uv[i][j].v = 0.0;
+          rhs_uv[i][j].u = m_scaling * ice_free_default_velocity;
+          rhs_uv[i][j].v = m_scaling * ice_free_default_velocity;
           continue;
         }
 
         if (is_marginal(i, j, bedrock_boundary)) {
-          PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
+          int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
           // direct neighbors
-	  if (bedrock_boundary) {
+          if (bedrock_boundary) {
             if (M.ice_free_ocean(M_e)) aPP = 0;
             if (M.ice_free_ocean(M_w)) aMM = 0;
             if (M.ice_free_ocean(M_n)) bPP = 0;
@@ -236,42 +348,40 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             if (M.ice_free(M_s)) bMM = 0;
           }
 
-          const double H_ij2        = H_ij*H_ij;
-                double ocean_pressure;
+          const double H_ij2 = H_ij*H_ij,
+            b     = (*bed)(i,j),
+            rho_g = rho_ice * standard_gravity;
 
-          if ((*bed)(i,j) < (sea_level - (ice_rho / ocean_rho) * H_ij)) {
-            //calving front boundary condition for floating shelf
-            ocean_pressure = 0.5 * ice_rho * standard_gravity * (1 - (ice_rho / ocean_rho))*H_ij2;
-            // this is not really the ocean_pressure, but the difference between
-            // ocean_pressure and isotrop.normal stresses (=pressure) from within
-            // the ice
+          double ocean_pressure;
+          // this is not really the ocean_pressure, but the difference
+          // between ocean_pressure and isotrop.normal stresses
+          // (=pressure) from within the ice
 
-            // what is the force balance of an iceshelf facing a bedrock wall?! 
-            // this is not relevant as long as we ask only for ice_free_ocean neighbors
-            //if ((aPP==0 && (*bed)(i+1,j)>h_ij) || (aMM==0 && (*bed)(i-1,j)>h_ij) ||
-            //    (bPP==0 && (*bed)(i,j+1)>h_ij) || (bMM==0 && (*bed)(i,j-1)>h_ij)){
-            //  ocean_pressure = 0.0; 
-            //}
-
+          if (M.ocean(M_ij)) {
+            // floating shelf
+            ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
           } else {
-            if( (*bed)(i,j) >= sea_level) {
-              // boundary condition for a "cliff" (grounded ice next to
-              // ice-free ocean) or grounded margin.
-              ocean_pressure = 0.5 * ice_rho * standard_gravity * H_ij2;
-              // this is not 'zero' because the isotrop.normal stresses
-              // (=pressure) from within the ice figures on RHS
+            // grounded terminus
+            if(b >= sea_level) {
+              ocean_pressure = 0.5 * rho_g * H_ij2;
             } else {
-              // boundary condition for marine terminating glacier
-              ocean_pressure = 0.5 * ice_rho * standard_gravity *
-                (H_ij2 - (ocean_rho / ice_rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
+              ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
             }
+          }
+
+          if (m_melange_back_pressure != NULL) {
+            double lambda = (*m_melange_back_pressure)(i, j);
+
+            // adjust the "pressure imbalance term" using the provided
+            // "melange back pressure fraction".
+            ocean_pressure *= (1.0 - lambda);
           }
 
           // Note that if the current cell is "marginal" but not a CFBC
           // location, the following two lines are equaivalent to the "usual
           // case" below.
-          rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP)*ocean_pressure / dx;
-          rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP)*ocean_pressure / dy;
+          rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
+          rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
 
           continue;
         } // end of "if (is_marginal(i, j))"
@@ -285,6 +395,10 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
       rhs_uv[i][j].u = taud(i, j).u;
       rhs_uv[i][j].v = taud(i, j).v;
     }
+  }
+
+  if (use_cfbc && m_melange_back_pressure != NULL) {
+    ierr = m_melange_back_pressure->end_access(); CHKERRQ(ierr);
   }
 
   if (use_cfbc) {
@@ -328,7 +442,9 @@ viscosity using its value at the current estimate of the velocity and we solve
 the linear equations which come from this viscosity.  In abstract symbols, the
 Picard iteration replaces the above nonlinear SSA equations by a sequence of
 linear problems
-	\f[ A(U^{(k)}) U^{(k+1)} = b \f]
+
+\f[ A(U^{(k)}) U^{(k+1)} = b \f]
+
 where \f$A(U)\f$ is the matrix from discretizing the SSA equations supposing
 the viscosity is a function of known velocities \f$U\f$, and where \f$U^{(k)}\f$
 denotes the \f$k\f$th iterate in the process.  The current method assembles \f$A(U)\f$.
@@ -336,8 +452,8 @@ denotes the \f$k\f$th iterate in the process.  The current method assembles \f$A
 For ice shelves \f$\tau_{(b)i} = 0\f$ [\ref MacAyealetal].
 For ice streams with a basal till modelled as a plastic material,
 \f$\tau_{(b)i} = - \tau_c u_i/|\mathbf{u}|\f$ where
-\f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, where
-\f$\tau_c(t,x,y)\f$ is the yield stress of the till [\ref SchoofStream].
+\f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$,
+where \f$\tau_c(t,x,y)\f$ is the yield stress of the till [\ref SchoofStream].
 More generally, ice streams can be modeled with a pseudo-plastic basal till;
 see IceModel::initBasalTillModel() and IceModel::updateYieldStressUsingBasalWater()
 and reference [\ref BKAJS].  The pseudo-plastic till model includes all power law
@@ -349,11 +465,11 @@ velocity*, \f$\beta(u,v)\f$.  Such factoring is possible even in the case of
 (regularized) plastic till.  This scalar coefficient \f$\beta\f$ is what is
 returned by IceBasalResistancePlasticLaw::drag().
 
-Note that the basal shear stress appears on the \em left side of the linear
-system we actually solve.  We believe this is crucial, because of its effect on
-the spectrum of the linear approximations of each stage.  The effect on spectrum
-is clearest in the linearly-viscous till case but
-there seems to be an analogous effect in the plastic till case.
+Note that the basal shear stress appears on the \em left side of the
+linear system we actually solve. We believe this is crucial, because
+of its effect on the spectrum of the linear approximations of each
+stage. The effect on spectrum is clearest in the linearly-viscous till
+case but there seems to be an analogous effect in the plastic till case.
 
 This method assembles the matrix for the left side of the above SSA equations.
 The numerical method is finite difference.  Suppose we use difference notation
@@ -381,9 +497,10 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 */
 PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
+  int zero_pivot_flag = 0;
 
-  const PetscScalar   dx=grid.dx, dy=grid.dy;
-  const PetscScalar   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
+  const double   dx=grid.dx, dy=grid.dy;
+  const double   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   // shortcut:
@@ -418,16 +535,16 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     ierr =    bed->begin_access();        CHKERRQ(ierr);
     ierr =    surface->begin_access();    CHKERRQ(ierr);
   }
-  PetscScalar nuBedrock=config.get("nuBedrock");
-  PetscScalar HminFrozen=0.0;
+  double nuBedrock=config.get("nuBedrock");
+  double HminFrozen=0.0;
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // Handle the easy case: provided Dirichlet boundary conditions
       if (m_vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
         // set diagonal entry to one (scaled); RHS entry will be known velocity;
-        ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
+        ierr = set_diagonal_matrix_entry(A, i, j, m_scaling); CHKERRQ(ierr);
         continue;
       }
 
@@ -437,17 +554,17 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *      c_s
        */
       // const
-      PetscScalar c_w = nuH(i-1,j,0);
-      PetscScalar c_e = nuH(i,j,0);
-      PetscScalar c_s = nuH(i,j-1,1);
-      PetscScalar c_n = nuH(i,j,1);
+      double c_w = nuH(i-1,j,0);
+      double c_e = nuH(i,j,0);
+      double c_s = nuH(i,j-1,1);
+      double c_n = nuH(i,j,1);
 
       if (nuBedrockSet){
        // if option is set, the viscosity at ice-bedrock boundary layer will
        // be prescribed and is a temperature-independent free (user determined) parameter
 
        // direct neighbors
-       PetscInt  M_e = mask->as_int(i + 1,j),
+       int  M_e = mask->as_int(i + 1,j),
                  M_w = mask->as_int(i - 1,j),
                  M_n = mask->as_int(i,j + 1),
                  M_s = mask->as_int(i,j - 1);
@@ -472,13 +589,13 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // non-zeros get allocated, even though we use only 13 (or 14). The
       // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
       // because this makes the code easier to understand.
-      const PetscInt sten = 18;
+      const int sten = 18;
       MatStencil row, col[sten];
 
-      PetscInt aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
-      PetscInt bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
+      int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
+      int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
-      PetscInt M_ij = mask->as_int(i,j);
+      int M_ij = mask->as_int(i,j);
 
       if (use_cfbc) {
         int
@@ -498,7 +615,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
         if (M.ice_free(M_ij)) {
-          ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
+          ierr = set_diagonal_matrix_entry(A, i, j, m_scaling); CHKERRQ(ierr);
           continue;
         }
 
@@ -520,10 +637,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
             if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_sw)) aMs = 0;
             if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_sw)) bMw = 0;
             if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_nw)) bPw = 0;
-            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_nw)) aMn = 0;}
-
-          else {
-
+            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_nw)) aMn = 0;
+          } else {
             if (M.ice_free(M_e)) aPP = 0;
             if (M.ice_free(M_w)) aMM = 0;
             if (M.ice_free(M_n)) bPP = 0;
@@ -537,15 +652,15 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
             if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
             if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
             if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
-            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;				}
-           }
+            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;                           }
+        }
       } // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
-      const PetscReal dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
+      const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
 
       /* Coefficients of the discretization of the first equation; u first, then v. */
-      PetscReal eq1[] = {
+      double eq1[] = {
         0,  -c_n*bPP/dy2,  0,
         -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
         0,  -c_s*bMM/dy2,  0,
@@ -555,7 +670,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* Coefficients of the discretization of the second equation; u first, then v. */
-      PetscReal eq2[] = {
+      double eq2[] = {
         c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
         (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
         -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
@@ -565,7 +680,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* i indices */
-      const PetscInt I[] = {
+      const int I[] = {
         i-1,  i,  i+1,
         i-1,  i,  i+1,
         i-1,  i,  i+1,
@@ -575,7 +690,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* j indices */
-      const PetscInt J[] = {
+      const int J[] = {
         j+1,  j+1,  j+1,
         j,  j,  j,
         j-1,  j-1,  j-1,
@@ -585,7 +700,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* component indices */
-      const PetscInt C[] = {
+      const int C[] = {
         0,  0,  0,
         0,  0,  0,
         0,  0,  0,
@@ -599,19 +714,19 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
        *    (i.e. on left side of SSA eqns).  */
-      PetscReal beta = 0.0;
+      double beta = 0.0;
       if (include_basal_shear) {
         if (M.grounded_ice(M_ij)) {
-          beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
         } else if (M.ice_free_land(M_ij)) {
           // apply drag even in this case, to help with margins; note ice free
           // areas already have a strength extension
           beta = beta_ice_free_bedrock;
         }
         if (sub_gl){
-          // if grounding line interpolation apply here reduced basal drag
+          // reduce the basal drag at grid cells that are partially grounded:
           if (M.icy(M_ij)) {
-            beta = (*gl_mask)(i,j) * basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+            beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           }
         }
       }
@@ -623,15 +738,17 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // check diagonal entries:
       const double eps = 1e-16;
       if (fabs(eq1[4]) < eps) {
-        SETERRQ2(grid.com, 1, "first (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+        fprintf(stderr, "PISM ERROR: first  (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+        zero_pivot_flag = 1;
       }
       if (fabs(eq2[13]) < eps) {
-        SETERRQ2(grid.com, 1, "second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+        fprintf(stderr, "PISM ERROR: second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+        zero_pivot_flag = 1;
       }
 
       // build equations: NOTE TRANSPOSE
       row.j = i; row.i = j;
-      for (PetscInt m = 0; m < sten; m++) {
+      for (int m = 0; m < sten; m++) {
         col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
       }
 
@@ -642,8 +759,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // set coefficients of the second equation:
       row.c = 1;
       ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
+    } // j-loop
+  } // i-loop
 
   if (m_vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
@@ -670,9 +787,15 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 #endif
 
+  int zero_pivot_flag_global = 0;
+  MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, grid.com);
+  if (zero_pivot_flag_global != 0) {
+    fprintf(stderr, "PISM ERROR: zero pivot detected.\n");
+    return 1;
+  }
+
   return 0;
 }
-
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
 //! shelf approximation.
@@ -709,11 +832,12 @@ roughly twice as slow.  The outputs of PETSc options `-ksp_monitor_singular_valu
 `-ksp_compute_eigenvalues` and `-ksp_plot_eigenvalues -draw_pause N`
 (the last holds plots for N seconds) may be useful to diagnose.
 
-The outer loop terminates when the effective viscosity times thickness is no longer changing
-much, according to the tolerance set by the option `-ssa_rtol`.  The
-outer loop also terminates when a maximum number of iterations is exceeded.
-We save the velocity from the last time step in order to have a better estimate
-of the effective viscosity than the u=v=0 result.
+The outer loop terminates when the effective viscosity times thickness
+is no longer changing much, according to the tolerance set by the
+option `-ssa_rtol`. The outer loop also terminates when a maximum
+number of iterations is exceeded. We save the velocity from the last
+time step in order to have a better estimate of the effective
+viscosity than the u=v=0 result.
 
 In truth there is an "outer outer" loop (over index `l`).  This attempts to
 over-regularize the effective viscosity if the nonlinear iteration (the "outer"
@@ -726,164 +850,55 @@ revert to a direct linear solve, either for the whole domain (not scalable) or
 on the subdomains.  This recovery alternative requires a more nontrivial choice
 but it may be worthwhile.  Note the user can already do `-pc_type asm
 -sub_pc_type lu` at the command line, forcing subdomain direct solves.)
- */
+
+FIXME: update this doxygen comment
+*/
 PetscErrorCode SSAFD::solve() {
   PetscErrorCode ierr;
-  Mat A = SSAStiffnessMatrix; // solve  A SSAX = SSARHS
-  PetscReal   norm, normChange;
-  PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
-  KSPConvergedReason  reason;
 
-  stdout_ssa.clear();
-
-  PetscReal ssaRelativeTolerance = config.get("ssafd_relative_convergence"),
-            epsilon              = config.get("epsilon_ssa");
-  PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssafd"));
-  // this has no units; epsilon goes up by this ratio when previous value failed
-  const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
-
+  // Store away old SSA velocity (it might be needed in case a solver
+  // fails).
   ierr = m_velocity.copy_to(m_velocity_old); CHKERRQ(ierr);
 
-  // computation of RHS only needs to be done once; does not depend on
-  // solution; but matrix changes under nonlinear iteration (loop over k below)
-  ierr = assemble_rhs(SSARHS); CHKERRQ(ierr);
+  {
+    // These computations do not depend on the solution, so they need
+    // to be done once.
+    ierr = assemble_rhs(m_b); CHKERRQ(ierr);
+    ierr = compute_hardav_staggered(); CHKERRQ(ierr);
+  }
 
-  ierr = compute_hardav_staggered(hardness); CHKERRQ(ierr);
-
-  for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
-    ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
-
-    ierr = update_nuH_viewers(); CHKERRQ(ierr);
-    // iterate on effective viscosity: "outer nonlinear iteration":
-    for (PetscInt k = 0; k < ssaMaxIterations; ++k) {
-      if (getVerbosityLevel() > 2) {
-        char tempstr[50] = "";  snprintf(tempstr,50, "  %d,%2d:", l, k);
-        stdout_ssa += tempstr;
-      }
-
-      // in preparation of measuring change of effective viscosity:
-      ierr = nuH.copy_to(nuH_old); CHKERRQ(ierr);
-
-      do {
-        // assemble (or re-assemble) matrix, which depends on updated viscosity
-        ierr = assemble_matrix(true, A); CHKERRQ(ierr);
-        if (getVerbosityLevel() > 2)
-          stdout_ssa += "A:";
-
-        // call PETSc to solve linear system by iterative method; "inner iteration"
-        ierr = KSPSetOperators(SSAKSP, A, A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-        ierr = KSPSolve(SSAKSP, SSARHS, SSAX); CHKERRQ(ierr); // SOLVE
-
-        // check if diverged; report to standard out about iteration
-        ierr = KSPGetConvergedReason(SSAKSP, &reason); CHKERRQ(ierr);
-        if (reason < 0) {
-          // KSP diverged
-          ierr = verbPrintf(1,grid.com,
-              "\nPISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
-              reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
-          // write a file with a fixed filename; avoid zillions of files
-          char filename[PETSC_MAX_PATH_LEN] = "SSAFD_kspdivergederror.petsc";
-          ierr = verbPrintf(1,grid.com,
-              "  writing linear system to PETSc binary file %s ...\n",filename);
-              CHKERRQ(ierr);
-          PetscViewer    viewer;
-          ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE, 
-                                       &viewer); CHKERRQ(ierr);
-          ierr = MatView(A,viewer); CHKERRQ(ierr);
-          ierr = VecView(SSARHS,viewer); CHKERRQ(ierr);
-          ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-          // attempt recovery by same mechanism as for outer iteration
-          //   (FIXME: could force direct solve on subdomains?)
-          if (epsilon <= 0.0) {
-            ierr = verbPrintf(1,grid.com,
-                "KSP diverged AND epsilon<=0.0.\n  ENDING ...\n"); CHKERRQ(ierr);
-            PISMEnd();
-          }
-          ierr = verbPrintf(1,grid.com,
-              "  KSP diverged with epsilon=%8.2e.  Retrying with epsilon multiplied by %8.2e.\n\n",
-            epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
-          epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
-          // recovery requires recompute on nuH  (FIXME: could be implemented by max(eps,nuH) here?)
-          ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
-        } else {
-          // report on KSP success; the "inner" iteration is done
-          ierr = KSPGetIterationNumber(SSAKSP, &ksp_iterations); CHKERRQ(ierr);
-          ksp_iterations_total += ksp_iterations;
-          if (getVerbosityLevel() > 2) {
-            char tempstr[50] = "";  snprintf(tempstr,50, "S:%d,%d: ", ksp_iterations, reason);
-            stdout_ssa += tempstr;
-          }
-        }
-
-      } while (reason < 0);  // keep trying till KSP converged
-
-      // Communicate so that we have stencil width for evaluation of effective
-      //   viscosity on next "outer" iteration (and geometry etc. if done):
-      ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
-
-      ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
-
-      // update viscosity and check for viscosity convergence
-      ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
-      ierr = update_nuH_viewers(); CHKERRQ(ierr);
-      ierr = compute_nuH_norm(norm, normChange); CHKERRQ(ierr);
-      if (getVerbosityLevel() > 2) {
-        char tempstr[100] = "";
-        snprintf(tempstr,100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
-                         norm, normChange/norm);
-        stdout_ssa += tempstr;
-      }
-
-      if (getVerbosityLevel() > 2) { // assume that high verbosity shows interest
-                                     //   in immediate feedback about SSA iterations
-        ierr = verbPrintf(2,grid.com, stdout_ssa.c_str()); CHKERRQ(ierr);
-        stdout_ssa.clear();
-      }
-
-      outer_iterations = k + 1;
-      if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
-
-    } // end of the "outer loop" (index: k)
-
-    if (epsilon > 0.0) {
-       ierr = verbPrintf(1,grid.com,
-	 "WARNING: Effective viscosity not converged after %d outer iterations\n"
-	 "\twith epsilon=%8.2e. Retrying with epsilon multiplied by %8.2e.\n",
-	 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
-       ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
-       epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
-    } else {
-       ierr = verbPrintf(1,grid.com,
-         "Effective viscosity not converged after %d iterations AND epsilon<=0.0.\n"
-         "  ENDING ...\n", ssaMaxIterations); CHKERRQ(ierr);
-       PISMEnd();
+  // Try with default settings:
+  {
+    if (m_default_pc_failure_count < m_default_pc_failure_max_count) {
+      ierr = pc_setup_bjacobi(); CHKERRQ(ierr);
     }
 
-  } // end of the "outer outer loop" (index: l)
-
-  done:
-
-  if (getVerbosityLevel() > 2) {
-    char tempstr[100] = "";
-    snprintf(tempstr, 100, "... =%5d outer iterations, ~%3.1f KSP iterations each\n",
-             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
-    stdout_ssa += tempstr;
-  } else if (getVerbosityLevel() == 2) {
-    // at default verbosity, just record last normchange and iterations
-    char tempstr[100] = "";
-    snprintf(tempstr, 100, "%5d outer iterations, ~%3.1f KSP iterations each\n",
-             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
-    stdout_ssa += tempstr;
+    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
+                            config.get("ssafd_relative_convergence"),
+                            config.get("epsilon_ssa"));
   }
-  if (getVerbosityLevel() >= 2)
-    stdout_ssa = "  SSA: " + stdout_ssa;
+
+  if (ierr != 0) {
+    m_default_pc_failure_count += 1;
+    ierr = strategy_1_regularization();
+  }
+
+  if (ierr != 0) {
+    ierr = strategy_2_asm();
+  }
+
+  if (ierr != 0) {
+    PetscPrintf(grid.com,
+                "PISM ERROR: all SSAFD strategies failed.\n");
+    return ierr;
+  }
 
   if (dump_system_matlab) {
-    ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
+    ierr = write_system_matlab(); CHKERRQ(ierr);
   }
-
+  
   if (config.get_flag("scalebrutalSet")){
-    const PetscScalar sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
+    const double sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
     ierr = m_velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
 
     ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
@@ -892,92 +907,208 @@ PetscErrorCode SSAFD::solve() {
   return 0;
 }
 
-
-//! \brief Write the SSA system to an .m (MATLAB) file (for debugging).
-PetscErrorCode SSAFD::writeSSAsystemMatlab() {
+//! \brief Manages the Picard iteration loop.
+/*!
+ *
+ * Returns 0 on success, 1 if the KSP solver failed to converge, and 2 if the
+ * Picard iteration failed to converge.
+ *
+ */
+PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
+                                       double ssa_relative_tolerance,
+                                       double nuH_regularization) {
   PetscErrorCode ierr;
-  PetscViewer    viewer;
-  string prefix = "pism_SSAFD", file_name;
-  char           yearappend[PETSC_MAX_PATH_LEN];
+  double   nuH_norm, nuH_norm_change;
+  int    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
+  KSPConvergedReason  reason;
 
-  IceModelVec2S component;
-  ierr = component.create(grid, "temp_storage", false); CHKERRQ(ierr);
+  char tempstr[100] = "";
+  bool verbose = getVerbosityLevel() >= 2,
+    very_verbose = getVerbosityLevel() > 2;
 
-  bool flag;
-  ierr = PISMOptionsString("ssafd_matlab",
-                           "Save the linear system to an ASCII .m file. Sets the file prefix.",
-                           prefix, flag); CHKERRQ(ierr);
+  // set the initial guess:
+  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
 
-  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m",
-           grid.convert(grid.time->current(), "seconds", "years"));
-  file_name = prefix + string(yearappend);
+  stdout_ssa.clear();
 
-  ierr = verbPrintf(2, grid.com,
-                    "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
-                    file_name.c_str()); CHKERRQ(ierr);
-  ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
-  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(viewer, file_name.c_str());CHKERRQ(ierr);
+  bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
-  // get the command which started the run
-  string cmdstr = pism_args_string();
+  if (use_cfbc == true) {
+    ierr = compute_nuH_staggered_cfbc(nuH, nuH_regularization); CHKERRQ(ierr);
+  } else {
+    ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+  }
+  ierr = update_nuH_viewers(); CHKERRQ(ierr);
 
-  // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
-  ierr = PetscViewerASCIIPrintf(viewer,
-    "%% A PISM linear system report for the finite difference implementation\n"
-    "%% of the SSA stress balance from this run:\n"
-    "%%   '%s'\n"
-    "%% Writes matrix A (sparse), and vectors uv and rhs, for the linear\n"
-    "%% system which was solved at the last step of the nonlinear iteration:\n"
-    "%%    A * uv = rhs.\n"
-    "%% Also writes the year, the coordinates x,y, their gridded versions\n"
-    "%% xx,yy, and the thickness (thk) and surface elevation (usurf).\n"
-    "%% Also writes i-offsetvalues of vertically-integrated viscosity\n"
-    "%% (nuH_0 = nu * H), and j-offset version of same thing (nuH_1 = nu * H);\n"
-    "%% these are on the staggered grid.\n",
-    cmdstr.c_str());  CHKERRQ(ierr);
+  // outer loop
+  for (unsigned int k = 0; k < max_iterations; ++k) {
 
-  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");  CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) SSAStiffnessMatrix,"A"); CHKERRQ(ierr);
-  ierr = MatView(SSAStiffnessMatrix, viewer);CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");  CHKERRQ(ierr);
+    if (very_verbose) {
+      snprintf(tempstr, 100, "  %2d:", k);
+      stdout_ssa += tempstr;
+    }
 
-  ierr = PetscObjectSetName((PetscObject) SSARHS,"rhs"); CHKERRQ(ierr);
-  ierr = VecView(SSARHS, viewer);CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) SSAX,"uv"); CHKERRQ(ierr);
-  ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
+    // in preparation of measuring change of effective viscosity:
+    ierr = nuH.copy_to(nuH_old); CHKERRQ(ierr);
 
-  // save coordinates (for viewing, primarily)
-  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",
-                                grid.convert(grid.time->current(), "seconds", "years"));
-  CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-            "x=%12.3f + (0:%d)*%12.3f;\n"
-            "y=%12.3f + (0:%d)*%12.3f;\n",
-            -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");  CHKERRQ(ierr);
+    // assemble (or re-assemble) matrix, which depends on updated viscosity
+    ierr = assemble_matrix(true, m_A); CHKERRQ(ierr);
 
-  // also save thickness and effective viscosity
-  ierr = thickness->view_matlab(viewer); CHKERRQ(ierr);
-  ierr = surface->view_matlab(viewer); CHKERRQ(ierr);
+    if (very_verbose)
+      stdout_ssa += "A:";
 
-  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
-  ierr = component.set_name("nuH_0"); CHKERRQ(ierr);
-  ierr = component.set_attr("long_name",
-    "effective viscosity times thickness (i offset) at current time step"); CHKERRQ(ierr);
-  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
+    // Call PETSc to solve linear system by iterative method; "inner iteration":
+    ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = KSPSolve(m_KSP, m_b, SSAX); CHKERRQ(ierr); // SOLVE
 
-  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
-  ierr = component.set_name("nuH_1"); CHKERRQ(ierr);
-  ierr = component.set_attr("long_name",
-    "effective viscosity times thickness (j offset) at current time step"); CHKERRQ(ierr);
-  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
+    // Check if diverged; report to standard out about iteration
+    ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
 
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
+    if (reason < 0) {
+      // KSP diverged
+      ierr = verbPrintf(1, grid.com,
+                        "PISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
+                        reason, KSPConvergedReasons[reason]); CHKERRQ(ierr);
+
+      ierr = write_system_petsc(); CHKERRQ(ierr);
+
+      // Tell the caller that we failed. (The caller might try again,
+      // though.)
+      return 1;
+    }
+
+    // report on KSP success; the "inner" iteration is done
+    ierr = KSPGetIterationNumber(m_KSP, &ksp_iterations); CHKERRQ(ierr);
+    ksp_iterations_total += ksp_iterations;
+
+    if (very_verbose) {
+      snprintf(tempstr, 100, "S:%d,%d: ", ksp_iterations, reason);
+      stdout_ssa += tempstr;
+    }
+
+    // Communicate so that we have stencil width for evaluation of effective
+    // viscosity on next "outer" iteration (and geometry etc. if done):
+    // Note that copy_from() updates ghosts of m_velocity.
+    ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+
+    // update viscosity and check for viscosity convergence
+    if (use_cfbc == true) {
+      ierr = compute_nuH_staggered_cfbc(nuH, nuH_regularization); CHKERRQ(ierr);
+    } else {
+      ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+    }
+    ierr = compute_nuH_norm(nuH_norm, nuH_norm_change); CHKERRQ(ierr);
+
+    ierr = update_nuH_viewers(); CHKERRQ(ierr);
+
+    if (very_verbose) {
+      snprintf(tempstr, 100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
+               nuH_norm, nuH_norm_change/nuH_norm);
+
+      stdout_ssa += tempstr;
+
+      // assume that high verbosity shows interest in immediate
+      // feedback about SSA iterations
+      ierr = verbPrintf(2, grid.com, stdout_ssa.c_str()); CHKERRQ(ierr);
+
+      stdout_ssa.clear();
+    }
+
+    outer_iterations = k + 1;
+
+    if (nuH_norm == 0 || nuH_norm_change / nuH_norm < ssa_relative_tolerance)
+      goto done;
+    
+  } // outer loop (k)
+
+  // If we're here, it means that we exceeded max_iterations and still
+  // failed.
+
+  ierr = verbPrintf(1, grid.com,
+                    "PISM WARNING: Effective viscosity not converged after %d outer iterations\n"
+                    "  with nuH_regularization=%8.2e.\n",
+                    max_iterations, nuH_regularization); CHKERRQ(ierr);
+
+  return 2;
+
+ done:
+
+  if (very_verbose) {
+    snprintf(tempstr, 100, "... =%5d outer iterations, ~%3.1f KSP iterations each\n",
+             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
+
+    stdout_ssa += tempstr;
+  } else if (verbose) {
+    // at default verbosity, just record last nuH_norm_change and iterations
+    snprintf(tempstr, 100, "%5d outer iterations, ~%3.1f KSP iterations each\n",
+             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
+
+    stdout_ssa += tempstr;
+  }
+
+  if (verbose)
+    stdout_ssa = "  SSA: " + stdout_ssa;
 
   return 0;
+}
+
+//! Old SSAFD recovery strategy: increase the SSA regularization parameter.
+PetscErrorCode SSAFD::strategy_1_regularization() {
+  PetscErrorCode ierr;
+  // this has no units; epsilon goes up by this ratio when previous value failed
+  const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
+  double nuH_regularization = config.get("epsilon_ssa");
+  unsigned int k = 0, max_tries = 5;
+
+  if (nuH_regularization <= 0.0) {
+      ierr = verbPrintf(1, grid.com,
+                        "PISM WARNING: will not attempt over-regularization of nuH\n"
+                        "  because nuH_regularization == 0.0.\n"); CHKERRQ(ierr);
+    return 1;
+  }
+  
+  while (k < max_tries) {
+    ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
+    ierr = verbPrintf(1, grid.com,
+                      "  failed with nuH_regularization = %8.2f.\n"
+                      "  re-trying with nuH_regularization multiplied by %8.2f...\n",
+                      nuH_regularization,
+                      DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
+
+    nuH_regularization *= DEFAULT_EPSILON_MULTIPLIER_SSA;
+
+
+    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
+                            config.get("ssafd_relative_convergence"),
+                            nuH_regularization);
+    if (ierr == 0)
+      break;
+
+    k += 1;
+
+    if (ierr != 0 && k == max_tries)
+      return ierr;
+  }
+
+  return 0;
+}
+
+//! New SSAFD strategy: switch to direct solves on sub-domains.
+PetscErrorCode SSAFD::strategy_2_asm() {
+  PetscErrorCode ierr;
+
+  ierr = pc_setup_asm(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(1, grid.com,
+                    "  re-trying using the Additive Schwarz preconditioner...\n"); CHKERRQ(ierr);
+  
+  ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
+
+  ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
+                          config.get("ssafd_relative_convergence"),
+                          config.get("epsilon_ssa"));
+
+  return ierr;
 }
 
 //! \brief Compute the norm of nu H and the change in nu H.
@@ -993,12 +1124,12 @@ For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ign
 a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
 \f$L^2\f$ (much less \f$L^\infty\f$, which might not work at all).
  */
-PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) {
+PetscErrorCode SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
   PetscErrorCode ierr;
 
-  vector<PetscReal> nuNorm, nuChange;
+  std::vector<double> nuNorm, nuChange;
 
-  const PetscScalar area = grid.dx * grid.dy;
+  const double area = grid.dx * grid.dy;
 #define MY_NORM     NORM_1
 
   // Test for change in nu
@@ -1019,45 +1150,126 @@ PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) 
 }
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
-PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
+PetscErrorCode SSAFD::compute_hardav_staggered() {
   PetscErrorCode ierr;
-  PetscScalar *E, *E_ij, *E_offset;
+  double *E, *E_ij, *E_offset;
 
-  E = new PetscScalar[grid.Mz];
+  E = new double[grid.Mz];
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = hardness.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  MaskQuery m(*mask);
+
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = enthalpy->getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
-      for (PetscInt o=0; o<2; o++) {
-        const PetscInt oi = 1-o, oj=o;
-        const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+      for (int o=0; o<2; o++) {
+        const int oi = 1-o, oj=o;
+        double H;
+
+        if (m.icy(i,j) && m.icy(i+oi,j+oj))
+          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+        else if (m.icy(i,j))
+          H = (*thickness)(i,j);
+        else
+          H = (*thickness)(i+oi,j+oj);
 
         if (H == 0) {
-          result(i,j,o) = -1e6; // an obviously impossible value
+          hardness(i,j,o) = -1e6; // an obviously impossible value
           continue;
         }
 
         ierr = enthalpy->getInternalColumn(i+oi,j+oj,&E_offset); CHKERRQ(ierr);
         // build a column of enthalpy values a the current location:
-        for (int k = 0; k < grid.Mz; ++k) {
+        for (unsigned int k = 0; k < grid.Mz; ++k) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
-        result(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                    &grid.zlevels[0], E); CHKERRQ(ierr);
+        hardness(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
+                                                      &grid.zlevels[0], E); CHKERRQ(ierr);
       } // o
     }   // j
   }     // i
 
-  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
   delete [] E;
+
+  ierr = fracture_induced_softening(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+/*! @brief Correct vertically-averaged hardness using a
+    parameterization of the fracture-induced softening.
+
+  See T. Albrecht, A. Levermann; Fracture-induced softening for
+  large-scale ice dynamics; (2013), The Cryosphere Discussions 7;
+  4501-4544; DOI:10.5194/tcd-7-4501-2013
+
+  Note that this paper proposes an adjustment of the enhancement factor:
+
+  \f[E_{\text{effective}} = E \cdot (1 - (1-\epsilon) \phi)^{-n}.\f]
+
+  Let \f$E_{\text{effective}} = E\cdot C\f$, where \f$C\f$ is the
+  factor defined by the formula above.
+
+  Recall that the effective viscosity is defined by
+
+  \f[\nu(D) = \frac12 B D^{(1-n)/(2n)}\f]
+
+  and the viscosity form of the flow law is
+
+  \f[\sigma'_{ij} = E_{\text{effective}}^{-\frac1n}2\nu(D) D_{ij}.\f]
+
+  Then
+
+  \f[\sigma'_{ij} = E_{\text{effective}}^{-\frac1n}BD^{(1-n)/(2n)}D_{ij}.\f]
+
+  Using the fact that \f$E_{\text{effective}} = E\cdot C\f$, this can be rewritten as
+
+  \f[\sigma'_{ij} = E^{-\frac1n} \left(C^{-\frac1n}B\right) D^{(1-n)/(2n)}D_{ij}.\f]
+
+  So scaling the enhancement factor by \f$C\f$ is equivalent to scaling
+  ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
+*/
+PetscErrorCode SSAFD::fracture_induced_softening() {
+  PetscErrorCode ierr;
+
+  if (config.get_flag("do_fracture_density") == false)
+    return 0;
+
+  const double
+    epsilon = config.get("fracture_density_softening_lower_limit"),
+    n_glen  = flow_law->exponent();
+
+  ierr = hardness.begin_access(); CHKERRQ(ierr);
+  ierr = fracture_density->begin_access(); CHKERRQ(ierr);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      for (int o=0; o<2; o++) {
+        const int oi = 1-o, oj=o;
+
+        const double
+          // fracture density on the staggered grid:
+          phi       = 0.5 * ((*fracture_density)(i,j) + (*fracture_density)(i+oi,j+oj)),
+          // the line below implements equation (6) in the paper
+          softening = pow((1.0-(1.0-epsilon)*phi), -n_glen);
+
+        hardness(i,j,o) *= pow(softening,-1.0/n_glen);
+      }
+    }
+  }
+  ierr = fracture_density->end_access(); CHKERRQ(ierr);
+  ierr = hardness.end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -1107,75 +1319,62 @@ its minimum is at least \f$\epsilon\f$.  This regularization constant is an argu
 In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
-
-Note that this code (unlike the gravitational driving stress computation, for
-example) does not use first-order differences near ice margins. There are two
-reasons. 1) When CFBC is "on", values of nuH at ice margins are not used in the
-matrix assembly. 2) When CFBC is "off", the velocity field used in this
-computation is continuous across ice margins.
 */
-PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal epsilon) {
+PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
+                                            double nuH_regularization) {
   PetscErrorCode ierr;
-  PISMVector2 **uv;
+
+  IceModelVec2V &uv = m_velocity; // shortcut
 
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = m_velocity.get_array(uv); CHKERRQ(ierr);
+  ierr = uv.begin_access(); CHKERRQ(ierr);
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
+  double ssa_enhancement_factor = flow_law->enhancement_factor(),
     n_glen = flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
-  const PetscScalar dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx, dy = grid.dy;
 
-  for (PetscInt o=0; o<2; ++o) {
-    const PetscInt oi = 1 - o, oj=o;
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int o=0; o<2; ++o) {
+    const int oi = 1 - o, oj=o;
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-        const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+        const double H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
         if (H < strength_extension->get_min_thickness()) {
-          // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
-          //  Does not add or subtract ice mass.
           result(i,j,o) = strength_extension->get_notional_strength();
           continue;
         }
 
-        PetscScalar u_x, u_y, v_x, v_y;
+        double u_x, u_y, v_x, v_y;
         // Check the offset to determine how to differentiate velocity
         if (o == 0) {
-          u_x = (uv[i+1][j].u - uv[i][j].u) / dx;
-          u_y = (uv[i][j+1].u + uv[i+1][j+1].u - uv[i][j-1].u - uv[i+1][j-1].u) / (4*dy);
-          v_x = (uv[i+1][j].v - uv[i][j].v) / dx;
-          v_y = (uv[i][j+1].v + uv[i+1][j+1].v - uv[i][j-1].v - uv[i+1][j-1].v) / (4*dy);
+          u_x = (uv(i+1,j).u - uv(i,j).u) / dx;
+          u_y = (uv(i,j+1).u + uv(i+1,j+1).u - uv(i,j-1).u - uv(i+1,j-1).u) / (4*dy);
+          v_x = (uv(i+1,j).v - uv(i,j).v) / dx;
+          v_y = (uv(i,j+1).v + uv(i+1,j+1).v - uv(i,j-1).v - uv(i+1,j-1).v) / (4*dy);
         } else {
-          u_x = (uv[i+1][j].u + uv[i+1][j+1].u - uv[i-1][j].u - uv[i-1][j+1].u) / (4*dx);
-          u_y = (uv[i][j+1].u - uv[i][j].u) / dy;
-          v_x = (uv[i+1][j].v + uv[i+1][j+1].v - uv[i-1][j].v - uv[i-1][j+1].v) / (4*dx);
-          v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
+          u_x = (uv(i+1,j).u + uv(i+1,j+1).u - uv(i-1,j).u - uv(i-1,j+1).u) / (4*dx);
+          u_y = (uv(i,j+1).u - uv(i,j).u) / dy;
+          v_x = (uv(i+1,j).v + uv(i+1,j+1).v - uv(i-1,j).v - uv(i-1,j+1).v) / (4*dx);
+          v_y = (uv(i,j+1).v - uv(i,j).v) / dy;
         }
 
-	PetscReal nu;
-	flow_law->effective_viscosity(hardness(i,j,o),
-				      secondInvariant_2D(u_x, u_y, v_x, v_y),
-				      &nu, NULL);
+        double nu;
+        flow_law->effective_viscosity(hardness(i,j,o),
+                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                      &nu, NULL);
+
         result(i,j,o) = nu * H;
-
-        if (! finite(result(i,j,o)) || false) {
-          ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
-          CHKERRQ(ierr);
-          ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n",
-                             u_x, u_y, v_x, v_y);
-          CHKERRQ(ierr);
-        }
 
         // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
         result(i,j,o) *= nu_enhancement_scaling;
 
         // We ensure that nuH is bounded below by a positive constant.
-        result(i,j,o) += epsilon;
+        result(i,j,o) += nuH_regularization;
 
       } // j
     } // i
@@ -1184,13 +1383,180 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
+  ierr = uv.end_access(); CHKERRQ(ierr);
 
   // Some communication
   ierr = result.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
+/**
+ * @brief Compute the product of ice viscosity and thickness on the
+ * staggered grid. Used when CFBC is enabled.
+ *
+ * @param[out] result nu*H product
+ * @param[in] nuH_regularization regularization parameter (added to nu*H to keep it away from zero)
+ *
+ * m_work storage scheme:
+ *
+ * m_work(i,j,0) - u_x on the i-offset
+ * m_work(i,j,1) - v_x on the i-offset
+ * m_work(i,j,2) - i-offset weight
+ * m_work(i,j,3) - u_y on the j-offset
+ * m_work(i,j,4) - v_y on the j-offset
+ * m_work(i,j,5) - j-offset weight
+ *
+ * @return 0 on success
+ */
+PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
+                                                 double nuH_regularization) {
+
+  PetscErrorCode ierr;
+  IceModelVec2V &uv = m_velocity; // shortcut
+  double ssa_enhancement_factor = flow_law->enhancement_factor(),
+    n_glen = flow_law->exponent(),
+    nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
+
+  const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
+
+  const double dx = grid.dx, dy = grid.dy;
+
+  MaskQuery m(*mask);
+
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = m_work.begin_access(); CHKERRQ(ierr);
+  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
+
+  int GHOSTS = 1;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+
+      // x-derivative, i-offset
+      {
+        if (m.icy(i,j) && m.icy(i+1,j)) {
+          m_work(i,j,U_X) = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
+          m_work(i,j,V_X) = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
+          m_work(i,j,W_I) = 1.0;
+        } else {
+          m_work(i,j,U_X) = 0.0;
+          m_work(i,j,V_X) = 0.0;
+          m_work(i,j,W_I) = 0.0;
+        }
+      }
+
+      // y-derivative, j-offset
+      {
+        if (m.icy(i,j) && m.icy(i,j+1)) {
+          m_work(i,j,U_Y) = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
+          m_work(i,j,V_Y) = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
+          m_work(i,j,W_J) = 1.0;
+        } else {
+          m_work(i,j,U_Y) = 0.0;
+          m_work(i,j,V_Y) = 0.0;
+          m_work(i,j,W_J) = 0.0;
+        }
+      }
+    } // j-loop
+  } // i-loop
+  ierr = m_velocity.end_access(); CHKERRQ(ierr);
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = hardness.begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+ 
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double u_x, u_y, v_x, v_y, H, nu, W;
+      // i-offset
+      {
+        if (m.icy(i,j) && m.icy(i+1,j))
+          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+1,j));
+        else if (m.icy(i,j))
+          H = (*thickness)(i,j);
+        else
+          H = (*thickness)(i+1,j);
+
+        if (H >= strength_extension->get_min_thickness()) {
+          u_x = m_work(i,j,U_X);
+          v_x = m_work(i,j,V_X);
+
+          W = m_work(i,j,W_J) + m_work(i,j-1,W_J) + m_work(i+1,j-1,W_J) + m_work(i+1,j,W_J);
+          if (W > 0) {
+            u_y = 1.0/W * (m_work(i,j,U_Y) + m_work(i,j-1,U_Y) +
+                           m_work(i+1,j-1,U_Y) + m_work(i+1,j,U_Y));
+            v_y = 1.0/W * (m_work(i,j,V_Y) + m_work(i,j-1,V_Y) +
+                           m_work(i+1,j-1,V_Y) + m_work(i+1,j,V_Y));
+          } else {
+            u_y = 0.0;
+            v_y = 0.0;
+          }
+
+          flow_law->effective_viscosity(hardness(i,j,0),
+                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        &nu, NULL);
+          result(i,j,0) = nu * H;
+        } else {
+          result(i,j,0) = strength_extension->get_notional_strength();
+        }
+      }
+      
+      // j-offset
+      {
+        if (m.icy(i,j) && m.icy(i,j+1))
+          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i,j+1));
+        else if (m.icy(i,j))
+          H = (*thickness)(i,j);
+        else
+          H = (*thickness)(i,j+1);
+
+        if (H >= strength_extension->get_min_thickness()) {
+          u_y = m_work(i,j,U_Y);
+          v_y = m_work(i,j,V_Y);
+
+          W = m_work(i,j,W_I) + m_work(i-1,j,W_I) + m_work(i-1,j+1,W_I) + m_work(i,j+1,W_I);
+          if (W > 0.0) {
+            u_x = 1.0/W * (m_work(i,j,U_X) + m_work(i-1,j,U_X) +
+                           m_work(i-1,j+1,U_X) + m_work(i,j+1,U_X));
+            v_x = 1.0/W * (m_work(i,j,V_X) + m_work(i-1,j,V_X) +
+                           m_work(i-1,j+1,V_X) + m_work(i,j+1,V_X));
+          } else {
+            u_x = 0.0;
+            v_x = 0.0;
+          }
+
+          flow_law->effective_viscosity(hardness(i,j,1),
+                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                        &nu, NULL);
+          result(i,j,1) = nu * H;
+        } else {
+          result(i,j,1) = strength_extension->get_notional_strength();
+        }
+      }
+
+      // adjustments:
+      for (unsigned int o = 0; o < 2; ++o) {
+        // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
+        result(i,j,o) *= nu_enhancement_scaling;
+
+        // We ensure that nuH is bounded below by a positive constant.
+        result(i,j,o) += nuH_regularization;
+      }
+    } // j-loop
+  } // i-loop
+
+
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = hardness.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = m_work.end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+
+  // Some communication
+  ierr = result.update_ghosts(); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! Update the nuH viewer, which shows log10(nu H).
 PetscErrorCode SSAFD::update_nuH_viewers() {
@@ -1199,7 +1565,7 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
   if (!view_nuh) return 0;
 
   IceModelVec2S tmp;
-  ierr = tmp.create(grid, "nuH", false); CHKERRQ(ierr);
+  ierr = tmp.create(grid, "nuH", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = tmp.set_attrs("temporary",
                        "log10 of (viscosity * thickness)",
                        "Pa s m", ""); CHKERRQ(ierr);
@@ -1207,9 +1573,9 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
   ierr = nuH.begin_access(); CHKERRQ(ierr);
   ierr = tmp.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscReal avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
         if (avg_nuH > 1.0e14) {
           tmp(i,j) = log10(avg_nuH);
         } else {
@@ -1231,7 +1597,7 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
 }
 
 PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
-                                                PetscScalar value) {
+                                                double value) {
   PetscErrorCode ierr;
   MatStencil row, col;
   row.j = i; row.i = j;
@@ -1261,8 +1627,8 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  * consistent.
  */
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
-	
-  const PetscInt M_ij = mask->as_int(i,j),
+
+  const int M_ij = mask->as_int(i,j),
     // direct neighbors
     M_e = mask->as_int(i + 1,j),
     M_w = mask->as_int(i - 1,j),
@@ -1277,14 +1643,121 @@ bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
   Mask M;
 
   if (ssa_dirichlet_bc) {
-    return (!M.ice_free(M_ij)) &&
+    return M.icy(M_ij) &&
       (M.ice_free(M_e) || M.ice_free(M_w) || M.ice_free(M_n) || M.ice_free(M_s) ||
        M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));}
   else {
-    return (!M.ice_free(M_ij)) &&
-      (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_w) || M.ice_free_ocean(M_n) || M.ice_free_ocean(M_s) ||
-       M.ice_free_ocean(M_ne) || M.ice_free_ocean(M_se) || M.ice_free_ocean(M_nw) || M.ice_free_ocean(M_sw));
+    return M.icy(M_ij) &&
+      (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_w) ||
+       M.ice_free_ocean(M_n) || M.ice_free_ocean(M_s) ||
+       M.ice_free_ocean(M_ne) || M.ice_free_ocean(M_se) ||
+       M.ice_free_ocean(M_nw) || M.ice_free_ocean(M_sw));
   }
+}
+
+PetscErrorCode SSAFD::write_system_petsc() {
+  PetscErrorCode ierr;
+
+  // write a file with a fixed filename; avoid zillions of files
+  char filename[PETSC_MAX_PATH_LEN] = "SSAFD_kspdivergederror.petsc";
+  ierr = verbPrintf(1, grid.com,
+                    "  writing linear system to PETSc binary file %s ...\n", filename);
+  CHKERRQ(ierr);
+  PetscViewer viewer;
+  ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE,
+                               &viewer); CHKERRQ(ierr);
+  ierr = MatView(m_A, viewer); CHKERRQ(ierr);
+  ierr = VecView(m_b, viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Write the SSA system to an .m (MATLAB) file (for debugging).
+PetscErrorCode SSAFD::write_system_matlab() {
+  PetscErrorCode ierr;
+  PetscViewer    viewer;
+  std::string prefix = "pism_SSAFD", file_name;
+  char           yearappend[PETSC_MAX_PATH_LEN];
+
+  IceModelVec2S component;
+  ierr = component.create(grid, "temp_storage", WITHOUT_GHOSTS); CHKERRQ(ierr);
+
+  bool flag;
+  ierr = PISMOptionsString("-ssafd_matlab",
+                           "Save the linear system to an ASCII .m file. Sets the file prefix.",
+                           prefix, flag); CHKERRQ(ierr);
+
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m",
+           grid.convert(grid.time->current(), "seconds", "years"));
+  file_name = prefix + std::string(yearappend);
+
+  ierr = verbPrintf(2, grid.com,
+                    "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
+                    file_name.c_str()); CHKERRQ(ierr);
+  ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name.c_str());CHKERRQ(ierr);
+
+  // get the command which started the run
+  std::string cmdstr = pism_args_string();
+
+  // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
+  ierr = PetscViewerASCIIPrintf(viewer,
+    "%% A PISM linear system report for the finite difference implementation\n"
+    "%% of the SSA stress balance from this run:\n"
+    "%%   '%s'\n"
+    "%% Writes matrix A (sparse), and vectors uv and rhs, for the linear\n"
+    "%% system which was solved at the last step of the nonlinear iteration:\n"
+    "%%    A * uv = rhs.\n"
+    "%% Also writes the year, the coordinates x,y, their gridded versions\n"
+    "%% xx,yy, and the thickness (thk) and surface elevation (usurf).\n"
+    "%% Also writes i-offsetvalues of vertically-integrated viscosity\n"
+    "%% (nuH_0 = nu * H), and j-offset version of same thing (nuH_1 = nu * H);\n"
+    "%% these are on the staggered grid.\n",
+    cmdstr.c_str());  CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");  CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) m_A,"A"); CHKERRQ(ierr);
+  ierr = MatView(m_A, viewer);CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");  CHKERRQ(ierr);
+
+  ierr = PetscObjectSetName((PetscObject) m_b,"rhs"); CHKERRQ(ierr);
+  ierr = VecView(m_b, viewer);CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAX,"uv"); CHKERRQ(ierr);
+  ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
+
+  // save coordinates (for viewing, primarily)
+  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",
+                                grid.convert(grid.time->current(), "seconds", "years"));
+  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+            "x=%12.3f + (0:%d)*%12.3f;\n"
+            "y=%12.3f + (0:%d)*%12.3f;\n",
+            -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");  CHKERRQ(ierr);
+
+  // also save thickness and effective viscosity
+  ierr = thickness->view_matlab(viewer); CHKERRQ(ierr);
+  ierr = surface->view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
+  ierr = component.set_name("nuH_0"); CHKERRQ(ierr);
+  component.metadata().set_string("long_name",
+                                  "effective viscosity times thickness (i offset) at current time step");
+  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = nuH.get_component(1, component); CHKERRQ(ierr);
+  ierr = component.set_name("nuH_1"); CHKERRQ(ierr);
+  component.metadata().set_string("long_name",
+                                  "effective viscosity times thickness (j offset) at current time step");
+  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  return 0;
 }
 
 SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars)
@@ -1306,9 +1779,9 @@ PetscErrorCode SSAFD_nuH::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "nuH", true); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "nuH", WITH_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
 
   ierr = model->nuH.copy_to(*result); CHKERRQ(ierr);
@@ -1317,10 +1790,9 @@ PetscErrorCode SSAFD_nuH::compute(IceModelVec* &output) {
   return 0;
 }
 
-void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                            map<string, PISMTSDiagnostic*> &ts_dict) {
+void SSAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                            std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
   SSA::get_diagnostics(dict, ts_dict);
 
   dict["nuH"] = new SSAFD_nuH(this, grid, *variables);
 }
-

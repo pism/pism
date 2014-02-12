@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -50,19 +50,19 @@ Call sequence like this:
 class tempSystemCtx : public columnSystemCtx {
 
 public:
-  tempSystemCtx(PetscInt my_Mz, string my_prefix);
+  tempSystemCtx(int my_Mz, std::string my_prefix);
   PetscErrorCode initAllColumns();
   PetscErrorCode setSchemeParamsThisColumn(
-                     PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
+                     PismMask my_mask, bool my_isMarginal, double my_lambda);  
+  PetscErrorCode setSurfaceBoundaryValuesThisColumn(double my_Ts);
   PetscErrorCode setBasalBoundaryValuesThisColumn(
-                     PetscScalar my_G0, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
+                     double my_G0, double my_Tshelfbase, double my_Rb);
 
-  PetscErrorCode solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex);  
+  PetscErrorCode solveThisColumn(double *x);  
 
 public:
   // constants which should be set before calling initForAllColumns()
-  PetscScalar  dx,
+  double  dx,
                dy,
                dtTemp,
                dzEQ,
@@ -70,7 +70,7 @@ public:
                ice_c_p,
                ice_k;
   // pointers which should be set before calling initForAllColumns()
-  PetscScalar  *T,
+  double  *T,
                *u,
                *v,
                *w,
@@ -78,11 +78,11 @@ public:
   IceModelVec3 *T3;
 
 protected: // used internally
-  PetscInt    Mz;
-  PetscScalar lambda, Ts, G0, Tshelfbase, Rb;
+  int    Mz;
+  double lambda, Ts, G0, Tshelfbase, Rb;
   PismMask    mask;
   bool        isMarginal;
-  PetscScalar nuEQ,
+  double nuEQ,
               rho_c_I,
               iceK,
               iceR;
@@ -93,5 +93,5 @@ protected: // used internally
               basalBCsValid;
 };
 
-#endif	/* __tempSystem_hh */
+#endif  /* __tempSystem_hh */
 

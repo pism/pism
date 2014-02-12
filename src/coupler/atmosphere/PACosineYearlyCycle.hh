@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,12 +25,12 @@ class Timeseries;
 
 class PACosineYearlyCycle : public PAYearlyCycle {
 public:
-  PACosineYearlyCycle(IceGrid &g, const NCConfigVariable &conf);
+  PACosineYearlyCycle(IceGrid &g, const PISMConfig &conf);
   virtual ~PACosineYearlyCycle();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   Timeseries *A;                 // amplitude scaling

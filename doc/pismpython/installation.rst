@@ -1,11 +1,8 @@
 .. _installation:
 
 =============================================
-Python Bindings and Inverse Code Installation
+Installation
 =============================================
-
-PISM's Python bindings can be used to write Python
-scripts that use 
 
 The Python bindings are an optional part of PISM, but 
 are required to run the inversion code. The instructions
@@ -112,9 +109,26 @@ Sphinx is a documentation generation tool and
 can be installed via ``apt-get`` or ``macports``.
 See the `installation instructions <http://sphinx-doc.org/latest/install.html>`_
 for more details.  It is only required if you wish to 
-build the python/inverse documentation.
+build the python/inverse documentation.  For example, do
 
-Note that if you install ``sphinx`` using macports,
+.. code-block:: bash
+
+  sudo apt-get install sphinx-common
+
+The documentation also requires the Sphinx extension called
+``sphinxcontrib.bibtex``, which may come with some Sphinx packages (but not
+with Debian packages at this time).  Without it you will see this error when
+you try to build the documentation (see below):
+
+.. code-block:: bash
+
+  Extension error:
+  Could not import extension sphinxcontrib.bibtex (exception: No module named bibtex)
+
+To install it see the
+`online instructions <http://sphinxcontrib-bibtex.readthedocs.org>`_.
+
+Note that if you install Sphinx using macports,
 you will install a version that depends on your python
 version, and its executables will have names that
 depend on the python version, e.g. ``sphinx-build-2.7``
@@ -178,8 +192,16 @@ In the PISM build directory,
 
   make pismpython_docs
 
-The main page for the documentation is then in
-:file:`doc/pismpython/html/index.html`. The
+If you get an error like
+
+.. code-block:: bash
+
+  make: *** No rule to make target `pismpython_docs'.  Stop.
+
+then re-run ``cmake ..`` or ``ccmake ..``, making sure that Sphinx is installed
+(see above); the ``pismpython_docs`` target will then be present.
+Once built, the main page for the documentation is then in
+:file:`doc/pismpython/html/index.html` inside your build directory. The
 documentation build can take some time while it
 builds a large number of small images from
 :math:`\text{\LaTeX}` formulas.

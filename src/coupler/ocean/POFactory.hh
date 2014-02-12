@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012 PISM Authors
+// Copyright (C) 2011, 2012, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 class POFactory : public PCFactory<PISMOceanModel,POModifier> {
 public:
-  POFactory(IceGrid& g, const NCConfigVariable& conf)
+  POFactory(IceGrid& g, const PISMConfig& conf)
     : PCFactory<PISMOceanModel,POModifier>(g, conf)
   {
     add_standard_types();

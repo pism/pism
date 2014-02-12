@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "PSLapseRates.hh"
 
-PSLapseRates::PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+PSLapseRates::PSLapseRates(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
   : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
@@ -42,11 +42,11 @@ PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+                  "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -62,7 +62,7 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool smb_lapse_rate_set;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -86,7 +86,8 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
 
   temp_lapse_rate = grid.convert(temp_lapse_rate, "K/km", "K/m");
 
-  smb_lapse_rate = grid.convert(smb_lapse_rate, "m/year / km", "m/s / m");
+  smb_lapse_rate *= config.get("ice_density"); // convert from [m/year / km] to [kg m-2 / year / km]
+  smb_lapse_rate = grid.convert(smb_lapse_rate, "(kg m-2) / year / km", "(kg m-2) / s / m");
 
   return 0;
 }
@@ -105,7 +106,7 @@ PetscErrorCode PSLapseRates::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSLapseRates::add_vars_to_output(string keyword, set<string> &result) {
+void PSLapseRates::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
@@ -114,7 +115,7 @@ void PSLapseRates::add_vars_to_output(string keyword, set<string> &result) {
   input_model->add_vars_to_output(keyword, result);
 }
 
-PetscErrorCode PSLapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSLapseRates::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -130,13 +131,13 @@ PetscErrorCode PSLapseRates::define_variables(set<string> vars, const PIO &nc, P
   return 0;
 }
 
-PetscErrorCode PSLapseRates::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSLapseRates::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
@@ -147,8 +148,8 @@ PetscErrorCode PSLapseRates::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(climatic_mass_balance, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = climatic_mass_balance;
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _POCONSTANTPIK_H_
 
 #include "PISMOcean.hh"
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 
 //! A class defining the interface of a PISM ocean model modifier.
 
@@ -28,24 +28,25 @@
 //! Parameterization of sub-shelf melting with respect to sub-shelf heat flux like in Beckmann_Goosse 2003
 class POConstantPIK : public PISMOceanModel {
 public:
-  POConstantPIK(IceGrid &g, const NCConfigVariable &conf);
+  POConstantPIK(IceGrid &g, const PISMConfig &conf);
   virtual ~POConstantPIK();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual PetscErrorCode sea_level_elevation(double &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
-  IceModelVec2S *ice_thickness;	// is not owned by this class
+  IceModelVec2S *ice_thickness; // is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:
   PetscErrorCode allocate_POConstantPIK();
+  double meltfactor;
 };
 
 #endif /* _POCONSTANTPIK_H_ */

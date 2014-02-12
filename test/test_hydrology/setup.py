@@ -28,7 +28,6 @@ if prefix == "":
     sys.exit(1)
 
 
-# If the user set NO_OPENMP, proceed with these options. Otherwise add options GCC uses.
 libraries=['gsl', 'gslcblas']
 extra_compile_args=["-O3", "-ffast-math", "-Wall"]
 

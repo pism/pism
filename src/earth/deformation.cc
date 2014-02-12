@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009, 2011, 2013 Ed Bueler
+// Copyright (C) 2004-2009, 2011, 2013, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -19,18 +19,20 @@
 #include <cmath>
 #include <petscvec.h>
 #include <fftw3.h>
+#include <assert.h>
 #include "pism_const.hh"
 #include "matlablike.hh"
 #include "greens.hh"
 #include "deformation.hh"
+#include "PISMConfig.hh"
 
 BedDeformLC::BedDeformLC() {
-  settingsDone = PETSC_FALSE;
-  allocDone = PETSC_FALSE;
+  settingsDone = false;
+  allocDone    = false;
 }
 
 BedDeformLC::~BedDeformLC() {
-  if (allocDone == PETSC_TRUE) {
+  if (allocDone == true) {
 
     fftw_destroy_plan(dft_forward);
     fftw_destroy_plan(dft_inverse);
@@ -45,65 +47,63 @@ BedDeformLC::~BedDeformLC() {
     VecDestroy(&vleft);
     VecDestroy(&vright);
     VecDestroy(&lrmE);
-    delete [] cx;  delete [] cy;
+    delete [] cx;
+    delete [] cy;
   }
-  allocDone = PETSC_FALSE;
 }
 
-PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
-                                     PetscBool  myinclude_elastic,
-                                     PetscInt myMx, PetscInt myMy,
-                                     PetscScalar mydx, PetscScalar mydy,
-                                     PetscInt myZ,
+PetscErrorCode BedDeformLC::settings(const PISMConfig &config,
+                                     bool  myinclude_elastic,
+                                     int myMx, int myMy,
+                                     double mydx, double mydy,
+                                     int myZ,
                                      Vec* myHstart, Vec* mybedstart, Vec* myuplift,
                                      Vec* myH, Vec* mybed) {
 
   // set parameters
   include_elastic = myinclude_elastic;
-  Mx = myMx;
-  My = myMy;
-  dx = mydx;
-  dy = mydy;
-  Z = myZ;
+
+  Mx     = myMx;
+  My     = myMy;
+  dx     = mydx;
+  dy     = mydy;
+  Z      = myZ;
   icerho = config.get("ice_density");
-  rho = config.get("lithosphere_density");
-  eta = config.get("mantle_viscosity");
-  D = config.get("lithosphere_flexural_rigidity");
+  rho    = config.get("lithosphere_density");
+  eta    = config.get("mantle_viscosity");
+  D      = config.get("lithosphere_flexural_rigidity");
 
   standard_gravity = config.get("standard_gravity");
 
   // derive more parameters
-  Lx = ((Mx - 1) / 2) * dx;
-  Ly = ((My - 1) / 2) * dy;
-  Nx = Z*(Mx - 1);
-  Ny = Z*(My - 1);
-  Lx_fat = (Nx / 2) * dx;
-  Ly_fat = (Ny / 2) * dy;
-  Nxge = Nx + 1;
-  Nyge = Ny + 1;
+  Lx       = ((Mx - 1) / 2) * dx;
+  Ly       = ((My - 1) / 2) * dy;
+  Nx       = Z*(Mx - 1);
+  Ny       = Z*(My - 1);
+  Lx_fat   = (Nx / 2) *   dx;
+  Ly_fat   = (Ny / 2) *   dy;
+  Nxge     = Nx + 1;
+  Nyge     = Ny + 1;
   i0_plate = (Z - 1)*(Mx - 1) / 2;
   j0_plate = (Z - 1)*(My - 1) / 2;
 
   // attach to existing (must be allocated!) sequential Vecs
-  H = myH;
-  bed = mybed;
-  H_start = myHstart;
+  H         = myH;
+  bed       = mybed;
+  H_start   = myHstart;
   bed_start = mybedstart;
-  uplift = myuplift;
+  uplift    = myuplift;
 
-  settingsDone = PETSC_TRUE;
+  settingsDone = true;
   return 0;
 }
 
 
 PetscErrorCode BedDeformLC::alloc() {
   PetscErrorCode  ierr;
-  if (settingsDone == PETSC_FALSE) {
-    SETERRQ(PETSC_COMM_SELF, 1, "BedDeformLC must be set with settings() before alloc()\n");
-  }
-  if (allocDone == PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF, 2, "BedDeformLC already allocated\n");
-  }
+
+  assert(settingsDone == true);
+  assert(allocDone == false);
 
   ierr = VecDuplicate(*H, &Hdiff); CHKERRQ(ierr);  // allocate working space
   ierr = VecDuplicate(*H, &dbedElastic); CHKERRQ(ierr);  // allocate working space
@@ -125,8 +125,8 @@ PetscErrorCode BedDeformLC::alloc() {
   // fftw manipulates the data in setting up a plan, so fill with nonconstant junk
   {
     VecAccessor2D<fftw_complex> tmp(fftw_input, Nx, Ny);
-    for (PetscInt i = 0; i < Nx; i++) {
-      for (PetscInt j = 0; j < Ny; j++) {
+    for (int i = 0; i < Nx; i++) {
+      for (int j = 0; j < Ny; j++) {
         tmp(i, j)[0] = i - 3;
         tmp(i, j)[1] = j*j + 2;
       }
@@ -135,38 +135,48 @@ PetscErrorCode BedDeformLC::alloc() {
   dft_forward = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_FORWARD, FFTW_MEASURE);
   dft_inverse = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_BACKWARD, FFTW_MEASURE);
 
+  cx = new double[Nx];
+  cy = new double[Ny];
+
+  allocDone = true;
+  return 0;
+}
+
+/**
+ * Pre-compute coefficients used by the model.
+ *
+ *
+ * @return 0 on success
+ */
+PetscErrorCode BedDeformLC::init() {
+  PetscErrorCode ierr;
+
   // coeffs for Fourier spectral method Laplacian
   // Matlab version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
-  cx = new PetscScalar[Nx];
-  cy = new PetscScalar[Ny];
-
-  for (PetscInt i = 0; i <= Nx / 2; i++)
+  for (int i = 0; i <= Nx / 2; i++)
     cx[i] = (M_PI / Lx_fat) * i;
 
-  for (PetscInt i = Nx / 2 + 1; i < Nx; i++)
+  for (int i = Nx / 2 + 1; i < Nx; i++)
     cx[i] = (M_PI / Lx_fat) * (Nx - i);
 
-  for (PetscInt j = 0; j <= Ny / 2; j++)
+  for (int j = 0; j <= Ny / 2; j++)
     cy[j] = (M_PI / Ly_fat) * j;
 
-  for (PetscInt j = Ny / 2 + 1; j < Ny; j++)
+  for (int j = Ny / 2 + 1; j < Ny; j++)
     cy[j] = (M_PI / Ly_fat) * (Ny - j);
 
   // compare geforconv.m
-  if (include_elastic == PETSC_TRUE) {
+  if (include_elastic == true) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
            "     computing spherical elastic load response matrix ..."); CHKERRQ(ierr);
     PetscVecAccessor2D II(lrmE, Nxge, Nyge);
     ge_params ge_data;
     ge_data.dx = dx;
     ge_data.dy = dy;
-    //const PetscInt imid_ge = Nx/2, jmid_ge = Ny/2;
-    for (PetscInt i = 0; i < Nxge; i++) {
-      for (PetscInt j = 0; j < Nyge; j++) {
+    for (int i = 0; i < Nxge; i++) {
+      for (int j = 0; j < Nyge; j++) {
         ge_data.p = i;
         ge_data.q = j;
-        //ge_data.p = i - imid_ge;
-        //ge_data.q = j - jmid_ge;
         II(i, j) = dblquad_cubature(ge_integrand, -dx/2, dx/2, -dy/2, dy/2,
                                     1.0e-8, &ge_data);
       }
@@ -175,10 +185,8 @@ PetscErrorCode BedDeformLC::alloc() {
     ierr = PetscPrintf(PETSC_COMM_SELF, " done\n"); CHKERRQ(ierr);
   }
 
-  allocDone = PETSC_TRUE;
   return 0;
 }
-
 
 PetscErrorCode BedDeformLC::uplift_init() {
   // to initialize we solve:
@@ -202,9 +210,9 @@ PetscErrorCode BedDeformLC::uplift_init() {
   fftw_execute(dft_forward);
 
   // compute left and right coefficients
-  for (PetscInt i = 0; i < Nx; i++) {
-    for (PetscInt j = 0; j < Ny; j++) {
-      const PetscScalar cclap = cx[i]*cx[i] + cy[j]*cy[j];
+  for (int i = 0; i < Nx; i++) {
+    for (int j = 0; j < Ny; j++) {
+      const double cclap = cx[i]*cx[i] + cy[j]*cy[j];
       left(i, j) = rho * standard_gravity + D * cclap * cclap;
       right(i, j) = -2.0 * eta * sqrt(cclap);
     }
@@ -217,8 +225,8 @@ PetscErrorCode BedDeformLC::uplift_init() {
     VecAccessor2D<fftw_complex> u0_hat(fftw_input, Nx, Ny),
       uplift_hat(fftw_output, Nx, Ny);
 
-    for (PetscInt i = 0; i < Nx; i++) {
-      for (PetscInt j = 0; j < Ny; j++) {
+    for (int i = 0; i < Nx; i++) {
+      for (int j = 0; j < Ny; j++) {
         u0_hat(i, j)[0] = (right(i, j) * uplift_hat(i, j)[0]) / left(i, j);
         u0_hat(i, j)[1] = (right(i, j) * uplift_hat(i, j)[1]) / left(i, j);
       }
@@ -231,14 +239,14 @@ PetscErrorCode BedDeformLC::uplift_init() {
   {
     PetscVecAccessor2D u_start(U_start, Nx, Ny);
 
-    PetscScalar av = 0.0;
-    for (PetscInt i = 0; i < Nx; i++)
+    double av = 0.0;
+    for (int i = 0; i < Nx; i++)
       av += u_start(i, 0);
 
-    for (PetscInt j = 0; j < Ny; j++)
+    for (int j = 0; j < Ny; j++)
       av += u_start(0, j);
 
-    av = av / ((PetscScalar) (Nx + Ny));
+    av = av / ((double) (Nx + Ny));
 
     ierr = VecShift(U_start, -av); CHKERRQ(ierr);
   }
@@ -249,7 +257,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
 }
 
 
-PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar seconds_from_start) {
+PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_from_start) {
   // solves:
   //     (2 eta |grad| U^{n+1}) + (dt/2) * ( rho_r g U^{n+1} + D grad^4 U^{n+1} )
   //   = (2 eta |grad| U^n) - (dt/2) * ( rho_r g U^n + D grad^4 U^n ) - dt * rho g H_start
@@ -281,9 +289,9 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar
 
   // Compute left and right coefficients; note they depend on the length of a
   // time-step and thus cannot be precomputed
-  for (PetscInt i = 0; i < Nx; i++) {
-    for (PetscInt j = 0; j < Ny; j++) {
-      const PetscScalar cclap = cx[i]*cx[i] + cy[j]*cy[j],
+  for (int i = 0; i < Nx; i++) {
+    for (int j = 0; j < Ny; j++) {
+      const double cclap = cx[i]*cx[i] + cy[j]*cy[j],
         part1 = 2.0 * eta * sqrt(cclap),
         part2 = (dt_seconds / 2.0) * (rho * standard_gravity + D * cclap * cclap);
       left(i, j)  = part1 + part2;
@@ -296,8 +304,8 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar
   {
     VecAccessor2D<fftw_complex> input(fftw_input, Nx, Ny),
       u_hat(fftw_output, Nx, Ny), load_hat(loadhat, Nx, Ny);
-    for (PetscInt i = 0; i < Nx; i++) {
-      for (PetscInt j = 0; j < Ny; j++) {
+    for (int i = 0; i < Nx; i++) {
+      for (int j = 0; j < Ny; j++) {
         input(i, j)[0] = (right(i, j) * u_hat(i, j)[0] + load_hat(i, j)[0]) / left(i, j);
         input(i, j)[1] = (right(i, j) * u_hat(i, j)[1] + load_hat(i, j)[1]) / left(i, j);
       }
@@ -311,7 +319,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar
   tweak(seconds_from_start);
 
   // now compute elastic response if desired; bed = ue at end of this block
-  if (include_elastic == PETSC_TRUE) {
+  if (include_elastic == true) {
     // Matlab:     ue=rhoi*conv2(H-H_start, II, 'same')
     ierr = conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);  CHKERRQ(ierr);
     ierr = VecScale(dbedElastic, icerho);  CHKERRQ(ierr);
@@ -326,8 +334,8 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar
     PetscVecAccessor2D b(*bed, Mx, My), b_start(*bed_start, Mx, My), db_elastic(dbedElastic, Mx, My),
       u(U, Nx, Ny, i0_plate, j0_plate), u_start(U_start, Nx, Ny, i0_plate, j0_plate);
 
-    for (PetscInt i = 0; i < Mx; i++) {
-      for (PetscInt j = 0; j < My; j++) {
+    for (int i = 0; i < Mx; i++) {
+      for (int j = 0; j < My; j++) {
         b(i, j) = b_start(i, j) + db_elastic(i, j) + (u(i, j) - u_start(i, j));
       }
     }
@@ -336,31 +344,31 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dt_seconds, const PetscScalar
   return 0;
 }
 
-void BedDeformLC::tweak(PetscReal seconds_from_start) {
+void BedDeformLC::tweak(double seconds_from_start) {
   PetscVecAccessor2D u(U, Nx, Ny);
 
   // find average value along "distant" boundary of [-Lx_fat, Lx_fat]X[-Ly_fat, Ly_fat]
   // note domain is periodic, so think of cut locus of torus (!)
   // (will remove it:   uun1=uun1-( sum(uun1(1, :))+sum(uun1(:, 1)) )/(2*N);)
-  PetscScalar av = 0.0;
-  for (PetscInt i = 0; i < Nx; i++)
+  double av = 0.0;
+  for (int i = 0; i < Nx; i++)
     av += u(i, 0);
 
-  for (PetscInt j = 0; j < Ny; j++)
+  for (int j = 0; j < Ny; j++)
     av += u(0, j);
 
-  av = av / ((PetscScalar) (Nx + Ny));
+  av = av / ((double) (Nx + Ny));
 
   // tweak continued: replace far field with value for an equivalent disc load which has R0=Lx*(2/3)=L/3
   // (instead of 1000km in Matlab code: H0 = dx*dx*sum(sum(H))/(pi*1e6^2);  % trapezoid rule)
-  const PetscScalar Lav = (Lx_fat + Ly_fat) / 2.0;
-  const PetscScalar Requiv = Lav * (2.0 / 3.0);
-  PetscScalar delvolume;
+  const double Lav = (Lx_fat + Ly_fat) / 2.0;
+  const double Requiv = Lav * (2.0 / 3.0);
+  double delvolume;
   VecSum(Hdiff, &delvolume);
   delvolume = delvolume * dx * dy;  // make into a volume
-  const PetscScalar Hequiv = delvolume / (M_PI * Requiv * Requiv);
+  const double Hequiv = delvolume / (M_PI * Requiv * Requiv);
 
-  const PetscScalar discshift = viscDisc(seconds_from_start,
+  const double discshift = viscDisc(seconds_from_start,
                                          Hequiv, Requiv, Lav, rho, standard_gravity, D, eta) - av;
 
   VecShift(U, discshift);
@@ -393,7 +401,7 @@ void BedDeformLC::copy_fftw_output(fftw_complex *output) {
 /*!
  * Sets the imaginary part to zero.
  */
-void BedDeformLC::set_fftw_input(Vec vec_input, PetscReal normalization, int M, int N, int i0, int j0) {
+void BedDeformLC::set_fftw_input(Vec vec_input, double normalization, int M, int N, int i0, int j0) {
   PetscVecAccessor2D in(vec_input, M, N);
   VecAccessor2D<fftw_complex> input(fftw_input, Nx, Ny, i0, j0);
   for (int i = 0; i < M; ++i) {
@@ -405,7 +413,7 @@ void BedDeformLC::set_fftw_input(Vec vec_input, PetscReal normalization, int M, 
 }
 
 //! \brief Get the real part of fftw_output and put it in output.
-void BedDeformLC::get_fftw_output(Vec output, PetscReal normalization, int M, int N, int i0, int j0) {
+void BedDeformLC::get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0) {
   PetscVecAccessor2D out(output, M, N);
   VecAccessor2D<fftw_complex> fftw_out(fftw_output, Nx, Ny, i0, j0);
   for (int i = 0; i < M; ++i) {

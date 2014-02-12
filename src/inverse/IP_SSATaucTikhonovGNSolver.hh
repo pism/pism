@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ public:
   typedef IceModelVec2V StateVec;
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
-  IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta, 
+  IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
                     IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
 
   ~IP_SSATaucTikhonovGNSolver();
@@ -68,12 +68,12 @@ public:
   }
 
   //! Sets the desired target misfit (in units of \f$\sqrt{J_{\rm misfit}}\f$).
-  virtual PetscErrorCode setTargetMisfit( PetscReal misfit) {
+  virtual PetscErrorCode setTargetMisfit( double misfit) {
     m_target_misfit = misfit;
     return 0;
   }
 
-  virtual PetscErrorCode evaluateGNFunctional(DesignVec h, PetscReal *value);
+  virtual PetscErrorCode evaluateGNFunctional(DesignVec &h, double *value);
 
   virtual PetscErrorCode apply_GN(IceModelVec2S &h, IceModelVec2S &out);
   virtual PetscErrorCode apply_GN(Vec h, Vec out);
@@ -92,7 +92,7 @@ protected:
 
   virtual PetscErrorCode solve_linearized(TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode compute_dlogalpha(PetscReal *dalpha, TerminationReason::Ptr &reason);
+  virtual PetscErrorCode compute_dlogalpha(double *dalpha, TerminationReason::Ptr &reason);
 
   virtual PetscErrorCode linesearch(TerminationReason::Ptr &reason);
 
@@ -131,7 +131,7 @@ protected:
   DesignVec m_grad_state;
   DesignVec m_gradient;
   
-  PetscReal m_val_design, m_val_state, m_value;
+  double m_val_design, m_val_state, m_value;
 
   StateVec &m_u_obs;
   StateVec m_u_diff;
@@ -139,18 +139,18 @@ protected:
   KSP m_ksp;  
   Mat m_mat_GN;
 
-  PetscReal m_eta;
+  double m_eta;
   IPInnerProductFunctional<DesignVec> &m_designFunctional;
   IPInnerProductFunctional<StateVec> &m_stateFunctional;
 
-  PetscReal m_alpha;
-  PetscReal m_logalpha;
-  PetscReal m_target_misfit;
+  double m_alpha;
+  double m_logalpha;
+  double m_target_misfit;
 
-  PetscInt m_iter, m_iter_max;
+  int m_iter, m_iter_max;
   bool m_tikhonov_adaptive;
-  PetscReal m_vel_scale;
-  PetscReal m_tikhonov_rtol, m_tikhonov_atol, m_tikhonov_ptol;
+  double m_vel_scale;
+  double m_tikhonov_rtol, m_tikhonov_atol, m_tikhonov_ptol;
 
   MPI_Comm m_comm;
 

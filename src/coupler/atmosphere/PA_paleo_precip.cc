@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PA_paleo_precip.hh"
+#include "PISMConfig.hh"
 
-PA_paleo_precip::PA_paleo_precip(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PA_paleo_precip::PA_paleo_precip(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
@@ -47,7 +48,7 @@ PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "near-surface air temperature");
+  precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
@@ -64,7 +65,7 @@ PA_paleo_precip::~PA_paleo_precip()
 PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -76,7 +77,7 @@ PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PA_paleo_precip::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
@@ -90,11 +91,11 @@ PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, unsigned int N) {
 
 PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_precipitation(result);
-  ierr = result.scale(exp( m_precipexpfactor * (*offset)(t + 0.5 * dt) )); CHKERRQ(ierr);
+  ierr = result.scale(exp( m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt) )); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
@@ -103,7 +104,7 @@ PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, PetscReal *resu
   return 0;
 }
 
-void PA_paleo_precip::add_vars_to_output(string keyword, set<string> &result) {
+void PA_paleo_precip::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -113,7 +114,7 @@ void PA_paleo_precip::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 
-PetscErrorCode PA_paleo_precip::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PA_paleo_precip::define_variables(std::set<std::string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -133,13 +134,13 @@ PetscErrorCode PA_paleo_precip::define_variables(set<string> vars, const PIO &nc
 }
 
 
-PetscErrorCode PA_paleo_precip::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PA_paleo_precip::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = air_temp;
 
     ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
 
@@ -150,8 +151,8 @@ PetscErrorCode PA_paleo_precip::write_variables(set<string> vars, const PIO &nc)
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = precipitation;
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 

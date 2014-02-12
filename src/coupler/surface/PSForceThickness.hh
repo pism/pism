@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,23 +27,23 @@
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input);
+  PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input);
 
   virtual ~PSForceThickness();
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
-  string input_file;
-  PetscReal alpha;
-  IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
+  std::string input_file;
+  double alpha;
+  IceModelVec2S *ice_thickness; //!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask;
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+  NCSpatialVariable climatic_mass_balance, climatic_mass_balance_original, ice_surface_temp;
 private:
   PetscErrorCode allocate_PSForceThickness();
 };

@@ -73,7 +73,7 @@ urlcolor=blue     % only if colorlinks=true
 
 \vspace{0.3in}
 \begin{quote}
-  \textsl{Copyright (C) 2004--2013 The PISM Authors}
+  \textsl{Copyright (C) 2004--2014 The PISM Authors}
   \medskip
 
   \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
@@ -425,13 +425,13 @@ This section describes how to use PISM to inspect climate forcing.
 \subsection{Visualizing climate inputs, without ice dynamics}
 \label{sec:visualize-climate}
 \index{Visualizing climate inputs!without ice dynamics}
-\optsection{Tesing climate models}
+\optsection{Testing climate models}
 
 Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). This makes it possible to turn ``off'' the ice dynamics code to visualize the climate mass balance and temperature boundary conditions produced using a combination of options and input files. This is helpful during the process of creating PISM-readable data files, and modeling with such.
 
-To do this, use the option \intextoption{test_climate_models}, which is equivalent to \intextoption{no_sia}, and \intextoption{no_energy} together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
+To do this, use the option \intextoption{test_climate_models} (which is equivalent to \intextoption{stress_balance none} and \intextoption{energy none}) together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
 
-Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface evelation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
+Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface elevation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
 
 \bigskip
 As an example, set up an ice sheet state file and check if climate data is read in correctly:
@@ -500,7 +500,7 @@ $ pismr -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
           -extra_vars climatic_mass_balance,air_temp_snapshot
 \end{verbatim}%$
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
-(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{air_temp_snapshot}
+(instantaneous net accumulation (ablation) rate), \texttt{air_temp_snapshot}
 (instantaneous near-surface air temperature), \texttt{precipitation} (mean annual
 ice-equivalent precipitation rate) and some others.
 
@@ -594,7 +594,7 @@ is negligible and heat from firn processes is ignored.
     Command-line option: & \texttt{-surface~given}
     \index[options]{SA@\surface!\texttt{given}}\\
     NetCDF variables: & \variable{ice_surface_temp}, \\
-    &\variable{climatic_mass_balance} [m/s ice equivalent]\\
+    &\variable{climatic_mass_balance} [kg/m$^2$/s]\\
     C++ class: & \class{PSGivenClimate}\\
     \bottomrule
   \end{tabular}
@@ -678,7 +678,7 @@ $ ncpdq -a t,x,y input.nc output.nc
   \end{tabular}
 \end{center}
 
-This surface model~component parametrizes the ice surface temperature $T_{h}$ =
+This surface model~component parameterizes the ice surface temperature $T_{h}$ =
 \variable{ice_surface_temp} and the mass balance $m$ =
 \variable{climatic_mass_balance} as \emph{piecewise-linear} functions of
 surface elevation $h$.
@@ -826,8 +826,7 @@ probability, in the presence of the daily variability, and thus melt may occur.
 Concretely, a normally-distributed, mean zero random temperature increment is
 added to the seasonal cycle. There is no assumed spatial correlation of daily
 variability. The standard deviation of the daily variability is controlled by
-the \intextoption{pdd_std_dev} option, and the corresponding configuration
-parameter has the same name. The default value is $5.0$ degrees
+the \texttt{pdd_std_dev} configuration parameter. The default value is $5.0$ degrees
 \cite{RitzEISMINT}.
 
 The number of positive degree days is computed as the magnitude of the
@@ -847,7 +846,7 @@ By default, the computation summarized in Figure \ref{fig:pdd-model}
 is performed every week. (This frequency is controlled by the
 \config{pdd_max_evals_per_year} parameter.) To compute mass balance
 during each week-long time-step, PISM keeps track of the current snow
-depth (units of ice-equivalent thickness). This is necessary to
+depth (using units of ice-equivalent thickness). This is necessary to
 determine if melt should be computed using the degree day factor for
 snow (\config{pdd_factor_snow}) or the corresponding factor for ice
 (\config{pdd_factor_ice}).
@@ -865,8 +864,7 @@ to October 1$^{\text{st}}$.
 
 Our PDD implementation is meant to be used with an atmosphere model
 implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
-\ref{sec:atmosphere-searise-greenland}) and \texttt{eismint_greenland} (section
-\ref{sec:atmosphere-eismint-greenland}), but it is not restricted to
+\ref{sec:atmosphere-searise-greenland}), but it is not restricted to
 parameterizations like these.
 
 This code also implements latitude- and mean July temperature dependent ice and snow
@@ -883,8 +881,7 @@ parameters with the \texttt{pdd_fausto} prefix.
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~pik} \index[options]{SA@\surface!\texttt{pik}} \\
-    NetCDF variables: & \variable{climatic_mass_balance} [m/s ice
-    equivalent],\\
+    NetCDF variables: & \variable{climatic_mass_balance} [kg/m$^2$/s],\\
     &\variable{lat} (latitude), [degrees north]\\
     C++ class: & \class{PSConstantPIK}\\
     \bottomrule
@@ -1027,7 +1024,7 @@ default value specified in the \emph{Source Code Browser}
     \toprule
     Command-line option: & \texttt{-surface~...,anomaly} \index[options]{SB@\surfacemods!\texttt{anomaly}} \\
     NetCDF variables: & \variable{ice_surface_temp_anomaly}, \\
-    &\variable{climatic_mass_balance_anomaly} \mbox{[m/s ice equivalent]}\\
+    &\variable{climatic_mass_balance_anomaly} \mbox{[kg/m$^2$/s]}\\
     C++ class: & \class{PSAnomaly}\\
     \bottomrule
   \end{tabular}
@@ -1180,27 +1177,6 @@ See also the \texttt{-atmosphere ...,paleo_precip} modifier, section
 SeaRISE-Greenland formula for paleo-precipitation correction from
 present; a 7.3\% change of precipitation rate for every one degree
 Celsius of temperature change~\cite{Huybrechts02}.
-
-\subsection{EISMINT-Greenland}
-\label{sec:atmosphere-eismint-greenland}
-\optsection{\atmosphere!\texttt{eismint_greenland}}
-
-\begin{center}
-  \begin{tabular}{rp{0.5\linewidth}}
-    \toprule
-    Command-line option: & \texttt{-atmosphere~eismint_greenland} \index[options]{\atmosphere!\texttt{eismint_greenland}} \\
-    NetCDF variables: & \variable{lon}, \variable{lat},
-    \variable{precipitation} \mbox{[m/s ice equivalent]} \\
-    C++ class: & \class{PAEismintGreenland}\\
-    \bottomrule
-  \end{tabular}
-\end{center}
-
-This model~component implements the latitude, longitude, and surface elevation-dependent
-near-surface air temperature parameterization described in~\cite{RitzEISMINT}.
-
-The time-independent \variable{precipitation} field is read from an input
-(\texttt{-i} or \texttt{-boot_file}) file.
 
 \subsection{PIK}
 \label{sec:atmosphere-pik}
@@ -1404,7 +1380,7 @@ The sub-shelf ice temperature is used as a Dirichlet boundary condition in the e
 \end{center}
 
 \begin{center}
-  \bf This is the default choice..
+  \bf This is the default choice.
 \end{center}
 
 This ocean model~component implements boundary conditions at the ice/ocean interface that are constant \textbf{both} in space and time.
@@ -1520,7 +1496,7 @@ It takes the following command-line options:
     \toprule
     Command-line option: & \texttt{-ocean~...,delta_SMB} \index[options]{OB@\oceanmods!\texttt{delta_SMB}} \\
     NetCDF variables: & \variable{delta_SMB} \\
-    C++ class: & \class{POdSBMFforcing}\\
+    C++ class: & \class{PO_delta_SMB}\\
     \bottomrule
   \end{tabular}
 \end{center}
@@ -1534,9 +1510,34 @@ It takes the following command-line options:
 \item \intextoption{ocean_delta_SMB_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
+\subsection{Modifier: Scalar melange back pressure fraction offsets}
+\label{sec:delta-subshelf-smb}
+\optsection{OB@\oceanmods!\texttt{delta_MBP}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~...,delta_MBP} \index[options]{OB@\oceanmods!\texttt{delta_MBP}} \\
+    NetCDF variables: & \variable{delta_MBP} \\
+    C++ class: & \class{PO_delta_MBP}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier implements forcing using melange back pressure fraction offsets. The variable \texttt{delta_MBP} should take on values from 0 to 1; it is understood as the fraction of the maximum melange back pressure possible at a given location. (We assume that melange back pressure cannot exceed the pressure of the ice column at a calving front.)
+
+Please see section \ref*{userman-sec:model-melange-pressure} of the \emph{User's Manual} for details.
+
+This modifier takes the following command-line options:
+\begin{itemize}
+\item \fileopt{ocean_delta_MBP_file}: specifies the name of the file containing forcing data. This file has to contain the \variable{delta_MBP} variable using units of ``1'' (a dimensionless parameter)
+\item \intextoption{ocean_delta_MBP_period} specifies the length of the period of the forcing data, in model years; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{ocean_delta_MBP_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
 \subsection{Modifier: Caching}
 \label{sec:ocean-cache}
-\optsection{SB@\oceanmods!\texttt{cache}}
+\optsection{OB@\oceanmods!\texttt{cache}}
 
 \begin{center}
   \begin{tabular}{rp{0.5\linewidth}}

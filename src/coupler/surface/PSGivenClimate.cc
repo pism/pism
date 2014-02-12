@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "PSGivenClimate.hh"
 #include "IceGrid.hh"
 
-PSGivenClimate::PSGivenClimate(IceGrid &g, const NCConfigVariable &conf)
+PSGivenClimate::PSGivenClimate(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, NULL)
 {
   option_prefix = "-surface_given";
@@ -45,7 +45,7 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance";
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
@@ -56,9 +56,9 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
                                      "temperature of the ice at the ice surface but below firn processes",
                                      "Kelvin", ""); CHKERRQ(ierr);
   ierr = climatic_mass_balance->set_attrs("climate_forcing",
-                                          "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                          "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                          "surface mass balance (accumulation/ablation) rate",
+                                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance->write_in_glaciological_units = true;
 
   return 0;
@@ -66,12 +66,13 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
 
 void PSGivenClimate::attach_atmosphere_model(PISMAtmosphereModel *input) {
   delete input;
+  input = NULL;
 }
 
 PetscErrorCode PSGivenClimate::init(PISMVars &) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the surface model reading temperature at the top of the ice\n"
@@ -88,11 +89,11 @@ PetscErrorCode PSGivenClimate::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode PSGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSGivenClimate::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = climatic_mass_balance->average(t, dt); CHKERRQ(ierr);
-  ierr = ice_surface_temp->average(t, dt); CHKERRQ(ierr);
+  ierr = climatic_mass_balance->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = ice_surface_temp->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }

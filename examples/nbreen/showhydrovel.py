@@ -9,8 +9,8 @@ import argparse
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
-
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 parser = argparse.ArgumentParser( \
     description='show quiver for the subglacial water velocity (or flux) field from a PISM file')

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,15 +21,15 @@
 PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
   IceGrid &grid = *x.get_grid();
-  PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
+  double h = PETSC_SQRT_MACHINE_EPSILON;
 
-  PetscReal F0,Fh;
+  double F0,Fh;
   
   ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
   
   ierr = gradient.begin_access(); CHKERRQ(ierr);
-  for(PetscInt i=grid.xs; i< grid.xs+grid.xm; i++) {
-    for(PetscInt j=grid.ys; j< grid.ys+grid.ym; j++) {
+  for(int i=grid.xs; i< grid.xs+grid.xm; i++) {
+    for(int j=grid.ys; j< grid.ys+grid.ym; j++) {
       x.begin_access(); CHKERRQ(ierr);
       x(i,j) += h;
       x.end_access(); CHKERRQ(ierr);
@@ -49,15 +49,15 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceM
 PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
   PetscErrorCode ierr;
   IceGrid &grid = *x.get_grid();
-  PetscReal h = PETSC_SQRT_MACHINE_EPSILON;
+  double h = PETSC_SQRT_MACHINE_EPSILON;
 
-  PetscReal F0,Fh;
+  double F0,Fh;
   
   ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
   
   ierr = gradient.begin_access(); CHKERRQ(ierr);
-  for(PetscInt i=grid.xs; i< grid.xs+grid.xm; i++) {
-    for(PetscInt j=grid.ys; j< grid.ys+grid.ym; j++) {
+  for(int i=grid.xs; i< grid.xs+grid.xm; i++) {
+    for(int j=grid.ys; j< grid.ys+grid.ym; j++) {
       x.begin_access(); CHKERRQ(ierr);
       x(i,j).u += h;
       x.end_access(); CHKERRQ(ierr);

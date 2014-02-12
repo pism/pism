@@ -1,4 +1,4 @@
-// Copyright (C) 2013  David Maxwell
+// Copyright (C) 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblem::connect(TaoSolver tao) {
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
   PetscErrorCode ierr;
-  PetscReal zeta_min, zeta_max, tauc_min, tauc_max;
+  double zeta_min, zeta_max, tauc_min, tauc_max;
 
   tauc_min = m_grid->config.get("inv_ssa_tauc_min");
   tauc_max = m_grid->config.get("inv_ssa_tauc_max");

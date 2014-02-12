@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,61 +21,56 @@
 
 #include "pism_const.hh"
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
-class NCConfigVariable;
+class PISMConfig;
 
 PetscErrorCode verbosityLevelFromOptions();
 
 // handy functions for processing options:
-PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string text, set<string> choices,
-			       string default_value, string &result, bool &flag);
+PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string text, std::set<std::string> choices,
+                               std::string default_value, std::string &result, bool &flag);
 
-PetscErrorCode PISMOptionsString(string option, string text,
-				 string &result, bool &flag, bool allow_empty_arg = false);
-PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
-				      vector<string>& result, bool &flag);
-PetscErrorCode PISMOptionsStringSet(string opt, string text, string default_value,
-                                    set<string>& result, bool &flag);
+PetscErrorCode PISMOptionsString(std::string option, std::string text,
+                                 std::string &result, bool &flag, bool allow_empty_arg = false);
+PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
+                                      std::vector<std::string>& result, bool &flag);
+PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::string default_value,
+                                    std::set<std::string>& result, bool &flag);
 
-PetscErrorCode PISMOptionsInt(string option, string text,
-			      PetscInt &result, bool &is_set);
-PetscErrorCode PISMOptionsIntArray(string option, string text,
-				   vector<PetscInt> &result, bool &is_set);
+PetscErrorCode PISMOptionsInt(std::string option, std::string text,
+                              int &result, bool &is_set);
+PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
+                                   std::vector<int> &result, bool &is_set);
 
-PetscErrorCode PISMOptionsReal(string option, string text,
-			       PetscReal &result, bool &is_set);
-PetscErrorCode PISMOptionsRealArray(string option, string text,
-				    vector<PetscReal> &result, bool &is_set);
+PetscErrorCode PISMOptionsReal(std::string option, std::string text,
+                               double &result, bool &is_set);
+PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
+                                    std::vector<double> &result, bool &is_set);
 
-PetscErrorCode PISMOptionsIsSet(string option, bool &result);
-PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
+PetscErrorCode PISMOptionsIsSet(std::string option, bool &result);
+PetscErrorCode PISMOptionsIsSet(std::string option, std::string descr, bool &result);
 
-PetscErrorCode PISMOptionsHasArgument(string option, bool &result);
+PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result);
 
-PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
-PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]);
-PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);
+PetscErrorCode ignore_option(MPI_Comm com, std::string name);
+PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std::string new_name);
+PetscErrorCode stop_if_set(MPI_Comm com, std::string name);
 
 // usage message and required options; drivers use these
 PetscErrorCode stop_on_version_option();
 
-PetscErrorCode show_usage_and_quit(MPI_Comm com, const char execname[], const char usage[]);
+PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage);
 
-PetscErrorCode show_usage_check_req_opts(MPI_Comm com, const char execname[],
-                                         vector<string> required_options,
-                                         const char usage[]);
+PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
+                                         std::vector<std::string> required_options,
+                                         std::string usage);
 
 // config file initialization:
-PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
-			   NCConfigVariable &config, NCConfigVariable &overrides,
+PetscErrorCode init_config(MPI_Comm com,
+                           PISMConfig &config, PISMConfig &overrides,
                            bool process_options = false);
 
 PetscErrorCode set_config_from_options(MPI_Comm com,
-                                       NCConfigVariable &config);
+                                       PISMConfig &config);
 
 
 #endif /* _PISM_OPTIONS_H_ */

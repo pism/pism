@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,21 +31,14 @@ paradigm.  See \ref EISMINT00 and Appendix B of \ref BBssasliding.
  */
 class IceEISModel : public IceModel {
 public:
-  IceEISModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
+  IceEISModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode set_default_flowlaw();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_couplers();
-  virtual PetscErrorCode init_couplers();
-    
+  virtual PetscErrorCode set_grid_defaults();
 protected:
-  char        expername;
-  virtual PetscErrorCode set_expername_from_options();
-
-  PetscScalar M_max, R_el, T_min, S_b, S_T;
+  char m_experiment;
 
   virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
   virtual PetscErrorCode generateMoundTopography();   // for experiments K,L

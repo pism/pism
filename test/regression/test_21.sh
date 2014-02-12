@@ -13,7 +13,7 @@ rm -f $files
 $PISM_PATH/flowlaw_test -flow_law pb > flowtable-21.txt
 # compare results
 diff flowtable-21.txt - > diff-21.txt <<END-OF-OUTPUT
-flow law:   "pb"
+flow law:   "Paterson-Budd"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:
   (dev stress)   (abs temp) (liq frac) =   (flow)

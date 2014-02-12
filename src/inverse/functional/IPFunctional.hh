@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ public:
   virtual ~IPFunctional() {};
 
   //! Computes the value of the functional at the vector x.
-  virtual PetscErrorCode valueAt(IMVecType &x, PetscReal *OUTPUT) = 0;
+  virtual PetscErrorCode valueAt(IMVecType &x, double *OUTPUT) = 0;
 
   //! Computes the gradient of the functional at the vector x.
   /*! On an \f$m\times n\f$ IceGrid, an IceModelVec \f$x\f$ with \f$d\f$
@@ -91,7 +91,7 @@ public:
   IPInnerProductFunctional(IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a,b)\f$.
-  virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, PetscReal *OUTPUT) = 0;
+  virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;
 
   //! Computes the interior product of a vector with the IPInnerProductFunctional's underlying bilinear form.
   /*! If \f$Q(x,y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the 

@@ -1,0 +1,81 @@
+/* -*- mode: maxima -*- */
+load("ssa_coeffs.mac");
+
+/* Switch from the [-1,0,1] indexing to [1,2,3] indexing: */
+/* coefficients of the first equation */
+eq1_u_coeffs : genmatrix(lambda([i,j], c1u[i-2,j-2]), 3, 3)$
+eq1_v_coeffs : genmatrix(lambda([i,j], c1v[i-2,j-2]), 3, 3)$
+
+/* coefficients of the second equation */
+eq2_u_coeffs : genmatrix(lambda([i,j], c2u[i-2,j-2]), 3, 3)$
+eq2_v_coeffs : genmatrix(lambda([i,j], c2v[i-2,j-2]), 3, 3)$
+
+/* Convert 3x3 matrix indices to the element number ranging from 1 to 9. */
+I[row,col] := col + (row - 1) * 3$
+
+/* build a matrix representing a neighborhood of a cell. S is the set
+   of numbers indicating which neighbors are ice-free
+
+   Here S is a set of ice-free cell numbers (from 1 to 9).
+
+   1 2 3
+   4 5 6
+   7 8 9
+ */
+gen_neighborhood(S) := genmatrix(lambda([i,j], if elementp(I[i,j], S) then 0 else 1), 3, 3)$
+
+/* "Weights" in expressions of centered differences as sums of
+one-sided differences. Recall that *both* cells have to be "icy" for
+us to use this one-sided difference. (Hence "a = 1 and b = 1".) */
+
+weight(a,b) := if (a = 1 and b = 1) then 1 else 0$
+
+/* generate "weights" using a matrix N corresponding to a neighborhood */
+gen_weights(X) := [
+  w[i-1, j-1/2] = weight(X[1,1], X[1,2]),
+  w[i-1, j+1/2] = weight(X[1,2], X[1,3]),
+  w[i-1/2, j-1] = weight(X[1,1], X[2,1]),
+  w[i-1/2, j]   = weight(X[1,2], X[2,2]),
+  w[i-1/2, j+1] = weight(X[1,3], X[2,3]),
+  w[i, j-1/2]   = weight(X[2,1], X[2,2]),
+  w[i, j+1/2]   = weight(X[2,2], X[2,3]),
+  w[i+1/2, j-1] = weight(X[2,1], X[3,1]),
+  w[i+1/2, j]   = weight(X[2,2], X[3,2]),
+  w[i+1/2, j+1] = weight(X[2,3], X[3,3]),
+  w[i+1, j-1/2] = weight(X[3,1], X[3,2]),
+  w[i+1, j+1/2] = weight(X[3,2], X[3,3])
+  ]$
+
+coeffs_from_weights(W) := [
+  at(eq1_u_coeffs, W),
+  at(eq2_u_coeffs, W),
+  at(eq1_v_coeffs, W),
+  at(eq2_v_coeffs, W)
+  ]$
+
+/* compute coefficients of the SSA discretization corresponding to a
+"neighborhood". N is a 3x3 matrix with ones (icy) and zeros
+(ice-free). */
+
+coeffs(N) := coeffs_from_weights(gen_weights(N))$
+
+/* keep neighborhoods that result in discretizations with zeros on the diagonal */
+check_neighborhood(N) := if every(lambda([M], is(M[2,2] = 0)), coeffs(N))
+  then N else false$
+
+check(S) := check_neighborhood(gen_neighborhood(S))$
+
+/* skip 5 (neighborhoods of an ice-free cell are of no interest) */
+P : powerset({1,2,3,4,6,7,8,9})$
+
+result : listify(disjoin(false, map(check, P)));
+
+length(result);
+
+printf(true, "\\begin{align*}")$
+for j:1 thru length(result) do
+  block(
+    printf(true, tex1(result[j])),
+    if integerp(j / 4) then printf(true, "\\\\~%") else printf(true, " &~%"))$
+printf(true, "\\end{align*}")$
+

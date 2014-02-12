@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,9 +21,7 @@
 
 // the following three includes are needed here because of inlined code
 #include "iceModelVec.hh"
-#include "NCVariable.hh"
-#include "flowlaws.hh"
-#include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 class Mask
 {
@@ -47,7 +45,7 @@ public:
 class GeometryCalculator
 {
 public:
-  GeometryCalculator(PetscReal seaLevel, const NCConfigVariable &config)
+  GeometryCalculator(double seaLevel, const PISMConfig &config)
   {
     sea_level = seaLevel;
     alpha = 1 - config.get("ice_density") / config.get("sea_water_density");
@@ -59,16 +57,16 @@ public:
   void compute(IceModelVec2S &in_bed, IceModelVec2S &in_thickness,
                IceModelVec2Int &out_mask, IceModelVec2S &out_surface);
 
-  inline void compute(PetscReal bed, PetscReal thickness,
-                      int *out_mask, PetscReal *out_surface) {
-    const PetscReal  hgrounded = bed + thickness; // FIXME issue #15
-    const PetscReal  hfloating = sea_level + alpha*thickness;
+  inline void compute(double bed, double thickness,
+                      int *out_mask, double *out_surface) {
+    const double  hgrounded = bed + thickness; // FIXME issue #15
+    const double  hfloating = sea_level + alpha*thickness;
 
     const bool is_floating = (hfloating > hgrounded + is_floating_thickness),
                ice_free    = (thickness < icefree_thickness);
 
     int mask_result;
-    PetscReal surface_result;
+    double surface_result;
 
     if (is_floating && (!is_dry_simulation)) {
       surface_result = hfloating;
@@ -91,22 +89,22 @@ public:
     if (out_mask != NULL) *out_mask = mask_result;
   }
 
-  inline int mask(PetscReal bed, PetscReal thickness)
+  inline int mask(double bed, double thickness)
   {
     int result;
     compute(bed, thickness, &result, NULL);
     return result;
   }
 
-  inline PetscReal surface(PetscReal bed, PetscReal thickness)
+  inline double surface(double bed, double thickness)
   {
-    PetscReal result;
+    double result;
     compute(bed, thickness, NULL, &result);
     return result;
   }
 
 protected:
-  PetscReal alpha, sea_level, icefree_thickness, is_floating_thickness;
+  double alpha, sea_level, icefree_thickness, is_floating_thickness;
   bool is_dry_simulation;
 };
 
@@ -164,44 +162,6 @@ public:
     return (ice_free_ocean(i + 1, j) || ice_free_ocean(i - 1, j) || ice_free_ocean(i, j + 1) || ice_free_ocean(i, j - 1));
   }
 
-
-  inline PetscErrorCode fill_where_grounded(IceModelVec2S &result, const PetscScalar fillval) {
-    PetscErrorCode ierr;
-
-    IceGrid *grid = result.get_grid();
-
-    ierr = mask.begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i < grid->xs + grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j < grid->ys + grid->ym; ++j) {
-        if (grounded(i,j))
-          result(i,j) = fillval;
-      }
-    }
-    ierr = result.end_access(); CHKERRQ(ierr);
-    ierr = mask.end_access(); CHKERRQ(ierr);
-
-    return 0;
-  }
-
-  inline PetscErrorCode fill_where_floating(IceModelVec2S &result, const PetscScalar fillval) {
-    PetscErrorCode ierr;
-
-    IceGrid *grid = result.get_grid();
-
-    ierr = mask.begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i < grid->xs + grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j < grid->ys + grid->ym; ++j) {
-        if (ocean(i,j))
-          result(i,j) = fillval;
-      }
-    }
-    ierr = result.end_access(); CHKERRQ(ierr);
-    ierr = mask.end_access(); CHKERRQ(ierr);
-
-    return 0;
-  }
 protected:
   IceModelVec2Int &mask;
 };

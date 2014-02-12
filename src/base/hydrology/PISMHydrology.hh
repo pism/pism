@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 #include "iceModelVec2T.hh"
 #include "PISMComponent.hh"
 #include "PISMStressBalance.hh"
-#include "PISMDiagnostic.hh"
+
 
 //! \brief The PISM subglacial hydrology model interface.
 /*!
@@ -33,34 +33,58 @@ This is a virtual base class.
 
 The purpose of this class and its derived classes is to provide
 \code
-  PetscErrorCode subglacial_water_thickness(IceModelVec2S &result)
-  PetscErrorCode subglacial_water_pressure(IceModelVec2S &result)
-  PetscErrorCode englacial_water_thickness(IceModelVec2S &result)
+  subglacial_water_thickness(IceModelVec2S &result)
+  subglacial_water_pressure(IceModelVec2S &result)
+  till_water_thickness(IceModelVec2S &result)
 \endcode
-Thus the interface is specific to subglacial hydrology models which track a
-two-dimensional water layer with a well-defined thickness and pressure at each
-map-plane location, and which either track the englacial water in a manner
-which allows computation of an effective thickness, or which lack englacial
-storage.  In the latter case englacial_water_thickness() sets `result` to
-zero.
+These correspond to state variables \f$W\f$, \f$P\f$, and \f$W_{\text{til}}\f$
+in [\ref BuelervanPeltDRAFT], though not all derived classes of PISMHydrology
+have all of them as state variables.
 
-Some references for such models are [\ref Bartholomausetal2011,
-\ref FlowersClarke2002_theory, \ref Schoofetal2012, \ref vanPeltBuelerDRAFT ].
+Additional modeled fields, for diagnostic purposes, are
+\code
+  overburden_pressure(IceModelVec2S &result)
+  wall_melt(IceModelVec2S &result)
+\endcode
+
+This interface is appropriate to subglacial hydrology models which track a
+two-dimensional water layer with a well-defined thickness and pressure at each
+map-plane location.  The methods subglacial_water_thickness() and
+subglacial_water_pressure() return amount and pressure.  This subglacial water
+is *transportable*, that is, it moves along a modeled hydraulic head gradient.
+Background references for such models include [\ref FlowersClarke2002_theory,
+\ref Hewittetal2012, \ref Schoofetal2012, \ref Hewitt2013].
+
+These models always have a separate, but potentially-coupled, amount of water
+which is held in local till storage.  It is important to note that the
+transportable water (bwat) and till water (tillwat) thicknesses are different.
+Published models with till storage include [\ref BBssasliding, \ref SchoofTill,
+\ref TrufferEchelmeyerHarrison2001, \ref Tulaczyketal2000b].
+
+The till water thickness is can be used, via the theory of
+[\ref Tulaczyketal2000], to compute an effective pressure for the water in the
+pore spaces of the till, which can then be used by the Mohr-Coulomb criterion
+to provide a yield stress.  Class PISMMohrCoulombYieldStress does this
+calculation.  Here in PISMHydrology only the till water thickness tillwat is
+computed.
 
 PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
 short physical timescales associated to liquid water moving under a glacier,
-PISMHydrology derived classes generally take many substeps in PISM's major
+PISMHydrology (and derived) classes generally take many substeps in PISM's major
 ice dynamics time steps.  Thus when an update() method in a PISMHydrology
-derived class is called it will advance its internal time to the new goal t+dt
+class is called it will advance its internal time to the new goal t+dt
 using its own internal time steps.
 
-Generally PISMHydrology and derived classes use the ice geometry, the basal melt
-rate, and the basal sliding velocity.  Note that the basal melt rate is an
-energy-conservation-derived field.  These fields generally
-come from IceModel and PISMStressBalance.  Additionally, time-dependent
-and spatially-variable water input to the basal layer, taken directly from a
-file, is possible too.  Potentially PISMSurfaceModel could supply such a
-quantity.
+Generally PISMHydrology classes use the ice geometry, the basal melt
+rate, and the basal sliding velocity in determining the evolution of the
+hydrology state variables.  Note that the basal melt rate is an
+energy-conservation-derived field and the basal-sliding velocity is derived
+from the solution of a stress balance.  The basal melt rate and
+sliding velocity fields therefore generally come from IceModel and
+PISMStressBalance, respectively.
+
+Additional, time-dependent and spatially-variable water input to the basal
+layer, taken directly from a file, is possible too.
 
 Ice geometry and energy fields are normally treated as constant in time
 during the update() call for the interval [t,t+dt].  Thus the coupling is
@@ -68,276 +92,167 @@ one-way during the update() call.
  */
 class PISMHydrology : public PISMComponent_TS {
 public:
-  PISMHydrology(IceGrid &g, const NCConfigVariable &conf);
+  PISMHydrology(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode regrid(IceModelVec2S &myvar);
-
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
   friend class PISMHydrology_hydroinput;
 
+  // in the base class these only add/define/write tillwat
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+
+  // all PISMHydrology models have a Wtil state variable, which this returns
+  virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
+
+  // this diagnostic method returns the standard shallow approximation
   virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict_dt);
-
-  // derived classes need to have a model state, which will be the variables in this set:
-  virtual void add_vars_to_output(string keyword, set<string> &result) = 0;
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype) = 0;
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc) = 0;
-
-  // derived classes need to be able to update their internal state
-  using PISMComponent_TS::update;
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt) = 0;
-
-  // regardless of the derived class model state variables, these methods
-  // need to be implemented so that PISMHydrology is useful to the outside
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
-  // these two exist in the base class and set result = 0:
-  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
+  // this diagnostic method returns zero in the base class
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
+  // these methods MUST be implemented in the derived class
+  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode update(double icet, double icedt) = 0;
+
 protected:
+  // this model's state
+  IceModelVec2S Wtil;      // effective thickness of till
   // this model's workspace
   IceModelVec2S total_input;
+
   // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *thk,   // ice thickness
                 *bed,   // bed elevation (not all models need this)
                 *cellarea, // projection-dependent area of each cell, used in mass reporting
                 *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
+
   IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
   unsigned int inputtobed_period;      // in years
-  PetscReal inputtobed_reference_time; // in seconds
+  double inputtobed_reference_time; // in seconds
+
   PISMVars *variables;
-  bool report_mass_accounting;
-  virtual PetscErrorCode get_input_rate(
-                            PetscReal hydro_t, PetscReal hydro_dt, IceModelVec2S &result);
-  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &Wnew,
-                            PetscReal &icefreelost, PetscReal &oceanlost, PetscReal &negativegain);
+
+  virtual PetscErrorCode get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
+
+  virtual PetscErrorCode check_Wtil_bounds();
 };
 
 
-//! \brief Reports the amount of englacial water as an effective thickness.
-class PISMHydrology_enwat : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_enwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the pressure of the water in the subglacial layer.
+//! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  There is no model for lateral transport.
 /*!
-This is used by most derived classes of PISMHydrology but not by
-PISMDistributedHydrology, in which the modeled pressure is a state variable.
- */
-class PISMHydrology_bwp : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
+This is the minimum functional derived class.  It updates till water thickness.
 
+It has no transportable water and subglacial_water_thickness() returns zero.
 
-//! \brief Reports the pressure of the water in the subglacial layer as a fraction of the overburden pressure.
-class PISMHydrology_bwprel : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
+This model can give no meaningful report on conservation errors.
 
-
-//! \brief Reports the effective pressure of the water in the subglacial layer, that is, the overburden pressure minus the pressure.
-class PISMHydrology_effbwp : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Reports the total input rate of water into the subglacial layer.
-class PISMHydrology_hydroinput : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief Report the wall melt rate from dissipation of the potential energy of the water.
-class PISMHydrology_wallmelt : public PISMDiag<PISMHydrology>
-{
-public:
-  PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
-//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITHOUT contrived water diffusion.
-/*!
-The name "till-can" comes from the following mental image:  Each map-plane cell
-under the glacier or ice sheet does not communicate with the next cell; i.e.
-there are "can walls" separating the cells.  The cans are "open-topped" in the
-sense that they fill up to level bwat_max.  Any water exceeding bwat_max "spills
-over the sides" \e and \e disappears.  Thus this model is not mass conserving.
-It is useful for computing a till yield stress based on a time-integrated basal
-melt rate.
-
-See [\ref BBssasliding] and [\ref Tulaczyketal2000b].  See this URL for a talk
-where the "till-can" metaphor is illustrated:
+Here is a talk which illustrates the "till-can" metaphor:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
-
-The paper [\ref BBssasliding] used this model but with contrived diffusion of
-the water.  It is implemented in the derived class PISMDiffuseOnlyHydrology.
  */
-class PISMTillCanHydrology : public PISMHydrology {
+class PISMNullTransportHydrology : public PISMHydrology {
 public:
-  PISMTillCanHydrology(IceGrid &g, const NCConfigVariable &conf, bool Whasghosts);
-  virtual ~PISMTillCanHydrology() {}
+  PISMNullTransportHydrology(IceGrid &g, const PISMConfig &conf)
+    : PISMHydrology(g, conf) {}
+  virtual ~PISMNullTransportHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
-
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
-
+  // sets result = 0
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+
+  // returns the overburden pressure in hope it is harmless
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
-protected:
-  // this model's state
-  IceModelVec2S W;      // water layer thickness
-
-  virtual PetscErrorCode allocate(bool Whasghosts);
-  virtual PetscErrorCode check_W_bounds();
-
-  //! \brief Updates the basal water layer thickness (in meters) at a grid cell.
-  /*!
-   * @param[in] my_W water layer thickness before the update
-   * @param[in] dWinput change in water amount due do melt/refreeze (can be of either sign)
-   * @param[in] dWdecay change in water amount due to the "decay" mechanism (non-negative)
-   * @param[in] Wmax maximum allowed water layer thickness
-   *
-   * @returns The new basal water thickness, W.  Note that W
-   * computed here may be negative due to refreeze, but not due to the gradual decay.
-   */
-  inline PetscReal pointwise_update(PetscReal my_W, PetscReal dWinput, PetscReal dWdecay, PetscReal Wmax) {
-    assert(dWdecay >= 0);
-
-    my_W += dWinput;       // if this makes my_W negative then we leave it for reporting
-
-    // avoids having the decay rate contribution reported as an icefree or floating mass loss:
-    if (dWdecay < my_W)    // case where my_W is largish and decay rate reduces it
-      my_W -= dWdecay;
-    else if (my_W >= 0.0)  // case where decay rate would go past zero ... don't allow that
-      my_W = 0.0;
-
-    return PetscMin(Wmax, my_W);  // overflows top of "can" and we lose it
-  }
+  // solves an implicit step of a highly-simplified ODE
+  virtual PetscErrorCode update(double icet, double icedt);
 };
 
 
-//! \brief The subglacial hydrology model from Bueler & Brown (2009) WITH contrived water diffusion.
+//! \brief A subglacial hydrology model which assumes water pressure equals overburden pressure.
 /*!
-Implements the full model in [\ref BBssasliding], including the diffusion in
-equation (11).
- */
-class PISMDiffuseOnlyHydrology : public PISMTillCanHydrology {
-public:
-  PISMDiffuseOnlyHydrology(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PISMDiffuseOnlyHydrology() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
-
-protected:
-  IceModelVec2S Wnew;  // new value at update
-  virtual PetscErrorCode allocateWnew();
-};
-
-
-//! \brief A subglacial hydrology model which assumes water pressure is the overburden pressure.
-/*!
-This model conserves water and transports it in the map-plane.  It was promised
+This is the minimal PISM hydrology model that has lateral motion of
+subglacial water and which conserves the water mass.  It was promised
 as a PISM addition in in Bueler's talk at IGS 2012 Fairbanks:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 
-This is (essentially) the minimal hydrology model that has lateral motion of
-subglacial water.  In such models the water velocity is along the steepest
-descent route for the hydraulic potential.  In the particular simplified case
-here this potential is (mostly) a function of ice sheet geometry, because the
-water pressure is (a multiple of) the overburden pressure.  However, the water
-layer thickness is also a part of the hydraulic potential because it is the
-potential of the \e top of the aquifer.
+The water velocity is along the steepest descent route for the hydraulic
+potential.  This potential is (mostly) a function of ice sheet geometry,
+because the water pressure is set to the overburden pressure, a simplified but
+well-established model [\ref Shreve1972].  However, the water layer thickness
+is also a part of the hydraulic potential because it is actually the potential
+of the top of the water layer.
 
 This (essential) model has been used for finding locations of subglacial lakes
-[\ref Siegertetal2009].  Subglacial lakes will occur at local minima of the
-hydraulic potential.  Thus if water builds up significantly (e.g. 10s of meters
-or more) then in the specific model here the resulting lakes diffuse instead of
-becoming infinitely deep.  Thus we avoid delta functions at the minima of the
-hydraulic potential.  This specific model is a well-posed PDE which finds
-subglacial lakes.
+[\ref Siegertetal2009, \ref Livingstoneetal2013TCD].  Subglacial lakes occur
+at local minima of the hydraulic potential.  If water builds up significantly
+(e.g. thickness of 10s of meters or more) then in the model here the resulting
+lakes diffuse instead of becoming infinitely deep.  Thus we avoid delta
+functions of water thickness at the minima of the hydraulic potential in this
+well-posed model.
 
-This model should generally be tested using static ice geometry first, i.e. using
-option -no_mass.  Use option `-report_mass_accounting` to see stdout reports
-which balance the books on this model.
+This model should generally be tested using static ice geometry first, i.e.
+using option -no_mass.
 
-As with PISMTillCanHydrology and PISMDiffuseOnlyHydrology, the state space
-includes only the water layer thickness W.  For more complete modeling where the
-water pressure is determined by a physical model for the opening and closing of
-cavities, and where the state space is both W and P, use PISMDistributedHydrology.
+Use option `-report_mass_accounting` to see stdout reports which balance the
+books on this model.
 
-Note there is an option `-hydrology_null_strip` `X` which produces a strip of
-`X` km around the edge of the computational domain in which the water flow
+The state space includes both the till water effective thickness \f$W_{til}\f$,
+which is in PISMHydrology, and the transportable water layer thickness \f$W\f$.
+
+For more complete modeling where the water pressure is determined by a
+physical model for the opening and closing of cavities, and where the state
+space includes a nontrivial pressure variable, see PISMDistributedHydrology.
+
+There is an option `-hydrology_null_strip` `X` which produces a strip of
+`X` km around the edge of the computational domain.  In that strip the water flow
 velocity is set to zero.  The water amount is also reset to zero at the end
-of each time step in this strip in an accounted way.
+of each time step in this strip (in an accounted way).
 
 As noted this is the minimal model which has a lateral water flux.  This flux is
     \f[ \mathbf{q} = - K \nabla \psi = \mathbf{V} W - D \nabla W \f]
 where \f$\psi\f$ is the hydraulic potential
     \f[ \psi = P + \rho_w g (b + W). \f]
-The generalized conductivity \f$K\f$ is nontrivial; see
-PISMRoutingHydrology::conductivity_staggered().
+The generalized conductivity \f$K\f$ is nontrivial and it generally also
+depends on the water thickness:
+    \f[ K = k W^{\alpha-1} |\nabla (P+\rho_w g b)|^{\beta-2}. \f]
 
-Unlike the general case PISMHydrology, this model contains the fields which
-allow us to compute the wall melt generated by dissipating the gravitational
-potential energy in the subglacial water as heat, thus melt, on the
-cavity/conduit walls.  In particular we have flux and potential so the water
-input in the mass continuity equation can have the added term
-    \f[ m_{wall} = - \mathbf{q} \cdot \nabla \psi \qquad \text{FIXME: check} \f]
-But this usage is optional ... FIXME: explain
+This model contains enough information (enough modeled fields) so that we can
+compute the wall melt generated by dissipating the gravitational
+potential energy in the moving, presumably turbulent, subglacial water.  If we
+suppose that this heat is dissipated immediately as melt on the
+cavity/conduit walls then we get a formula for a wall melt contribution.  (This
+is in addition to the `bmelt` field coming from conserving energy in the flowing
+ice.)  See wall_melt().  At this time the wall melt is diagnostic only and does
+not add to the water amount W; such an addition is generally unstable.
  */
 class PISMRoutingHydrology : public PISMHydrology {
 public:
-  PISMRoutingHydrology(IceGrid &g, const NCConfigVariable &conf);
+  PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMRoutingHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
-
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
-  virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
-  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+
+  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+
+  virtual PetscErrorCode update(double icet, double icedt);
 
 protected:
   // this model's state
@@ -350,33 +265,42 @@ protected:
                    Kstag,// edge-centered (staggered) values of nonlinear conductivity
                    Qstag;// edge-centered (staggered) advection fluxes
   // this model's workspace variables
-  IceModelVec2S Wnew, Pover, R;
+  IceModelVec2S Wnew, Wtilnew, Pover, R;
 
-  PetscReal stripwidth; // width in m of strip around margin where V and W are set to zero;
+  double stripwidth; // width in m of strip around margin where V and W are set to zero;
                         // if negative then the strip mechanism is inactive inactive
 
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode init_actions(PISMVars &vars, bool i_set, bool bootstrap_set);
+  virtual PetscErrorCode init_bwat(PISMVars &vars);
 
-  virtual PetscErrorCode boundary_mass_changes_with_null(IceModelVec2S &Wnew,
-             PetscReal &icefreelost, PetscReal &oceanlost,
-             PetscReal &negativegain, PetscReal &nullstriplost);
+  // when we update the water amounts, careful mass accounting at the
+  // boundary is needed; we update the new thickness variable, typically a
+  // temporary during the update
+  bool report_mass_accounting;
+  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
+             double &icefreelost, double &oceanlost,
+             double &negativegain, double &nullstriplost);
 
-  virtual PetscErrorCode check_W_nonnegative();
+  virtual PetscErrorCode check_water_thickness_nonnegative(IceModelVec2S &thk);
+
   virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
 
-  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, PetscReal &maxKW);
+  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
+  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
+  friend class PISMRoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
-            PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-            PetscReal &dt_result,
-            PetscReal &maxV_result, PetscReal &maxD_result,
-            PetscReal &dtCFL_result, PetscReal &dtDIFFW_result);
+            double t_current, double t_end, double maxKW,
+            double &dt_result,
+            double &maxV_result, double &maxD_result,
+            double &dtCFL_result, double &dtDIFFW_result);
 
-  PetscErrorCode raw_update_W(PetscReal hdt);
+  PetscErrorCode raw_update_W(double hdt);
+  PetscErrorCode raw_update_Wtil(double hdt);
 
-  inline bool in_null_strip(PetscInt i, PetscInt j) {
+  inline bool in_null_strip(int i, int j) {
     if (stripwidth < 0.0) return false;
     return ((grid.x[i] <= grid.x[0] + stripwidth) || (grid.x[i] >= grid.x[grid.Mx-1] - stripwidth)
             || (grid.y[j] <= grid.y[0] + stripwidth) || (grid.y[j] >= grid.y[grid.My-1] - stripwidth));
@@ -384,19 +308,9 @@ protected:
 };
 
 
-//! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-/*! Only available for PISMRoutingHydrology and its derived classes. */
-class PISMRoutingHydrology_bwatvel : public PISMDiag<PISMRoutingHydrology>
-{
-public:
-  PISMRoutingHydrology_bwatvel(PISMRoutingHydrology *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
 //! \brief The PISM subglacial hydrology model for a distributed linked-cavity system.
 /*!
-This implements the new van Pelt & Bueler model documented at the repo (currently
+This implements the new Bueler & van Pelt model documented at the repo (currently
 private):
   https://github.com/bueler/hydrolakes
 Unlike PISMRoutingHydrology, the water pressure P is a state variable, and there
@@ -410,26 +324,24 @@ potential to zero if either regular grid neighbor is in the null strip.
  */
 class PISMDistributedHydrology : public PISMRoutingHydrology {
 public:
-  PISMDistributedHydrology(IceGrid &g, const NCConfigVariable &conf, PISMStressBalance *sb);
+  PISMDistributedHydrology(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb);
   virtual ~PISMDistributedHydrology() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual PetscErrorCode update(PetscReal icet, PetscReal icedt);
+  virtual PetscErrorCode update(double icet, double icedt);
 
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
-  virtual PetscErrorCode englacial_water_thickness(IceModelVec2S &result);
 
 protected:
   // this model's state, in addition to what is in PISMRoutingHydrology
-  IceModelVec2S Wen,    // englacial water thickness
-                P;      // water pressure
+  IceModelVec2S P;      // water pressure
   // this model's auxiliary variables, in addition ...
   IceModelVec2S psi,    // hydraulic potential
                 cbase,  // sliding speed of overlying ice
@@ -438,23 +350,29 @@ protected:
   // need to get basal sliding velocity (thus speed):
   PISMStressBalance* stressbalance;
 
-  virtual PetscErrorCode allocate_englacial();
   virtual PetscErrorCode allocate_pressure();
+  virtual PetscErrorCode init_bwp(PISMVars &vars);
 
-  virtual PetscErrorCode check_Wen_nonnegative();
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
 
   virtual PetscErrorCode update_cbase(IceModelVec2S &result);
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
-                           PetscReal t_current, PetscReal t_end, PetscReal maxKW,
-                           PetscReal &dt_result,
-                           PetscReal &maxV_result, PetscReal &maxD_result,
-                           PetscReal &PtoCFLratio);
+                           double t_current, double t_end, double maxKW,
+                           double &dt_result,
+                           double &maxV_result, double &maxD_result,
+                           double &PtoCFLratio);
+};
 
-  virtual PetscErrorCode update_englacial_storage(
-                               IceModelVec2S &myPnew, IceModelVec2S &Wnew_tot);
+
+//! \brief A form of the PISM subglacial hydrology model for a distributed linked-cavity system with an alternate (more "elliptic") way of updating pressure.
+class PISMDistHydrologyALT : public PISMDistributedHydrology {
+public:
+  PISMDistHydrologyALT(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb)
+    : PISMDistributedHydrology(g,conf,sb) {}
+  virtual ~PISMDistHydrologyALT() {}
+  virtual PetscErrorCode update(double icet, double icedt);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

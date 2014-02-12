@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,13 @@
 #include "PALapseRates.hh"
 
 
-PALapseRates::PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PALapseRates::PALapseRates(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in),
     precipitation(g.get_unit_system()),
     air_temp(g.get_unit_system())
 {
   precip_lapse_rate = 0;
-  option_prefix	    = "-atmosphere_lapse_rate";
+  option_prefix     = "-atmosphere_lapse_rate";
 
   PetscErrorCode ierr = allocate_PALapseRates(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -43,7 +43,7 @@ PetscErrorCode PALapseRates::allocate_PALapseRates() {
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name",
-			   "ice-equivalent precipitation rate with a lapse-rate correction");
+                           "ice-equivalent precipitation rate with a lapse-rate correction");
   ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
@@ -60,7 +60,7 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool precip_lapse_rate_set;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -121,7 +121,7 @@ PetscErrorCode PALapseRates::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PALapseRates::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
   ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
@@ -132,9 +132,9 @@ PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PALapseRates::temp_time_series(int i, int j, double *values) {
   PetscErrorCode ierr;
-  vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<double> usurf(m_ts_times.size());
 
   ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
 
@@ -147,9 +147,9 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::precip_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PALapseRates::precip_time_series(int i, int j, double *values) {
   PetscErrorCode ierr;
-  vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<double> usurf(m_ts_times.size());
 
   ierr = input_model->precip_time_series(i, j, values); CHKERRQ(ierr);
 
@@ -169,7 +169,7 @@ PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PALapseRates::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -185,13 +185,13 @@ PetscErrorCode PALapseRates::define_variables(set<string> vars, const PIO &nc, P
   return 0;
 }
 
-PetscErrorCode PALapseRates::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PALapseRates::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = air_temp;
 
     ierr = temp_snapshot(tmp); CHKERRQ(ierr);
 
@@ -202,8 +202,8 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = precipitation;
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
@@ -217,7 +217,7 @@ PetscErrorCode PALapseRates::write_variables(set<string> vars, const PIO &nc) {
   return 0;
 }
 
-void PALapseRates::add_vars_to_output(string keyword, set<string> &result) {
+void PALapseRates::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {

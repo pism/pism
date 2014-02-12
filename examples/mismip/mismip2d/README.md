@@ -103,7 +103,7 @@ threshold speed to 1 meter per second, which will make it inactive.
 
 The `-pseudo_plastic_uthreshold` command-line option takes an argument in meters per year, so we use `-pseudo_plastic_uthreshold 3.15569259747e7`, where `3.15569259747e7` is the number of seconds in a year.
 
-The MISMIP parameter C corresponds to `tauc` in PISM. It can be set using `-hold_tauc -tauc C`.
+The MISMIP parameter C corresponds to `tauc` in PISM. It can be set using `-yield_stress constant -tauc C`.
 
 The MISMIP power law exponent `m` corresponds to `-pseudo_plastic_q` in PISM.
 

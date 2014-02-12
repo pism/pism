@@ -9,7 +9,8 @@ import MISMIP
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 import sys
 
@@ -98,39 +99,36 @@ class Experiment:
             self.Lz = 6000
 
 
-    def physics_options(self, step):
+    def physics_options(self, input_file, step):
         "Options corresponding to modeling choices."
         config_filename = self.config(step)
 
-        options = ["-cold",             # allow selecting cold-mode flow laws
-                   "-sia_flow_law isothermal_glen", # isothermal setup
+        options = ["-energy none", # isothermal setup; allows selecting cold-mode flow laws
                    "-ssa_flow_law isothermal_glen", # isothermal setup
-                   "-no_energy",                    # isothermal setup
-                   "-ssa_sliding",                  # use SSA
-                   "-hold_tauc",
+                   "-yield_stress constant",
                    "-tauc %e" % MISMIP.C(self.experiment),
                    "-pseudo_plastic",
                    "-gradient eta",
                    "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
                    "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
-                   "-ocean_kill",               # calving at the present front
+                   "-calving ocean_kill", # calving at the present front
+                   "-ocean_kill_file %s" % input_file,
                    "-config_override %s" % config_filename,
-                   "-ssa_method fd",       # use the FD solver that includes PIK improvements
+                   "-ssa_method fd",
                    "-cfbc",                # calving front boundary conditions
                    "-part_grid",           # sub-grid front motion parameterization
-                   "-ksp_rtol 1e-7",
+                   "-ssafd_ksp_rtol 1e-7",
                    "-ys 0",
-                   "-ye %f" % MISMIP.run_length(self.experiment, step),
+                   "-ye %d" % MISMIP.run_length(self.experiment, step),
                    "-options_left",
                    ]
 
         if self.model == 1:
-            options.extend(["-no_sia"])
+            options.extend(["-stress_balance ssa"])
         else:
-            options.extend(["-sia"])
-
-        if self.mode in (2, 3):
-            options.extend(["-skip", "-skip_max 10"])
+            options.extend(["-stress_balance ssa+sia",
+                            "-sia_flow_law isothermal_glen", # isothermal setup
+                        ])
 
         return options
 
@@ -158,8 +156,10 @@ class Experiment:
                  "Glen_exponent" : MISMIP.n(),
                  "standard_gravity": MISMIP.g(),
                  "ocean_sub_shelf_heat_flux_into_ice" : 0.0,
-                 "bed_smoother_range" : 0.0,
                  }
+
+        if self.model != 1:
+            attrs["bed_smoother_range"] = 0.0
 
         for name, value in attrs.iteritems():
             var.setncattr(name, value)
@@ -181,7 +181,7 @@ class Experiment:
                    "-Mz %d" % self.Mz,
                    "-Lz %d" % self.Lz]
 
-        return options
+        return options, boot_filename
 
     def output_options(self, step):
         output_file = self.output_filename(self.experiment, step)
@@ -190,7 +190,7 @@ class Experiment:
 
         options = ["-extra_file %s" % extra_file,
                    "-extra_times 0:50:3e4",
-                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf,hardav",
+                   "-extra_vars thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,cbase,nuH,tauc,taud,taub,flux_divergence",
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
                    "-o %s" % output_file,
@@ -206,11 +206,11 @@ class Experiment:
         '''Generates a string of PISM options corresponding to a MISMIP experiment.'''
 
         if input_file is None:
-            input_options = self.bootstrap_options(step)
+            input_options, input_file = self.bootstrap_options(step)
         else:
             input_options = ["-i %s" % input_file]
 
-        physics = self.physics_options(step)
+        physics = self.physics_options(input_file, step)
 
         output_file, output_options  = self.output_options(step)
 
@@ -263,7 +263,6 @@ def run_mismip(initials, executable, semianalytic):
     models = (1, 2)
     modes  = (1, 2, 3)
     experiments = ('1a', '1b', '2a', '2b', '3a', '3b')
-    semianalytic = True
 
     print preamble
 

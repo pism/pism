@@ -17,7 +17,6 @@ netcdf nbreen_config {
     pism_overrides:ice_softness = 3.1689e-24;
     pism_overrides:ice_softness_doc = "; = A";
 
-
     // next four are k, alpha, beta, W_r (= h_r) just as in *both*
     //   Schoof et al (2012) Table 1  and  Hewitt et al (2012) Table 1
 
@@ -27,13 +26,11 @@ netcdf nbreen_config {
     pism_overrides:hydrology_thickness_power_in_flux = 1.25;
     pism_overrides:hydrology_thickness_power_in_flux_doc = "; = 5/4; = alpha";
 
-    pism_overrides:hydrology_potential_gradient_power_in_flux = 1.5;
-    pism_overrides:hydrology_potential_gradient_power_in_flux_doc = "; = 3/2; = beta";
+    pism_overrides:hydrology_gradient_power_in_flux = 1.5;
+    pism_overrides:hydrology_gradient_power_in_flux_doc = "; = 3/2; = beta";
 
     pism_overrides:hydrology_roughness_scale = 0.1;
     pism_overrides:hydrology_roughness_scale_doc = "m; = W_r; = h_r in Schoof/Hewitt work";
-
-    // end
 
     pism_overrides:hydrology_cavitation_opening_coefficient = 0.500;
     pism_overrides:hydrology_cavitation_opening_coefficient_doc = "m-1; = c_1";
@@ -41,14 +38,11 @@ netcdf nbreen_config {
     pism_overrides:hydrology_creep_closure_coefficient = 0.040;
     pism_overrides:hydrology_creep_closure_coefficient_doc = "; = c_2";
 
-    pism_overrides:hydrology_englacial_porosity = 0.001;
-    pism_overrides:hydrology_englacial_porosity_doc = "[pure]; = phi";
-
-    pism_overrides:hydrology_regularizing_porosity = 0.005;
+    pism_overrides:hydrology_regularizing_porosity = 0.01;
     pism_overrides:hydrology_regularizing_porosity_doc = "[pure]; phi_0";
-
-    pism_overrides:hydrology_lower_bound_creep_regularization = 0.001;
-    pism_overrides:hydrology_lower_bound_creep_regularization_doc = "m; = Y_0";
+ 
+    pism_overrides:hydrology_tillwat_max = 0.0;
+    pism_overrides:hydrology_tillwat_max_doc = "m; turn off till water mechanism";
 
     pism_overrides:hydrology_maximum_time_step_years = 1.0;
     pism_overrides:hydrology_maximum_time_step_years_doc = "years; ";

@@ -1,25 +1,25 @@
 #!/usr/bin/env python
 from numpy import sort
-# try different netCDF modules
 try:
     from netCDF4 import *
 except:
-    try:
-        from netCDF3 import *
-    except:
-        print "ERROR: Neither netCDF3 nor netCDF4 is installed!"
-        import sys
-        sys.exit(1)
+    print "ERROR: netCDF4 is installed!"
+    import sys
+    sys.exit(1)
 
 input = "pism_config.nc"
+
+allowed_boolean_values = ["yes", "true", "on", "no", "false", "off"]
 
 nc = Dataset(input, 'r')
 
 var = nc.variables['pism_config']
 
 print """
-/*!
-\page config Configuration flags and parameters
+Configuration flags and parameters {#config}
+=============
+
+[TOC]
 
 \htmlonly
 <p style="text-align: right">
@@ -97,7 +97,7 @@ for attr in sort(var.ncattrs()):
       docstring = "[missing]"
 
     # ignore anything that does not represent a boolean:
-    if (value not in ["yes", "true", "on", "no", "false", "off"]):
+    if (value not in allowed_boolean_values):
         continue
 
     print '<tr><td class="indexkey">%s</td><td class="indexvalue">\"%s\"</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
@@ -153,9 +153,9 @@ for attr in sort(var.ncattrs()):
       docstring = "[missing]"
 
     # ignore non-strings and strings representing booleans
-    if (type(value) != str) or (value in ["yes", "true", "on", "no", "false", "off"]):
+    if (not isinstance(value, (str, unicode))) or (value in allowed_boolean_values):
         continue
 
     print '<tr><td class="indexkey">%s</td><td class="indexvalue">\'%s\'</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
 
-print "</table> */"
+print "</table>"

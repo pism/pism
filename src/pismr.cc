@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,28 +33,23 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
-
-    ierr = check_old_option_and_stop(com, "-boot_from", "-boot_file"); CHKERRQ(ierr); 
 
     bool iset, bfset;
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
-    string usage =
+    std::string usage =
       "  pismr {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
@@ -66,17 +61,18 @@ int main(int argc, char *argv[]) {
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismr", usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pismr", usage); CHKERRQ(ierr);
     } else {
-      vector<string> required;  required.clear();
-      ierr = show_usage_check_req_opts(com, "pismr", required, usage.c_str()); CHKERRQ(ierr);
+      std::vector<std::string> required;  required.clear();
+      ierr = show_usage_check_req_opts(com, "pismr", required, usage); CHKERRQ(ierr);
     }
 
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
-    IceGrid g(com, rank, size, config);
+    IceGrid g(com, config);
     IceModel m(g, config, overrides);
 
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -25,84 +25,54 @@ static char help[] =
 #include "IceGrid.hh"
 #include "iceModel.hh"
 #include "eismint/iceEISModel.hh"
-#include "eismint/icePSTexModel.hh"
 #include "pism_options.hh"
 
-#include "PSDummy.hh"
 #include "POConstant.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {    
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-    vector<string> required;
+    std::vector<std::string> required;
     required.clear(); // no actually required options; "-eisII A" is default
     ierr = show_usage_check_req_opts(com, "pisms", required,
-      "  pisms [-eisII x|-pst -xxx] [OTHER PISM & PETSc OPTIONS]\n"
+      "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
       "where major option chooses type of simplified experiment:\n"
-      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"
-      "  -pst -xxx   choose plastic till ice stream experiment; see Bueler & Brown (2009);\n"
-      "              (-xxx = -P0A|-P0I|-P1|-P2|-P3|-P4)\n"
-      "notes:\n"
-      "  -pdd        not allowed (because PISMConstAtmosCoupler is always used)\n"
-      ); CHKERRQ(ierr);
+      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"); CHKERRQ(ierr);
 
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
     config.set_string("calendar", "none");
 
-    bool EISIIchosen, PSTexchosen;
-    /* This option determines the single character name of EISMINT II experiments:
-    "-eisII F", for example. */
-    ierr = PISMOptionsIsSet("-eisII", EISIIchosen); CHKERRQ(ierr);
-    /* This option chooses Plastic till ice Stream with Thermocoupling experiment. */
-    ierr = PISMOptionsIsSet("-pst", PSTexchosen); CHKERRQ(ierr);
+    IceGrid g(com, config);
+    IceEISModel m(g, config, overrides);
 
-    int  choiceSum = (int) EISIIchosen + (int) PSTexchosen;
-    if (choiceSum > 1) {
-      ierr = PetscPrintf(com,
-         "PISM ERROR: pisms called with more than one simplified geometry experiment chosen\n");
-         CHKERRQ(ierr);
-      PISMEnd();
-    }
+    ierr = m.setExecName("pisms"); CHKERRQ(ierr);
 
-    // actually construct the IceModel
-    IceGrid g(com, rank, size, config);
-    IceModel *m;
-    if (PSTexchosen == PETSC_TRUE) {
-      m = new IcePSTexModel(g, config, overrides);
-    } else {
-      m = new IceEISModel(g, config, overrides);
-    }
+    ierr = m.init(); CHKERRQ(ierr);
 
-    ierr = m->setExecName("pisms"); CHKERRQ(ierr);
-
-    ierr = m->init(); CHKERRQ(ierr);
-
-    ierr = m->run(); CHKERRQ(ierr);
+    ierr = m.run(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
-    ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
 
-    delete m;
+    // provide a default output file name if no -o option is given.
+    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

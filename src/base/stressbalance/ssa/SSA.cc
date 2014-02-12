@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2014 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -20,15 +20,13 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "flowlaw_factory.hh"
 #include "PIO.hh"
+#include "enthalpyConverter.hh"
 
-SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
-         EnthalpyConverter &e,
-         const NCConfigVariable &c)
-  : ShallowStressBalance(g, b, e, c)
+SSA::SSA(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : ShallowStressBalance(g, e, c)
 {
   mask = NULL;
   thickness = NULL;
@@ -38,12 +36,18 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
   enthalpy = NULL;
   driving_stress_x = NULL;
   driving_stress_y = NULL;
-  if (config.get_flag("sub_groundingline")) {
-    gl_mask = NULL;
-  }
+  gl_mask = NULL;
 
   strength_extension = new SSAStrengthExtension(config);
   allocate();
+}
+
+SSA::~SSA() { 
+  if (deallocate() != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSA de-allocation failed.\n");
+    PISMEnd();
+  }
+  delete strength_extension;
 }
 
 
@@ -54,41 +58,49 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "  [using the %s flow law]\n", flow_law->name().c_str()); CHKERRQ(ierr);
   
   if (config.get_flag("sub_groundingline")) {
     gl_mask = dynamic_cast<IceModelVec2S*>(vars.get("gl_mask"));
-    if (gl_mask == NULL) SETERRQ(grid.com, 1, "subgrid_grounding_line_position is not available");
+    if (gl_mask == NULL)
+      SETERRQ(grid.com, 1, "subgrid_grounding_line_position is not available");
   }
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  if (mask == NULL)
+    SETERRQ(grid.com, 1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  if (thickness == NULL)
+    SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
-  if (tauc == NULL) SETERRQ(grid.com, 1, "tauc is not available");
+  if (tauc == NULL)
+    SETERRQ(grid.com, 1, "tauc is not available");
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   driving_stress_x = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_x"));
   driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
   if( (driving_stress_x==NULL) || (driving_stress_y==NULL) ) {
     if(surface == NULL) {
-      SETERRQ(grid.com, 1, "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
+      SETERRQ(grid.com, 1,
+              "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
     }
  }
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
+  if (bed == NULL)
+    SETERRQ(grid.com, 1, "bedrock_altitude is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
-
-
+  if (enthalpy == NULL)
+    SETERRQ(grid.com, 1, "enthalpy is not available");
+  
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
   bool i_set;
-  string filename;
+  std::string filename;
   ierr = PISMOptionsString("-i", "PISM input file",
                            filename, i_set); CHKERRQ(ierr);
 
@@ -110,7 +122,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
         (! dont_read_initial_guess)) {
       ierr = verbPrintf(3,grid.com,"Reading u_ssa and v_ssa...\n"); CHKERRQ(ierr);
 
-      ierr = m_velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
+      ierr = m_velocity.read(filename, start); CHKERRQ(ierr);
     }
 
   } else {
@@ -125,8 +137,6 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     if (m_vel_bc == NULL) SETERRQ(grid.com, 1, "vel_ssa_bc is not available");
   }
 
-  event_ssa = grid.profiler->create("ssa_update", "time spent solving the SSA");
-
   return 0;
 }
 
@@ -134,7 +144,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 PetscErrorCode SSA::allocate() {
   PetscErrorCode ierr;
 
-  ierr = taud.create(grid, "taud", false); CHKERRQ(ierr);
+  ierr = taud.create(grid, "taud", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = taud.set_attrs("diagnostic",
                         "X-component of the driving shear stress at the base of ice",
                         "Pa", "", 0); CHKERRQ(ierr);
@@ -142,18 +152,18 @@ PetscErrorCode SSA::allocate() {
                         "Y-component of the driving shear stress at the base of ice",
                         "Pa", "", 1); CHKERRQ(ierr);
 
-  ierr = m_velocity_old.create(grid, "velocity_old", true); CHKERRQ(ierr);
+  ierr = m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS); CHKERRQ(ierr);
   ierr = m_velocity_old.set_attrs("internal",
                                   "old SSA velocity field; used for re-trying with a different epsilon",
                                   "m s-1", ""); CHKERRQ(ierr);
 
   // override velocity metadata
-  vector<string> long_names;
+  std::vector<std::string> long_names;
   long_names.push_back("SSA model ice velocity in the X direction");
   long_names.push_back("SSA model ice velocity in the Y direction");
   ierr = m_velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
 
-  PetscInt dof=2, stencil_width=1;
+  int dof=2, stencil_width=1;
   ierr = grid.get_dm(dof, stencil_width, SSADA); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
@@ -189,21 +199,23 @@ PetscErrorCode SSA::deallocate() {
 
 
 //! \brief Update the SSA solution.
-PetscErrorCode SSA::update(bool fast) {
+PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
 
   if (fast)
     return 0;
 
-  grid.profiler->begin(event_ssa);
+  (void) melange_back_pressure;
 
-  ierr = solve(); CHKERRQ(ierr); 
+  ierr = solve();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "PISM ERROR: SSA solver failed.\n");
+    return ierr;
+  }
 
   ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
-					  basal_frictional_heating); CHKERRQ(ierr);
+                                          basal_frictional_heating); CHKERRQ(ierr);
   
-  grid.profiler->end(event_ssa);
-
   return 0;
 }
 
@@ -225,17 +237,15 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
-  const PetscScalar n = flow_law->exponent(), // frequently n = 3
+  const double n = flow_law->exponent(), // frequently n = 3
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,  // = 3/8
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
-  const PetscScalar minThickEtaTransform = 5.0; // m
-  const PetscScalar dx=grid.dx, dy=grid.dy;
+  const double minThickEtaTransform = 5.0; // m
+  const double dx=grid.dx, dy=grid.dy;
 
   bool cfbc = config.get_flag("calving_front_stress_boundary_condition");
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  PetscReal standard_gravity = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
   ierr =   surface->begin_access();    CHKERRQ(ierr);
@@ -247,21 +257,21 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   ierr = result.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice_rho * standard_gravity * thk(i,j); // FIXME issue #15
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;
       } else {
-        PetscScalar h_x = 0.0, h_y = 0.0;
+        double h_x = 0.0, h_y = 0.0;
         // FIXME: we need to handle grid periodicity correctly.
         if (m.grounded(i,j) && (use_eta == true)) {
-	        // in grounded case, differentiate eta = H^{8/3} by chain rule
+                // in grounded case, differentiate eta = H^{8/3} by chain rule
           if (thk(i,j) > 0.0) {
-            const PetscScalar myH = (thk(i,j) < minThickEtaTransform ?
+            const double myH = (thk(i,j) < minThickEtaTransform ?
                                      minThickEtaTransform : thk(i,j));
-            const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
+            const double eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
             h_x = factor * (pow(thk(i+1,j),etapow) - pow(thk(i-1,j),etapow)) / (2*dx);
             h_y = factor * (pow(thk(i,j+1),etapow) - pow(thk(i,j-1),etapow)) / (2*dy);
           }
@@ -303,12 +313,12 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
               // This driving stress computation has to match the calving front
               // stress boundary condition in SSAFD::assemble_rhs().
-	      if (cfbc) {
-		if (m.icy(i,j) && m.ice_free(i+1,j))
-		  east = 0;
-		if (m.icy(i,j) && m.ice_free(i-1,j))
-		  west = 0;
-	      }
+              if (cfbc) {
+                if (m.icy(i,j) && m.ice_free(i+1,j))
+                  east = 0;
+                if (m.icy(i,j) && m.ice_free(i-1,j))
+                  west = 0;
+              }
 
               if (east + west > 0)
                 h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
@@ -329,12 +339,12 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
               // This driving stress computation has to match the calving front
               // stress boundary condition in SSAFD::assemble_rhs().
-	      if (cfbc) {
-		if (m.icy(i,j) && m.ice_free(i,j+1))
-		  north = 0;
-		if (m.icy(i,j) && m.ice_free(i,j-1))
-		  south = 0;
-	      }
+              if (cfbc) {
+                if (m.icy(i,j) && m.ice_free(i,j+1))
+                  north = 0;
+                if (m.icy(i,j) && m.ice_free(i,j-1))
+                  south = 0;
+              }
 
               if (north + south > 0)
                 h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +
@@ -361,7 +371,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   return 0;
 }
 
-PetscErrorCode SSA::stdout_report(string &result) {
+PetscErrorCode SSA::stdout_report(std::string &result) {
   result = stdout_ssa;
   return 0;
 }
@@ -375,12 +385,12 @@ PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void SSA::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("vel_ssa");
 }
 
 
-PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode SSA::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
@@ -391,7 +401,7 @@ PetscErrorCode SSA::define_variables(set<string> vars, const PIO &nc, PISM_IO_Ty
 }
 
 
-PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode SSA::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
@@ -401,10 +411,12 @@ PetscErrorCode SSA::write_variables(set<string> vars, const PIO &nc) {
   return 0;
 }
 
-void SSA::get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                          map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void SSA::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                          std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
     dict["taud"] = new SSA_taud(this, grid, *variables);
     dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
+    dict["taub"] = new SSA_taub(this, grid, *variables);
+    dict["beta"] = new SSA_beta(this, grid, *variables);
 }
 
 SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
@@ -430,9 +442,9 @@ PetscErrorCode SSA_taud::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
 
   ierr = model->compute_driving_stress(*result); CHKERRQ(ierr);
 
@@ -457,8 +469,8 @@ PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "taud_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
@@ -473,6 +485,105 @@ PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
   ierr = taud->magnitude(*result); CHKERRQ(ierr);
 
   delete tmp;
+
+  output = result;
+  return 0;
+}
+
+SSA_taub::SSA_taub(SSA *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SSA>(m, g, my_vars) {
+  dof = 2;
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
+  // set metadata:
+  vars[0].init_2d("taub_x", grid);
+  vars[1].init_2d("taub_y", grid);
+
+  set_attrs("X-component of the shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+  set_attrs("Y-component of the shear stress at the base of ice", "",
+            "Pa", "Pa", 1);
+
+  for (int k = 0; k < dof; ++k)
+    vars[k].set_string("comment",
+                       "this field is purely diagnostic (not used by the model)");
+}
+
+PetscErrorCode SSA_taub::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2V *result = new IceModelVec2V;
+  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
+
+  IceModelVec2V *velocity;
+  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
+
+  IceModelVec2V &vel = *velocity;
+  IceModelVec2S &tauc = *model->tauc;
+  IceModelVec2Int &mask = *model->mask;
+
+  MaskQuery m(mask);
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = tauc.begin_access(); CHKERRQ(ierr);
+  ierr = vel.begin_access(); CHKERRQ(ierr);
+  ierr = mask.begin_access(); CHKERRQ(ierr);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (m.grounded_ice(i,j)) {
+        double beta = model->basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
+        (*result)(i,j).u = - beta * vel(i,j).u;
+        (*result)(i,j).v = - beta * vel(i,j).v;
+      } else {
+        (*result)(i,j).u = 0.0;
+        (*result)(i,j).v = 0.0;
+      }
+    }
+  }
+  ierr = mask.end_access(); CHKERRQ(ierr);
+  ierr = vel.end_access(); CHKERRQ(ierr);
+  ierr = tauc.end_access(); CHKERRQ(ierr);
+  ierr = result->end_access(); CHKERRQ(ierr);
+
+  output = result;
+
+  return 0;
+}
+
+SSA_beta::SSA_beta(SSA *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SSA>(m, g, my_vars) {
+  // set metadata:
+  vars[0].init_2d("beta", grid);
+
+  set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
+}
+
+PetscErrorCode SSA_beta::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  // Allocate memory:
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "beta", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->write_in_glaciological_units = true;
+
+  IceModelVec2S *tauc = model->tauc;
+  IceModelVec2V *velocity;
+  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  ierr = velocity->begin_access(); CHKERRQ(ierr);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      (*result)(i,j) = model->basal_sliding_law->drag((*tauc)(i,j),
+                                                      (*velocity)(i,j).u, (*velocity)(i,j).v);
+    }
+  }
+  ierr = velocity->end_access(); CHKERRQ(ierr);
+  ierr = tauc->end_access(); CHKERRQ(ierr);
+  ierr = result->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;

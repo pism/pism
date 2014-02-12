@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,8 +23,8 @@
 #include "PISMPNCFile.hh"
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
 
-PISMPNCFile::PISMPNCFile(MPI_Comm c, int r)
-  : PISMNCFile(c, r) {
+PISMPNCFile::PISMPNCFile(MPI_Comm c)
+  : PISMNCFile(c) {
   // MPI_Info_create(&mpi_info);
   mpi_info = MPI_INFO_NULL;
 }
@@ -41,7 +41,7 @@ void PISMPNCFile::check(int return_code) const {
 }
 
 
-int PISMPNCFile::open(string fname, int mode) {
+int PISMPNCFile::open(std::string fname, int mode) {
   int stat;
 
   init_hints();
@@ -56,7 +56,7 @@ int PISMPNCFile::open(string fname, int mode) {
 }
 
 
-int PISMPNCFile::create(string fname) {
+int PISMPNCFile::create(std::string fname) {
   int stat;
 
   init_hints();
@@ -108,7 +108,7 @@ int PISMPNCFile::redef() const {
 }
 
 
-int PISMPNCFile::def_dim(string name, size_t length) const {
+int PISMPNCFile::def_dim(std::string name, size_t length) const {
   int dimid = 0, stat;
 
   stat = ncmpi_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
@@ -117,7 +117,7 @@ int PISMPNCFile::def_dim(string name, size_t length) const {
 }
 
 
-int PISMPNCFile::inq_dimid(string dimension_name, bool &exists) const {
+int PISMPNCFile::inq_dimid(std::string dimension_name, bool &exists) const {
   int tmp, stat;
 
   stat = ncmpi_inq_dimid(ncid, dimension_name.c_str(), &tmp);
@@ -132,7 +132,7 @@ int PISMPNCFile::inq_dimid(string dimension_name, bool &exists) const {
 }
 
 
-int PISMPNCFile::inq_dimlen(string dimension_name, unsigned int &result) const {
+int PISMPNCFile::inq_dimlen(std::string dimension_name, unsigned int &result) const {
   int stat, dimid = -1;
   MPI_Offset len;
 
@@ -146,7 +146,7 @@ int PISMPNCFile::inq_dimlen(string dimension_name, unsigned int &result) const {
 }
 
 
-int PISMPNCFile::inq_unlimdim(string &result) const {
+int PISMPNCFile::inq_unlimdim(std::string &result) const {
   int stat, dimid;
   char dimname[NC_MAX_NAME];
 
@@ -163,7 +163,7 @@ int PISMPNCFile::inq_unlimdim(string &result) const {
   return stat;
 }
 
-int PISMPNCFile::inq_dimname(int j, string &result) const {
+int PISMPNCFile::inq_dimname(int j, std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
@@ -184,11 +184,11 @@ int PISMPNCFile::inq_ndims(int &result) const {
   return stat;
 }
 
-int PISMPNCFile::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
-  vector<int> dimids;
+int PISMPNCFile::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
+  std::vector<int> dimids;
   int stat, varid;
 
-  vector<string>::iterator j;
+  std::vector<std::string>::iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
     int dimid = -1;
     stat = ncmpi_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
@@ -213,39 +213,41 @@ int PISMPNCFile::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
 }
 
 
-int PISMPNCFile::get_vara_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
+int PISMPNCFile::get_vara_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
                                  double *ip) const {
-  vector<unsigned int> dummy;
+  std::vector<unsigned int> dummy;
   return this->get_var_double(variable_name,
                               start, count, dummy, ip, false);
 }
 
 
-int PISMPNCFile::put_vara_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 double *op) const {
-  vector<unsigned int> dummy;
+int PISMPNCFile::put_vara_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
+                                 const double *op) const {
+  std::vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
                               start, count, dummy, op, false);
 }
 
 
-int PISMPNCFile::get_varm_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 vector<unsigned int> imap, double *ip) const {
+int PISMPNCFile::get_varm_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
+                                 std::vector<unsigned int> imap,
+                                 double *ip) const {
   return this->get_var_double(variable_name,
                               start, count, imap, ip, true);
 }
 
 
-int PISMPNCFile::put_varm_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 vector<unsigned int> imap, double *op) const {
+int PISMPNCFile::put_varm_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
+                                 std::vector<unsigned int> imap,
+                                 const double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
@@ -260,9 +262,9 @@ int PISMPNCFile::inq_nvars(int &result) const {
 }
 
 
-int PISMPNCFile::inq_vardimid(string variable_name, vector<string> &result) const {
+int PISMPNCFile::inq_vardimid(std::string variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
-  vector<int> dimids;
+  std::vector<int> dimids;
 
   stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
 
@@ -291,7 +293,7 @@ int PISMPNCFile::inq_vardimid(string variable_name, vector<string> &result) cons
 }
 
 
-int PISMPNCFile::inq_varnatts(string variable_name, int &result) const {
+int PISMPNCFile::inq_varnatts(std::string variable_name, int &result) const {
   int stat, varid = -1;
 
   if (variable_name == "PISM_GLOBAL") {
@@ -306,7 +308,7 @@ int PISMPNCFile::inq_varnatts(string variable_name, int &result) const {
 }
 
 
-int PISMPNCFile::inq_varid(string variable_name, bool &exists) const {
+int PISMPNCFile::inq_varid(std::string variable_name, bool &exists) const {
   int stat, flag = -1;
 
   stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &flag);
@@ -322,7 +324,7 @@ int PISMPNCFile::inq_varid(string variable_name, bool &exists) const {
 }
 
 
-int PISMPNCFile::inq_varname(unsigned int j, string &result) const {
+int PISMPNCFile::inq_varname(unsigned int j, std::string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
@@ -334,7 +336,7 @@ int PISMPNCFile::inq_varname(unsigned int j, string &result) const {
   return stat;
 }
 
-int PISMPNCFile::inq_vartype(string variable_name, PISM_IO_Type &result) const {
+int PISMPNCFile::inq_vartype(std::string variable_name, PISM_IO_Type &result) const {
   int stat, varid;
   nc_type var_type;
 
@@ -348,7 +350,7 @@ int PISMPNCFile::inq_vartype(string variable_name, PISM_IO_Type &result) const {
 }
 
 
-int PISMPNCFile::get_att_double(string variable_name, string att_name, vector<double> &result) const {
+int PISMPNCFile::get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const {
   int stat, len, varid = -1;
   MPI_Offset attlen;
 
@@ -390,7 +392,7 @@ int PISMPNCFile::get_att_double(string variable_name, string att_name, vector<do
 }
 
 
-int PISMPNCFile::get_att_text(string variable_name, string att_name, string &result) const {
+int PISMPNCFile::get_att_text(std::string variable_name, std::string att_name, std::string &result) const {
   char *str = NULL;
   int stat, len, varid = -1;
 
@@ -437,7 +439,7 @@ int PISMPNCFile::get_att_text(string variable_name, string att_name, string &res
 }
 
 
-int PISMPNCFile::put_att_double(string variable_name, string att_name, PISM_IO_Type nctype, vector<double> &data) const {
+int PISMPNCFile::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type nctype, const std::vector<double> &data) const {
   int stat = 0;
 
   stat = redef(); check(stat);
@@ -457,7 +459,7 @@ int PISMPNCFile::put_att_double(string variable_name, string att_name, PISM_IO_T
 }
 
 
-int PISMPNCFile::put_att_text(string variable_name, string att_name, string value) const {
+int PISMPNCFile::put_att_text(std::string variable_name, std::string att_name, std::string value) const {
   int stat = 0, varid = -1;
 
   stat = redef(); check(stat);
@@ -474,7 +476,7 @@ int PISMPNCFile::put_att_text(string variable_name, string att_name, string valu
 }
 
 
-int PISMPNCFile::inq_attname(string variable_name, unsigned int n, string &result) const {
+int PISMPNCFile::inq_attname(std::string variable_name, unsigned int n, std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
@@ -495,7 +497,7 @@ int PISMPNCFile::inq_attname(string variable_name, unsigned int n, string &resul
 }
 
 
-int PISMPNCFile::inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const {
+int PISMPNCFile::inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const {
   int stat, varid = -1;
   nc_type tmp;
 
@@ -527,10 +529,10 @@ int PISMPNCFile::set_fill(int fillmode, int &old_modep) const {
 }
 
 
-int PISMPNCFile::get_var_double(string variable_name,
-                                vector<unsigned int> start,
-                                vector<unsigned int> count,
-                                vector<unsigned int> imap, double *ip,
+int PISMPNCFile::get_var_double(std::string variable_name,
+                                std::vector<unsigned int> start,
+                                std::vector<unsigned int> count,
+                                std::vector<unsigned int> imap, double *ip,
                                 bool mapped) const {
   int stat, varid, ndims = static_cast<int>(start.size());
 
@@ -552,7 +554,7 @@ int PISMPNCFile::get_var_double(string variable_name,
   if (mapped == false)
     imap.resize(ndims);
 
-  vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
+  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
     nc_imap(ndims), nc_stride(ndims);
 
   stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -578,10 +580,10 @@ int PISMPNCFile::get_var_double(string variable_name,
 }
 
 
-int PISMPNCFile::put_var_double(string variable_name,
-                                vector<unsigned int> start,
-                                vector<unsigned int> count,
-                                vector<unsigned int> imap, const double *op,
+int PISMPNCFile::put_var_double(std::string variable_name,
+                                std::vector<unsigned int> start,
+                                std::vector<unsigned int> count,
+                                std::vector<unsigned int> imap, const double *op,
                                 bool mapped) const {
   int stat, varid, ndims = static_cast<int>(start.size());
 
@@ -603,7 +605,7 @@ int PISMPNCFile::put_var_double(string variable_name,
   if (mapped == false)
     imap.resize(ndims);
 
-  vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
+  std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
     nc_imap(ndims), nc_stride(ndims);
 
   stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -631,11 +633,11 @@ int PISMPNCFile::put_var_double(string variable_name,
 
 void PISMPNCFile::init_hints() {
 
-  vector<string>::iterator j = mpi_io_hints.begin();
+  std::vector<std::string>::iterator j = mpi_io_hints.begin();
   while (j != mpi_io_hints.end()) {
-    istringstream arg(*j);
-    vector<string> words;
-    string word;
+    std::istringstream arg(*j);
+    std::vector<std::string> words;
+    std::string word;
     while (getline(arg, word, ':'))
       words.push_back(word);
 
@@ -647,6 +649,8 @@ void PISMPNCFile::init_hints() {
                    const_cast<char*>(words[0].c_str()),
                    const_cast<char*>(words[1].c_str()));
     } else {
+      int rank = 0;
+      MPI_Comm_rank(com, &rank);
       if (rank == 0) {
         printf("PISM WARNING: invalid MPI I/O hint: %s. Ignoring it...\n",
                j->c_str());
@@ -658,6 +662,6 @@ void PISMPNCFile::init_hints() {
 
 }
 
-string PISMPNCFile::get_format() const {
+std::string PISMPNCFile::get_format() const {
   return "netcdf3";
 }

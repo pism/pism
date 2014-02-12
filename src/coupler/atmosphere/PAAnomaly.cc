@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,10 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PAAnomaly.hh"
+#include "PISMConfig.hh"
 #include "IceGrid.hh"
 #include <assert.h>
 
-PAAnomaly::PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PAAnomaly::PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
@@ -34,7 +35,7 @@ PAAnomaly::PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereMod
 PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
   PetscErrorCode ierr;
 
-  option_prefix	 = "-atmosphere_anomaly";
+  option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
   air_temp_anomaly      = new IceModelVec2T;
@@ -45,7 +46,7 @@ PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = air_temp_anomaly->create(grid, "air_temp_anomaly", false); CHKERRQ(ierr);
@@ -67,7 +68,7 @@ PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "near-surface air temperature");
+  precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
@@ -82,7 +83,7 @@ PAAnomaly::~PAAnomaly()
 PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(input_model != NULL);
   ierr = input_model->init(vars); CHKERRQ(ierr);
@@ -100,11 +101,11 @@ PetscErrorCode PAAnomaly::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PAAnomaly::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = precipitation_anomaly->average(t, dt); CHKERRQ(ierr);
-  ierr = air_temp_anomaly->average(t, dt); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }
@@ -143,7 +144,7 @@ PetscErrorCode PAAnomaly::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PAAnomaly::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
   ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
@@ -158,7 +159,7 @@ PetscErrorCode PAAnomaly::init_timeseries(PetscReal *ts, unsigned int N) {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::temp_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PAAnomaly::temp_time_series(int i, int j, double *result) {
   PetscErrorCode ierr;
 
   ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
@@ -172,7 +173,7 @@ PetscErrorCode PAAnomaly::temp_time_series(int i, int j, PetscReal *result) {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PAAnomaly::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr;
 
   ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
@@ -186,7 +187,7 @@ PetscErrorCode PAAnomaly::precip_time_series(int i, int j, PetscReal *result) {
   return 0;
 }
 
-void PAAnomaly::add_vars_to_output(string keyword, set<string> &result) {
+void PAAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -196,7 +197,7 @@ void PAAnomaly::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 
-PetscErrorCode PAAnomaly::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PAAnomaly::define_variables(std::set<std::string> vars, const PIO &nc,
                                            PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -216,13 +217,13 @@ PetscErrorCode PAAnomaly::define_variables(set<string> vars, const PIO &nc,
 }
 
 
-PetscErrorCode PAAnomaly::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PAAnomaly::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = air_temp;
 
     ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
 
@@ -233,8 +234,8 @@ PetscErrorCode PAAnomaly::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = precipitation;
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 

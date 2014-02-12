@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@
 class SIAFD_Regional : public SIAFD
 {
 public:
-  SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+  SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
     : SIAFD(g, e, c) {}
   virtual ~SIAFD_Regional() {}
   virtual PetscErrorCode init(PISMVars &vars);
@@ -48,10 +48,8 @@ protected:
 class SSAFD_Regional : public SSAFD
 {
 public:
-  SSAFD_Regional(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-                 const NCConfigVariable &c)
-    : SSAFD(g, b, e, c) {}
-  virtual ~SSAFD_Regional() {}
+  SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~SSAFD_Regional();
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 protected:
@@ -62,7 +60,7 @@ protected:
 class PISMRegionalDefaultYieldStress : public PISMMohrCoulombYieldStress
 {
 public:
-  PISMRegionalDefaultYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro)
+  PISMRegionalDefaultYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro)
     : PISMMohrCoulombYieldStress(g, conf, hydro) {}
   virtual ~PISMRegionalDefaultYieldStress() {}
   virtual PetscErrorCode init(PISMVars &vars);

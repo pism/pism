@@ -3,7 +3,8 @@
 try:
   import netCDF4 as netCDF
 except:
-  import netCDF3 as netCDF
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 from matplotlib import pyplot as pp
 from matplotlib import colors as mc
 from optparse import OptionParser

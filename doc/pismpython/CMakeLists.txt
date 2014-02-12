@@ -7,40 +7,43 @@ if (NOT SPHINX_EXECUTABLE)
 else ()
 
   set(RST_FILES
-  index.rst 
-  installation.rst 
-  python.rst
-  zbib.rst
-  inverse/index.rst
-  inverse/refresher.rst
-  inverse/pism_ssa.rst
-  inverse/ssa_forward.rst
-  inverse/ssa_inverse.rst
-  inverse/pismi.rst
-  inverse/design.rst
-  inverse/listeners.rst
-  api/index.rst
-  api/PISM.rst
-  api/options.rst
-  api/logging.rst
-  api/model.rst
-  api/util.rst
-  api/vec.rst
-  api/ssa.rst
-  api/sia.rst
-  api/invert/index.rst
-  api/invert/ssa.rst
-  api/invert/ssa_tao.rst
-  api/invert/ssa_siple.rst
-  api/invert/sipletools.rst
-  )
+    index.rst 
+    installation.rst 
+    python.rst
+    zbib.rst
+    inverse/index.rst
+    inverse/refresher.rst
+    inverse/pism_ssa.rst
+    inverse/ssa_forward.rst
+    inverse/ssa_inverse.rst
+    inverse/pismi.rst
+    inverse/design.rst
+    inverse/listeners.rst
+    api/index.rst
+    api/PISM.rst
+    api/options.rst
+    api/logging.rst
+    api/model.rst
+    api/util.rst
+    api/vec.rst
+    api/ssa.rst
+    api/sia.rst
+    api/invert/index.rst
+    api/invert/ssa.rst
+    api/invert/ssa_siple.rst
+    api/invert/sipletools.rst
+    )
+
+  if (Pism_USE_TAO)
+    list(APPEND RST_FILES api/invert/ssa_tao.rst)
+  endif()
 
   set (sphinx_helpers
-  _static/pymunk.js
-  pismdoc/theme.conf
-  pismdoc/static/PISM.css )
+    _static/pymunk.js
+    pismdoc/theme.conf
+    pismdoc/static/PISM.css )
 
-  # Copy the bibliography file (note the change in the file name)
+  # Copy the bibliography file
   configure_file (../ice_bib.bib ice_bib.bib COPYONLY)
 
   # copy all the files needed to generate browser sources

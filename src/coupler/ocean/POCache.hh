@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,18 +25,19 @@
 
 class POCache : public POModifier {
 public:
-  POCache(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  POCache(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
   virtual ~POCache();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode sea_level_elevation(double &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux;
   double m_sea_level;

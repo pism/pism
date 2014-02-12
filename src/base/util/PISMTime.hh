@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
-inline bool pism_is_valid_calendar_name(string name) {
+inline bool pism_is_valid_calendar_name(std::string name) {
   // Calendar names from the CF Conventions document (except the
   // 366_day (all_leap)):
   if (name == "standard"            ||
@@ -58,7 +58,8 @@ inline bool pism_is_valid_calendar_name(string name) {
 class PISMTime
 {
 public:
-  PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem units_system);
+  PISMTime(MPI_Comm c, const PISMConfig &conf, std::string calendar,
+           PISMUnitSystem units_system);
   virtual ~PISMTime();
 
   //! \brief Sets the current time (in seconds since the reference time).
@@ -79,33 +80,35 @@ public:
   double end();
 
   //! \brief Returns the calendar string.
-  string calendar();
+  std::string calendar();
 
   //! \brief Returns the length of the current run, in years.
-  string run_length();
+  std::string run_length();
 
   // Virtual methods:
 
   //! \brief Intialize using command-line options.
   virtual PetscErrorCode init();
 
-  PetscErrorCode parse_times(string spec, vector<double> &result);
+  void init_calendar(std::string calendar);
+
+  PetscErrorCode parse_times(std::string spec, std::vector<double> &result);
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
    * This units string is saved in the output file. Always contains a reference
    * date, even if it is not used by PISM.
    */
-  virtual string CF_units_string();
+  virtual std::string CF_units_string();
 
   //! \brief Internal time units.
   /*!
    * May or may not contain a reference date. (The base class PISMTime does not
    * use the reference date, while PISMTime_Calendar does.)
    */
-  virtual string units_string();
+  virtual std::string units_string();
 
-  virtual string CF_units_to_PISM_units(string input);
+  virtual std::string CF_units_to_PISM_units(std::string input);
 
   //! \brief Returns time since the origin modulo period.
   virtual double mod(double time, unsigned int period_years);
@@ -116,7 +119,7 @@ public:
 
   //! \brief Convert the day number to the year fraction.
   virtual double day_of_the_year_to_day_fraction(unsigned int day);
-  
+
   //! \brief Returns the model time in seconds corresponding to the
   //! beginning of the year `T` falls into.
   virtual double calendar_year_start(double T);
@@ -126,51 +129,62 @@ public:
   virtual double increment_date(double T, int years);
 
   //! \brief Returns the date corresponding to time T.
-  virtual string date(double T);
+  virtual std::string date(double T);
 
   //! \brief Returns current time, in years. Only for reporting.
-  virtual string date();
+  virtual std::string date();
+
+#if (PISM_DEBUG==1)
+  //! \brief Returns current time, in years. Only for debugging.
+  virtual double current_years() {
+    return seconds_to_years(current());
+  }
+#endif
 
   //! Date corresponding to the beginning of the run.
-  virtual string start_date();
+  virtual std::string start_date();
 
   //! Date corresponding to the end of the run.
-  virtual string end_date();
+  virtual std::string end_date();
+
+  //! @brief Convert time interval from seconds to given units. Handle
+  //! 'years' using the year length corresponding to the calendar.
+  virtual double convert_time_interval(double T, std::string units);
 
 protected:
-  PetscErrorCode parse_list(string spec, vector<double> &result);
+  PetscErrorCode parse_list(std::string spec, std::vector<double> &result);
 
   virtual PetscErrorCode process_ys(double &result, bool &flag);
   virtual PetscErrorCode process_y(double &result, bool &flag);
   virtual PetscErrorCode process_ye(double &result, bool &flag);
 
   virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       string keyword,
-                                       vector<double> &result);
+                                       std::string keyword,
+                                       std::vector<double> &result);
 
   PetscErrorCode compute_times_simple(double time_start, double delta, double time_end,
-                                      vector<double> &result);
+                                      std::vector<double> &result);
 
-  virtual PetscErrorCode parse_range(string spec, vector<double> &result);
+  virtual PetscErrorCode parse_range(std::string spec, std::vector<double> &result);
 
-  virtual PetscErrorCode parse_date(string spec, double *result);
+  virtual PetscErrorCode parse_date(std::string spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(string spec, string &keyword, double *result);
+  virtual PetscErrorCode parse_interval_length(std::string spec, std::string &keyword,
+                                               double *result);
 
-private:
   double years_to_seconds(double input);
   double seconds_to_years(double input);
 
 protected:
   MPI_Comm m_com;
-  const NCConfigVariable &m_config;
+  const PISMConfig &m_config;
   PISMUnitSystem m_unit_system;
   PISMUnit m_time_units;
-  double m_year_length;      //!< number of seconds in a year, "mod" and "year fraction"
+  double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time
     m_run_end;                    //!< run end tim, in seconds since the reference time
-  string m_calendar_string;       //!< CF calendar string
+  std::string m_calendar_string;       //!< CF calendar string
 };
 
 #endif /* _PISMTIME_H_ */

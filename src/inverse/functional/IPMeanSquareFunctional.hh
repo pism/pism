@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@
 J(x) = c_N \sum_{i} w_i x_i^2
 \f]
 where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
-of the normalization constant is set implicitly by a call to \member normalize.
+of the normalization constant is set implicitly by a call to normalize().
 */
 class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
@@ -37,15 +37,15 @@ public:
   IPInnerProductFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
 
-  virtual PetscErrorCode normalize(PetscReal scale);
+  virtual PetscErrorCode normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
+  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 protected:
   IceModelVec2S *m_weights;
-  PetscReal m_normalization;
+  double m_normalization;
 
 private:
   IPMeanSquareFunctional2S(IPMeanSquareFunctional2S const &);
@@ -59,7 +59,7 @@ private:
 J(x) = c_N \sum_{i} w_i |x_i|^2
 \f]
 where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
-of the normalization constant is set implicitly by a call to \member normalize.
+of the normalization constant is set implicitly by a call to normalize().
 */
 class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
@@ -67,15 +67,15 @@ public:
   IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 
-  virtual PetscErrorCode normalize(PetscReal scale);
+  virtual PetscErrorCode normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, PetscReal *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT);
+  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *OUTPUT);
+  virtual PetscErrorCode dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 protected:
   IceModelVec2S *m_weights;
-  PetscReal m_normalization;
+  double m_normalization;
 
 private:
   IPMeanSquareFunctional2V(IPMeanSquareFunctional2V const &);

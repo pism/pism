@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "PISMConfig.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
 #include <sstream>
@@ -38,24 +39,17 @@ double PISMTime::seconds_to_years(double input) {
 }
 
 
-PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit_system)
+PISMTime::PISMTime(MPI_Comm c,
+                   const PISMConfig &conf,
+                   std::string calendar_string,
+                   PISMUnitSystem unit_system)
   : m_com(c), m_config(conf), m_unit_system(unit_system),
     m_time_units(m_unit_system) {
 
-  m_calendar_string = m_config.get_string("calendar");
-
-  double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
-  if (calendar() == "360_day") {
-    m_year_length = 360 * seconds_per_day;
-  } else if (calendar() == "365_day" || calendar() == "noleap") {
-    m_year_length = 365 * seconds_per_day;
-  } else {
-    // use the ~365.2524-day year
-    m_year_length = m_unit_system.convert(1.0, "year", "seconds");
-  }
+  init_calendar(calendar_string);
 
   m_run_start = years_to_seconds(m_config.get("start_year"));
-  m_run_end   = increment_date(m_run_start, m_config.get("run_length_years"));
+  m_run_end   = increment_date(m_run_start, (int)m_config.get("run_length_years"));
 
   m_time_units.parse("seconds");
 
@@ -63,6 +57,20 @@ PISMTime::PISMTime(MPI_Comm c, const NCConfigVariable &conf, PISMUnitSystem unit
 }
 
 PISMTime::~PISMTime() {
+}
+
+void PISMTime::init_calendar(std::string calendar_string) {
+  m_calendar_string = calendar_string;
+
+  double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
+  if (calendar_string == "360_day") {
+    m_year_length = 360 * seconds_per_day;
+  } else if (calendar_string == "365_day" || calendar_string == "noleap") {
+    m_year_length = 365 * seconds_per_day;
+  } else {
+    // use the ~365.2524-day year
+    m_year_length = m_unit_system.convert(1.0, "year", "seconds");
+  }
 }
 
 //! \brief Sets the current time (in seconds since the reference time).
@@ -91,12 +99,12 @@ double PISMTime::end() {
   return m_run_end;
 }
 
-string PISMTime::CF_units_string() {
+std::string PISMTime::CF_units_string() {
   return "seconds since " + m_config.get_string("reference_date");
 }
 
 //! \brief Returns the calendar string.
-string PISMTime::calendar() {
+std::string PISMTime::calendar() {
   return m_calendar_string;
 }
 
@@ -110,12 +118,12 @@ void PISMTime::step(double delta_t) {
     m_time_in_seconds = m_run_end;
 }
 
-string PISMTime::units_string() {
+std::string PISMTime::units_string() {
   return "seconds";
 }
 
 
-string PISMTime::CF_units_to_PISM_units(string input) {
+std::string PISMTime::CF_units_to_PISM_units(std::string input) {
   size_t n = input.find("since");
   
   /*!
@@ -124,7 +132,7 @@ string PISMTime::CF_units_to_PISM_units(string input) {
     This is done to ignore the reference date in the time units string (the
     reference date specification always starts with this word).
   */
-  if (n != string::npos)
+  if (n != std::string::npos)
     input.resize(n);
 
   // strip trailing spaces
@@ -170,7 +178,12 @@ PetscErrorCode PISMTime::process_ye(double &result, bool &flag) {
 PetscErrorCode PISMTime::init() {
   PetscErrorCode ierr;
   bool y_set, ys_set, ye_set;
-  PetscReal y_seconds, ys_seconds, ye_seconds;
+  double y_seconds, ys_seconds, ye_seconds;
+
+  // At this point the calendar and the year length are set (in the
+  // constructor). The PISMTime_Calendar class will (potentially)
+  // override all this by using settings from -time_file, so that is
+  // fine, too.
 
   ierr = PetscOptionsBegin(m_com, "", "PISM model time options", ""); CHKERRQ(ierr);
   {
@@ -211,34 +224,34 @@ PetscErrorCode PISMTime::init() {
   } else if (y_set == true) {
     m_run_end = m_run_start + y_seconds;
   } else {
-    m_run_end = increment_date(m_run_start, m_config.get("run_length_years"));
+    m_run_end = increment_date(m_run_start, (int)m_config.get("run_length_years"));
   }
 
   return 0;
 }
 
-string PISMTime::date(double T) {
+std::string PISMTime::date(double T) {
   char tmp[256];
-  snprintf(tmp, 256, "%3.3f", seconds_to_years(T));
-  return string(tmp);
+  snprintf(tmp, 256, "%012.3f", seconds_to_years(T));
+  return std::string(tmp);
 }
 
-string PISMTime::date() {
+std::string PISMTime::date() {
   return date(m_time_in_seconds);
 }
 
-string PISMTime::start_date() {
+std::string PISMTime::start_date() {
   return date(m_run_start);
 }
 
-string PISMTime::end_date() {
+std::string PISMTime::end_date() {
   return date(m_run_end);
 }
 
-string PISMTime::run_length() {
+std::string PISMTime::run_length() {
   char tmp[256];
   snprintf(tmp, 256, "%3.3f", seconds_to_years(m_run_end - m_run_start));
-  return string(tmp);
+  return std::string(tmp);
 }
 
 double PISMTime::mod(double time, unsigned int period_years) {
@@ -273,10 +286,10 @@ double PISMTime::increment_date(double T, int years) {
   return T + years_to_seconds(years);
 }
 
-PetscErrorCode PISMTime::parse_times(string spec,
-                                     vector<double> &result) {
+PetscErrorCode PISMTime::parse_times(std::string spec,
+                                     std::vector<double> &result) {
 
-  if (spec.find(',') != string::npos) {
+  if (spec.find(',') != std::string::npos) {
     // a list will always contain a comma because at least two numbers are
     // needed to specify reporting intervals
 
@@ -290,10 +303,10 @@ PetscErrorCode PISMTime::parse_times(string spec,
   return 0;
 }
 
-PetscErrorCode PISMTime::parse_list(string spec, vector<double> &result) {
-  vector<string> parts;
-  istringstream arg(spec);
-  string tmp;
+PetscErrorCode PISMTime::parse_list(std::string spec, std::vector<double> &result) {
+  std::vector<std::string> parts;
+  std::istringstream arg(spec);
+  std::string tmp;
 
   while(getline(arg, tmp, ','))
     parts.push_back(tmp);
@@ -322,7 +335,7 @@ PetscErrorCode PISMTime::parse_list(string spec, vector<double> &result) {
  *
  * @return 0 on success, 1 otherwise
  */
-int PISMTime::parse_interval_length(string spec, string &keyword, double *result) {
+int PISMTime::parse_interval_length(std::string spec, std::string &keyword, double *result) {
 
   // check if it is a keyword
   if (spec == "hourly") {
@@ -367,7 +380,7 @@ int PISMTime::parse_interval_length(string spec, string &keyword, double *result
   // latter allows intervals of the form "0.5", which stands for "half
   // of a model year". This also discards interval specs such as "days
   // since 1-1-1", even though "days" is compatible with "seconds".
-  if (ut_are_convertible(tmp.get(), seconds.get()) == 1) {
+  if (units_are_convertible(tmp, seconds) == true) {
     cv_converter *c = seconds.get_converter_from(tmp);
     assert(c != NULL);
 
@@ -376,7 +389,7 @@ int PISMTime::parse_interval_length(string spec, string &keyword, double *result
 
     cv_free(c);
 
-  } else if (ut_are_convertible(tmp.get(), one.get()) == 1) {
+  } else if (units_are_convertible(tmp, one) == true) {
     cv_converter *c = one.get_converter_from(tmp);
     assert(c != NULL);
 
@@ -400,12 +413,12 @@ int PISMTime::parse_interval_length(string spec, string &keyword, double *result
 }
 
 
-PetscErrorCode PISMTime::parse_range(string spec, vector<double> &result) {
+PetscErrorCode PISMTime::parse_range(std::string spec, std::vector<double> &result) {
   double
     time_start   = m_run_start,
     time_end     = m_run_end,
     delta        = 0;
-  string keyword = "simple";
+  std::string keyword = "simple";
   int    errcode;
 
   if (spec == "hourly") {
@@ -416,9 +429,9 @@ PetscErrorCode PISMTime::parse_range(string spec, vector<double> &result) {
     keyword = spec;
     delta   = 0;
   } else {
-    istringstream  arg(spec);
-    vector<string> parts;
-    string         tmp;
+    std::istringstream  arg(spec);
+    std::vector<std::string> parts;
+    std::string         tmp;
 
     while(getline(arg, tmp, ':'))
       parts.push_back(tmp);
@@ -453,7 +466,7 @@ PetscErrorCode PISMTime::parse_range(string spec, vector<double> &result) {
 }
 
 
-PetscErrorCode PISMTime::parse_date(string spec, double *result) {
+PetscErrorCode PISMTime::parse_date(std::string spec, double *result) {
   PetscErrorCode ierr;
   double d;
   char *endptr;
@@ -492,7 +505,7 @@ PetscErrorCode PISMTime::parse_date(string spec, double *result) {
  * @return 0 on success, 1 otherwise
  */
 PetscErrorCode PISMTime::compute_times_simple(double time_start, double delta, double time_end,
-                                              vector<double> &result) {
+                                              std::vector<double> &result) {
   if (time_start >= time_end) {
     PetscPrintf(m_com, "PISM ERROR: a >= b in time range a:dt:b.\n");
     return 1;
@@ -517,8 +530,8 @@ PetscErrorCode PISMTime::compute_times_simple(double time_start, double delta, d
 }
 
 PetscErrorCode PISMTime::compute_times(double time_start, double delta, double time_end,
-                                       string keyword,
-                                       vector<double> &result) {
+                                       std::string keyword,
+                                       std::vector<double> &result) {
   if (keyword == "yearly") {
     delta = years_to_seconds(1.0);
   } else if (keyword == "monthly") {
@@ -530,4 +543,11 @@ PetscErrorCode PISMTime::compute_times(double time_start, double delta, double t
   }
 
   return compute_times_simple(time_start, delta, time_end, result);
+}
+
+double PISMTime::convert_time_interval(double T, std::string units) {
+  if (units == "year" || units == "years" || units == "yr" || units == "a") {
+    return this->seconds_to_years(T); // uses year length here
+  }
+  return m_unit_system.convert(T, "seconds", units);
 }

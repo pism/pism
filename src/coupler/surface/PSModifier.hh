@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ upper surface temperature "just before" it gets to the ice itself.
 class PSModifier : public Modifier<PISMSurfaceModel>
 {
 public:
-  PSModifier(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+  PSModifier(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
     : Modifier<PISMSurfaceModel>(g, conf, in) {}
   virtual ~PSModifier() {}
 

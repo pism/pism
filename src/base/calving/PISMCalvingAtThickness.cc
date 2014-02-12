@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,11 +20,11 @@
 #include "PISMCalvingAtThickness.hh"
 #include "Mask.hh"
 
-PISMCalvingAtThickness::PISMCalvingAtThickness(IceGrid &g, const NCConfigVariable &conf)
+PISMCalvingAtThickness::PISMCalvingAtThickness(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
-  m_calving_threshold = config.get("calving_at_thickness");
+  m_calving_threshold = config.get("thickness_calving_threshold");
 
-  PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", true, 1);
+  PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
   if (ierr != 0) {
     PetscPrintf(grid.com,
                 "PISM ERROR: memory allocation failed (PISMCalvingAtThickness constructor.\n");
@@ -38,7 +38,11 @@ PISMCalvingAtThickness::~PISMCalvingAtThickness() {
 
 
 PetscErrorCode PISMCalvingAtThickness::init(PISMVars &/*vars*/) {
-  // empty
+  PetscErrorCode ierr;
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the 'calving at a threshold thickness' mechanism...\n"
+                    "  thickness threshold: %3.3f meters\n", m_calving_threshold); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -64,8 +68,8 @@ PetscErrorCode PISMCalvingAtThickness::update(IceModelVec2Int &pism_mask,
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = m_old_mask.begin_access();    CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.floating_ice(i, j)           &&
           M.next_to_ice_free_ocean(i, j) &&
           ice_thickness(i, j) < m_calving_threshold) {
@@ -86,19 +90,19 @@ PetscErrorCode PISMCalvingAtThickness::update(IceModelVec2Int &pism_mask,
 }
 
 
-void PISMCalvingAtThickness::add_vars_to_output(string /*keyword*/,
-                                                set<string> &/*result*/) {
+void PISMCalvingAtThickness::add_vars_to_output(std::string /*keyword*/,
+                                                std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode PISMCalvingAtThickness::define_variables(set<string> /*vars*/,
+PetscErrorCode PISMCalvingAtThickness::define_variables(std::set<std::string> /*vars*/,
                                                         const PIO &/*nc*/,
                                                         PISM_IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMCalvingAtThickness::write_variables(set<string> /*vars*/,
+PetscErrorCode PISMCalvingAtThickness::write_variables(std::set<std::string> /*vars*/,
                                                        const PIO& /*nc*/) {
   // empty
   return 0;

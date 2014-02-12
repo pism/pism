@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,14 +36,14 @@ file containing a complete model state, versus bootstrapping).
 #include <signal.h>
 #include <gsl/gsl_rng.h>
 #include <petscsnes.h>
-#include <petsctime.h>		// PetscGetTime()
+#include <petsctime.h>          // PetscGetTime()
 
 #include "flowlaws.hh"
 
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "PISMVars.hh"
 
 // forward declarations
@@ -51,7 +51,6 @@ class IceGrid;
 class EnthalpyConverter;
 class PISMHydrology;
 class PISMYieldStress;
-class IceBasalResistancePlasticLaw;
 class PISMStressBalance;
 class PISMSurfaceModel;
 class PISMOceanModel;
@@ -60,11 +59,10 @@ class PISMBedThermalUnit;
 class PISMDiagnostic;
 class PISMTSDiagnostic;
 class PISMIcebergRemover;
-
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
+class PISMOceanKill;
+class PISMFloatKill;
+class PISMCalvingAtThickness;
+class PISMEigenCalving;
 
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
@@ -87,8 +85,6 @@ class IceModel {
   friend class IceModel_tempicethk_basal;
   friend class IceModel_new_mask;
   friend class IceModel_climatic_mass_balance_cumulative;
-  friend class IceModel_ocean_kill_flux_2D;
-  friend class IceModel_ocean_kill_flux_2D_cumulative;
   friend class IceModel_dHdt;
   friend class IceModel_flux_divergence;
   // scalar:
@@ -117,31 +113,26 @@ class IceModel {
   friend class IceModel_sub_shelf_flux_cumulative;
   friend class IceModel_nonneg_flux;
   friend class IceModel_nonneg_flux_cumulative;
-  friend class IceModel_ocean_kill_flux;
-  friend class IceModel_ocean_kill_flux_cumulative;
-  friend class IceModel_float_kill_flux;
-  friend class IceModel_float_kill_flux_cumulative;
   friend class IceModel_discharge_flux;
   friend class IceModel_discharge_flux_cumulative;
   friend class IceModel_nonneg_flux_2D_cumulative;
   friend class IceModel_grounded_basal_flux_2D_cumulative;
   friend class IceModel_floating_basal_flux_2D_cumulative;
+  friend class IceModel_discharge_flux_2D_cumulative;
   friend class IceModel_max_hor_vel;
   friend class IceModel_sum_divQ_flux;
   friend class IceModel_H_to_Href_flux;
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
+  IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
   virtual PetscErrorCode grid_setup();
 
   virtual PetscErrorCode allocate_submodels();
-  virtual PetscErrorCode set_default_flowlaw();
   virtual PetscErrorCode allocate_enthalpy_converter();
-  virtual PetscErrorCode allocate_basal_resistance_law();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_bed_deformation();
   virtual PetscErrorCode allocate_bedrock_thermal_unit();
@@ -149,6 +140,9 @@ public:
   virtual PetscErrorCode allocate_basal_yield_stress();
   virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode allocate_iceberg_remover();
+
+  virtual PetscErrorCode attach_surface_model(PISMSurfaceModel *input);
+  virtual PetscErrorCode attach_ocean_model(PISMOceanModel *input);
 
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
@@ -158,28 +152,39 @@ public:
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode init_diagnostics();
-  virtual PetscErrorCode init_ocean_kill();
+  virtual PetscErrorCode init_calving();
 
   virtual PetscErrorCode list_diagnostics();
 
   // see iceModel.cc
   PetscErrorCode init();
+
+
+  /** Run PISM in the "standalone" mode. */
   virtual PetscErrorCode run();
+  /** Advance the current PISM run to a specific time */
+  virtual PetscErrorCode run_to(double time);
+  /** Do the "preliminary" time-step. */
+  virtual PetscErrorCode init_run();
+protected:
+  /** Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
+  virtual PetscErrorCode continue_run();
+public:
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual PetscErrorCode setExecName(string my_executable_short_name);
+  virtual PetscErrorCode setExecName(std::string my_executable_short_name);
   virtual void reset_counters();
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile(string fname);
-  virtual PetscErrorCode bootstrap_2d(string fname);
+  virtual PetscErrorCode bootstrapFromFile(std::string fname);
+  virtual PetscErrorCode bootstrap_2d(std::string fname);
   virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_output_size(string option, string description,
-					 string default_value, set<string> &result);
-  virtual string         get_output_size(string option);
+  virtual PetscErrorCode set_output_size(std::string option, std::string description,
+                                         std::string default_value, std::set<std::string> &result);
+  virtual std::string         get_output_size(std::string option);
 
   // see iMutil.cc
   virtual PetscErrorCode additionalAtStartTimestep();
@@ -187,146 +192,144 @@ public:
   virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual PetscErrorCode initFromFile(string);
-  virtual PetscErrorCode writeFiles(string default_filename);
+  virtual PetscErrorCode initFromFile(std::string);
+  virtual PetscErrorCode writeFiles(std::string default_filename);
   virtual PetscErrorCode write_model_state(const PIO &nc);
   virtual PetscErrorCode write_metadata(const PIO &nc,
                                         bool write_mapping,
                                         bool write_run_stats);
-  virtual PetscErrorCode write_variables(const PIO &nc, set<string> vars,
-					 PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(const PIO &nc, std::set<std::string> vars,
+                                         PISM_IO_Type nctype);
 protected:
 
-  IceGrid               &grid;
+  IceGrid &grid;
 
-  NCConfigVariable      mapping, //!< grid projection (mapping) parameters
-    &config,			 //!< configuration flags and parameters
-    &overrides,			 //!< flags and parameters overriding config, see -config_override
-    run_stats;                   //!< run statistics
+  PISMConfig &config,           //!< configuration flags and parameters
+    &overrides;                 //!< flags and parameters overriding config, see -config_override
 
-  NCGlobalAttributes    global_attributes;
+  NCVariable global_attributes, //!< stores global attributes saved in a PISM output file
+    mapping,                    //!< grid projection (mapping) parameters
+    run_stats;                  //!< run statistics
 
   PISMHydrology   *subglacial_hydrology;
-  PISMYieldStress *basal_yield_stress;
-  IceBasalResistancePlasticLaw *basal;
+  PISMYieldStress *basal_yield_stress_model;
 
   EnthalpyConverter *EC;
   PISMBedThermalUnit *btu;
 
-  PISMIcebergRemover *iceberg_remover;
+  PISMIcebergRemover     *iceberg_remover;
+  PISMOceanKill          *ocean_kill_calving;
+  PISMFloatKill          *float_kill_calving;
+  PISMCalvingAtThickness *thickness_threshold_calving;
+  PISMEigenCalving       *eigen_calving;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
   PISMBedDef       *beddef;
+  bool external_surface_model, external_ocean_model;
 
   //! \brief A dictionary with pointers to IceModelVecs below, for passing them
   //! from the IceModel core to other components (such as surface and ocean models)
   PISMVars variables;
 
   // state variables and some diagnostics/internals
-  IceModelVec2S vh,		//!< ice surface elevation; ghosted
-    vH,		//!< ice thickness; ghosted
-    vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
-    vbmr,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
-    vLongitude,	//!< Longitude; ghosted to compute cell areas
-    vLatitude,	//!< Latitude; ghosted to compute cell areas
-    vbed,		//!< bed topography; ghosted
-    vuplift,	//!< bed uplift rate; no ghosts
-    vGhf,		//!< geothermal flux; no ghosts
+  IceModelVec2S ice_surface_elevation,          //!< ice surface elevation; ghosted
+    ice_thickness,              //!< ghosted
+    basal_yield_stress,         //!< ghosted
+    basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
+    vLongitude, //!< Longitude; ghosted to compute cell areas
+    vLatitude,  //!< Latitude; ghosted to compute cell areas
+    bed_topography,             //!< bed topography; ghosted
+    bed_uplift_rate,    //!< bed uplift rate; no ghosts
+    geothermal_flux,   //!< geothermal flux; no ghosts
+    vFD,    //!< fracture density
+    vFG,    //!< fracture growth rate
+    vFH,    //!< fracture healing rate
+    vFE,    //!< fracture flow enhancement
+    vFA,    //!< fracture age
+    vFT,    //!< fracture toughness
     bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
     vHref,          //!< accumulated mass advected to a partially filled grid cell
-    vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
-    acab,		//!< accumulation/ablation rate; no ghosts
-    climatic_mass_balance_cumulative,    //!< cumulative acab
-    ocean_kill_flux_2D_cumulative,       //!< cumulative ocean kill flux
+    climatic_mass_balance,              //!< accumulation/ablation rate; no ghosts
+    climatic_mass_balance_cumulative,    //!< cumulative climatic_mass_balance
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
-    artm,		//!< ice temperature at the ice surface but below firn; no ghosts
+    discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux (2D field)
+    ice_surface_temp,           //!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
-    shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
-    shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
-    cell_area,		//!< cell areas (computed using the WGS84 datum)
+    shelfbtemp,         //!< ice temperature at the shelf base; no ghosts
+    shelfbmassflux,     //!< ice mass flux into the ocean at the shelf base; no ghosts
+    cell_area,          //!< cell areas (computed using the WGS84 datum)
     flux_divergence;    //!< flux divergence
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
+  
+  IceModelVec2 deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
                          //!< grounded_ice, floating_ice, ice_free_ocean
-    ocean_kill_mask,     //!< mask used by the -ocean_kill code 
     vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
   
-  IceModelVec2S gl_mask; //!< mask to determine grounding line position
+  IceModelVec2S gl_mask, //!< mask to determine grounding line position
+    gl_mask_x, //!< mask to determine grounding line position in x-direction
+    gl_mask_y; //!< mask to determine grounding line position in y-direction
 
   IceModelVec3
-        T3,		//!< absolute temperature of ice; K (ghosted)
+        T3,             //!< absolute temperature of ice; K (ghosted)
         Enth3,          //!< enthalpy; J / kg (ghosted)
-        tau3;		//!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
+        tau3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
-  PetscReal   dt,     //!< mass continuity time step, s
+  double   dt,     //!< mass continuity time step, s
               t_TempAge,  //!< time of last update for enthalpy/temperature
               dt_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_cfl, CFLmaxdt, CFLmaxdt2D, dt_from_eigencalving,
-              gDmax,		// global max of the diffusivity
+              dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+              gDmax,            // global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
-    float_kill_flux_cumulative,
-    discharge_flux_cumulative,
     nonneg_rule_flux_cumulative,
-    ocean_kill_flux_cumulative,
     sub_shelf_ice_flux_cumulative,
     surface_ice_flux_cumulative,
     sum_divQ_SIA_cumulative,
     sum_divQ_SSA_cumulative,
     Href_to_H_flux_cumulative,
-    H_to_Href_flux_cumulative;
-  PetscInt    skipCountDown;
+    H_to_Href_flux_cumulative,
+    discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  // physical parameters used frequently enough to make looking up via
-  // config.get() a hassle; initialized in the IceModel constructor from the
-  // configuration file; SHOULD NOT be hard-wired.
-  PetscScalar standard_gravity;
+  int skipCountDown;
 
   // flags
-  PetscBool  shelvesDragToo, allowAboveMelting;
-  PetscBool  repeatRedist, putOnTop;
-  char        adaptReasonFlag;
+  char adaptReasonFlag;
 
-  string      stdout_flags, stdout_ssa;
+  std::string stdout_flags;
 
-  string executable_short_name;
+  std::string executable_short_name;
   
 protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode deallocate_internal_objects();
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMax3DVelocities();
   virtual PetscErrorCode computeMax2DSlidingSpeed();
   virtual PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
-  virtual PetscErrorCode countCFLViolations(PetscScalar* CFLviol);
+  virtual PetscErrorCode countCFLViolations(double* CFLviol);
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
-
-  // see iMcalving.cc
-  virtual PetscErrorCode eigenCalving();
-  virtual PetscErrorCode calvingAtThickness();
-  virtual PetscErrorCode dt_from_eigenCalving();
 
   // see iMenergy.cc
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
   virtual bool checkThinNeigh(
-       PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
-       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
+       double E, double NE, double N, double NW, 
+       double W, double SW, double S, double SE);
 
   // see iMenthalpy.cc
   virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
@@ -334,101 +337,100 @@ protected:
                                           IceModelVec3 &result);
   virtual PetscErrorCode compute_liquid_water_fraction(IceModelVec3 &enthalpy, IceModelVec3 &result);
 
-  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
+  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &result);
 
-  virtual PetscErrorCode getEnthalpyCTSColumn(PetscScalar p_air, //!< atmospheric pressure
-					      PetscScalar thk,	 //!< ice thickness
-					      PetscInt ks,	 //!< index of the level just below the surface
-					      PetscScalar **Enth_s //!< enthalpy of pressure-melting temperature cold ice
-					      );
-
-  virtual PetscErrorCode getlambdaColumn(PetscInt ks,	       //!< index of the level just below the surface
-					 PetscScalar ice_rho_c,//!< default value only
-                                         PetscScalar ice_k,    //!< default value only
-					 const PetscScalar *Enth,   //!< enthalpy in the column
-					 const PetscScalar *Enth_s, //!< enthalpy of pressure-melting temperature cold ice
-					 const PetscScalar *w, //!< vert. velocity
-					 PetscScalar *lambda //!< constant controlling choice of implicit method
-					 );
-
-  virtual PetscErrorCode enthalpyAndDrainageStep(
-                PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
-                PetscScalar* bulgeCount);
+  virtual PetscErrorCode enthalpyAndDrainageStep(double* vertSacrCount,
+                                                 double* liquifiedVol, double* bulgeCount);
 
   // see iMgeometry.cc
   virtual PetscErrorCode updateSurfaceElevationAndMask();
-  virtual PetscErrorCode update_mask(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2Int &mask);
-  virtual PetscErrorCode update_surface_elevation(IceModelVec2S &bed, IceModelVec2S &ice_thickness, IceModelVec2S &result);
+  virtual PetscErrorCode update_mask(IceModelVec2S &bed,
+                                     IceModelVec2S &ice_thickness,
+                                     IceModelVec2Int &mask);
+  virtual PetscErrorCode update_surface_elevation(IceModelVec2S &bed,
+                                                  IceModelVec2S &ice_thickness,
+                                                  IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> input_velocity,
-                                     planeStar<PetscScalar> input_flux,
-                                     planeStar<PetscScalar> &output_velocity,
-                                     planeStar<PetscScalar> &output_flux);
+                                     planeStar<double> input_flux,
+                                     planeStar<double> &output_velocity,
+                                     planeStar<double> &output_flux);
   virtual void adjust_flow(planeStar<int> mask,
-                           planeStar<PetscScalar> &SSA_velocity,
-                           planeStar<PetscScalar> &SIA_flux);
+                           planeStar<double> &SSA_velocity,
+                           planeStar<double> &SIA_flux);
   virtual PetscErrorCode massContExplicitStep();
-  virtual PetscErrorCode sub_gl_position();
+  virtual PetscErrorCode update_floatation_mask();
+  virtual PetscErrorCode do_calving();
+  virtual PetscErrorCode Href_cleanup();
+  virtual PetscErrorCode update_cumulative_discharge(IceModelVec2S &thickness,
+                                                     IceModelVec2S &thickness_old,
+                                                     IceModelVec2S &Href,
+                                                     IceModelVec2S &Href_old);
 
 
   // see iMIO.cc
-  virtual PetscErrorCode dumpToFile(string filename);
+  virtual PetscErrorCode dumpToFile(std::string filename);
   virtual PetscErrorCode regrid(int dimensions);
-  virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
+  virtual PetscErrorCode regrid_variables(std::string filename, std::set<std::string> regrid_vars, unsigned int ndims);
+  virtual PetscErrorCode init_enthalpy(std::string filename, bool regrid, int last_record);
+
+  // see iMfractures.cc
+  virtual PetscErrorCode calculateFractureDensity();
 
   // see iMpartgrid.cc
-  PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
-                                  planeStar<PetscScalar> H);
-  virtual PetscErrorCode redistResiduals();
-  virtual PetscErrorCode calculateRedistResiduals();
+  double get_threshold_thickness(planeStar<int> Mask,
+                                    planeStar<double> thickness,
+                                    planeStar<double> surface_elevation,
+                                    double bed_elevation,
+                                    bool reduce_frontal_thickness);
+  virtual PetscErrorCode residual_redistribution(IceModelVec2S &residual);
+  virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(
-                       PetscScalar& gvolume,PetscScalar& garea);
+                       double& gvolume,double& garea);
   virtual PetscErrorCode energyStats(
-                       PetscScalar iarea,PetscScalar &gmeltfrac);
-  virtual PetscErrorCode ageStats(PetscScalar ivol, PetscScalar &gorigfrac);
+                       double iarea,double &gmeltfrac);
+  virtual PetscErrorCode ageStats(double ivol, double &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
-  virtual PetscErrorCode summaryPrintLine(
-              PetscBool printPrototype, bool tempAndAge,
-              PISMTime* date, PetscScalar delta_t,
-              PetscScalar volume, PetscScalar area,
-              PetscScalar meltfrac, PetscScalar max_diffusivity);
+  virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
+                                          double delta_t,
+                                          double volume, double area,
+                                          double meltfrac, double max_diffusivity);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // scalar:
-  virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
-  virtual PetscErrorCode compute_sealevel_volume(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_volume_temperate(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_volume_cold(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_temperate(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_cold(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
-  virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_volume(double &result);
+  virtual PetscErrorCode compute_sealevel_volume(double &result);
+  virtual PetscErrorCode compute_ice_volume_temperate(double &result);
+  virtual PetscErrorCode compute_ice_volume_cold(double &result);
+  virtual PetscErrorCode compute_ice_area(double &result);
+  virtual PetscErrorCode compute_ice_area_temperate(double &result);
+  virtual PetscErrorCode compute_ice_area_cold(double &result);
+  virtual PetscErrorCode compute_ice_area_grounded(double &result);
+  virtual PetscErrorCode compute_ice_area_floating(double &result);
+  virtual PetscErrorCode compute_ice_enthalpy(double &result);
 
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
-                      const PetscScalar rho, const PetscScalar c, const PetscScalar L,
-                      const PetscScalar z, const PetscScalar dz,
-                      PetscScalar *Texcess, PetscScalar *bwat);
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+                      const double rho, const double c, const double L,
+                      const double z, const double dz,
+                      double *Texcess, double *bwat);
+  virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
 
   // see iMutil.cc
   virtual int            endOfTimeStepHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
-  virtual PetscErrorCode stampHistory(string);
+  virtual PetscErrorCode stampHistory(std::string);
   virtual PetscErrorCode update_run_stats();
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
-  virtual bool           issounding(const PetscInt i, const PetscInt j);
 
 protected:
   // working space (a convenience)
-  static const PetscInt nWork2d=2;
+  static const int nWork2d=3;
   IceModelVec2S vWork2d[nWork2d];
   IceModelVec2V vWork2dV;
 
@@ -437,27 +439,27 @@ protected:
 
   PISMStressBalance *stress_balance;
 
-  map<string,PISMDiagnostic*> diagnostics;
-  map<string,PISMTSDiagnostic*> ts_diagnostics;
+  std::map<std::string,PISMDiagnostic*> diagnostics;
+  std::map<std::string,PISMTSDiagnostic*> ts_diagnostics;
 
   // Set of variables to put in the output file:
-  set<string> output_vars;
+  std::set<std::string> output_vars;
 
   // This is related to the snapshot saving feature
-  string snapshots_filename;
+  std::string snapshots_filename;
   bool save_snapshots, snapshots_file_is_ready, split_snapshots;
-  vector<double> snapshot_times;
-  set<string> snapshot_vars;
+  std::vector<double> snapshot_times;
+  std::set<std::string> snapshot_vars;
   unsigned int current_snapshot;
   PetscErrorCode init_snapshots();
   PetscErrorCode write_snapshot();
 
   // scalar time-series
-  bool save_ts;			//! true if the user requested time-series output
-  string ts_filename;		//! file to write time-series to
-  vector<double> ts_times;	//! times requested
-  unsigned int current_ts;	//! index of the current time
-  set<string> ts_vars;		//! variables requested
+  bool save_ts;                 //! true if the user requested time-series output
+  std::string ts_filename;              //! file to write time-series to
+  std::vector<double> ts_times; //! times requested
+  unsigned int current_ts;      //! index of the current time
+  std::set<std::string> ts_vars;                //! variables requested
   PetscErrorCode init_timeseries();
   PetscErrorCode flush_timeseries();
   PetscErrorCode write_timeseries();
@@ -465,11 +467,11 @@ protected:
 
   // spatially-varying time-series
   bool save_extra, extra_file_is_ready, split_extra;
-  string extra_filename;
-  vector<double> extra_times;
+  std::string extra_filename;
+  std::vector<double> extra_times;
   unsigned int next_extra;
   double last_extra;
-  set<string> extra_vars;
+  std::set<std::string> extra_vars;
   NCTimeBounds extra_bounds;
   NCTimeseries timestamp;
   PetscErrorCode init_extras();
@@ -478,38 +480,30 @@ protected:
 
   // automatic backups
   double backup_interval;
-  string backup_filename;
-  PetscReal last_backup_time;
-  set<string> backup_vars;
+  std::string backup_filename;
+  double last_backup_time;
+  std::set<std::string> backup_vars;
   PetscErrorCode init_backups();
   PetscErrorCode write_backup();
 
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
-  set<string> map_viewers, slice_viewers, sounding_viewers;
-  PetscInt     id, jd;	     // sounding indices
-  map<string,PetscViewer> viewers;
-
-  // time step decision helper; see step()
-  inline void revise_maxdt(PetscReal new_dt, PetscReal &my_maxdt) {
-    if (my_maxdt > 0)
-      my_maxdt = PetscMin(new_dt, my_maxdt);
-    else
-      my_maxdt = new_dt;
-  }
+  std::set<std::string> map_viewers, slice_viewers;
+  int     id, jd;            // sounding indexes
+  std::map<std::string,PetscViewer> viewers;
 
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
 
-  int event_step,		//!< total time spent doing time-stepping
-    event_velocity,		//!< total velocity computation
-    event_energy,		//!< energy balance computation
-    event_hydrology,		//!< subglacial hydrology computation
-    event_mass,			//!< mass continuity computation
-    event_age,			//!< age computation
-    event_beddef,		//!< bed deformation step
-    event_output,		//!< time spent writing the output file
+  int event_step,               //!< total time spent doing time-stepping
+    event_velocity,             //!< total velocity computation
+    event_energy,               //!< energy balance computation
+    event_hydrology,            //!< subglacial hydrology computation
+    event_mass,                 //!< mass continuity computation
+    event_age,                  //!< age computation
+    event_beddef,               //!< bed deformation step
+    event_output,               //!< time spent writing the output file
     event_output_define,        //!< time spent defining variables
     event_snapshots,            //!< time spent writing snapshots
     event_backups;              //!< time spent writing backups files

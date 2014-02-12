@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -30,9 +30,9 @@ class EnthalpyConverter;
 class SSB_Modifier : public PISMComponent
 {
 public:
-  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
     : PISMComponent(g, c), EC(e)
-  { D_max = u_max = v_max = 0.0; variables = NULL; allocate(); }
+  { D_max = 0.0; variables = NULL; allocate(); }
   virtual ~SSB_Modifier() {}
 
   virtual PetscErrorCode init(PISMVars &vars) { variables = &vars; return 0; }
@@ -44,22 +44,20 @@ public:
   { result = &diffusive_flux; return 0; }
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(PetscReal &result)
+  virtual PetscErrorCode get_max_diffusivity(double &result)
   { result = D_max; return 0; }
 
-  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
+  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result,
+                                                    IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
-
-  virtual PetscErrorCode get_max_horizontal_velocity(PetscReal &max_u, PetscReal &max_v)
-  { max_u = u_max; max_v = v_max; return 0; }
 
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
   { result = &strain_heating; return 0; }
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+  virtual PetscErrorCode extend_the_grid(int old_Mz);
 
-  virtual PetscErrorCode stdout_report(string &result)
+  virtual PetscErrorCode stdout_report(std::string &result)
   { result = ""; return 0; }
 
   IceFlowLaw* get_flow_law()
@@ -69,7 +67,7 @@ protected:
 
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
-  PetscReal D_max, u_max, v_max;
+  double D_max;
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, strain_heating;
 
@@ -78,27 +76,27 @@ protected:
 
 
 //! The trivial Shallow Stress Balance modifier.
-class SSBM_Trivial : public SSB_Modifier
+class ConstantInColumn : public SSB_Modifier
 {
 public:
-  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c);
-  virtual ~SSBM_Trivial();
+  ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~ConstantInColumn();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 };
 #endif /* _SSB_MODIFIER_H_ */

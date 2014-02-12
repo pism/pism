@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@ extern "C" {
 #include <netcdf_par.h>
 }
 
-int PISMNC4_Par::open(string fname, int mode) {
+int PISMNC4_Par::open(std::string fname, int mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -38,7 +38,7 @@ int PISMNC4_Par::open(string fname, int mode) {
   return stat;
 }
 
-int PISMNC4_Par::create(string fname) {
+int PISMNC4_Par::create(std::string fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 

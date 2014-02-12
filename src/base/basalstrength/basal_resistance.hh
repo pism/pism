@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,10 @@
 #define __basal_resistance_hh
 
 #include <petscsys.h>
-#include "NCVariable.hh"
+
+#include "PISMUnits.hh"
+
+class PISMConfig;
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
@@ -29,14 +32,13 @@ viscous till to purely plastic till.
  */
 class IceBasalResistancePlasticLaw {
 public:
-  IceBasalResistancePlasticLaw(const NCConfigVariable &config);
+  IceBasalResistancePlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePlasticLaw() {}
-  virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
-  virtual PetscScalar drag(PetscScalar tauc,
-                           PetscScalar vx, PetscScalar vy);
-  // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
-  virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
-                                  PetscScalar *drag, PetscScalar *ddrag) const;
+  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com);
+  virtual double drag(double tauc, double vx, double vy);
+  //! The derivative of drag with respect to \f$ alpha=\frac 1 2 |u|^2 \f$.
+  virtual void drag_with_derivative(double tauc, double vx, double vy,
+                                    double *drag, double *ddrag) const;
 protected:
   double plastic_regularize;
   PISMUnitSystem m_unit_system;
@@ -44,16 +46,14 @@ protected:
 
 class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
-  IceBasalResistancePseudoPlasticLaw(const NCConfigVariable &config);
+  IceBasalResistancePseudoPlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() {}
-  virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
-  virtual PetscScalar drag(PetscScalar tauc,
-                           PetscScalar vx, PetscScalar vy);
-  // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
-  virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
-                                  PetscScalar *drag, PetscScalar *ddrag) const;
+  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com);
+  virtual double drag(double tauc, double vx, double vy);
+  virtual void drag_with_derivative(double tauc, double vx, double vy,
+                                    double *drag, double *ddrag) const;
 protected:
-  PetscReal pseudo_q, pseudo_u_threshold, sliding_scale;
+  double pseudo_q, pseudo_u_threshold, sliding_scale;
 };
 
 #endif /* __basal_resistance_hh */

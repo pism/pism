@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -59,12 +59,12 @@ Instead see the PSForceThickness surface model modifier class.
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, NCConfigVariable &c, NCConfigVariable &o)
+  IceRegionalModel(IceGrid &g, PISMConfig &c, PISMConfig &o)
      : IceModel(g,c,o) {};
 protected:
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode bootstrap_2d(string filename);
-  virtual PetscErrorCode initFromFile(string filename);
+  virtual PetscErrorCode bootstrap_2d(std::string filename);
+  virtual PetscErrorCode initFromFile(std::string filename);
   virtual PetscErrorCode model_state_setup();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
@@ -73,38 +73,27 @@ protected:
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> input_velocity,
-                                     planeStar<PetscScalar> input_flux,
-                                     planeStar<PetscScalar> &output_velocity,
-                                     planeStar<PetscScalar> &output_flux);
-  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
-                                                 PetscScalar* bulgeCount);
-  virtual PetscErrorCode setFromOptions();
+                                     planeStar<double> input_flux,
+                                     planeStar<double> &output_velocity,
+                                     planeStar<double> &output_flux);
+  virtual PetscErrorCode enthalpyAndDrainageStep(double* vertSacrCount,
+                                                 double* liquifiedVol,
+                                                 double* bulgeCount);
 private:
   IceModelVec2Int no_model_mask;
   IceModelVec2S   usurfstore, thkstore;
   IceModelVec2S   bmr_stored;
-  PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
+  PetscErrorCode  set_no_model_strip(double stripwidth);
 };
-
-//! \brief 
-PetscErrorCode IceRegionalModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
-
-  ierr = config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc"); CHKERRQ(ierr);
-
-  return 0;
-}
 
 //! \brief Set no_model_mask variable to have value 1 in strip of width 'strip'
 //! m around edge of computational domain, and value 0 otherwise.
-PetscErrorCode IceRegionalModel::set_no_model_strip(PetscReal strip) {
+PetscErrorCode IceRegionalModel::set_no_model_strip(double strip) {
   PetscErrorCode ierr;
 
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
         if (grid.x[i] <= grid.x[0]+strip || grid.x[i] >= grid.x[grid.Mx-1]-strip) {
           no_model_mask(i, j) = 1;
         } else if (grid.y[j] <= grid.y[0]+strip || grid.y[j] >= grid.y[grid.My-1]-strip) {
@@ -116,7 +105,7 @@ PetscErrorCode IceRegionalModel::set_no_model_strip(PetscReal strip) {
     }
     ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
-    ierr = no_model_mask.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+    no_model_mask.metadata().set_string("pism_intent", "model_state");
 
     ierr = no_model_mask.update_ghosts(); CHKERRQ(ierr);
   return 0;
@@ -132,24 +121,23 @@ PetscErrorCode IceRegionalModel::createVecs() {
      "  creating IceRegionalModel vecs ...\n"); CHKERRQ(ierr);
 
   // stencil width of 2 needed for surfaceGradientSIA() action
-  ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
+  ierr = no_model_mask.create(grid, "no_model_mask", WITH_GHOSTS, 2); CHKERRQ(ierr);
   ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
     "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)",
     "", ""); CHKERRQ(ierr); // no units and no standard name
   double NMMASK_NORMAL   = 0.0,
          NMMASK_ZERO_OUT = 1.0;
-  vector<double> mask_values(2);
+  std::vector<double> mask_values(2);
   mask_values[0] = NMMASK_NORMAL;
   mask_values[1] = NMMASK_ZERO_OUT;
-  ierr = no_model_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
-  ierr = no_model_mask.set_attr("flag_meanings", "normal special_treatment"); CHKERRQ(ierr);
-  no_model_mask.output_data_type = PISM_BYTE;
-  no_model_mask.time_independent = true;
+  no_model_mask.metadata().set_doubles("flag_values", mask_values);
+  no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
+  no_model_mask.set_time_independent(true);
   ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
-  ierr = usurfstore.create(grid, "usurfstore", true, 2); CHKERRQ(ierr);
+  ierr = usurfstore.create(grid, "usurfstore", WITH_GHOSTS, 2); CHKERRQ(ierr);
   ierr = usurfstore.set_attrs(
     "model_state", // ensures that it gets written at the end of the run
     "saved surface elevation for use to keep surface gradient constant in no_model strip",
@@ -158,7 +146,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
   ierr = variables.add(usurfstore); CHKERRQ(ierr);
 
   // stencil width of 1 needed for differentiation
-  ierr = thkstore.create(grid, "thkstore", true, 1); CHKERRQ(ierr);
+  ierr = thkstore.create(grid, "thkstore", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = thkstore.set_attrs(
     "model_state", // ensures that it gets written at the end of the run
     "saved ice thickness for use to keep driving stress constant in no_model strip",
@@ -168,7 +156,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
 
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of bmelt instead.
-  ierr = bmr_stored.create(grid, "bmr_stored", true, 2); CHKERRQ(ierr);
+  ierr = bmr_stored.create(grid, "bmr_stored", WITH_GHOSTS, 2); CHKERRQ(ierr);
   ierr = bmr_stored.set_attrs("internal",
                               "time-independent basal melt rate in the no-model-strip",
                               "m s-1", ""); CHKERRQ(ierr);
@@ -189,7 +177,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   ierr = IceModel::model_state_setup(); CHKERRQ(ierr);
 
   // Now save the basal melt rate at the beginning of the run.
-  ierr = bmr_stored.copy_from(vbmr); CHKERRQ(ierr);
+  ierr = bmr_stored.copy_from(basal_melt_rate); CHKERRQ(ierr);
 
   bool zgwnm;
   ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
@@ -199,10 +187,10 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   }
 
   bool nmstripSet;
-  PetscReal stripkm = 0.0;
+  double stripkm = 0.0;
   ierr = PISMOptionsReal("-no_model_strip", 
                          "width in km of strip near boundary in which modeling is turned off",
-			 stripkm, nmstripSet);
+                         stripkm, nmstripSet);
 
   if (nmstripSet) {
     ierr = verbPrintf(2, grid.com,
@@ -216,36 +204,43 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
 
 PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   PetscErrorCode ierr;
-  
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_sia = config.get_flag("do_sia");
 
-  ShallowStressBalance *my_stress_balance;
-  SSB_Modifier *modifier;
-  if (do_sia) {
+  if (stress_balance != NULL)
+    return 0;
+
+  std::string model = config.get_string("stress_balance_model");
+
+  ShallowStressBalance *sliding = NULL;
+  if (model == "none" || model == "sia") {
+    sliding = new ZeroSliding(grid, *EC, config);
+  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
+    sliding = new PrescribedSliding(grid, *EC, config);
+  } else if (model == "ssa" || model == "ssa+sia") {
+    sliding = new SSAFD_Regional(grid, *EC, config);
+  } else {
+    SETERRQ(grid.com, 1, "invalid stress balance model");
+  }
+
+  SSB_Modifier *modifier = NULL;
+  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
+    modifier = new ConstantInColumn(grid, *EC, config);
+  } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
     modifier = new SIAFD_Regional(grid, *EC, config);
   } else {
-    modifier = new SSBM_Trivial(grid, *EC, config);
+    SETERRQ(grid.com, 1, "invalid stress balance model");
   }
 
-  if (use_ssa_velocity) {
-    my_stress_balance = new SSAFD_Regional(grid, *basal, *EC, config);
-  } else {
-    my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
-  }
-  
-  // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
-  stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                         modifier, config);
+  // ~PISMStressBalance() will de-allocate sliding and modifier.
+  stress_balance = new PISMStressBalance(grid, sliding, modifier, config);
 
-  // Note that in PISM stress balance computations are diagnostic, i.e. do not
-  // have a state that changes in time. This means that this call can be here
-  // and not in model_state_setup() and we don't need to re-initialize after
+  // PISM stress balance computations are diagnostic, i.e. do not
+  // have a state that changes in time.  Therefore this call can be here
+  // and not in model_state_setup().  We don't need to re-initialize after
   // the "diagnostic time step".
   ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
   if (config.get_flag("include_bmr_in_continuity")) {
-    ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+    ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
   }
 
   return 0;
@@ -253,42 +248,44 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
 
 
 PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
-  PetscErrorCode ierr;
 
-  if (basal_yield_stress != NULL)
+  if (basal_yield_stress_model != NULL)
     return 0;
 
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_blatter = config.get_flag("do_blatter");
+  std::string model = config.get_string("stress_balance_model");
 
-  if (use_ssa_velocity || do_blatter) {
-    bool hold_tauc;
-    ierr = PISMOptionsIsSet("-hold_tauc", hold_tauc); CHKERRQ(ierr);
-    
-    if (hold_tauc) {
-      basal_yield_stress = new PISMConstantYieldStress(grid, config);
+  // only these two use the yield stress (so far):
+  if (model == "ssa" || model == "ssa+sia") {
+    std::string yield_stress_model = config.get_string("yield_stress_model");
+
+    if (yield_stress_model == "constant") {
+      basal_yield_stress_model = new PISMConstantYieldStress(grid, config);
+    } else if (yield_stress_model == "mohr_coulomb") {
+      basal_yield_stress_model = new PISMRegionalDefaultYieldStress(grid, config, subglacial_hydrology);
     } else {
-      basal_yield_stress = new PISMRegionalDefaultYieldStress(grid, config, subglacial_hydrology);
+      PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
+                  yield_stress_model.c_str());
+      PISMEnd();
     }
   }
-  
+
   return 0;
 }
 
 
-PetscErrorCode IceRegionalModel::bootstrap_2d(string filename) {
+PetscErrorCode IceRegionalModel::bootstrap_2d(std::string filename) {
   PetscErrorCode ierr;
 
   ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
 
-  ierr = usurfstore.regrid(filename, 0.0); CHKERRQ(ierr);
-  ierr =   thkstore.regrid(filename, 0.0); CHKERRQ(ierr);
+  ierr = usurfstore.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
+  ierr =   thkstore.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-PetscErrorCode IceRegionalModel::initFromFile(string filename) {
+PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
   PetscErrorCode  ierr;
   PIO nc(grid, "guess_mode");
 
@@ -297,7 +294,7 @@ PetscErrorCode IceRegionalModel::initFromFile(string filename) {
                           no_model_strip_set); CHKERRQ(ierr);
 
   if (no_model_strip_set) {
-    ierr = no_model_mask.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+    no_model_mask.metadata().set_string("pism_intent", "internal");
   }
 
   ierr = verbPrintf(2, grid.com,
@@ -315,7 +312,7 @@ PetscErrorCode IceRegionalModel::initFromFile(string filename) {
     ierr = nc.close(); CHKERRQ(ierr);
 
     if (! (u_ssa_exists && v_ssa_exists)) {
-      ierr = vBCvel.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+      vBCvel.metadata().set_string("pism_intent", "internal");
       ierr = verbPrintf(2, grid.com,
                         "PISM WARNING: u_ssa_bc and/or v_ssa_bc not found in %s. Setting them to zero.\n"
                         "              This may be overridden by the -regrid_file option.\n",
@@ -328,19 +325,19 @@ PetscErrorCode IceRegionalModel::initFromFile(string filename) {
   bool zgwnm;
   ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
   if (zgwnm) {
-    ierr = thkstore.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
-    ierr = usurfstore.set_attr("pism_intent", "internal"); CHKERRQ(ierr);
+    thkstore.metadata().set_string("pism_intent", "internal");
+    usurfstore.metadata().set_string("pism_intent", "internal");
   }
 
   ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
 
   if (config.get_flag("ssa_dirichlet_bc")) {
-      ierr = vBCvel.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+      vBCvel.metadata().set_string("pism_intent", "model_state");
   }
 
   if (zgwnm) {
-    ierr = thkstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
-    ierr = usurfstore.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+    thkstore.metadata().set_string("pism_intent", "model_state");
+    usurfstore.metadata().set_string("pism_intent", "model_state");
   }
 
   return 0;
@@ -389,9 +386,9 @@ PetscErrorCode IceRegionalModel::massContExplicitStep() {
 void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
                                              int i, int j,
                                              planeStar<PISMVector2> input_velocity,
-                                             planeStar<PetscScalar> input_flux,
-                                             planeStar<PetscScalar> &output_velocity,
-                                             planeStar<PetscScalar> &output_flux) {
+                                             planeStar<double> input_flux,
+                                             planeStar<double> &output_velocity,
+                                             planeStar<double> &output_flux) {
 
   IceModel::cell_interface_fluxes(dirichlet_bc, i, j,
                                   input_velocity,
@@ -414,10 +411,10 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
   //
 }
 
-PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
-                                                         PetscScalar* bulgeCount) {
+PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, double* liquifiedVol,
+                                                         double* bulgeCount) {
   PetscErrorCode ierr;
-  PetscScalar *new_enthalpy, *old_enthalpy;
+  double *new_enthalpy, *old_enthalpy;
 
   ierr = IceModel::enthalpyAndDrainageStep(vertSacrCount, liquifiedVol, bulgeCount); CHKERRQ(ierr);
 
@@ -427,34 +424,34 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (no_model_mask(i, j) < 0.5)
         continue;
 
       ierr = vWork3d.getInternalColumn(i, j, &new_enthalpy); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i, j, &old_enthalpy); CHKERRQ(ierr);
 
-      for (int k = 0; k < grid.Mz; ++k)
+      for (unsigned int k = 0; k < grid.Mz; ++k)
         new_enthalpy[k] = old_enthalpy[k];
     }
   }
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
-  // set vbmr; ghosts are comminucated later (in IceModel::energyStep()).
-  ierr = vbmr.begin_access(); CHKERRQ(ierr);
+  // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
+  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = bmr_stored.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (no_model_mask(i, j) < 0.5)
         continue;
 
-      vbmr(i, j) = bmr_stored(i, j);
+      basal_melt_rate(i, j) = bmr_stored(i, j);
     }
   }
   ierr = bmr_stored.end_access(); CHKERRQ(ierr);
-  ierr = vbmr.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
 
   ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
@@ -467,22 +464,19 @@ int main(int argc, char *argv[]) {
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   MPI_Comm    com = PETSC_COMM_WORLD;
-  PetscMPIInt rank, size;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "PISMO %s (regional outlet-glacier run mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     bool iset, bfset;
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
-    string usage =
+    std::string usage =
       "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
@@ -496,19 +490,20 @@ int main(int argc, char *argv[]) {
     if ((!iset) && (!bfset)) {
       ierr = PetscPrintf(com,
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismo", usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pismo", usage); CHKERRQ(ierr);
     } else {
-      vector<string> required;
+      std::vector<std::string> required;
       required.clear();
-      ierr = show_usage_check_req_opts(com, "pismo", required, usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_check_req_opts(com, "pismo", required, usage); CHKERRQ(ierr);
     }
 
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides, true); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
     // initialize the ice dynamics model
-    IceGrid g(com, rank, size, config);
+    IceGrid g(com, config);
     IceRegionalModel m(g, config, overrides);
     ierr = m.setExecName("pismo"); CHKERRQ(ierr);
 

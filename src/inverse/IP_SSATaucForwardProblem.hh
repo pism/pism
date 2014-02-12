@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -104,9 +104,9 @@ public:
   typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
-  IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-    EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-    const NCConfigVariable &c);
+  IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
+                           IPDesignVariableParameterization &tp,
+                           const PISMConfig &c);
 
   virtual ~IP_SSATaucForwardProblem();
 
@@ -118,8 +118,8 @@ public:
       space with entries set to zero in the fixed locations.  These can safely be added
       to preexisting values of \f$\zeta\f$ without changing the entries of \f$\zeta\f$ at the 
       fixed locations.  Inversion can be done by setting an initial value of \f$\zeta\f$
-      having the desired values in the fixed locations, and using \ref set_tauc_fixed_locations
-      to indicated the nodes that should not be changed.
+      having the desired values in the fixed locations, and using set_tauc_fixed_locations()
+      to indicate the nodes that should not be changed.
   */
   virtual PetscErrorCode set_tauc_fixed_locations(IceModelVec2Int &locations)
   { 
@@ -152,7 +152,7 @@ public:
 
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta);
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta);
-  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta);
+  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,double **dzeta);
 
   virtual PetscErrorCode apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
   virtual PetscErrorCode apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);

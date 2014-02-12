@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,14 +21,14 @@
 
 #include <petscsys.h>
 
-class NCConfigVariable;
+class PISMConfig;
 
 //! Converts between specific enthalpy and temperature or liquid content.
 /*!
-Use this way, for example within IceModel with NCConfigVariable config member:
+Use this way, for example within IceModel with PISMConfig config member:
 \code
   #include "enthalpyConverter.hh"
-  EnthalpyConverter EC(&config);  // runs constructor; do after initialization of NCConfigVariable config
+  EnthalpyConverter EC(&config);  // runs constructor; do after initialization of PISMConfig config
   ...
   for (...) {
     ...
@@ -56,7 +56,7 @@ This class is documented by [\ref AschwandenBuelerKhroulevBlatter].
 */
 class EnthalpyConverter {
 public:
-  EnthalpyConverter(const NCConfigVariable &config);
+  EnthalpyConverter(const PISMConfig &config);
   virtual ~EnthalpyConverter() {}
 
   virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
@@ -79,7 +79,7 @@ public:
   virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
   virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
-  virtual PetscReal c_from_T(PetscReal /*T*/)
+  virtual double c_from_T(double /*T*/)
   { return c_i; }
 
 protected:
@@ -96,12 +96,12 @@ temperature (in K) and enthalpy proportional:  \f$E = c_i (T - T_0)\f$.
 
 The pressure dependence of the pressure-melting temperature is neglected.
 
-Note: Any instance of IceFlowLaw uses an EnthalpyConverter, and it is this
-one when in verification mode.
+Note: Any instance of IceFlowLaw uses an EnthalpyConverter; this is
+the one used in verification mode.
  */
 class ICMEnthalpyConverter : public EnthalpyConverter {
 public:
-  ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {
+  ICMEnthalpyConverter(const PISMConfig &config) : EnthalpyConverter(config) {
     do_cold_ice_methods = true;
   }
 

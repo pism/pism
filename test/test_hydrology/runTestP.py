@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from sys import argv, exit
+from sys import argv, stderr, exit
 import subprocess
 import numpy as np
 from argparse import ArgumentParser
@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 try:
   from exactP import exactP_list
 except:
-  print "Please build the exactP module by running 'make exactP'."
+  stderr.write("Please build the exactP module by running 'make exactP'.\n")
   exit(1)
 
 try:
@@ -17,7 +17,7 @@ except:
   from PISMNC import PISMDataset
 
 def parse_options():
-  print "reading options ..."
+  stderr.write("reading options ...\n")
 
   parser = ArgumentParser()
   parser.description = "Test P (verification of '-hydrology distributed')."
@@ -31,7 +31,7 @@ def parse_options():
 def generate_config():
   """Generates the config file with custom ice softness and hydraulic conductivity."""
 
-  print "generating testPconfig.nc ..."
+  stderr.write("generating testPconfig.nc ...\n")
 
   nc = PISMDataset("testPconfig.nc", 'w')
   pism_overrides = nc.createVariable("pism_overrides", 'b')
@@ -39,14 +39,29 @@ def generate_config():
   pism_overrides.ice_softness = 3.1689e-24
   pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness; NOT DEFAULT"
 
-  pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2
-  pism_overrides.hydrology_hydraulic_conductivity_doc = "m s-1; = K; NOT DEFAULT"
-
-  pism_overrides.hydrology_englacial_porosity = 0.0;
-  pism_overrides.hydrology_englacial_porosity_doc = "[pure]; phi in notes; NOT DEFAULT";
+  pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2 / (1000.0 * 9.81)
+  pism_overrides.hydrology_hydraulic_conductivity_doc = "= k; NOT DEFAULT"
 
   pism_overrides.hydrology_regularizing_porosity = 0.01;
   pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes";
+
+  pism_overrides.hydrology_tillwat_max = 0.0;
+  pism_overrides.hydrology_tillwat_max_doc = "m; turn off till water mechanism";
+
+  pism_overrides.hydrology_thickness_power_in_flux = 1.0;
+  pism_overrides.hydrology_thickness_power_in_flux_doc = "; = alpha in notes";
+
+  pism_overrides.hydrology_gradient_power_in_flux = 2.0;
+  pism_overrides.hydrology_gradient_power_in_flux_doc = "; = beta in notes";
+
+  pism_overrides.hydrology_roughness_scale = 1.0;
+  pism_overrides.hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale";
+
+  pism_overrides.yield_stress_model = "constant";
+  pism_overrides.yield_stress_model_doc = "only the constant yield stress model works without till";
+
+  pism_overrides.default_tauc = 1e6;
+  pism_overrides.default_tauc_doc = "set default to 'high tauc'";
 
   nc.close()
 
@@ -60,7 +75,7 @@ def report_drift(file1, file2):
     var2 = nc2.variables[name]
     diff = np.abs(np.squeeze(var1[:]) - np.squeeze(var2[:]))
 
-    print "Drift in %s: average = %f, max = %f [%s]" % (name, np.average(diff), np.max(diff), var1.units)
+    stderr.write("Drift in %s: average = %f, max = %f [%s]" % (name, np.average(diff), np.max(diff), var1.units) + "\n")
 
 def create_grid(Mx):
   Lx = 25.0e3  # outside L = 22.5 km
@@ -80,7 +95,7 @@ def radially_outward(mag, x, y):
   return (vx, vy)
 
 def compute_sorted_radii(xx, yy):
-  print "sorting radial variable ..."
+  stderr.write("sorting radial variable ...\n")
 
   Mx = xx.shape[0]
   # create 1D array of tuples (r,j,k), sorted by r-value
@@ -97,7 +112,7 @@ def compute_sorted_radii(xx, yy):
 
 
 def generate_pism_input(x, y, xx, yy):
-  print "calling exactP_list() ..."
+  stderr.write("calling exactP_list() ...\n")
 
   EPS_ABS = 1.0e-12
   EPS_REL = 1.0e-15
@@ -105,7 +120,7 @@ def generate_pism_input(x, y, xx, yy):
   # Wrapping r[:]['r'] in np.array() forces NumPy to make a C-contiguous copy.
   h_r, magvb_r, _, W_r, P_r = exactP_list(np.array(r[:]['r']), EPS_ABS, EPS_REL, 1)
 
-  print "creating gridded variables ..."
+  stderr.write("creating gridded variables ...\n")
   # put on grid
   h = np.zeros_like(xx)
   W = np.zeros_like(xx)
@@ -124,7 +139,7 @@ def generate_pism_input(x, y, xx, yy):
     W[j,k] = W_r[n]         # water thickness in m
     P[j,k] = P_r[n]         # water pressure in Pa
 
-  print "creating inputforP.nc ..."
+  stderr.write("creating inputforP.nc ...\n")
 
   nc = PISMDataset("inputforP.nc", 'w')
   nc.create_dimensions(x, y, time_dependent = True, use_time_bounds = True)
@@ -140,7 +155,7 @@ def generate_pism_input(x, y, xx, yy):
                               "standard_name" : "bedrock_altitude"})
   nc.define_2d_field("climatic_mass_balance", time_dependent = False,
                      attrs = {"long_name"   : "climatic mass balance for -surface given",
-                              "units"       : "m year-1",
+                              "units"       : "kg m-2 year-1",
                               "standard_name" : "land_ice_surface_specific_mass_balance"})
   nc.define_2d_field("ice_surface_temp", time_dependent = False,
                      attrs = {"long_name"   : "ice surface temp (K) for -surface given",
@@ -188,14 +203,14 @@ def generate_pism_input(x, y, xx, yy):
 
   nc.history = subprocess.list2cmdline(argv)
   nc.close()
-  print "NetCDF file %s written" % "inputforP.nc"
+  stderr.write("NetCDF file %s written\n" % "inputforP.nc")
 
 def run_pism(opts):
-  print "Testing: Test P verification of '-hydrology distributed'."
+  stderr.write("Testing: Test P verification of '-hydrology distributed'.\n")
 
-  cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
+  cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, opts.Mx, opts.Mx)
 
-  print cmd
+  stderr.write(cmd + "\n")
   subprocess.call(cmd, shell=True)
 
 # high-res and parallel example:

@@ -3,7 +3,6 @@ include_directories (./util)
 # Boundary models (surface, atmosphere, ocean).
 add_library (pismboundary
   ./atmosphere/PAConstantPIK.cc
-  ./atmosphere/PAEismintGreenland.cc
   ./atmosphere/PASeariseGreenland.cc
   ./atmosphere/PAYearlyCycle.cc
   ./atmosphere/PACosineYearlyCycle.cc
@@ -13,13 +12,16 @@ add_library (pismboundary
   ./atmosphere/PA_delta_P.cc
   ./atmosphere/PA_paleo_precip.cc
   ./atmosphere/PAAnomaly.cc
+  ./ocean/PISMOceanModel.cc
   ./ocean/POCache.cc
   ./ocean/POConstantPIK.cc
   ./ocean/POConstant.cc
   ./ocean/POGivenClimate.cc
+  ./ocean/POGivenTH.cc
   ./ocean/PO_delta_SL.cc
   ./ocean/PO_delta_T.cc
   ./ocean/PO_delta_SMB.cc
+  ./ocean/PO_delta_MBP.cc
   ./surface/localMassBalance.cc
   ./surface/PISMSurface.cc
   ./surface/PSCache.cc

@@ -39,13 +39,15 @@ urlcolor=blue     % only if colorlinks=true
 \begin{titlepage}
 
   \begin{center}
-    {\huge\usekomafont{title} \emph{PISM}, a Parallel Ice Sheet Model:\\\medskip User's Manual}
-    \vspace{0.5cm}
 
-    {\Large The PISM Authors}
-    \vspace{1cm}
+    \includegraphics[width=3.3in,keepaspectratio=true]{pism-logo}
 
-    \includegraphics[width=3.3in,keepaspectratio=true]{grn-1km-csurf}
+    \vspace{2.0cm}
+    {\Huge \usekomafont{title} User's Manual}
+    \vspace{2.0cm}
+
+    \includegraphics[width=4.2in,keepaspectratio=true]{grn-1km-csurf}
+
     \vfill
 
     \small Support by email: \PISMEMAIL.
@@ -65,35 +67,36 @@ urlcolor=blue     % only if colorlinks=true
 \bigskip
 
 \normalspacing
-PISM is a joint project between developers in the ice sheet modeling group at the University of Alaska (UAF) and at the Potsdam Institute for Climate Impact Research (PIK).  The number of source code authors, documentation authors, and script contributors is large. Perhaps the best description is this alphabetical list.
+PISM is a joint project between developers in the ice sheet modeling group at the University of Alaska (UAF), developers at the Potsdam Institute for Climate Impact Research (PIK), and several additional developers listed here.  Current (or recent) affiliation and area of contributions shown:
 \bigskip
 \normalspacing
 
 \renewcommand{\arraystretch}{1.3}
 \begin{tabular}{ll}
-\textbf{Torsten Albrecht} & ice shelf physics and numerics \\
-\textbf{\underline{Andy Aschwanden}} & \begin{minipage}[t]{4in} scripts, visualization, thermodynamics, SeaRISE-Greenland, Storglaci\"aren  \end{minipage}  \\
-\textbf{Jed Brown} & source code original author, SSA numerics, PETSc underpinnings \\
-\textbf{\underline{Ed Bueler}} & \begin{minipage}[t]{4in} principal investigator, verification, earth deformation, SIA, thermodynamics, documentation  \end{minipage} \\
-\textbf{Dani DellaGiustina} & regional tools and modeling \\
-\textbf{Marijke Habermann} & inversion\\
-\textbf{Marianne Haselhoff} & ice streams: physics and numerics\\
-\textbf{Regine Hock} & surface mass and energy balance \\
-\textbf{\underline{Constantine Khroulev}} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, climate couplers, parallelization, testing, user support, most documentation, most bug fixes, regional tools \end{minipage} \\
-\textbf{Craig Lingle}\index{People!Lingle, Craig} & original modeling choices, earth deformation, modeled-it-before-you-did \\
-\textbf{Maria Martin} & SeaRISE-Antarctica, Antarctica processes \\
-\textbf{Mattias Mengel} & marine ice sheet processes \\
-\textbf{David Maxwell} & inversion, SSA finite elements, python bindings \\
-\textbf{Ward van Pelt} & hydrology analysis and design \\
-\textbf{Julien Seguinot} & bug fixes \\
-\textbf{Ricarda Winkelmann} & Antarctica processes, coupling, and modeling  \\
-\textbf{Florian Ziemen} & bug fixes, sliding \\
+\textbf{Torsten Albrecht (PIK)} & ice shelf physics and numerics \\
+\textbf{\underline{Andy Aschwanden} (UAF)} & \begin{minipage}[t]{4in} scripts, visualization, thermodynamics, SeaRISE-Greenland, Storglaci\"aren  \end{minipage}  \\
+\textbf{Jed Brown (ANL)} & source code original author, SSA numerics, PETSc underpinnings \\
+\textbf{\underline{Ed Bueler} (UAF)} & \begin{minipage}[t]{4in} principal investigator, verification, earth deformation, SIA numerics, thermodynamics, documentation  \end{minipage} \\
+\textbf{Dani DellaGiustina (UAF)} & regional tools and modeling \\
+\textbf{Johannes Feldman (PIK)} & marine ice sheet processes \\
+\textbf{Bob Fischer (GFDL)} & coupling design \\
+\textbf{Marijke Habermann (UAF)} & inversion\\
+\textbf{Marianne Haselhoff (UBC)} & ice streams: physics and numerics\\
+\textbf{Regine Hock (UAF)} & surface mass and energy balance \\
+\textbf{\underline{Constantine Khroulev} (UAF)} & \begin{minipage}[t]{4in} source code primary author, input/output, software design, climate couplers, parallelization, testing, user support, most documentation, most bug fixes, regional tools, \dots \end{minipage} \\
+\textbf{Anders Levermann (PIK)} & calving, ice shelf processes \\
+\textbf{Craig Lingle (UAF)} & original SIA model, earth deformation \\
+\textbf{Maria Martin (PIK)} & SeaRISE-Antarctica, Antarctica processes \\
+\textbf{Mattias Mengel (PIK)} & marine ice sheet processes \\
+\textbf{David Maxwell (UAF)} & inversion, SSA finite elements, python bindings \\
+\textbf{Ward van Pelt (IMAU)} & hydrology analysis and design \\
+\textbf{Julien Seguinot (INK)} & bug fixes \\
+\textbf{Ricarda Winkelmann (PIK)} & Antarctica processes, coupling, and modeling  \\
+\textbf{Florian Ziemen (UAF)} & bug fixes, sliding \\
 \end{tabular}
 
-\bigskip\bigskip
-Users will reach the \underline{underlined} UAF-based developers listed above by using the email address
-
-\centerline{ \PISMEMAIL.  }
+\bigskip
+\noindent Email the \underline{underlined} UAF developers at \qquad \PISMEMAIL.
 
 \bigskip\bigskip
 \noindent \textsc{Front page}:  Magnitude of horizontal surface velocity from PISM run on a horizontal grid resolution of 1\,km.  Visualization by IDV.
@@ -103,7 +106,7 @@ Users will reach the \underline{underlined} UAF-based developers listed above by
 \newpage
 \vspace{0.2in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2013 The PISM Authors}
+\textsl{Copyright (C) 2004--2014 The PISM Authors}
 \medskip
 
 \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
@@ -114,15 +117,17 @@ Users will reach the \underline{underlined} UAF-based developers listed above by
 \bigskip
 
 \small
-The NASA Modeling, Analysis, and Prediction program\index{Organizations!NASA!Modeling, Analysis, and Prediction Program} (grant \# NNX09AJ38G) supports the development of PISM from 2009 to 2013.  Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences Program\index{Organizations!NASA!Cryospheric Sciences Program}.  The Snow, Ice, and Permafrost (SIP) group\index{Organizations!Geophysical Institute!Snow, Ice, and Permafrost group} at the Geophysical Institute is the home for the University of Alaska PISM developers; find us in Elvey 410D.  The Arctic Region Supercomputing Center\index{Organizations!Arctic Region Supercomputing Center (ARSC)} has provided significant computational resources and technical help in the development of PISM.
+NASA Modeling, Analysis, and Prediction (MAP) program\index{Organizations!NASA!Modeling, Analysis, and Prediction program} grant \# NNX13AM16G and NASA Cryospheric Sciences program grant \# NNX13AK27G support the development of PISM from 2013 to 2017.  NASA MAP grant \# NNX09AJ38G supported the development of PISM from 2009 to 2013.  Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences program\index{Organizations!NASA!Cryospheric Sciences program}.
 
-Thanks for comments/questions from many PISM users around the world, including
+The Snow, Ice, and Permafrost group\index{Organizations!Geophysical Institute!Snow, Ice, and Permafrost group} at the Geophysical Institute is the home for the University of Alaska PISM developers; find us in Elvey 410D.  The Arctic Region Supercomputing Center\index{Organizations!Arctic Region Supercomputing Center (ARSC)} has provided significant computational resources and technical help in the development of PISM.
+
+Thanks for comments/questions from many PISM users around the world, including these not already listed as PISM authors:
 
 \begin{quote}
-Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Marianne Madsen, Malou Maris, Art Mahoney, Mirena Olaizola, Kent Overstreet, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
+Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Moritz H\"utten, Thomas Kleiner, Marianne Madsen, Malou Maris, Tim Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
 \end{quote}
 
-\noindent for helpful comments and questions on PISM and this \emph{Manual}.  Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and computations.  Bob Bindshadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE group have motivated and assisted PISM development in many ways.  
+\noindent for helpful comments and questions on PISM and this \emph{Manual}.  Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and computations.  Bob Bindshadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE\index{SeaRISE!group} group have motivated and assisted PISM development in many ways.  
 
 \normalsize
 
@@ -143,18 +148,18 @@ Welcome!  All information about PISM is online at the home page
 \begin{center}
   \url{http://www.pism-docs.org}
 \end{center}
-Please see the extensive lists of PISM applications and user projects at the home page.
+Please see the extensive lists of PISM publications and applications at that page.
 
 This User's Manual gives examples of how to run PISM using publicly-available data for: the whole Greenland ice sheet, the Jakobshavn outlet glacier in Greenland, the Ross ice shelf in Antarctica, and the St\"orglaciaren mountain glacier in Sweden.  It documents all the PISM options.  It summarizes the continuum models used by PISM, and it illustrates how PISM's numerical approximations are verified.
 
 See the PISM Installation Manual\footnote{PDF for latest stable release at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=installation.pdf}.}
 for how to download\index{PISM!download source code} the PISM source code and install
-it\index{PISM!install}, along with needed libraries.  The PISM Climate Forcing Manual
-\footnote{PDF for latest stable release at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=forcing.pdf}.}
+it\index{PISM!install}, along with needed libraries.  The PISM Climate Forcing
+Manual\footnote{PDF for latest stable release at \url{http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=forcing.pdf}.}
 extends the User's Manual to cover additional couplings to atmosphere and ocean
 models and data.
 
-Users who want to understand more deeply how PISM is designed, or who want to extend it,  will need to go beyond what is described here.  For such users there is a \emph{Source Code Browser}\index{PISM!\emph{Source Code Browser (HTML)}} which can also be found online.  It gives a complete view of the class/object structure of the PISM source code.
+Users who want to understand more deeply how PISM is designed, or who want to extend it,  will need to go beyond what is described here.  See the \emph{Source Code Browser}\index{PISM!\emph{Source Code Browser (HTML)}}, which is online for the latest stable version.\footnote{At \url{http://www.pism-docs.org/wiki/doku.php?id=browser}.}  It can be generated from source code as described in the PISM Installation Manual.  It gives a complete view of the class/object structure of the PISM source code.
 
 
 \vspace{.3in}
@@ -177,10 +182,16 @@ Users who want to understand more deeply how PISM is designed, or who want to ex
 \input{highlevelview.tex}
 
 \clearpage\newpage
+\input{init-boot.tex}
+
+\clearpage\newpage
 \input{modeling-computational.tex}
 
 \clearpage\newpage
 \input{modeling-dynamics.tex}
+
+\clearpage\newpage
+\input{modeling-subglacier.tex}
 
 \clearpage\newpage
 \input{modeling-marine.tex}
@@ -195,7 +206,7 @@ Users who want to understand more deeply how PISM is designed, or who want to ex
 \input{simplified-geometry.tex}
 
 \clearpage\newpage
-\input{ross.tex}
+\input{validation.tex}
 
 \clearpage\newpage
 \input{storglaciaren.tex}

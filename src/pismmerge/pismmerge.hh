@@ -28,8 +28,6 @@
 #include <stdlib.h>
 #include <cstdio>
 
-using namespace std;
-
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
 #ifndef MPI_INCLUDED
@@ -39,21 +37,21 @@ using namespace std;
 
 
 // metadata.cc
-int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, string dim_name);
-int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, string variable_name);
-int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, string var_name);
+int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string dim_name);
+int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string variable_name);
+int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string var_name);
 
 // variables.cc
-int copy_coordinate_variable(PISMNC4_Serial &input, string var_name, PISMNC4_Serial &output);
-int copy_spatial_variable(string filename, string var_name, PISMNC4_Serial &output);
-int copy_all_variables(string filename, PISMNC4_Serial &output);
+int copy_coordinate_variable(PISMNC4_Serial &input, std::string var_name, PISMNC4_Serial &output);
+int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Serial &output);
+int copy_all_variables(std::string filename, PISMNC4_Serial &output);
 
 // util.cc
 void check(int return_code);
-string patch_filename(string input, int mpi_rank);
-string output_filename(string input, string var_name);
+std::string patch_filename(std::string input, int mpi_rank);
+std::string output_filename(std::string input, std::string var_name);
 int get_quilt_size(PISMNC4_Serial &input, int &mpi_size);
-int check_input_files(string filename);
+int check_input_files(std::string filename);
 int patch_geometry(PISMNC4_Serial &input, int &xs, int &ys, unsigned int &xm, unsigned int &ym);
 
 #endif /* _PISMMERGE_H_ */

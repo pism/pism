@@ -13,7 +13,7 @@ rm -f $files
 $PISM_PATH/flowlaw_test -flow_law hooke > flowtable-24.txt
 # compare results
 diff flowtable-24.txt - > diff-24.txt <<END-OF-OUTPUT
-flow law:   "hooke"
+flow law:   "Hooke"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:
   (dev stress)   (abs temp) (liq frac) =   (flow)

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ class IceModelVec2S;
 class PISMYieldStress : public PISMComponent_TS
 {
 public:
-  PISMYieldStress(IceGrid &g, const NCConfigVariable &conf)
+  PISMYieldStress(IceGrid &g, const PISMConfig &conf)
     : PISMComponent_TS(g, conf) {}
   virtual ~PISMYieldStress() {}
 

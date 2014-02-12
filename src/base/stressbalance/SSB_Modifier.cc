@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,29 +21,30 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "flowlaw_factory.hh"
+#include "PISMConfig.hh"
 
 PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;
 
-  ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
+  ierr =     u.create(grid, "uvel", WITH_GHOSTS); CHKERRQ(ierr);
   ierr =     u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-			  "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
+                          "m s-1", "land_ice_x_velocity"); CHKERRQ(ierr);
   ierr =     u.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   u.write_in_glaciological_units = true;
 
-  ierr =     v.create(grid, "vvel", true); CHKERRQ(ierr);
+  ierr =     v.create(grid, "vvel", WITH_GHOSTS); CHKERRQ(ierr);
   ierr =     v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-			  "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
+                          "m s-1", "land_ice_y_velocity"); CHKERRQ(ierr);
   ierr =     v.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   v.write_in_glaciological_units = true;
 
-  ierr = strain_heating.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = strain_heating.create(grid, "strainheat", WITHOUT_GHOSTS); CHKERRQ(ierr); // never diff'ed in hor dirs
   ierr = strain_heating.set_attrs("internal",
                           "rate of strain heating in ice (dissipation heating)",
-	        	  "W m-3", ""); CHKERRQ(ierr);
+                          "W m-3", ""); CHKERRQ(ierr);
   ierr = strain_heating.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
 
-  ierr = diffusive_flux.create(grid, "diffusive_flux", true, 1); CHKERRQ(ierr);
+  ierr = diffusive_flux.create(grid, "diffusive_flux", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = diffusive_flux.set_attrs("internal", 
                                   "diffusive (SIA) flux components on the staggered grid",
                                   "", ""); CHKERRQ(ierr);
@@ -51,7 +52,7 @@ PetscErrorCode SSB_Modifier::allocate() {
   return 0;
 }
 
-PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
+PetscErrorCode SSB_Modifier::extend_the_grid(int old_Mz) {
   PetscErrorCode ierr;
 
   ierr =     u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
@@ -61,7 +62,7 @@ PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
   return 0;
 }
 
-PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
+PetscErrorCode ConstantInColumn::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
@@ -69,18 +70,18 @@ PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
   return 0;
 }
 
-SSBM_Trivial::SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
   : SSB_Modifier(g, e, c)
 {
   IceFlowLawFactory ice_factory(grid.com, "", config, &EC);
 
-  ice_factory.setType(config.get_string("sia_flow_law").c_str());
+  ice_factory.setType(config.get_string("sia_flow_law"));
 
   ice_factory.setFromOptions();
   ice_factory.create(&flow_law);
 }
 
-SSBM_Trivial::~SSBM_Trivial()
+ConstantInColumn::~ConstantInColumn()
 {
   if (flow_law != NULL) {
     delete flow_law;
@@ -98,7 +99,7 @@ SSBM_Trivial::~SSBM_Trivial()
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input, bool fast) {
+PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
 
   if (fast)
@@ -108,14 +109,10 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input, bool fast) {
   ierr = u.begin_access(); CHKERRQ(ierr);
   ierr = v.begin_access(); CHKERRQ(ierr);
   ierr = vel_input->begin_access(); CHKERRQ(ierr);
-  PetscReal my_u_max = 0, my_v_max = 0;
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
       ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
-
-      my_u_max = PetscMax(my_u_max, PetscAbs((*vel_input)(i,j).u));
-      my_v_max = PetscMax(my_v_max, PetscAbs((*vel_input)(i,j).u));
     }
   }
   ierr = vel_input->end_access(); CHKERRQ(ierr);
@@ -125,9 +122,6 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input, bool fast) {
   // Communicate to get ghosts (needed to compute w):
   ierr = u.update_ghosts(); CHKERRQ(ierr);
   ierr = v.update_ghosts(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&my_v_max, &v_max, grid.com); CHKERRQ(ierr);
 
   // diffusive flux and maximum diffusivity
   ierr = diffusive_flux.set(0.0); CHKERRQ(ierr);

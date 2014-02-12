@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,9 +20,10 @@
 #include "Timeseries.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
+#include "PISMConfig.hh"
 
 
-PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
+PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const PISMConfig &conf)
   : PAYearlyCycle(g, conf), A(NULL) {
 }
 
@@ -34,14 +35,14 @@ PACosineYearlyCycle::~PACosineYearlyCycle() {
 PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool input_file_flag, scaling_flag;
-  string input_file, scaling_file;
+  std::string input_file, scaling_file;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   variables = &vars;
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
+                    "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
   CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling '-atmosphere yearly_cycle'",
@@ -67,9 +68,9 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
                     "  Reading mean annual air temperature, mean July air temperature, and\n"
                     "  precipitation fields from '%s'...\n", input_file.c_str()); CHKERRQ(ierr);
 
-  ierr = air_temp_mean_annual.regrid(input_file, true); CHKERRQ(ierr);
-  ierr = air_temp_mean_july.regrid(input_file, true); CHKERRQ(ierr);
-  ierr = precipitation.regrid(input_file, true); CHKERRQ(ierr);
+  ierr = air_temp_mean_annual.regrid(input_file, CRITICAL); CHKERRQ(ierr);
+  ierr = air_temp_mean_july.regrid(input_file, CRITICAL); CHKERRQ(ierr);
+  ierr = precipitation.regrid(input_file, CRITICAL); CHKERRQ(ierr);
 
   if (scaling_flag) {
 
@@ -102,31 +103,31 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PACosineYearlyCycle::update(PetscReal my_t, PetscReal my_dt) {
-  t = my_t;
-  dt = my_dt;
+PetscErrorCode PACosineYearlyCycle::update(double my_t, double my_dt) {
+  m_t = my_t;
+  m_dt = my_dt;
   return 0;
 }
 
 PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  const PetscReal
+  const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day),
-    T                = grid.time->year_fraction(t + 0.5 * dt) - julyday_fraction,
+    T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
     cos_T            = cos(2.0 * M_PI * T);
 
   double scaling = 1.0;
   if (A != NULL) {
-    scaling = (*A)(t + 0.5 * dt);
+    scaling = (*A)(m_t + 0.5 * m_dt);
   }
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       result(i,j) = air_temp_mean_annual(i,j) + (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * scaling * cos_T;
     }
   }
@@ -138,7 +139,7 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PACosineYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PACosineYearlyCycle::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAYearlyCycle::init_timeseries(ts, N); CHKERRQ(ierr);

@@ -11,10 +11,23 @@ if (UDUNITS2_INCLUDES)
 endif (UDUNITS2_INCLUDES)
 
 find_path (UDUNITS2_INCLUDES udunits2.h
+  HINTS "${UDUNITS2_ROOT}/include" "$ENV{UDUNITS2_ROOT}/include"
   PATH_SUFFIXES "udunits2"
   DOC "Path to udunits2.h")
 
-find_library (UDUNITS2_LIBRARIES NAMES udunits2)
+# UDUNITS2 headers might be in .../include or .../include/udunits2.
+# We try both.
+if (${UDUNITS2_INCLUDES} MATCHES "udunits2/?$")
+  string(REGEX REPLACE "/include/udunits2/?$" "/lib"
+    UDUNITS2_LIB_HINT ${UDUNITS2_INCLUDES})
+else()
+  string(REGEX REPLACE "/include/?$" "/lib"
+    UDUNITS2_LIB_HINT ${UDUNITS2_INCLUDES})
+endif()
+
+find_library (UDUNITS2_LIBRARIES
+  NAMES udunits2
+  HINTS ${UDUNITS2_LIB_HINT})
 
 set(UDUNITS2_TEST_SRC "
 #include <udunits2.h>
@@ -27,7 +40,24 @@ int main(int argc, char **argv) {
 ")
 
 if ((NOT UDUNITS2_LIBRARIES) OR (NOT UDUNITS2_INCLUDES))
-  message(FATAL_ERROR "Failed to find UDUNITS-2")
+  message(STATUS "Trying to find UDUNITS-2 using LD_LIBRARY_PATH (we're desperate)...")
+
+  file(TO_CMAKE_PATH "$ENV{LD_LIBRARY_PATH}" LD_LIBRARY_PATH)
+
+  find_library(UDUNITS2_LIBRARIES
+    NAMES udunits2
+    HINTS ${LD_LIBRARY_PATH})
+
+  if (UDUNITS2_LIBRARIES)
+    get_filename_component(UDUNITS2_LIB_DIR ${UDUNITS2_LIBRARIES} PATH)
+    string(REGEX REPLACE "/lib/?$" "/include"
+      UDUNITS2_H_HINT ${UDUNITS2_LIB_DIR})
+
+    find_path (UDUNITS2_INCLUDES udunits2.h
+      HINTS ${UDUNITS2_H_HINT}
+      PATH_SUFFIXES "udunits2"
+      DOC "Path to udunits2.h")
+  endif()
 endif()
 
 include (CheckCSourceRuns)
@@ -46,7 +76,7 @@ else()
   check_c_source_runs("${UDUNITS2_TEST_SRC}" UDUNITS2_WORKS_WITH_EXPAT)
 
   if(NOT ${UDUNITS2_WORKS_WITH_EXPAT})
-    message(FATAL_ERROR "Failed to find UDUNITS-2")
+    message(FATAL_ERROR "UDUNITS-2 does not seem to work with or without expat")
   endif()
 
   message(STATUS "UDUNITS-2 requires EXPAT")

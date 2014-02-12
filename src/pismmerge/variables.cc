@@ -1,4 +1,4 @@
-// Copyright (C) 2013 PISM Authors
+// Copyright (C) 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,11 +22,11 @@
 /*!
  * This function processes coordinate variables and time bounds.
  */
-int copy_coordinate_variable(PISMNC4_Serial &input, string var_name, PISMNC4_Serial &output) {
+int copy_coordinate_variable(PISMNC4_Serial &input, std::string var_name, PISMNC4_Serial &output) {
   int stat;
   unsigned int dim1_len = 0, dim2_len = 0;
-  vector<unsigned int> start, count;
-  vector<string> dims;
+  std::vector<unsigned int> start, count;
+  std::vector<std::string> dims;
   double *data = NULL;
 
   stat = input.inq_vardimid(var_name, dims); check(stat);
@@ -82,12 +82,12 @@ int copy_coordinate_variable(PISMNC4_Serial &input, string var_name, PISMNC4_Ser
  * maximum buffer size and allocate once, although it is also not clear if this
  * would give any performance benefit.
  */
-int copy_spatial_variable(string filename, string var_name, PISMNC4_Serial &output) {
-  map<string, int> dim_lengths;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0, 0);
+int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Serial &output) {
+  std::map<std::string, int> dim_lengths;
+  PISMNC4_Serial input(MPI_COMM_SELF, 0);
   int stat;
-  vector<string> dims;
-  vector<unsigned int> in_start, out_start, count;
+  std::vector<std::string> dims;
+  std::vector<unsigned int> in_start, out_start, count;
 
   stat = output.inq_vardimid(var_name, dims); check(stat);
 
@@ -184,17 +184,17 @@ int copy_spatial_variable(string filename, string var_name, PISMNC4_Serial &outp
  * Loops over variables present in an output file. This allows us to process
  * both cases ("-v foo" and without "-v").
  */
-int copy_all_variables(string filename, PISMNC4_Serial &output) {
+int copy_all_variables(std::string filename, PISMNC4_Serial &output) {
   int n_vars, stat;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0, 0);
-  vector<string> dimensions, spatial_vars;
+  PISMNC4_Serial input(MPI_COMM_SELF, 0);
+  std::vector<std::string> dimensions, spatial_vars;
 
   stat = input.open(patch_filename(filename, 0), PISM_NOWRITE); check(stat);
 
   stat = output.inq_nvars(n_vars); check(stat);
 
   for (int j = 0; j < n_vars; ++j) {
-    string var_name;
+    std::string var_name;
 
     stat = output.inq_varname(j, var_name); check(stat);
     stat = output.inq_vardimid(var_name, dimensions); check(stat);

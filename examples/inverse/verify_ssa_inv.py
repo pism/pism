@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012 David Maxwell
+# Copyright (C) 2012, 2014 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -45,13 +45,10 @@ def success():
 
 netCDF = None
 try:
-  import netCDF3 as netCDF
+  import netCDF4 as netCDF
 except:
-  try:
-    import netCDF4 as netCDF
-  except:
-    fail('Unable to import netCDF3/netCDF4.')
-    exit(1)
+  fail('Unable to import netCDF4.')
+  exit(1)
 
 import argparse
 

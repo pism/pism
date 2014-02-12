@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler
+// Copyright (C) 2011, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,7 @@ and the reference temperature is \f$T_r = 256.81786846822\f$ K.
  */
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
-  varcEnthalpyConverter(const NCConfigVariable &config)
+  varcEnthalpyConverter(const PISMConfig &config)
     : EnthalpyConverter(config),
       T_r(256.81786846822),
       c_gradient(7.253)
@@ -53,12 +53,12 @@ public:
     \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
     \f$T_r = 256.82\f$ K.
   */
-  virtual PetscReal c_from_T(PetscReal T)
+  virtual double c_from_T(double T)
   { return c_i + c_gradient * (T - T_r); }
 
-  virtual PetscReal c_from_enth(PetscReal E, PetscReal p)
+  virtual double c_from_enth(double E, double p)
   {
-    PetscReal T;
+    double T;
     getAbsTemp(E, p, T);
     return c_from_T(T);
   }

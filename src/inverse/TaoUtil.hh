@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -189,7 +189,7 @@ protected:
 This class makes it convenient to associate a TAO Objective callback
 with a C++ object method. To assign 
 \code
-PetscErrorCode MyObject::evaluateObjective(TaoSolver tao,Vec x, PetscReal *value);
+PetscErrorCode MyObject::evaluateObjective(TaoSolver tao,Vec x, double *value);
 \endcode
 
 as the objective function to a `TaoSolver` `tao`, 
@@ -218,7 +218,7 @@ public:
 protected:
 
   static PetscErrorCode evaluateObjectiveCallback(TaoSolver tao,
-                                 Vec x, PetscReal *value, void *ctx ) {
+                                 Vec x, double *value, void *ctx ) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateObjective(tao,x,value); CHKERRQ(ierr);
@@ -398,7 +398,7 @@ protected:
 This class makes it convenient to associate a TAO combined objective value and gradient 
 callback with a C++ object method. To assign 
 \code
-PetscErrorCode MyObject::someObjectiveFunction(TaoSolver tao,Vec x, PetscReal *value, Vec gradient);
+PetscErrorCode MyObject::someObjectiveFunction(TaoSolver tao,Vec x, double *value, Vec gradient);
 \endcode
 
 as the convergence test function to a `TaoSolver` `tao`, 
@@ -411,7 +411,7 @@ ObjGradCallback::connect(tao,obj);
 
 Note that the method name for the callback must be specified explicitly via a template argument.
 */
-template<class Problem, PetscErrorCode (Problem::*Callback)(TaoSolver,Vec,PetscReal*,Vec) >
+template<class Problem, PetscErrorCode (Problem::*Callback)(TaoSolver,Vec,double*,Vec) >
 class TaoObjGradCallback {
 public:
 
@@ -426,7 +426,7 @@ public:
 protected:
 
   static PetscErrorCode evaluateObjectiveAndGradientCallback(TaoSolver tao,
-                                 Vec x, PetscReal *value, Vec gradient, void *ctx ) {
+                                 Vec x, double *value, Vec gradient, void *ctx ) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = (p->*Callback)(tao,x,value,gradient); CHKERRQ(ierr);

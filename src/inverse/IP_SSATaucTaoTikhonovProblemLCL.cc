@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucTaoTikhonovProblemLCL.hh"
-#include "pism_petsc32_compat.hh"
 #include <assert.h>
 
 typedef IceModelVec2S  DesignVec;
@@ -27,7 +26,7 @@ typedef IceModelVec2V  StateVec;
 // typedef typename Listener::Ptr ListenerPtr;
 
 IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward,
-IP_SSATaucTaoTikhonovProblemLCL::DesignVec &d0, IP_SSATaucTaoTikhonovProblemLCL::StateVec &u_obs, PetscReal eta,
+IP_SSATaucTaoTikhonovProblemLCL::DesignVec &d0, IP_SSATaucTaoTikhonovProblemLCL::StateVec &u_obs, double eta,
 IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
 m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
@@ -42,39 +41,39 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
 
   IceGrid &grid = *m_d0.get_grid();
 
-  PetscReal stressScale = grid.config.get("design_param_tauc_scale");
+  double stressScale = grid.config.get("design_param_tauc_scale");
   m_constraintsScale = grid.Lx*grid.Ly*4*stressScale;
 
   m_velocityScale = grid.config.get("inv_ssa_velocity_scale", "m/year", "m/second");
 
 
-  PetscInt design_stencil_width = m_d0.get_stencil_width();
-  PetscInt state_stencil_width = m_u_obs.get_stencil_width();
-  ierr = m_d.create(grid, "design variable", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_Jdesign.create(grid, "Jdesign design variable", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dGlobal.create(grid, "design variable (global)", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
+  int design_stencil_width = m_d0.get_stencil_width();
+  int state_stencil_width = m_u_obs.get_stencil_width();
+  ierr = m_d.create(grid, "design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_Jdesign.create(grid, "Jdesign design variable", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_dGlobal.create(grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dGlobal.copy_from(m_d0); CHKERRQ(ierr);
 
-  ierr = m_uGlobal.create(grid, "state variable (global)", kNoGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_u.create(grid, "state variable", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_du.create(grid, "du", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_u_Jdesign.create(grid, "Jdesign state variable", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_uGlobal.create(grid, "state variable (global)", WITHOUT_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_u.create(grid, "state variable", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_du.create(grid, "du", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_u_Jdesign.create(grid, "Jdesign state variable", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
   
-  ierr = m_u_diff.create( grid, "state residual", kHasGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create( grid, "design residual", kHasGhosts, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dzeta.create(grid,"dzeta",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
+  ierr = m_u_diff.create( grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff.create( grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_dzeta.create(grid,"dzeta",WITH_GHOSTS,design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_grad_state.create( grid, "state gradient", kNoGhosts, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad_design.create( grid, "design gradient", kNoGhosts, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_state.create( grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_design.create( grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_constraints.create(grid,"PDE constraints",kNoGhosts,design_stencil_width); CHKERRQ(ierr);
+  ierr = m_constraints.create(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width); CHKERRQ(ierr);
 
   DM da;
   ierr = m_ssaforward.get_da(&da); CHKERRQ(ierr);
   ierr = DMCreateMatrix(da, "baij", &m_Jstate); CHKERRQ(ierr);
 
-  PetscInt nLocalNodes  = grid.xm*grid.ym;
-  PetscInt nGlobalNodes = grid.Mx*grid.My;
+  int nLocalNodes  = grid.xm*grid.ym;
+  int nGlobalNodes = grid.Mx*grid.My;
   ierr = MatCreateShell(grid.com,2*nLocalNodes,nLocalNodes,2*nGlobalNodes,nGlobalNodes,this,&m_Jdesign); CHKERRQ(ierr);
   ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign); CHKERRQ(ierr);
   ierr = MatShellSetOperation(m_Jdesign,MATOP_MULT_TRANSPOSE,(void(*)(void))IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose); CHKERRQ(ierr);
@@ -131,7 +130,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::connect(TaoSolver tao) {
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(TaoSolver tao) {
   PetscErrorCode ierr;
   
-  PetscInt its;
+  int its;
   ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL ); CHKERRQ(ierr);
   
   int nListeners = m_listeners.size();
@@ -146,7 +145,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(TaoSolver tao) {
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(TaoSolver /*tao*/, Vec x, PetscReal *value, Vec gradient) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(TaoSolver /*tao*/, Vec x, double *value, Vec gradient) {
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2013  David Maxwell
+// Copyright (C) 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -30,17 +30,17 @@ yield a total variation functional, save for the regularizing parameter \f$\epsi
 */
 class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
-  IPTotalVariationFunctional2S(IceGrid &grid, PetscReal c, PetscReal q, PetscReal eps, IceModelVec2Int *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(IceGrid &grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
 
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
+  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 protected:
 
   IceModelVec2Int *m_dirichletIndices;
-  PetscReal m_c; // scale parameter.
-  PetscReal m_lebesgue_exp;
-  PetscReal m_epsilon_sq; // Regularization parameter.
+  double m_c; // scale parameter.
+  double m_lebesgue_exp;
+  double m_epsilon_sq; // Regularization parameter.
 
 private:
   // Hide copy/assignment operations

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -24,11 +24,12 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
+#include "PISMConfig.hh"
 
 PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      ShallowStressBalance *sb,
                                      SSB_Modifier *ssb_mod,
-                                     const NCConfigVariable &conf)
+                                     const PISMConfig &conf)
   : PISMComponent(g, conf), m_stress_balance(sb), m_modifier(ssb_mod) {
 
   m_basal_melt_rate = NULL;
@@ -46,15 +47,15 @@ PetscErrorCode PISMStressBalance::allocate() {
   PetscErrorCode ierr;
 
   // allocate the vertical velocity field:
-  ierr = m_w.create(grid, "wvel_rel", false); CHKERRQ(ierr);
+  ierr = m_w.create(grid, "wvel_rel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_w.set_attrs("diagnostic",
                        "vertical velocity of ice, relative to base of ice directly below",
                        "m s-1", ""); CHKERRQ(ierr);
-  m_w.time_independent = false;
+  m_w.set_time_independent(false);
   ierr = m_w.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   m_w.write_in_glaciological_units = true;
 
-  ierr = m_strain_heating.create(grid, "strain_heating", false); CHKERRQ(ierr);
+  ierr = m_strain_heating.create(grid, "strain_heating", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_strain_heating.set_attrs("internal",
                                     "rate of strain heating in ice (dissipation heating)",
                                     "W m-3", ""); CHKERRQ(ierr);
@@ -88,7 +89,8 @@ PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S *bmr_input) 
 }
 
 //! \brief Performs the shallow stress balance computation.
-PetscErrorCode PISMStressBalance::update(bool fast, double sea_level) {
+PetscErrorCode PISMStressBalance::update(bool fast, double sea_level,
+                                         IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   IceModelVec2V *velocity_2d;
   IceModelVec3  *u, *v;
@@ -96,13 +98,17 @@ PetscErrorCode PISMStressBalance::update(bool fast, double sea_level) {
   // Tell the ShallowStressBalance object about the current sea level:
   m_stress_balance->set_sea_level_elevation(sea_level);
 
-  ierr = m_stress_balance->update(fast); CHKERRQ(ierr);
+  ierr = m_stress_balance->update(fast, melange_back_pressure);
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "PISM ERROR: Shallow stress balance solver failed.\n");
+    return ierr;
+  }
 
   ierr = m_stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);
 
   ierr = m_modifier->update(velocity_2d, fast); CHKERRQ(ierr);
 
-  if (!fast) {
+  if (fast == false) {
     ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
     ierr = this->compute_volumetric_strain_heating(); CHKERRQ(ierr);
@@ -125,7 +131,7 @@ PetscErrorCode PISMStressBalance::get_diffusive_flux(IceModelVec2Stag* &result) 
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::get_max_diffusivity(PetscReal &D) {
+PetscErrorCode PISMStressBalance::get_max_diffusivity(double &D) {
   PetscErrorCode ierr;
   ierr = m_modifier->get_max_diffusivity(D); CHKERRQ(ierr);
   return 0;
@@ -164,7 +170,7 @@ PetscErrorCode PISMStressBalance::compute_2D_stresses(IceModelVec2V &velocity, I
 }
 
 //! \brief Extend the grid vertically.
-PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
+PetscErrorCode PISMStressBalance::extend_the_grid(int old_Mz) {
   PetscErrorCode ierr;
 
   ierr = m_w.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
@@ -182,7 +188,7 @@ PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
 The vertical velocity \f$w(x,y,z,t)\f$ is the velocity *relative to the
 location of the base of the ice column*.  That is, the vertical velocity
 computed here is identified as \f$\tilde w(x,y,s,t)\f$ in the page
-\ref vertchange.
+[]@ref vertchange.
 
 Thus \f$w<0\f$ here means that that
 that part of the ice is getting closer to the base of the ice, and so on.
@@ -227,10 +233,10 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
     ierr = bmr->begin_access(); CHKERRQ(ierr);
   }
 
-  PetscScalar *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
+  double *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
 
       ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
@@ -286,13 +292,13 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
         v_y = D_y * (south * (v_ij[0] - v_jm1[0]) + north * (v_jp1[0] - v_ij[0]));
 
       // within the ice and above:
-      PetscScalar old_integrand = u_x + v_y;
-      for (PetscInt k = 1; k < grid.Mz; ++k) {
+      double old_integrand = u_x + v_y;
+      for (unsigned int k = 1; k < grid.Mz; ++k) {
         u_x = D_x * (west  * (u_ij[k] - u_im1[k]) + east  * (u_ip1[k] - u_ij[k]));
         v_y = D_y * (south * (v_ij[k] - v_jm1[k]) + north * (v_jp1[k] - v_ij[k]));
-        const PetscScalar new_integrand = u_x + v_y;
+        const double new_integrand = u_x + v_y;
 
-        const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
+        const double dz = grid.zlevels[k] - grid.zlevels[k-1];
 
         w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
 
@@ -422,15 +428,15 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
   ierr = u->begin_access(); CHKERRQ(ierr);
   ierr = v->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscScalar H  = (*thickness)(i,j);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double H  = (*thickness)(i,j);
       int         ks = grid.kBelowHeight(H);
-      PetscScalar
+      double
         *u_ij, *u_w, *u_n, *u_e, *u_s,
         *v_ij, *v_w, *v_n, *v_e, *v_s;
-      PetscScalar u_x, u_y, u_z, v_x, v_y, v_z;
-      PetscScalar *Sigma, *E_ij;
+      double u_x, u_y, u_z, v_x, v_y, v_z;
+      double *Sigma, *E_ij;
 
       ierr = u->getInternalColumn(i,     j,     &u_ij); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i - 1, j,     &u_w);  CHKERRQ(ierr);
@@ -447,8 +453,6 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
       ierr =        enthalpy->getInternalColumn(i, j, &E_ij);  CHKERRQ(ierr);
       ierr = m_strain_heating.getInternalColumn(i, j, &Sigma); CHKERRQ(ierr);
 
-      ierr = PetscMemzero(Sigma, grid.Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
-      
       for (int k = 0; k <= ks; ++k) {
         double dz,
           pressure = EC.getPressureFromDepth(H - grid.zlevels[k]),
@@ -472,6 +476,12 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
 
         Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
       } // k-loop
+
+      int remaining_levels = grid.Mz - (ks + 1);
+      if (remaining_levels > 0) {
+        ierr = PetscMemzero(&Sigma[ks+1],
+                            remaining_levels*sizeof(double)); CHKERRQ(ierr);
+      }
     }   // j-loop
   }     // i-loop
 
@@ -484,9 +494,9 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::stdout_report(string &result) {
+PetscErrorCode PISMStressBalance::stdout_report(std::string &result) {
   PetscErrorCode ierr;
-  string tmp1, tmp2;
+  std::string tmp1, tmp2;
 
   ierr = m_stress_balance->stdout_report(tmp1); CHKERRQ(ierr);
 
@@ -497,7 +507,7 @@ PetscErrorCode PISMStressBalance::stdout_report(string &result) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMStressBalance::define_variables(std::set<std::string> vars, const PIO &nc,
                                                    PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -508,7 +518,7 @@ PetscErrorCode PISMStressBalance::define_variables(set<string> vars, const PIO &
 }
 
 
-PetscErrorCode PISMStressBalance::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMStressBalance::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   ierr = m_stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
@@ -517,7 +527,7 @@ PetscErrorCode PISMStressBalance::write_variables(set<string> vars, const PIO &n
   return 0;
 }
 
-void PISMStressBalance::add_vars_to_output(string keyword, set<string> &result) {
+void PISMStressBalance::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
 
   m_stress_balance->add_vars_to_output(keyword, result);
   m_modifier->add_vars_to_output(keyword, result);

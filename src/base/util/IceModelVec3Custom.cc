@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 
 #include "IceModelVec3Custom.hh"
+#include <assert.h>
 
 IceModelVec3Custom::IceModelVec3Custom()
 {
@@ -42,34 +43,33 @@ IceModelVec3Custom::~IceModelVec3Custom()
  */
 
 PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
-                                          string short_name,
-                                          string z_name,
-                                          vector<double> my_zlevels,
-                                          map<string, string> z_attrs) {
+                                          std::string short_name,
+                                          std::string z_name,
+                                          std::vector<double> my_zlevels,
+                                          std::map<std::string, std::string> z_attrs) {
   PetscErrorCode ierr;
+  assert(v == NULL);
 
-  if (v != PETSC_NULL) {
-    SETERRQ1(grid->com,
-             2,
-             "IceModelVec3Custom with name='%s' already allocated\n",
-             name.c_str());
+  m_has_ghosts = false;
+  grid         = &mygrid;
+  m_name       = short_name;
+  zlevels      = my_zlevels;
+  m_n_levels   = zlevels.size();
+
+  m_da_stencil_width = 1;
+
+  ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
+
+  ierr = DMCreateGlobalVector(m_da, &v); CHKERRQ(ierr);
+
+  m_metadata[0].init_3d(m_name, mygrid, zlevels);
+  m_metadata[0].get_z().set_name(z_name);
+
+  std::map<std::string, std::string>::const_iterator j = z_attrs.begin();
+  while (j != z_attrs.end()) {
+    m_metadata[0].get_z().set_string(j->first, j->second);
+    ++j;
   }
-
-  localp   = false;
-  grid     = &mygrid;
-  name     = short_name;
-  zlevels  = my_zlevels;
-  n_levels = zlevels.size();
-
-  da_stencil_width = 1;
-
-  ierr = grid->get_dm(this->n_levels, this->da_stencil_width, da); CHKERRQ(ierr);
-
-  ierr = DMCreateGlobalVector(da, &v); CHKERRQ(ierr);
-
-  vars[0].init_3d(name, mygrid, zlevels);
-  vars[0].dimensions["z"] = z_name;
-  vars[0].z_attrs         = z_attrs;
 
   return 0;
 }

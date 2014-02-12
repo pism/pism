@@ -19,7 +19,8 @@
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
     
 from getopt import getopt, GetoptError
 from os.path import splitext

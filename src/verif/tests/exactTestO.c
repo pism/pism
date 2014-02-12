@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2011, 2013 Ed Bueler
+   Copyright (C) 2011, 2013, 2014 Ed Bueler
   
    This file is part of PISM.
   
@@ -20,9 +20,9 @@
 
 #include "exactTestO.h"
 
-#define beta_CC        7.9e-8       /* K Pa-1; Clausius-Clapeyron constant [\\ref Luethi2002] */
+#define beta_CC        7.9e-8       /* K Pa-1; Clausius-Clapeyron constant [@ref Luethi2002] */
 #define T_triple       273.15       /* K; triple point of pure water */
-#define L              3.34e5       /* J kg-1; latent heat of fusion for water [\\ref AschwandenBlatter] */
+#define L              3.34e5       /* J kg-1; latent heat of fusion for water [@ref AschwandenBlatter] */
 #define grav           9.81         /* m/s^2; accel of gravity */
 
 #define rho_ICE        910.0        /* kg/(m^3)  density of ice */

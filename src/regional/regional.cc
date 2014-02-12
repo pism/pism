@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Ed Bueler, Daniella DellaGiustina, Constantine Khroulev, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "regional.hh"
+#include "enthalpyConverter.hh"
 
 PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
   PetscErrorCode ierr;
@@ -39,20 +40,20 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
 
   ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 
-  IceModelVec2Int nmm = *no_model_mask;
-  IceModelVec2S hst = *usurfstore; // convenience
+  IceModelVec2Int &nmm = *no_model_mask;
+  IceModelVec2S &hst = *usurfstore; // convenience
 
   const int Mx = grid.Mx, My = grid.My;
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx, dy = grid.dy;  // convenience
 
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
   ierr = nmm.begin_access(); CHKERRQ(ierr);
   ierr = hst.begin_access(); CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 1;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 1;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
       // x-component, i-offset
       if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
@@ -104,6 +105,15 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   return 0;
 }
 
+SSAFD_Regional::SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : SSAFD(g, e, c) {
+  // empty
+}
+
+SSAFD_Regional::~SSAFD_Regional() {
+  // empty
+}
+
 PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
@@ -133,17 +143,15 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
   ierr = SSAFD::compute_driving_stress(result); CHKERRQ(ierr);
 
-  const PetscReal standard_gravity = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
-  IceModelVec2Int nmm = *no_model_mask;
+  IceModelVec2Int &nmm = *no_model_mask;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = nmm.begin_access(); CHKERRQ(ierr);
   ierr = usurfstore->begin_access(); CHKERRQ(ierr);
   ierr = thkstore->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar pressure = ice_rho * standard_gravity * (*thkstore)(i,j);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double pressure = EC.getPressureFromDepth((*thkstore)(i,j));
       if (pressure <= 0) pressure = 0;
 
       if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
@@ -171,7 +179,7 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
 PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  PetscInt v = getVerbosityLevel(); // turn off second, redundant init message
+  int v = getVerbosityLevel(); // turn off second, redundant init message
   ierr = setVerbosityLevel(1); CHKERRQ(ierr);
   ierr = PISMMohrCoulombYieldStress::init(vars); CHKERRQ(ierr);
   ierr = setVerbosityLevel(v); CHKERRQ(ierr);
@@ -193,8 +201,8 @@ PetscErrorCode PISMRegionalDefaultYieldStress::basal_material_yield_stress(IceMo
   // now set result=tauc to a big value in no_model_strip
   ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if ((*no_model_mask)(i,j) > 0.5) {
         result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
       }

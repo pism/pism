@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,10 @@
 #include "PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
-
+#include "PISMConfig.hh"
 
 ///// Elevation-dependent temperature and surface mass balance.
-PSElevation::PSElevation(IceGrid &g, const NCConfigVariable &conf)
+PSElevation::PSElevation(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
@@ -35,15 +35,15 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   PetscErrorCode ierr;
   PetscBool T_is_set, m_is_set, m_limits_set;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n"); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Elevation-dependent surface model options", ""); CHKERRQ(ierr);
   {
-    PetscInt T_param_number = 4;
-    PetscReal T_array[4] = {-5, 0, 1325, 1350};
+    int T_param_number = 4;
+    double T_array[4] = {-5, 0, 1325, 1350};
 
     ierr = PetscOptionsGetRealArray(PETSC_NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
     CHKERRQ(ierr);
@@ -53,8 +53,8 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
     z_T_min = T_array[2];
     z_T_max = T_array[3];
 
-    PetscInt m_param_number = 5;
-    PetscReal m_array[5] = {-3, 4, 1100, 1450, 1700};
+    int m_param_number = 5;
+    double m_array[5] = {-3, 4, 1100, 1450, 1700};
 
     ierr = PetscOptionsGetRealArray(PETSC_NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
     CHKERRQ(ierr);
@@ -65,8 +65,8 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
     z_ELA = m_array[3];
     z_m_max = m_array[4];
 
-    PetscInt Nlimitsparam= 2;
-    PetscReal limitsarray[2] = {0, 0};
+    int Nlimitsparam= 2;
+    double limitsarray[2] = {0, 0};
 
     ierr = PetscOptionsGetRealArray(PETSC_NULL,
                                     "-climatic_mass_balance_limits",
@@ -111,11 +111,11 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+                  "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -164,29 +164,29 @@ void PSElevation::attach_atmosphere_model(PISMAtmosphereModel *input)
   delete input;
 }
 
-void PSElevation::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
-                                  map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void PSElevation::get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
+                                  std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
   // empty
 }
 
-PetscErrorCode PSElevation::update(PetscReal my_t, PetscReal my_dt)
+PetscErrorCode PSElevation::update(double my_t, double my_dt)
 {
-  t = my_t;
-  dt = my_dt;
+  m_t = my_t;
+  m_dt = my_dt;
   return 0;
 }
 
 
 PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal dabdz = -m_min/(z_ELA - z_m_min);
-  PetscReal dacdz = m_max/(z_m_max - z_ELA);
+  double dabdz = -m_min/(z_ELA - z_m_min);
+  double dacdz = m_max/(z_m_max - z_ELA);
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = usurf->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscReal z = (*usurf)(i, j);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double z = (*usurf)(i, j);
       if (z < z_m_min) {
         result(i, j) = m_limit_min;
       }
@@ -209,6 +209,9 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
+  // convert from m/s ice equivalent to kg m-2 s-1:
+  ierr = result.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -217,10 +220,10 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = usurf->begin_access(); CHKERRQ(ierr);
-  PetscReal dTdz = (T_max - T_min)/(z_T_max - z_T_min);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscReal z = (*usurf)(i, j);
+  double dTdz = (T_max - T_min)/(z_T_max - z_T_min);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double z = (*usurf)(i, j);
       if (z <= z_T_min) {
         result(i, j) = T_min;
       }
@@ -244,14 +247,14 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSElevation::add_vars_to_output(string keyword, set<string> &result) {
+void PSElevation::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
 }
 
-PetscErrorCode PSElevation::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSElevation::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -267,13 +270,13 @@ PetscErrorCode PSElevation::define_variables(set<string> vars, const PIO &nc, PI
   return 0;
 }
 
-PetscErrorCode PSElevation::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSElevation::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
@@ -282,8 +285,8 @@ PetscErrorCode PSElevation::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(climatic_mass_balance, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = climatic_mass_balance;
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;

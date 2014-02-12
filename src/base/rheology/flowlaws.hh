@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,16 +26,16 @@ class IceModelVec2S;
 class IceModelVec3;
 
 class EnthalpyConverter;
-class NCConfigVariable;
+class PISMConfig;
 
 // This uses the definition of squared second invariant from Hutter and several others, namely the output is
 // \f$ D^2 = \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
-static inline PetscReal secondInvariant_2D(PetscReal u_x, PetscReal u_y,
-					   PetscReal v_x, PetscReal v_y)
+static inline double secondInvariant_2D(double u_x, double u_y,
+                                           double v_x, double v_y)
 { return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
 
 // The squared second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
-static inline PetscReal secondInvariantDu_2D(const PetscReal Du[])
+static inline double secondInvariantDu_2D(const double Du[])
 { return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2])); }
 
 
@@ -61,43 +61,64 @@ static inline PetscReal secondInvariantDu_2D(const PetscReal Du[])
 class IceFlowLaw {
 public:
   IceFlowLaw(MPI_Comm c, const char pre[],
-             const NCConfigVariable &config,
+             const PISMConfig &config,
              EnthalpyConverter *EC);
  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
-  virtual void effective_viscosity(PetscReal hardness, PetscReal gamma,
-				   PetscReal *nu, PetscReal *dnu) const;
+  //! \brief Computes effective viscosity and its derivative with respect to the
+  //! squared second invariant \f$ \gamma \f$.
+  /*!
+   *
+   * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
+   *
+   * \param[in] hardness ice hardness
+   * \param[in] gamma the second invariant \f$ \gamma = \frac{1}{2} D_{ij} D_{ij}\f$ if \f$D_{ij}\f$ is the strain rate tensor
+   * \param[out] nu effective viscosity
+   * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
+   */
+  inline void effective_viscosity(double hardness, double gamma,
+                                  double *nu, double *dnu) const {
+    const double
+      my_nu = 0.5 * hardness * pow(schoofReg + gamma, viscosity_power);
 
-  virtual PetscReal averaged_hardness(PetscReal thickness,
-                                      PetscInt kbelowH,
-                                      const PetscReal *zlevels,
-                                      const PetscReal *enthalpy) const;
+    if (PetscLikely(nu != NULL))
+      *nu = my_nu;
+    if (PetscLikely(dnu != NULL))
+      *dnu = viscosity_power * my_nu / (schoofReg + gamma);
+  }
 
-  virtual PetscErrorCode averaged_hardness_vec(
-    IceModelVec2S &thickness, IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
+  virtual double averaged_hardness(double thickness,
+                                      int kbelowH,
+                                      const double *zlevels,
+                                      const double *enthalpy) const;
 
-  virtual PetscReal exponent() const { return n; }
-  virtual PetscReal enhancement_factor() const { return e; }
+  virtual PetscErrorCode averaged_hardness_vec(IceModelVec2S &thickness,
+                                               IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
 
-  virtual PetscReal hardness_parameter(PetscReal E, PetscReal p) const;
-  virtual PetscReal softness_parameter(PetscReal E, PetscReal p) const = 0;
-  virtual PetscReal flow(PetscReal stress, PetscReal E,
-                         PetscReal pressure, PetscReal grainsize) const;
+  virtual std::string name() const = 0;
+  virtual double exponent() const { return n; }
+  virtual double enhancement_factor() const { return e; }
+
+  virtual double hardness_parameter(double E, double p) const;
+  virtual double softness_parameter(double E, double p) const = 0;
+  virtual double flow(double stress, double E,
+                         double pressure, double grainsize) const;
 
 protected:
-  PetscReal rho,          //!< ice density
+  double rho,          //!< ice density
     beta_CC_grad, //!< Clausius-Clapeyron gradient
     melting_point_temp;  //!< for water, 273.15 K
   EnthalpyConverter *EC;
 
-  PetscReal softness_parameter_paterson_budd(PetscReal T_pa) const;
+  double softness_parameter_paterson_budd(double T_pa) const;
 
-  PetscReal schoofLen,schoofVel,schoofReg,
+  double schoofLen,schoofVel,schoofReg, viscosity_power,
+    hardness_power,
     A_cold, A_warm, Q_cold, Q_warm,  // see Paterson & Budd (1982)
     crit_temp;
 
-  PetscReal standard_gravity,
+  double standard_gravity,
     ideal_gas_constant,
     e,                          // flow enhancement factor
     n;                          // power law exponent
@@ -107,7 +128,7 @@ protected:
 };
 
 // Helper functions:
-PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &,
+PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const PISMConfig &,
                                        EnthalpyConverter*);
 PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *);
 
@@ -119,87 +140,95 @@ PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *);
 class GPBLDIce : public IceFlowLaw {
 public:
   GPBLDIce(MPI_Comm c, const char pre[],
-           const NCConfigVariable &config,
+           const PISMConfig &config,
            EnthalpyConverter *EC);
   virtual ~GPBLDIce() {}
 
-  virtual PetscErrorCode setFromOptions();
-  virtual PetscReal softness_parameter(PetscReal enthalpy,
-                                       PetscReal pressure) const;
+  virtual double softness_parameter(double enthalpy,
+                                       double pressure) const;
+  virtual std::string name() const
+  { return "Glen-Paterson-Budd-Lliboutry-Duval"; }
 protected:
-  PetscReal T_0, water_frac_coeff, water_frac_observed_limit;
+  double T_0, water_frac_coeff, water_frac_observed_limit;
 };
 
 //! Derived class of IceFlowLaw for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceFlowLaw {
 public:
   ThermoGlenIce(MPI_Comm c, const char pre[],
-                const NCConfigVariable &config,
+                const PISMConfig &config,
                 EnthalpyConverter *my_EC)
     : IceFlowLaw(c, pre, config, my_EC) {
   }
   virtual ~ThermoGlenIce() {}
 
   // This also takes care of hardness_parameter
-  virtual PetscReal softness_parameter(PetscReal enthalpy, PetscReal pressure) const;
+  virtual double softness_parameter(double enthalpy, double pressure) const;
 
-  virtual PetscReal flow(PetscReal stress, PetscReal E,
-                         PetscReal pressure, PetscReal gs) const;
+  virtual double flow(double stress, double E,
+                         double pressure, double gs) const;
+  virtual std::string name() const
+  { return "Paterson-Budd"; }
 
 protected:
-  virtual PetscReal softness_parameter_from_temp(PetscReal T_pa) const
+  virtual double softness_parameter_from_temp(double T_pa) const
   { return softness_parameter_paterson_budd(T_pa); }
 
-  virtual PetscReal hardness_parameter_from_temp(PetscReal T_pa) const
-  { return pow(softness_parameter_from_temp(T_pa), -1.0/n); }
+  virtual double hardness_parameter_from_temp(double T_pa) const
+  { return pow(softness_parameter_from_temp(T_pa), hardness_power); }
 
   // special temperature-dependent method
-  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
-                                   PetscReal pressure, PetscReal gs) const;
+  virtual double flow_from_temp(double stress, double temp,
+                                   double pressure, double gs) const;
 };
 
 //! Isothermal Glen ice allowing extra customization.
 class IsothermalGlenIce : public ThermoGlenIce {
 public:
   IsothermalGlenIce(MPI_Comm c, const char pre[],
-                    const NCConfigVariable &config,
+                    const PISMConfig &config,
                     EnthalpyConverter *my_EC);
   virtual ~IsothermalGlenIce() {}
 
-  virtual PetscReal averaged_hardness(PetscReal, PetscInt,
-                                      const PetscReal*, const PetscReal*) const
+  virtual double averaged_hardness(double, int,
+                                      const double*, const double*) const
   { return hardness_B; }
 
-  virtual PetscReal flow(PetscReal stress, PetscReal,
-                         PetscReal, PetscReal ) const
+  virtual double flow(double stress, double,
+                         double, double ) const
   { return softness_A * pow(stress, n-1); }
 
-  virtual PetscReal softness_parameter(PetscReal, PetscReal) const
+  virtual double softness_parameter(double, double) const
   { return softness_A; }
 
-  virtual PetscReal hardness_parameter(PetscReal, PetscReal) const
+  virtual double hardness_parameter(double, double) const
   { return hardness_B; }
 
+  virtual std::string name() const
+  { return "isothermal Glen"; }
+
 protected:
-  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal,
-                                   PetscReal, PetscReal ) const
+  virtual double flow_from_temp(double stress, double,
+                                   double, double ) const
   { return softness_A * pow(stress,n-1); }
 
 protected:
-  PetscReal softness_A, hardness_B;
+  double softness_A, hardness_B;
 };
 
 //! The Hooke flow law.
 class HookeIce : public ThermoGlenIce {
 public:
   HookeIce(MPI_Comm c, const char pre[],
-           const NCConfigVariable &config,
+           const PISMConfig &config,
            EnthalpyConverter *EC);
   virtual ~HookeIce() {}
+  virtual std::string name() const
+  { return "Hooke"; }
 protected:
-  virtual PetscReal softness_parameter_from_temp(PetscReal T_pa) const;
+  virtual double softness_parameter_from_temp(double T_pa) const;
 
-  PetscReal A_Hooke, Q_Hooke, C_Hooke, K_Hooke, Tr_Hooke; // constants from Hooke (1981)
+  double A_Hooke, Q_Hooke, C_Hooke, K_Hooke, Tr_Hooke; // constants from Hooke (1981)
   // R_Hooke is the ideal_gas_constant.
 };
 
@@ -207,27 +236,30 @@ protected:
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
   ThermoGlenArrIce(MPI_Comm c, const char pre[],
-                   const NCConfigVariable &config,
+                   const PISMConfig &config,
                    EnthalpyConverter *my_EC)
     : ThermoGlenIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIce() {}
 
   //! Return the temperature T corresponding to a given value A=A(T).
-  PetscReal tempFromSoftness(PetscReal myA) const
+  double tempFromSoftness(double myA) const
   { return - Q() / (ideal_gas_constant * (log(myA) - log(A()))); }
 
+  virtual std::string name() const
+  { return "Paterson-Budd (cold case)"; }
+
 protected:
-  virtual PetscReal A() const { return A_cold; }
-  virtual PetscReal Q() const { return Q_cold; }
+  virtual double A() const { return A_cold; }
+  virtual double Q() const { return Q_cold; }
 
   // takes care of hardness_parameter...
-  virtual PetscReal softness_parameter_from_temp(PetscReal T_pa) const
+  virtual double softness_parameter_from_temp(double T_pa) const
   { return A() * exp(-Q()/(ideal_gas_constant * T_pa)); }
 
 
   // ignores pressure and uses non-pressure-adjusted temperature
-  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
-                                   PetscReal , PetscReal ) const
+  virtual double flow_from_temp(double stress, double temp,
+                                   double , double ) const
   { return softness_parameter_from_temp(temp) * pow(stress,n-1); }
 };
 
@@ -235,19 +267,22 @@ protected:
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
   ThermoGlenArrIceWarm(MPI_Comm c, const char pre[],
-                       const NCConfigVariable &config, EnthalpyConverter *my_EC)
+                       const PISMConfig &config, EnthalpyConverter *my_EC)
     : ThermoGlenArrIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIceWarm() {}
 
+  virtual std::string name() const
+  { return "Paterson-Budd (warm case)"; }
+
 protected:
-  virtual PetscReal A() const { return A_warm; }
-  virtual PetscReal Q() const { return Q_warm; }
+  virtual double A() const { return A_warm; }
+  virtual double Q() const { return Q_warm; }
 };
 
 // Hybrid (Goldsby-Kohlstedt/Glen) ice flow law
 
 struct GKparts {
-  PetscReal eps_total, eps_diff, eps_disl, eps_basal, eps_gbs;
+  double eps_total, eps_diff, eps_disl, eps_basal, eps_gbs;
 };
 
 
@@ -262,30 +297,33 @@ derived class.
 class GoldsbyKohlstedtIce : public IceFlowLaw {
 public:
   GoldsbyKohlstedtIce(MPI_Comm c, const char pre[],
-                      const NCConfigVariable &config,
+                      const PISMConfig &config,
                       EnthalpyConverter *my_EC);
 
-  virtual PetscReal flow(PetscReal stress, PetscReal E,
-                         PetscReal pressure, PetscReal grainsize) const;
+  virtual double flow(double stress, double E,
+                         double pressure, double grainsize) const;
 
-  virtual void effective_viscosity(PetscReal hardness, PetscReal gamma,
-				   PetscReal *nu, PetscReal *dnu) const;
+  virtual void effective_viscosity(double hardness, double gamma,
+                                   double *nu, double *dnu) const;
 
-  virtual PetscReal averaged_hardness(PetscReal thickness,
-                                      PetscInt kbelowH,
-                                      const PetscReal *zlevels,
-                                      const PetscReal *enthalpy) const;
+  virtual double averaged_hardness(double thickness,
+                                      int kbelowH,
+                                      const double *zlevels,
+                                      const double *enthalpy) const;
 
-  virtual PetscReal hardness_parameter(PetscReal E, PetscReal p) const;
+  virtual double hardness_parameter(double E, double p) const;
 
-  virtual PetscReal softness_parameter(PetscReal E, PetscReal p) const;
+  virtual double softness_parameter(double E, double p) const;
+
+  virtual std::string name() const
+  { return "Goldsby-Kohlstedt / Paterson-Budd (hybrid)"; }
 
 protected:
-  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
-                                   PetscReal pressure, PetscReal gs) const;
-  GKparts flowParts(PetscReal stress, PetscReal temp, PetscReal pressure) const;
+  virtual double flow_from_temp(double stress, double temp,
+                                   double pressure, double gs) const;
+  GKparts flowParts(double stress, double temp, double pressure) const;
 
-  PetscReal  V_act_vol,  d_grain_size,
+  double  V_act_vol,  d_grain_size,
              //--- diffusional flow ---
              diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta,
              //--- dislocation creep ---
@@ -305,12 +343,15 @@ protected:
 class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
 public:
   GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[],
-                              const NCConfigVariable &config, EnthalpyConverter *my_EC);
-protected:
-  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
-                                   PetscReal pressure, PetscReal gs) const;
+                              const PISMConfig &config, EnthalpyConverter *my_EC);
+  virtual std::string name() const
+  { return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)"; }
 
-  PetscReal d_grain_size_stripped;
+protected:
+  virtual double flow_from_temp(double stress, double temp,
+                                   double pressure, double gs) const;
+
+  double d_grain_size_stripped;
 };
 
 #endif // __flowlaws_hh

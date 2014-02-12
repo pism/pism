@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,15 +28,16 @@
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
 #include <cstring>              // memset
-#include <cstdio>		// stderr, fprintf
+#include <cstdio>               // stderr, fprintf
 
-PISMNC3File::PISMNC3File(MPI_Comm c, int r)
-  : PISMNCFile(c, r) {
+PISMNC3File::PISMNC3File(MPI_Comm c)
+  : PISMNCFile(c) {
+  MPI_Comm_rank(c, &m_rank);
 }
 
 PISMNC3File::~PISMNC3File() {
   if (ncid >= 0) {
-    if (rank == 0) {
+    if (m_rank == 0) {
       nc_close(ncid);
       fprintf(stderr, "PISMNC3File::~PISMNC3File: NetCDF file %s is still open\n",
               m_filename.c_str());
@@ -46,12 +47,12 @@ PISMNC3File::~PISMNC3File() {
 }
 
 // open/create/close
-int PISMNC3File::open(string fname, int mode) {
+int PISMNC3File::open(std::string fname, int mode) {
   int stat;
 
   m_filename = fname;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_open(m_filename.c_str(), mode, &ncid);
   }
 
@@ -65,12 +66,12 @@ int PISMNC3File::open(string fname, int mode) {
 }
 
 //! \brief Create a NetCDF file.
-int PISMNC3File::create(string fname) {
+int PISMNC3File::create(std::string fname) {
   int stat;
 
   m_filename = fname;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_create(m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &ncid);
   }
 
@@ -87,7 +88,7 @@ int PISMNC3File::create(string fname) {
 int PISMNC3File::close() {
   int stat;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_close(ncid);
     ncid = -1;
   }
@@ -109,7 +110,7 @@ int PISMNC3File::enddef() const {
   if (define_mode == false)
     return 0;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
     //! created by PISM.
     stat = nc__enddef(ncid, 50000, 4, 0, 4); check(stat);
@@ -130,7 +131,7 @@ int PISMNC3File::redef() const {
   if (define_mode == true)
     return 0;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_redef(ncid);
   }
 
@@ -144,10 +145,10 @@ int PISMNC3File::redef() const {
 
 
 //! \brief Define a dimension.
-int PISMNC3File::def_dim(string name, size_t length) const {
+int PISMNC3File::def_dim(std::string name, size_t length) const {
   int stat;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int dimid;
     stat = nc_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
   }
@@ -158,10 +159,10 @@ int PISMNC3File::def_dim(string name, size_t length) const {
   return stat;
 }
 
-int PISMNC3File::inq_dimid(string dimension_name, bool &exists) const {
+int PISMNC3File::inq_dimid(std::string dimension_name, bool &exists) const {
   int stat, flag = -1;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_dimid(ncid, dimension_name.c_str(), &flag);
 
     if (stat == NC_NOERR)
@@ -180,10 +181,10 @@ int PISMNC3File::inq_dimid(string dimension_name, bool &exists) const {
 
 
 //! \brief Get a dimension length.
-int PISMNC3File::inq_dimlen(string dimension_name, unsigned int &result) const {
+int PISMNC3File::inq_dimlen(std::string dimension_name, unsigned int &result) const {
   int stat;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int dimid;
     size_t length;
 
@@ -202,12 +203,12 @@ int PISMNC3File::inq_dimlen(string dimension_name, unsigned int &result) const {
 }
 
 //! \brief Get an unlimited dimension.
-int PISMNC3File::inq_unlimdim(string &result) const {
+int PISMNC3File::inq_unlimdim(std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int dimid;
     stat = nc_inq_unlimdim(ncid, &dimid); check(stat);
 
@@ -226,12 +227,12 @@ int PISMNC3File::inq_unlimdim(string &result) const {
   return stat;
 }
 
-int PISMNC3File::inq_dimname(int j, string &result) const {
+int PISMNC3File::inq_dimname(int j, std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_dimname(ncid, j, dimname); check(stat);
   }
 
@@ -249,7 +250,7 @@ int PISMNC3File::inq_dimname(int j, string &result) const {
 int PISMNC3File::inq_ndims(int &result) const {
   int stat;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_ndims(ncid, &result); check(stat);
   }
 
@@ -262,14 +263,14 @@ int PISMNC3File::inq_ndims(int &result) const {
 
 
 //! \brief Define a variable.
-int PISMNC3File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) const {
+int PISMNC3File::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
   int stat;
 
-  if (rank == 0) {
-    vector<int> dimids;
+  if (m_rank == 0) {
+    std::vector<int> dimids;
     int varid;
 
-    vector<string>::iterator j;
+    std::vector<std::string>::iterator j;
     for (j = dims.begin(); j != dims.end(); ++j) {
       int dimid;
       stat = nc_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
@@ -277,7 +278,7 @@ int PISMNC3File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
     }
 
     stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
-		      static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
+                      static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
   }
 
   MPI_Barrier(com);
@@ -286,28 +287,28 @@ int PISMNC3File::def_var(string name, PISM_IO_Type nctype, vector<string> dims) 
   return stat;
 }
 
-int PISMNC3File::get_varm_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 vector<unsigned int> imap, double *op) const {
+int PISMNC3File::get_varm_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
+                                 std::vector<unsigned int> imap, double *op) const {
   return this->get_var_double(variable_name,
                               start, count, imap, op, true);
 }
 
-int PISMNC3File::get_vara_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
+int PISMNC3File::get_vara_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
                                  double *op) const {
-  vector<unsigned int> dummy;
+  std::vector<unsigned int> dummy;
   return this->get_var_double(variable_name,
                               start, count, dummy, op, false);
 }
 
 //! \brief Get variable data.
-int PISMNC3File::get_var_double(string variable_name,
-                                vector<unsigned int> start,
-                                vector<unsigned int> count,
-                                vector<unsigned int> imap, double *ip,
+int PISMNC3File::get_var_double(std::string variable_name,
+                                std::vector<unsigned int> start,
+                                std::vector<unsigned int> count,
+                                std::vector<unsigned int> imap, double *ip,
                                 bool mapped) const {
   const int start_tag = 1,
     count_tag = 2,
@@ -350,7 +351,7 @@ int PISMNC3File::get_var_double(string variable_name,
   MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
 
   // now we need to send start, count and imap data to processor 0 and receive data
-  if (rank == 0) {
+  if (m_rank == 0) {
     // Note: this could be optimized: if processor_0_chunk_size <=
     // max(local_chunk_size) we can avoid allocating this buffer. The inner for
     // loop will have to be re-ordered, though.
@@ -359,8 +360,8 @@ int PISMNC3File::get_var_double(string variable_name,
     // MPI calls below require C datatypes (so that we don't have to worry
     // about sizes of size_t and ptrdiff_t), so we make local copies of start,
     // count, and imap to use in the nc_get_varm_double() call.
-    vector<size_t> nc_start(ndims), nc_count(ndims);
-    vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
+    std::vector<size_t> nc_start(ndims), nc_count(ndims);
+    std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
     int varid;
 
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -417,29 +418,29 @@ int PISMNC3File::get_var_double(string variable_name,
   return stat;
 }
 
-int PISMNC3File::put_varm_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 vector<unsigned int> imap, double *op) const {
+int PISMNC3File::put_varm_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
+                                 std::vector<unsigned int> imap, const double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
 
-int PISMNC3File::put_vara_double(string variable_name,
-                                 vector<unsigned int> start,
-                                 vector<unsigned int> count,
-                                 double *op) const {
-  vector<unsigned int> dummy;
+int PISMNC3File::put_vara_double(std::string variable_name,
+                                 std::vector<unsigned int> start,
+                                 std::vector<unsigned int> count,
+                                 const double *op) const {
+  std::vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
                               start, count, dummy, op, false);
 }
 
 
 //! \brief Put variable data (mapped).
-int PISMNC3File::put_var_double(string variable_name,
-				vector<unsigned int> start,
-				vector<unsigned int> count,
-				vector<unsigned int> imap, const double *op,
+int PISMNC3File::put_var_double(std::string variable_name,
+                                std::vector<unsigned int> start,
+                                std::vector<unsigned int> count,
+                                std::vector<unsigned int> imap, const double *op,
                                 bool mapped) const {
   const int start_tag = 1,
     count_tag = 2,
@@ -482,14 +483,14 @@ int PISMNC3File::put_var_double(string variable_name,
   MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
 
   // now we need to send start, count and imap data to processor 0 and receive data
-  if (rank == 0) {
+  if (m_rank == 0) {
     processor_0_buffer = new double[processor_0_chunk_size];
 
     // MPI calls below require C datatypes (so that we don't have to worry
     // about sizes of size_t and ptrdiff_t), so we make local copies of start,
     // count, and imap to use in the nc_get_varm_double() call.
-    vector<size_t> nc_start(ndims), nc_count(ndims);
-    vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
+    std::vector<size_t> nc_start(ndims), nc_count(ndims);
+    std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
     int varid;
 
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
@@ -564,7 +565,7 @@ int PISMNC3File::put_var_double(string variable_name,
 int PISMNC3File::inq_nvars(int &result) const {
   int stat;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_nvars(ncid, &result); check(stat);
   }
   MPI_Barrier(com);
@@ -574,11 +575,11 @@ int PISMNC3File::inq_nvars(int &result) const {
 }
 
 //! \brief Get dimensions a variable depends on.
-int PISMNC3File::inq_vardimid(string variable_name, vector<string> &result) const {
+int PISMNC3File::inq_vardimid(std::string variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
-  vector<int> dimids;
+  std::vector<int> dimids;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
 
     stat = nc_inq_varndims(ncid, varid, &ndims); check(stat);
@@ -593,7 +594,7 @@ int PISMNC3File::inq_vardimid(string variable_name, vector<string> &result) cons
   result.resize(ndims);
   dimids.resize(ndims);
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_vardimid(ncid, varid, &dimids[0]); check(stat);
   }
 
@@ -603,7 +604,7 @@ int PISMNC3File::inq_vardimid(string variable_name, vector<string> &result) cons
     char name[NC_MAX_NAME];
     memset(name, 0, NC_MAX_NAME);
 
-    if (rank == 0) {
+    if (m_rank == 0) {
       stat = nc_inq_dimname(ncid, dimids[k], name); check(stat);
     }
 
@@ -620,10 +621,10 @@ int PISMNC3File::inq_vardimid(string variable_name, vector<string> &result) cons
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_varnatts(string variable_name, int &result) const {
+int PISMNC3File::inq_varnatts(std::string variable_name, int &result) const {
   int stat;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int varid = -1;
 
     if (variable_name == "PISM_GLOBAL") {
@@ -641,10 +642,10 @@ int PISMNC3File::inq_varnatts(string variable_name, int &result) const {
 }
 
 //! \brief Finds a variable and sets the "exists" flag.
-int PISMNC3File::inq_varid(string variable_name, bool &exists) const {
+int PISMNC3File::inq_varid(std::string variable_name, bool &exists) const {
   int stat, flag = -1;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_varid(ncid, variable_name.c_str(), &flag);
 
     if (stat == NC_NOERR)
@@ -661,12 +662,12 @@ int PISMNC3File::inq_varid(string variable_name, bool &exists) const {
   return 0;
 }
 
-int PISMNC3File::inq_varname(unsigned int j, string &result) const {
+int PISMNC3File::inq_varname(unsigned int j, std::string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_inq_varname(ncid, j, varname); check(stat);
   }
 
@@ -680,10 +681,10 @@ int PISMNC3File::inq_varname(unsigned int j, string &result) const {
   return stat;
 }
 
-int PISMNC3File::inq_vartype(string variable_name, PISM_IO_Type &result) const {
+int PISMNC3File::inq_vartype(std::string variable_name, PISM_IO_Type &result) const {
   int stat, tmp;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     nc_type var_type;
     stat = nc_inq_varid(ncid, variable_name.c_str(), &tmp); check(stat);
     stat = nc_inq_vartype(ncid, tmp, &var_type); check(stat);
@@ -707,11 +708,11 @@ int PISMNC3File::inq_vartype(string variable_name, PISM_IO_Type &result) const {
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::get_att_double(string variable_name, string att_name, vector<double> &result) const {
+int PISMNC3File::get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const {
   int stat, len, varid = -1;
 
   // Read and broadcast the attribute length:
-  if (rank == 0) {
+  if (m_rank == 0) {
     size_t attlen;
 
     if (variable_name == "PISM_GLOBAL") {
@@ -741,7 +742,7 @@ int PISMNC3File::get_att_double(string variable_name, string att_name, vector<do
   result.resize(len);
 
   // Now read data and broadcast stat to see if we succeeded:
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_get_att_double(ncid, varid, att_name.c_str(), &result[0]); check(stat);
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, com);
@@ -761,12 +762,12 @@ int PISMNC3File::get_att_double(string variable_name, string att_name, vector<do
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::get_att_text(string variable_name, string att_name, string &result) const {
+int PISMNC3File::get_att_text(std::string variable_name, std::string att_name, std::string &result) const {
   char *str = NULL;
   int stat, len, varid = -1;
 
   // Read and broadcast the attribute length:
-  if (rank == 0) {
+  if (m_rank == 0) {
     size_t attlen;
 
     if (variable_name == "PISM_GLOBAL") {
@@ -783,7 +784,7 @@ int PISMNC3File::get_att_text(string variable_name, string att_name, string &res
   }
   MPI_Bcast(&len, 1, MPI_INT, 0, com);
 
-  // Allocate some memory or set result to NULL and return:
+  // Allocate some memory or clear result and return:
   if (len == 0) {
     result.clear();
     return 0;
@@ -795,7 +796,7 @@ int PISMNC3File::get_att_text(string variable_name, string att_name, string &res
   memset(str, 0, len + 1);
 
   // Now read the string and broadcast stat to see if we succeeded:
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_get_att_text(ncid, varid, att_name.c_str(), str);
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, com);
@@ -817,14 +818,14 @@ int PISMNC3File::get_att_text(string variable_name, string att_name, string &res
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::put_att_double(string variable_name, string att_name,
-                               PISM_IO_Type nctype, vector<double> &data) const {
+int PISMNC3File::put_att_double(std::string variable_name, std::string att_name,
+                               PISM_IO_Type nctype, const std::vector<double> &data) const {
 
   int stat = 0;
 
   stat = redef(); check(stat);
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int varid = -1;
 
     if (variable_name == "PISM_GLOBAL") {
@@ -849,12 +850,12 @@ int PISMNC3File::put_att_double(string variable_name, string att_name,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::put_att_text(string variable_name, string att_name, string value) const {
+int PISMNC3File::put_att_text(std::string variable_name, std::string att_name, std::string value) const {
   int stat = 0;
 
   stat = redef(); check(stat);
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int varid = -1;
 
     if (variable_name == "PISM_GLOBAL") {
@@ -876,12 +877,12 @@ int PISMNC3File::put_att_text(string variable_name, string att_name, string valu
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_attname(string variable_name, unsigned int n, string &result) const {
+int PISMNC3File::inq_attname(std::string variable_name, unsigned int n, std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int varid = -1;
 
     if (variable_name == "PISM_GLOBAL") {
@@ -905,10 +906,10 @@ int PISMNC3File::inq_attname(string variable_name, unsigned int n, string &resul
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const {
+int PISMNC3File::inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const {
   int stat, tmp;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int varid = -1;
 
     if (variable_name == "PISM_GLOBAL") {
@@ -940,7 +941,7 @@ int PISMNC3File::inq_atttype(string variable_name, string att_name, PISM_IO_Type
 int PISMNC3File::set_fill(int fillmode, int &old_modep) const {
   int stat;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     stat = nc_set_fill(ncid, fillmode, &old_modep); check(stat);
   }
 
@@ -951,10 +952,10 @@ int PISMNC3File::set_fill(int fillmode, int &old_modep) const {
   return stat;
 }
 
-string PISMNC3File::get_format() const {
+std::string PISMNC3File::get_format() const {
   int format;
 
-  if (rank == 0) {
+  if (m_rank == 0) {
     int stat = nc_inq_format(ncid, &format); check(stat);
   }
   MPI_Barrier(com);

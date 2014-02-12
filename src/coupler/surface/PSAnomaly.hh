@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,18 +26,18 @@
 class PSAnomaly : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {
 public:
-  PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  PSAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
   virtual ~PSAnomaly();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
   IceModelVec2T *climatic_mass_balance_anomaly, *ice_surface_temp_anomaly;

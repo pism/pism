@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ setting each of these does not affect the value of the other.
  */
 class SSAStrengthExtension {
 public:
-  SSAStrengthExtension(const NCConfigVariable &c) : config(c) {
+  SSAStrengthExtension(const PISMConfig &c) : config(c) {
     min_thickness = config.get("min_thickness_strength_extension_ssa");
     constant_nu = config.get("constant_nu_strength_extension_ssa");
   }
@@ -59,7 +59,7 @@ public:
 
   //! Set strength = (viscosity times thickness).
   /*! Determines nu by input strength and current min_thickness. */
-  virtual PetscErrorCode set_notional_strength(PetscReal my_nuH) {
+  virtual PetscErrorCode set_notional_strength(double my_nuH) {
      if (my_nuH <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"nuH must be positive");
      constant_nu = my_nuH / min_thickness;
      return 0;
@@ -67,25 +67,27 @@ public:
 
   //! Set minimum thickness to trigger use of extension.
   /*! Preserves strength (nuH) by also updating using current nu.  */
-  virtual PetscErrorCode set_min_thickness(PetscReal my_min_thickness) {
+  virtual PetscErrorCode set_min_thickness(double my_min_thickness) {
      if (my_min_thickness <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"min_thickness must be positive");
-     PetscReal nuH = constant_nu * min_thickness;
+     double nuH = constant_nu * min_thickness;
      min_thickness = my_min_thickness;
      constant_nu = nuH / min_thickness;
      return 0;
   }
 
   //! Returns strength = (viscosity times thickness).
-  virtual PetscReal get_notional_strength() const {
+  double get_notional_strength() const {
     return constant_nu * min_thickness;
   }
 
   //! Returns minimum thickness to trigger use of extension.
-  virtual PetscReal get_min_thickness() const { return min_thickness; }
+  double get_min_thickness() const {
+    return min_thickness;
+  }
 
 private:
-  const NCConfigVariable &config;
-  PetscReal  min_thickness, constant_nu;
+  const PISMConfig &config;
+  double  min_thickness, constant_nu;
 };
 
 //! Callback for constructing a new SSA subclass.  The caller is
@@ -96,8 +98,7 @@ all the arguments of an SSA constructor and returns a newly constructed instance
 Subclasses of SSA should provide an associated function pointer matching the
 SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &,
-                            EnthalpyConverter &, const NCConfigVariable &);
+typedef SSA * (*SSAFactory)(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 
 
 //! PISM's SSA solver.
@@ -133,37 +134,30 @@ provides the basic fields.
 class SSA : public ShallowStressBalance
 {
   friend class SSA_taud;
+  friend class SSA_taub;
+  friend class SSA_beta;
 public:
-  SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-      const NCConfigVariable &c);
+  SSA(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~SSA();
 
   SSAStrengthExtension *strength_extension;
 
-  virtual ~SSA() { 
-    PetscErrorCode ierr = deallocate();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
-      PISMEnd();
-    }
-    delete strength_extension;
-  }
-
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
-  virtual PetscErrorCode stdout_report(string &result);
+  virtual PetscErrorCode stdout_report(std::string &result);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate();
 
@@ -179,7 +173,7 @@ protected:
   IceModelVec3 *enthalpy;
   IceModelVec2S *gl_mask;
 
-  string stdout_ssa;
+  std::string stdout_ssa;
 
   // objects used by the SSA solver (internally)
   DM  SSADA;                    // dof=2 DA (grid.da2 has dof=1)
@@ -205,6 +199,21 @@ class SSA_taud : public PISMDiag<SSA>
 {
 public:
   SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! @brief Computes the basal shear stress @f$ \tau_b @f$.
+class SSA_taub : public PISMDiag<SSA>
+{
+public:
+  SSA_taub(SSA *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+class SSA_beta : public PISMDiag<SSA>
+{
+public:
+  SSA_beta(SSA *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

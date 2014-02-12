@@ -16,7 +16,7 @@ rm -f $files
 set -e -x
 
 # create foo-23.nc (at about 6500 years we get some basal melting...)
-$MPIEXEC -n 2 $PISM_PATH/pisms -no_cold -y 6500 $opts -o foo-23.nc
+$MPIEXEC -n 2 $PISM_PATH/pisms -energy enthalpy -y 6500 $opts -o foo-23.nc
 
 # bootstrap from it, re-gridding all the variables we can
 $PISM_PATH/pismr -boot_file foo-23.nc -regrid_file foo-23.nc -y 0 -no_temp $opts -o bar-23.nc

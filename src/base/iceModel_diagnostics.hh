@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -146,7 +146,7 @@ class IceModel_ivol : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ivol(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total ice volume, which is relevant for sea-level
@@ -154,7 +154,7 @@ class IceModel_slvol : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_slvol(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice volume.
@@ -162,7 +162,7 @@ class IceModel_divoldt : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_divoldt(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total ice area.
@@ -170,7 +170,7 @@ class IceModel_iarea : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_iarea(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total ice mass.
@@ -178,7 +178,7 @@ class IceModel_imass : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_imass(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the rate of change of the total ice mass.
@@ -186,7 +186,7 @@ class IceModel_dimassdt : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_dimassdt(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total volume of the temperate ice.
@@ -194,7 +194,7 @@ class IceModel_ivoltemp : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ivoltemp(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total volume of the cold ice.
@@ -202,7 +202,7 @@ class IceModel_ivolcold : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ivolcold(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total area of the temperate ice.
@@ -210,7 +210,7 @@ class IceModel_iareatemp : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total area of the cold ice.
@@ -218,7 +218,7 @@ class IceModel_iareacold : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total ice enthalpy.
@@ -226,7 +226,7 @@ class IceModel_ienthalpy : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ienthalpy(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total grounded ice area.
@@ -234,7 +234,7 @@ class IceModel_iareag : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_iareag(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total floating ice area.
@@ -242,7 +242,7 @@ class IceModel_iareaf : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_iareaf(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total grounded ice volume.
@@ -250,7 +250,7 @@ class IceModel_ivolg : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ivolg(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Computes the total floating ice volume.
@@ -258,7 +258,7 @@ class IceModel_ivolf : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_ivolf(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the mass continuity time step.
@@ -266,7 +266,7 @@ class IceModel_dt : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_dt(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports maximum diffusivity.
@@ -274,7 +274,7 @@ class IceModel_max_diffusivity : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_max_diffusivity(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the total surface ice flux.
@@ -282,7 +282,7 @@ class IceModel_surface_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_surface_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the cumulative total surface ice flux.
@@ -290,7 +290,7 @@ class IceModel_surface_flux_cumulative : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_surface_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the total basal ice flux over the grounded region.
@@ -298,7 +298,7 @@ class IceModel_grounded_basal_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_grounded_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the cumulative total basal ice flux over the grounded region.
@@ -306,7 +306,7 @@ class IceModel_grounded_basal_flux_cumulative : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_grounded_basal_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the total sub-shelf ice flux.
@@ -314,7 +314,7 @@ class IceModel_sub_shelf_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the total sub-shelf ice flux.
@@ -322,7 +322,7 @@ class IceModel_sub_shelf_flux_cumulative : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_sub_shelf_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the 'numerical' ice flux resulting from enforcing the 'thk
@@ -331,7 +331,7 @@ class IceModel_nonneg_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_nonneg_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the cumulative 'numerical' ice flux resulting from enforcing the 'thk
@@ -340,39 +340,7 @@ class IceModel_nonneg_flux_cumulative : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_nonneg_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Reports the -ocean_kill flux.
-class IceModel_ocean_kill_flux : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Reports the cumulative -ocean_kill flux.
-class IceModel_ocean_kill_flux_cumulative : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Reports the total -float_kill flux.
-class IceModel_float_kill_flux : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_float_kill_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
-};
-
-//! \brief Reports the cumulative total -float_kill flux.
-class IceModel_float_kill_flux_cumulative : public PISMTSDiag<IceModel>
-{
-public:
-  IceModel_float_kill_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the total discharge flux.
@@ -380,7 +348,7 @@ class IceModel_discharge_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_discharge_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the cumulative total discharge flux.
@@ -388,7 +356,7 @@ class IceModel_discharge_flux_cumulative : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_discharge_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports cumulative surface mass balance.
@@ -397,27 +365,6 @@ class IceModel_climatic_mass_balance_cumulative : public PISMDiag<IceModel>
 public:
   IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Reports cumulative ocean kill flux.
-class IceModel_ocean_kill_flux_2D_cumulative : public PISMDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Computes ocean_kill_flux, the calving flux due to the "-ocean_kill"
-//! mechanism.
-class IceModel_ocean_kill_flux_2D : public PISMDiag<IceModel>
-{
-public:
-  IceModel_ocean_kill_flux_2D(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-  virtual PetscErrorCode update_cumulative();
-protected:
-  IceModelVec2S last_ocean_kill_flux_cumulative;
-  PetscReal last_report_time;
 };
 
 //! \brief Computes dHdt, the ice thickness rate of change.
@@ -429,7 +376,7 @@ public:
   virtual PetscErrorCode update_cumulative();
 protected:
   IceModelVec2S last_ice_thickness;
-  PetscReal last_report_time;
+  double last_report_time;
 };
 
 //! \brief Reports the maximum horizontal absolute velocity component over the grid.
@@ -437,7 +384,7 @@ class IceModel_max_hor_vel : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_max_hor_vel(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the mass flux from the mass tracked using ice thickness
@@ -446,7 +393,7 @@ class IceModel_H_to_Href_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the mass flux from the mass tracked using Href to the mass
@@ -455,7 +402,7 @@ class IceModel_Href_to_H_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the sum(div Q) flux (to diagnose issues in the mass
@@ -464,7 +411,7 @@ class IceModel_sum_divQ_flux : public PISMTSDiag<IceModel>
 {
 public:
   IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode update(PetscReal a, PetscReal b);
+  virtual PetscErrorCode update(double a, double b);
 };
 
 //! \brief Reports the 2D cumulative (numerical) flux due to enforcing
@@ -493,6 +440,14 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Reports the 2D cumulative discharge (calving) flux.
+class IceModel_discharge_flux_2D_cumulative : public PISMDiag<IceModel>
+{
+public:
+  IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 #if (PISM_USE_PROJ4==1)
 
 #include <proj_api.h>
@@ -502,12 +457,12 @@ class IceModel_lat_lon_bounds : public PISMDiag<IceModel>
 {
 public:
   IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
-                          string var_name,
-                          string proj_string);
+                          std::string var_name,
+                          std::string proj_string);
   ~IceModel_lat_lon_bounds();
   virtual PetscErrorCode compute(IceModelVec* &result);
 protected:
-  string m_var_name;
+  std::string m_var_name;
   projPJ pism, lonlat;
 };
 #elif (PISM_USE_PROJ4==0)

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,18 +25,18 @@
 #include "IceGrid.hh"
 #include <map>
 
-class NCConfigVariable;
+class PISMConfig;
 
 template <class Model, class Modifier>
 class PCFactory {
 public:
-  PCFactory<Model,Modifier>(IceGrid& g, const NCConfigVariable& conf)
+  PCFactory<Model,Modifier>(IceGrid& g, const PISMConfig& conf)
   : grid(g), config(conf) {}
   virtual ~PCFactory<Model,Modifier>() {}
 
   //! Sets the default type name.
-  virtual PetscErrorCode set_default(string name) {
-    void (*func) (IceGrid&, const NCConfigVariable&, Model*&);
+  virtual PetscErrorCode set_default(std::string name) {
+    void (*func) (IceGrid&, const PISMConfig&, Model*&);
 
     func = models[name];
     if (!func) {
@@ -49,14 +49,14 @@ public:
 
   //! Creates a boundary model. Processes command-line options.
   virtual PetscErrorCode create(Model* &result) {
-    void (*F) (IceGrid&, const NCConfigVariable&, Model*&);
+    void (*F) (IceGrid&, const PISMConfig&, Model*&);
     PetscErrorCode ierr;
-    vector<string> choices;
-    string model_list, modifier_list, descr;
+    std::vector<std::string> choices;
+    std::string model_list, modifier_list, descr;
     bool flag = false;
 
     // build a list of available models:
-    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)>::iterator k;
+    typename std::map<std::string,void(*)(IceGrid&, const PISMConfig&, Model*&)>::iterator k;
     k = models.begin();
     model_list = "[" + (k++)->first;
     for(; k != models.end(); k++) {
@@ -65,7 +65,7 @@ public:
     model_list += "]";
 
     // build a list of available modifiers:
-    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)>::iterator p;
+    typename std::map<std::string,void(*)(IceGrid&, const PISMConfig&, Model*, Modifier*&)>::iterator p;
     p = modifiers.begin();
     modifier_list = "[" + (p++)->first;
     for(; p != modifiers.end(); p++) {
@@ -77,28 +77,28 @@ public:
       " Available modifiers: " + modifier_list;
 
     // Get the command-line option:
-    ierr = PISMOptionsStringArray("-" + option, descr, default_type.c_str(), choices, flag); CHKERRQ(ierr);
+    ierr = PISMOptionsStringArray("-" + option, descr, default_type, choices, flag); CHKERRQ(ierr);
 
     if (choices.empty()) {
       if (flag) {
-	PetscPrintf(grid.com, "ERROR: option -%s requires an argument.\n", option.c_str());
-	PISMEnd();
+        PetscPrintf(grid.com, "ERROR: option -%s requires an argument.\n", option.c_str());
+        PISMEnd();
       }
       choices.push_back(default_type);
     }
 
     // the first element has to be an *actual* model (not a modifier), so we
     // create it:
-    vector<string>::iterator j = choices.begin();
+    std::vector<std::string>::iterator j = choices.begin();
 
     F = models[*j];
     if (!F) {
       PetscPrintf(grid.com,
-		  "ERROR: %s model \"%s\" is not available.\n"
-		  "  Available models:    %s\n"
-		  "  Available modifiers: %s\n",
-		  option.c_str(), j->c_str(),
-		  model_list.c_str(), modifier_list.c_str());
+                  "ERROR: %s model \"%s\" is not available.\n"
+                  "  Available models:    %s\n"
+                  "  Available modifiers: %s\n",
+                  option.c_str(), j->c_str(),
+                  model_list.c_str(), modifier_list.c_str());
       PISMEnd();
     }
 
@@ -108,16 +108,16 @@ public:
 
     // process remaining arguments:
     while (j != choices.end()) {
-      void (*M) (IceGrid&, const NCConfigVariable&, Model*, Modifier*&);
+      void (*M) (IceGrid&, const PISMConfig&, Model*, Modifier*&);
       Modifier *mod;
 
       M = modifiers[*j];
       if (!M) {
-	PetscPrintf(grid.com,
-		    "ERROR: %s modifier \"%s\" is not available.\n"
-		    "  Available modifiers: %s\n",
-		    option.c_str(), j->c_str(), modifier_list.c_str());
-	PISMEnd();
+        PetscPrintf(grid.com,
+                    "ERROR: %s modifier \"%s\" is not available.\n"
+                    "  Available modifiers: %s\n",
+                    option.c_str(), j->c_str(), modifier_list.c_str());
+        PISMEnd();
       }
 
       (*M)(grid, config, result, mod);
@@ -131,20 +131,20 @@ public:
   }
 
   //! Adds a boundary model to the dictionary.
-  virtual void add_model(string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*&)) {
+  virtual void add_model(std::string name, void(*func)(IceGrid&, const PISMConfig&, Model*&)) {
     models[name] = func;
   }
 
-  virtual void add_modifier(string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)) {
+  virtual void add_modifier(std::string name, void(*func)(IceGrid&, const PISMConfig&, Model*, Modifier*&)) {
     modifiers[name] = func;
   }
 
   //! Removes a boundary model from the dictionary.
-  virtual void remove_model(string name) {
+  virtual void remove_model(std::string name) {
     models.erase(name);
   }
 
-  virtual void remove_modifier(string name) {
+  virtual void remove_modifier(std::string name) {
     modifiers.erase(name);
   }
 
@@ -158,11 +158,11 @@ public:
   }
 protected:
   virtual void add_standard_types() {}
-  string default_type, option;
-  map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)> models;
-  map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)> modifiers;
+  std::string default_type, option;
+  std::map<std::string,void(*)(IceGrid&, const PISMConfig&, Model*&)> models;
+  std::map<std::string,void(*)(IceGrid&, const PISMConfig&, Model*, Modifier*&)> modifiers;
   IceGrid& grid;
-  const NCConfigVariable& config;
+  const PISMConfig& config;
 };
 
 #endif /* _PCFACTORY_H_ */

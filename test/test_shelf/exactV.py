@@ -1,32 +1,10 @@
 #!/usr/bin/env python
 
-# Computes and plots exact solution for "test V", in preparation for
-# implementing C version for PISM verification.
+from pylab import figure, plot, xlabel, ylabel, title, show, axis, linspace, hold, subplot, grid, step
+import numpy as np
+import subprocess, shlex, sys
 
-from pylab import *
-import subprocess
-
-try:
-    from netCDF4 import Dataset as NC
-except:
-    from netCDF3 import Dataset as NC
-
-def permute(variable, output_order = ('time', 'z', 'zb', 'y', 'x')):
-    """Permute dimensions of a NetCDF variable to match the output storage order."""
-    input_dimensions = variable.dimensions
-
-    # filter out irrelevant dimensions
-    dimensions = filter(lambda(x): x in input_dimensions,
-                        output_order)
-
-    # create the mapping
-    mapping = map(lambda(x): dimensions.index(x),
-                  input_dimensions)
-
-    if mapping:
-        return np.transpose(variable[:], mapping)
-    else:
-        return variable[:]              # so that it does not break processing "mapping"
+from netCDF4 import Dataset as NC
 
 ### Setup
 
@@ -47,9 +25,6 @@ v0 = 300.0/secpera                      # 300 meters/year
 # upstream ice flux
 Q0 = H0 * v0;
 
-Mx = 201
-x = linspace(0, 400e3, Mx)
-
 def H(x):
     """Ice thickness."""    
     return (4 * C / Q0 * x + 1 / H0**4)**(-0.25)
@@ -65,9 +40,7 @@ def x_c(t):
 def plot_xc(t_years):
     """Plot the location of the calving front."""
     x = x_c(t_years * secpera)/1000.0   # convert to km
-    a = axis()
-    y_min = a[2]
-    y_max = a[3]
+    _, _, y_min, y_max = axis()
 
     hold(True)
     plot([x, x], [y_min, y_max], '--g')
@@ -75,15 +48,15 @@ def plot_xc(t_years):
 def run_pismv(Mx, run_length, options, output):
     command = "pismv -test V -y %f -Mx %d %s -o %s" % (run_length, Mx, options, output)
     print "Running %s" % command
-    subprocess.call(command, shell=True)
+    subprocess.call(shlex.split(command))
 
-def plot_pism_results(figure_number, filename, figure_title, color):
+def plot_pism_results(filename, figure_title, color, same_figure=False):
     nc = NC(filename)
 
     time = nc.variables['time'][0]/secpera # convert to years
 
-    thk = permute(nc.variables['thk'])[0,1,2:]
-    ubar_ssa = permute(nc.variables['cbar'])[0,1,2:]
+    thk = nc.variables['thk'][0,1,2:]
+    ubar_ssa = nc.variables['cbar'][0,1,2:]
     x = nc.variables['x'][:]
     dx = x[1] - x[0]
     Lx = (x[-1] - x[0]) / 2.0
@@ -91,20 +64,21 @@ def plot_pism_results(figure_number, filename, figure_title, color):
 
     hold(True)
 
-    figure(figure_number)
+    if same_figure == False:
+        figure(1)
 
     subplot(211)
     title(figure_title)
-    plot(x_nc, H(x_nc*1000.0), color='black', linestyle='dashed')
-    plot(x_nc, thk, color=color, linewidth=2)
+    plotter(x_nc, H(x_nc*1000.0), color='black', linestyle='dashed')
+    plotter(x_nc, thk, color=color, linewidth=2)
     plot_xc(time)
     ylabel("Ice thickness, m")
     axis(xmin=0, xmax=400, ymax=600)
     grid(True)
 
     subplot(212)
-    plot(x_nc, v(x_nc*1000.0) * secpera, color='black', linestyle='dashed')
-    plot(x_nc, ubar_ssa, color=color, linewidth=2)
+    plotter(x_nc, v(x_nc*1000.0) * secpera, color='black', linestyle='dashed')
+    plotter(x_nc, ubar_ssa, color=color, linewidth=2)
     plot_xc(time)
     axis(xmin=0, xmax=400, ymax=1000)
     xlabel("km")
@@ -113,18 +87,71 @@ def plot_pism_results(figure_number, filename, figure_title, color):
 
     nc.close()
 
-options = "-ssa_method fd -cfbc -part_grid -Lx 250"
 
-run_pismv(101, 300, options, "out.nc")
-plot_pism_results(1, "out.nc", "Figure 6 (b) (-part_grid)", 'blue')
+import argparse
+## Set up the option parser
+parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.description = """Manages PISM runs reproducing Figure 6 in Albrecht et al
+'Parameterization for subgrid-scale motion of ice-shelf calving fronts', 2011"""
 
-run_pismv(101, 300, options + " -max_dt 1", "out.nc")
-plot_pism_results(1, "out.nc", "Figure 6 (b) (-part_grid)", 'green')
+parser.epilog = """Model "variants":
 
-run_pismv(101, 300, options + " -part_redist", "out.nc")
-plot_pism_results(2, "out.nc", "Figure 6 (c) (-part_grid -part_redist)", 'blue')
+0:  no subgrid parameterization, no stress boundary condition at the calving front
+1: -cfbc -part_grid
+2: -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness
 
-run_pismv(101, 300, options + " -part_redist -max_dt 1", "out.nc")
-plot_pism_results(2, "out.nc", "Figure 6 (c) (-part_grid -part_redist)", 'green')
+Here -part_grid_reduce_frontal_thickness adjusts the thickness
+threshold used to decide when a 'partially filled' cell becomes full.
+This is done to try and match the van der Veen profile this particular
+setup is based on. Don't use it."""
+
+parser.add_argument("-v", dest="variant", type=int,
+                    help="choose the 'model variant', choose from 0, 1, 2", default=2)
+parser.add_argument("-Mx", dest="Mx", type=int,
+                    help="number of grid points", default=201)
+parser.add_argument("-y", dest="y", type=float,
+                    help="run length", default=300)
+parser.add_argument("-s", dest="step_plot", action='store_true',
+                    help="use 'plt.step()' to plot")
+options = parser.parse_args()
+
+Mx = options.Mx
+x = linspace(0, 400e3, Mx)
+run_length = options.y
+
+opt = "-ssa_method fd -Lx 250 -o_order zyx"
+extras = " -extra_file ex.nc -extra_vars cflx,thk,nuH,flux_divergence,velbar -extra_times 1"
+
+if options.step_plot:
+    plotter = step
+else:
+    plotter = plot
+
+if options.variant == 0:
+    run_pismv(Mx, run_length, opt, "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'blue')
+
+    opt = opt + extras
+    run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (a-b) (control)", 'green', same_figure=True)
+elif options.variant == 1:
+    opt += " -part_grid -cfbc"
+    run_pismv(Mx, run_length, opt, "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'blue')
+
+    opt = opt + extras
+    run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (c-d) (-part_grid)", 'green', same_figure=True)
+elif options.variant == 2:
+    opt += " -cfbc -part_grid -part_redist -part_grid_reduce_frontal_thickness"
+    run_pismv(Mx, run_length, opt, "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'blue')
+
+    opt = opt + extras
+    run_pismv(Mx, run_length, opt + " -max_dt 1", "out.nc")
+    plot_pism_results("out.nc", "Figure 6 (e-f) (-part_grid -part_redist)", 'green', same_figure=True)
+else:
+    print "Wrong variant number. Choose one of 0, 1, 2."
+    sys.exit(1)
 
 show()

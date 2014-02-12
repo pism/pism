@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,13 +26,14 @@ static char help[] =
 #include "bedrockThermalUnit.hh"
 #include "PISMTime.hh"
 #include "PISMVars.hh"
+#include "PISMConfig.hh"
 
 #include "../../verif/tests/exactTestK.h"
 
 class BTU_Test : public PISMBedThermalUnit
 {
 public:
-  BTU_Test(IceGrid &g, const NCConfigVariable &conf)
+  BTU_Test(IceGrid &g, const PISMConfig &conf)
     : PISMBedThermalUnit(g, conf) {}
   virtual ~BTU_Test() {}
 protected:
@@ -44,16 +45,16 @@ PetscErrorCode BTU_Test::bootstrap() {
 
   // fill exact bedrock temperature from Test K at time ys
   if (Mbz > 1) {
-    vector<double> zlevels = temp.get_levels();
+    std::vector<double> zlevels = temp.get_levels();
 
     ierr = temp.begin_access(); CHKERRQ(ierr);
-    PetscScalar *Tb; // columns of these values
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    double *Tb; // columns of these values
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-        for (PetscInt k=0; k < Mbz; k++) {
-          const PetscReal z = zlevels[k];
-          PetscReal FF; // Test K:  use Tb[k], ignore FF
+        for (unsigned int k=0; k < Mbz; k++) {
+          const double z = zlevels[k];
+          double FF; // Test K:  use Tb[k], ignore FF
           ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
         }
       }
@@ -71,17 +72,17 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   IceModelVec2S *bedtoptemp = new IceModelVec2S,
                 *ghf        = new IceModelVec2S;
 
-  ierr = ghf->create(grid, "bheatflx", false); CHKERRQ(ierr);
+  ierr = ghf->create(grid, "bheatflx", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = ghf->set_attrs("",
                        "upward geothermal flux at bedrock thermal layer base",
-		       "W m-2", ""); CHKERRQ(ierr);
+                       "W m-2", ""); CHKERRQ(ierr);
   ierr = ghf->set_glaciological_units("mW m-2");
   ierr = variables.add(*ghf); CHKERRQ(ierr);
 
-  ierr = bedtoptemp->create(grid, "bedtoptemp", false); CHKERRQ(ierr);
+  ierr = bedtoptemp->create(grid, "bedtoptemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = bedtoptemp->set_attrs("",
                        "temperature at top of bedrock thermal layer",
-		       "K", ""); CHKERRQ(ierr);
+                       "K", ""); CHKERRQ(ierr);
   ierr = variables.add(*bedtoptemp); CHKERRQ(ierr);
 
   return 0;
@@ -90,8 +91,8 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
 static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
   // Get the names of all the variables allocated earlier:
-  set<string> vars = variables.keys();
-  set<string>::iterator i = vars.begin();
+  std::set<std::string> vars = variables.keys();
+  std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
     delete var;
@@ -105,24 +106,22 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  PetscMPIInt rank, size;
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "BTUTEST %s (test program for PISMBedThermalUnit)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     // check required options
-    vector<string> required;
+    std::vector<std::string> required;
     required.push_back("-Mbz");
     ierr = show_usage_check_req_opts(com, "btutest", required,
       "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
@@ -142,17 +141,17 @@ int main(int argc, char *argv[]) {
         "btutest tests PISMBedThermalUnit and IceModelVec3BTU\n"); CHKERRQ(ierr);
 
     // read the config option database:
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
     config.set_string("calendar", "none");
 
     // when IceGrid constructor is called, these settings are used
     config.set_string("grid_ice_vertical_spacing","equal");
     config.set_string("grid_bed_vertical_spacing","equal");
-    config.set("start_year", 0.0);
-    config.set("run_length_years", 1.0);
+    config.set_double("start_year", 0.0);
+    config.set_double("run_length_years", 1.0);
 
     // create grid and set defaults
-    IceGrid grid(com, rank, size, config);
+    IceGrid grid(com, config);
     grid.Mz = 41;
     grid.Lz = 4000.0;
     grid.Mx = 3;
@@ -161,22 +160,30 @@ int main(int argc, char *argv[]) {
     grid.Ly = grid.Lx;
 
     // Mbz and Lbz are used by the PISMBedThermalUnit, not by IceGrid
-    config.set("grid_Mbz", 11); 
-    config.set("grid_Lbz", 1000); 
+    config.set_double("grid_Mbz", 11); 
+    config.set_double("grid_Lbz", 1000); 
 
     ierr = verbPrintf(2,com,
-	"  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
+        "  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
     bool flag;
-    PetscReal dt_years = 1.0;
-    string outname="unnamed_btutest.nc";
+    double dt_years = 1.0;
+    std::string outname="unnamed_btutest.nc";
+    int tmp = grid.Mz;
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-Mz", "number of vertical layers in ice", grid.Mz, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsInt("-Mz", "number of vertical layers in ice", tmp, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+    if (tmp > 0) {
+      grid.Mz = tmp;
+    } else {
+      PetscPrintf(grid.com, "PISM ERROR: -Mz %d is invalid (has to be positive).\n", tmp);
+      PISMEnd();
+    }
 
     // complete grid initialization based on user options
     grid.compute_nprocs();
@@ -207,7 +214,7 @@ int main(int argc, char *argv[]) {
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
-    PetscReal dt_seconds = unit_system.convert(dt_years, "years", "seconds");
+    double dt_seconds = unit_system.convert(dt_years, "years", "seconds");
 
     // worry about time step
     int  N = (int)ceil((grid.time->end() - grid.time->start()) / dt_seconds);
@@ -216,7 +223,7 @@ int main(int argc, char *argv[]) {
                       "  user set timestep of %.4f years ...\n"
                       "  reset to %.4f years to get integer number of steps ... \n",
                       dt_years, unit_system.convert(dt_seconds, "seconds", "years")); CHKERRQ(ierr);
-    PetscReal max_dt;
+    double max_dt;
     bool restrict_dt;
     ierr = btu.max_timestep(0.0, max_dt, restrict_dt); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
@@ -226,14 +233,14 @@ int main(int argc, char *argv[]) {
 
     // actually do the time-stepping
     ierr = verbPrintf(2,com,"  running ...\n  "); CHKERRQ(ierr);
-    for (PetscInt n = 0; n < N; n++) {
-      const PetscReal time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
+    for (int n = 0; n < N; n++) {
+      const double time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
 
       // compute exact ice temperature at z=0 at time y
       ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          PetscReal TT, FF; // Test K:  use TT, ignore FF
+      for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+        for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+          double TT, FF; // Test K:  use TT, ignore FF
           ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
           (*bedtoptemp)(i,j) = TT;
         }
@@ -252,18 +259,18 @@ int main(int argc, char *argv[]) {
     ierr = ghf->set_name("bheatflx0"); CHKERRQ(ierr);
     ierr = ghf->set_attrs("",
                        "upward geothermal flux at ice/bedrock interface",
-		       "W m-2", ""); CHKERRQ(ierr);
+                       "W m-2", ""); CHKERRQ(ierr);
     ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
     // get, and tell stdout, the correct answer from Test K
-    PetscReal TT, FF; // Test K:  use FF, ignore TT
+    double TT, FF; // Test K:  use FF, ignore TT
     ierr = exactK(grid.time->end(), 0.0, &TT, &FF, 0); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
                       grid.time->end_date().c_str(), FF); CHKERRQ(ierr);
 
     // compute numerical error
-    PetscReal maxghferr, avghferr;
+    double maxghferr, avghferr;
     ierr = ghf->shift(-FF); CHKERRQ(ierr);
     ierr = ghf->norm(NORM_INFINITY,maxghferr); CHKERRQ(ierr);
     ierr = ghf->norm(NORM_1,avghferr); CHKERRQ(ierr);
@@ -281,12 +288,12 @@ int main(int argc, char *argv[]) {
                       maxghferr,100.0*maxghferr/FF,avghferr); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
-    set<string> vars;
+    std::set<std::string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
     PIO pio(grid, grid.config.get_string("output_format"));
 
-    string time_name = config.get_string("time_dimension_name");
+    std::string time_name = config.get_string("time_dimension_name");
     ierr = pio.open(outname, PISM_WRITE); CHKERRQ(ierr);
     ierr = pio.def_time(time_name, grid.time->calendar(),
                         grid.time->CF_units_string()); CHKERRQ(ierr);

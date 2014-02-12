@@ -1,4 +1,4 @@
-// Copyright (C) 2011 David Maxwell
+// Copyright (C) 2011, 2014 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,9 +21,9 @@
 #define _PISM_PYTHON_
 #include "petsc.h"
 
-PetscErrorCode globalMax(PetscReal local_max, PetscReal *result, MPI_Comm comm);
-PetscErrorCode globalMin(PetscReal local_min, PetscReal *result, MPI_Comm comm);
-PetscErrorCode globalSum(PetscReal local_sum, PetscReal *result, MPI_Comm comm);
+PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm);
+PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm);
+PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm);
 
 PetscErrorCode optionsGroupBegin(MPI_Comm comm,const char *prefix,const char *mess,const char *sec);
 void optionsGroupNext();

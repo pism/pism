@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013  David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -63,25 +63,25 @@ public:
   
   virtual ~IPDesignVariableParameterization() {};
 
-  virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
 
   //! Converts from parameterization value \f$\zeta\f$ to \f$d=g(\zeta)\f$.
   /*!
   \param[in] zeta The parameter value.
   \param[out] value The value \f$g(\zeta)\f$.
   \param[out] derivative The value \f$g'(\zeta)\f$. */
-  virtual PetscErrorCode toDesignVariable( PetscReal zeta, PetscReal *value, PetscReal *derivative) = 0;
+  virtual PetscErrorCode toDesignVariable( double zeta, double *value, double *derivative) = 0;
   
   //! Converts from \f$d\f$ to a parameterization value \f$\zeta\f$ such that \f$d=g(\zeta)\f$.  
   /*! More than one such \f$\zeta\f$ may exist; only one is returned. */
-  virtual PetscErrorCode fromDesignVariable( PetscReal d, PetscReal *OUTPUT) = 0;
+  virtual PetscErrorCode fromDesignVariable( double d, double *OUTPUT) = 0;
 
   virtual PetscErrorCode convertToDesignVariable( IceModelVec2S &zeta, IceModelVec2S &d, bool communicate = true);
 
   virtual PetscErrorCode convertFromDesignVariable( IceModelVec2S &d, IceModelVec2S &zeta,  bool communicate = true);
 protected:
   
-  PetscReal m_d_scale;  ///< Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
+  double m_d_scale;  ///< Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
 };
 
 //! Parameterization \f$d=d_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\zeta\f$.
@@ -92,9 +92,9 @@ public:
 
   virtual ~IPDesignVariableParamIdent() {};
 
-  virtual PetscErrorCode toDesignVariable( PetscReal p, PetscReal *value, PetscReal *derivative);
+  virtual PetscErrorCode toDesignVariable( double p, double *value, double *derivative);
 
-  virtual PetscErrorCode fromDesignVariable( PetscReal tauc, PetscReal *OUTPUT);
+  virtual PetscErrorCode fromDesignVariable( double tauc, double *OUTPUT);
 };
 
 //! Parameterization \f$\tau_c=\tau_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\zeta^2\f$.
@@ -105,9 +105,9 @@ public:
 
   virtual ~IPDesignVariableParamSquare() {};
 
-  virtual PetscErrorCode toDesignVariable( PetscReal p, PetscReal *value, PetscReal *derivative);
+  virtual PetscErrorCode toDesignVariable( double p, double *value, double *derivative);
 
-  virtual PetscErrorCode fromDesignVariable( PetscReal tauc, PetscReal *OUTPUT);
+  virtual PetscErrorCode fromDesignVariable( double tauc, double *OUTPUT);
 };
 
 //! Parameterization \f$\tau_c=\tau_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\exp(\zeta)\f$.
@@ -118,14 +118,14 @@ public:
 
   virtual ~IPDesignVariableParamExp() {};
 
-  virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
 
-  virtual PetscErrorCode toDesignVariable( PetscReal p, PetscReal *value, PetscReal *derivative);
+  virtual PetscErrorCode toDesignVariable( double p, double *value, double *derivative);
 
-  virtual PetscErrorCode fromDesignVariable( PetscReal tauc, PetscReal *OUTPUT);
+  virtual PetscErrorCode fromDesignVariable( double tauc, double *OUTPUT);
 
 private:
-  PetscReal m_d_eps;
+  double m_d_eps;
 };
 
 
@@ -140,15 +140,15 @@ public:
 
   virtual ~IPDesignVariableParamTruncatedIdent() {};
 
-  virtual PetscErrorCode set_scales( const NCConfigVariable &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
 
-  virtual PetscErrorCode toDesignVariable( PetscReal p, PetscReal *value, PetscReal *derivative);
+  virtual PetscErrorCode toDesignVariable( double p, double *value, double *derivative);
 
-  virtual PetscErrorCode fromDesignVariable( PetscReal d, PetscReal *OUTPUT);
+  virtual PetscErrorCode fromDesignVariable( double d, double *OUTPUT);
 
 private:
-  PetscReal m_d0_sq;
-  PetscReal m_d_eps;
+  double m_d0_sq;
+  double m_d_eps;
 };
 
 #endif /* end of include guard: IPTAUCPARAMETERIZATION_HH_7ZRETI1S */

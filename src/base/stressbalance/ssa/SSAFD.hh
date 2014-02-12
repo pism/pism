@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,81 +22,89 @@
 #include "SSA.hh"
 #include <petscksp.h>
 
-
-//! PISM's SSA solver: the finite difference implementation
+//! PISM's SSA solver: the finite difference implementation.
 class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, EnthalpyConverter &e,
-        const NCConfigVariable &c) :
-    SSA(g,b,e,c)
-  {
-    PetscErrorCode ierr = allocate_fd();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFD allocation failed.\n");
-      PISMEnd();
-    }
-  }
-
-  virtual ~SSAFD()
-  {
-    PetscErrorCode ierr = deallocate_fd();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
-      PISMEnd();
-    }
-  }
+  SSAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~SSAFD();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
+
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate_fd();
 
   virtual PetscErrorCode deallocate_fd();
 
+  virtual PetscErrorCode pc_setup_bjacobi();
+
+  virtual PetscErrorCode pc_setup_asm();
+  
   virtual PetscErrorCode solve();
 
-  virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result);
+  virtual PetscErrorCode picard_iteration(unsigned int max_iterations,
+                                          double ssa_relative_tolerance,
+                                          double nuH_regularization);
+
+  virtual PetscErrorCode strategy_1_regularization();
+
+  virtual PetscErrorCode strategy_2_asm();
+
+  virtual PetscErrorCode compute_hardav_staggered();
 
   virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
-                                               PetscReal epsilon);
+                                               double epsilon);
 
-  virtual PetscErrorCode compute_nuH_norm(PetscReal &norm,
-                                          PetscReal &norm_change);
+  virtual PetscErrorCode compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
+                                                    double nuH_regularization);
+
+  virtual PetscErrorCode compute_nuH_norm(double &norm,
+                                          double &norm_change);
 
   virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
 
   virtual PetscErrorCode assemble_rhs(Vec rhs);
 
-  virtual PetscErrorCode writeSSAsystemMatlab();
+  virtual PetscErrorCode write_system_petsc();
+
+  virtual PetscErrorCode write_system_matlab();
 
   virtual PetscErrorCode update_nuH_viewers();
 
   virtual PetscErrorCode set_diagonal_matrix_entry(Mat A, int i, int j,
-                                                   PetscScalar value);
+                                                   double value);
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
+  virtual PetscErrorCode fracture_induced_softening();
+
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
-  KSP SSAKSP;
-  Mat SSAStiffnessMatrix;
-  Vec SSARHS;
-  PetscScalar scaling;
+  IceModelVec2 m_work;
+  KSP m_KSP;
+  Mat m_A;
+  Vec m_b;
+  double m_scaling;
 
+  IceModelVec2S *fracture_density, *m_melange_back_pressure;
+
+  unsigned int m_default_pc_failure_count,
+    m_default_pc_failure_max_count;
+  
   bool view_nuh;
   PetscViewer nuh_viewer;
-  PetscInt nuh_viewer_size;
+  int nuh_viewer_size;
 
   bool dump_system_matlab;
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &,
-                   EnthalpyConverter &, const NCConfigVariable &);
+SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 
 //! \brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.
@@ -108,4 +116,3 @@ public:
 };
 
 #endif /* _SSAFD_H_ */
-

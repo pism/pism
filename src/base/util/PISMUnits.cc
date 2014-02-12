@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,8 @@
 #include <gsl/gsl_math.h>       // GSL_NAN
 #include <petscsys.h>
 #include <cstdio>
+
+#include "pism_const.hh"
 
 class ut_system_deleter {
 public:
@@ -156,6 +158,56 @@ PISMUnitSystem PISMUnit::get_system() const {
   return m_system;
 }
 
+bool units_are_convertible(PISMUnit from, PISMUnit to) {
+  return ut_are_convertible(from.get(), to.get()) != 0;
+}
+
+//! Check if provided units are convertible and terminate PISM if they are not.
+PetscErrorCode units_check(std::string name, PISMUnit from, PISMUnit to) {
+
+  if (units_are_convertible(from, to) == false) {              // can't convert
+    PetscPrintf(PETSC_COMM_SELF,
+                "PISM ERROR: processing variable '%s': attempted to convert data from '%s' to '%s'.\n",
+                name.c_str(), from.format().c_str(), to.format().c_str());
+    PISMEnd();
+  }
+  return 0;
+}
+
 bool PISMUnit::is_valid() const {
   return m_unit != NULL;
+}
+
+PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to) {
+  PetscErrorCode ierr;
+
+  int data_size = 0;
+  ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
+
+  double *data = NULL;
+  ierr = VecGetArray(v, &data); CHKERRQ(ierr);
+  ierr = convert_doubles(data, data_size, from, to); CHKERRQ(ierr);
+  ierr = VecRestoreArray(v, &data); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMUnit to) {
+  std::string from_name, to_name;
+
+  // Get string representations of units:
+  from_name = from.format();
+  to_name   = to.format();
+
+  // Get the converter:
+  cv_converter *c = to.get_converter_from(from);
+  if (c == NULL) {              // can't convert
+    SETERRQ2(MPI_COMM_SELF, 1, "cannot convert data from '%s' to '%s'.\n",
+             from_name.c_str(), to_name.c_str());
+  }
+
+  cv_convert_doubles(c, data, length, data);
+  cv_free(c);
+
+  return 0;
 }

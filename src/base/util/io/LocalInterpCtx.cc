@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,6 @@
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 
-
 //! Construct a local interpolation context from arrays of parameters.
 /*!
   This method constructs a class from existing information already read from a NetCDF file and stored
@@ -44,23 +43,24 @@
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
-LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
-                               PetscReal z_min, PetscReal z_max) {
+LocalInterpCtx::LocalInterpCtx(grid_info input, const IceGrid &grid,
+                               double z_min, double z_max) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   com = grid.com;
   rank = grid.rank;
   report_range = true;
 
-  input.print(com);
-  PetscReal eps = 1e-6;         // tolerance (one micron)
+  print_grid_info(input, grid.get_unit_system(), 3);
+
+  double eps = 1e-6;         // tolerance (one micron)
   if (!(grid.x.front() >= input.x_min - eps && grid.x.back() <= input.x_max + eps &&
         grid.y.front() >= input.y_min - eps && grid.y.back() <= input.y_max + eps &&
         z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
 
     PetscPrintf(com,
-		"target computational domain not a subset of source (in NetCDF file)\n"
-		"  computational domain:\n");
+                "target computational domain not a subset of source (in NetCDF file)\n"
+                "  computational domain:\n");
     PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
                 grid.x.front(), grid.x.back(),
                 grid.y.front(), grid.y.back(),
@@ -119,7 +119,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
   x_alpha.resize(grid.xm);
 
   // x-direction
-  for (PetscInt i = 0; i < grid.xm; ++i) {
+  for (int i = 0; i < grid.xm; ++i) {
     double x = grid.x[grid.xs + i];
 
     // This is here to make it crash and burn if something goes wrong, instead
@@ -161,7 +161,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, IceGrid &grid,
   y_right.resize(grid.ym);
   y_alpha.resize(grid.ym);
 
-  for (PetscInt j = 0; j < grid.ym; ++j) {
+  for (int j = 0; j < grid.ym; ++j) {
     double y = grid.y[grid.ys + j];
 
     // This is here to make it crash and burn if something goes wrong, instead
@@ -217,40 +217,27 @@ PetscErrorCode LocalInterpCtx::printArray() {
   return 0;
 }
 
-grid_info::grid_info(PISMUnitSystem unit_system)
-  : m_unit_system(unit_system) {
+void LocalInterpCtx::print_grid_info(grid_info g, PISMUnitSystem s, int threshold) {
 
-  t_len = 0;
-  time  = 0;
+  verbPrintf(threshold, com,
+             "\nRegridding file grid info:\n");
 
-  x_len = 0;
-  x_max = 0;
-  x_min = 0;
+  verbPrintf(threshold, com,
+             "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+             g.x_len, g.x_min/1000.0, g.x_max/1000.0, (g.x_min + g.x_max)/2.0/1000.0,
+             (g.x_max - g.x_min)/1000.0);
 
-  y_len = 0;
-  y_max = 0;
-  y_min = 0;
+  verbPrintf(threshold, com,
+             "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+             g.y_len, g.y_min/1000.0, g.y_max/1000.0,
+             (g.y_min + g.y_max)/2.0/1000.0,
+             (g.y_max - g.y_min)/1000.0);
 
-  z_len = 0;
-  z_min = 0;
-  z_max = 0;
-}
+  verbPrintf(threshold, com,
+             "  z:  %5d points, [%10.3f, %10.3f] m\n",
+             g.z_len, g.z_min, g.z_max);
 
-PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
-  PetscErrorCode ierr;
-  double zero = 0;
-  ierr = verbPrintf(threshold, com, "\nRegridding file grid info:\n"); CHKERRQ(ierr);
-
-  ierr = verbPrintf(threshold, com, "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-		    x_len, x_min/1000.0, x_max/1000.0, (x_min + x_max)/2.0/1000.0,
-                    (x_max - x_min)/1000.0); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-		    y_len, y_min/1000.0, y_max/1000.0,
-                    (y_min + y_max)/2.0/1000.0,
-                    (y_max - y_min)/1000.0); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  z:  %5d points, [%10.3f, %10.3f] m\n",
-		    z_len, zero, z_max); CHKERRQ(ierr);
-  ierr = verbPrintf(threshold, com, "  t:  %5d points, last time = %.3f years\n\n",
-		    t_len, m_unit_system.convert(time, "seconds", "years")); CHKERRQ(ierr);
-  return 0;
+  verbPrintf(threshold, com,
+             "  t:  %5d points, last time = %.3f years\n\n",
+             g.t_len, s.convert(g.time, "seconds", "years"));
 }

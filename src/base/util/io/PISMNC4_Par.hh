@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,14 +24,14 @@
 class PISMNC4_Par : public PISMNC4File
 {
 public:
-  PISMNC4_Par(MPI_Comm c, int r)
-    : PISMNC4File(c, r, 0) {}
+  PISMNC4_Par(MPI_Comm c)
+    : PISMNC4File(c, 0) {}
   virtual ~PISMNC4_Par() {}
 
   // open/create/close
-  virtual int open(string filename, int mode);
+  virtual int open(std::string filename, int mode);
 
-  virtual int create(string filename);
+  virtual int create(std::string filename);
 
 protected:
   virtual int set_access_mode(int varid, bool mapped) const;

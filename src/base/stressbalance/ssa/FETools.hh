@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -150,7 +150,7 @@ the hard steps so that they are not scattered about the code.
 /*! Germ in meant in the mathematical sense, sort of. */
 struct FEFunctionGerm
 {
-  PetscReal val,  //!< Function value.
+  double val,  //!< Function value.
              dx,  //!< Function deriviative with respect to x.
              dy;  //!< Function derivative with respect to y.
 };
@@ -177,28 +177,28 @@ public:
   virtual ~FEShapeQ1() {}
 
   //! Compute values and derivatives of the shape function supported at node 0
-  static void shape0(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  static void shape0(double x, double y, FEFunctionGerm *value)
   {
     value->val = (1-x)*(1-y)/4.;
     value->dx = -(1-y)/4.;
     value->dy = -(1-x)/4;
   }
   //! Compute values and derivatives of the shape function supported at node 1
-  static void shape1(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  static void shape1(double x, double y, FEFunctionGerm *value)
   {
     value->val = (1+x)*(1-y)/4.;
     value->dx =  (1-y)/4.;
     value->dy = -(1+x)/4;
   }
   //! Compute values and derivatives of the shape function supported at node 2
-  static void shape2(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  static void shape2(double x, double y, FEFunctionGerm *value)
   {
     value->val = (1+x)*(1+y)/4.;
     value->dx =  (1+y)/4.;
     value->dy =  (1+x)/4;
   }
   //! Compute values and derivatives of the shape function supported at node 3
-  static void shape3(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  static void shape3(double x, double y, FEFunctionGerm *value)
   {
     value->val = (1-x)*(1+y)/4.;
     value->dx =  -(1+y)/4.;
@@ -206,21 +206,17 @@ public:
   }
 
   //! The number of basis shape functions.
-  static const PetscInt Nk = 4;
+  static const int Nk = 4;
 
   //! A table of function pointers, one for each shape function.
-  typedef void (*ShapeFunctionSpec)(PetscReal,PetscReal,FEFunctionGerm*);
+  typedef void (*ShapeFunctionSpec)(double,double,FEFunctionGerm*);
   static const ShapeFunctionSpec shapeFunction[Nk];
   
   //! Evaluate shape function \a k at (\a x,\a y) with values returned in \a germ.
-  virtual void eval(PetscInt k, PetscReal x, PetscReal y,FEFunctionGerm*germ){
+  virtual void eval(int k, double x, double y,FEFunctionGerm*germ){
     shapeFunction[k](x,y,germ);
   }
 };
-
-
-// Computes the closest integer to maskvalue, with integers of the form n/2 rounded up.
-int PismIntMask(PetscScalar maskvalue);
 
 
 //! The mapping from global to local degrees of freedom.
@@ -232,7 +228,7 @@ element-local degrees of freedom for the purposes of local computation,
 
 An FEDOFMap mediates the transfer between element-local and global degrees of freedom.
 In this very concrete implementation, the global degrees of freedom are either
-scalars (PetscReal's) or vectors (PISMVector2's), one per node in the IceGrid, 
+scalars (double's) or vectors (PISMVector2's), one per node in the IceGrid, 
 and the local degrees of freedom on the element are FEDOFMap::Nk (%i.e. four) scalars or vectors, one 
 for each vertex of the element.
 
@@ -254,34 +250,34 @@ public:
   
   virtual ~FEDOFMap() {};
 
-  virtual void extractLocalDOFs(PetscInt i, PetscInt j, PetscReal const*const*xg, PetscReal *x) const;
-  virtual void extractLocalDOFs(PetscInt i, PetscInt j, PISMVector2 const*const*xg, PISMVector2 *x) const;
+  virtual void extractLocalDOFs(int i, int j, double const*const*xg, double *x) const;
+  virtual void extractLocalDOFs(int i, int j, PISMVector2 const*const*xg, PISMVector2 *x) const;
 
-  virtual void extractLocalDOFs(PetscReal const*const*xg, PetscReal *x) const;
+  virtual void extractLocalDOFs(double const*const*xg, double *x) const;
   virtual void extractLocalDOFs(PISMVector2 const*const*xg, PISMVector2 *x) const;
 
-  virtual void reset(PetscInt i, PetscInt j, const IceGrid &g);
+  virtual void reset(int i, int j, const IceGrid &g);
   
-  virtual void markRowInvalid(PetscInt k);
-  virtual void markColInvalid(PetscInt k);
+  virtual void markRowInvalid(int k);
+  virtual void markColInvalid(int k);
 
-  void localToGlobal(PetscInt k, PetscInt *i, PetscInt *j);
+  void localToGlobal(int k, int *i, int *j);
 
   virtual void addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg);
-  virtual void addLocalResidualBlock(const PetscScalar *y, PetscScalar **yg);
+  virtual void addLocalResidualBlock(const double *y, double **yg);
 
-  virtual PetscErrorCode addLocalJacobianBlock(const PetscReal *K, Mat J);
-  virtual PetscErrorCode setJacobianDiag(PetscInt i, PetscInt j, const PetscReal *K, Mat J);
+  virtual PetscErrorCode addLocalJacobianBlock(const double *K, Mat J);
+  virtual PetscErrorCode setJacobianDiag(int i, int j, const double *K, Mat J);
 
-  static const PetscInt Nk = 4; //<! The number of test functions defined on an element.
+  static const int Nk = 4; //<! The number of test functions defined on an element.
   
 protected:
-  static const PetscInt kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
-  static const PetscInt kIOffset[Nk];
-  static const PetscInt kJOffset[Nk];
+  static const int kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
+  static const int kIOffset[Nk];
+  static const int kJOffset[Nk];
 
   //! Indices of the current element (for updating residual/Jacobian).
-  PetscInt m_i, m_j;
+  int m_i, m_j;
 
   //! Stencils for updating entries of the Jacobian matrix.
   MatStencil m_row[Nk], m_col[Nk]; 
@@ -323,19 +319,19 @@ public:
   FEElementMap(const IceGrid &g);
   
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
-  PetscInt element_count()
+  int element_count()
   {
     return xm*ym;
   }
   
   /*!\brief Convert an element index (\a i,\a j) into a flattened (1-d) array index, with the first
       element (\a i, \a j) to be iterated over corresponding to flattened index 0. */
-  PetscInt flatten(PetscInt i, PetscInt j)
+  int flatten(int i, int j)
   {
     return (i-xs)*ym+(j-ys);
   }
   
-  PetscInt xs, //!< x-coordinate of the first element to loop over.
+  int xs, //!< x-coordinate of the first element to loop over.
            xm, //!< total number of elements to loop over in the x-direction.
            ys, //!< y-coordinate of the first element to loop over.
            ym, //!< total number of elements to loop over in the y-direction. 
@@ -383,47 +379,47 @@ class FEQuadrature
 {
 public:
 
-  static const PetscInt Nq = 4;  //!< Number of quadrature points.
-  static const PetscInt Nk = 4;  //!< Number of test functions on the element.
+  static const int Nq = 4;  //!< Number of quadrature points.
+  static const int Nk = 4;  //!< Number of test functions on the element.
   
   FEQuadrature();
 
-  void init(const IceGrid &g,PetscScalar L=1.); // FIXME Allow a length scale to be specified.
+  void init(const IceGrid &g,double L=1.); // FIXME Allow a length scale to be specified.
 
   const FEFunctionGerm (*testFunctionValues())[Nq];  
-  const FEFunctionGerm *testFunctionValues(PetscInt q);
-  const FEFunctionGerm *testFunctionValues(PetscInt q,PetscInt k);
+  const FEFunctionGerm *testFunctionValues(int q);
+  const FEFunctionGerm *testFunctionValues(int q,int k);
   
 
-  void computeTrialFunctionValues( const PetscReal *x, PetscReal *vals);
-  void computeTrialFunctionValues( const PetscReal *x, PetscReal *vals, PetscReal *dx, PetscReal *dy);
-  void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PetscReal const*const*xg, PetscReal *vals);
-  void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PetscReal const*const*xg, 
-                                   PetscReal *vals, PetscReal *dx, PetscReal *dy);
+  void computeTrialFunctionValues( const double *x, double *vals);
+  void computeTrialFunctionValues( const double *x, double *vals, double *dx, double *dy);
+  void computeTrialFunctionValues( int i, int j, const FEDOFMap &dof, double const*const*xg, double *vals);
+  void computeTrialFunctionValues( int i, int j, const FEDOFMap &dof, double const*const*xg, 
+                                   double *vals, double *dx, double *dy);
 
   void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals);
-  void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PetscReal (*Dv)[3]);  
+  void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, double (*Dv)[3]);  
   void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PISMVector2 *dx, PISMVector2 *dy);  
-  void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
+  void computeTrialFunctionValues( int i, int j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
                                    PISMVector2 *vals);
-  void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
-                                   PISMVector2 *vals, PetscReal (*Dv)[3]);
+  void computeTrialFunctionValues( int i, int j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
+                                   PISMVector2 *vals, double (*Dv)[3]);
 
-  void getWeightedJacobian(PetscReal *jxw);
+  void getWeightedJacobian(double *jxw);
 
   //! The coordinates of the quadrature points on the reference element.
-  static const PetscReal quadPoints[Nq][2];
+  static const double quadPoints[Nq][2];
   //! The weights for quadrature on the reference element.
-  static const PetscReal quadWeights[Nq];
+  static const double quadWeights[Nq];
 
 protected:
 
   //! The Jacobian determinant of the map from the reference element to the physical element.
-  PetscReal m_jacobianDet;
+  double m_jacobianDet;
   //! Shape function values (for each of \a Nq quadrature points, and each of \a Nk shape function )
   FEFunctionGerm m_germs[Nq][Nk];
 
-  PetscReal   m_tmpScalar[Nk];
+  double   m_tmpScalar[Nk];
   PISMVector2 m_tmpVector[Nk];
 };
 
@@ -431,18 +427,18 @@ class DirichletData {
 public:
   DirichletData();
   ~DirichletData();
-  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2V *values, PetscReal weight);
-  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2S *values, PetscReal weight);
+  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2V *values, double weight);
+  PetscErrorCode init( IceModelVec2Int *indices, IceModelVec2S *values, double weight);
   PetscErrorCode init( IceModelVec2Int *indices);
   void constrain( FEDOFMap &dofmap );
   void update( FEDOFMap &dofmap, PISMVector2* x_e );
-  void update( FEDOFMap &dofmap, PetscReal* x_e );
+  void update( FEDOFMap &dofmap, double* x_e );
   void updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e );
-  void updateHomogeneous( FEDOFMap &dofmap, PetscReal* x_e );
+  void updateHomogeneous( FEDOFMap &dofmap, double* x_e );
   void fixResidual( PISMVector2 **x, PISMVector2 **r);
-  void fixResidual( PetscReal **x, PetscReal **r);
+  void fixResidual( double **x, double **r);
   void fixResidualHomogeneous( PISMVector2 **r);
-  void fixResidualHomogeneous( PetscReal **r);
+  void fixResidualHomogeneous( double **r);
   PetscErrorCode fixJacobian2V( Mat J);
   PetscErrorCode fixJacobian2S( Mat J);
   operator bool() {
@@ -451,13 +447,13 @@ public:
   PetscErrorCode finish();
 protected:
   
-  PetscReal m_indices_e[FEQuadrature::Nk];
+  double m_indices_e[FEQuadrature::Nk];
   IceModelVec2Int *m_indices;
   IceModelVec     *m_values;
 
-  PetscReal      **m_pIndices;
+  double      **m_pIndices;
   void           **m_pValues;
-  PetscReal        m_weight;
+  double        m_weight;
 };
 
 #endif/* _FETOOLS_H_*/

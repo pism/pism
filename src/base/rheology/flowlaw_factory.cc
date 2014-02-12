@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 
 IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
                                      const char pre[],
-                                     const NCConfigVariable &conf,
+                                     const PISMConfig &conf,
                                      EnthalpyConverter *my_EC)
   : com(c), config(conf), EC(my_EC) {
   prefix[0] = 0;
@@ -46,50 +46,50 @@ IceFlowLawFactory::~IceFlowLawFactory()
 {
 }
 
-PetscErrorCode IceFlowLawFactory::registerType(string name, IceFlowLawCreator icreate)
+PetscErrorCode IceFlowLawFactory::registerType(std::string name, IceFlowLawCreator icreate)
 {
   flow_laws[name] = icreate;
   return 0;
 }
 
-PetscErrorCode IceFlowLawFactory::removeType(string name) {
+PetscErrorCode IceFlowLawFactory::removeType(std::string name) {
   flow_laws.erase(name);
   return 0;
 }
 
 
 static PetscErrorCode create_isothermal_glen(MPI_Comm com,const char pre[],
-                                             const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                             const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (IsothermalGlenIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_pb(MPI_Comm com,const char pre[],
-                                const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (ThermoGlenIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_gpbld(MPI_Comm com,const char pre[],
-                                   const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                   const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (GPBLDIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_hooke(MPI_Comm com,const char pre[],
-                                   const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                   const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (HookeIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_arr(MPI_Comm com,const char pre[],
-                                 const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                 const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (ThermoGlenArrIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_arrwarm(MPI_Comm com,const char pre[],
-                                     const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                     const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (ThermoGlenArrIceWarm)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_goldsby_kohlstedt(MPI_Comm com,const char pre[],
-                                               const NCConfigVariable &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                               const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (GoldsbyKohlstedtIce)(com, pre, config, EC);  return 0;
 }
 
@@ -109,7 +109,7 @@ PetscErrorCode IceFlowLawFactory::registerAll()
   return 0;
 }
 
-PetscErrorCode IceFlowLawFactory::setType(string type)
+PetscErrorCode IceFlowLawFactory::setType(std::string type)
 {
   IceFlowLawCreator r;
   PetscErrorCode ierr;
@@ -130,14 +130,14 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
 {
   PetscErrorCode ierr;
   bool flag;
-  string my_type_name;
+  std::string my_type_name;
 
   ierr = PetscOptionsBegin(com, prefix, "IceFlowLawFactory options", "IceFlowLaw");CHKERRQ(ierr);
   {
 
     // build the list of choices
-    map<string,IceFlowLawCreator>::iterator j = flow_laws.begin();
-    set<string> choices;
+    std::map<std::string,IceFlowLawCreator>::iterator j = flow_laws.begin();
+    std::set<std::string> choices;
     while (j != flow_laws.end()) {
       choices.insert(j->first);
       ++j;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 class PISMConstantYieldStress : public PISMYieldStress
 {
 public:
-  PISMConstantYieldStress(IceGrid &g, const NCConfigVariable &conf)
+  PISMConstantYieldStress(IceGrid &g, const PISMConfig &conf)
     : PISMYieldStress(g, conf)
   {
     if (allocate() != 0) {
@@ -38,20 +38,19 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:
   IceModelVec2S tauc;
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode regrid();
 };
 
 #endif /* _PISMCONSTANTYIELDSTRESS_H_ */

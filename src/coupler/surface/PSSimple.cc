@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,12 @@
 #include "IceGrid.hh"
 #include "pism_const.hh"
 #include "iceModelVec.hh"
+#include "PISMConfig.hh"
+
 #include <assert.h>
 
 ///// Simple PISM surface model.
-PSSimple::PSSimple(IceGrid &g, const NCConfigVariable &conf)
+PSSimple::PSSimple(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
@@ -40,11 +42,11 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-				   "ice-equivalent surface mass balance (accumulation/ablation) rate");
+                                   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-				   "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                   "land_ice_surface_specific_mass_balance");
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -59,7 +61,7 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
 PetscErrorCode PSSimple::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
   ierr = atmosphere->init(vars); CHKERRQ(ierr);
@@ -74,10 +76,10 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSSimple::update(PetscReal my_t, PetscReal my_dt)
+PetscErrorCode PSSimple::update(double my_t, double my_dt)
 {
-  t = my_t;
-  dt = my_dt;
+  m_t = my_t;
+  m_dt = my_dt;
   if (atmosphere) {
     PetscErrorCode ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
   }
@@ -87,6 +89,7 @@ PetscErrorCode PSSimple::update(PetscReal my_t, PetscReal my_dt)
 
 PetscErrorCode PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr = atmosphere->mean_precipitation(result); CHKERRQ(ierr);
+  ierr = result.scale(config.get("ice_density")); // convert from m/s ice equivalent to kg m-2 s-1
   return 0;
 }
 
@@ -95,7 +98,7 @@ PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSSimple::add_vars_to_output(string keyword, set<string> &result) {
+void PSSimple::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   PISMSurfaceModel::add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -104,7 +107,7 @@ void PSSimple::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PSSimple::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSSimple::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -120,13 +123,13 @@ PetscErrorCode PSSimple::define_variables(set<string> vars, const PIO &nc, PISM_
   return 0;
 }
 
-PetscErrorCode PSSimple::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSSimple::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
@@ -137,8 +140,8 @@ PetscErrorCode PSSimple::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(climatic_mass_balance, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = climatic_mass_balance;
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;

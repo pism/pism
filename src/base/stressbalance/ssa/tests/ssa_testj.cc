@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -38,35 +38,34 @@ static char help[] =
 class SSATestCaseJ: public SSATestCase
 {
 public:
-  SSATestCaseJ( MPI_Comm com, PetscMPIInt rank,
-                 PetscMPIInt size, NCConfigVariable &c ):
-                 SSATestCase(com,rank,size,c)
+  SSATestCaseJ(MPI_Comm com, PISMConfig &c):
+    SSATestCase(com, c)
   { };
 
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j,
+    double x, double y, double *u, double *v );
 
 };
 
-PetscErrorCode SSATestCaseJ::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCaseJ::initializeGrid(int Mx,int My)
 {
 
-  PetscReal halfWidth = 300.0e3;  // 300.0 km half-width
-  PetscReal Lx = halfWidth, Ly = halfWidth;
+  double halfWidth = 300.0e3;  // 300.0 km half-width
+  double Lx = halfWidth, Ly = halfWidth;
   init_shallow_grid(grid,Lx,Ly,Mx,My,XY_PERIODIC);
   return 0;
 }
 
 PetscErrorCode SSATestCaseJ::initializeSSAModel()
 {
-  basal = new IceBasalResistancePlasticLaw(config);
+  config.set_flag("do_pseudo_plastic_till", false);
 
   enthalpyconverter = new EnthalpyConverter(config);
   config.set_string("ssa_flow_law", "isothermal_glen");
@@ -86,8 +85,8 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
-  const PetscScalar nu0 = grid.convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
-  const PetscScalar H0 = 500.;       /* 500 m typical thickness */
+  const double nu0 = grid.convert(30.0, "MPa year", "Pa s"); /* = 9.45e14 Pa s */
+  const double H0 = 500.;       /* 500 m typical thickness */
 
   // Test J has a viscosity that is independent of velocity.  So we force a
   // constant viscosity by settting the strength_extension
@@ -100,10 +99,10 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk1, myu, myv, H;
-      const PetscScalar myx = grid.x[i], myy = grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double junk1, myu, myv, H;
+      const double myx = grid.x[i], myy = grid.y[j];
 
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
@@ -137,11 +136,11 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCaseJ::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
-                                           PetscReal x, PetscReal y,
-                                           PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
+                                           double x, double y,
+                                           double *u, double *v)
 {
-  PetscReal junk1, junk2;
+  double junk1, junk2;
   exactJ(x, y, &junk1, &junk2, u, v);
   return 0;
 }
@@ -150,20 +149,18 @@ PetscErrorCode SSATestCaseJ::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
+  MPI_Comm    com;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -179,14 +176,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=61;
-    PetscInt My=61;
-    string output_file = "ssa_test_j.nc";
+    int Mx=61;
+    int My=61;
+    std::string output_file = "ssa_test_j.nc";
 
-    set<string> ssa_choices;
+    std::set<std::string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    string driver = "fem";
+    std::string driver = "fem";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTJ options", ""); CHKERRQ(ierr);
     {
@@ -208,12 +205,12 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
-    SSATestCaseJ testcase(com,rank,size,config);
+    SSATestCaseJ testcase(com,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("J"); CHKERRQ(ierr);

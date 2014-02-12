@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid &g, const NCConfigVariable &conf, Model* in)
+  PScalarForcing(IceGrid &g, const PISMConfig &conf, Model* in)
     : Mod(g, conf, in), input(in) {}
   virtual ~PScalarForcing()
   {
@@ -37,10 +37,10 @@ public:
       delete offset;
   }
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  virtual PetscErrorCode update(double my_t, double my_dt)
   {
-    Mod::t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
-    Mod::dt = my_dt;
+    Mod::m_t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
+    Mod::m_dt = my_dt;
 
     PetscErrorCode ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
     return 0;
@@ -54,7 +54,7 @@ protected:
 
     IceGrid &g = Mod::grid;
 
-    PetscReal bc_period_years = 0,
+    double bc_period_years = 0,
       bc_reference_year = 0;
 
     ierr = PetscOptionsBegin(g.com, "", "Scalar forcing options", ""); CHKERRQ(ierr);
@@ -75,7 +75,7 @@ protected:
     }
 
     if (bc_period_set) {
-      bc_period = bc_period_years;
+      bc_period = (unsigned int)bc_period_years;
     } else {
       bc_period = 0;
     }
@@ -91,7 +91,7 @@ protected:
                       "  reading %s data from forcing file %s...\n",
                       offset->short_name.c_str(), filename.c_str());
     CHKERRQ(ierr);
-    PIO nc(g.com, g.rank, "netcdf3", g.get_unit_system());
+    PIO nc(g.com, "netcdf3", g.get_unit_system());
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     {
       ierr = offset->read(nc, g.time); CHKERRQ(ierr);
@@ -103,16 +103,16 @@ protected:
   }
 
   PetscErrorCode offset_data(IceModelVec2S &result) {
-    PetscErrorCode ierr = result.shift((*offset)(Mod::t + 0.5*Mod::dt)); CHKERRQ(ierr);
+    PetscErrorCode ierr = result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
     return 0;
   }
 
   Model *input;
   Timeseries *offset;
-  string filename, offset_name, option_prefix;
+  std::string filename, offset_name, option_prefix;
 
   unsigned int bc_period;       // in years
-  PetscReal bc_reference_time;  // in seconds
+  double bc_reference_time;  // in seconds
 };
 
 

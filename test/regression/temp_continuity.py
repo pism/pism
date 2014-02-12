@@ -5,9 +5,10 @@ from os import system
 from numpy import squeeze, abs, diff
 
 try:
-    from netCDF3 import Dataset as NC
-except:
     from netCDF4 import Dataset as NC
+except:
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 pism_path=argv[1]
 mpiexec=argv[2]
@@ -24,7 +25,7 @@ if e != 0:
 deltas = []
 dts = [200, 100]
 for dt in dts:
-    cmd = "%s %s/pisms -eisII B -y 5000 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -no_cold -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (mpiexec, pism_path, dt)
+    cmd = "%s %s/pisms -eisII B -y 5000 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (mpiexec, pism_path, dt)
     stderr.write(cmd + '\n')
 
     e = system(cmd)

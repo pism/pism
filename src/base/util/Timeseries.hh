@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,11 +23,6 @@
 #include <deque>
 
 class IceGrid;
-
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
 
 
 //! \brief A general class for reading and accessing time-series.
@@ -58,7 +53,7 @@ using namespace std;
   ierr = verbPrintf(2, grid.com, 
                     "  reading delta T data from forcing file %s...\n", dT_file);
                     CHKERRQ(ierr);
-	 
+         
   ierr = delta_T->read(dT_file); CHKERRQ(ierr);
   \endcode
 
@@ -76,9 +71,9 @@ using namespace std;
  */
 class Timeseries {
 public:
-  Timeseries(IceGrid * g, string name, string dimension_name);
-  Timeseries(MPI_Comm com, PetscMPIInt rank, PISMUnitSystem units_system,
-             string name, string dimension_name);
+  Timeseries(IceGrid * g, std::string name, std::string dimension_name);
+  Timeseries(MPI_Comm com, PISMUnitSystem units_system,
+             std::string name, std::string dimension_name);
   
   PetscErrorCode read(const PIO &nc, PISMTime *time);
   PetscErrorCode write(const PIO &nc);
@@ -87,26 +82,27 @@ public:
   double average(double t, double dt, unsigned int N);
   PetscErrorCode append(double value, double a, double b);
   int length();
-  PetscErrorCode set_attr(string name, double value);
-  PetscErrorCode set_attr(string name, string value);
-  PetscErrorCode set_units(string units, string glaciological_units);
-  PetscErrorCode set_dimension_units(string units, string glaciological_units);
-  string get_string(string name);
+  PetscErrorCode set_attr(std::string name, double value);
+  PetscErrorCode set_attr(std::string name, std::string value);
+  PetscErrorCode set_units(std::string units, std::string glaciological_units);
+  PetscErrorCode set_dimension_units(std::string units, std::string glaciological_units);
+  std::string get_string(std::string name);
 
-  string short_name;
+  void scale(double scaling_factor);
+
+  std::string short_name;
 protected:
-  MPI_Comm com;
-  PetscMPIInt rank;
+  PISMUnitSystem m_unit_system;
   NCTimeseries dimension, var;
+  MPI_Comm com;
   NCTimeBounds bounds;
   bool use_bounds;
-  PISMUnitSystem m_unit_system;
-
-  vector<double> time;
-  vector<double> values;
-  vector<double> time_bounds;
-  void private_constructor(MPI_Comm com, PetscMPIInt rank,
-                           string name, string dimension_name);
+  std::vector<double> time;
+  std::vector<double> values;
+  std::vector<double> time_bounds;
+private:
+  void private_constructor(MPI_Comm com, std::string name, std::string dimension_name);
+  PetscErrorCode report_range();
 };
 
 //! A class for storing and writing diagnostic time-series.
@@ -165,22 +161,22 @@ protected:
  */
 class DiagnosticTimeseries : public Timeseries {
 public:
-  DiagnosticTimeseries(IceGrid * g, string name, string dimension_name);
+  DiagnosticTimeseries(IceGrid * g, std::string name, std::string dimension_name);
   ~DiagnosticTimeseries();
 
-  PetscErrorCode init(string filename);
+  PetscErrorCode init(std::string filename);
   PetscErrorCode append(double V, double a, double b);
   PetscErrorCode interp(double a, double b);
   void reset();
   PetscErrorCode flush();
 
   size_t buffer_size;
-  string output_filename;
+  std::string output_filename;
   bool rate_of_change;
 
 protected:
   size_t start;
-  deque<double> t, v;
+  std::deque<double> t, v;
   double v_previous;
 };
 

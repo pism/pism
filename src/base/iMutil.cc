@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,22 +103,25 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
 
   snprintf(startstr, sizeof(startstr), 
            "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
-  ierr = stampHistory(string(startstr)); CHKERRQ(ierr);
+  ierr = stampHistory(std::string(startstr)); CHKERRQ(ierr);
 
-  // Create a string with space-separated command-line arguments:
-  string cmdstr = pism_args_string();
-
-  global_attributes.prepend_history(cmdstr);
+  global_attributes.set_string("history",
+                               pism_args_string() + global_attributes.get_string("history"));
 
   return 0;
 }
 
 PetscErrorCode IceModel::update_run_stats() {
   PetscErrorCode ierr;
+
+  MPI_Datatype mpi_type;
+  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
+
   // timing stats
-  PetscLogDouble current_time;
-  PetscReal wall_clock_hours, proc_hours, mypph;
-  ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
+  PetscLogDouble current_time, my_current_time;
+  double wall_clock_hours, proc_hours, mypph;
+  ierr = PISMGetTime(&my_current_time); CHKERRQ(ierr);
+  MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
   wall_clock_hours = (current_time - start_time) / 3600.0;
 
@@ -132,27 +135,23 @@ PetscErrorCode IceModel::update_run_stats() {
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
   PetscLogDouble flops, my_flops;
-  MPI_Datatype mpi_type;
   ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
-  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
 
-  run_stats.set("wall_clock_hours", wall_clock_hours);
-  run_stats.set("processor_hours", proc_hours);
-  run_stats.set("model_years_per_processor_hour", mypph);
-  run_stats.set("PETSc_MFlops", flops * 1.0e-6);
+  run_stats.set_double("wall_clock_hours", wall_clock_hours);
+  run_stats.set_double("processor_hours", proc_hours);
+  run_stats.set_double("model_years_per_processor_hour", mypph);
+  run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
 
-  run_stats.set("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
-  run_stats.set("float_kill_flux_cumulative", float_kill_flux_cumulative);
-  run_stats.set("discharge_flux_cumulative", discharge_flux_cumulative);
-  run_stats.set("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
-  run_stats.set("ocean_kill_flux_cumulative", ocean_kill_flux_cumulative);
-  run_stats.set("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
-  run_stats.set("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
-  run_stats.set("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);
-  run_stats.set("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
-  run_stats.set("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
-  run_stats.set("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
+  run_stats.set_double("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
+  run_stats.set_double("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
+  run_stats.set_double("sub_shelf_ice_flux_cumulative", sub_shelf_ice_flux_cumulative);
+  run_stats.set_double("surface_ice_flux_cumulative", surface_ice_flux_cumulative);
+  run_stats.set_double("sum_divQ_SIA_cumulative", sum_divQ_SIA_cumulative);
+  run_stats.set_double("sum_divQ_SSA_cumulative", sum_divQ_SSA_cumulative);
+  run_stats.set_double("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
+  run_stats.set_double("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
+  run_stats.set_double("discharge_flux_cumulative", discharge_flux_cumulative);
 
   return 0;
 }
@@ -169,10 +168,10 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
   snprintf(str, TEMPORARY_STRING_LENGTH,
     "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
-           run_stats.get("wall_clock_hours"),
-           run_stats.get("processor_hours"),
-           run_stats.get("model_years_per_processor_hour"),
-           run_stats.get("PETSc_MFlops"));
+           run_stats.get_double("wall_clock_hours"),
+           run_stats.get_double("processor_hours"),
+           run_stats.get_double("model_years_per_processor_hour"),
+           run_stats.get_double("PETSc_MFlops"));
 
   ierr = stampHistory(str); CHKERRQ(ierr);
 
@@ -181,9 +180,12 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
 
 //! Get time and user/host name and add it to the given string.
-PetscErrorCode  IceModel::stampHistory(string str) {
+PetscErrorCode  IceModel::stampHistory(std::string str) {
 
-  global_attributes.prepend_history(pism_username_prefix(grid.com) + (str + "\n"));
+  std::string history = pism_username_prefix(grid.com) + (str + "\n");
+
+  global_attributes.set_string("history",
+                               history + global_attributes.get_string("history"));
   
   return 0;
 }
@@ -194,22 +196,22 @@ PetscErrorCode  IceModel::stampHistory(string str) {
  */
 PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;
-  PetscReal H_min, H_max, dz_top;
-  vector<double> new_zlevels;
+  double H_min, H_max, dz_top;
+  std::vector<double> new_zlevels;
   const int old_Mz = grid.Mz;
-  int N = 0; 			// the number of new levels
+  int N = 0;                    // the number of new levels
 
-  ierr = vH.range(H_min, H_max); CHKERRQ(ierr);
+  ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
   if (grid.Lz >= H_max) return 0;
 
   if (grid.initial_Mz == 0)
     grid.initial_Mz = grid.Mz;
   else if (grid.Mz > grid.initial_Mz * 2) {
     ierr = PetscPrintf(grid.com,
-		       "\n"
-		       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
-		       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
-		       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
+                       "\n"
+                       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
+                       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
+                       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -236,10 +238,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "\n"
-		    "PISM WARNING: max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)...\n"
-		    "              Adding %d new grid levels %7.4f m apart...\n",
-		    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
+                    "\n"
+                    "PISM WARNING: max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)...\n"
+                    "              Adding %d new grid levels %7.4f m apart...\n",
+                    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
 
   // Create new zlevels and zblevels:
   new_zlevels = grid.zlevels;
@@ -256,7 +258,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // PISMSurfaceModel.
 
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
@@ -264,19 +266,19 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 
   // for extending the variables Enth3 and vWork3d vertically, put into
   //   vWork2d[0] the enthalpy of the air
-  PetscReal p_air = EC->getPressureFromDepth(0.0);
+  double p_air = EC->getPressureFromDepth(0.0);
   ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
-  ierr = artm.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_air,
+  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
                                    vWork2d[0](i,j));
          CHKERRQ(ierr);
     }
   }
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
   ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
   // Model state 3D vectors:
@@ -286,7 +288,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
-    ierr =    T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
+    ierr =    T3.extend_vertically(old_Mz, ice_surface_temp); CHKERRQ(ierr);
   }
 
   // deal with 3D age conditionally
@@ -307,8 +309,8 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     snapshots_file_is_ready = false;
 
     ierr = verbPrintf(2, grid.com,
-		      "NOTE: Further snapshots will be saved to '%s'...\n",
-		      snapshots_filename.c_str()); CHKERRQ(ierr);
+                      "NOTE: Further snapshots will be saved to '%s'...\n",
+                      snapshots_filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -319,8 +321,4 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 /*! Base class version does absolutely nothing. */
 PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   return 0;
-}
-
-bool IceModel::issounding(const PetscInt i, const PetscInt j){ 
-  return ((i == id) && (j == jd));
 }

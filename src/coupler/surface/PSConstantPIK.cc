@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 PISM Authors
+// Copyright (C) 2008-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PSConstantPIK::PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+PSConstantPIK::PSConstantPIK(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf)
 {
   PetscErrorCode ierr = allocate_PSConstantPIK(); CHKERRCONTINUE(ierr);
@@ -42,15 +42,15 @@ void PSConstantPIK::attach_atmosphere_model(PISMAtmosphereModel *input)
 PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
   PetscErrorCode ierr;
 
-  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("climate_state",
-                                         "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                         "m s-1",
+                                         "constant-in-time surface mass balance (accumulation/ablation) rate",
+                                         "kg m-2 s-1",
                                          "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
 
-  ierr = ice_surface_temp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
+  ierr = ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = ice_surface_temp.set_attrs("climate_state",
                                     "constant-in-time ice temperature at the ice surface",
                                     "K", ""); CHKERRQ(ierr);
@@ -60,10 +60,10 @@ PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
 
 PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  bool regrid = false;
+  bool do_regrid = false;
   int start = -1;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing the constant-in-time surface processes model PSConstantPIK.\n"
@@ -78,16 +78,16 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
 
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate from file
   ierr = verbPrintf(2, grid.com,
-    "    reading ice-equivalent surface mass balance rate 'climatic_mass_balance' from %s ... \n",
+    "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr);
-  if (regrid) {
-    ierr = climatic_mass_balance.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+  if (do_regrid) {
+    ierr = climatic_mass_balance.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = climatic_mass_balance.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = climatic_mass_balance.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
@@ -97,22 +97,22 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
+PetscErrorCode PSConstantPIK::update(double my_t, double my_dt)
 {
   PetscErrorCode ierr;
 
-  if ((fabs(my_t - t) < 1e-12) &&
-      (fabs(my_dt - dt) < 1e-12))
+  if ((fabs(my_t - m_t) < 1e-12) &&
+      (fabs(my_dt - m_dt) < 1e-12))
     return 0;
 
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
   ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
     }
   }
@@ -123,8 +123,8 @@ PetscErrorCode PSConstantPIK::update(PetscReal my_t, PetscReal my_dt)
   return 0;
 }
 
-void PSConstantPIK::get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
-                                    map<string, PISMTSDiagnostic*> &/*ts_dict*/)
+void PSConstantPIK::get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
+                                    std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/)
 {
   // empty (does not have an atmosphere model)
 }
@@ -145,13 +145,13 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSConstantPIK::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PSConstantPIK::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("climatic_mass_balance");
   result.insert("ice_surface_temp");
   // does not call atmosphere->add_vars_to_output().
 }
 
-PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSConstantPIK::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -167,7 +167,7 @@ PetscErrorCode PSConstantPIK::define_variables(set<string> vars, const PIO &nc, 
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSConstantPIK::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,11 +64,7 @@ struct DegreeDayFactors {
 */
 class LocalMassBalance {
 public:
-  LocalMassBalance(const NCConfigVariable &myconfig)
-    : config(myconfig), m_unit_system(config.get_unit_system()),
-      seconds_per_day(86400) {
-    // empty
-  }
+  LocalMassBalance(const PISMConfig &myconfig);
   virtual ~LocalMassBalance() {}
 
   virtual int get_timeseries_length(double dt) = 0;
@@ -103,7 +99,7 @@ public:
                     double &cumulative_smb) = 0;
 
 protected:
-  const NCConfigVariable& config;
+  const PISMConfig& config;
   PISMUnitSystem m_unit_system;
   const double seconds_per_day;
 };
@@ -118,7 +114,7 @@ protected:
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(const NCConfigVariable& myconfig);
+  PDDMassBalance(const PISMConfig& myconfig);
   virtual ~PDDMassBalance() {}
 
   virtual int get_timeseries_length(double dt);
@@ -162,7 +158,7 @@ protected:
 class PDDrandMassBalance : public PDDMassBalance {
 
 public:
-  PDDrandMassBalance(const NCConfigVariable& myconfig,
+  PDDrandMassBalance(const PISMConfig& myconfig,
                      bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
@@ -192,7 +188,7 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &myconfig);
+  FaustoGrevePDDObject(IceGrid &g, const PISMConfig &myconfig);
   virtual ~FaustoGrevePDDObject() {}
 
   virtual PetscErrorCode update_temp_mj(IceModelVec2S *surfelev, IceModelVec2S *lat, IceModelVec2S *lon);
@@ -205,7 +201,7 @@ public:
 
 protected:
   IceGrid &grid;
-  const NCConfigVariable &config;
+  const PISMConfig &config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
   IceModelVec2S temp_mj;

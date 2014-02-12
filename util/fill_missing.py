@@ -171,7 +171,8 @@ if __name__ == "__main__":
     try:
         from netCDF4 import Dataset as NC
     except:
-        from netCDF3 import Dataset as NC
+        print "netCDF4 is not installed!"
+        sys.exit(1)
 
     parser = OptionParser()
 

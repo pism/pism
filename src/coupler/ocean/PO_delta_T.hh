@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,17 +27,17 @@
 class PO_delta_T : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
-  PO_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in);
+  PO_delta_T(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
   virtual ~PO_delta_T();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:

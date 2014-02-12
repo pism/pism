@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,43 +30,30 @@
 class SIA_Sliding : public ShallowStressBalance
 {
 public:
-  SIA_Sliding(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              EnthalpyConverter &e, const NCConfigVariable &conf)
-    : ShallowStressBalance(g, b, e, conf)
-  {
-    verification_mode = false;
-    eisII_experiment = "";
-    allocate();
-  }
+  SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
 
-  virtual ~SIA_Sliding()
-  {
-    if (flow_law != NULL) {
-      delete flow_law;
-      flow_law = NULL;
-    }
-  }
+  virtual ~SIA_Sliding();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
     dict["taud"] = new SSB_taud(this, grid, *variables);
     dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
   }
@@ -80,10 +67,10 @@ protected:
   virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscScalar basalVelocitySIA(PetscScalar /*x*/, PetscScalar /*y*/,
-                                       PetscScalar H, PetscScalar T,
-                                       PetscScalar /*alpha*/, PetscScalar mu,
-                                       PetscScalar min_T) const;
+  virtual double basalVelocitySIA(double /*x*/, double /*y*/,
+                                       double H, double T,
+                                       double /*alpha*/, double mu,
+                                       double min_T) const;
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *surface, *bed, work_2d;
   IceModelVec3 *enthalpy;
@@ -91,7 +78,7 @@ protected:
   double standard_gravity;
 
   bool verification_mode;
-  string eisII_experiment;
+  std::string eisII_experiment;
 };
 
 #endif /* _SIA_SLIDING_H_ */

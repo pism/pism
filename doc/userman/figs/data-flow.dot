@@ -5,7 +5,7 @@ digraph dataflow {
     
     subgraph cluster_atmosphere {
 	labeljust=l;
-	label="Atmosphere";
+	label="Atmosphere [optional]";
 	
 	atm [label="Atmosphere model"];
 	subgraph cluster_mod_a {

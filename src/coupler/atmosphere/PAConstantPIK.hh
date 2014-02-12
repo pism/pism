@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,23 +24,23 @@
 
 class PAConstantPIK : public PISMAtmosphereModel {
 public:
-  PAConstantPIK(IceGrid &g, const NCConfigVariable &conf);
+  PAConstantPIK(IceGrid &g, const PISMConfig &conf);
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
-  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode temp_time_series(int i, int j, double *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
 protected:
   IceModelVec2S *usurf, *lat;
-  string input_file;
+  std::string input_file;
   IceModelVec2S precipitation, air_temp;
   NCSpatialVariable air_temp_snapshot;
 private:

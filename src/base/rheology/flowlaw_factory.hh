@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,11 +23,6 @@
 #include <map>
 #include <string>
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
 #define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
@@ -37,27 +32,27 @@ using namespace std;
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
 typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const char[],
-                                           const NCConfigVariable &, EnthalpyConverter*, IceFlowLaw **);
+                                           const PISMConfig &, EnthalpyConverter*, IceFlowLaw **);
 
 class IceFlowLawFactory {
 public:
   IceFlowLawFactory(MPI_Comm, const char prefix[],
-                    const NCConfigVariable &conf,
+                    const PISMConfig &conf,
                     EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
-  PetscErrorCode setType(string name);
+  PetscErrorCode setType(std::string name);
   PetscErrorCode setFromOptions();
-  PetscErrorCode registerType(string name, IceFlowLawCreator);
-  PetscErrorCode removeType(string name);
+  PetscErrorCode registerType(std::string name, IceFlowLawCreator);
+  PetscErrorCode removeType(std::string name);
   PetscErrorCode create(IceFlowLaw **);
 private:
   PetscErrorCode registerAll();
 private:
   MPI_Comm com;
   char prefix[256];
-  string type_name;
-  map<string, IceFlowLawCreator> flow_laws;
-  const NCConfigVariable &config;
+  std::string type_name;
+  std::map<std::string, IceFlowLawCreator> flow_laws;
+  const PISMConfig &config;
   EnthalpyConverter *EC;
 };
 

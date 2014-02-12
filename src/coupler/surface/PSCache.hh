@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,19 +25,19 @@
 
 class PSCache : public PSModifier {
 public:
-  PSCache(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  PSCache(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
   virtual ~PSCache();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
   virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   IceModelVec2S m_mass_flux, m_temperature, m_liquid_water_fraction,
     m_mass_held_in_surface_layer, m_surface_layer_thickness;

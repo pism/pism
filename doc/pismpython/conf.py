@@ -59,7 +59,7 @@ rst_prolog = """
 breathe_projects = { "browser_inverse": "@CMAKE_BINARY_DIR@/doc/browser/inverse/xml/",
                      "browser_util": "@CMAKE_BINARY_DIR@/doc/browser/util/xml/"}
 
-breathe_default_project = "browser_base"
+breathe_default_project = "browser"
 breathe_domain_by_extension = {
         "hh" : "cpp",
         }

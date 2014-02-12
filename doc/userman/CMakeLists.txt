@@ -6,21 +6,22 @@ configure_file(../pism-macros.tex pism-macros.tex @ONLY)
 # Copy the bibliography file (note the change in the file name)
 configure_file (../ice_bib.bib ice-bib.bib COPYONLY)
 
-# The list of all the source files:
+# The list of all the source files for the User's Manual, with section number:
 set (latex_sources
-  ross.tex
-  getting-started.tex
-  manual.tex
-  highlevelview.tex
-  modeling-computational.tex
-  modeling-dynamics.tex
-  modeling-marine.tex
-  practical-usage.tex
-  simplified-geometry.tex
-  storglaciaren.tex
-  verification.tex
-  storglaciaren.tex
-  jako.tex
+  manual.tex                   # preamble and structure
+  getting-started.tex          # 2
+  highlevelview.tex            # 3
+  init-boot.tex                # 4
+  modeling-computational.tex   # 5
+  modeling-dynamics.tex        # 6
+  modeling-subglacier.tex      # 7
+  modeling-marine.tex          # 8
+  practical-usage.tex          # 9
+  verification.tex             # 10
+  simplified-geometry.tex      # 11
+  validation.tex               # 12
+  storglaciaren.tex            # 13
+  jako.tex                     # 14
   )
 
 # Find all the figures in figs/

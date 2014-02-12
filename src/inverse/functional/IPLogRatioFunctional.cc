@@ -1,4 +1,4 @@
-// Copyright (C) 2013  David Maxwell
+// Copyright (C) 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,13 +25,13 @@ J(x)=1
 \f]
 if  \f$|x| = \mathtt{scale}|u_{\rm obs}| \f$ everywhere.
 */
-PetscErrorCode IPLogRatioFunctional::normalize(PetscReal scale) {
+PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
   PetscErrorCode   ierr;
 
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **w_a;
-  PetscReal w = 1.;
+  double **w_a;
+  double w = 1.;
 
   PISMVector2 **u_obs_a;
   ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
@@ -39,18 +39,18 @@ PetscErrorCode IPLogRatioFunctional::normalize(PetscReal scale) {
   if(m_weights){
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
   }
-  for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+  for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       if( m_weights ) {
         w = w_a[i][j];
       }
 
       PISMVector2 &u_obs_ij = u_obs_a[i][j];
-      PetscReal obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
-      PetscReal modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
+      double modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
       
-      PetscReal v = log( modelMagSq/obsMagSq);
+      double v = log( modelMagSq/obsMagSq);
       value += w*v*v;
     }
   }
@@ -64,14 +64,14 @@ PetscErrorCode IPLogRatioFunctional::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **w_a;
-  PetscReal w = 1.;
+  double **w_a;
+  double w = 1.;
 
   PISMVector2 **x_a;
   ierr = x.get_array(x_a); CHKERRQ(ierr);
@@ -81,18 +81,18 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT
   if(m_weights){
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
   }
-  for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+  for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       if( m_weights ) {
         w = w_a[i][j];
       }
       PISMVector2 &x_ij = x_a[i][j];
       PISMVector2 &u_obs_ij = u_obs_a[i][j];
       PISMVector2 u_model_ij = x_ij+u_obs_ij;
-      PetscReal obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
-      PetscReal modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
-      PetscReal v = log( modelMagSq/obsMagSq);
+      double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
+      double v = log( modelMagSq/obsMagSq);
       value += w*v*v;
     }
   }
@@ -115,8 +115,8 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
 
   gradient.set(0);
 
-  PetscReal **w_a;
-  PetscReal w = 1.;
+  double **w_a;
+  double w = 1.;
 
   PISMVector2 **x_a;
   ierr = x.get_array(x_a); CHKERRQ(ierr);
@@ -129,8 +129,8 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
   if(m_weights){
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
   }
-  for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+  for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       if( m_weights ) {
         w = w_a[i][j];
       }
@@ -138,10 +138,10 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
       PISMVector2 &u_obs_ij = u_obs_a[i][j];
       PISMVector2 u_model_ij = x_ij+u_obs_ij;
 
-      PetscReal obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
-      PetscReal modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
-      PetscReal v = log( modelMagSq/obsMagSq);
-      PetscReal dJdw =  2*w*v/modelMagSq;
+      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+      double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
+      double v = log( modelMagSq/obsMagSq);
+      double dJdw =  2*w*v/modelMagSq;
 
       gradient_a[i][j].u = dJdw*2*u_model_ij.u/m_normalization;
       gradient_a[i][j].v = dJdw*2*u_model_ij.v/m_normalization;

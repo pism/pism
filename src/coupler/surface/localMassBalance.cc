@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -23,11 +23,17 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <assert.h>
 #include "pism_const.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "localMassBalance.hh"
 #include "IceGrid.hh"
 
-PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig)
+LocalMassBalance::LocalMassBalance(const PISMConfig &myconfig)
+  : config(myconfig), m_unit_system(config.get_unit_system()),
+    seconds_per_day(86400) {
+  // empty
+}
+
+PDDMassBalance::PDDMassBalance(const PISMConfig& myconfig)
   : LocalMassBalance(myconfig) {
   precip_as_snow     = config.get_flag("interpret_precip_as_snow");
   Tmin               = config.get("air_temp_all_precip_as_snow");
@@ -209,7 +215,7 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(const NCConfigVariable& myconfig,
+PDDrandMassBalance::PDDrandMassBalance(const PISMConfig& myconfig,
                                        bool repeatable)
   : PDDMassBalance(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
@@ -266,22 +272,22 @@ void PDDrandMassBalance::get_PDDs(double pddStdDev, double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const NCConfigVariable &myconfig)
+FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const PISMConfig &myconfig)
   : grid(g), config(myconfig) {
 
   beta_ice_w  = config.get("pdd_fausto_beta_ice_w");
   beta_snow_w = config.get("pdd_fausto_beta_snow_w");
 
-  T_c	      = config.get("pdd_fausto_T_c");
-  T_w	      = config.get("pdd_fausto_T_w");
+  T_c         = config.get("pdd_fausto_T_c");
+  T_w         = config.get("pdd_fausto_T_w");
   beta_ice_c  = config.get("pdd_fausto_beta_ice_c");
   beta_snow_c = config.get("pdd_fausto_beta_snow_c");
 
-  fresh_water_density	     = config.get("fresh_water_density");
-  ice_density		     = config.get("ice_density");
+  fresh_water_density        = config.get("fresh_water_density");
+  ice_density                = config.get("ice_density");
   pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
 
-  temp_mj.create(grid, "temp_mj_faustogreve", false);
+  temp_mj.create(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   temp_mj.set_attrs("internal",
                     "mean July air temp from Fausto et al (2009) parameterization",
                     "K", "");
@@ -340,21 +346,22 @@ PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
     c_mj     = config.get("snow_temp_fausto_c_mj"),      // K (degN)-1
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
 
-  PetscScalar **lat_degN, **lon_degE, **h;
-  ierr = surfelev->get_array(h);   CHKERRQ(ierr);
-  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
-  ierr = lon->get_array(lon_degE); CHKERRQ(ierr);
+  IceModelVec2S &h = *surfelev, &lat_degN = *lat, &lon_degE = *lon;
+
+  ierr = h.begin_access();   CHKERRQ(ierr);
+  ierr = lat_degN.begin_access(); CHKERRQ(ierr);
+  ierr = lon_degE.begin_access(); CHKERRQ(ierr);
   ierr = temp_mj.begin_access();  CHKERRQ(ierr);
 
   for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      temp_mj(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j] + kappa_mj * (-lon_degE[i][j]);
+      temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
     }
   }
 
-  ierr = surfelev->end_access();   CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = lon->end_access(); CHKERRQ(ierr);
+  ierr = h.end_access();   CHKERRQ(ierr);
+  ierr = lat_degN.end_access(); CHKERRQ(ierr);
+  ierr = lon_degE.end_access(); CHKERRQ(ierr);
   ierr = temp_mj.end_access();  CHKERRQ(ierr);
 
   return 0;

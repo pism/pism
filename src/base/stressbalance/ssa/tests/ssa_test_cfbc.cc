@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -50,9 +50,8 @@ static double u_exact(double V0, double H0, double C, double x)
 class SSATestCaseCFBC: public SSATestCase
 {
 public:
-  SSATestCaseCFBC( MPI_Comm com, PetscMPIInt rank,
-                 PetscMPIInt size, NCConfigVariable &c )
-    : SSATestCase(com, rank, size, c)
+  SSATestCaseCFBC(MPI_Comm com, PISMConfig &c)
+    : SSATestCase(com, c)
   {
     PISMUnitSystem s = c.get_unit_system();
     V0 = s.convert(300.0, "m/year", "m/second");
@@ -60,26 +59,49 @@ public:
     C  = 2.45e-18;
   };
 
+  virtual PetscErrorCode write_nuH(std::string filename);
+
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx, PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx, int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j,
+    double x, double y, double *u, double *v );
 
   double V0, //!< grounding line vertically-averaged velocity
     H0,      //!< grounding line thickness (meters)
     C;       //!< "typical constant ice parameter"
 };
 
-PetscErrorCode SSATestCaseCFBC::initializeGrid(PetscInt Mx, PetscInt My)
+PetscErrorCode SSATestCaseCFBC::write_nuH(std::string filename) {
+  PetscErrorCode ierr;
+
+  SSAFD *ssafd = dynamic_cast<SSAFD*>(ssa);
+  if (ssafd == NULL) {
+    PetscPrintf(grid.com, "ssa_test_cfbc error: have to use the SSAFD solver.\n");
+    PISMEnd();
+  }
+
+  SSAFD_nuH nuH(ssafd, grid, vars);
+
+  IceModelVec* result;
+  ierr = nuH.compute(result); CHKERRQ(ierr);
+
+  ierr = result->write(filename); CHKERRQ(ierr);
+
+  delete result;
+
+  return 0;
+}
+
+PetscErrorCode SSATestCaseCFBC::initializeGrid(int Mx, int My)
 {
 
-  PetscReal halfWidth = 250.0e3;  // 500.0 km length
-  PetscReal Lx = halfWidth, Ly = halfWidth;
+  double halfWidth = 250.0e3;  // 500.0 km length
+  double Lx = halfWidth, Ly = halfWidth;
   init_shallow_grid(grid, Lx, Ly, Mx, My, Y_PERIODIC);
   return 0;
 }
@@ -87,16 +109,12 @@ PetscErrorCode SSATestCaseCFBC::initializeGrid(PetscInt Mx, PetscInt My)
 PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 {
 
-  config.set("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+  config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
   config.set_flag("compute_surf_grad_inward_ssa", false);
   config.set_flag("calving_front_stress_boundary_condition", true);
   config.set_string("ssa_flow_law", "isothermal_glen");
   config.set_string("output_variable_order", "zyx");
 
-  if (config.get_flag("do_pseudo_plastic_till") == true)
-    basal = new IceBasalResistancePseudoPlasticLaw(config);
-  else
-    basal = new IceBasalResistancePlasticLaw(config);
 
   enthalpyconverter = new EnthalpyConverter(config);
 
@@ -121,9 +139,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar x = grid.x[i];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double x = grid.x[i];
 
       if (i != grid.Mx - 1) {
         thickness(i, j) = H_exact(V0, H0, C, x + grid.Lx);
@@ -169,9 +187,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::exactSolution(PetscInt i, PetscInt /*j*/,
-                                              PetscReal x, PetscReal /*y*/,
-                                              PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseCFBC::exactSolution(int i, int /*j*/,
+                                              double x, double /*y*/,
+                                              double *u, double *v)
 {
   if (i != grid.Mx - 1) {
     *u = u_exact(V0, H0, C, x + grid.Lx);
@@ -188,19 +206,17 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -216,9 +232,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=61;
-    PetscInt My=61;
-    string output_file = "ssa_test_cfbc.nc";
+    int Mx=61;
+    int My=61;
+    std::string output_file = "ssa_test_cfbc.nc";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTCFBC options", ""); CHKERRQ(ierr);
     {
@@ -238,11 +254,12 @@ int main(int argc, char *argv[]) {
 
     SSAFactory ssafactory = SSAFDFactory;
 
-    SSATestCaseCFBC testcase(com,rank,size,config);
+    SSATestCaseCFBC testcase(com, config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("V"); CHKERRQ(ierr);
     ierr = testcase.write(output_file);
+    ierr = testcase.write_nuH(output_file); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

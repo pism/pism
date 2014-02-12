@@ -1,4 +1,4 @@
-// Copyright (C) 2013  David Maxwell
+// Copyright (C) 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -33,26 +33,26 @@ The term \f$X_i+U_i\f$ appears because the argument is expected to already be in
 \f$V_i-U_i\f$, where \f$v=[V_i]\f$ is some approximation of \f$[U_i]\f$ and hence the 
 integrand has the form \f$\log(|V_i|/|U_i|)\f$.
 
-The normalization constant \f$c_N\f$ is determined implicitly by ::normalize.
+The normalization constant \f$c_N\f$ is determined implicitly by normalize().
 */
 class IPLogRatioFunctional : public IPFunctional<IceModelVec2V> {
 public:
-  IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed, PetscReal eps,
+  IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed, double eps,
                        IceModelVec2S *weights=NULL) :
   IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), 
   m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRatioFunctional() {};
 
-  virtual PetscErrorCode normalize(PetscReal scale);
+  virtual PetscErrorCode normalize(double scale);
 
-  virtual PetscErrorCode valueAt(IceModelVec2V &x, PetscReal *OUTPUT);
+  virtual PetscErrorCode valueAt(IceModelVec2V &x, double *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 protected:
   IceModelVec2V &m_u_observed;
   IceModelVec2S *m_weights;
-  PetscReal m_normalization;
-  PetscReal m_eps;
+  double m_normalization;
+  double m_eps;
 
 };
 

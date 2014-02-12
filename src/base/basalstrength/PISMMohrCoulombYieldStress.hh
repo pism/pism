@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,42 +29,35 @@
 class PISMMohrCoulombYieldStress : public PISMYieldStress
 {
 public:
-  PISMMohrCoulombYieldStress(IceGrid &g, const NCConfigVariable &conf, PISMHydrology *hydro)
+  PISMMohrCoulombYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro)
     : PISMYieldStress(g, conf)
   {
     bed_topography = NULL;
     mask = NULL;
-
     hydrology = hydro;
-
     if (allocate() != 0) {
       PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMYieldStress constructor.\n");
       PISMEnd();
     }
-
-    ice_density = config.get("ice_density");
-    standard_gravity = config.get("standard_gravity");
-    till_c_0 = config.get("till_c_0", "kPa", "Pa");
   }
 
   virtual ~PISMMohrCoulombYieldStress() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 
 protected:
-  PetscReal standard_gravity, ice_density, till_c_0;
-  IceModelVec2S till_phi, tauc, bwp, Po;
+  IceModelVec2S till_phi, tauc, tillwat, Po;
   IceModelVec2S *bed_topography;
   IceModelVec2Int *mask;
   PISMVars *variables;
@@ -73,7 +66,6 @@ protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode topg_to_phi();
   virtual PetscErrorCode tauc_to_phi();
-  virtual PetscErrorCode regrid();
 };
 
 #endif /* _PISMMOHRCOULOMBYIELDSTRESS_H_ */

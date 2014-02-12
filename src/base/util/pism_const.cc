@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,10 +35,10 @@
 
 //! \brief PISM verbosity level; determines how much gets printed to the
 //! standard out.
-static PetscInt verbosityLevel;
+static int verbosityLevel;
 
 //! \brief Set the PISM verbosity level.
-PetscErrorCode setVerbosityLevel(PetscInt level) {
+PetscErrorCode setVerbosityLevel(int level) {
   if ((level < 0) || (level > 5)) {
     SETERRQ(PETSC_COMM_SELF, 1,"verbosity level invalid");
   }
@@ -47,7 +47,7 @@ PetscErrorCode setVerbosityLevel(PetscInt level) {
 }
 
 //! \brief Get the verbosity level.
-PetscInt getVerbosityLevel() {
+int getVerbosityLevel() {
   return verbosityLevel;
 }
 
@@ -75,7 +75,7 @@ PetscErrorCode verbPrintf(const int thresh,
   size_t         len;
   char           *buffer,*sub1,*sub2;
   const char     *nformat;
-  PetscReal      value;
+  double      value;
 
   extern FILE *petsc_history;
 
@@ -151,7 +151,7 @@ void endPrintRank() {
 
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
-bool ends_with(string str, string suffix) {
+bool ends_with(std::string str, std::string suffix) {
   if (str.rfind(suffix) + suffix.size() == str.size())
     return true;
 
@@ -160,16 +160,16 @@ bool ends_with(string str, string suffix) {
 
 
 //! Checks if a vector of doubles is strictly increasing.
-bool is_increasing(const vector<double> &a) {
+bool is_increasing(const std::vector<double> &a) {
   int len = (int)a.size();
-  for (PetscInt k = 0; k < len-1; k++) {
+  for (int k = 0; k < len-1; k++) {
     if (a[k] >= a[k+1])  return false;
   }
   return true;
 }
 
 //! Creates a time-stamp used for the history NetCDF attribute.
-string pism_timestamp() {
+std::string pism_timestamp() {
   time_t now;
   tm tm_now;
   char date_str[50];
@@ -179,11 +179,11 @@ string pism_timestamp() {
   //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
   strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
 
-  return string(date_str);
+  return std::string(date_str);
 }
 
 //! Creates a string with the user name, hostname and the time-stamp (for history strings).
-string pism_username_prefix(MPI_Comm com) {
+std::string pism_username_prefix(MPI_Comm com) {
   PetscErrorCode ierr;
 
   char username[50];
@@ -195,10 +195,10 @@ string pism_username_prefix(MPI_Comm com) {
   if (ierr != 0)
     hostname[0] = '\0';
   
-  ostringstream message;
+  std::ostringstream message;
   message << username << "@" << hostname << " " << pism_timestamp() << ": ";
 
-  string result = message.str();
+  std::string result = message.str();
   int length = result.size();
   MPI_Bcast(&length, 1, MPI_INT, 0, com);
 
@@ -210,19 +210,19 @@ string pism_username_prefix(MPI_Comm com) {
 
 //! \brief Uses argc and argv to create the string with current PISM
 //! command-line arguments.
-string pism_args_string() {
-  PetscInt argc;
+std::string pism_args_string() {
+  int argc;
   char **argv;
   PetscGetArgs(&argc, &argv);
 
-  string cmdstr, argument;
+  std::string cmdstr, argument;
   for (int j = 0; j < argc; j++) {
     argument = argv[j];
 
     // enclose arguments containing spaces with double quotes:
-    if (argument.find(" ") != string::npos) argument = "\"" + argument + "\"";
+    if (argument.find(" ") != std::string::npos) argument = "\"" + argument + "\"";
 
-    cmdstr += string(" ") + argument;
+    cmdstr += std::string(" ") + argument;
   }
   cmdstr += "\n";
 
@@ -236,17 +236,17 @@ string pism_args_string() {
  * "name + separator + more stuff + .nc", then removes the string after the
  * separator.
  */
-string pism_filename_add_suffix(string filename, string separator, string suffix) {
-  string basename = filename, result;
+std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix) {
+  std::string basename = filename, result;
 
   // find where the separator begins:
-  string::size_type j = basename.rfind(separator);
-  if (j == string::npos) {
+  std::string::size_type j = basename.rfind(separator);
+  if (j == std::string::npos) {
     j = basename.rfind(".nc");
   }
 
   // if the separator was not found, find the .nc suffix:
-  if (j == string::npos) {
+  if (j == std::string::npos) {
     j = basename.size();
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,14 +24,14 @@
 class PISMNC4_Serial : public PISMNC4File
 {
 public:
-  PISMNC4_Serial(MPI_Comm c, int r, unsigned int compression_level)
-    : PISMNC4File(c, r, compression_level) {}
+  PISMNC4_Serial(MPI_Comm c, unsigned int compression_level)
+    : PISMNC4File(c, compression_level) {}
   virtual ~PISMNC4_Serial() {}
 
   // open/create/close
-  virtual int open(string filename, int mode);
+  virtual int open(std::string filename, int mode);
 
-  virtual int create(string filename);
+  virtual int create(std::string filename);
 };
 
 

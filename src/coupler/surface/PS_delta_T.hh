@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,16 +26,16 @@
 class PS_delta_T : public PScalarForcing<PISMSurfaceModel,PSModifier>
 {
 public:
-  PS_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in);
+  PS_delta_T(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
   virtual ~PS_delta_T();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
 private:

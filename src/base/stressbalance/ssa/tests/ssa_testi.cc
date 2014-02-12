@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -38,37 +38,36 @@ static char help[] =
 class SSATestCaseI: public SSATestCase
 {
 public:
-  SSATestCaseI( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c ): 
-                 SSATestCase(com,rank,size,c)
+  SSATestCaseI(MPI_Comm com, PISMConfig &c): 
+                 SSATestCase(com,c)
   { };
 
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j, 
+    double x, double y, double *u, double *v );
 
 };
 
-const PetscScalar m_schoof = 10; // (pure number)
-const PetscScalar L_schoof = 40e3; // meters
-const PetscScalar aspect_schoof = 0.05; // (pure)
-const PetscScalar H0_schoof = aspect_schoof * L_schoof; 
+const double m_schoof = 10; // (pure number)
+const double L_schoof = 40e3; // meters
+const double aspect_schoof = 0.05; // (pure)
+const double H0_schoof = aspect_schoof * L_schoof; 
                                        // = 2000 m THICKNESS
-const PetscScalar B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
+const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
                                      // given on p. 239 of Schoof; why so big?
-const PetscScalar p_schoof = 4.0/3.0; // = 1 + 1/n
+const double p_schoof = 4.0/3.0; // = 1 + 1/n
 
 
-PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
-  PetscReal Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  PetscReal Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
+  double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
+  double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -76,12 +75,12 @@ PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCaseI::initializeSSAModel()
 {
-  basal = new IceBasalResistancePlasticLaw(config);
-
   enthalpyconverter = new EnthalpyConverter(config);
 
+  config.set_flag("do_pseudo_plastic_till", false);
+
   config.set_string("ssa_flow_law", "isothermal_glen");
-  config.set("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
+  config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
 
   return 0;
 }
@@ -89,7 +88,6 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
 PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  PetscScalar    **ph, **pbed;
 
   ierr = bc_mask.set(0); CHKERRQ(ierr);
   ierr = thickness.set(H0_schoof); CHKERRQ(ierr);
@@ -98,21 +96,19 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set("epsilon_ssa", 0.0);  // don't use this lower bound
+  config.set_double("epsilon_ssa", 0.0);  // don't use this lower bound
 
-  PetscScalar **ptauc;
+  ierr = tauc.begin_access(); CHKERRQ(ierr);
 
-  ierr = tauc.get_array(ptauc); CHKERRQ(ierr);
-
-  PetscScalar standard_gravity = config.get("standard_gravity"),
+  double standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar y = grid.y[j];
-      const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice_rho * standard_gravity * H0_schoof * tan(theta);
-      ptauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double y = grid.y[j];
+      const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
+      const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
+      tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }
   ierr = tauc.end_access(); CHKERRQ(ierr);
@@ -122,15 +118,15 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = surface.get_array(ph); CHKERRQ(ierr);
-  ierr = bed.get_array(pbed); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk, myu, myv;
-      const PetscScalar myx = grid.x[i], myy=grid.y[j];
+  ierr = surface.begin_access(); CHKERRQ(ierr);
+  ierr = bed.begin_access(); CHKERRQ(ierr);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double junk, myu, myv;
+      const double myx = grid.x[i], myy=grid.y[j];
       // eval exact solution; will only use exact vels if at edge
-      exactI(m_schoof, myx, myy, &(pbed[i][j]), &junk, &myu, &myv); 
-      ph[i][j] = pbed[i][j] + H0_schoof;
+      exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
+      surface(i,j) = bed(i,j) + H0_schoof;
 
       bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
       if (edge) {
@@ -161,11 +157,11 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 }
 
 
-PetscErrorCode SSATestCaseI::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
-                                           PetscReal x, PetscReal y,
-                                           PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseI::exactSolution(int /*i*/, int /*j*/, 
+                                           double x, double y,
+                                           double *u, double *v)
 {
-  PetscReal junk1, junk2;
+  double junk1, junk2;
   exactI(m_schoof, x,y, &junk1, &junk2,u,v); 
   return 0;
 }
@@ -174,20 +170,18 @@ PetscErrorCode SSATestCaseI::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
+  MPI_Comm    com;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -203,14 +197,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=11;
-    PetscInt My=61;
-    string output_file = "ssa_test_i.nc";
+    int Mx=11;
+    int My=61;
+    std::string output_file = "ssa_test_i.nc";
 
-    set<string> ssa_choices;
+    std::set<std::string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    string driver = "fem";
+    std::string driver = "fem";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTI options", ""); CHKERRQ(ierr);
     {
@@ -232,12 +226,12 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
-    SSATestCaseI testcase(com,rank,size,config);
+    SSATestCaseI testcase(com, config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("I"); CHKERRQ(ierr);

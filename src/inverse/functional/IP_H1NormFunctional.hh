@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -34,23 +34,23 @@ by the constructor argument \a dirichletLocations.
 */
 class IP_H1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_H1NormFunctional2S(IceGrid &grid, 
-      PetscReal cL2, ///< The constant \f$c_{L^2}\f$.
-      PetscReal cH1, ///< The constant \f$c_{H^1}\f$.
+  IP_H1NormFunctional2S(IceGrid &grid, ///< computational grid
+      double cL2, ///< The constant \f$c_{L^2}\f$.
+      double cH1, ///< The constant \f$c_{H^1}\f$.
       IceModelVec2Int *dirichletLocations=NULL ///< Nodes where the function will be set to zero prior to integration.
       ) :
       IPInnerProductFunctional<IceModelVec2S>(grid),
       m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations) {};
   virtual ~IP_H1NormFunctional2S() {};
   
-  virtual PetscErrorCode valueAt(IceModelVec2S &x, PetscReal *OUTPUT);
-  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT);
+  virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
+  virtual PetscErrorCode dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
   virtual PetscErrorCode gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
   virtual PetscErrorCode assemble_form(Mat J);
 
 protected:
 
-  PetscReal m_cL2, m_cH1;
+  double m_cL2, m_cH1;
   IceModelVec2Int *m_dirichletIndices;
 
 private:

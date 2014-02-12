@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,10 +19,11 @@
 #ifndef __PISMDiagnostic_hh
 #define __PISMDiagnostic_hh
 
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 #include "Timeseries.hh"        // inline code
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 class IceModelVec;
 class PISMVars;
@@ -96,10 +97,10 @@ public:
   }
 
   //! \brief A method for setting common variable attributes.
-  PetscErrorCode set_attrs(string my_long_name,
-                           string my_standard_name,
-                           string my_units,
-                           string my_glaciological_units,
+  PetscErrorCode set_attrs(std::string my_long_name,
+                           std::string my_standard_name,
+                           std::string my_units,
+                           std::string my_glaciological_units,
                            int N = 0) {
     PetscErrorCode ierr;
 
@@ -124,7 +125,7 @@ protected:
   IceGrid &grid;                //!< the grid
   int dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
   PISM_IO_Type output_datatype;      //!< data type to use in the file
-  vector<NCSpatialVariable> vars; //!< metadata corresponding to NetCDF variables
+  std::vector<NCSpatialVariable> vars; //!< metadata corresponding to NetCDF variables
 };
 
 //! A template derived from PISMDiagnostic, adding a "Model".
@@ -150,9 +151,9 @@ public:
     delete ts;
   }
 
-  virtual PetscErrorCode update(PetscReal a, PetscReal b) = 0;
+  virtual PetscErrorCode update(double a, double b) = 0;
 
-  virtual PetscErrorCode save(PetscReal a, PetscReal b) {
+  virtual PetscErrorCode save(double a, double b) {
     if (ts)
       return ts->interp(a, b);
 
@@ -166,13 +167,13 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode init(string filename) {
+  virtual PetscErrorCode init(std::string filename) {
     if (ts)
       return ts->init(filename);
     return 0;
   }
 
-  virtual string get_string(string name) {
+  virtual std::string get_string(std::string name) {
     return ts->get_string(name);
   }
 
@@ -193,7 +194,7 @@ public:
   }
 protected:
   Model *model;
-  string time_units, time_dimension_name;
+  std::string time_units, time_dimension_name;
 };
 
 #endif /* __PISMDiagnostic_hh */

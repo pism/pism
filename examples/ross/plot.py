@@ -8,7 +8,8 @@ from argparse import ArgumentParser
 try:
     import netCDF4 as NC
 except:
-    import netCDF3 as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 # Set up the option parser
 parser = ArgumentParser()
@@ -20,6 +21,7 @@ args = options.FILE
 
 if len(args) == 1:
     pism_output = args[0]
+    plotname=pism_output.split('.')[0]
 else:
     print("wrong number of arguments, 1 expected, %i given" % int(len(args)))
     import sys
@@ -72,8 +74,8 @@ plt.quiver(x[::s], y[::s], u[::s,::s], v[::s,::s], color='black')
 plt.xticks([])
 plt.yticks([])
 plt.title(r"Ross ice velocity (m/year); white=observed, black=model")
-print "saving figure 'rossquiver.png'"
-plt.savefig('rossquiver.png', dpi=300)
+plt.savefig(plotname+'_quiver.png', dpi=300)
+print("saving figure %s" % plotname+'_quiver.png')
 
 # do the scatter plot
 magnitude = np.sqrt(np.abs(u[::s,::s])**2 + np.abs(v[::s,::s])**2)
@@ -88,5 +90,5 @@ plt.axis(xmin=0, xmax=max_velocity, ymin=0, ymax=max_velocity)
 plt.xlabel('modeled speed')
 plt.ylabel('observed speed')
 plt.title("Observed versus modeled speed (m/year), at points in quiver plot")
-print "saving figure 'rossscatter.png'"
-plt.savefig('rossscatter.png', dpi=300)
+plt.savefig(plotname+'_scatter.png', dpi=300)
+print("saving figure %s" % plotname+'_scatter.png')

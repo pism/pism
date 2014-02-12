@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,34 +20,34 @@
 #define _POCONSTANT_H_
 
 #include "PISMOcean.hh"
-#include "NCSpatialVariable.hh"
+#include "NCVariable.hh"
 
 //! \brief A class implementing a constant (in terms of the ocean inputs) ocean
 //! model. Uses configuration parameters for the sea level elevation and
 //! sub-shelf heat flux.
 class POConstant : public PISMOceanModel {
 public:
-  POConstant(IceGrid &g, const NCConfigVariable &conf);
+  POConstant(IceGrid &g, const PISMConfig &conf);
   virtual ~POConstant() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
-  { t = my_t; dt = my_dt; return 0; } // do nothing
+  virtual PetscErrorCode update(double my_t, double my_dt)
+  { m_t = my_t; m_dt = my_dt; return 0; } // do nothing
 
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode sea_level_elevation(double &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
-  IceModelVec2S *ice_thickness;	// is not owned by this class
+  IceModelVec2S *ice_thickness; // is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;
   bool meltrate_set;
-  PetscReal mymeltrate;
+  double mymeltrate;
 private:
   PetscErrorCode allocate_POConstant();
 };

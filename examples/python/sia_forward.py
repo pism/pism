@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012 David Maxwell
+# Copyright (C) 2011, 2012, 2014 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -52,7 +52,7 @@ if is_regional:
 grid = PISM.Context().newgrid()
 PISM.model.initGridFromFile(grid,input_file,periodicity);
 
-basal = PISM.IceBasalResistancePlasticLaw(config)
+config.set_flag("do_pseudo_plastic_till", False)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() >3:
@@ -60,7 +60,7 @@ if PISM.getVerbosityLevel() >3:
 
 
 modeldata = PISM.model.ModelData(grid)
-modeldata.setPhysics(basal,enthalpyconverter)
+modeldata.setPhysics(enthalpyconverter)
 
 vecs = modeldata.vecs;
 
@@ -99,7 +99,7 @@ else:
 vel_sia =   PISM.sia.computeSIASurfaceVelocities(modeldata,siasolver=solver)
 
 
-pio = PISM.PIO(grid.com,grid.rank,"netcdf3")
+pio = PISM.PIO(grid.com,"netcdf3")
 pio.open(output_file,PISM.NC_WRITE,False)
 pio.def_time(grid.config.get_string("time_dimension_name"),
              grid.config.get_string("calendar"), grid.time.units())

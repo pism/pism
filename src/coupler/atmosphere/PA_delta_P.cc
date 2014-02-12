@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PA_delta_P.hh"
+#include "PISMConfig.hh"
 
-PA_delta_P::PA_delta_P(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+PA_delta_P::PA_delta_P(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
@@ -38,7 +39,7 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m / second", "m / year");
   offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "precipitation offsets");
+  offset->set_attr("long_name", "precipitation offsets, units of ice-equivalent thickness");
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -47,7 +48,7 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "near-surface air temperature");
+  precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
@@ -62,7 +63,7 @@ PA_delta_P::~PA_delta_P()
 PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -74,7 +75,7 @@ PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_delta_P::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PA_delta_P::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
@@ -94,7 +95,7 @@ PetscErrorCode PA_delta_P::mean_precipitation(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PA_delta_P::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PA_delta_P::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
   
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
@@ -103,7 +104,7 @@ PetscErrorCode PA_delta_P::precip_time_series(int i, int j, PetscReal *result) {
   return 0;
 }
 
-void PA_delta_P::add_vars_to_output(string keyword, set<string> &result) {
+void PA_delta_P::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -113,7 +114,7 @@ void PA_delta_P::add_vars_to_output(string keyword, set<string> &result) {
 }
 
 
-PetscErrorCode PA_delta_P::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PA_delta_P::define_variables(std::set<std::string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -133,13 +134,13 @@ PetscErrorCode PA_delta_P::define_variables(set<string> vars, const PIO &nc,
 }
 
 
-PetscErrorCode PA_delta_P::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PA_delta_P::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(air_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = air_temp;
 
     ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
 
@@ -150,8 +151,8 @@ PetscErrorCode PA_delta_P::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(precipitation, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = precipitation;
 
     ierr = mean_precipitation(tmp); CHKERRQ(ierr);
 

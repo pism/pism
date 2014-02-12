@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,9 +31,9 @@ Most viewers are updated by this routine, but some other are updated elsewhere.
  */
 PetscErrorCode IceModel::update_viewers() {
   PetscErrorCode ierr;
-  set<string>::iterator i;
+  std::set<std::string>::iterator i;
 
-  PetscInt viewer_size = (PetscInt)config.get("viewer_size");
+  unsigned int viewer_size = (unsigned int)config.get("viewer_size");
 
   // map-plane viewers
   for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
@@ -56,7 +56,7 @@ PetscErrorCode IceModel::update_viewers() {
     if (v == NULL)
       continue;
 
-    int dims = v->get_ndims();
+    unsigned int dims = v->get_ndims();
 
     if (dims != 2) {
       ierr = PetscPrintf(grid.com,
@@ -66,7 +66,7 @@ PetscErrorCode IceModel::update_viewers() {
     }
 
     if (v->get_dof() == 1) {    // scalar fields
-      string name = v->string_attr("short_name");
+      std::string name = v->metadata().get_string("short_name");
       PetscViewer viewer = viewers[name];
 
       if (viewer == PETSC_NULL) {
@@ -80,8 +80,8 @@ PetscErrorCode IceModel::update_viewers() {
       ierr = v2d->view(viewer, PETSC_NULL); CHKERRQ(ierr);
 
     } else if (v->get_dof() == 2) { // vector fields
-      string name_1 = v->string_attr("short_name", 0),
-        name_2 = v->string_attr("short_name", 1);
+      std::string name_1 = v->metadata().get_string("short_name"),
+        name_2 = v->metadata(1).get_string("short_name");
       PetscViewer v1 = viewers[name_1],
         v2 = viewers[name_2];
 
@@ -104,51 +104,6 @@ PetscErrorCode IceModel::update_viewers() {
     if (de_allocate) delete v;
   }
 
-  // sounding viewers:
-  for (i = sounding_viewers.begin(); i != sounding_viewers.end(); ++i) {
-    IceModelVec *v = variables.get(*i);
-    bool de_allocate = false;
-
-    // if not found, try to compute:
-    if (v == NULL) {
-      de_allocate = true;
-      PISMDiagnostic *diag = diagnostics[*i];
-
-      if (diag) {
-        ierr = diag->compute(v); CHKERRQ(ierr);
-      } else {
-        v = NULL;
-      }
-    }
-
-    // if still not found, ignore
-    if (v == NULL)
-      continue;
-
-    int dims = v->get_ndims();
-
-    // if it's a 2D variable, stop
-    if (dims == 2) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: soundings of 2D quantities are not supported.\n");
-      PISMEnd();
-    }
-
-    string name = v->string_attr("short_name");
-    PetscViewer viewer = viewers[name];
-
-    if (viewer == PETSC_NULL) {
-      ierr = grid.create_viewer(viewer_size, name, viewers[name]); CHKERRQ(ierr);
-      viewer = viewers[name];
-    }
-
-    if (dims == 3) {
-	IceModelVec3D *v3d = dynamic_cast<IceModelVec3D*>(v);
-	if (v3d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3d->view_sounding(id, jd, viewer); CHKERRQ(ierr);
-    }
-
-    if (de_allocate) delete v;
-  } // sounding viewers
   return 0;
 }
 
@@ -159,36 +114,26 @@ PetscErrorCode IceModel::init_viewers() {
   char tmp[TEMPORARY_STRING_LENGTH];
 
   ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
-			   "Options controlling run-time diagnostic viewers",
-			   PETSC_NULL); CHKERRQ(ierr);
+                           "Options controlling run-time diagnostic viewers",
+                           PETSC_NULL); CHKERRQ(ierr);
 
-  PetscInt viewer_size = (PetscInt)config.get("viewer_size");
+  int viewer_size = (int)config.get("viewer_size");
   ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
-			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
+                         "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 
   if (flag)
-    config.set("viewer_size", viewer_size);
+    config.set_double("viewer_size", viewer_size);
 
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",
-			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
-  string var_name;
+                            tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+  std::string var_name;
   if (flag) {
-    istringstream arg(tmp);
+    std::istringstream arg(tmp);
 
     while (getline(arg, var_name, ',')) {
       map_viewers.insert(var_name);
     }
-  }
-
-  // sounding viewers:
-  ierr = PetscOptionsString("-view_sounding", "specifies the comma-separated list of sounding viewers", "", "empty",
-			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
-  if (flag) {
-    istringstream arg(tmp);
-
-    while (getline(arg, var_name, ','))
-      sounding_viewers.insert(var_name);
   }
 
   // Done with the options.

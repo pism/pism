@@ -7,7 +7,8 @@ import sys
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF3 import Dataset as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 class Plotter:
     def __init__(self, save_figures, nc, file_format):

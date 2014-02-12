@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 try:
-    from netCDF3 import Dataset
-except:
     from netCDF4 import Dataset
+except:
+    print "netCDF4 is not installed!"
+    sys.exit(1)
+
 import numpy as np
 import pylab as plt
 
@@ -11,7 +13,7 @@ from optparse import OptionParser
 
 parser = OptionParser()
 parser.usage = "usage: %prog [options] FILE"
-parser.description = "A script to compare PISM flowline velocities with full Stokes solution."
+parser.description = "A script to compare PISM flowline velocities with Stokes solution."
 
 (options, args) = parser.parse_args()
 
@@ -88,7 +90,7 @@ plt.setp(axUpperLeft, xticks=[])
 if (plot_acab == True):
     acab = np.squeeze(nc.variables["climatic_mass_balance"][:])
     axUpperRight = axUpperLeft.twinx()
-    axUpperRight.plot(x,acab,color='#984EA3',lw=1.5)
+    axUpperRight.plot(x, acab / 910.0, color='#984EA3',lw=1.5)
     axUpperRight.axes.set_ylabel("mass balance [m a$^{-1}$]")
     axUpperRight.axes.set_xlim(-250, 3500)
 axLower.plot(x,b,color='black', lw = 1.5)

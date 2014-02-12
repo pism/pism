@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,8 +28,8 @@
 #endif
 #include <netcdf.h>
 
-PISMNCFile::PISMNCFile(MPI_Comm c, int r)
-  : rank(r), com(c) {
+PISMNCFile::PISMNCFile(MPI_Comm c)
+  : com(c) {
   ncid = -1;
   define_mode = false;
   m_xs = m_xm = m_ys = m_ym = -1;
@@ -39,12 +39,12 @@ PISMNCFile::~PISMNCFile() {
   // empty
 }
 
-string PISMNCFile::get_filename() const {
+std::string PISMNCFile::get_filename() const {
   return m_filename;
 }
 
-int PISMNCFile::put_att_double(string variable_name, string att_name, PISM_IO_Type nctype, double value) const {
-  vector<double> tmp(1);
+int PISMNCFile::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type nctype, double value) const {
+  std::vector<double> tmp(1);
   tmp[0] = value;
   return put_att_double(variable_name, att_name, nctype, tmp);
 }
@@ -68,8 +68,9 @@ void PISMNCFile::set_local_extent(unsigned int xs, unsigned int xm,
 /*!
  * Note: only processor 0 does the renaming.
  */
-int PISMNCFile::move_if_exists(string file_to_move, int rank_to_use) {
-  int stat;
+int PISMNCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
+  int stat, rank = 0;
+  MPI_Comm_rank(com, &rank);
 
   if (rank == rank_to_use) {
     bool exists = false;
@@ -83,7 +84,7 @@ int PISMNCFile::move_if_exists(string file_to_move, int rank_to_use) {
     }
 
     if (exists) {
-      string tmp = file_to_move + "~";
+      std::string tmp = file_to_move + "~";
 
       stat = rename(file_to_move.c_str(), tmp.c_str());
       if (stat != 0) {

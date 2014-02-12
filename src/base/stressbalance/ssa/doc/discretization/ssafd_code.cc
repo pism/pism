@@ -1,7 +1,7 @@
-const PetscReal dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
+const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
 
 /* Coefficients of the discretization of the first equation; u first, then v. */
-PetscReal eq1[] = {
+double eq1[] = {
  0,  -c_n/dy2,  0, 
  -4*c_w/dx2,  (c_s+c_n)/dy2+(4*c_w+4*c_e)/dx2,  -4*c_e/dx2, 
  0,  -c_s/dy2,  0, 
@@ -11,7 +11,7 @@ PetscReal eq1[] = {
 };
 
 /* Coefficients of the discretization of the second equation; u first, then v. */
-PetscReal eq2[] = {
+double eq2[] = {
  c_w/d4+c_n/d2,  (c_w-c_e)/d4,  -c_e/d4-c_n/d2, 
  (c_n-c_s)/d2,  0,  (c_s-c_n)/d2, 
  -c_w/d4-c_s/d2,  (c_e-c_w)/d4,  c_e/d4+c_s/d2, 
@@ -21,7 +21,7 @@ PetscReal eq2[] = {
 };
 
 /* i indices */
-const PetscInt I[] = {
+const int I[] = {
  i-1,  i,  i+1, 
  i-1,  i,  i+1, 
  i-1,  i,  i+1, 
@@ -31,7 +31,7 @@ const PetscInt I[] = {
 };
 
 /* j indices */
-const PetscInt J[] = {
+const int J[] = {
  j+1,  j+1,  j+1, 
  j,  j,  j, 
  j-1,  j-1,  j-1, 
@@ -41,7 +41,7 @@ const PetscInt J[] = {
 };
 
 /* component indices */
-const PetscInt C[] = {
+const int C[] = {
  0,  0,  0, 
  0,  0,  0, 
  0,  0,  0, 

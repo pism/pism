@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@
 #include "inverse/functional/IPLogRelativeFunctional.hh"
 #include "inverse/functional/IPLogRatioFunctional.hh"
 #include "inverse/IP_SSATaucTikhonovGNSolver.hh"
-#if (PISM_USE_TAO==1)
+#ifdef PISM_USE_TAO
 #include "inverse/TaoUtil.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 #include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
@@ -83,22 +83,10 @@
 %include std_vector.i
 %include std_set.i
 
+#ifdef PISM_USE_TR1
 #define SWIG_SHARED_PTR_SUBNAMESPACE tr1
+#endif
 %include <std_shared_ptr.i>
-
-// Tell SWIG that PetscReal and a double are the same thing so that we can reuse
-// the DoubleVector template declared above.  I don't know why SWIG doesn't figure this out.
-// Without the typedef below, if I add %template(PestsRealVector) vector<PetscReal>; then
-// the SWIG wrappers contain two attempts to wrap a vector<double>.  If I leave out the 
-// PetscRealVector template and the typedef, then SWIG doesn't do the type conversion between
-// Python lists and vector<PetscReal> arguments.   The typedef below is the WRONG thing to do
-// because the actual definition of a PetscReal (from petscmath.h) depends on a compiler flag.
-// So this needs to get fixed properly at some point.  Do I have access to the Petsc compiler flags?
-// If so, maybe just copy the code block from petscmath.h here for the PetscReal typedefs.
-#define PETSC_USE_REAL_DOUBLE
-typedef double PetscReal; // YUCK.
-typedef int PetscInt; // YUCK.
-typedef int NormType; // YUCK.
 
 // SWIG seems convinced that it might need to convert a PetscScalar into a 
 // complex number at some point, even though it never will.  It issues undesired
@@ -113,12 +101,10 @@ typedef int NormType; // YUCK.
 }
 
 
-namespace std {
-   %template(IntVector) vector<PetscInt>;
-   %template(DoubleVector) vector<PetscReal>;
-   %template(StringVector) vector<string>;
-   %template(StringSet) set<string>;
-}
+%template(IntVector) std::vector<int>;
+%template(DoubleVector) std::vector<double>;
+%template(StringVector) std::vector<std::string>;
+%template(StringSet) std::set<std::string>;
 
 // Why did I include this?
 %include "cstring.i"
@@ -199,7 +185,7 @@ namespace std {
     %append_output(SWIG_From(int)(*$1));
 };
 
-%typemap(in, numinputs=0,noblock=1) string& result (string temp) {
+%typemap(in, numinputs=0,noblock=1) std::string& result (std::string temp) {
     $1 = &temp;
 }
 
@@ -212,10 +198,10 @@ namespace std {
 }
 %apply std::string &OUTPUT { std::string &result}
 
-%typemap(in, numinputs=0,noblock=1) vector<PetscInt> & OUTPUT (vector<PetscInt> temp) {
+%typemap(in, numinputs=0,noblock=1) std::vector<int> & OUTPUT (std::vector<int> temp) {
     $1 = &temp;
 }
-%typemap(argout,noblock=1) vector<PetscInt> & OUTPUT
+%typemap(argout,noblock=1) std::vector<int> & OUTPUT
 {
     int len;
     len = $1->size();
@@ -227,10 +213,10 @@ namespace std {
      }
 }
 
-%typemap(in, numinputs=0,noblock=1) vector<PetscReal> & OUTPUT (vector<PetscReal> temp) {
+%typemap(in, numinputs=0,noblock=1) std::vector<double> & OUTPUT (std::vector<double> temp) {
     $1 = &temp;
 }
-%typemap(argout,noblock=1) vector<PetscReal> & OUTPUT
+%typemap(argout,noblock=1) std::vector<double> & OUTPUT
 {
     int len;
     len = $1->size();
@@ -242,31 +228,35 @@ namespace std {
      }
 }
 
-%shared_ptr(TerminationReason)
-%typemap(in, numinputs=0, noblock=1) std::tr1::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
+%typemap(in, numinputs=0, noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
   $1 = &temp;
 }
-%typemap(argout,noblock=1) std::tr1::shared_ptr<TerminationReason> & OUTPUT
+%typemap(argout,noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT
 {
   {
-    std::tr1::shared_ptr<  TerminationReason > *smartresult = new std::tr1::shared_ptr<  TerminationReason >(*$1);
+    SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  TerminationReason > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  TerminationReason >(*$1);
     %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
   }
 };
-%apply std::tr1::shared_ptr<TerminationReason> & OUTPUT { std::tr1::shared_ptr<TerminationReason> &reason };
+%apply SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT { SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> &reason };
 
-%apply vector<PetscInt> & OUTPUT {vector<PetscInt> &result};
-%apply vector<PetscReal> & OUTPUT {vector<PetscReal> &result};
-%apply vector<string> & OUTPUT {vector<string> & result};
+%shared_ptr(TerminationReason)
+%shared_ptr(KSPTerminationReason)
+%shared_ptr(SNESTerminationReason)
+%shared_ptr(GenericTerminationReason)
+%include "TerminationReason.hh"
+
+
+%apply std::vector<int> & OUTPUT {std::vector<int> &result};
+%apply std::vector<double> & OUTPUT {std::vector<double> &result};
+%apply std::vector<std::string> & OUTPUT {std::vector<std::string> & result};
  
 %apply int &OUTPUT {int &result};
 %apply int *OUTPUT {int *out_mask};
 
-%apply PetscInt & OUTPUT {PetscInt & result};
-%apply PetscReal & OUTPUT {PetscReal & result};
-%apply PetscScalar & OUTPUT {PetscScalar & result};
-%apply PetscReal & OUTPUT {PetscReal & out};
-%apply double & OUTPUT {double &};
+%apply double & OUTPUT {double & result};
+%apply double & OUTPUT {double & out};
+%apply double * OUTPUT {double * result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
@@ -311,61 +301,45 @@ namespace std {
   }
 }
 
-// There was a collision between the two IceModelVec::regrid methods:
-//  regrid(string filename,bool critical,start=0)
-//  regrid(string filename, PetscScalar default)
-//
-//  Calls in the python bindings to var.regrid(filename,True)
-//  were actually calling the second version, i.e. with a default value
-//  of true, and verification of critical variables was not done.
-//  
-//  We avoid the collision by renaming all three regrids (there are three
-//  because of SWIG's implementation of the default variable) 
-//
-//  And we add a python method regrid that can be called via
-//  var.regrid(filename, critical=True).  
-//
-//  To access the version of regrid taking a default value, call
-//  var.regrid_with_default(filename, value)
-%rename(regrid_with_default) IceModelVec::regrid(string, PetscScalar);
-%rename(regrid_with_critical) IceModelVec::regrid(string, bool);
-%rename(regrid_with_critical_and_start) IceModelVec::regrid(string, bool, int);
-%rename(regrid_with_default_pio) IceModelVec::regrid(const PIO&, PetscScalar);
-%rename(regrid_with_critical_pio) IceModelVec::regrid(const PIO&, bool);
-%rename(regrid_with_critical_and_start_pio) IceModelVec::regrid(const PIO&, bool, int);
+%rename(_regrid) IceModelVec::regrid;
 %extend IceModelVec
 {
   %pythoncode {
-    def regrid(self,filename,critical=False,start=0):
-      self.regrid_with_critical_and_start(filename,critical,start)
+    def regrid(self,filename,critical=False,default_value=0.0):
+      if critical == True:
+        flag = CRITICAL
+      else:
+        flag = OPTIONAL
+      self._regrid(filename, flag, default_value)
   }
 }
 
 // We also make the same fix for IceModelVec2's.
-%rename(regrid_with_default) IceModelVec2::regrid(string, PetscScalar);
-%rename(regrid_with_critical) IceModelVec2::regrid(string, bool);
-%rename(regrid_with_critical_and_start) IceModelVec2::regrid(string, bool, int);
-%rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
-%rename(read_attributes_with_pio) IceModelVec::read_attributes(const PIO&, int);
+%rename(_regrid) IceModelVec2::regrid;
 %extend IceModelVec2
 {
   %pythoncode {
-    def regrid(self,filename,critical=False,start=0):
-      self.regrid_with_critical_and_start(filename,critical,start)
+    def regrid(self,filename,critical=False,default_value=0.0):
+      if critical == True:
+        flag = CRITICAL
+      else:
+        flag = OPTIONAL
+      self._regrid(filename, flag, default_value)
   }
 }
 
+%rename(read_with_pio) IceModelVec2::read(const PIO&, unsigned int const);
 
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
 %extend IceModelVec2S
 {
-    PetscReal getitem(int i, int j)
+    double getitem(int i, int j)
     {
         return (*($self))(i,j);
     }
 
-    void setitem(int i, int j, PetscReal val)
+    void setitem(int i, int j, double val)
     {
         (*($self))(i,j) = val;
     }
@@ -384,7 +358,7 @@ namespace std {
 %rename(__mult__) PISMVector2::operator*;
 %rename(__add__) PISMVector2::operator+;
 %ignore PISMVector2::operator=;
-%ignore operator*(const PetscScalar &a, const PISMVector2 &v1);
+%ignore operator*(const double &a, const PISMVector2 &v1);
 %extend PISMVector2
 {
   %pythoncode
@@ -432,12 +406,12 @@ namespace std {
 %extend IceModelVec3D
 {
 
-  PetscReal getitem(int i, int j, int k)
+  double getitem(int i, int j, int k)
   {
       return (*($self))(i,j,k);
   }
 
-  void setitem(int i, int j, int k, PetscReal val)
+  void setitem(int i, int j, int k, double val)
   {
       (*($self))(i,j,k) = val;
   }
@@ -465,7 +439,7 @@ namespace std {
 // thing, and the warning is wrong.  Trying to reproduce the warning
 // in a simple test setting failed.  This should get cleaned up, and
 // a bug reported to SWIG if needed.  For now, we do the following hack.
-%rename(write_as_type) IceModelVec2::write(string,PISM_IO_Type);
+%rename(write_as_type) IceModelVec2::write(std::string,PISM_IO_Type);
 
 %extend Timeseries
 {
@@ -556,20 +530,9 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %immutable PISM_Revision;
 %immutable PISM_DefaultConfigFile;
 
-// Deal with 'print' being a python keyword
-%extend NCVariable
-{
-    %rename(printinfo) print;
-}
-
-%extend grid_info
-{
-    %rename(printinfo) print;
-}
-
 
 %include "stressbalance/ssa/SNESProblem.hh"
-%template(SNESScalarProblem) SNESProblem<1,PetscScalar>;
+%template(SNESScalarProblem) SNESProblem<1,double>;
 %template(SNESVectorProblem) SNESProblem<2,PISMVector2>;
 
 // Now the header files for the PISM source code we want to wrap.
@@ -581,6 +544,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %feature("valuewrapper") NCVariable;
 %feature("valuewrapper") NCSpatialVariable;
 %include "NCVariable.hh"
+%include "PISMConfig.hh"
 %include "pism_const.hh"
 %include "pism_options.hh"
 %include "Timeseries.hh"
@@ -605,11 +569,6 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "flowlaw_factory.hh"
 
 %include "iceModel.hh"
-
-%shared_ptr(KSPTerminationReason)
-%shared_ptr(SNESTerminationReason)
-%shared_ptr(GenericTerminationReason)
-%include "TerminationReason.hh"
 
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
@@ -644,7 +603,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "inverse/IP_SSAHardavForwardProblem.hh"
 %include "inverse/IP_SSATaucTikhonovGNSolver.hh"
 
-#if (PISM_USE_TAO==1)
+#ifdef PISM_USE_TAO
 %ignore TaoConvergedReasons;
 %shared_ptr(TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
@@ -692,7 +651,8 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %template(IP_SSAHardavTaoTikhonovSolver)
           TaoBasicSolver<IP_SSAHardavTaoTikhonovProblem>;
 
-#endif
+#endif  /* end of ifdef PISM_USE_TAO */
+
 
 // Tell SWIG that input arguments of type double * are to be treated as return values,
 // and that int return values are to be error checked as per a PetscErrorCode.

@@ -24,11 +24,9 @@ file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_c
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
-option (Pism_USE_FFTW "Use FFTW in the bed deformation code." ON)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." ON)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
-option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
 option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
@@ -36,6 +34,7 @@ option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
 option (Pism_LOOK_FOR_LIBRARIES "Specifies whether PISM should look for libraries. (Disable this on Crays.)" ON)
+option (Pism_USE_TR1 "Use the std::tr1 namespace to access shared pointer definitions. Disable to get shared pointers from the std namespace (might be needed with some compilers)." ON)
 
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 pism_use_rpath()
@@ -106,13 +105,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     CACHE PATH "Python extension module installation directory." )
 endif ()
 
-# Build the Lingle-Clark bed deformation model if we have FFTW-3.
-if (Pism_USE_FFTW)
-  add_definitions (-DPISM_USE_FFTW=1)
-else()
-  add_definitions (-DPISM_USE_FFTW=0)
-endif()
-
 # Do cell area computations the right way if we have proj.4.
 if (Pism_USE_PROJ4)
   add_definitions (-DPISM_USE_PROJ4=1)
@@ -123,12 +115,15 @@ endif()
 # Use TAO in inverse solvers.
 if (Pism_USE_TAO)
   add_definitions (-DPISM_USE_TAO=1)
-else()
-  add_definitions (-DPISM_USE_TAO=0)
 endif()
 
+if (Pism_USE_TR1)
+  message (STATUS "Adding -DPISM_USE_TR1=1 to compiler flags.")
+  add_definitions (-DPISM_USE_TR1=1)
+endif ()
+
 add_custom_target (etags
-  COMMAND find -E src -regex ".*\\.(c|cc|h|hh)" | xargs etags
+  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh|py)" | xargs etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )

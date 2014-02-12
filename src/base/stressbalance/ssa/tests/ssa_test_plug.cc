@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2013 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2014 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -44,9 +44,8 @@ static char help[] =
 class SSATestCasePlug: public SSATestCase
 {
 public:
-  SSATestCasePlug( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c, PetscScalar n): 
-                 SSATestCase(com,rank,size,c)
+  SSATestCasePlug(MPI_Comm com, PISMConfig &c, double n)
+    : SSATestCase(com, c)
   { 
     H0 = 2000.; //m
     L=50.e3; // 50km half-width
@@ -58,31 +57,31 @@ public:
   }
   
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j, 
+    double x, double y, double *u, double *v );
 
 
-  PetscScalar H0; // Thickness
-  PetscScalar L;  // Half-width
-  PetscScalar dhdx; // surface slope
-  PetscScalar tauc0; // zero basal shear stress
-  PetscScalar B0;  // hardness
-  PetscScalar glen_n;
+  double H0; // Thickness
+  double L;  // Half-width
+  double dhdx; // surface slope
+  double tauc0; // zero basal shear stress
+  double B0;  // hardness
+  double glen_n;
 
   bool dimensionless;
   
 };
 
 
-PetscErrorCode SSATestCasePlug::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCasePlug::initializeGrid(int Mx,int My)
 {
-  PetscReal Lx=L, Ly = L; 
+  double Lx=L, Ly = L; 
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -90,15 +89,14 @@ PetscErrorCode SSATestCasePlug::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCasePlug::initializeSSAModel()
 {
-  // Configuration parameters used by IceBasalResistancePlasticLaw are irrelevant because tauc=0
-  basal = new IceBasalResistancePlasticLaw(config);
+  // Basal sliding law parameters are irrelevant because tauc=0
 
   // Enthalpy converter is irrelevant (but still required) for this test.
   enthalpyconverter = new EnthalpyConverter(config);
 
   // Use constant hardness
   config.set_string("ssa_flow_law", "isothermal_glen");
-  config.set("ice_softness", pow(B0, -glen_n));
+  config.set_double("ice_softness", pow(B0, -glen_n));
   return 0;
 }
 
@@ -108,7 +106,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set("epsilon_ssa", 0.0);
+  config.set_double("epsilon_ssa", 0.0);
 
   // Ensure we never use the strength extension.
   ssa->strength_extension->set_min_thickness(H0/2);
@@ -119,15 +117,15 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 
 
   // Set boundary conditions (Dirichlet all the way around).
-  ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
+  ierr = bc_mask.set(0.0); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = bed.begin_access(); CHKERRQ(ierr);
   ierr = surface.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar myu, myv;
-      const PetscScalar myx = grid.x[i], myy=grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double myu, myv;
+      const double myx = grid.x[i], myy=grid.y[j];
 
       bed(i,j) = -myx*(dhdx);
       surface(i,j) = bed(i,j) + H0;
@@ -156,14 +154,14 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCasePlug::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
-                                              PetscReal /*x*/, PetscReal y,
-                                              PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCasePlug::exactSolution(int /*i*/, int /*j*/, 
+                                              double /*x*/, double y,
+                                              double *u, double *v)
 {
-  PetscScalar earth_grav = config.get("standard_gravity"),
+  double earth_grav = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
-  PetscScalar f = ice_rho * earth_grav * H0* dhdx;
-  PetscScalar ynd = y/L;
+  double f = ice_rho * earth_grav * H0* dhdx;
+  double ynd = y/L;
 
   *u = 0.5*pow(f,3)*pow(L,4)/pow(B0*H0,3)*(1-pow(ynd,4));
   *v = 0;
@@ -174,19 +172,17 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
@@ -202,17 +198,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=11;
-    PetscInt My=61;
-    string output_file = "ssa_test_plug.nc";
+    int Mx=11;
+    int My=61;
+    std::string output_file = "ssa_test_plug.nc";
 
-    set<string> ssa_choices;
+    std::set<std::string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    string driver = "fem";
+    std::string driver = "fem";
 
-    // PetscScalar H0dim = 1.;
-    PetscScalar glen_n = 3.;
+    // double H0dim = 1.;
+    double glen_n = 3.;
 
     ierr = PetscOptionsBegin(com, "", "SSA_TEST_PLUG options", ""); CHKERRQ(ierr);
     {
@@ -236,12 +232,12 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
-    SSATestCasePlug testcase(com,rank,size,config,glen_n);
+    SSATestCasePlug testcase(com,config,glen_n);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report("plug"); CHKERRQ(ierr);

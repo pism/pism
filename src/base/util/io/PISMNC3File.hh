@@ -1,4 +1,4 @@
-// Copyright (C) 2012 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,13 +24,13 @@
 class PISMNC3File : public PISMNCFile
 {
 public:
-  PISMNC3File(MPI_Comm com, int rank);
+  PISMNC3File(MPI_Comm com);
   virtual ~PISMNC3File();
 
   // open/create/close
-  int open(string filename, int mode);
+  int open(std::string filename, int mode);
 
-  int create(string filename);
+  int create(std::string filename);
 
   int close();
 
@@ -40,81 +40,84 @@ public:
   int redef() const;
 
   // dim
-  int def_dim(string name, size_t length) const;
+  int def_dim(std::string name, size_t length) const;
 
-  int inq_dimid(string dimension_name, bool &exists) const;
+  int inq_dimid(std::string dimension_name, bool &exists) const;
 
-  int inq_dimlen(string dimension_name, unsigned int &result) const;
+  int inq_dimlen(std::string dimension_name, unsigned int &result) const;
 
-  int inq_unlimdim(string &result) const;
+  int inq_unlimdim(std::string &result) const;
 
-  int inq_dimname(int j, string &result) const;
+  int inq_dimname(int j, std::string &result) const;
 
   int inq_ndims(int &result) const;
 
   // var
-  int def_var(string name, PISM_IO_Type nctype, vector<string> dims) const;
+  int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
 
-  int get_vara_double(string variable_name,
-                      vector<unsigned int> start,
-                      vector<unsigned int> count,
+  int get_vara_double(std::string variable_name,
+                      std::vector<unsigned int> start,
+                      std::vector<unsigned int> count,
                       double *ip) const;
 
-  int put_vara_double(string variable_name,
-                      vector<unsigned int> start,
-                      vector<unsigned int> count,
-                      double *op) const;
+  int put_vara_double(std::string variable_name,
+                      std::vector<unsigned int> start,
+                      std::vector<unsigned int> count,
+                      const double *op) const;
 
-  int get_varm_double(string variable_name,
-                      vector<unsigned int> start,
-                      vector<unsigned int> count,
-                      vector<unsigned int> imap, double *ip) const;
+  int get_varm_double(std::string variable_name,
+                      std::vector<unsigned int> start,
+                      std::vector<unsigned int> count,
+                      std::vector<unsigned int> imap,
+                      double *ip) const;
 
-  int put_varm_double(string variable_name,
-                      vector<unsigned int> start,
-                      vector<unsigned int> count,
-                      vector<unsigned int> imap, double *op) const;
+  int put_varm_double(std::string variable_name,
+                      std::vector<unsigned int> start,
+                      std::vector<unsigned int> count,
+                      std::vector<unsigned int> imap,
+                      const double *op) const;
 
   int inq_nvars(int &result) const;
 
-  int inq_vardimid(string variable_name, vector<string> &result) const;
+  int inq_vardimid(std::string variable_name, std::vector<std::string> &result) const;
 
-  int inq_varnatts(string variable_name, int &result) const;
+  int inq_varnatts(std::string variable_name, int &result) const;
 
-  int inq_varid(string variable_name, bool &exists) const;
+  int inq_varid(std::string variable_name, bool &exists) const;
 
-  int inq_varname(unsigned int j, string &result) const;
+  int inq_varname(unsigned int j, std::string &result) const;
 
-  int inq_vartype(string variable_name, PISM_IO_Type &result) const;
+  int inq_vartype(std::string variable_name, PISM_IO_Type &result) const;
   // att
-  int get_att_double(string variable_name, string att_name, vector<double> &result) const;
+  int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const;
 
-  int get_att_text(string variable_name, string att_name, string &result) const;
+  int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
 
   using PISMNCFile::put_att_double;
-  int put_att_double(string variable_name, string att_name, PISM_IO_Type xtype, vector<double> &data) const;
+  int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const;
 
-  int put_att_text(string variable_name, string att_name, string value) const;
+  int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
-  int inq_attname(string variable_name, unsigned int n, string &result) const;
+  int inq_attname(std::string variable_name, unsigned int n, std::string &result) const;
 
-  int inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const;
+  int inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const;
 
   // misc
   int set_fill(int fillmode, int &old_modep) const;
 
-  virtual string get_format() const;
+  virtual std::string get_format() const;
 private:
-  int get_var_double(string variable_name,
-                     vector<unsigned int> start,
-                     vector<unsigned int> count,
-                     vector<unsigned int> imap, double *ip,
+  int m_rank;
+  int get_var_double(std::string variable_name,
+                     std::vector<unsigned int> start,
+                     std::vector<unsigned int> count,
+                     std::vector<unsigned int> imap, double *ip,
                      bool mapped) const;
 
-  int put_var_double(string variable_name,
-                     vector<unsigned int> start,
-                     vector<unsigned int> count,
-                     vector<unsigned int> imap, const double *op,
+  int put_var_double(std::string variable_name,
+                     std::vector<unsigned int> start,
+                     std::vector<unsigned int> count,
+                     std::vector<unsigned int> imap, const double *op,
                      bool mapped) const;
 };
 

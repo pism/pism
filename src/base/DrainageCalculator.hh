@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,13 @@
 #ifndef __DrainageCalculator_hh
 #define __DrainageCalculator_hh
 
-class NCConfigVariable;
+#include "NCVariable.hh"
 
 //! Compute the rate of drainage D(omega) for temperate ice.
 class DrainageCalculator {
 
 public:
-  DrainageCalculator(const NCConfigVariable &config) {
+  DrainageCalculator(const PISMConfig &config) {
     OM1 = config.get("drainage_target_water_frac"); // 0.01
     OM2 = 2.0 * OM1;
     OM3 = 3.0 * OM1;
@@ -35,7 +35,7 @@ public:
   virtual ~DrainageCalculator() {}
 
   //! Return D(omega), as in figure in [\ref AschwandenBuelerKhroulevBlatter].
-  virtual PetscReal get_drainage_rate(PetscReal omega) {
+  virtual double get_drainage_rate(double omega) {
     if (omega > OM1) {
       if (omega > OM2) {
         if (omega > OM3) {
@@ -50,7 +50,7 @@ public:
   }
 
 private:
-  PetscReal OM1, OM2, OM3, DR2, DR3;
+  double OM1, OM2, OM3, DR2, DR3;
 };
 
 

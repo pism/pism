@@ -4,11 +4,15 @@
 try:
     import netCDF4 as NC
 except:
-    import netCDF3 as NC
+    print "netCDF4 is not installed!"
+    sys.exit(1)
 
 import subprocess
 import numpy as np
 import os
+
+smb_name = "climatic_mass_balance"
+temp_name = "ice_surface_temp"
 
 def run(commands):
     """Run a list of commands (or one command given as a string)."""
@@ -24,8 +28,8 @@ def preprocess_ice_velocity():
     Download and preprocess the ~95Mb Antarctic ice velocity dataset from NASA MEASURES project
     http://nsidc.org/data/nsidc-0484.html
     """
-    url = "ftp://anonymous@sidads.colorado.edu/pub/DATASETS/nsidc0484_MEASURES_antarc_vel_V01/"
-    input_filename = "Antarctica_ice_velocity.nc"
+    url = "ftp://anonymous@sidads.colorado.edu/pub/DATASETS/nsidc0484_MEASURES_antarc_vel_V01/900m/"
+    input_filename = "antarctica_ice_velocity.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
     commands = ["wget -nc %s%s.gz" % (url, input_filename), # NSIDC supports compression on demand!
@@ -112,14 +116,11 @@ def preprocess_albmap():
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
-    smb_name = "climatic_mass_balance"
-    temp_name = "ice_surface_temp"
-
     commands = ["wget -nc %s" % url,                # download
                 "unzip -n %s.zip" % input_filename, # unpack
                 # modify this command to cut out a different region
                 "ncks -O -d x1,439,649 -d y1,250,460 %s %s" % (input_filename, output_filename), # cut out
-                "ncks -O -v usrf,lsrf,topg,temp,acca %s %s" % (output_filename, output_filename), # trim
+                "ncks -O -v usrf,lsrf,topg,temp,acca,mask %s %s" % (output_filename, output_filename), # trim
                 "ncrename -O -d x1,x -d y1,y -v x1,x -v y1,y %s" % output_filename, # fix metadata
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
@@ -128,12 +129,14 @@ def preprocess_albmap():
     nc = NC.Dataset(output_filename, 'a')
 
     # fix acab
+    rho_ice = 910.0             # kg m-3
     acab = nc.variables[smb_name]
-    acab.units = "m / year"
     acab.standard_name = "land_ice_surface_specific_mass_balance"
     SMB = acab[:]
     SMB[SMB == -9999] = 0
-    acab[:] = SMB
+    # convert from m/year to kg m-2 / year:
+    acab[:] = SMB * rho_ice
+    acab.units = "kg m-2 / year"
 
     # fix artm and topg
     nc.variables[temp_name].units = "Celsius"
@@ -178,41 +181,71 @@ def final_corrections(filename):
 
     # compute the grounded/floating mask:
     mask = np.zeros(thk.shape, dtype='i')
-    rho_ice = 910.0
-    rho_seawater = 1028.0
 
-    ice_free = 0
-    grounded = 1
-    floating = 2
+    def is_grounded(thickness, bed):
+        rho_ice = 910.0
+        rho_seawater = 1028.0
+        return bed + thickness > 0 + (1 - rho_ice/rho_seawater) * thickness
+
+    grounded_icy      = 0
+    grounded_ice_free = 1
+    ocean_icy         = 2
+    ocean_ice_free    = 3
 
     My, Mx = thk.shape
     for j in xrange(My):
         for i in xrange(Mx):
-            if topg[j,i] + thk[j,i] > 0 + (1 - rho_ice/rho_seawater) * thk[j,i]:
-                mask[j,i] = grounded
-            else:
-                if thk[j,i] < 1:
-                    mask[j,i] = ice_free
+            if is_grounded(thk[j,i], topg[j,i]):
+                if thk[j,i] > 1.0:
+                    mask[j,i] = grounded_icy
                 else:
-                    mask[j,i] = floating
+                    mask[j,i] = grounded_ice_free
+            else:
+                if thk[j,i] > 1.0:
+                    mask[j,i] = ocean_icy
+                else:
+                    mask[j,i] = ocean_ice_free
 
     # compute the B.C. locations:
-    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
-    bcflag_var[:] = mask == grounded
+    bcflag = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
 
-    # mark floating cells next to grounded ones too:
-    row = np.array([-1,  0,  1, -1, 1, -1, 0, 1])
-    col = np.array([-1, -1, -1,  0, 0,  1, 1, 1])
+    # mark ocean_icy cells next to grounded_icy ones too:
+    row = np.array([ 0, -1, 1,  0])
+    col = np.array([-1,  0, 0,  1])
     for j in xrange(1, My-1):
         for i in xrange(1, Mx-1):
             nearest = mask[j + row, i + col]
 
-            if mask[j,i] == floating and np.any(nearest == grounded):
-                bcflag_var[j,i] = 1
+            if mask[j,i] == ocean_icy and np.any(nearest == grounded_icy):
+                bcflag[j,i] = 1
+
+    # Do not prescribe SSA Dirichlet B.C. in ice-free ocean areas:
+    bcflag[thk < 1.0] = 0
+
+    # modifications for the prognostic run
+    # this is to avoid grounding (Why? -- CK)
+    topg[np.logical_or(mask == ocean_icy, mask == ocean_ice_free)] = -2000.0
+
+    # cap temperature out in the ocean:
+    temperature = nc.variables[temp_name][:]
+    temperature[temperature > -20.0] = -20.0
+
+    nc.variables[temp_name][:] = temperature
+    nc.variables['topg'][:] = topg
+    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
+    bcflag_var[:] = bcflag
+
+    bad_bcflag_mask = np.logical_and(thk < 1.0, bcflag == 1)
+    bad_bcflag_var = nc.createVariable('bad_bcflag', 'i', ('y', 'x'))
+    bad_bcflag_var[:] = bad_bcflag_mask
+
+    mask_var = nc.createVariable('mask', 'i', ('y', 'x'))
+    mask_var[:] = mask
 
     nc.close()
 
 if __name__ == "__main__":
+
     velocity = preprocess_ice_velocity()
     albmap = preprocess_albmap()
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc" # ice velocity on the ALBMAP grid

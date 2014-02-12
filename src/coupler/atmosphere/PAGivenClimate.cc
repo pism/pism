@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,8 +18,9 @@
 
 #include "PAGivenClimate.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
-PAGivenClimate::PAGivenClimate(IceGrid &g, const NCConfigVariable &conf)
+PAGivenClimate::PAGivenClimate(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
 {
   option_prefix = "-atmosphere_given";
@@ -48,7 +49,7 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = air_temp->create(grid, "air_temp", false); CHKERRQ(ierr);
@@ -67,7 +68,7 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
 PetscErrorCode PAGivenClimate::init(PISMVars &) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the atmosphere model reading near-surface air temperature\n"
@@ -88,15 +89,15 @@ PetscErrorCode PAGivenClimate::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PAGivenClimate::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
   // compute mean precipitation
-  ierr = precipitation->average(t, dt); CHKERRQ(ierr);
+  ierr = precipitation->average(m_t, m_dt); CHKERRQ(ierr);
 
   // Average so that the mean_annual_temp() may be reported correctly (at least
   // in the "-surface pdd" case).
-  ierr = air_temp->average(t, dt); CHKERRQ(ierr);
+  ierr = air_temp->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }
@@ -128,7 +129,7 @@ PetscErrorCode PAGivenClimate::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, double *result) {
   PetscErrorCode ierr;
 
   ierr = air_temp->interp(i, j, &result[0]); CHKERRQ(ierr);
@@ -136,7 +137,7 @@ PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, PetscReal *result)
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr;
 
   ierr = precipitation->interp(i, j, &result[0]); CHKERRQ(ierr);
@@ -144,7 +145,7 @@ PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, PetscReal *resul
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PAGivenClimate::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = air_temp->init_interpolation(ts, N); CHKERRQ(ierr);

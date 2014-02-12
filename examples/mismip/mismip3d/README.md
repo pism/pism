@@ -1,59 +1,80 @@
 MISMIP3D in PISM
 ==============
 
-This directory contains scripts that can be used to run MISMIP3d experiments using PISM. To understand the intent of these experiments, please see the MISMIP website at http://homepages.ulb.ac.be/~fpattyn/mismip3d/, and download the intercomparison description PDF from that site. Results will be soon published in 
-Pattyn et al., 2012; "Grounding-line migration in plan-view marine ice-sheet models: results of the ice2sea MISMIP3d intercomparison" (submitted to JoGl).
+This directory contains scripts that can be used to run MISMIP3d experiments using PISM.  See section 10  .3 of the PISM User's Manual.
 
-To run the complete set of the MISMIP3d experiments, the three files `create_runscript.py`, `createSetup_Stnd.py` and `createSetup_PXXS.py` are needed. By running the file `create_runscript.py` a very simple structured shell script for running the experiments is created (details and options below), as well as a config-override file `MISMIP3D_conf.nc`. This shell script then uses the files `createSetup_Stnd.py` and `createSetup_PXXS.py` for creating the initial setup nc-files used by PISM and runs the experiments one after another. (Note that the script `createSetup_PXXS.py` needs the result of the Standard (Stnd) experiment for creating the setup of the P10S and P75S experiments. See the above mentioned description PDF for further details).
+In outline, running `preprocess.py` creates a config-override file `MISMIP3D_conf.nc`.  Then running `createscript.py` creates a shell script for running the experiments.  This shell script uses  `setup_Stnd.py` or `setup_PXXS.py` for creating the initial setup `.nc`-files which contain the geometry and basal sliding fields, and then it runs PISM for the experiment.
 
-
-Step by step instructions
--------------------------
-
-The script `create_runscript.py` is used to generate a `bash` script performing the set of MISMIP3d experiments. Following options can be set:
-
-      -m MODEL, --model=MODEL
-			    Choose SSA only or SIA+SSA computation. model=1 sets SSA only, model=2 SSA+SIA computation. If no option is set, model 2 is used.
-
-      -s, --subgl  	    if this option is set, subgrid groundling line interpolation method is used (as defined as "LI" in Gladstone et al., 2010, "Parameterising the grounding line in flow-line ice sheet models; The Cryosphere 4, p.605--619). Also, the field gl_mask is written into the extra file to determine the subgrid groundling line position. The subgrid groundling line interpolation method is available from PISM in the development version (https://github.com/pism/pism/commit/626b309de4342f379c13ed879da694bbd96bada3). It modifies basal friction in grid cells, where the grounding lines position is identified. If no option is set, subgrid groundling line interpolation is not used.
-
-      -a ACCUMRATE, --accumrate=ACCUMRATE  
-			    sets the accumulation rate in meters per year. If no option is set, standard accumulation rate of a=0.5 m/a is used.
-
-      -r RESOLUTIONMODE, --resolutionmode=RESOLUTIONMODE
-			    sets the grid resolution of the computational domain. Because the MISMP3d domain has the fixed size of 800km x 50km and for ensuring equally spaced boxes in x- and y-direction, only discrete choices of resolution are offered:
-			     resolutionmode=1: 0.5km
-			     resolutionmode=2: 1.0km
-			     resolutionmode=3: 2.5km
-			     resolutionmode=4: 5.0km
-			     resolutionmode=5: 10.0km
-			     resolutionmode=6: 16.6km
-			     If no option is set, standard resolution of 16.6 km is used. Note that the computational domain is doubled in both directions to 1600km x 100km to omit the implementation of boundary conditions along symmerty lines, but for additional computational cost.
-
-The initial ice sheet configuration from which the Stnd-experiment is started has the constant thickness of 500 meters. For all experiments, the ice shelf is cut off at the distance of x=700 km (option -ocean_kill) from the center of the computational domain, where the stress boundary condition is applied. 
- 
+Note that the script `setup_PXXS.py` needs the result of the Standard (Stnd) experiment for creating the setup of the P10S and P75S experiments.  The `PXXR` runs require the output of the corresponding `PXXS` experiment.
 
 
-Example
+Usage
 -------
 
-For example, to set up a MISMIP3d experiment with SIA+SSA computation, grounding line interpolation and accumulation rate of 0.5m/a for a resolution of dx=dy=1km run
+For example, to set up and run the MISMIP3d "Stnd" experiment with SIA+SSA computation (model 2), grounding line interpolation, a resolution of dx = dy = 2 km, and a (shortened) duration of 3000 years, do:
 
-    ./create_runscript.py -m 2 -s -a 0.5 -r 2 > runscript.sh
+    $ ./preprocess      # generate MISMIP3D_conf.nc, used by all experiments
+    $ ./createscript.py -n 2 -r 3 -d 3000 -s -e Stnd > runStnd.sh
+    $ bash runStnd.sh > out.Stnd &
 
-This will create `runscript.sh` as well as the bootstrapping file
-`MISMIP3D_conf.nc`. Running this script with the accordingly adapted path for the Python and PISM executable at the file header will create a full set of MISMIP3d experiments.
+This 2 process run (`-n 2`) takes about three minutes on a 2013 laptop.
+
+This `Stnd` run uses `My=3` as would a MISMIP flowline experiment, and it uses `Mx=801` because of the 2 km resolution.  Three files will be output, `Stnd.nc`, `ts_Stnd.nc`, and `ex_Stnd.nc`.
+
+Now do the first experiment, which uses information from `ex_Stnd.nc` and builds a `Mx=801` by `My=51` grid, again with 2 km resolution:
+
+    $ ./createscript.py -n 2 -r 3 -d 100 -s -e P75S > runP75S.sh
+    $ bash runP75S.sh > out.P75S &
+
+This 2 process run and the next each take about 25 minutes on a 2013 laptop.  Next we try a reversibility experiment:
+
+    $ ./createscript.py -n 2 -r 3 -d 100 -s -e P75R > runP75R.sh
+    $ bash runP75R.sh > out.P75R &
+
+Note that more complete reversibility requires longer runs.  In fact, the PISM submission used `-d 30000` for the `Stnd` experiment and `-d 500` for the other experiments.  Also, the submitted MISMIP3d runs used resolution mode (`-r 2`) with 1 km spacing.
+
+The remaining implemented experiments are `P10S` and `P10R`.  They are run with the obvious modification, namely option `-e P10S` or `-e P10R` to the `createscript.py` script.
+
+
+Options for `createscript.py`
+-------------------------
+
+Run
+
+    $ ./createscript.p -h
+
+to see a usage message.
+
+Regarding the `-s` or `--subgl` option, if it is set then a subgrid grounding line (SGL) interpolation method is used.  This kind of method is called "LI" in Gladstone et al., 2010, "Parameterising the grounding line in flow-line ice sheet models; The Cryosphere 4, p.605--619.  If this option is set then the field `gl_mask` is written into the extra file to determine the SGL position. The SGL interpolation method modifies basal friction in grid cells where the grounding lines position is identified.  By default this option is not set.
+
+The `-r MODE` option sets the resolution mode.  Because the MISMP3d domain has the fixed size of 800 km x 50 km, and for ensuring equally spaced boxes in x- and y-direction, only discrete choices of resolution are offered:
+
+    - MODE = 1: 0.5 km
+    - MODE = 2: 1.0 km
+    - MODE = 3: 2.0 km
+    - MODE = 4: 2.5 km
+    - MODE = 5: 5.0 km  [the default]
+    - MODE = 6: 10.0 km
+    - MODE = 7: 16.6 km
+
+Note that the computational domain is doubled in both directions to 1600 km x 100 km.  This avoids implementation of boundary conditions along symmerty lines, though at additional computational cost.
+
+The initial ice sheet configuration, from which the Stnd experiment is started, has constant thickness of 500 meters.
+
+For all the experiments, the ice shelf is cut off at the distance of x=700 km (option `-calving ocean_kill`) from the center of the computational domain.  At this calving front a stress boundary condition (`-cfbc`) is applied.
+
+For more details read the source code of `createscript.py`.
 
 
 Implementation details
 ----------------------
 
-We can turn PISM's default sliding law into MISMIP's power law by setting the
-threshold speed to 1 meter per second, which will make it inactive.
+We turn PISM's default sliding law into MISMIP's power law by setting the
+threshold speed to 1 meter per second.
 
 The `-pseudo_plastic_uthreshold` command-line option takes an argument in meters per year, so we use `-pseudo_plastic_uthreshold 3.15569259747e7`, where `3.15569259747e7` is the number of seconds in a year.
 
-The MISMIP parameter C corresponds to `tauc` in PISM. It can be set using `-hold_tauc -tauc C`.
+The MISMIP parameter C corresponds to `tauc` in PISM.  It can be set using `-yield_stress constant -tauc C`.
 
 The MISMIP power law exponent `m` corresponds to `-pseudo_plastic_q` in PISM.
 
@@ -65,5 +86,5 @@ Note that PISM does not at this time implement the stopping criteria described i
 Post-processing
 ---------------
 
-Converting PISM output files to ASCII files following MISMIP
-specifications is left as an exercise. A bunch of additional variables for evaluation is saved to an extra file for each run. For output of the deviatoric stress components, see development version (https://github.com/pism/pism/commit/03f1c4f5676875efb3a4ae855426a7bf79c2fa63).
+Converting PISM output files to ASCII files following MISMIP specifications is left as an exercise.  See the additional variables saved in the extra file for each run.
+

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,6 @@
 #include "PISMBedSmoother.hh"
 #include "enthalpyConverter.hh"
 #include "PISMVars.hh"
-#include "PISMProf.hh"
 #include "flowlaw_factory.hh"
 
 SIAFD::~SIAFD() {
@@ -40,8 +39,8 @@ PetscErrorCode SIAFD::allocate() {
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
 
-    ierr = work_2d[i].create(grid, "work_vector", true, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = work_2d_stag[i].create(grid, "work_vector", true); CHKERRQ(ierr);
+    ierr = work_2d[i].create(grid, "work_vector", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = work_2d_stag[i].create(grid, "work_vector", WITH_GHOSTS); CHKERRQ(ierr);
 
     snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
     ierr = work_2d[i].set_name(namestr); CHKERRQ(ierr);
@@ -52,12 +51,12 @@ PetscErrorCode SIAFD::allocate() {
     }
   }
 
-  ierr = delta[0].create(grid, "delta_0", true); CHKERRQ(ierr);
-  ierr = delta[1].create(grid, "delta_1", true); CHKERRQ(ierr);
+  ierr = delta[0].create(grid, "delta_0", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = delta[1].create(grid, "delta_1", WITH_GHOSTS); CHKERRQ(ierr);
 
   // 3D temporary storage:
-  ierr = work_3d[0].create(grid, "work_3d_0", true); CHKERRQ(ierr);
-  ierr = work_3d[1].create(grid, "work_3d_1", true); CHKERRQ(ierr);
+  ierr = work_3d[0].create(grid, "work_3d_0", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS); CHKERRQ(ierr);
 
   // bed smoother
   bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
@@ -67,7 +66,7 @@ PetscErrorCode SIAFD::allocate() {
   {
     IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
-    ierr = ice_factory.setType(config.get_string("sia_flow_law").c_str()); CHKERRQ(ierr);
+    ierr = ice_factory.setType(config.get_string("sia_flow_law")); CHKERRQ(ierr);
 
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
     ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
@@ -84,6 +83,8 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the SIA stress balance modifier...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "  [using the %s flow law]\n", flow_law->name().c_str()); CHKERRQ(ierr);
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
@@ -107,8 +108,6 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
     age = NULL;
   }
 
-  event_sia = grid.profiler->create("siafd_update", "time spent inside SIAFD update");
-
   // set bed_state_counter to -1 so that the smoothed bed is computed the first
   // time update() is called.
   bed_state_counter = -1;
@@ -119,17 +118,12 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 //! strain heating.
 PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
-  IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
-
-  grid.profiler->begin(event_sia);
+  IceModelVec2Stag &h_x = work_2d_stag[0], &h_y = work_2d_stag[1];
 
   // Check if the smoothed bed computed by PISMBedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
-    ierr = bed_smoother->preprocess_bed(*bed,
-                                        config.get("Glen_exponent"),
-                                        config.get("bed_smoother_range"));
-    CHKERRQ(ierr);
+    ierr = bed_smoother->preprocess_bed(*bed); CHKERRQ(ierr);
     bed_state_counter = bed->get_state_counter();
   }
 
@@ -140,8 +134,6 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   if (!fast) {
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
   }
-
-  grid.profiler->end(event_sia);
 
   return 0;
 }
@@ -186,7 +178,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
 PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode  ierr;
 
-  const string method = config.get_string("surface_gradient_method");
+  const std::string method = config.get_string("surface_gradient_method");
 
   if (method == "eta") {
 
@@ -214,19 +206,19 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
 PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  const PetscScalar n = flow_law->exponent(), // presumably 3.0
+  const double n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
-  IceModelVec2S eta = work_2d[0];
+  const double dx = grid.dx, dy = grid.dy;  // convenience
+  IceModelVec2S &eta = work_2d[0];
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = eta.begin_access(); CHKERRQ(ierr);
-  PetscInt GHOSTS = 2;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 2;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       eta(i,j) = pow((*thickness)(i,j), etapow);
     }
   }
@@ -240,15 +232,15 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = eta.begin_access(); CHKERRQ(ierr);
-  for (PetscInt o=0; o<2; o++) {
+  for (int o=0; o<2; o++) {
 
     GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
-          const PetscScalar mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
+          const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
           if (mean_eta > 0.0) {
-            const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
+            const double factor = invpow * pow(mean_eta, dinvpow);
             h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
             h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
                                    - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
@@ -260,9 +252,9 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
           h_x(i,j,o) += bed->diff_x_stagE(i,j);
           h_y(i,j,o) += bed->diff_y_stagE(i,j);
         } else {        // J-offset
-          const PetscScalar mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
+          const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
           if (mean_eta > 0.0) {
-            const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
+            const double factor = invpow * pow(mean_eta, dinvpow);
             h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
             h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
                                    - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
@@ -291,25 +283,25 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
 //! see [\ref Mahaffy].
 PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx, dy = grid.dy;  // convenience
 
-  PetscScalar **h;
+  IceModelVec2S &h = *surface;
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = surface->get_array(h); CHKERRQ(ierr);
+  ierr = surface->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt o=0; o<2; o++) {
-    PetscInt GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (int o=0; o<2; o++) {
+    int GHOSTS = 1;
+    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (o==0) {     // If I-offset
-          h_x(i,j,o) = (h[i+1][j] - h[i][j]) / dx;
-          h_y(i,j,o) = (+ h[i+1][j+1] + h[i][j+1]
-                        - h[i+1][j-1] - h[i][j-1]) / (4.0*dy);
+          h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
+          h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
+                        - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
         } else {        // J-offset
-          h_y(i,j,o) = (h[i][j+1] - h[i][j]) / dy;
-          h_x(i,j,o) = (+ h[i+1][j+1] + h[i+1][j]
-                        - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
+          h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
+          h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
+                        - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
         }
       }
     }
@@ -371,7 +363,7 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
  */
 PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const double dx = grid.dx, dy = grid.dy;  // convenience
   IceModelVec2S &h = *surface, &b = *bed,
     &w_i = work_2d[0], &w_j = work_2d[1]; // averaging weights
 
@@ -385,9 +377,9 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
   ierr = h.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = b.begin_access(); CHKERRQ(ierr);
-  PetscInt GHOSTS = 1;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 1;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
       // x-derivative, i-offset
       {
@@ -431,8 +423,8 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
   ierr = b.end_access(); CHKERRQ(ierr);
   ierr = h.end_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       // x-derivative, j-offset
       {
         if (w_j(i,j) > 0) {
@@ -542,20 +534,17 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
 PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                              IceModelVec2Stag &result, bool fast) {
   PetscErrorCode  ierr;
-  IceModelVec2S thk_smooth = work_2d[0],
-    theta = work_2d[1];
+  IceModelVec2S &thk_smooth = work_2d[0],
+    &theta = work_2d[1];
 
-  bool full_update = !fast;
+  bool full_update = (fast == false);
 
   ierr = result.set(0.0); CHKERRQ(ierr);
 
-  PetscScalar *delta_ij;
-  delta_ij = new PetscScalar[grid.Mz];
+  double *delta_ij;
+  delta_ij = new double[grid.Mz];
 
-  const double enhancement_factor = flow_law->enhancement_factor(),
-    standard_gravity = config.get("standard_gravity"),
-    ice_rho = config.get("ice_density");
-
+  const double enhancement_factor = flow_law->enhancement_factor();
   double ice_grain_size = config.get("ice_grain_size");
 
   bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
@@ -575,11 +564,9 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each IceModelVec2S involved must
   // have stencil width WIDE_GHOSTS for this too work
-  ierr = bed_smoother->get_theta(*surface, config.get("Glen_exponent"),
-                                 WIDE_STENCIL, &theta); CHKERRQ(ierr);
+  ierr = bed_smoother->get_theta(*surface, &theta); CHKERRQ(ierr);
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = theta.begin_access(); CHKERRQ(ierr);
@@ -589,7 +576,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
 
-  PetscScalar *age_ij, *age_offset;
+  double *age_ij, *age_offset;
   if (use_age) {
     ierr = age->begin_access(); CHKERRQ(ierr);
   }
@@ -599,19 +586,19 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     ierr = delta[1].begin_access(); CHKERRQ(ierr);
   }
 
-  PetscScalar *E_ij, *E_offset;
+  double *E_ij, *E_offset;
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar my_D_max = 0.0;
-  for (PetscInt o=0; o<2; o++) {
-    PetscInt GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  double my_D_max = 0.0;
+  for (int o=0; o<2; o++) {
+    int GHOSTS = 1;
+    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
         //   are regular grid neighbors of a staggered point:
-        const PetscInt oi = 1 - o, oj = o;
+        const int oi = 1 - o, oj = o;
 
-        const PetscScalar
+        const double
           thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
 
         // zero thickness case:
@@ -631,38 +618,49 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
         ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
 
-        const PetscScalar slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-        const PetscInt      ks = grid.kBelowHeight(thk);
-        const PetscScalar   alpha =
+        const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
+        const int      ks = grid.kBelowHeight(thk);
+        const double   alpha =
           sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
-        const PetscReal theta_local = 0.5 * ( theta(i,j) + theta(i+oi,j+oj) );
+        const double theta_local = 0.5 * ( theta(i,j) + theta(i+oi,j+oj) );
 
-        PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
-        for (PetscInt k = 0; k <= ks; ++k) {
-          PetscReal depth = thk - grid.zlevels[k]; // FIXME issue #15
+        double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
+        for (int k = 0; k <= ks; ++k) {
+          double depth = thk - grid.zlevels[k]; // FIXME issue #15
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
-          const PetscScalar pressure = ice_rho * standard_gravity * depth;
+          const double pressure = EC.getPressureFromDepth(depth);
 
-          PetscScalar flow;
+          double flow;
           if (use_age) {
             ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
           }
           // If the flow law does not use grain size, it will just ignore it,
           // no harm there
-          PetscScalar E = 0.5 * (E_ij[k] + E_offset[k]);
+          double E = 0.5 * (E_ij[k] + E_offset[k]);
           flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
           delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
           if (k > 0) { // trapezoidal rule
-            const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
+            const double dz = grid.zlevels[k] - grid.zlevels[k-1];
             Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
           }
         }
         // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const PetscScalar dz = thk - grid.zlevels[ks];
+        const double dz = thk - grid.zlevels[ks];
         Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+
+        // Override diffusivity at the edges of the domain. (At these
+        // locations PISM uses ghost cells *beyond* the boundary of
+        // the computational domain. This does not matter if the ice
+        // does not extend all the way to the domain boundary, as in
+        // whole-ice-sheet simulations. In a regional setup, though,
+        // this adjustment lets us avoid taking very small time-steps
+        // because of the possible thickness and bed elevation
+        // "discontinuities" at the boundary.)
+        if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
+          Dfoffset = 0.0;
 
         my_D_max = PetscMax(my_D_max, Dfoffset);
 
@@ -674,7 +672,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         // if doing the full update, fill the delta column above the ice and
         // store it:
         if (full_update) {
-          for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
+          for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
             delta_ij[k] = 0.0;
           }
           ierr = delta[o].setInternalColumn(i,j,delta_ij); CHKERRQ(ierr);
@@ -722,7 +720,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
  */
 PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  IceModelVec2Stag D_stag = work_2d_stag[0];
+  IceModelVec2Stag &D_stag = work_2d_stag[0];
 
   ierr = this->compute_diffusivity_staggered(D_stag); CHKERRQ(ierr);
 
@@ -741,25 +739,24 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   PetscErrorCode ierr;
 
   // delta on the staggered grid:
-  PetscScalar *delta_ij;
-  IceModelVec2S thk_smooth = work_2d[0];
+  double *delta_ij;
+  IceModelVec2S &thk_smooth = work_2d[0];
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
   ierr = delta[0].begin_access(); CHKERRQ(ierr);
   ierr = delta[1].begin_access(); CHKERRQ(ierr);
   ierr = D_stag.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       for (int o = 0; o < 2; ++o) {
-        const PetscInt oi = 1 - o, oj = o;
+        const int oi = 1 - o, oj = o;
 
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
 
-        const PetscScalar
+        const double
           thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
 
         if (thk == 0) {
@@ -767,19 +764,19 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
           continue;
         }
 
-        const PetscInt ks = grid.kBelowHeight(thk);
-        PetscScalar Dfoffset = 0.0;
+        const unsigned int ks = grid.kBelowHeight(thk);
+        double Dfoffset = 0.0;
 
-        for (PetscInt k = 1; k <= ks; ++k) {
-          PetscReal depth = thk - grid.zlevels[k];
+        for (unsigned int k = 1; k <= ks; ++k) {
+          double depth = thk - grid.zlevels[k];
 
-          const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
+          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
           // trapezoidal rule
           Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
 
         // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const PetscScalar dz = thk - grid.zlevels[ks];
+        const double dz = thk - grid.zlevels[ks];
         Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
         D_stag(i,j,o) = Dfoffset;
@@ -795,7 +792,7 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
 }
 
 //! \brief Extend the grid vertically.
-PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
+PetscErrorCode SIAFD::extend_the_grid(int old_Mz) {
   PetscErrorCode ierr;
 
   ierr = SSB_Modifier::extend_the_grid(old_Mz); CHKERRQ(ierr);
@@ -823,13 +820,12 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
  */
 PetscErrorCode SIAFD::compute_I() {
   PetscErrorCode ierr;
-  PetscScalar *I_ij, *delta_ij;
+  double *I_ij, *delta_ij;
 
-  IceModelVec2S thk_smooth = work_2d[0];
-  IceModelVec3 I[2] = {work_3d[0], work_3d[1]};
+  IceModelVec2S &thk_smooth = work_2d[0];
+  IceModelVec3* I = work_3d;
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = delta[0].begin_access(); CHKERRQ(ierr);
@@ -838,30 +834,30 @@ PetscErrorCode SIAFD::compute_I() {
   ierr = I[1].begin_access(); CHKERRQ(ierr);
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt o = 0; o < 2; ++o) {
-    PetscInt GHOSTS = 1;
-    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        const PetscInt oi = 1-o, oj=o;
-        const PetscReal
+  for (int o = 0; o < 2; ++o) {
+    int GHOSTS = 1;
+    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        const int oi = 1-o, oj=o;
+        const double
           thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
 
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
         ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
 
-        const PetscInt ks = grid.kBelowHeight(thk);
+        const unsigned int ks = grid.kBelowHeight(thk);
 
         // within the ice:
         I_ij[0] = 0.0;
-        PetscScalar I_current = 0.0;
-        for (int k = 1; k <= ks; ++k) {
-          const PetscReal dz = grid.zlevels[k] - grid.zlevels[k-1];
+        double I_current = 0.0;
+        for (unsigned int k = 1; k <= ks; ++k) {
+          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
           // trapezoidal rule
           I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
           I_ij[k] = I_current;
         }
         // above the ice:
-        for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
           I_ij[k] = I_current;
         }
       }
@@ -902,9 +898,9 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
 
   ierr = compute_I(); CHKERRQ(ierr);
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
-  IceModelVec3 I[2] = {work_3d[0], work_3d[1]};
+  IceModelVec3 *I = work_3d;
 
-  PetscScalar *u_ij, *v_ij, *IEAST, *IWEST, *INORTH, *ISOUTH;
+  double *u_ij, *v_ij, *IEAST, *IWEST, *INORTH, *ISOUTH;
 
   ierr = u_out.begin_access(); CHKERRQ(ierr);
   ierr = v_out.begin_access(); CHKERRQ(ierr);
@@ -916,8 +912,8 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   ierr = I[0].begin_access(); CHKERRQ(ierr);
   ierr = I[1].begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = I[0].getInternalColumn(i, j, &IEAST); CHKERRQ(ierr);
       ierr = I[0].getInternalColumn(i - 1, j, &IWEST); CHKERRQ(ierr);
       ierr = I[1].getInternalColumn(i, j, &INORTH); CHKERRQ(ierr);
@@ -927,16 +923,16 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
       ierr = v_out.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
 
       // Fetch values from 2D fields *outside* of the k-loop:
-      PetscScalar h_x_w = h_x(i - 1, j, 0), h_x_e = h_x(i, j, 0),
+      double h_x_w = h_x(i - 1, j, 0), h_x_e = h_x(i, j, 0),
         h_x_n = h_x(i, j, 1), h_x_s = h_x(i, j - 1, 1);
 
-      PetscScalar h_y_w = h_y(i - 1, j, 0), h_y_e = h_y(i, j, 0),
+      double h_y_w = h_y(i - 1, j, 0), h_y_e = h_y(i, j, 0),
         h_y_n = h_y(i, j, 1), h_y_s = h_y(i, j - 1, 1);
 
-      PetscScalar vel_input_u = (*vel_input)(i, j).u,
+      double vel_input_u = (*vel_input)(i, j).u,
         vel_input_v = (*vel_input)(i, j).v;
 
-      for (PetscInt k = 0; k < grid.Mz; ++k) {
+      for (unsigned int k = 0; k < grid.Mz; ++k) {
         u_ij[k] = - 0.25 * ( IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
                              INORTH[k] * h_x_n + ISOUTH[k] * h_x_s );
         v_ij[k] = - 0.25 * ( IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
@@ -979,23 +975,23 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   was added simply to give interpolation for very old ice; ages beyond that get
   constant extrapolation. Linear interpolation is done between the samples.
  */
-PetscScalar SIAFD::grainSizeVostok(PetscScalar age_seconds) const {
-  const PetscInt numPoints = 22;
-  const PetscScalar ageAt[numPoints] = {  // ages in ka
+double SIAFD::grainSizeVostok(double age_seconds) const {
+  const int numPoints = 22;
+  const double ageAt[numPoints] = {  // ages in ka
     0.0000e+00, 5.0000e+01, 1.0000e+02, 1.2500e+02, 1.5000e+02,
     1.5800e+02, 1.6500e+02, 1.7000e+02, 1.8000e+02, 1.8800e+02,
     2.0000e+02, 2.2500e+02, 2.4500e+02, 2.6000e+02, 3.0000e+02,
     3.2000e+02, 3.5000e+02, 4.0000e+02, 5.0000e+02, 6.0000e+02,
     8.0000e+02, 1.0000e+04 };
-  const PetscScalar gsAt[numPoints] = {   // grain sizes in m
+  const double gsAt[numPoints] = {   // grain sizes in m
     1.8000e-03, 2.2000e-03, 3.0000e-03, 4.0000e-03, 4.3000e-03,
     3.0000e-03, 3.0000e-03, 4.6000e-03, 3.4000e-03, 3.3000e-03,
     5.9000e-03, 6.2000e-03, 5.4000e-03, 6.8000e-03, 3.5000e-03,
     6.0000e-03, 8.0000e-03, 8.3000e-03, 3.6000e-03, 3.8000e-03,
     9.5000e-03, 1.0000e-02 };
-  const PetscScalar a = age_seconds * second_to_kiloyear; // Age in ka
-  PetscInt l = 0;               // Left end of the binary search
-  PetscInt r = numPoints - 1;   // Right end
+  const double a = age_seconds * second_to_kiloyear; // Age in ka
+  int l = 0;               // Left end of the binary search
+  int r = numPoints - 1;   // Right end
 
   // If we are out of range
   if (a < ageAt[l]) {
@@ -1005,7 +1001,7 @@ PetscScalar SIAFD::grainSizeVostok(PetscScalar age_seconds) const {
   }
   // Binary search for the interval
   while (r > l + 1) {
-    const PetscInt j = (r + l) / 2;
+    const int j = (r + l) / 2;
     if (a < ageAt[j]) {
       r = j;
     } else {

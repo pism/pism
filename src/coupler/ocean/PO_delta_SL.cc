@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,10 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PO_delta_SL.hh"
+#include "PISMConfig.hh"
 
 /// -ocean_delta_SL_file, ...
 
-PO_delta_SL::PO_delta_SL(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
+PO_delta_SL::PO_delta_SL(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in),
     shelfbmassflux(g.get_unit_system()),
     shelfbtemp(g.get_unit_system())
@@ -37,7 +38,7 @@ PO_delta_SL::~PO_delta_SL() {
 
 PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   option_prefix = "-ocean_delta_SL";
-  offset_name	= "delta_SL";
+  offset_name   = "delta_SL";
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
@@ -49,8 +50,8 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("m s-1");
-  shelfbmassflux.set_glaciological_units("m year-1");
+  shelfbmassflux.set_units("kg m-2 s-1");
+  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
@@ -64,7 +65,7 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
 PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
@@ -76,23 +77,23 @@ PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
+PetscErrorCode PO_delta_SL::sea_level_elevation(double &result) {
   PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
 
   if (offset)
-    result += (*offset)(t + 0.5*dt);
+    result += (*offset)(m_t + 0.5*m_dt);
 
   return 0;
 }
 
-void PO_delta_SL::add_vars_to_output(string keyword, set<string> &result) {
+void PO_delta_SL::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode PO_delta_SL::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PO_delta_SL::define_variables(std::set<std::string> vars, const PIO &nc,
                                              PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -111,16 +112,16 @@ PetscErrorCode PO_delta_SL::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PO_delta_SL::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PO_delta_SL::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", false); CHKERRQ(ierr);
+      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
     }
 
-    ierr = tmp.set_metadata(shelfbtemp, 0); CHKERRQ(ierr);
+    tmp.metadata() = shelfbtemp;
     ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
     ierr = tmp.write(nc); CHKERRQ(ierr);
     vars.erase("shelfbtemp");
@@ -128,10 +129,10 @@ PetscErrorCode PO_delta_SL::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", false); CHKERRQ(ierr);
+      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
     }
 
-    ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
+    tmp.metadata() = shelfbmassflux;
     tmp.write_in_glaciological_units = true;
     ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
     ierr = tmp.write(nc); CHKERRQ(ierr);

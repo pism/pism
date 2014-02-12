@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -37,18 +37,15 @@ class test_plug(PISM.ssa.SSAExactTestCase):
   def _initPhysics(self):
     config = self.config
     
-    # Configuration flags and parameters used by this call are irrelevant because tauc == 0.
-    basal = PISM.IceBasalResistancePlasticLaw(config)
-
     #// Enthalpy converter is irrelevant for this test.
     enthalpyconverter = PISM.EnthalpyConverter(config);
 
     #// Use constant hardness
     config.set_string("ssa_flow_law", "isothermal_glen")
-    config.set("ice_softness", pow(B0, -glen_n))
-    config.set("Glen_exponent", glen_n)
+    config.set_double("ice_softness", pow(B0, -glen_n))
+    config.set_double("Glen_exponent", glen_n)
 
-    self.modeldata.setPhysics(basal,enthalpyconverter)
+    self.modeldata.setPhysics(enthalpyconverter)
 
   def _initSSACoefficients(self):
     self._allocStdSSACoefficients()
@@ -88,7 +85,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
     # self.config.set_flag("compute_surf_grad_inward_ssa", True);
 
     # SSAFEM uses this (even though it has "ssafd" in its name)
-    self.config.set("epsilon_ssa", 0.0);
+    self.config.set_double("epsilon_ssa", 0.0);
 
   def exactSolution(self,i,j,x,y):
     earth_grav = self.config.get("standard_gravity")

@@ -4,19 +4,10 @@ Some of these examples are documented in the _User's Manual_:
 
 * eismintII/
 * jako/
+* labgum/
 * mismip/
 * ross/
-* searise-greenland/
+* std-greenland/
 * storglaciaren/
 
-
-The others are experimental and/or undocumented at this time:
-
-* bedmap2/
-* inverse/
-* labgum/
-* nbreen/
-* python/
-* piktests/
-* searise-antarctica/
-
+The others are experimental, historical, and/or undocumented at this time.

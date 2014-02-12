@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -21,22 +21,44 @@
 #include "PISMVars.hh"
 #include "flowlaws.hh"
 #include "basal_resistance.hh"
+#include "pism_options.hh"
+
+ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : PISMComponent(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
+
+  m_vel_bc = NULL;
+  bc_locations = NULL;
+  variables = NULL;
+  sea_level = 0;
+
+  allocate();
+}
+
+ShallowStressBalance::~ShallowStressBalance() {
+  delete basal_sliding_law;
+}
 
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
   PetscErrorCode ierr;
+  unsigned int WIDE_STENCIL = 2;
 
-  ierr = m_velocity.create(grid, "bar", true); CHKERRQ(ierr); // components ubar, vbar
+  if (config.get_flag("do_pseudo_plastic_till") == true)
+    basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(config);
+  else
+    basal_sliding_law = new IceBasalResistancePlasticLaw(config);
+
+  ierr = m_velocity.create(grid, "bar", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // components ubar, vbar
   ierr = m_velocity.set_attrs("model_state",
-                            "thickness-advective ice velocity (x-component)", 
-                            "m s-1", "", 0); CHKERRQ(ierr);
+                              "thickness-advective ice velocity (x-component)", 
+                              "m s-1", "", 0); CHKERRQ(ierr);
   ierr = m_velocity.set_attrs("model_state",
-                            "thickness-advective ice velocity (y-component)",
-                            "m s-1", "", 1); CHKERRQ(ierr);
+                              "thickness-advective ice velocity (y-component)",
+                              "m s-1", "", 1); CHKERRQ(ierr);
   ierr = m_velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   m_velocity.write_in_glaciological_units = true;
 
-  ierr = basal_frictional_heating.create(grid, "bfrict", false); CHKERRQ(ierr);
+  ierr = basal_frictional_heating.create(grid, "bfrict", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = basal_frictional_heating.set_attrs("diagnostic",
                                             "basal frictional heating",
                                             "W m-2", ""); CHKERRQ(ierr);
@@ -46,10 +68,49 @@ PetscErrorCode ShallowStressBalance::allocate() {
   return 0;
 }
 
+ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : ShallowStressBalance(g, e, conf) {
+
+  // Use the SIA flow law.
+  IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
+  ice_factory.setType(config.get_string("sia_flow_law"));
+
+  ice_factory.setFromOptions();
+  ice_factory.create(&flow_law);
+}
+
+ZeroSliding::~ZeroSliding() {
+  delete flow_law;
+}
+
+void ZeroSliding::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                                  std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
+  dict["taud"] = new SSB_taud(this, grid, *variables);
+  dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
+}
+
+void ZeroSliding::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
+{
+  // empty
+}
+
+PetscErrorCode ZeroSliding::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+                                             PISM_IO_Type /*nctype*/) {
+  return 0;
+}
+
+PetscErrorCode ZeroSliding::write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/) {
+  return 0;
+}
+
+
 //! \brief Update the trivial shallow stress balance object.
-PetscErrorCode SSB_Trivial::update(bool fast) {
+PetscErrorCode ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
-  if (fast) return 0;
+  if (fast)
+    return 0;
+
+  (void) melange_back_pressure;
 
   ierr = m_velocity.set(0.0); CHKERRQ(ierr);
 
@@ -68,9 +129,9 @@ PetscErrorCode SSB_Trivial::update(bool fast) {
   \param[out] result
  */
 PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVec2V &velocity,
-								      IceModelVec2S &tauc,
-								      IceModelVec2Int &mask,
-								      IceModelVec2S &result) {
+                                                                      IceModelVec2S &tauc,
+                                                                      IceModelVec2Int &mask,
+                                                                      IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   MaskQuery m(mask);
@@ -80,13 +141,13 @@ PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVe
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = mask.begin_access(); CHKERRQ(ierr);
   
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (m.ocean(i,j)) {
         result(i,j) = 0.0;
       } else {
-        const PetscScalar
-          C = basal.drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
+        const double
+          C = basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
               basal_stress_x = - C * velocity(i,j).u,
               basal_stress_y = - C * velocity(i,j).v;
         result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
@@ -112,9 +173,6 @@ the eigenvalues `result(i,j,0)` = (maximum eigenvalue), `result(i,j,1)` = (minim
 eigenvalue).  Uses the provided thickness to make decisions (PIK) about computing
 strain rates near calving front.
 
-Though there are two eigenvalues, such do not form a vector, so the output is not
-an IceModelVec2V, though it could be a std::vector<IceModelVec2S> or such.
-
 Note that `result(i,j,0)` >= `result(i,j,1)`, but there is no necessary relation between 
 the magnitudes, and either principal strain rate could be negative or positive.
 
@@ -127,18 +185,18 @@ update_ghosts() to ensure that ghost values are up to date.
 PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar    dx = grid.dx, dy = grid.dy;
+  double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
   if (result.get_dof() != 2)
-    SETERRQ(grid.com, 1, "result.get_dof() == 2 is required");
+    SETERRQ(grid.com, 1, "result.dof() == 2 is required");
 
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = mask.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       if (M.ice_free(mask.as_int(i,j))) {
         result(i,j,0) = 0.0;
@@ -190,7 +248,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
         v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
       }
 
-      const PetscScalar A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
+      const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
         B   = 0.5 * (u_x - v_y),
         Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
         q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
@@ -212,7 +270,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
 PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar    dx = grid.dx, dy = grid.dy;
+  double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
   if (result.get_dof() != 3)
@@ -225,8 +283,8 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = mask.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       if (M.ice_free(mask.as_int(i,j))) {
         result(i,j,0) = 0.0;
@@ -281,8 +339,8 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
 
       double nu;
       flow_law->effective_viscosity(hardness,
-				    secondInvariant_2D(u_x, u_y, v_x, v_y),
-				    &nu, NULL);
+                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                    &nu, NULL);
 
       //get deviatoric stresses
       result(i,j,0) = nu*u_x;
@@ -328,9 +386,9 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   IceModelVec2S *thickness, *surface;
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[1], 1); CHKERRQ(ierr);
+  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
@@ -338,16 +396,16 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
-  PetscReal standard_gravity = grid.config.get("standard_gravity"),
+  double standard_gravity = grid.config.get("standard_gravity"),
     ice_density = grid.config.get("ice_density");
 
   ierr =    result->begin_access(); CHKERRQ(ierr);
   ierr =   surface->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar pressure = ice_density * standard_gravity * (*thickness)(i,j);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double pressure = ice_density * standard_gravity * (*thickness)(i,j);
       if (pressure <= 0.0) {
         (*result)(i,j).u = 0.0;
         (*result)(i,j).v = 0.0;
@@ -372,7 +430,7 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_var
   // set metadata:
   vars[0].init_2d("taud_mag", grid);
 
-  set_attrs("magnitude of the driving shear stress at the base of ice", "",
+  set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
   vars[0].set_string("comment",
                      "this field is purely diagnostic (not used by the model)");
@@ -383,8 +441,8 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  ierr = result->create(grid, "taud_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
@@ -403,3 +461,48 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+
+/**
+ * Shallow stress balance class that reads `u` and `v` fields from a
+ * file and holds them constant.
+ *
+ * The only use I can think of right now is testing.
+ */
+PrescribedSliding::PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+  : ZeroSliding(g, e, conf) {
+  // empty
+}
+
+PrescribedSliding::~PrescribedSliding() {
+  // empty
+}
+
+PetscErrorCode PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
+  PetscErrorCode ierr;
+  if (fast == true)
+    return 0;
+
+  (void) melange_back_pressure;
+
+  ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode PrescribedSliding::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
+
+  bool flag;
+  std::string input_filename;
+  ierr = PISMOptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
+                           input_filename, flag); CHKERRQ(ierr);
+  if (flag == false) {
+    PetscPrintf(grid.com, "PISM ERROR: option -prescribed_sliding_file is required.\n");
+    PISMEnd();
+  }
+
+  ierr = m_velocity.regrid(input_filename, CRITICAL); CHKERRQ(ierr);
+
+  return 0;
+}
+

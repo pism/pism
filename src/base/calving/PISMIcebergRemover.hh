@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@
 class PISMIcebergRemover : public PISMComponent
 {
 public:
-  PISMIcebergRemover(IceGrid &g, const NCConfigVariable &conf);
+  PISMIcebergRemover(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMIcebergRemover();
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -55,15 +55,17 @@ protected:
   PetscErrorCode transfer_to_proc0();
   PetscErrorCode transfer_from_proc0();
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO& nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
   
   Vec m_g2, m_g2natural;  //!< global Vecs used to transfer data to/from processor 0.
   VecScatter m_scatter; //!< VecScatter used to transfer data to/from processor 0.
   Vec m_mask_p0;
   DM m_da2;
+
+  IceModelVec2Int *m_bcflag;
 };
 
 #endif /* _PISMICEBERGREMOVER_H_ */

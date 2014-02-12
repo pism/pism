@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -46,7 +46,7 @@ public:
 
   IP_SSATaucTaoTikhonovProblem( IP_SSATaucForwardProblem &forward, 
                           IP_SSATaucTaoTikhonovProblem::DesignVec &d0, 
-                          IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, PetscReal eta, 
+                          IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, double eta, 
                           IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec>&designFunctional, 
                           IPFunctional<IP_SSATaucTaoTikhonovProblem::StateVec>&stateFunctional) :
         IPTaoTikhonovProblem<IP_SSATaucForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};

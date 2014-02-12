@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "PSAnomaly.hh"
 #include "IceGrid.hh"
 
-PSAnomaly::PSAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+PSAnomaly::PSAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
   : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
@@ -36,7 +36,7 @@ PSAnomaly::~PSAnomaly() {
 
 PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   PetscErrorCode ierr;
-  option_prefix	 = "-surface_anomaly";
+  option_prefix  = "-surface_anomaly";
 
   // will be de-allocated by the parent's destructor
   climatic_mass_balance_anomaly = new IceModelVec2T;
@@ -47,29 +47,29 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = ice_surface_temp_anomaly->create(grid, "ice_surface_temp_anomaly", false); CHKERRQ(ierr);
   ierr = climatic_mass_balance_anomaly->create(grid, "climatic_mass_balance_anomaly", false); CHKERRQ(ierr);
 
   ierr = ice_surface_temp_anomaly->set_attrs("climate_forcing",
-                        "anomaly of the temperature of the ice at the ice surface but below firn processes",
-                        "Kelvin", ""); CHKERRQ(ierr);
+                                             "anomaly of the temperature of the ice at the ice surface but below firn processes",
+                                             "Kelvin", ""); CHKERRQ(ierr);
   ierr = climatic_mass_balance_anomaly->set_attrs("climate_forcing",
-                             "anomaly of the ice-equivalent surface mass balance (accumulation/ablation) rate",
-                             "m s-1", ""); CHKERRQ(ierr);
-  ierr = climatic_mass_balance_anomaly->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                                  "anomaly of the surface mass balance (accumulation/ablation) rate",
+                                                  "kg m-2 s-1", ""); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance_anomaly->write_in_glaciological_units = true;
 
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+                                   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-                  "land_ice_surface_specific_mass_balance");
-  ierr = climatic_mass_balance.set_units("m s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                   "land_ice_surface_specific_mass_balance");
+  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
@@ -83,14 +83,14 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
 PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (input_model != NULL) {
     ierr = input_model->init(vars); CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the '-surface ...,anomaly' modifier...\n"); CHKERRQ(ierr);
+                    "* Initializing the '-surface ...,anomaly' modifier...\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "    reading anomalies from %s ...\n", filename.c_str()); CHKERRQ(ierr);
@@ -101,11 +101,11 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSAnomaly::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSAnomaly::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = climatic_mass_balance_anomaly->average(t, dt); CHKERRQ(ierr);
-  ierr = ice_surface_temp_anomaly->average(t, dt); CHKERRQ(ierr);
+  ierr = climatic_mass_balance_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = ice_surface_temp_anomaly->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }
@@ -128,7 +128,7 @@ PetscErrorCode PSAnomaly::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSAnomaly::add_vars_to_output(string keyword, set<string> &result) {
+void PSAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -137,7 +137,7 @@ void PSAnomaly::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
-PetscErrorCode PSAnomaly::define_variables(set<string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSAnomaly::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -153,13 +153,13 @@ PetscErrorCode PSAnomaly::define_variables(set<string> vars, const PIO &nc, PISM
   return 0;
 }
 
-PetscErrorCode PSAnomaly::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PSAnomaly::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(ice_surface_temp, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
@@ -170,8 +170,8 @@ PetscErrorCode PSAnomaly::write_variables(set<string> vars, const PIO &nc) {
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", false); CHKERRQ(ierr);
-    ierr = tmp.set_metadata(climatic_mass_balance, 0); CHKERRQ(ierr);
+    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata() = climatic_mass_balance;
 
     ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;

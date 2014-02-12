@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "iceModelVec.hh"
 
 class IceGrid;
-class NCConfigVariable;
+class PISMConfig;
 
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).
 /*!
@@ -57,52 +57,48 @@ PISMBedSmoother then provides three major functionalities, all of which \e must
 Here is a basic example of the creation and usage of a PISMBedSmoother instance.
 Note that PISMBedSmoother will update ghosted values in `topgsmooth`, and other
 internal fields, and update them in the return fields `thksmooth`, `theta`,
-if asked.  In IceModel::velocitySIAStaggered(), MAX_GHOSTS=2
+if asked.  In IceModel::velocitySIAStaggered()
 \code
     PISMBedSmoother smoother(grid, config, 2);
-    const PetscReal n = 3.0,
+    const double n = 3.0,
                     lambda = 50.0e3;
     ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
     ierr = smoother.get_smoothed_thk(usurf, thk, 1, &thksmooth); CHKERRQ(ierr);
     ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
 \endcode
-See IceGrid and NCConfigVariable documentation for initializing `grid` and
+See IceGrid and PISMConfig documentation for initializing `grid` and
 `config`.  Note we assume `topg`, `usurf`, `thk`, `thksmooth`, and `theta`
 are all created IceModelVec2S instances.
  */
 class PISMBedSmoother {
 public:
-  PISMBedSmoother(IceGrid &g, const NCConfigVariable &conf, PetscInt MAX_GHOSTS);
+  PISMBedSmoother(IceGrid &g, const PISMConfig &conf, int MAX_GHOSTS);
   virtual ~PISMBedSmoother();
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S topg, PetscReal n, 
-                                        PetscReal lambda);
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S topg, PetscReal n,
-                                        PetscInt Nx_in, PetscInt Ny_in);
+  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg);
 
-  virtual PetscErrorCode get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out);
-  virtual PetscInt       get_max_ghosts() { return maxGHOSTS; }
+  // FIXME: this method is used exactly once in bedrough_test.cc. Consider removing it.
+  virtual PetscErrorCode get_smoothing_domain(int &Nx_out, int &Ny_out);
 
-  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S usurf, IceModelVec2S thk, IceModelVec2Int mask,
-                                          PetscInt GHOSTS, IceModelVec2S *thksmooth);
-  virtual PetscErrorCode get_theta(IceModelVec2S usurf, PetscReal n,
-                                   PetscInt GHOSTS, IceModelVec2S *theta);
+  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S &usurf, IceModelVec2S &thk,
+                                          IceModelVec2Int &mask, IceModelVec2S *thksmooth);
+  virtual PetscErrorCode get_theta(IceModelVec2S &usurf, IceModelVec2S *theta);
 
-  IceModelVec2S topgsmooth;  //!< smoothed bed elevation; publicly-available; set by calling preprocess_bed(); has ghosts with width get_max_ghosts()
+  //! smoothed bed elevation; publicly-available; set by calling preprocess_bed()
+  IceModelVec2S topgsmooth;
 
 protected:
   IceGrid &grid;
-  const NCConfigVariable &config;
-  IceModelVec2S maxtl,C2,C3,C4;
+  const PISMConfig &config;
+  IceModelVec2S maxtl, C2, C3, C4;
 
-  PetscInt Nx,Ny;  //!< number of grid points to smooth over; e.g.
-                   //!i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1
-                   //!always, unless lambda<=0
-  PetscInt maxGHOSTS; //!< topg will be read, and topgsmooth will be created,
-                      //!with this ghosting width; thksmooth and theta can be
-                      //!filled at this ghosting level or less
+  int Nx, Ny;  //!< number of grid points to smooth over; e.g.
+                    //!i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1
+                    //!always, unless lambda<=0
 
-  PetscErrorCode allocate();
+  double m_Glen_exponent, m_smoothing_range;
+
+  PetscErrorCode allocate(int MAX_GHOSTS);
   PetscErrorCode deallocate();
 
   Vec g2, g2natural;  //!< global Vecs used to transfer data to/from processor 0.
@@ -110,11 +106,14 @@ protected:
   Vec topgp0,         //!< original bed elevation on processor 0
       topgsmoothp0,   //!< smoothed bed elevation on processor 0
       maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
-      C2p0,C3p0,C4p0;
+      C2p0, C3p0, C4p0;
+
+  virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg,
+                                        int Nx_in, int Ny_in);
 
   PetscErrorCode smooth_the_bed_on_proc0();
-  PetscErrorCode compute_coefficients_on_proc0(PetscReal n);
+  PetscErrorCode compute_coefficients_on_proc0();
 };
 
-#endif	// __PISMBedSmoother_hh
+#endif  // __PISMBedSmoother_hh
 

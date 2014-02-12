@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,19 +25,15 @@
 #include <set>
 #include <map>
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 #include "PIO.hh"
 
 class IceGrid;
-class NCConfigVariable;
+class PISMConfig;
 class NCSpatialVariable;
 class PISMDiagnostic;
 class PISMTSDiagnostic;
 class PISMVars;
+class IceModelVec;
 
 //! \brief A class defining a common interface for most PISM sub-models.
 /*!
@@ -74,7 +70,7 @@ class PISMVars;
   NetCDF variables because defining all the NetCDF variables before writing
   data is a lot faster than defining a variable, writing it, defining the
   second variable, etc. (See <a
-  href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Parts-of-a-NetCDF-Classic-File.html#Parts-of-a-NetCDF-Classic-Filel">The
+  href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Parts-of-a-NetCDF-Classic-File.html#Parts-of-a-NetCDF-Classic-File">The
   NetCDF Users' Guide</a> for a technical explanation.)
 
   Within IceModel the following steps are done to write 2D and 3D fields to an
@@ -93,7 +89,7 @@ class PISMVars;
  */
 class PISMComponent {
 public:
-  PISMComponent(IceGrid &g, const NCConfigVariable &conf)
+  PISMComponent(IceGrid &g, const PISMConfig &conf)
     : grid(g), config(conf) {}
   virtual ~PISMComponent() {}
 
@@ -104,27 +100,33 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &result) = 0;
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/) = 0;
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO& /*nc*/) = 0;
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/,
-                               map<string, PISMTSDiagnostic*> &/*ts_dict*/) {}
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict)
+  {
+    (void)dict;
+    (void)ts_dict;
+  }
 
-  // //! Add pointers to scalar diagnostic quantities to a dictionary.
-  // virtual void get_scalar_diagnostics(map<string, PISMDiagnostic_Scalar*> &/*dict*/) {}
 protected:
-  virtual PetscErrorCode find_pism_input(string &filename, bool &regrid, int &start);
+  virtual PetscErrorCode find_pism_input(std::string &filename, bool &regrid, int &start);
   IceGrid &grid;
-  const NCConfigVariable &config;
+  const PISMConfig &config;
+
+  enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
+  virtual PetscErrorCode regrid(std::string module_name, IceModelVec *variable,
+                                RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to
@@ -133,22 +135,69 @@ protected:
 class PISMComponent_TS : public PISMComponent
 {
 public:
-  PISMComponent_TS(IceGrid &g, const NCConfigVariable &conf)
+  PISMComponent_TS(IceGrid &g, const PISMConfig &conf)
     : PISMComponent(g, conf)
-  { t = dt = GSL_NAN; }
+  { m_t = m_dt = GSL_NAN; }
   virtual ~PISMComponent_TS() {}
 
-  //! \brief Reports the maximum time-step the model can take at my_t. Sets
-  //! my_dt to -1 if any time-step is OK.
-  virtual PetscErrorCode max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict)
-  { my_dt = -1; restrict = false; return 0; }
+  //! \brief Reports the maximum time-step the model can take at t. Sets
+  //! dt to -1 if any time-step is OK.
+  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict)
+  {
+    (void)t;
+    dt = -1;
+    restrict = false;
+    return 0;
+  }
 
-  //! Update a model, if necessary.
-  virtual PetscErrorCode update(PetscReal /*my_t*/, PetscReal /*my_dt*/) = 0;
+  //! Update the *state* of a component, if necessary.
+  /**
+   * Defines the common interface of time-stepping components.
+   *
+   * Derived classes should use this method to perform computations
+   * needed to step from `t` to `t + dt`. This could be
+   * a no-op.
+   *
+   * Time-step length `dt` should never be zero.
+   *
+   * This method will be called only once with a given `t`, `dt` pair;
+   * the value of `t` in a particular call should be equal to `t + dt`
+   * in the previous call (i.e. there should be no "gaps" or "repeats").
+   *
+   * One unfortunate exception is the initialization stage:
+   * IceModel::bootstrapFromFile() and IceModel::model_state_setup()
+   * might need to "know" the state of the model at the beginning of
+   * the run, which might require a non-trivial computation and so
+   * requires an update() call. Because of this and the "preliminary"
+   * step, *currently* update() gets called more than once at the
+   * beginning of the run.
+   *
+   * Other interface methods
+   * (PISMSurfaceModel::ice_surface_temperature() is an example)
+   * should use cached values if the corresponding computation is
+   * expensive. Methods like
+   * PISMSurfaceModel::ice_surface_temperature() might be called
+   * multiple times per time-step.
+   *
+   * PSTemperatureIndex is an example of a component that does a
+   * fairly expensive computation in PSTemperatureIndex::update() and
+   * uses cached values in
+   * PSTemperatureIndex::ice_surface_mass_flux().
+   *
+   * *Who* calls this depends on the kind of the component in
+   * question, but all calls originate from IceModel::step() and the
+   * initialization methods mentioned above.
+   *
+   * @param[in] t time corresponding to the beginning of the time-step, in seconds
+   * @param[in] dt length of the time-step, in seconds
+   *
+   * @return 0 on success
+   */
+  virtual PetscErrorCode update(double t, double dt) = 0;
 
 protected:
-  PetscReal t,			//!< Last time used as an argument for the update() method.
-    dt;				//!< Last time-step used as an argument for the update() method.
+  double m_t,                   //!< Last time used as an argument for the update() method.
+    m_dt;                               //!< Last time-step used as an argument for the update() method.
 };
 
 //! \brief This template allows creating PISMComponent_TS (PISMAtmosphereModel,
@@ -163,7 +212,7 @@ template<class Model>
 class Modifier : public Model
 {
 public:
-  Modifier(IceGrid &g, const NCConfigVariable &conf, Model* in)
+  Modifier(IceGrid &g, const PISMConfig &conf, Model* in)
     : Model(g, conf), input_model(in) {}
   virtual ~Modifier()
   {
@@ -172,14 +221,14 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(string keyword, set<string> &result)
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result)
   {
     if (input_model != NULL) {
       input_model->add_vars_to_output(keyword, result);
     }
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype)
   {
     if (input_model != NULL) {
@@ -188,7 +237,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc)
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
@@ -196,15 +245,15 @@ public:
     return 0;
   }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict)
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict)
   {
     if (input_model != NULL) {
       input_model->get_diagnostics(dict, ts_dict);
     }
   }
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict)
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
@@ -215,10 +264,10 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt)
+  virtual PetscErrorCode update(double my_t, double my_dt)
   {
-    Model::t = my_t;
-    Model::dt = my_dt;
+    Model::m_t = my_t;
+    Model::m_dt = my_dt;
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->update(my_t, my_dt); CHKERRQ(ierr);
     }

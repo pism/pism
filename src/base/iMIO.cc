@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,11 +32,14 @@
 #include "PISMStressBalance.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
 #include "PISMTime.hh"
 #include "PISMDiagnostic.hh"
+#include "PISMOceanKill.hh"
+#include "PISMFloatKill.hh"
+#include "PISMCalvingAtThickness.hh"
+#include "PISMEigenCalving.hh"
 
 //! Save model state in NetCDF format.
 /*!
@@ -44,9 +47,9 @@ Optionally allows saving of full velocity field.
 
 Calls dumpToFile() to do the actual work.
  */
-PetscErrorCode  IceModel::writeFiles(string default_filename) {
+PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
   PetscErrorCode ierr;
-  string filename = default_filename,
+  std::string filename = default_filename,
     config_out;
   bool o_set, dump_config;
 
@@ -56,13 +59,13 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
   {
     ierr = PISMOptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
     ierr = PISMOptionsString("-dump_config", "File to write the config to",
-			     config_out, dump_config); CHKERRQ(ierr);
+                             config_out, dump_config); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (!ends_with(filename, ".nc")) {
     ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+                      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
     CHKERRQ(ierr);
   }
 
@@ -74,23 +77,10 @@ PetscErrorCode  IceModel::writeFiles(string default_filename) {
 
   // save the config file
   if (dump_config) {
-    ierr = config.write(config_out); CHKERRQ(ierr);
+    // Here "false" means "do not append"; creates a new file and moves
+    // the old one aside
+    ierr = config.write(config_out, false); CHKERRQ(ierr);
   }
-
-#ifdef PISM_PROFILE
-  bool flag;
-  ierr = PISMOptionsIsSet("-prof", flag); CHKERRQ(ierr);
-  string prof_output_name;
-  if (flag) {
-    prof_output_name = pism_filename_add_suffix(filename, "-prof", "");
-
-    ierr = verbPrintf(2, grid.com, "Saving profiling data to '%s'...\n",
-		      prof_output_name.c_str());
-    CHKERRQ(ierr);
-
-    ierr = grid.profiler->save_report(prof_output_name); CHKERRQ(ierr);
-  }
-#endif
 
   return 0;
 }
@@ -101,15 +91,27 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
   PetscErrorCode ierr;
 
   if (write_mapping) {
-    ierr = mapping.write(nc); CHKERRQ(ierr);
+    bool mapping_exists = false;
+    ierr = nc.inq_var(mapping.get_name(), mapping_exists); CHKERRQ(ierr);
+    if (mapping_exists == false) {
+      ierr = nc.redef(); CHKERRQ(ierr);
+      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+    }
+    ierr = nc.write_attributes(mapping, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
 
   if (write_run_stats) {
     ierr = update_run_stats(); CHKERRQ(ierr);
-    ierr = run_stats.write(nc); CHKERRQ(ierr);
+    bool run_stats_exists = false;
+    ierr = nc.inq_var(run_stats.get_name(), run_stats_exists); CHKERRQ(ierr);
+    if (run_stats_exists == false) {
+      ierr = nc.redef(); CHKERRQ(ierr);
+      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+    }
+    ierr = nc.write_attributes(run_stats, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
 
-  ierr = global_attributes.write(nc); CHKERRQ(ierr);
+  ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);
 
   bool override_used;
   ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
@@ -122,12 +124,12 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
 }
 
 
-PetscErrorCode IceModel::dumpToFile(string filename) {
+PetscErrorCode IceModel::dumpToFile(std::string filename) {
   PetscErrorCode ierr;
   PIO nc(grid, config.get_string("output_format"));
 
   // Prepare the file
-  string time_name = config.get_string("time_dimension_name");
+  std::string time_name = config.get_string("time_dimension_name");
   ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
   ierr = nc.def_time(time_name, grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);
@@ -145,18 +147,14 @@ PetscErrorCode IceModel::dumpToFile(string filename) {
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
-					 PISM_IO_Type nctype) {
+PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> vars,
+                                         PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
 
-  grid.profiler->begin(event_output);
-
-  grid.profiler->begin(event_output_define);
-
   // Define all the variables:
   {
-    set<string>::iterator i;
+    std::set<std::string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
       v = variables.get(*i);
 
@@ -185,8 +183,8 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
       ierr = btu->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
-    if (basal_yield_stress != NULL) {
-      ierr = basal_yield_stress->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    if (basal_yield_stress_model != NULL) {
+      ierr = basal_yield_stress_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
     if (stress_balance != NULL) {
@@ -211,11 +209,25 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
       SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
     }
 
-  }
-  grid.profiler->end(event_output_define);
+    if (ocean_kill_calving != NULL) {
+      ierr = ocean_kill_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
 
+    if (float_kill_calving != NULL) {
+      ierr = float_kill_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
+    if (thickness_threshold_calving != NULL) {
+      ierr = thickness_threshold_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
+    if (eigen_calving != NULL) {
+      ierr = eigen_calving->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
+  }
   // Write all the IceModel variables:
-  set<string>::iterator i;
+  std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end();) {
     v = variables.get(*i);
 
@@ -224,7 +236,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
     } else {
       ierr = v->write(nc); CHKERRQ(ierr); // use the default data type
 
-      vars.erase(i++);		// note that it only erases variables that were
+      vars.erase(i++);          // note that it only erases variables that were
                                 // found (and saved)
     }
   }
@@ -239,8 +251,8 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
     ierr = btu->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
-  if (basal_yield_stress != NULL) {
-    ierr = basal_yield_stress->write_variables(vars, nc); CHKERRQ(ierr);
+  if (basal_yield_stress_model != NULL) {
+    ierr = basal_yield_stress_model->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // Write stress balance-related variables:
@@ -264,6 +276,22 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
     ierr = ocean->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
     SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
+  }
+
+  if (ocean_kill_calving != NULL) {
+    ierr = ocean_kill_calving->write_variables(vars, nc); CHKERRQ(ierr);
+  }
+
+  if (float_kill_calving != NULL) {
+    ierr = float_kill_calving->write_variables(vars, nc); CHKERRQ(ierr);
+  }
+
+  if (thickness_threshold_calving != NULL) {
+    ierr = thickness_threshold_calving->write_variables(vars, nc); CHKERRQ(ierr);
+  }
+
+  if (eigen_calving != NULL) {
+    ierr = eigen_calving->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // All the remaining names in vars must be of diagnostic quantities.
@@ -294,12 +322,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
     ierr = verbPrintf(threshold, grid.com,
                       "PISM WARNING: the following variables were *not* written by PISM core (IceModel): "); CHKERRQ(ierr);
     for (i = vars.begin(); i != vars.end(); ++i) {
-      ierr = verbPrintf(threshold, grid.com, "%s ", (*i).c_str()); CHKERRQ(ierr);
+      ierr = verbPrintf(threshold, grid.com, "%s ", i->c_str()); CHKERRQ(ierr);
     }
     ierr = verbPrintf(threshold, grid.com, "\n"); CHKERRQ(ierr);
   }
-
-  grid.profiler->end(event_output);
 
   return 0;
 }
@@ -307,44 +333,14 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, set<string> vars,
 
 PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   PetscErrorCode ierr;
-  string o_size = get_output_size("-o_size");
-
-  // only write out these extra diagnostics if decently big
-  if (o_size == "medium" || o_size == "big") {
-    bool write_temp_pa, write_liqfrac;
-    ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);
-    if (write_temp_pa || (!config.get_flag("do_cold_ice_methods"))) {
-      // write temp_pa = pressure-adjusted temp in Celcius
-      ierr = verbPrintf(4, grid.com,
-                        "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n");
-                        CHKERRQ(ierr);
-      output_vars.insert("temp_pa");
-    }
-    ierr = PISMOptionsIsSet("-liqfrac", write_liqfrac); CHKERRQ(ierr);
-    if (write_liqfrac || (!config.get_flag("do_cold_ice_methods"))) {
-      ierr = verbPrintf(4, grid.com,
-                        "  writing liquid water fraction 'liqfrac' ...\n");
-                        CHKERRQ(ierr);
-      output_vars.insert("liqfrac");
-    }
-  }
-
-  // if user wants it, give it to them (ignore -o_size, except "none")
-  bool userWantsCTS;
-  ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
-  if (userWantsCTS) {
-    ierr = verbPrintf(4, grid.com,
-                      "  writing CTS (= E/Es) scalar field 'cts' ...\n"); CHKERRQ(ierr);
-    output_vars.insert("cts");
-  }
+  std::string o_size = get_output_size("-o_size");
 
 #if (PISM_USE_PROJ4==1)
-
-  if (mapping.has("proj4")) {
+  if (mapping.has_attribute("proj4")) {
     output_vars.insert("lon_bounds");
     output_vars.insert("lat_bounds");
-    vLatitude.set_attr("bounds", "lat_bound");
-    vLongitude.set_attr("bounds", "lon_bound");
+    vLatitude.metadata().set_string("bounds", "lat_bound");
+    vLongitude.metadata().set_string("bounds", "lon_bound");
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -365,7 +361,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
     grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
     box from the same input file.
   */
-PetscErrorCode IceModel::initFromFile(string filename) {
+PetscErrorCode IceModel::initFromFile(std::string filename) {
   PetscErrorCode  ierr;
   PIO nc(grid, "guess_mode");
 
@@ -380,21 +376,22 @@ PetscErrorCode IceModel::initFromFile(string filename) {
   last_record -= 1;
 
   // Read the model state, mapping and climate_steady variables:
-  set<string> vars = variables.keys();
+  std::set<std::string> vars = variables.keys();
 
-  set<string>::iterator i = vars.begin();
+  std::set<std::string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i++);
+    NCSpatialVariable &m = var->metadata();
 
-    string intent = var->string_attr("pism_intent");
+    std::string intent = m.get_string("pism_intent");
     if ((intent == "model_state") || (intent == "mapping") ||
         (intent == "climate_steady")) {
 
       // skip "age", "enthalpy", and "Href" for now: we'll take care
       // of them a little later
-      if (var->string_attr("short_name") == "enthalpy" ||
-          var->string_attr("short_name") == "age"      ||
-          var->string_attr("short_name") == "Href")
+      if (m.get_string("short_name") == "enthalpy" ||
+          m.get_string("short_name") == "age"      ||
+          m.get_string("short_name") == "Href")
         continue;
 
       ierr = var->read(filename, last_record); CHKERRQ(ierr);
@@ -442,160 +439,201 @@ PetscErrorCode IceModel::initFromFile(string filename) {
   // Initialize the enthalpy field by reading from a file or by using
   // temperature and liquid water fraction, or by using temperature
   // and assuming that the ice is cold.
-  {
-    bool enthalpy_exists, liqfrac_exists, temperature_exists;
-    ierr = nc.inq_var("enthalpy", enthalpy_exists);    CHKERRQ(ierr);
-    ierr = nc.inq_var("liqfrac",  liqfrac_exists);     CHKERRQ(ierr);
-    ierr = nc.inq_var("temp",     temperature_exists); CHKERRQ(ierr);
+  ierr = init_enthalpy(filename, false, last_record); CHKERRQ(ierr);
 
-    if (enthalpy_exists) {
-      ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
-    } else if (temperature_exists) {
-      IceModelVec3 temperature;
-
-      ierr = temperature.create(grid, "temp", false); CHKERRQ(ierr);
-      ierr = temperature.set_attrs("internal",
-                                   "ice temperature; temporary storage during initialization",
-                                   "K", "land_ice_temperature"); CHKERRQ(ierr);
-      ierr = temperature.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-
-      ierr = temperature.read(filename, last_record); CHKERRQ(ierr);
-
-      if (liqfrac_exists) {
-        ierr = verbPrintf(2, grid.com,
-                          "* Computing enthalpy using ice temperature,"
-                          " liquid water fraction and thickness...\n"); CHKERRQ(ierr);
-
-        // use vWork3d as already-allocated space
-        ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
-        ierr = vWork3d.set_attrs("internal", "liqfrac; temporary use during initialization",
-                                 "1", ""); CHKERRQ(ierr);
-        ierr = vWork3d.read(filename, last_record); CHKERRQ(ierr);
-
-        ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
-      } else {
-        ierr = verbPrintf(2, grid.com,
-                          "* Computing enthalpy using ice temperature and thickness...\n");
-        CHKERRQ(ierr);
-
-        ierr = compute_enthalpy_cold(temperature, Enth3); CHKERRQ(ierr);
-      }
-    } else {
-      PetscPrintf(grid.com, "PISM ERROR: neither %s nor %s was found in the input file %s.\n",
-                  "enthalpy", "temperature", filename.c_str());
-      PISMEnd();
-    }
-      
-  } // end of enthalpy initialization
-
-  string history;
+  std::string history;
   ierr = nc.get_att_text("PISM_GLOBAL", "history", history); CHKERRQ(ierr);
-  global_attributes.prepend_history(history);
+  global_attributes.set_string("history",
+                               history + global_attributes.get_string("history"));
 
   ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
 
-  //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
-  /*!
-    For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
-    the NetCDF file specified by `-regrid_file`.
+//! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
+/*!
+  For each variable selected by option `-regrid_vars`, we regrid it onto the current grid from
+  the NetCDF file specified by `-regrid_file`.
 
-    The default, if `-regrid_vars` is not given, is to regrid the 3
-    dimensional quantities `tau3`, `Tb3` and either `T3` or `Enth3`. This is
-    consistent with one standard purpose of regridding, which is to stick with
-    current geometry through the downscaling procedure. Most of the time the user
-    should carefully specify which variables to regrid.
+  The default, if `-regrid_vars` is not given, is to regrid the 3
+  dimensional quantities `tau3`, `Tb3` and either `T3` or `Enth3`. This is
+  consistent with one standard purpose of regridding, which is to stick with
+  current geometry through the downscaling procedure. Most of the time the user
+  should carefully specify which variables to regrid.
 
-    This `dimensions` argument can be 2 (regrid 2D variables only), 3 (3D
-    only) and 0 (everything).
-  */
-  PetscErrorCode IceModel::regrid(int dimensions) {
-    PetscErrorCode ierr;
-    string filename;
-    bool regrid_vars_set, regrid_file_set;
-    set<string> regrid_vars;
+  This `dimensions` argument can be 2 (regrid 2D variables only), 3 (3D
+  only) and 0 (everything).
+*/
+PetscErrorCode IceModel::regrid(int dimensions) {
+  PetscErrorCode ierr;
+  std::string filename;
+  bool regrid_vars_set, regrid_file_set;
+  std::set<std::string> regrid_vars;
 
-    if (! (dimensions == 0 ||
-           dimensions == 2 ||
-           dimensions == 3))
-      SETERRQ(grid.com, 1, "dimensions can only be 0, 2 or 3");
+  if (! (dimensions == 0 ||
+         dimensions == 2 ||
+         dimensions == 3))
+    SETERRQ(grid.com, 1, "dimensions can only be 0, 2 or 3");
 
-    ierr = PetscOptionsBegin(grid.com, PETSC_NULL, "Options controlling regridding",
-                             PETSC_NULL); CHKERRQ(ierr);
-    {
-      ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
-                               filename, regrid_file_set); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, PETSC_NULL, "Options controlling regridding",
+                           PETSC_NULL); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
+                             filename, regrid_file_set); CHKERRQ(ierr);
 
-      ierr = PISMOptionsStringSet("-regrid_vars", "Specifies the list of variables to regrid",
-                                  "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
-    }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PISMOptionsStringSet("-regrid_vars", "Specifies the list of variables to regrid",
+                                "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    // Return if no regridding is requested:
-    if (!regrid_file_set) return 0;
+  // Return if no regridding is requested:
+  if (!regrid_file_set) return 0;
 
-    if (dimensions != 0) {
-      ierr = verbPrintf(2, grid.com, "regridding %dD variables from file %s ...\n",
-                        dimensions, filename.c_str()); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
-    }
-
-    if (regrid_vars.empty()) {
-      // defaults if user gives no regrid_vars list
-      regrid_vars.insert("litho_temp");
-
-      if (config.get_flag("do_age"))
-	regrid_vars.insert("age");
-
-      if (config.get_flag("do_cold_ice_methods"))
-        regrid_vars.insert("temp");
-      else
-        regrid_vars.insert("enthalpy");
-    }
-
-    if (dimensions == 0) {
-      ierr = regrid_variables(filename, regrid_vars, 2); CHKERRQ(ierr);
-      ierr = regrid_variables(filename, regrid_vars, 3); CHKERRQ(ierr);
-    } else {
-      ierr = regrid_variables(filename, regrid_vars, dimensions); CHKERRQ(ierr);
-    }
-
-    return 0;
+  if (dimensions != 0) {
+    ierr = verbPrintf(2, grid.com, "regridding %dD variables from file %s ...\n",
+                      dimensions, filename.c_str()); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
   }
 
-PetscErrorCode IceModel::regrid_variables(string filename, set<string> vars, int ndims) {
-  PetscErrorCode ierr;
+  if (regrid_vars.empty()) {
+    // defaults if user gives no regrid_vars list
+    regrid_vars.insert("litho_temp");
 
-  set<string>::iterator i;
-  for (i = vars.begin(); i != vars.end(); ++i) {
-    IceModelVec *v = variables.get(*i);
+    if (config.get_flag("do_age"))
+      regrid_vars.insert("age");
 
-    if (v == NULL) continue;
+    if (config.get_flag("do_cold_ice_methods"))
+      regrid_vars.insert("temp");
+    else
+      regrid_vars.insert("enthalpy");
+  }
 
-    if (v->get_ndims() != ndims) continue;
-
-    string pism_intent = v->string_attr("pism_intent");
-    if (pism_intent != "model_state") {
-      ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
-                        (*i).c_str()); CHKERRQ(ierr);
-      continue;
-    }
-
-    ierr = v->regrid(filename, true); CHKERRQ(ierr);
+  if (dimensions == 0) {
+    ierr = regrid_variables(filename, regrid_vars, 2); CHKERRQ(ierr);
+    ierr = regrid_variables(filename, regrid_vars, 3); CHKERRQ(ierr);
+  } else {
+    ierr = regrid_variables(filename, regrid_vars, dimensions); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
+PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::string> vars, unsigned int ndims) {
+  PetscErrorCode ierr;
+
+  std::set<std::string>::iterator i;
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    IceModelVec *v = variables.get(*i);
+
+    if (v == NULL) continue;
+
+    NCSpatialVariable &m = v->metadata();
+
+    if (v->get_ndims() != ndims) continue;
+
+    std::string pism_intent = m.get_string("pism_intent");
+    if (pism_intent != "model_state") {
+      ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
+                        i->c_str()); CHKERRQ(ierr);
+      continue;
+    }
+
+    if (*i == "enthalpy") {
+      ierr = init_enthalpy(filename, true, 0); CHKERRQ(ierr);
+      continue;
+    }
+
+    ierr = v->regrid(filename, CRITICAL); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+/**
+ * Initialize enthalpy from a file that does not contain it using "temp" and "liqfrac".
+ *
+ * @param filename input file name
+ *
+ * @param do_regrid use regridding if 'true', otherwise assume that the
+ *               input file has the same grid
+ * @param last_record the record to use when 'do_regrid==false'.
+ *
+ * @return 0 on success
+ */
+PetscErrorCode IceModel::init_enthalpy(std::string filename,
+                                       bool do_regrid, int last_record) {
+  PetscErrorCode ierr;
+  bool temp_exists  = false,
+    liqfrac_exists  = false,
+    enthalpy_exists = false;
+
+  PIO nc(grid, "guess_mode");
+  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.inq_var("enthalpy", enthalpy_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("temp", temp_exists); CHKERRQ(ierr);
+  ierr = nc.inq_var("liqfrac", liqfrac_exists); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  if (enthalpy_exists == true) {
+    if (do_regrid) {
+      ierr = Enth3.regrid(filename, CRITICAL); CHKERRQ(ierr);
+    } else {
+      ierr = Enth3.read(filename, last_record); CHKERRQ(ierr);
+    }
+  } else if (temp_exists == true) {
+    IceModelVec3 &temp = vWork3d,
+      &liqfrac         = Enth3;
+
+    NCSpatialVariable enthalpy_metadata = Enth3.metadata();
+    ierr = temp.set_name("temp"); CHKERRQ(ierr);
+    ierr = temp.set_attrs("temporary", "ice temperature", "Kelvin",
+                          "land_ice_temperature"); CHKERRQ(ierr);
+
+    if (do_regrid) {
+      ierr = temp.regrid(filename, CRITICAL); CHKERRQ(ierr);
+    } else {
+      ierr = temp.read(filename, last_record); CHKERRQ(ierr);
+    }
+
+    if (liqfrac_exists == true) {
+      ierr = liqfrac.set_name("liqfrac"); CHKERRQ(ierr);
+      ierr = liqfrac.set_attrs("temporary", "ice liquid water fraction",
+                               "1", ""); CHKERRQ(ierr);
+
+      if (do_regrid) {
+        ierr = liqfrac.regrid(filename, CRITICAL); CHKERRQ(ierr);
+      } else {
+        ierr = liqfrac.read(filename, last_record); CHKERRQ(ierr);
+      }
+
+      ierr = verbPrintf(2, grid.com,
+                        "* Computing enthalpy using ice temperature,"
+                        "  liquid water fraction and thickness...\n"); CHKERRQ(ierr);
+      ierr = compute_enthalpy(temp, liqfrac, Enth3); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com,
+                        "* Computing enthalpy using ice temperature and thickness...\n");
+      CHKERRQ(ierr);
+      ierr = compute_enthalpy_cold(temp, Enth3); CHKERRQ(ierr);
+    }
+
+    Enth3.metadata() = enthalpy_metadata;
+  } else {
+    PetscPrintf(grid.com, "PISM ERROR: neither %s nor %s was found in '%s'.\n",
+                "enthalpy", "temperature", filename.c_str());
+    PISMEnd();
+  }
+
+  return 0;
+}
 
 //! Initializes the snapshot-saving mechanism.
 PetscErrorCode IceModel::init_snapshots() {
   PetscErrorCode ierr;
   bool save_times_set, save_file_set, split;
-  string tmp;
+  std::string tmp;
   current_snapshot = 0;
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", ""); CHKERRQ(ierr);
@@ -659,18 +697,12 @@ PetscErrorCode IceModel::init_snapshots() {
 
   ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp.c_str()); CHKERRQ(ierr);
 
-  timestamp.init("timestamp", config.get_string("time_dimension_name"),
-                 grid.com, grid.rank);
-  timestamp.set_units("hours");
-  timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
-
   return 0;
 }
 
   //! Writes a snapshot of the model state (if necessary)
 PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
-  PIO nc(grid, grid.config.get_string("output_format"));
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
   // value is never used, because saving_after
   // is only used if save_now == true, and in
@@ -694,13 +726,11 @@ PetscErrorCode IceModel::write_snapshot() {
     return 0;
   }
 
-  grid.profiler->begin(event_snapshots);
-
   // flush time-series buffers
   ierr = flush_timeseries(); CHKERRQ(ierr);
 
   if (split_snapshots) {
-    snapshots_file_is_ready = false;	// each snapshot is written to a separate file
+    snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
              snapshots_filename.c_str(), grid.time->date().c_str());
   } else {
@@ -712,6 +742,8 @@ PetscErrorCode IceModel::write_snapshot() {
                     filename, grid.time->date().c_str(),
                     grid.time->date(saving_after).c_str());
   CHKERRQ(ierr);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (!snapshots_file_is_ready) {
     // Prepare the snapshots file:
@@ -745,13 +777,11 @@ PetscErrorCode IceModel::write_snapshot() {
 
     MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
-    ierr = timestamp.write(nc, static_cast<size_t>(time_length - 1),
-                           wall_clock_hours); CHKERRQ(ierr);
+    ierr = nc.write_timeseries(timestamp, static_cast<size_t>(time_length - 1),
+                               wall_clock_hours); CHKERRQ(ierr);
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
-
-  grid.profiler->end(event_snapshots);
 
   return 0;
 }
@@ -788,7 +818,6 @@ PetscErrorCode IceModel::init_backups() {
 PetscErrorCode IceModel::write_backup() {
   PetscErrorCode ierr;
   double wall_clock_hours;
-  PIO nc(grid, grid.config.get_string("output_format"));
 
   if (grid.rank == 0) {
     PetscLogDouble current_time;
@@ -801,12 +830,10 @@ PetscErrorCode IceModel::write_backup() {
   if (wall_clock_hours - last_backup_time < backup_interval)
     return 0;
 
-  grid.profiler->begin(event_backups);
-
   last_backup_time = wall_clock_hours;
 
   // create a history string:
-  string date_str = pism_timestamp();
+  std::string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
            "%s automatic backup at %s, %3.3f hours after the beginning of the run\n",
@@ -817,6 +844,8 @@ PetscErrorCode IceModel::write_backup() {
                     backup_filename.c_str(), wall_clock_hours); CHKERRQ(ierr);
 
   stampHistory(tmp);
+
+  PIO nc(grid, grid.config.get_string("output_format"));
 
   // write metadata:
   ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);
@@ -834,8 +863,6 @@ PetscErrorCode IceModel::write_backup() {
 
   // Also flush time-series:
   ierr = flush_timeseries(); CHKERRQ(ierr);
-
-  grid.profiler->end(event_backups);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,9 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "PISMConfig.hh"
 
-PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
+PBLingleClark::PBLingleClark(IceGrid &g, const PISMConfig &conf)
   : PISMBedDef(g, conf) {
 
   if (allocate() != 0) {
@@ -113,11 +114,13 @@ PetscErrorCode PBLingleClark::allocate() {
   ierr = VecDuplicate(Hp0,&bedstartp0); CHKERRQ(ierr);
   ierr = VecDuplicate(Hp0,&upliftp0); CHKERRQ(ierr);
 
+  bool use_elastic_model = config.get_flag("bed_def_lc_elastic_model");
+
   if (grid.rank == 0) {
-    ierr = bdLC.settings(config, PETSC_FALSE, // turn off elastic model for now
-			 grid.Mx, grid.My, grid.dx, grid.dy,
-			 4,     // use Z = 4 for now; to reduce global drift?
-			 &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
+    ierr = bdLC.settings(config, use_elastic_model,
+                         grid.Mx, grid.My, grid.dx, grid.dy,
+                         4,     // use Z = 4 for now; to reduce global drift?
+                         &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
     CHKERRQ(ierr);
 
     ierr = bdLC.alloc(); CHKERRQ(ierr);
@@ -149,7 +152,7 @@ PetscErrorCode PBLingleClark::init(PISMVars &vars) {
   ierr = PISMBedDef::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the Lingle-Clark bed deformation model...\n"); CHKERRQ(ierr);
+                    "* Initializing the Lingle-Clark bed deformation model...\n"); CHKERRQ(ierr);
 
   ierr = correct_topg(); CHKERRQ(ierr);
 
@@ -160,6 +163,7 @@ PetscErrorCode PBLingleClark::init(PISMVars &vars) {
   ierr = transfer_to_proc0(uplift, upliftp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
+    ierr = bdLC.init(); CHKERRQ(ierr);
     ierr = bdLC.uplift_init(); CHKERRQ(ierr);
   }
 
@@ -170,7 +174,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   PetscErrorCode ierr;
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
-  string boot_filename, regrid_filename;
+  std::string boot_filename, regrid_filename;
   PIO nc(grid, "guess_mode");
 
   ierr = PISMOptionsIsSet("-regrid_bed_special",
@@ -201,7 +205,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   }
 
   // Stop if the user asked to regrid topg (in this case no correction is necessary).
-  set<string> regrid_vars;
+  std::set<std::string> regrid_vars;
   ierr = PISMOptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
                               regrid_vars, regrid_vars_set); CHKERRQ(ierr);
 
@@ -220,13 +224,13 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   int WIDE_STENCIL = grid.max_stencil_width;
-  ierr = topg_tmp.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = topg_tmp.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                             "m", "bedrock_altitude"); CHKERRQ(ierr);
 
   // Get topg and topg_initial from the regridding file.
-  ierr = topg_initial.regrid(regrid_filename.c_str(), true); CHKERRQ(ierr);
-  ierr =     topg_tmp.regrid(regrid_filename.c_str(), true); CHKERRQ(ierr);
+  ierr = topg_initial.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
+  ierr =     topg_tmp.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
 
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.
@@ -246,20 +250,20 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
 
 //! Update the Lingle-Clark bed deformation model.
-PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
-  if ((fabs(my_t - t)   < 1e-12) &&
-      (fabs(my_dt - dt) < 1e-12))
+  if ((fabs(my_t - m_t)   < 1e-12) &&
+      (fabs(my_dt - m_dt) < 1e-12))
     return 0;
 
-  t  = my_t;
-  dt = my_dt;
+  m_t  = my_t;
+  m_dt = my_dt;
 
-  PetscReal t_final = t + dt;
+  double t_final = m_t + m_dt;
 
   // Check if it's time to update:
-  PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
+  double dt_beddef = t_final - t_beddef_last; // in seconds
   if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < grid.time->end()) ||
       dt_beddef < 1e-12)

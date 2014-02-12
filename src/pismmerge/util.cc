@@ -1,4 +1,4 @@
-// Copyright (C) 2013 PISM Authors
+// Copyright (C) 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,13 +27,13 @@ void check(int return_code) {
 }
 
 //! \brief Computes the file name corresponding to a patch written by mpi_rank.
-string patch_filename(string input, int mpi_rank) {
+std::string patch_filename(std::string input, int mpi_rank) {
   char tmp[TEMPORARY_STRING_LENGTH];
 
   snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
 
-  string::size_type n = input.find("RANK");
-  if (n != string::npos) {
+  std::string::size_type n = input.find("RANK");
+  if (n != std::string::npos) {
     snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
     input.replace(n, 4, tmp);
   } else {
@@ -45,12 +45,12 @@ string patch_filename(string input, int mpi_rank) {
 }
 
 //! \brief Computes the output file name (if not given using -o).
-string output_filename(string input, string var_name) {
-  string::size_type n = input.find("RANK");
-  if (n != string::npos) {
+std::string output_filename(std::string input, std::string var_name) {
+  std::string::size_type n = input.find("RANK");
+  if (n != std::string::npos) {
     input.replace(n, 4, var_name);
   } else {
-    input = pism_filename_add_suffix(input, string("-") + var_name, "");
+    input = pism_filename_add_suffix(input, std::string("-") + var_name, "");
   }
 
   return input;
@@ -60,7 +60,7 @@ string output_filename(string input, string var_name) {
 int get_quilt_size(PISMNC4_Serial &input, int &mpi_size) {
   int stat;
 
-  vector<double> tmp;
+  std::vector<double> tmp;
   stat = input.get_att_double("x_patch", "mpi_size", tmp);
   if (stat != 0 || tmp.size() != 1) {
     printf("ERROR: x_patch:mpi_size does not exist or has the wrong length.\n");
@@ -73,8 +73,8 @@ int get_quilt_size(PISMNC4_Serial &input, int &mpi_size) {
 
 //! \brief Checks if all input files are present. (We do this before creating
 //! the output file to make sure we don't end up bailing in the middle of it.)
-int check_input_files(string filename) {
-  PISMNC4_Serial nc(MPI_COMM_SELF, 0, 0);
+int check_input_files(std::string filename) {
+  PISMNC4_Serial nc(MPI_COMM_SELF, 0);
   int stat;
 
   stat = nc.open(patch_filename(filename, 0), PISM_NOWRITE);
@@ -107,7 +107,7 @@ int check_input_files(string filename) {
 int patch_geometry(PISMNC4_Serial &input, int &xs, int &ys,
                    unsigned int &xm, unsigned int &ym) {
   int stat;
-  vector<double> tmp;
+  std::vector<double> tmp;
 
   stat = input.get_att_double("x_patch", "patch_offset", tmp);
   if (stat != 0 || tmp.size() != 1) {

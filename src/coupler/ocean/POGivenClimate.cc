@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "POGivenClimate.hh"
 #include "IceGrid.hh"
 
-POGiven::POGiven(IceGrid &g, const NCConfigVariable &conf)
+POGiven::POGiven(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
 {
   PetscErrorCode ierr = allocate_POGiven(); CHKERRCONTINUE(ierr);
@@ -45,18 +45,20 @@ PetscErrorCode POGiven::allocate_POGiven() {
 
   ierr = process_options(); CHKERRQ(ierr);
 
-  map<string, string> standard_names;
+  std::map<std::string, std::string> standard_names;
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = shelfbtemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr);
   ierr = shelfbmassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
 
   ierr = shelfbtemp->set_attrs("climate_forcing",
-                        "absolute temperature at ice shelf base",
-                        "Kelvin", ""); CHKERRQ(ierr);
+                               "absolute temperature at ice shelf base",
+                               "Kelvin", ""); CHKERRQ(ierr);
   ierr = shelfbmassflux->set_attrs("climate_forcing",
-			     "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-			     "m s-1", ""); CHKERRQ(ierr);
+                                   "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                                   "kg m-2 s-1", ""); CHKERRQ(ierr);
+  ierr = shelfbmassflux->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  shelfbmassflux->write_in_glaciological_units = true;
 
   return 0;
 }
@@ -64,7 +66,7 @@ PetscErrorCode POGiven::allocate_POGiven() {
 PetscErrorCode POGiven::init(PISMVars &) {
   PetscErrorCode ierr;
 
-  t = dt = GSL_NAN;  // every re-init restarts the clock
+  m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the ocean model reading base of the shelf temperature\n"
@@ -81,16 +83,16 @@ PetscErrorCode POGiven::init(PISMVars &) {
   return 0;
 }
 
-PetscErrorCode POGiven::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode POGiven::update(double my_t, double my_dt) {
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = shelfbmassflux->average(t, dt); CHKERRQ(ierr);
-  ierr = shelfbtemp->average(t, dt); CHKERRQ(ierr);
+  ierr = shelfbmassflux->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = shelfbtemp->average(m_t, m_dt); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode POGiven::sea_level_elevation(PetscReal &result) {
+PetscErrorCode POGiven::sea_level_elevation(double &result) {
   result = sea_level;
   return 0;
 }
@@ -106,3 +108,7 @@ PetscErrorCode POGiven::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
+PetscErrorCode POGiven::melange_back_pressure_fraction(IceModelVec2S &result) {
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}

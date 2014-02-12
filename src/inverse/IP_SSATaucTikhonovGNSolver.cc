@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include "pism_options.hh"
 
 IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward,
-DesignVec &d0, StateVec &u_obs, PetscReal eta,
+DesignVec &d0, StateVec &u_obs, double eta,
 IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
 m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
@@ -45,54 +45,54 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   IceGrid &grid = *m_d0.get_grid();
   m_comm = grid.com;
 
-  PetscInt design_stencil_width = m_d0.get_stencil_width();
-  PetscInt state_stencil_width = m_u_obs.get_stencil_width();
+  unsigned int design_stencil_width = m_d0.get_stencil_width();
+  unsigned int state_stencil_width = m_u_obs.get_stencil_width();
 
-  ierr = m_x.create(grid,"x",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
+  ierr = m_x.create(grid, "x", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_tmp_D1Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_tmp_D2Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_tmp_S1Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_tmp_S2Global.create(grid,"work vector",kNoGhosts,0); CHKERRQ(ierr);
+  ierr = m_tmp_D1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_tmp_D2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_tmp_S1Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_tmp_S2Global.create(grid, "work vector", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
 
-  ierr = m_tmp_D1Local.create(grid,"work vector",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_D2Local.create(grid,"work vector",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_S1Local.create(grid,"work vector",kHasGhosts,state_stencil_width); CHKERRQ(ierr);
-  ierr = m_tmp_S2Local.create(grid,"work vector",kHasGhosts,state_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_D1Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_D2Local.create(grid, "work vector", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_S1Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_tmp_S2Local.create(grid, "work vector", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_GN_rhs.create(grid,"GN_rhs",kNoGhosts,0); CHKERRQ(ierr);
+  ierr = m_GN_rhs.create(grid, "GN_rhs", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
 
-  ierr = m_dGlobal.create(grid,"d (sans ghosts)",kNoGhosts,0); CHKERRQ(ierr);
-  ierr = m_d.create(grid,"d",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create(grid,"d_diff",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff_lin.create(grid,"d_diff linearized",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_h.create(grid,"h",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_hGlobal.create(grid,"h (sans ghosts)",kNoGhosts); CHKERRQ(ierr);
+  ierr = m_dGlobal.create(grid, "d (sans ghosts)", WITHOUT_GHOSTS, 0); CHKERRQ(ierr);
+  ierr = m_d.create(grid, "d", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff.create(grid, "d_diff", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff_lin.create(grid, "d_diff linearized", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_h.create(grid, "h", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_hGlobal.create(grid, "h (sans ghosts)", WITHOUT_GHOSTS); CHKERRQ(ierr);
   
-  ierr = m_dalpha_rhs.create(grid,"dalpha rhs",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_dh_dalpha.create(grid,"dh_dalpha",kHasGhosts,design_stencil_width); CHKERRQ(ierr);
-  ierr = m_dh_dalphaGlobal.create(grid,"dh_dalpha",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_u_diff.create(grid,"du",kHasGhosts,state_stencil_width); CHKERRQ(ierr);
+  ierr = m_dalpha_rhs.create(grid, "dalpha rhs", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_dh_dalpha.create(grid, "dh_dalpha", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_dh_dalphaGlobal.create(grid, "dh_dalpha", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_u_diff.create(grid, "du", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_grad_design.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_grad_state.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
-  ierr = m_gradient.create(grid,"grad design",kNoGhosts); CHKERRQ(ierr);
+  ierr = m_grad_design.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_gradient.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &m_ksp); CHKERRQ(ierr);
-  ierr = KSPSetOptionsPrefix(m_ksp,"inv_gn_"); CHKERRQ(ierr);
-  PetscReal ksp_rtol = 1e-5; // Soft tolerance
-  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
-  ierr = KSPSetType(m_ksp,KSPCG); CHKERRQ(ierr);
+  ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_"); CHKERRQ(ierr);
+  double ksp_rtol = 1e-5; // Soft tolerance
+  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  ierr = KSPSetType(m_ksp, KSPCG); CHKERRQ(ierr);
   PC pc;
-  ierr = KSPGetPC(m_ksp,&pc); CHKERRQ(ierr);
-  ierr = PCSetType(pc,PCNONE); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCNONE); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);  
 
-  PetscInt nLocalNodes  = grid.xm*grid.ym;
-  PetscInt nGlobalNodes = grid.Mx*grid.My;
-  ierr = MatCreateShell(grid.com,nLocalNodes,nLocalNodes,nGlobalNodes,nGlobalNodes,this,&m_mat_GN); CHKERRQ(ierr);
+  int nLocalNodes  = grid.xm*grid.ym;
+  int nGlobalNodes = grid.Mx*grid.My;
+  ierr = MatCreateShell(grid.com, nLocalNodes, nLocalNodes, nGlobalNodes, nGlobalNodes, this, &m_mat_GN); CHKERRQ(ierr);
 
-  typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver,&IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
+  typedef MatrixMultiplyCallback<IP_SSATaucTikhonovGNSolver, &IP_SSATaucTikhonovGNSolver::apply_GN> multCallback;
   ierr = multCallback::connect(m_mat_GN);
 
   m_alpha = 1./m_eta;
@@ -101,7 +101,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   
   m_iter_max = 1000; bool flag;
-  ierr = PISMOptionsInt("-inv_gn_iter_max", "",m_iter_max,flag); CHKERRQ(ierr);  
+  ierr = PISMOptionsInt("-inv_gn_iter_max", "", m_iter_max, flag); CHKERRQ(ierr);  
 
   m_tikhonov_atol = grid.config.get("tikhonov_atol");
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");
@@ -189,21 +189,21 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec h, PetscReal *value) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec &h, double *value) {
   PetscErrorCode ierr;
   
   ierr = m_ssaforward.apply_linearization(h,m_tmp_S1Local); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.update_ghosts(); CHKERRQ(ierr);
   ierr = m_tmp_S1Local.add(1,m_u_diff);
   
-  PetscReal sValue;
+  double sValue;
   ierr =  m_stateFunctional.valueAt(m_tmp_S1Local,&sValue); CHKERRQ(ierr);
   
   
   ierr = m_tmp_D1Local.copy_from(m_d_diff); CHKERRQ(ierr);
   ierr = m_tmp_D1Local.add(1,h); CHKERRQ(ierr);
   
-  PetscReal dValue;
+  double dValue;
   ierr =  m_designFunctional.valueAt(m_tmp_D1Local,&dValue); CHKERRQ(ierr);
   
   *value = m_alpha*dValue + sValue;
@@ -215,8 +215,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluateGNFunctional(DesignVec h, Pet
 PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::Ptr &reason) {
   PetscErrorCode ierr;
 
-  PetscReal designNorm, stateNorm, sumNorm;
-  PetscReal dWeight, sWeight;
+  double designNorm, stateNorm, sumNorm;
+  double dWeight, sWeight;
   dWeight = m_alpha;
   sWeight = 1;
 
@@ -232,13 +232,13 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
   if(m_tikhonov_adaptive) {
     ierr = verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha); CHKERRQ(ierr);
   }
-  PetscReal relsum = (sumNorm/PetscMax(designNorm,stateNorm));
+  double relsum = (sumNorm/PetscMax(designNorm,stateNorm));
   ierr = verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",designNorm,stateNorm,sumNorm,relsum); CHKERRQ(ierr);
 
   // If we have an adaptive tikhonov parameter, check if we have met
   // this constraint first.
   if(m_tikhonov_adaptive) {
-    PetscReal disc_ratio = fabs( (sqrt(m_val_state)/m_target_misfit) - 1.);
+    double disc_ratio = fabs( (sqrt(m_val_state)/m_target_misfit) - 1.);
     if(disc_ratio > m_tikhonov_ptol) {
       reason = GenericTerminationReason::keep_iterating();
       return 0;
@@ -288,7 +288,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(Termi
   ierr = m_gradient.scale(m_alpha); CHKERRQ(ierr);    
   ierr = m_gradient.add(1,m_grad_state); CHKERRQ(ierr);
 
-  PetscReal valDesign, valState;
+  double valDesign, valState;
   ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);
   ierr = m_stateFunctional.valueAt(m_u_diff,&valState); CHKERRQ(ierr);
 
@@ -305,9 +305,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
 
   TerminationReason::Ptr step_reason;
 
-  PetscReal old_value = m_val_design * m_alpha + m_val_state;
+  double old_value = m_val_design * m_alpha + m_val_state;
 
-  PetscReal descent_derivative;
+  double descent_derivative;
 
   ierr = m_tmp_D1Global.copy_from(m_h); CHKERRQ(ierr);
   ierr = VecDot(m_gradient.get_vec(),m_tmp_D1Global.get_vec(),&descent_derivative);
@@ -318,7 +318,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
     return 0;
   }
 
-  PetscReal alpha = 1;
+  double alpha = 1;
   ierr = m_tmp_D1Local.copy_from(m_d); CHKERRQ(ierr);
   while(true) {
     ierr = m_d.add(alpha,m_h); CHKERRQ(ierr);  // Replace with line search.
@@ -355,7 +355,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   m_iter = 0;
   ierr = m_d.copy_from(m_d0); CHKERRQ(ierr);
 
-  PetscReal dlogalpha = 0;
+  double dlogalpha = 0;
 
   TerminationReason::Ptr step_reason;
 
@@ -408,7 +408,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalpha, TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
 
@@ -436,7 +436,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
   ierr = m_tmp_S1Local.add(1,m_u_diff); CHKERRQ(ierr);
 
   // Compute linearized discrepancy.
-  PetscReal disc_sq;
+  double disc_sq;
   ierr = m_stateFunctional.dot(m_tmp_S1Local,m_tmp_S1Local,&disc_sq); CHKERRQ(ierr);
 
   // There are a number of equivalent ways to compute the derivative of the 
@@ -448,7 +448,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
   // If this fails, we compute by a harder way that inherently yields a 
   // positive number.
 
-  PetscReal ddisc_sq_dalpha;
+  double ddisc_sq_dalpha;
   ierr = m_designFunctional.dot(m_dh_dalpha,m_d_diff_lin,&ddisc_sq_dalpha);
   ddisc_sq_dalpha *= -2*m_alpha;
 
@@ -461,9 +461,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
     ierr = m_ssaforward.apply_linearization(m_dh_dalpha,m_tmp_S2Local); CHKERRQ(ierr);
     ierr = m_tmp_S2Local.update_ghosts(); CHKERRQ(ierr);
 
-    PetscReal ddisc_sq_dalpha_a;
+    double ddisc_sq_dalpha_a;
     ierr = m_stateFunctional.dot(m_tmp_S2Local,m_tmp_S2Local,&ddisc_sq_dalpha_a); CHKERRQ(ierr);
-    PetscReal ddisc_sq_dalpha_b;
+    double ddisc_sq_dalpha_b;
     ierr = m_designFunctional.dot(m_dh_dalpha,m_dh_dalpha,&ddisc_sq_dalpha_b); CHKERRQ(ierr);
     ddisc_sq_dalpha = 2*m_alpha*(ddisc_sq_dalpha_a+m_alpha*ddisc_sq_dalpha_b);
 
@@ -479,9 +479,9 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(PetscReal *dlogalph
 
   // It's easy to take steps that are too big when we are far from the solution.
   // So we limit the step size.
-  PetscReal stepmax = 3;
+  double stepmax = 3;
   if(fabs(*dlogalpha)> stepmax) {
-    PetscReal sgn = *dlogalpha > 0 ? 1 : -1;
+    double sgn = *dlogalpha > 0 ? 1 : -1;
     *dlogalpha = stepmax*sgn;
   }
   

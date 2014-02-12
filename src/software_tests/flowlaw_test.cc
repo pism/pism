@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -19,7 +19,7 @@
 #include <petsc.h>
 #include "pism_const.hh"
 #include "flowlaw_factory.hh"
-#include "NCVariable.hh"
+#include "PISMConfig.hh"
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
 
@@ -36,34 +36,28 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  PetscMPIInt rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
-  ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     PISMUnitSystem unit_system(NULL);
-    NCConfigVariable config(unit_system), overrides(unit_system);
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+    PISMConfig config(com, "pism_config", unit_system),
+      overrides(com, "pism_overrides", unit_system);
+    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
     EnthalpyConverter EC(config);
 
     IceFlowLaw *flow_law = NULL;
     IceFlowLawFactory ice_factory(com, NULL, config, &EC);
 
-    string flow_law_name = ICE_GPBLD;
+    std::string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type
 
     ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
     ice_factory.create(&flow_law);
-
-    bool dummy;
-    ierr = PISMOptionsString("-flow_law", "Selects the flow law",
-                             flow_law_name, dummy); CHKERRQ(ierr);
 
     double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C
                depth   = 2000.0,
@@ -74,7 +68,7 @@ int main(int argc, char *argv[]) {
     double     p       = EC.getPressureFromDepth(depth),
                Tm      = EC.getMeltingTemp(p);
 
-    printf("flow law:   \"%s\"\n", flow_law_name.c_str());
+    printf("flow law:   \"%s\"\n", flow_law->name().c_str());
     printf("pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)\n",
            p,depth);
     printf("flowtable:\n");

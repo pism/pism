@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2014 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -28,15 +28,15 @@
 //! present-day temperature parameterization and stored precipitation data.
 class PA_SeaRISE_Greenland : public PAYearlyCycle {
 public:
-  PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf);
+  PA_SeaRISE_Greenland(IceGrid &g, const PISMConfig &conf);
   virtual ~PA_SeaRISE_Greenland();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 protected:
   IceModelVec2S *lat, *lon, *surfelev;
 };
 
 
-#endif	// __PASeariseGreenland_hh
+#endif  // __PASeariseGreenland_hh

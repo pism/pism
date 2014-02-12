@@ -1,10 +1,15 @@
+Contents of this directory relate to running PISM's Test P which compares
+a `-hydrology distributed` run with an exact solution.  This is both a
+regression test and a verification test for PISM.  The exact solution
+is documented in an manuscript by Bueler and van Pelt (in preparation).
+
 Run `make exactP` to build the `exactP` extension module.
 
 Apparently the many code warnings generated this way can be ignored.  You will
 need the [Cython](http://www.cython.org) library to do this.
 
-Script `simpleP.py` calls the code in `src/verif/tests/exactTestP.c`
-through its Python (i.e. Cython) interface:
+Scripts `simpleP.py` and `runTestP.py` call the code in
+`src/verif/tests/exactTestP.c` through its Python (i.e. Cython) interface:
 
     $ make exactP
     $ ./simpleP.py

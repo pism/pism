@@ -82,7 +82,7 @@ if __name__ == "__main__":
   # Convert tauc_prior -> zeta_prior
   zeta = PISM.IceModelVec2S();
   WIDE_STENCIL=2
-  zeta.create(grid, "", PISM.kHasGhosts, WIDE_STENCIL)
+  zeta.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
   ssarun.tauc_param.convertFromDesignVariable(tauc_prior,zeta)
   ssarun.ssa.linearize_at(zeta)
 
@@ -118,9 +118,9 @@ if __name__ == "__main__":
   d2 = PISM.vec.randVectorS(grid,1)
 
   GNd1 = PISM.IceModelVec2S();
-  GNd1.create(grid,"",PISM.kNoGhosts)
+  GNd1.create(grid,"",PISM.WITHOUT_GHOSTS)
   GNd2 = PISM.IceModelVec2S();
-  GNd2.create(grid,"",PISM.kNoGhosts)
+  GNd2.create(grid,"",PISM.WITHOUT_GHOSTS)
   
   solver_gn.apply_GN(d1,GNd1)
   solver_gn.apply_GN(d2,GNd2)

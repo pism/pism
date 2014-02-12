@@ -27,6 +27,11 @@ Download and Install
 See [instructions for getting the latest release](http://www.pism-docs.org/wiki/doku.php?id=stable_version).
 
 
+Making Doxygen Source Code Documentation
+----------------------------------------
+
+See the INSTALL file in this directory.
+
 Contributing
 ------------
 

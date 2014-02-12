@@ -1,4 +1,4 @@
-// Copyright (C) 2013  David Maxwell
+// Copyright (C) 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,16 +21,15 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include "basal_resistance.hh"
-#include "pism_petsc32_compat.hh"
 
 
-IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-  EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-  const NCConfigVariable &c) : SSAFEM(g,b,e,c),
-  m_grid(grid), m_zeta(NULL), 
-  m_fixed_design_locations(NULL), 
-  m_design_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) 
-{
+IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
+                                                       IPDesignVariableParameterization &tp,
+                                                       const PISMConfig &c)
+  : SSAFEM(g,e,c),
+    m_grid(grid), m_zeta(NULL), 
+    m_fixed_design_locations(NULL), 
+    m_design_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
   assert(ierr == 0);
@@ -44,22 +43,22 @@ IP_SSAHardavForwardProblem::~IP_SSAHardavForwardProblem() {
 
 PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   PetscErrorCode ierr;
-  PetscInt stencilWidth = 1;
+  int stencilWidth = 1;
 
-  ierr = m_dzeta_local.create(m_grid,"d_zeta_local",kHasGhosts,stencilWidth); CHKERRQ(ierr);
-  ierr = m_hardav.create(m_grid,"hardav",kHasGhosts,stencilWidth); CHKERRQ(ierr);
+  ierr = m_dzeta_local.create(m_grid, "d_zeta_local", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
+  ierr = m_hardav.create(m_grid, "hardav", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
 
-  ierr = m_du_global.create(m_grid,"linearization work vector (sans ghosts)",kNoGhosts,stencilWidth); CHKERRQ(ierr);
-  ierr = m_du_local.create(m_grid,"linearization work vector (with ghosts)",kHasGhosts,stencilWidth); CHKERRQ(ierr);
+  ierr = m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencilWidth); CHKERRQ(ierr);
+  ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
 
   ierr = DMCreateMatrix(SSADA, "baij", &m_J_state); CHKERRQ(ierr);
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
-  PetscReal ksp_rtol = 1e-12;
-  ierr = KSPSetTolerances(m_ksp,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT); CHKERRQ(ierr);
+  double ksp_rtol = 1e-12;
+  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT); CHKERRQ(ierr);
   PC pc;
-  ierr = KSPGetPC(m_ksp,&pc); CHKERRQ(ierr);
-  ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);  
 
   m_quadrature.init(m_grid);
@@ -85,7 +84,7 @@ kept.
 PetscErrorCode IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
-  PetscInt i,j,q;
+  int i,j,q;
 
   m_zeta = &new_zeta;
   
@@ -93,15 +92,15 @@ PetscErrorCode IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta )
   m_design_param.convertToDesignVariable(*m_zeta,m_hardav);
 
   // Cache hardav at the quadrature points in feStore.
-  PetscReal **hardav_a;
-  PetscReal hardav_q[FEQuadrature::Nq];
+  double **hardav_a;
+  double hardav_q[FEQuadrature::Nq];
   ierr = m_hardav.get_array(hardav_a); CHKERRQ(ierr);
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys;j<ys+ym; j++) {
       quadrature.computeTrialFunctionValues(i,j,dofmap,hardav_a,hardav_q);
-      const PetscInt ij = m_element_index.flatten(i,j);
+      const int ij = m_element_index.flatten(i,j);
       FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq];
       for (q=0; q<4; q++) {
         feS[q].B = hardav_q[q];
@@ -119,7 +118,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta )
 //! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
 /* Use this method for inverse methods employing the reduced gradient. Use this method
 in conjuction with apply_linearization and apply_linearization_transpose.*/
-PetscErrorCode IP_SSAHardavForwardProblem::linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSAHardavForwardProblem::linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
   ierr = this->set_design(zeta); CHKERRQ(ierr);
@@ -232,15 +231,15 @@ to this method.
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,IceModelVec2S &dzeta, PISMVector2 **du_a) {
   PetscErrorCode ierr;
 
-  PetscInt         i,j;
+  int         i,j;
 
-  PetscReal **zeta_a;
+  double **zeta_a;
   ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
 
   PISMVector2 **u_a;
   ierr = u.get_array(u_a); CHKERRQ(ierr);
 
-  PetscReal **dzeta_a;
+  double **dzeta_a;
   IceModelVec2S *dzeta_local;
   if(dzeta.has_ghosts()) {
     dzeta_local = &dzeta;
@@ -260,21 +259,21 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  PetscReal        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = dirichletScale;
 
   PISMVector2 u_e[FEQuadrature::Nk];
   PISMVector2 u_q[FEQuadrature::Nq];
-  PetscScalar Du_q[FEQuadrature::Nq][3];
+  double Du_q[FEQuadrature::Nq][3];
 
 
   PISMVector2 du_e[FEQuadrature::Nk];
 
-  PetscReal dzeta_e[FEQuadrature::Nk];
+  double dzeta_e[FEQuadrature::Nk];
 
-  PetscReal zeta_e[FEQuadrature::Nk];
+  double zeta_e[FEQuadrature::Nk];
 
-  PetscReal dB_e[FEQuadrature::Nk];
-  PetscReal dB_q[FEQuadrature::Nq];
+  double dB_e[FEQuadrature::Nk];
+  double dB_q[FEQuadrature::Nq];
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -285,23 +284,23 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   ierr = fixedZeta.init(m_fixed_design_locations);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   // Loop through all elements.
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
 
       // Zero out the element-local residual in prep for updating it.
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for(int k=0;k<FEQuadrature::Nk;k++){
         du_e[k].u = 0;
         du_e[k].v = 0;
       }
 
       // Index into coefficient storage in feStore
-      const PetscInt ij = element_index.flatten(i,j);
+      const int ij = element_index.flatten(i,j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i,j,m_grid);
@@ -321,25 +320,25 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 
       // Compute the change in hardav with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i,j,zeta_a,zeta_e);
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for(int k=0;k<FEQuadrature::Nk;k++){
         m_design_param.toDesignVariable(zeta_e[k],NULL,dB_e + k);
         dB_e[k]*=dzeta_e[k];
       }
       m_quadrature.computeTrialFunctionValues(dB_e,dB_q);
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
         // Symmetric gradient at the quadrature point.
-        PetscScalar *Duqq = Du_q[q];
+        double *Duqq = Du_q[q];
 
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
 
-        PetscReal d_nuH = 0;
+        double d_nuH = 0;
         if (feS->H >= strength_extension->get_min_thickness()) {
           flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
           d_nuH  *= (2*feS->H);
         }
 
-        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+        for (int k=0; k<FEQuadrature::Nk; k++) {
           const FEFunctionGerm &testqk = test[q][k];
           du_e[k].u += JxW[q]*d_nuH*(testqk.dx*(2*Duqq[0]+Duqq[1]) + testqk.dy*Duqq[2]);
           du_e[k].v += JxW[q]*d_nuH*(testqk.dy*(2*Duqq[1]+Duqq[0]) + testqk.dx*Duqq[2]);
@@ -367,7 +366,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 */
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta) {
   PetscErrorCode ierr;
-  PetscReal **dzeta_a;
+  double **dzeta_a;
   ierr = dzeta.get_array(dzeta_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design_transpose(u,du,dzeta_a);CHKERRQ(ierr);
   ierr = dzeta.end_access(); CHKERRQ(ierr);
@@ -379,7 +378,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 \overload */
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta) {
   PetscErrorCode ierr;
-  PetscReal **dzeta_a;
+  double **dzeta_a;
   DM da2;
   ierr = m_grid.get_dm(1, m_grid.max_stencil_width, da2); CHKERRQ(ierr);
 
@@ -401,11 +400,11 @@ to this method.
 
   Typically this method is called via one of its overloads.
 */
-PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta_a) {
-  PetscInt         i,j;
+PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,double **dzeta_a) {
+  int         i,j;
   PetscErrorCode ierr;
 
-  PetscReal **zeta_a;
+  double **zeta_a;
   ierr = m_zeta->get_array(zeta_a); CHKERRQ(ierr);
 
   PISMVector2 **u_a;
@@ -423,14 +422,14 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 
   PISMVector2 u_e[FEQuadrature::Nk];
   PISMVector2 u_q[FEQuadrature::Nq];
-  PetscScalar Du_q[FEQuadrature::Nq][3];
+  double Du_q[FEQuadrature::Nq][3];
 
   PISMVector2 du_e[FEQuadrature::Nk];
   PISMVector2 du_q[FEQuadrature::Nq];
   PISMVector2 du_dx_q[FEQuadrature::Nq];
   PISMVector2 du_dy_q[FEQuadrature::Nq];
 
-  PetscReal dzeta_e[FEQuadrature::Nk];
+  double dzeta_e[FEQuadrature::Nk];
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -439,11 +438,11 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   // Aliases to help with notation consistency.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  PetscReal        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = dirichletScale;
   ierr = dirichletBC.init(m_dirichletLocations,m_dirichletValues,m_dirichletWeight); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   // Zero out the portion of the function we are responsible for computing.
@@ -453,12 +452,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
     }
   }
 
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Index into coefficient storage in feStore
-      const PetscInt ij = element_index.flatten(i,j);
+      const int ij = element_index.flatten(i,j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i,j,m_grid);
@@ -474,24 +473,24 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
       m_quadrature.computeTrialFunctionValues(u_e,u_q,Du_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for(int k=0;k<FEQuadrature::Nk;k++){
         dzeta_e[k] = 0;
       }
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
         // Symmetric gradient at the quadrature point.
-        PetscScalar *Duqq = Du_q[q];
+        double *Duqq = Du_q[q];
 
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
 
         // Determine "d_nuH/dB" at the quadrature point
-        PetscReal d_nuH_dB = 0;
+        double d_nuH_dB = 0;
         if (feS->H >= strength_extension->get_min_thickness()) {
           flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
           d_nuH_dB  *= (2*feS->H);
         }
 
-        for (PetscInt k=0; k<FEQuadrature::Nk; k++) {
+        for (int k=0; k<FEQuadrature::Nk; k++) {
           dzeta_e[k] += JxW[q]*d_nuH_dB*test[q][k].val*(
             (du_dx_q[q].u*(2*Duqq[0]+Duqq[1]) + du_dy_q[q].u*Duqq[2]) +
             (du_dy_q[q].v*(2*Duqq[1]+Duqq[0]) + du_dx_q[q].v*Duqq[2])
@@ -506,7 +505,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
 
   for( i=m_grid.xs;i<m_grid.xs+m_grid.xm;i++){
     for( j=m_grid.ys;j<m_grid.ys+m_grid.ym;j++){
-      PetscReal dB_dzeta;
+      double dB_dzeta;
       m_design_param.toDesignVariable(zeta_a[i][j],NULL,&dB_dzeta);
       dzeta_a[i][j] *= dB_dzeta;
     }
@@ -599,7 +598,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  PetscReal        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = dirichletScale;
   
   ierr = m_du_global.copy_from(du); CHKERRQ(ierr);
   PISMVector2 **du_a;

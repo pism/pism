@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,34 +26,34 @@
 class PAAnomaly : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
 public:
-  PAAnomaly(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
   virtual ~PAAnomaly();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
-  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode temp_time_series(int i, int j, double *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
 protected:
-  vector<PetscReal> ts_mod, ts_values;
+  std::vector<double> ts_mod, ts_values;
   NCSpatialVariable air_temp, precipitation;
   IceModelVec2T *air_temp_anomaly, *precipitation_anomaly;
-  vector<double> m_mass_flux_anomaly, m_temp_anomaly;
+  std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 private:
   PetscErrorCode allocate_PAAnomaly();
 };

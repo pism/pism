@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -48,10 +48,10 @@ public:
   //!Callback called after each iteration.
   virtual PetscErrorCode 
   iteration( IP_SSATaucTaoTikhonovProblemLCL &problem,  ///< The class calling the callback.
-             PetscReal eta,                             ///< Tikhonov penalty parameter.
-             PetscInt iter,                             ///< Current iteration count.
-             PetscReal objectiveValue,                  ///< Value of the state functional.
-             PetscReal designValue,                     ///< Value of the design functiona.
+             double eta,                             ///< Tikhonov penalty parameter.
+             int iter,                             ///< Current iteration count.
+             double objectiveValue,                  ///< Value of the state functional.
+             double designValue,                     ///< Value of the design functiona.
              DesignVec &d,                              ///< Value of the design variable.
              DesignVec &diff_d,                         ///< Diference between design variable and a-prior estimate.
              DesignVec &grad_d,                         ///< Gradient of design functional
@@ -75,7 +75,7 @@ public:
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
-  IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, PetscReal eta,
+  IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta,
                       IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
   virtual ~IP_SSATaucTaoTikhonovProblemLCL();
@@ -93,7 +93,7 @@ public:
 
   PetscErrorCode monitorTao(TaoSolver tao);
 
-  virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, PetscReal *value, Vec gradient);
+  virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, double *value, Vec gradient);
   
   virtual PetscErrorCode formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
 
@@ -130,10 +130,10 @@ protected:
   DesignVec m_grad_design;
   StateVec  m_grad_state;
 
-  PetscReal m_eta;
+  double m_eta;
 
-  PetscReal m_val_design;
-  PetscReal m_val_state;
+  double m_val_design;
+  double m_val_state;
 
   StateVec m_constraints;
   Mat m_Jstate;
@@ -142,8 +142,8 @@ protected:
   IceModelVec2S m_d_Jdesign;
   IceModelVec2V m_u_Jdesign;
 
-  PetscReal m_constraintsScale;
-  PetscReal m_velocityScale;
+  double m_constraintsScale;
+  double m_velocityScale;
 
   IPFunctional<IceModelVec2S> &m_designFunctional;
   IPFunctional<IceModelVec2V> &m_stateFunctional;

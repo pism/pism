@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013 PISM Authors
+// Copyright (C) 2011, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
  * Note: this code uses overloaded operators (PISMVector2::operator*, etc).
  */
 template<class V>
-PetscErrorCode add_2d(IceModelVec* const x_in, PetscScalar alpha, IceModelVec* const y_in,
+PetscErrorCode add_2d(IceModelVec* const x_in, double alpha, IceModelVec* const y_in,
                       IceModelVec* const result) {
   PetscErrorCode ierr;
 
@@ -59,9 +59,9 @@ PetscErrorCode add_2d(IceModelVec* const x_in, PetscScalar alpha, IceModelVec* c
   ierr = x->begin_access(); CHKERRQ(ierr);
   ierr = y->begin_access(); CHKERRQ(ierr);
   ierr = z->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid->xs - ghosts; i < grid->xs+grid->xm + ghosts; ++i) {
-    for (PetscInt j = grid->ys - ghosts; j < grid->ys+grid->ym + ghosts; ++j) {
-      (*z)(i, j) = (*x)(i, j) + alpha * (*y)(i, j);
+  for (int   i = grid->xs - ghosts; i < grid->xs+grid->xm + ghosts; ++i) {
+    for (int j = grid->ys - ghosts; j < grid->ys+grid->ym + ghosts; ++j) {
+      (*z)(i, j) = (*x)(i, j) + (*y)(i, j) * alpha;
     }
   }
   ierr = z->end_access(); CHKERRQ(ierr);
@@ -95,8 +95,8 @@ PetscErrorCode copy_2d(IceModelVec* const source,
 
   ierr = x->begin_access(); CHKERRQ(ierr);
   ierr = z->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid->xs - ghosts; i < grid->xs+grid->xm + ghosts; ++i) {
-    for (PetscInt j = grid->ys - ghosts; j < grid->ys+grid->ym + ghosts; ++j) {
+  for (int   i = grid->xs - ghosts; i < grid->xs+grid->xm + ghosts; ++i) {
+    for (int j = grid->ys - ghosts; j < grid->ys+grid->ym + ghosts; ++j) {
       (*z)(i, j) = (*x)(i, j);
     }
   }

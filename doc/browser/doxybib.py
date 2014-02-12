@@ -4,10 +4,12 @@ from os import popen, system
 
 input  = "ice_bib"
 bbl    = "texput.bbl"
-output = "references.txt"
+output = "references.md"
 
-notes = """
-\par Notes
+header = """References {#references}
+==========
+
+@par Notes
 This large list collects all references which the PISM authors have found
 convenient.  There is no claim that all of these references get direct use,
 or even mention, in the PISM project files.<br><br><hr>
@@ -35,13 +37,12 @@ system("bibtex texput")
 f = open(bbl)
 lines = f.readlines()
 f.close()
-header = lines[0]
-body = "".join(lines[1:])
+body = "".join(lines[:])
 
 # NB! The order of substitutions is important.
 subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
-        (r"\\href{([^}]*)}{([^}]*)}", r'<a href="\1">\2</a>'), # hyperref href command
-        (r"\\url{([^}]*)}",           r'<a href="\1">\1</a>'), # hyperref url command
+        (r"\\href{([^}]*)}{([^}]*)}", r'[\2](\1)'), # hyperref href command
+        (r"\\url{([^}]*)}",           r'[\1](\1)'), # hyperref url command
         (r"\\\w*{([^}]*)}",           r" \1 "),                # ignore other LaTeX commands
         (r"[}{]",                     r""),                    # curly braces
         (r"\$\\sim\$",                r"~"),                   # LaTeX \sim used to represent ~
@@ -56,14 +57,13 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         (r"''",                       r'"'),                   # closing quotes
         (r"\\,",                      r""),                    # \, LaTeX math spacing command
         (r"\\ae",                     r"&aelig;"),             # ae ligature
+        (r"\\tt",                     r"\\c"),                 # \tt (in the 'siple' entry)
         ]
 
 for (regex, substitution) in subs:
-    r = re.compile(regex)
-    body = r.sub(substitution, body)
+    body = re.compile(regex).sub(substitution, body)
 
 f = open(output, 'w')
 f.write(header)
-f.write(notes)
 f.write(body)
 f.close()

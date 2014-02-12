@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
-PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
+PISMBedDef::PISMBedDef(IceGrid &g, const PISMConfig &conf)
   : PISMComponent_TS(g, conf) {
 
   thk    = NULL;
@@ -39,24 +39,24 @@ PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
 
 PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
-  ierr = topg_initial.create(grid, "topg_initial", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
                                 "m", ""); CHKERRQ(ierr);
 
-  ierr = topg_last.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = topg_last.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_last.set_attrs("model_state", "bedrock surface elevation",
-			     "m", "bedrock_altitude"); CHKERRQ(ierr);
+                             "m", "bedrock_altitude"); CHKERRQ(ierr);
 
   return 0;
 }
 
-void PISMBedDef::add_vars_to_output(string /*keyword*/, set<string> &result) {
+void PISMBedDef::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("topg_initial");
 }
 
-PetscErrorCode PISMBedDef::define_variables(set<string> vars, const PIO &nc,
+PetscErrorCode PISMBedDef::define_variables(std::set<std::string> vars, const PIO &nc,
                                             PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -67,7 +67,7 @@ PetscErrorCode PISMBedDef::define_variables(set<string> vars, const PIO &nc,
   return 0;
 }
 
-PetscErrorCode PISMBedDef::write_variables(set<string> vars, const PIO &nc) {
+PetscErrorCode PISMBedDef::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "topg_initial")) {
@@ -98,7 +98,7 @@ PetscErrorCode PISMBedDef::init(PISMVars &vars) {
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).
-PetscErrorCode PISMBedDef::compute_uplift(PetscScalar dt_beddef) {
+PetscErrorCode PISMBedDef::compute_uplift(double dt_beddef) {
   PetscErrorCode ierr;
 
   ierr = topg->add(-1, topg_last, *uplift); CHKERRQ(ierr);

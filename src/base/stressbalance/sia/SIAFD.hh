@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
-  SIAFD(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &c)
+  SIAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
     : SSB_Modifier(g, e, c), WIDE_STENCIL(2) { allocate(); }
 
   virtual ~SIAFD();
@@ -44,24 +44,24 @@ public:
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+  virtual PetscErrorCode extend_the_grid(int old_Mz);
 
   //! Add pointers to diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict,
-                               map<string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
 
-  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/)
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
                                           PISM_IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(set<string> /*vars*/, const PIO &/*nc*/)
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
 protected:
@@ -82,7 +82,7 @@ protected:
 
   virtual PetscErrorCode compute_I();
 
-  virtual PetscScalar grainSizeVostok(PetscScalar age) const;
+  virtual double grainSizeVostok(double age) const;
 
   virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
   virtual PetscErrorCode compute_diffusivity_staggered(IceModelVec2Stag &result);
@@ -100,14 +100,14 @@ protected:
                                 // on the staggered grid
 
   PISMBedSmoother *bed_smoother;
-  const PetscInt WIDE_STENCIL;
+  const int WIDE_STENCIL;
   int bed_state_counter;
 
   // profiling
   int event_sia;
 
   // unit conversion
-  PetscReal second_to_kiloyear;
+  double second_to_kiloyear;
 };
 
 //! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the

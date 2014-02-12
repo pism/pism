@@ -32,30 +32,36 @@ def generate_config():
     pism_overrides.fresh_water_density_doc = "kg m-3; = rhow";
 
     pism_overrides.ice_softness = 3.1689e-24
-    pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness;"
+    pism_overrides.ice_softness_doc = "Pa-3 s-1; ice softness; NOT DEFAULT"
 
-    pism_overrides.hydrology_hydraulic_conductivity = 1.01936799184506e-6;
-    pism_overrides.hydrology_hydraulic_conductivity_doc = "; = k; = 0.01 / (rhow*g)";
+    pism_overrides.hydrology_hydraulic_conductivity = 1.0e-2 / (1000.0 * 9.81)
+    pism_overrides.hydrology_hydraulic_conductivity_doc = "= k; NOT DEFAULT"
+
+    pism_overrides.hydrology_tillwat_max = 0.0;
+    pism_overrides.hydrology_tillwat_max_doc = "m; turn off till water mechanism";
 
     pism_overrides.hydrology_thickness_power_in_flux = 1.0;
-    pism_overrides.hydrology_thickness_power_in_flux_doc = ";; = alpha";
+    pism_overrides.hydrology_thickness_power_in_flux_doc = "; = alpha in notes";
 
-    pism_overrides.hydrology_potential_gradient_power_in_flux = 2.0;
-    pism_overrides.hydrology_potential_gradient_power_in_flux_doc = "; = beta";
+    pism_overrides.hydrology_gradient_power_in_flux = 2.0;
+    pism_overrides.hydrology_gradient_power_in_flux_doc = "; = beta in notes";
 
     pism_overrides.hydrology_roughness_scale = 1.0;
-    pism_overrides.hydrology_roughness_scale_doc = "m; = W_r";
-
-    pism_overrides.hydrology_englacial_porosity = 0.0;
-    pism_overrides.hydrology_englacial_porosity_doc = "[pure]; phi in notes; NOT DEFAULT";
+    pism_overrides.hydrology_roughness_scale_doc = "m; W_r in notes; roughness scale";
 
     pism_overrides.hydrology_regularizing_porosity = 0.01;
     pism_overrides.hydrology_regularizing_porosity_doc = "[pure]; phi_0 in notes";
 
+    pism_overrides.yield_stress_model = "constant";
+    pism_overrides.yield_stress_model_doc = "only the constant yield stress model works without till";
+
+    pism_overrides.default_tauc = 1e6;
+    pism_overrides.default_tauc_doc = "set default to 'high tauc'";
+
     nc.close()
 
 def run_pism(opts):
-    cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP_regression.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -no_energy -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
+    cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP_regression.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
 
     print cmd
     subprocess.call(shlex.split(cmd))
@@ -64,10 +70,10 @@ def check_drift(file1, file2):
     nc1 = NC(file1)
     nc2 = NC(file2)
 
-    stored_drift = {'bwat_max' : 0.033977176396989717,
-                    'bwp_max'  : 103793.75919843616,
-                    'bwp_avg'  : 6285.7038819618074,
-                    'bwat_avg' : 0.0044137440344120754}
+    stored_drift = {'bwat_max': 0.024263951766380631,
+                    'bwp_max':  81658.173074602877,
+                    'bwp_avg':  7152.4179414459632,
+                    'bwat_avg': 0.004056179416920525}
 
     drift = {}
     for name in ("bwat", "bwp"):
@@ -78,7 +84,7 @@ def check_drift(file1, file2):
         drift["%s_max" % name] = np.max(diff)
         drift["%s_avg" % name] = np.average(diff)
 
-    print "drift = ", drift
+    print "drift        = ", drift
     print "stored_drift = ", stored_drift
 
     for name in drift.keys():

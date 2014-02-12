@@ -16,7 +16,7 @@ PISMGO="mpiexec -n $NN ${PREFIX}pismr"
 
 VERTGRID="-Lz 5000 -Lbz 2000 -Mz 51 -Mbz 21 -z_spacing equal"
 
-OPTIONS="-sia_e 5.6 -atmosphere given -atmosphere_given_file pism_Antarctica_5km.nc -surface simple -ocean pik -meltfactor_pik 1.5e-2 -ocean_kill"
+OPTIONS="-sia_e 5.6 -atmosphere given -atmosphere_given_file pism_Antarctica_5km.nc -surface simple -ocean pik -meltfactor_pik 1.5e-2 -calving ocean_kill"
 
 HYDRO="-hydrology routing -hydrology_use_const_bmelt -hydrology_const_bmelt 3.1689e-10 -hydrology_hydraulic_conductivity 1.0e-3 -report_mass_accounting"
 
@@ -27,13 +27,13 @@ dorun () {
   LABEL=$2
 
   #(from antspinCC.sh)  bootstrapping plus short SIA run for 100 years
-  cmd="$PISMGO -skip -skip_max 10 -boot_file pism_Antarctica_5km.nc $GRID $VERTGRID $OPTIONS -y 100 -o pre${LABEL}.nc"
+  cmd="$PISMGO -skip -skip_max 10 -boot_file pism_Antarctica_5km.nc $GRID $VERTGRID $OPTIONS -ocean_kill_file pism_Antarctica_5km.nc -y 100 -o pre${LABEL}.nc"
   $DOIT $cmd
 
   EXTRA="-extra_file ex_routing${LABEL}.nc -extra_times 200:100:$ENDTIME -extra_vars bwat,bwp,bwatvel,hydroinput"
 
   #hydrology only run for $ENDTIME years
-  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS $HYDRO -no_mass -no_energy -no_sia -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o routing${LABEL}.nc"
+  cmd="$PISMGO -i pre${LABEL}.nc $OPTIONS -ocean_kill_file pre${LABEL}.nc $HYDRO -no_mass -energy none -stress_balance ssa -max_dt 10.0 -ys 0 -ye $ENDTIME $EXTRA -o routing${LABEL}.nc"
   $DOIT $cmd
 }
 

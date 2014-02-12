@@ -1,4 +1,4 @@
-// Copyright (C) 2011 PISM Authors
+// Copyright (C) 2011, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 
 class PSFactory : public PCFactory<PISMSurfaceModel,PSModifier> {
 public:
-  PSFactory(IceGrid& g, const NCConfigVariable& conf)
+  PSFactory(IceGrid& g, const PISMConfig& conf)
     : PCFactory<PISMSurfaceModel,PSModifier>(g, conf)
   {
     add_standard_types();

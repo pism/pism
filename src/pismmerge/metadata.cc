@@ -26,7 +26,7 @@
  * Ignores dimensions that already exist in the output file or don't exist in
  * the input file.
  */
-int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, string dim_name) {
+int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string dim_name) {
   int stat;
   bool exists;
 
@@ -56,10 +56,10 @@ int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, string dim_n
  * The `extra_vars` output argument will contain names of coordinate variables
  * corresponding to dimensions used by this variable.
  */
-int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, string variable_name) {
+int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string variable_name) {
   int stat;
   bool exists;
-  vector<string> dimensions;
+  std::vector<std::string> dimensions;
 
   stat = input.inq_varid(variable_name, exists); check(stat);
   if (exists == false)
@@ -73,7 +73,7 @@ int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, string variab
 
   for (unsigned int k = 0; k < dimensions.size(); ++k) {
 
-    string dim_name = dimensions[k];
+    std::string dim_name = dimensions[k];
 
     if (dim_name == "x_patch")
       dim_name = "x";
@@ -101,14 +101,14 @@ int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, string variab
 }
 
 //! \brief Copies variable attributes.
-int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, string var_name) {
+int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string var_name) {
   int stat;
   int n_attrs;
 
   stat = input.inq_varnatts(var_name, n_attrs); check(stat);
 
   for (int j = 0; j < n_attrs; ++j) {
-    string att_name;
+    std::string att_name;
     PISM_IO_Type att_type;
 
     stat = input.inq_attname(var_name, j, att_name); check(stat);
@@ -116,13 +116,13 @@ int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, string var_na
     stat = input.inq_atttype(var_name, att_name, att_type); check(stat);
 
     if (att_type == PISM_CHAR) {
-      string tmp;
+      std::string tmp;
 
       stat = input.get_att_text(var_name, att_name, tmp); check(stat);
 
       stat = output.put_att_text(var_name, att_name, tmp); check(stat);
     } else {
-      vector<double> tmp;
+      std::vector<double> tmp;
 
       stat = input.get_att_double(var_name, att_name, tmp); check(stat);
 

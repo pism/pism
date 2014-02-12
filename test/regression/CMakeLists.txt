@@ -74,20 +74,6 @@ pism_test (verif_test_L_regress_SIA_nonflat_bed test_16.sh)
 
 pism_test (verif_test_G_regress_thermo_SIA_time_SMB test_17.sh)
 
-pism_test (verif_test_I_SSAFD_regress_SSA_plastic ssa/ssa_testi_fd.sh)
-
-pism_test (verif_test_I_SSAFEM_regress_SSA_plastic ssa/ssa_testi_fem.sh)
-
-pism_test (verif_test_J_SSAFD_regress_linear_SSA_floating ssa/ssa_testj_fd.sh)
-
-pism_test (verif_test_J_SSAFEM_regress_linear_SSA_floating ssa/ssa_testj_fem.sh)
-
-pism_test (verif_SSAFEM_regress_linear_flow ssa/ssafem_test_linear.sh)
-
-pism_test (verif_SSAFEM_regress_plug_flow ssa/ssafem_test_plug.sh)
-
-pism_test (verif_test_V_SSAFD_regress_CFBC ssa/ssa_test_cfbc.sh)
-
 pism_test (verif_test_K_regress_cold_ice_bedrock_thermal test_18.sh)
 
 pism_test (GPBLD_flow_law_regress test_20.sh)
@@ -104,8 +90,6 @@ pism_test (GK_flow_law_regress test_25.sh)
 
 pism_test (cold_part_of_Paterson-Budd_flow_law_regress test_26.sh)
 
-pism_test (verif_PISMBedThermalUnit_test_K_regress btu_regression.sh)
-
 pism_test (runtime_viewers test_27.sh)
 
 pism_test (bootstrapping_incomplete_input test_28.sh)
@@ -114,6 +98,29 @@ pism_test (distributed_hydrology_regression test_29.py)
 
 pism_test (initialization_without_enthalpy test_31.sh)
 
+pism_test (regridding_without_enthalpy test_32.sh)
+
+if(Pism_BUILD_EXTRA_EXECS)
+  # These tests require special executables. They are disabled unless
+  # these executables are built. This way we don't need to explain why
+  # "make && make test" shows some test failures when PISM is built
+  # with default settings.
+  pism_test (verif_PISMBedThermalUnit_test_K_regress btu_regression.sh)
+
+  pism_test (verif_test_V_SSAFD_regress_CFBC ssa/ssa_test_cfbc.sh)
+
+  pism_test (verif_test_I_SSAFD_regress_SSA_plastic ssa/ssa_testi_fd.sh)
+
+  pism_test (verif_test_I_SSAFEM_regress_SSA_plastic ssa/ssa_testi_fem.sh)
+
+  pism_test (verif_test_J_SSAFD_regress_linear_SSA_floating ssa/ssa_testj_fd.sh)
+
+  pism_test (verif_test_J_SSAFEM_regress_linear_SSA_floating ssa/ssa_testj_fem.sh)
+
+  pism_test (verif_SSAFEM_regress_linear_flow ssa/ssafem_test_linear.sh)
+
+  pism_test (verif_SSAFEM_regress_plug_flow ssa/ssafem_test_plug.sh)
+endif()
 
 if(Pism_BUILD_PYTHON_BINDINGS)
 

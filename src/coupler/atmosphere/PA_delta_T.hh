@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,28 +25,28 @@
 class PA_delta_T : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:
-  PA_delta_T(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in);
+  PA_delta_T(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
   virtual ~PA_delta_T() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
 
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
 
-  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode temp_time_series(int i, int j, double *values);
 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
-  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(set<string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
                                           PISM_IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(set<string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
 protected:
   NCSpatialVariable air_temp, precipitation;
-  vector<double> m_offset_values;
+  std::vector<double> m_offset_values;
 private:
   PetscErrorCode allocate_PA_delta_T();
 };

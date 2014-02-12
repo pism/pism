@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -22,11 +22,6 @@
 #include <string>
 #include <petsc.h>
 
-// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
-/// @cond NAMESPACE_BROWSER
-using namespace std;
-/// @endcond
-
 //! Virtual base class.  Abstracts a tridiagonal system to solve in a column of ice and/or bedrock.
 /*!
 Because both the age evolution and conservation of energy equations require us to set up
@@ -43,37 +38,37 @@ the system in each column.
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(PetscInt my_nmax, string my_prefix);
+  columnSystemCtx(unsigned int my_nmax, std::string my_prefix);
   virtual ~columnSystemCtx();
 
-  PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
+  PetscErrorCode setIndicesAndClearThisColumn(int i, int j, int ks);  
 
-  PetscScalar    norm1(const PetscInt n) const;
-  PetscScalar    ddratio(const PetscInt n) const;
+  double    norm1(unsigned int n) const;
+  double    ddratio(unsigned int n) const;
 
   PetscErrorCode viewVectorValues(PetscViewer viewer,
-                                  const PetscScalar *v, PetscInt m, const char* info) const;
+                                  const double *v, int m, const char* info) const;
   PetscErrorCode viewMatrix(PetscViewer viewer, const char* info) const;
   virtual PetscErrorCode viewSystem(PetscViewer viewer) const;
 
   PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex);
-  PetscErrorCode viewColumnInfoMFile(PetscScalar *x, PetscInt n);
-  PetscErrorCode viewColumnInfoMFile(char *filename, PetscScalar *x, PetscInt n);
+  PetscErrorCode viewColumnInfoMFile(double *x, unsigned int n);
+  PetscErrorCode viewColumnInfoMFile(char *filename, double *x, unsigned int n);
 
 protected:
-  PetscInt    nmax;
-  PetscScalar *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
+  unsigned int nmax;
+  double *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
 
-  PetscInt    i, j, ks;
+  int    i, j, ks;
 
   // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(const PetscInt n, PetscScalar **x);
+  PetscErrorCode solveTridiagonalSystem(unsigned int n, double *x);
   
-  string      prefix;
+  std::string      prefix;
 private:
   bool        indicesValid;
   PetscErrorCode resetColumn();
 };
 
-#endif	/* __columnSystem_hh */
+#endif  /* __columnSystem_hh */
 

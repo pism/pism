@@ -13,7 +13,7 @@ rm -f $files
 $PISM_PATH/flowlaw_test -flow_law gpbld > flowtable-20.txt
 # compare results
 diff flowtable-20.txt - > diff-20.txt <<END-OF-OUTPUT
-flow law:   "gpbld"
+flow law:   "Glen-Paterson-Budd-Lliboutry-Duval"
 pressure = 1.785e+07 Pa = (hydrostatic at depth 2000.00 m)
 flowtable:
   (dev stress)   (abs temp) (liq frac) =   (flow)
