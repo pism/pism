@@ -77,4 +77,4 @@ endif()
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (GSL DEFAULT_MSG GSL_LIBRARIES GSL_INCLUDES)
 
-mark_as_advanced (GSL_LIB GSL_CBLAS_LIB GSL_INCLUDES)
+mark_as_advanced (GSL_LIB GSL_CBLAS_LIB GSL_INCLUDES GSL_CONFIG)
