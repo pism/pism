@@ -99,6 +99,7 @@ Here $c_0$ is called the ``till cohesion'', whose default value in PISM is zero 
     \\\midrule
     \intextoption{yield_stress mohr_coulomb} &   The default.  Use equation \eqref{eq:mohrcoulomb} to determine $\tau_c$.  Only effective if \texttt{-stress_balance ssa} or \texttt{-stress_balance ssa+sia} is also set. \\
     \intextoption{till_c_0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
+   \intextoption{tauc_slippery_grounding_lines} & If set, replace normally-computed $\tau_c$ from Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of $\tau_c$ from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the reported amount of till water, nor does this mechanism affect water conservation.\\
     \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
     \txtopt{topg_to_phi}{\emph{list of 4 numbers}} & Compute $\phi$ using equation \eqref{eq:phipiecewise}.\\ \midrule
     \intextoption{yield_stress constant} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-stress_balance ssa} or \texttt{-stress_balance ssa+sia} is also set. \\
