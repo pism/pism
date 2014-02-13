@@ -94,7 +94,7 @@ Also, please don't expect all your questions to be answered here.  Write to us w
 \vfill
 
 \begin{quote}
-\textsl{Copyright (C) 2004--2013 the PISM authors.}
+\textsl{Copyright (C) 2004--2014 the PISM authors.}
 \medskip
 
 \noindent \textsl{This file is part of PISM.  PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -171,14 +171,9 @@ The following Python packages are needed to do all the examples in the \emph{Use
 \subsubsection{Installing prerequisites by packages (Debian)}
 \label{sec:deb-libraries-by-hand}
 
-Even if you cannot use the meta-package above you may still be able to use your
-package manager to get the prerequisites for PISM.
+You should be able to use your package manager to get the prerequisites for PISM.
 Install the following packages using \texttt{apt-get} or \texttt{synaptic} or similar.
 All of these are recommended as they satisfy requirements for building or running PISM.
-Regarding the final group, note that some form of MPI and
-BLAS and LAPACK are needed, but that if you will configure PETSc with
-option \texttt{--download-mpich=1} and so on (see below), which PETSc generally recommends
-and which works well for PISM, then you may not need to get these packages.
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
     \toprule
@@ -256,10 +251,7 @@ From now on, this manual assumes the use of the \texttt{bash} shell.
     \emph{Message Passing Interface})}.\index{MPI (\emph{Message Passing
       Interface})} Your system may have an existing MPI installation, in which
   case the path to the MPI directory will be used when installing PETSc  (see \ref{subsec:prereq-petsc}).
-  Otherwise we recommend that you allow PETSc to download
-  \href{http://www-unix.mcs.anl.gov/mpi/mpich2/}{MPICH2} as part of the PETSc
-  configure process (see \ref{subsec:prereq-petsc}).
-  In any case, the goal is to have the PETSc installation use the
+  The goal is to have the PETSc installation use the
   same version of MPI which is called by the \texttt{mpiexec} or \texttt{mpirun}
   executable.
 
@@ -324,7 +316,7 @@ etc.; check with your system administrator.
 
 \item It is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-f2cblaslapack=1}'' to the other configure options; note there is no use of Fortran in PISM.
 
-\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option ``\texttt{--with-mpi-dir=/home/user/mympi/}''.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in sub-directory \texttt{bin/} and MPI library files in sub-directory \texttt{lib/}.  On the other hand, the user who only needs MPI and PETSc for running PISM, and other users as well, may want to follow the PETSc recommendation to have PETSc download MPI\index{MPI (\emph{Message Passing Interface})} into a place it understands; do \texttt{--download-mpich=1}.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try also try this option.
+\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option ``\texttt{--with-mpi-dir=/home/user/mympi/}''.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in sub-directory \texttt{bin/} and MPI library files in sub-directory \texttt{lib/}. If you get messages suggesting that PETSc cannot configure using your existing MPI, you might want to try adding the \texttt{--download-mpich=1} (or \texttt{--download-openmpi=1}) option to PETSc's configure command.
 
 \item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \texttt{--with-batch=1}.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
 
@@ -522,7 +514,7 @@ This section adds information on installing PISM and its prerequisites on the Ma
   \href{http://www.finkproject.org/}{Fink} is recommended, as it significantly
   simplifies installing many open-source libraries. Download a package from the
   \href{http://www.macports.org/install.php}{MacPorts homepage} (or
-  (\href{http://www.finkproject.org/download/index.php}{Fink homepage}, install
+  \href{http://www.finkproject.org/download/index.php}{Fink homepage}), install
   and set the environment:
 
 \begin{verbatim}
@@ -555,15 +547,10 @@ Untar, then change to the directory just created.
 The next three commands complete the PETSc installation:
 \begin{verbatim}
 $  export PETSC_DIR=$PWD; export PETSC_ARCH=macosx;
-$  ./config/configure.py --download-mpich=1 --download-f2cblaslapack=yes \
-                         --with-shared-libraries \
-                         --with-debugging=no --with-fortran=0
+$  ./config/configure.py --with-shared-libraries \
+                         --with-fortran=0 --with-debugging=0
 $  make all test
 \end{verbatim}
-
-We are telling PETSc to download and build MPICH-2 because recent Mac OS X
-versions do not include Open MPI. (This works better than trying to install
-Open MPI or MPICH-2 via MacPorts.)
 
 \item Now you can build PISM as described in section \ref{sec:install-cmake}.
 \end{enumerate}
@@ -741,8 +728,7 @@ documentation evolve together. These tools are required: \bigskip
     \texttt{make forcing} & to build the \emph{PISM's Climate Forcing
       Components} document, \texttt{forcing.pdf} \\
     \texttt{make installation} & to build this document, the \emph{Installation Manual}, \texttt{installation.pdf}\\
-    \texttt{make browser_base} & to build the \emph{PISM Source Code Browser},\\
-    \texttt{make browser_util} & to build the \emph{PISM Utility Class Browser}\\
+    \texttt{make browser} & to build the \emph{PISM Source Code Browser},\\
   \end{tabular}
 \end{center}
 \bigskip
