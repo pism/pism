@@ -463,7 +463,9 @@ PetscErrorCode PISMEigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mas
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   for (int   i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      if (mask.floating_ice(i, j) == false)
+      if (mask.ice_free(i, j))  // FIXME: it might be better to have access to bedrock elevation b(i,j)
+                                // and sea level SL so that the predicate can be
+                                //   mask.ice_free(i,j) || (mask.grounded_ice(i,j) && (b(i,j) >= SL)))
         continue;
 
       const bool
