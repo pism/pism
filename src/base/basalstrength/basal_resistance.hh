@@ -53,7 +53,7 @@ public:
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
-  double pseudo_q, pseudo_u_threshold, sliding_scale;
+  double pseudo_q, pseudo_u_threshold, sliding_scale_factor_reduces_tauc;
 };
 
 #endif /* __basal_resistance_hh */

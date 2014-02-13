@@ -529,13 +529,13 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
    }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
-  bool nuBedrockSet=config.get_flag("nuBedrockSet");
-  if (nuBedrockSet) {
+  bool nu_bedrock_set=config.get_flag("nu_bedrock_set");
+  if (nu_bedrock_set) {
     ierr =    thickness->begin_access();  CHKERRQ(ierr);
     ierr =    bed->begin_access();        CHKERRQ(ierr);
     ierr =    surface->begin_access();    CHKERRQ(ierr);
   }
-  double nuBedrock=config.get("nuBedrock");
+  double nu_bedrock=config.get("nu_bedrock");
   double HminFrozen=0.0;
 
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -559,7 +559,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       double c_s = nuH(i,j-1,1);
       double c_n = nuH(i,j,1);
 
-      if (nuBedrockSet){
+      if (nu_bedrock_set){
        // if option is set, the viscosity at ice-bedrock boundary layer will
        // be prescribed and is a temperature-independent free (user determined) parameter
 
@@ -571,16 +571,16 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
         if ((*thickness)(i,j) > HminFrozen) {
           if ((*bed)(i-1,j) > (*surface)(i,j) && M.ice_free_land(M_w)) {
-            c_w = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
+            c_w = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
           }
           if ((*bed)(i+1,j) > (*surface)(i,j) && M.ice_free_land(M_e)) {
-            c_e = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+            c_e = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
           }
           if ((*bed)(i,j+1) > (*surface)(i,j) && M.ice_free_land(M_n)) {
-            c_n = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
+            c_n = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
           }
           if ((*bed)(i,j-1) > (*surface)(i,j) && M.ice_free_land(M_s)) {
-            c_s = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+            c_s = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
           }
         }
       }
@@ -775,7 +775,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
-  if (nuBedrockSet) {
+  if (nu_bedrock_set) {
         ierr = thickness->end_access(); CHKERRQ(ierr);
         ierr = bed->end_access();       CHKERRQ(ierr);
         ierr = surface->end_access();   CHKERRQ(ierr);
@@ -897,9 +897,9 @@ PetscErrorCode SSAFD::solve() {
     ierr = write_system_matlab(); CHKERRQ(ierr);
   }
   
-  if (config.get_flag("scalebrutalSet")){
-    const double sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
-    ierr = m_velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
+  if (config.get_flag("brutal_sliding")){
+    const double brutal_sliding_scaleFactor = config.get("brutal_sliding_scale");
+    ierr = m_velocity.scale(brutal_sliding_scaleFactor); CHKERRQ(ierr);
 
     ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
   }

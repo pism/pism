@@ -91,9 +91,6 @@ netcdf pism_config {
     pism_config:write_ssa_system_to_matlab = "no";
     pism_config:write_ssa_system_to_matlab_doc = "Specifies whether to write the SSA system to a matlab file";
 
-    pism_config:scalebrutalSet = "false";
-    pism_config:scalebrutalSet_doc = "Enhance sliding speed brutally.";
-
     pism_config:include_bmr_in_continuity = "yes";
     pism_config:include_bmr_in_continuity_doc = "Include basal melt rate in the continuity equation";
 
@@ -115,8 +112,11 @@ netcdf pism_config {
     pism_config:use_temperature_dependent_thermal_conductivity = "no";
     pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [@ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
 
-    pism_config:nuBedrockSet = "false";
-    pism_config:nuBedrockSet_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
+    pism_config:nu_bedrock = 5.0e15;
+    pism_config:nu_bedrock_doc = "Pa s; Staggered Viscosity used as side friction parameterization.";
+
+    pism_config:nu_bedrock_set = "false";
+    pism_config:nu_bedrock_set_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
 
     pism_config:sub_groundingline  = "false";
     pism_config:sub_groundingline_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
@@ -169,8 +169,11 @@ netcdf pism_config {
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "; Flow enhancement factor for SSA";
 
-    pism_config:sliding_scale_brutal = 1.0;
-    pism_config:sliding_scale_brutal_doc = "; Brutal SSA Sliding Scale";
+    pism_config:brutal_sliding = "false";
+    pism_config:brutal_sliding_doc = "Enhance sliding speed brutally.";
+
+    pism_config:brutal_sliding_scale = 1.0;
+    pism_config:brutal_sliding_scale_doc = "; Brutal SSA Sliding Scale";
 
     pism_config:ice_grain_size = 1.0;
     pism_config:ice_grain_size_doc = "mm; Default constant ice grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
@@ -178,8 +181,8 @@ netcdf pism_config {
     pism_config:compute_grain_size_using_age = "no";
     pism_config:compute_grain_size_using_age_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
 
-    pism_config:do_e_age_coupling = "no";
-    pism_config:do_e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
+    pism_config:e_age_coupling = "no";
+    pism_config:e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
 
     pism_config:start_year = 0;
     pism_config:start_year_doc = "years; Start year.";
@@ -309,9 +312,6 @@ netcdf pism_config {
 
     pism_config:thickness_calving_threshold = 50.0;
     pism_config:thickness_calving_threshold_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
-
-    pism_config:nuBedrock = 5.0e15;
-    pism_config:nuBedrock_doc = "Pa s; Staggered Viscosity used as side friction parameterization.";
 
 
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
