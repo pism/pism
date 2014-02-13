@@ -687,7 +687,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.scalar_from_option("sia_e", "sia_enhancement_factor"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_e", "ssa_enhancement_factor"); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("e_age_coupling", "do_e_age_coupling"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("e_age_coupling", "e_age_coupling"); CHKERRQ(ierr);
 
   // This parameter is used by the Goldsby-Kohlstedt flow law.
   ierr = config.scalar_from_option("ice_grain_size", "ice_grain_size"); CHKERRQ(ierr);
@@ -707,10 +707,10 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.flag_from_option("cfbc", "calving_front_stress_boundary_condition"); CHKERRQ(ierr);
 
   // Basal sliding fiddles
-  ierr = config.flag_from_option("brutal_sliding", "scalebrutalSet"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("brutal_sliding_scale","sliding_scale_brutal"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("brutal_sliding", "brutal_sliding"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("brutal_sliding_scale","brutal_sliding_scale"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("sliding_scale",
+  ierr = config.scalar_from_option("sliding_scale_factor_reduces_tauc",
                                    "sliding_scale_factor_reduces_tauc"); CHKERRQ(ierr);
 
   // SSA Inversion
@@ -791,10 +791,10 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("nuBedrock", "nuBedrock"); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-nuBedrock", flag);  CHKERRQ(ierr);
+  ierr = config.scalar_from_option("nu_bedrock", "nu_bedrock"); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-nu_bedrock", flag);  CHKERRQ(ierr);
   if (flag) {
-    config.set_flag_from_option("nuBedrockSet", true);
+    config.set_flag_from_option("nu_bedrock_set", true);
   }
 
   // fracture density
@@ -874,7 +874,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
     // let the user decide if they want to use "-no_mass" or not
   }
 
-  ierr = config.flag_from_option("bed_def_lc_elastic", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("bed_def_lc_elastic_model", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
 

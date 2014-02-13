@@ -81,7 +81,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   // implements an option e.g. described in \ref Greve that is the
   // enhancement factor is coupled to the age of the ice with
   // e = 1 (A < 11'000 years), e = 3 otherwise
-  if (config.get_flag("do_e_age_coupling")) {
+  if (config.get_flag("e_age_coupling")) {
     ierr = verbPrintf(2, grid.com,
                       "  setting age-dependent enhancement factor: "
                       "e=1 if A<11'000 years, e=3 otherwise\n"); CHKERRQ(ierr);
