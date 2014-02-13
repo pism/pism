@@ -22,29 +22,15 @@ fi
 exdt=25 # for the extrafile
 
 THRESHOLD=4.5e4   #  stress threshold
-if [ $# -gt 5 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4" then ... and -fractures x,7e16,x,x
-  THRESHOLD="$6"
-fi
 
 FRACRATE=0.5   #  fracture rate
-if [ $# -gt 6 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4 0.5 " then ... and -fractures 0.5,x,x,x
-  FRACRATE="$7"
-fi
 
 HEALTHRESHOLD=2.0e-10   #  healing threshold
-if [ $# -gt 7 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10" then ... and -fractures x,x,x,5.0e-10
-  HEALTHRESHOLD="$8"
-fi
 
 HEALRATE=0.05   #  healing rate
-if [ $# -gt 8 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1" then ... and -fractures x,x,0.1,x
-  HEALRATE="$9"
-fi
 
 SOFTRES=0.01   #  softening residual (avoid viscosity from degeneration), value 1 inhibits softening effect
-if [ $# -gt 9 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1 0.001" then ... and -fracture_softening 0.001
-  SOFTRES="$10"
-fi
+
 
 # options ###############################
 
