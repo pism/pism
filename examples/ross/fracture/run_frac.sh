@@ -15,13 +15,13 @@ if [ $# -gt 2 ] ; then  # if user says "run_frac.sh 8 211 0.6" then ... and -ssa
   SSAE="$3"
 fi
 
-YEARS=500    # integration time
+YEARS=3000    # integration time
 if [ $# -gt 3 ] ; then  # if user says "run_frac.sh 8 211 0.6 500" then ... and -y 500
   YEARS="$4"
 fi
-interval=25
+exdt=25 # for the extrafile
 
-THRESHOLD=7.0e4   #  stress threshold
+THRESHOLD=4.5e4   #  stress threshold
 if [ $# -gt 5 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4" then ... and -fractures x,7e16,x,x
   THRESHOLD="$6"
 fi
@@ -31,17 +31,17 @@ if [ $# -gt 6 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 7.0e4 0.5
   FRACRATE="$7"
 fi
 
-HEALTHRESHOLD=5.0e-10   #  healing threshold
+HEALTHRESHOLD=2.0e-10   #  healing threshold
 if [ $# -gt 7 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10" then ... and -fractures x,x,x,5.0e-10
   HEALTHRESHOLD="$8"
 fi
 
-HEALRATE=0.1   #  healing rate
+HEALRATE=0.05   #  healing rate
 if [ $# -gt 8 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1" then ... and -fractures x,x,0.1,x
   HEALRATE="$9"
 fi
 
-SOFTRES=1.0   #  softening residual (avoid viscosity from degeneration), value 1 inhibits softening effect
+SOFTRES=0.01   #  softening residual (avoid viscosity from degeneration), value 1 inhibits softening effect
 if [ $# -gt 9 ] ; then  # if user says "run_frac.sh 8 211 0.6 500 7e16 0.5 5.0e-10 0.1 0.001" then ... and -fracture_softening 0.001
   SOFTRES="$10"
 fi
@@ -49,6 +49,7 @@ fi
 # options ###############################
 
 PISMPREFIX=""
+#PISMPREFIX="../../../bin/"
 
 NAME=frac_Mx${M}_yr-${YEARS}.nc
 
@@ -59,7 +60,7 @@ ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa
 
 calving="-calving ocean_kill "
 
-extra="-extra_file ex-${NAME} -extra_times 0:${interval}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
+extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
 timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 
@@ -89,8 +90,6 @@ cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface give
   ${fractures} ${extra} ${timeseries}"
 
 # -ssa_rtol 1.0e-3 -ssa_eps 5.0e15
-# -cfl_eigencalving
-# -nuBedrock 1e15
 
 echo "running command:"
 echo

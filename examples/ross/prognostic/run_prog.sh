@@ -15,15 +15,17 @@ if [ $# -gt 2 ] ; then  # if user says "run_prog.sh 8 211 0.7" then ... and -ssa
   SSAE="$3"
 fi
 
-YEARS=100    # integration time
+YEARS=3000    # integration time
 if [ $# -gt 3 ] ; then  # if user says "run_prog.sh 8 211 0.7 200" then ... and -y 200
   YEARS="$4"
 fi
 
 PISMPREFIX=""
+#PISMPREFIX="../../../bin/"
 
 # use these for more robust SSA solves
-STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
+#STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
+STRONGKSP=""
 
 # preliminary bootstrap and diagnostic run:
 STARTNAME=startfile_Mx${M}.nc
@@ -38,9 +40,9 @@ ${cmd_diag}
 
 # prognostic run
 NAME=prog_Mx${M}_yr${YEARS}.nc
-ECALV=1e17   #  constant for eigen_calving parameterization
-CTHICK=150.0  #  constant thickness for thickness_calving
-exdt=5
+ECALV=1e18   #  constant for eigen_calving parameterization
+CTHICK=50.0  #  constant thickness for thickness_calving
+exdt=25
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
   -ssa_dirichlet_bc -ssa_e $SSAE -y $YEARS -o $NAME -o_order zyx -o_size big \
