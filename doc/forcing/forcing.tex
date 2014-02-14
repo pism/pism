@@ -1436,7 +1436,7 @@ It takes one command-line option:
 \item \intextoption{meltfactor_pik}: a melt factor $F_{\mathrm{melt}}$ in sub-shelf-melting parameterization, see equation~(5) in~\cite{Martinetal2011}.
 \end{itemize}
 
-\subsection{basal melt rate and temperature from thermodynamics in boundary layer}
+\subsection{Basal melt rate and temperature from thermodynamics in boundary layer}
 \label{sec:ocean-th}
 \optsection{OA@\ocean!\texttt{th}}
 
@@ -1444,17 +1444,18 @@ It takes one command-line option:
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-ocean~th} \index[options]{OA@\ocean!\texttt{th}} \\
-    NetCDF variables: & none \\
+    NetCDF variables: & \variable{theta_ocean} (absolute potential ocean temperature), [Kelvin], \variable{salinity_ocean} (salinity of the adjacent ocean), [g/kg] \\
     C++ class: & \class{POGivenTH}\\
     \bottomrule
   \end{tabular}
 \end{center}
 
 This ocean model~component derives basal melt rate and basal temperature from thermodynamics in a boundary layer at the base of the ice shelf.
-It uses a set of three equations describing (1) the heat and (2) the salinity balance as well as (3) the pressure and salinity dependent freezing point in the boundary layer \cite{Hellmeretal1998}. Temperature and salinity in that layer are equilibrated by fluxes from the adjacent mixed ocean waters and the ice and by the melting or refreezing of ice.
-Inputs are potential temperature and salinity fields, for example from an ocean model.
-No ocean circulation is modeled and there is therefore no feedback from derived melt waters on the ocean.
+It uses a set of three equations describing (1) the energy balance, (2) the salinity balance, and (3) the pressure and salinity dependent freezing point in the boundary layer \cite{Hellmeretal1998}. Temperature and salinity in the boundary layer are equilibrated by fluxes from the adjacent mixed ocean waters and the ice and by the melting or refreezing of ice.
 
+Inputs are potential temperature and salinity fields, for example from an ocean model.
+
+No ocean circulation is modeled, so melt water computed by this model is not fed back into the surrounding ocean.
 
 It takes one command-line option:
 \begin{itemize}
