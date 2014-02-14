@@ -106,9 +106,6 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -boot_file ${INNAME} $GRID
 $DO $cmd
 #exit # <-- uncomment to stop here
 
-# replace topg with topgsmooth in file $RESNAMEONE
-PISM_DO=$PISM_DO ./topgreplace.sh $RESNAMEONE
-
 stage=smoothing
 RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 RUNTIME=100
@@ -166,7 +163,7 @@ $DO $cmd
 #exit # <-- comment to stop here
 
 # #######################################
-## do a regridding to fine grid and reset year to 0 (demonstrate for only 1000 model years):
+## do a regridding to fine grid and reset year to 0 and run for 2000 model years:
 # #######################################
 GRID=$FIFTEENKMGRID
 SKIP=$SKIPFIFTEENKM
@@ -175,38 +172,15 @@ stage=run_regrid_${GRIDNAME}
 INNAME=$RESNAME
 RESNAME=${RESDIR}$stage.nc
 TSNAME=${RESDIR}ts_$stage.nc
-RUNTIME=1000
+RUNTIME=2000
 EXTRANAME=${RESDIR}extra_$stage.nc
 expackage="-extra_times 0:10:$RUNTIME -extra_vars $exvars"
 
 echo
-echo "$SCRIPTNAME  continue but regrid to $GRIDNAME"
+echo "$SCRIPTNAME  continue but regrid to $GRIDNAME and run for 2000 a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
     -boot_file $PISM_INDATANAME $GRID \
     -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
-    $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
-    -ys 0 -y $RUNTIME \
-    -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-    -extra_file $EXTRANAME $expackage \
-    -o $RESNAME -o_size big"
-
-$DO $cmd
-
-
-# continue run after smoothing topg
-
-# replace topg with topgsmooth in file $RESNAMEONE
-PISM_DO=$PISM_DO ./topgreplace.sh $RESNAME
-
-INNAME=$RESNAME
-stage=run_cont_${GRIDNAME}
-RESNAME=${RESDIR}$stage.nc
-TSNAME=${RESDIR}ts_$stage.nc
-RUNTIME=1000
-EXTRANAME=${RESDIR}extra_$stage.nc
-echo "$SCRIPTNAME  continue on $GRIDNAME grid"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
-    -i $INNAME \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
     -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
