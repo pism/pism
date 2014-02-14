@@ -371,3 +371,8 @@ PetscErrorCode POGivenTH::sea_level_elevation(double &result) {
   result = sea_level;
   return 0;
 }
+
+PetscErrorCode POGivenTH::melange_back_pressure_fraction(IceModelVec2S &result) {
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}
