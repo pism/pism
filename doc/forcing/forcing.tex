@@ -462,7 +462,8 @@ $ pismr -test_climate_models -no_mass -i g20km_pre100.nc \
         -ys 0 -ye 1 -extra_times 0:1week:1 \
         -extra_file foo.nc \
         -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot,precipitation
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temp} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{ice_surface_temp} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
 
 
@@ -481,7 +482,8 @@ $ pismr -boot_file g20km_pre100.nc -Mx 51 -My 101 -Mz 11 \
         -extra_vars climatic_mass_balance,air_temp_snapshot,smelt,srunoff,saccum
         -ts_file ts.nc -ts_times 0:0.1:2.5 \
         -o bar.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 will produce \texttt{foo.nc} containing a ``movie'' very similar to the one created by the previous run, but including the full influence of ice dynamics.
 
 In addition to \texttt{foo.nc}, the latter command will produce \texttt{ts.nc} containing scalar time-series. The variable \texttt{surface_ice_flux} (the \emph{total over the ice-covered area} of the surface mass flux) can be used to detect if climate forcing is applied at the right time.
@@ -498,7 +500,8 @@ $ pismr -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
           -extra_times 0:1week:3 -ys 0 -ye 3 \
           -extra_file pddmovie.nc -o_order zyx \
           -extra_vars climatic_mass_balance,air_temp_snapshot
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
 (instantaneous net accumulation (ablation) rate), \texttt{air_temp_snapshot}
 (instantaneous near-surface air temperature), \texttt{precipitation} (mean annual
@@ -543,7 +546,8 @@ $ pismr -i g20km_pre100.nc -surface simple \
           -extra_vars ice_surface_temp \
           -extra_file dT_movie.nc -o_order zyx \
           -test_climate_models -no_mass
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 The output \texttt{dT_movie.nc} and \texttt{pism_dT.nc} were used to create figure \ref{fig:artm-timeseries}.
 
 This figure shows the GRIP temperature offsets and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
@@ -635,7 +639,8 @@ For example, to use monthly records and period of 1 year, create a file (say,
 too). Then, run
 \begin{verbatim}
 $ pismr -surface given -surface_given_file foo.nc -surface_given_period 1
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 \noindent Notes:
 \begin{itemize}
@@ -652,7 +657,8 @@ $ pismr -surface given -surface_given_file foo.nc -surface_given_period 1
   To change the storage order in a NetCDF file, use \texttt{ncpdq}:
 \begin{verbatim}
 $ ncpdq -a t,x,y input.nc output.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
   will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the
   storage order to \texttt{t,x,y} at the same time.
 \end{itemize}
@@ -1006,7 +1012,8 @@ thickness field. A basic run modifying surface model \texttt{given} would
 look like
 \begin{verbatim}
 $ pismr -i foo.nc -surface given,forcing -force_to_thk bar.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp},
 as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field

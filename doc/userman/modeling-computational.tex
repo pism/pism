@@ -75,7 +75,8 @@ When running PISM in parallel with \texttt{mpiexec -n N}, the horizontal grid is
 Once $N_x$ and $N_y$ are computed, PISM computes sizes of sub-domains $M_{x,i}$ so that $\sum_{i=1}^{N_x}M_{x,i} = \mathrm{Mx}$ and $M_{x,i} - \left\lfloor \mathrm{Mx} / N_x \right\rfloor < 1$. To specify strip widths $M_{x,i}$ and $M_{y,i}$, use command-line options \intextoption{procs_x} and \intextoption{procs_y}. Each option takes a comma-separated list of numbers as its argument. For example,
 \begin{verbatim}
 $ mpiexec -n 3 pisms -Mx 101 -My 101 -Nx 1 -Ny 3 -procs_x 101 -procs_y 20,61,20
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 splits a $101 \times 101$ grid into 3 strips along the $x$ axis.
 
 \subsection{Model time}
@@ -173,7 +174,8 @@ $ pismr -calendar standard -ys 2001-1-1 -ye 2101-1-1 ...
 It is also possible to run PISM for the duration of the available forcing data using the \fileopt{time_file} option.  The command
 \begin{verbatim}
 $ pismr -calendar gregorian -time_file forcing.nc
-\end{verbatim} %$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 will extract the reference date and run length from \texttt{forcing.nc}, respecting time bounds.
 
 It is also possible to save spatial and/or scalar time-series daily, monthly or yearly using these calendric computations. See sections~\ref{sec:saving-time-series} and~\ref{sec:saving-spat-vari}.

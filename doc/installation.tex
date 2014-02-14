@@ -375,11 +375,13 @@ If your operating system does not support shared libraries\footnote{This might b
 either running
 \begin{verbatim}
 $  cmake -DPism_LINK_STATICALLY:BOOL=ON ..
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 or by using \texttt{ccmake}:\footnote{Install the \texttt{cmake-curses-gui} package to get \texttt{ccmake} on Ubuntu.} run
 \begin{verbatim}
 $  ccmake ..
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 and then change \texttt{Pism_LINK_STATICALLY} (and then press 'c' for ``configure'' then 'g' for ``generate makefiles'').  Then do \texttt{make install}.
 
 Object files created during the build process (located in the \texttt{build}
@@ -533,7 +535,8 @@ for Fink.
 \item  If you are using MacPorts, do
 \begin{verbatim}
 $  sudo port install netcdf ncview gsl fftw-3 libproj4 git-core cmake
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 Fink users should use the following command instead (\texttt{ncview} is only available in the unstable branch).
 \begin{verbatim}

@@ -27,23 +27,27 @@ Sayag \& Worster estimate Glen exponent $n = 5.9$ for the flow law of their gum 
 To run the example, first do
 \begin{verbatim}
 $ python preprocess.py
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 and then do a run for 746 model seconds \cite{SayagWorster2013} on an 10 mm grid (520 mm / 52 subintervals) using 4 processors:
 \begin{verbatim}
 $ ./rungum.sh 4 53 &> out.lab53 &
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 This run generates text file \texttt{out.lab53}, diagnostic files \texttt{ts_lab53.nc} and \texttt{ex_lab53.nc}, and final output \texttt{lab53.nc}.  The run took about 5 minutes on a 2013 laptop; roughly real time!
 
 When it is done, you can compare the modeled radius to the experimental data:
 \begin{verbatim}
 $ ./showradius.py -o r53.png -d constantflux3.txt ts_lab53.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 You can also redo the whole thing on a higher resolution grid (here: 2.5 mm), and when that run is done after several hours, make a combined figure just like Figure \ref{fig:labgumresult}:
 \begin{verbatim}
 $ ./preprocess.py -Mx 209 -o initlab209.nc
 $ ./rungum.sh 4 209 &> out.lab209 &
 $ ./showradius.py -o foo.png -d constantflux3.txt ts_lab*.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 \begin{figure}[ht]
 \centering
@@ -69,7 +73,8 @@ The scripts in this subsection are found in directory \texttt{examples/ross/}.  
 \begin{verbatim}
 $ cd examples/ross/
 $ ./preprocess.py
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 The NetCDF file \texttt{Ross_combined.nc} produced by \texttt{preprocess.py} contains ice thickness, bed elevations, surface temperature, net accumulation, as well as latitude and longitude values.  All of these are typical of ice sheet modelling data, both in diagnostic runs and as needed to initialize and provide boundary conditions for prognostic (evolutionary) runs; see below for the prognostic case with these data.  The \texttt{_combined} file also has variables \texttt{u_ssa_bc} and \texttt{v_ssa_bc} for the boundary values used in the (diagnostic and prognostic) computation of velocity.  They are used at all grounded locations and at ice shelf cells that are immediate neighbors of grounded ice.  The variable \texttt{bcflag} specifies these locations.  Finally the variables \texttt{u_ssa_bc,v_ssa_bc}, which contain observed values, are used after the run to compare to the computed interior velocities.
 
@@ -79,7 +84,8 @@ The NetCDF file \texttt{Ross_combined.nc} produced by \texttt{preprocess.py} con
 pismr -boot_file ../Ross_combined.nc -Mx 211 -My 211 -Mz 3 -Lz 3000 -z_spacing equal \
     -surface given -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 \
     -pik -ssa_dirichlet_bc -y 0 -ssa_e 0.6 -ssafd_ksp_monitor
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 \noindent The computational grid here is the ``native'' $5$ km data grid used in ALBMAP.  Regarding the options,
 
@@ -106,7 +112,8 @@ There is no need to type in the above command; just do
 \begin{verbatim}
 $ cd diagnostic/
 $ ./run_diag.sh 2 211 0.6
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 Note \texttt{run_diag.sh} accepts three arguments: \texttt{run_diag.sh N Mx E} does a run with
 \texttt{N} MPI processes, an \texttt{Mx} by \texttt{Mx} grid, and option \texttt{-ssa_e E}.  The choices above give a run which only takes a few seconds, and it produces output file \texttt{diag_Mx211.nc}.
@@ -117,7 +124,8 @@ The script \texttt{plot.py} takes PISM output such as \texttt{diag_Mx211.nc} to 
 
 \begin{verbatim}
 $ ../plot.py diag_Mx211.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 \begin{figure}[ht]
 \centering
@@ -139,7 +147,8 @@ Then change to the \texttt{prognostic/} directory and run the default example:
 \begin{verbatim}
 $ cd examples/ross/prognostic/
 $ ./run_prog.sh 4 211 0.6 100
-\end{verbatim}%$    
+\end{verbatim}
+%$ - match dollar signs to make emacs happy    
 
 \noindent This 100 model year run on 4 processes and a 5 km grid took about twenty minutes on a 2013 laptop.  It starts with a bootstrapping stage which does a \texttt{y 0} run, which generates \texttt{startfile_Mx211.nc}.  It then re-initializes to start the prognostic run itself.  See the \texttt{README.md} for a bit more on the arguments taken by \texttt{run_prog.sh} and on viewing the output files.
 
@@ -153,7 +162,8 @@ pismr -i startfile_Mx211.nc -surface given -stress_balance ssa \
     -cfl_eigen_calving -thickness_calving_threshold 150.0 \
     -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
     -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
-\end{verbatim}%$    
+\end{verbatim}
+%$ - match dollar signs to make emacs happy    
 
 Several of these options are different from those used in the diagnostic case.  First, while the command \texttt{-pik} is the same as before, now each part of its expansion, namely \texttt{-cfbc -kill_icebergs -part_grid -part_redist}, is important.  As the calving front evolves (i.e.~regardless of the calving law choices), option \texttt{-part_grid} moves the calving front by one grid cell only when the cell is full of the ice flowing into it; see \cite{Albrechtetal2011}.  The option \texttt{-kill_icebergs} is essential to maintain well-posedness of the SSA velocity problem at each time step \cite{Winkelmannetal2011}.  See section \ref{sec:pism-pik}.
 
@@ -161,14 +171,16 @@ Option combination
 \begin{verbatim}
     -calving eigen_calving,thickness_calving -eigen_calving_K 1e17 \
     -cfl_eigen_calving -thickness_calving_threshold 150.0
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 specifies that ice at the calving front will be removed if either a criterion on the product of principal stresses is satisfied \cite{Levermannetal2012}, namely \texttt{eigen_calving} with the given constant $K$, or if the ice thickness goes below the given threshold of 150 meters.  See subsection \ref{sec:calving}.
 
 There is also an extended option combination
 \begin{verbatim}
     -ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned \
     -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 which tells the PETSc KSP object used by the SSA solver to solve in the most robust, though not necessarily fastest, way.  In particular, the linear problem is spread across processors using an additive Schwarz domain decomposition preconditioning method (\texttt{pc_type asm}) \cite{Smithetal1996}, along with the standard \texttt{gmres} KSP solver, and then on each processor the local part of the linear system is solved by a direct method by the preconditioner (\texttt{sub_pc_type lu}).  These choices seem to be effective for solving SSA stress balances on the complicated-geometry domains which arise from nontrivial calving laws.
 
 %FIXME \textbf{Evolving fracture density.}  See \texttt{README.md}, \texttt{preprocess_frac.py}, and \texttt{run_frac.sh} in directory \texttt{examples/ross/fracture_density/}.  This example demonstrates the fracture density transport model in \cite{AlbrechtLevermann2012}.
