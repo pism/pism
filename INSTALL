@@ -57,8 +57,7 @@ To generate PDF documentation:
 
 To generate Doxygen source code documentation:
 
-  make browser_base        # doxygen docs; view doc/browser/base/html/index.html when built
-  make browser_util        #      ...           doc/browser/util/html/index.html   ...
+  make browser             # doxygen docs; view doc/browser/html/index.html when done
 
 See also: http://www.pism-docs.org/wiki/doku.php?id=development_version
 
