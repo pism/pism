@@ -44,7 +44,7 @@ else ()
     pismdoc/static/PISM.css )
 
   # Copy the bibliography file
-  configure_file (../ice_bib.bib ice_bib.bib COPYONLY)
+  configure_file (../ice-bib.bib ice-bib.bib COPYONLY)
 
   # copy all the files needed to generate browser sources
   foreach (filename ${sphinx_helpers})
