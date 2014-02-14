@@ -36,6 +36,7 @@ public:
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
+  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 private:
   IceModelVec2S shelfbtemp, shelfbmassflux;
   IceModelVec2S *ice_thickness;
