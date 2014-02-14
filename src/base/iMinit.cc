@@ -1011,14 +1011,14 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
-  // Make sure that we use the output_variable_order that works with
-  // NetCDF-4 and "quilt". (For different reasons, but mainly because
+  // Make sure that we use the output_variable_order that works with NetCDF-4,
+  // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
   // it is faster.)
   std::string o_format = config.get_string("output_format");
-  if ((o_format == "netcdf4_parallel" || o_format == "quilt") &&
+  if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       config.get_string("output_variable_order") != "xyz") {
     PetscPrintf(grid.com,
-                "PISM ERROR: output formats netcdf4_parallel and quilt require -o_order xyz.\n");
+                "PISM ERROR: output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.\n");
     PISMEnd();
   }
 

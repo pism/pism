@@ -821,7 +821,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
                                     "xyz,yxz,zyx"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("o_format", "output_format",
-                                    "netcdf3,quilt,netcdf4_parallel,pnetcdf"); CHKERRQ(ierr);
+                                    "netcdf3,quilt,netcdf4_parallel,pnetcdf,hdf5"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("summary_vol_scale_factor_log10",
                                    "summary_vol_scale_factor_log10"); CHKERRQ(ierr);

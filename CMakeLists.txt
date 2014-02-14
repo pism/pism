@@ -27,6 +27,7 @@ option (Pism_BUILD_PYTHON_BINDINGS "Build python bindings" OFF)
 option (Pism_USE_PROJ4 "Use Proj.4 to compute cell areas, longitudes, and latitudes." ON)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." ON)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." ON)
+option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
 option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
