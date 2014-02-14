@@ -46,7 +46,6 @@ PSTemperatureIndex::~PSTemperatureIndex() {
 
 PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   PetscErrorCode ierr;
-  bool flag;
 
   mbscheme              = NULL;
   faustogreve           = NULL;
