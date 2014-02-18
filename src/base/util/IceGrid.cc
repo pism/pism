@@ -34,6 +34,13 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
   x0 = 0.0;
   y0 = 0.0;
 
+  // initialize these data members to get rid of a valgrind warning;
+  // correct values will be set in IceGrid::allocate()
+  xs = 0;
+  ys = 0;
+  xm = 0;
+  ym = 0;
+
   std::string word = config.get_string("grid_periodicity");
   if (word == "none")
     periodicity = NONE;
