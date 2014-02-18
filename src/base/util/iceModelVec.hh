@@ -259,6 +259,8 @@ private:
   // disable copy constructor and the assignment operator:
   IceModelVec(const IceModelVec &other);
   IceModelVec& operator=(const IceModelVec&);
+public:
+  //! Dump an IceModelVec to a file. *This is for debugging only.*
   PetscErrorCode dump(const char filename[]);
 };
 

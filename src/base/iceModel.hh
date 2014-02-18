@@ -263,6 +263,10 @@ protected:
     cell_area,          //!< cell areas (computed using the WGS84 datum)
     flux_divergence;    //!< flux divergence
 
+public:
+  IceModelVec2S* get_geothermal_flux();
+protected:
+
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
   
   IceModelVec2 deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
@@ -438,6 +442,10 @@ protected:
   IceModelVec3 vWork3d;
 
   PISMStressBalance *stress_balance;
+
+public:
+  PISMStressBalance* get_stress_balance();
+protected:
 
   std::map<std::string,PISMDiagnostic*> diagnostics;
   std::map<std::string,PISMTSDiagnostic*> ts_diagnostics;

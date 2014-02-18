@@ -1103,3 +1103,13 @@ PetscErrorCode IceModel::init() {
   }
   return 0;
 }
+
+// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
+IceModelVec2S* IceModel::get_geothermal_flux() {
+  return &this->geothermal_flux;
+}
+
+// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
+PISMStressBalance* IceModel::get_stress_balance() {
+  return this->stress_balance;
+}
