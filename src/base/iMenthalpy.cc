@@ -205,11 +205,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   // essentially physical constants:
   const double
-    ice_rho      = config.get("ice_density"), // kg m-3
+    ice_density = config.get("ice_density"),              // kg m-3
     L            = config.get("water_latent_heat_fusion"), // J kg-1
     // constants controlling the numerical method:
-    bulgeEnthMax = config.get("enthalpy_cold_bulge_max"), // J kg-1
-    ice_density = config.get("ice_density");
+    bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn = false;
   ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
@@ -431,7 +430,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             //
             // after we compute it we make sure there is no refreeze if
             // there is no available basal water
-            basal_melt_rate(i, j) = ( (*Rb)(i, j) + basal_heat_flux(i, j) - hf_up ) / (ice_rho * L);
+            basal_melt_rate(i, j) = ( (*Rb)(i, j) + basal_heat_flux(i, j) - hf_up ) / (ice_density * L);
 
             if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0)
               basal_melt_rate(i, j) = 0.0;
