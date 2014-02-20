@@ -45,16 +45,11 @@ private:
   PetscErrorCode calc_shelfbtemp_shelfbmassflux();
 
   PetscErrorCode btemp_bmelt_3eqn(double rhow, double rhoi,
-                                  double sal_ocean, double temp_insitu, double zice,
+                                  double sal_ocean, double thetao, double zice,
                                   double &temp_base, double &meltrate);
 
-  PetscErrorCode adiabatic_temperature_gradient(double salinity, double temp_insitu, double pressure, double &adlprt_out);
-  PetscErrorCode potential_temperature(double salinity,double temp_insitu,double pressure,
-                                       double reference_pressure, double& thetao);
-  PetscErrorCode insitu_temperature(double salinity, double thetao,
-                                    double pressure,double reference_pressure,
-                                    double &temp_insitu_out);
   PetscErrorCode allocate_POGivenTH();
+
 };
 
 #endif /* _POGIVENTH_H_ */
