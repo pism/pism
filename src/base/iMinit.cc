@@ -884,47 +884,6 @@ PetscErrorCode IceModel::allocate_submodels() {
   return 0;
 }
 
-/**
- * Attach an external PISMOceanModel instance to this IceModel.
- *
- * Call this *before* calling IceModel::init().
- *
- * IceModel will *not* de-allocate the pointer to the PISMOceanModel
- * instance passed in.
- *
- * @param input the model to attach
- *
- * @return 0
- */
-PetscErrorCode IceModel::attach_ocean_model(PISMOceanModel *input) {
-
-  assert(ocean == NULL);
-  external_ocean_model = true;
-  ocean = input;
-
-  return 0;
-}
-
-/**
- * Attach an external PISMSurfaceModel instance to this IceModel.
- *
- * Call this *before* calling IceModel::init().
- *
- * IceModel will *not* de-allocate the pointer to the PISMSurfaceModel
- * instance passed in.
- *
- * @param input the model to attach
- *
- * @return 0
- */
-PetscErrorCode IceModel::attach_surface_model(PISMSurfaceModel *input) {
-
-  assert(surface == NULL);
-  external_surface_model = true;
-  surface = input;
-
-  return 0;
-}
 
 PetscErrorCode IceModel::allocate_couplers() {
   PetscErrorCode ierr;

@@ -141,9 +141,6 @@ public:
   virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode allocate_iceberg_remover();
 
-  virtual PetscErrorCode attach_surface_model(PISMSurfaceModel *input);
-  virtual PetscErrorCode attach_ocean_model(PISMOceanModel *input);
-
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode set_grid_defaults();
