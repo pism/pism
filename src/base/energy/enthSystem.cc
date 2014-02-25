@@ -104,7 +104,6 @@ double enthSystemCtx::k_from_T(double T) {
 
 PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
                                              double my_ice_thickness,
-                                             double till_water_thickness,
                                              IceModelVec3 *u3,
                                              IceModelVec3 *v3,
                                              IceModelVec3 *w3,
@@ -138,12 +137,6 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
 
   ierr = Enth3->getValColumn(i, j, m_ks, Enth); CHKERRQ(ierr);
   ierr = compute_enthalpy_CTS(); CHKERRQ(ierr);
-  // if there is subglacial water, don't allow ice base enthalpy to be below
-  // pressure-melting; that is, assume subglacial water is at the pressure-
-  // melting temperature and enforce continuity of temperature
-  if (till_water_thickness > 0.0 && Enth[0] < Enth_s[0]) {
-    Enth[0] = Enth_s[0];
-  }
 
   m_lambda = compute_lambda();
 

@@ -291,8 +291,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       const double thickness_threshold = 100.0; // FIXME: make configurable
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
-      ierr = esys.initThisColumn(i, j, isMarginal,
-                                 ice_thickness(i, j), till_water_thickness(i,j),
+      ierr = esys.initThisColumn(i, j, isMarginal, ice_thickness(i, j),
                                  u3, v3, w3, strain_heating3); CHKERRQ(ierr);
 
       // enthalpy and pressures at top of ice
@@ -389,6 +388,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
           }
         }
+
+        // if there is subglacial water, don't allow ice base enthalpy to be below
+        // pressure-melting; that is, assume subglacial water is at the pressure-
+        // melting temperature and enforce continuity of temperature
+        {
+          if (Enthnew[0] < esys.Enth_s[0] && till_water_thickness(i,j) > 0.0) {
+            Enthnew[0] = esys.Enth_s[0];
+          }
+        }
+
       } // end of post-processing
 
       // compute basal melt rate
