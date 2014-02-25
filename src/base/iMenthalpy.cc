@@ -291,8 +291,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       const double thickness_threshold = 100.0; // FIXME: make configurable
       const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
-      ierr = esys.initThisColumn(i, j, isMarginal,
-                                 ice_thickness(i, j), till_water_thickness(i,j),
+      ierr = esys.initThisColumn(i, j, isMarginal, ice_thickness(i, j),
                                  u3, v3, w3, strain_heating3); CHKERRQ(ierr);
 
       // enthalpy and pressures at top of ice
@@ -358,6 +357,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
       // post-process (drainage and bulge-limiting)
       double Hdrainedtotal = 0.0;
+      double Hfrozen = 0.0;
       {
         // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
         //   using DrainageCalculator dc
@@ -389,6 +389,45 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
           }
         }
+
+        // if there is subglacial water, don't allow ice base enthalpy to be below
+        // pressure-melting; that is, assume subglacial water is at the pressure-
+        // melting temperature and enforce continuity of temperature
+        {
+          if (Enthnew[0] < esys.Enth_s[0] && till_water_thickness(i,j) > 0.0) {
+            const double E_difference = esys.Enth_s[0] - Enthnew[0];
+
+            Enthnew[0] = esys.Enth_s[0];
+            // This adjustment creates energy out of nothing. We will
+            // freeze some basal water, subtracting an equal amount of
+            // energy, to make up for it.
+            //
+            // Note that [E_difference] = J/kg, so
+            //
+            // U_difference = E_difference * ice_density * dx * dy * (0.5*dz_fine)
+            //
+            // is the amount of energy created (we changed enthalpy of
+            // a block of ice with the volume equal to
+            // dx*dy*(0.5*dz_fine); note that the control volume
+            // corresponding to the grid point at the base of the
+            // column has thickness 0.5*dz_fine, not dz_fine).
+            //
+            // Also, [L] = J/kg, so
+            //
+            // U_freeze_on = L * ice_density * dx * dy * Hfrozen,
+            //
+            // is the amount of energy created by freezing a water
+            // layer of thickness Hfrozen (using units of ice
+            // equivalent thickness).
+            //
+            // Setting U_difference = U_freeze_on and solving for
+            // Hfrozen, we find the thickness of the basal water layer
+            // we need to freeze co restore energy conservation.
+
+            Hfrozen = E_difference * (0.5*grid.dz_fine) / L;
+          }
+        }
+
       } // end of post-processing
 
       // compute basal melt rate
@@ -441,7 +480,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         // basal melt rate; if floating, Hdrainedtotal is discarded
         // because ocean determines basal melt rate
         if (is_floating == false) {
-          basal_melt_rate(i, j) += Hdrainedtotal / dt_TempAge;
+          basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt_TempAge;
         }
 
         // Use the fractional floatation mask to adjust the basal melt
