@@ -288,8 +288,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // ignore advection and strain heating in ice if isMarginal
-      const bool isMarginal = checkThinNeigh(ice_thickness(i+1, j), ice_thickness(i+1, j+1), ice_thickness(i, j+1), ice_thickness(i-1, j+1),
-                                             ice_thickness(i-1, j), ice_thickness(i-1, j-1), ice_thickness(i, j-1), ice_thickness(i+1, j-1));
+      const double thickness_threshold = 100.0; // FIXME: make configurable
+      const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
       ierr = esys.initThisColumn(i, j, isMarginal,
                                  ice_thickness(i, j), till_water_thickness(i,j),
