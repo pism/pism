@@ -61,7 +61,7 @@ PetscErrorCode IceModel::energyStep() {
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
-    ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);  
+    ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);
 
     ierr = vWork3d.update_ghosts(T3); CHKERRQ(ierr);
 
@@ -97,7 +97,7 @@ PetscErrorCode IceModel::energyStep() {
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
-    if (   (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT) 
+    if (   (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT)
         && (getVerbosityLevel() > 2)                    ) {
       char tempstr[50] = "";
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
@@ -126,7 +126,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
     beta_CC_grad_sea_water = (config.get("beta_CC") * config.get("sea_water_density") *
                               config.get("standard_gravity")); // K m-1
 
-  // will need coupler fields in ice-free land and 
+  // will need coupler fields in ice-free land and
   assert(surface != NULL);
   ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
 
@@ -174,11 +174,17 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
 //! \brief Is one of my neighbors below a critical thickness to apply advection
 //! in enthalpy or temperature equation?
-bool IceModel::checkThinNeigh(double E, double NE, double N, double NW, 
-                              double W, double SW, double S, double SE) {
-  // FIXME: silly hard-wired critical level, but we want to avoid config.get() in loops.
-  const double THIN = 100.0;  // thin = (at most 100m thick)
-  return (   (E < THIN) || (NE < THIN) || (N < THIN) || (NW < THIN)
-          || (W < THIN) || (SW < THIN) || (S < THIN) || (SE < THIN) );
-}
+bool IceModel::checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold) {
+  const double
+    N  = thickness(i, j + 1),
+    E  = thickness(i + 1, j),
+    S  = thickness(i, j - 1),
+    W  = thickness(i - 1, j),
+    NW = thickness(i - 1, j + 1),
+    SW = thickness(i - 1, j - 1),
+    NE = thickness(i + 1, j + 1),
+    SE = thickness(i + 1, j - 1);
 
+  return ((E < threshold) || (NE < threshold) || (N < threshold) || (NW < threshold) ||
+          (W < threshold) || (SW < threshold) || (S < threshold) || (SE < threshold));
+}

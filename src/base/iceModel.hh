@@ -324,9 +324,7 @@ protected:
   // see iMenergy.cc
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
-  virtual bool checkThinNeigh(
-       double E, double NE, double N, double NW, 
-       double W, double SW, double S, double SE);
+  virtual bool checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold);
 
   // see iMenthalpy.cc
   virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
