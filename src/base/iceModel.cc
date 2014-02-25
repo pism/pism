@@ -907,6 +907,9 @@ PetscErrorCode IceModel::run() {
   adaptReasonFlag = '$'; // no reason for no timestep
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
 
+  t_TempAge = grid.time->current();
+  dt_TempAge = 0.0;
+
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
   // will terminate
