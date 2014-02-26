@@ -44,6 +44,22 @@ private:
 
   PetscErrorCode calc_shelfbtemp_shelfbmassflux();
 
+  struct POGivenTHConstants {
+    double shelf_top_surface_temperature;
+    double water_latent_heat_fusion;
+    double sea_water_density;
+    double sea_water_specific_heat_capacity;
+    double ice_density;
+    double ice_specific_heat_capacity;
+  };
+
+  PetscErrorCode pointwise_calculation(const POGivenTHConstants &constants,
+                                       double sea_water_salinity,
+                                       double sea_water_potential_temperature,
+                                       double ice_thickness,
+                                       double *shelf_base_temperature,
+                                       double *shelf_base_melt_rate);
+
   PetscErrorCode btemp_bmelt_3eqn(double rhow, double rhoi,
                                   double sal_ocean, double thetao, double zice,
                                   double &temp_base, double &meltrate);

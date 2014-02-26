@@ -20,6 +20,8 @@
 #include "IceGrid.hh"
 #include "PISMVars.hh"
 
+#include <cassert>
+
 /* TO DO:
  *
  * Add detailed references ("this implements equations (3)-(7) in Smith and
@@ -270,6 +272,101 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
   return 0;
 }
 
+/** Compute temperature and melt rate at the base of the shelf.
+ *
+ * This model uses equations for the heat and salt flux balance at the
+ * base of the shelf to compute the temperature at the base of the
+ * shelf and the sub-shelf melt rate.
+ *
+ * This models is not applicable in the case of basal freeze-on.
+ *
+ * FIXME: fill in the details.
+ *
+ * @param[in] c physical constants, stored here to avoid looking them up in a double for loop
+ * @param[in] sea_water_salinity salinity of the ocean immediately adjacent to the shelf, [g/kg]
+ * @param[in] sea_water_potential_temperature potential temperature of the sea water, [degrees Celsius]
+ * @param[in] thickness thickness of the ice shelf, [meters]
+ * @param[out] shelf_base_temperature computed basal temperature, [degrees Celsius]
+ * @param[out] shelf_base_melt_rate computed basal melt rate, [m/second]
+ *
+ * @return 0 on success
+ */
+PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
+                                                double sea_water_salinity,
+                                                double sea_water_potential_temperature,
+                                                double thickness,
+                                                double *shelf_base_temperature,
+                                                double *shelf_base_melt_rate) {
+
+  assert(sea_water_salinity >= 0.0);
+  assert(sea_water_salinity <= 400.0); // that would be saltier than the Dead Sea
+  assert(thickness >= 0.0);
+
+  // Coefficients for linearized freezing point equation for in situ
+  // temperature:
+  //
+  // Tb(salinity, thickness) = a[0] * salinity + a[1] + a[2] * thickness
+  const double a[3] = {-0.0575, 0.0901, -7.61e-4};
+
+  // Coefficients for linearized freezing point equation for potential
+  // temperature
+  //
+  // Theta_b(salinity, thickness) = b[0] * salinity + b[1] + b[2] * thickness
+  const double b[3] = {-0.0575, 0.0921, -7.85e-4};
+
+  // Turbulent heat and salt transfer coefficients:
+  const double gamma_t = 1.00e-4;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
+  const double gamma_s = 5.05e-7;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
+
+  const double
+    cp_i    = c.ice_specific_heat_capacity,
+    cp_w    = c.sea_water_specific_heat_capacity,
+    L       = c.water_latent_heat_fusion,
+    Ts      = c.shelf_top_surface_temperature,
+    Sm      = sea_water_salinity,
+    Theta_m = sea_water_potential_temperature;
+
+  // We solve a quadratic equation for Sb, the salinity at the shelf
+  // base.
+  //
+  // A*Sb^2 + B*Sb + C = 0
+  const double A = a[0] * gamma_s * cp_i - b[0] * gamma_t * cp_w;
+  const double B = (gamma_s * (L - cp_i * (Ts + a[0] * Sm - a[2] * thickness - a[1])) +
+                    gamma_t * cp_w * (Theta_m - b[2] * thickness - b[1]));
+  const double C = -gamma_s * Sm * (L - cp_i * (Ts - a[2] * thickness - a[1]));
+  // Find two roots of the equation:
+  const double S1 = (-B + sqrt(B*B - 4.0 * A * C)) / (2.0 * A);
+  const double S2 = (-B - sqrt(B*B - 4.0 * A * C)) / (2.0 * A);
+
+  // Both roots cannot be negative at the same time
+  assert((S1 < 0.0 && S2 < 0.0) == false);
+
+  // pick the positive root
+  double basal_salinity = 0.0;
+  if (S1 > 0.0) {
+    basal_salinity = S1;
+  } else {
+    basal_salinity = S2;
+  }
+
+  assert(basal_salinity >= 0.0);
+  assert(basal_salinity <= 400.0); // this would be saltier than the Dead Sea
+  assert(basal_salinity <= sea_water_salinity); // ice melt should lower salinity
+
+  if (shelf_base_temperature != NULL) {
+    *shelf_base_temperature = a[0] * basal_salinity + a[1] + a[2] * thickness;
+  }
+
+  if (shelf_base_melt_rate != NULL) {
+    *shelf_base_melt_rate = gamma_s * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
+
+    // we use an approximation of the temperature gradient at the base
+    // of the shelf that is invalid for negative melt rates.
+    assert(*shelf_base_melt_rate >= 0.0);
+  }
+
+  return 0;
+}
 
 PetscErrorCode POGivenTH::sea_level_elevation(double &result) {
   result = sea_level;
