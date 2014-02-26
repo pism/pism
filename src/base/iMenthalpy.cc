@@ -357,6 +357,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
       // post-process (drainage and bulge-limiting)
       double Hdrainedtotal = 0.0;
+      double Hfrozen = 0.0;
       {
         // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
         //   using DrainageCalculator dc
@@ -394,7 +395,33 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         // melting temperature and enforce continuity of temperature
         {
           if (Enthnew[0] < esys.Enth_s[0] && till_water_thickness(i,j) > 0.0) {
+            const double E_difference = esys.Enth_s[0] - Enthnew[0];
+
             Enthnew[0] = esys.Enth_s[0];
+            // This adjustment creates energy out of nothing. We will
+            // freeze some basal water, subtracting an equal amount of
+            // energy, to make up for it.
+            //
+            // Note that [E_difference] = J/kg, so
+            //
+            // U_difference = E_difference * ice_density * dx * dy * dz_fine
+            //
+            // is the amount of energy created (we changed enthalpy of a block
+            // of ice of volume dx*dy*dz_fine).
+            //
+            // Also, [L] = J/kg, so
+            //
+            // U_freeze_on = L * ice_density * dx * dy * Hfrozen,
+            //
+            // is the amount of energy created by freezing a water
+            // layer of thickness Hfrozen (using units of ice
+            // equivalent thickness).
+            //
+            // Setting U_difference = U_freeze_on and solving for
+            // Hfrozen, we find the thickness of the basal water layer
+            // we need to freeze co restore energy conservation.
+
+            Hfrozen = E_difference / L * grid.dz_fine;
           }
         }
 
@@ -450,7 +477,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         // basal melt rate; if floating, Hdrainedtotal is discarded
         // because ocean determines basal melt rate
         if (is_floating == false) {
-          basal_melt_rate(i, j) += Hdrainedtotal / dt_TempAge;
+          basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt_TempAge;
         }
 
         // Use the fractional floatation mask to adjust the basal melt
