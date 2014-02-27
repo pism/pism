@@ -286,8 +286,8 @@ netcdf pism_config {
     pism_config:till_compressibility_coefficient = 0.12;
     pism_config:till_compressibility_coefficient_doc = "[pure]; coefficient of compressiblity of till; value from [@ref Tulaczyketal2000]";
 
-    pism_config:till_effective_fraction_overburden = 0.01;
-    pism_config:till_effective_fraction_overburden_doc = "[pure]; = delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [@ref Tulaczyketal2000]";
+    pism_config:till_effective_fraction_overburden = 0.02;
+    pism_config:till_effective_fraction_overburden_doc = "[pure]; = delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [@ref Tulaczyketal2000]; default value from Greenland and Antarctic model runs";
 
     pism_config:mu_sliding = 0.0;
     pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. *This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.*  See Appendix B of [@ref BBssasliding] for the dangers in this mechanism.";
