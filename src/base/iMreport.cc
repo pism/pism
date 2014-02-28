@@ -45,7 +45,7 @@ PetscErrorCode IceModel::volumeArea(double& gvolume, double& garea) {
   MaskQuery mask(vMask);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (ice_thickness(i,j) > 0) {
+      if (mask.icy(i, j)) {
         area += cell_area(i,j);
         const double dv = cell_area(i,j) * ice_thickness(i,j);
         volume += dv;
@@ -79,11 +79,14 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
   // use Enth3 to get stats
   ierr = Enth3.getHorSlice(Enthbase, 0.0); CHKERRQ(ierr);  // z=0 slice
 
+  MaskQuery mask(vMask);
+
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (ice_thickness(i,j) > 0) {
+      if (mask.icy(i, j)) {
         // accumulate area of base which is at melt point
         if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)) )) // FIXME issue #15
           meltarea += a;
@@ -97,6 +100,7 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
   }
   ierr = Enthbase.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   // communication
   ierr = PISMGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
@@ -127,6 +131,9 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
     currtime = grid.time->current(); // seconds
 
   double *tau, origvol = 0.0;
+  MaskQuery mask(vMask);
+
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = tau3.begin_access(); CHKERRQ(ierr);
 
@@ -135,7 +142,7 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
   // compute local original volume
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (ice_thickness(i,j) > 0) {
+      if (mask.icy(i, j)) {
         // accumulate volume of ice which is original
         ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
         const int  ks = grid.kBelowHeight(ice_thickness(i,j));
@@ -150,6 +157,7 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
 
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = tau3.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   // communicate to turn into global original fraction
   ierr = PISMGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
@@ -337,7 +345,9 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
     ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
     for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (ice_thickness(i,j) > 0)
+        // count all ice, including cells which have so little they
+        // are considered "ice-free"
+        if (ice_thickness(i,j) > 0.0)
           volume += ice_thickness(i,j) * cell_area(i,j);
       }
     }
@@ -379,7 +389,9 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.grounded_ice(i,j)){
+      if (mask.grounded(i,j)){
+        // count all ice, including cells which have so little they
+        // are considered "ice-free"
         if (ice_thickness(i,j) > 0) {
           if(bed_topography(i, j) > sea_level){
             volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho ;
@@ -413,6 +425,8 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(double &result) {
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
       if (ice_thickness(i,j) > 0) {
         const int ks = grid.kBelowHeight(ice_thickness(i,j));
         ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
@@ -447,6 +461,8 @@ PetscErrorCode IceModel::compute_ice_volume_cold(double &result) {
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
       if (ice_thickness(i,j) > 0) {
         const int ks = grid.kBelowHeight(ice_thickness(i,j));
         ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
@@ -474,16 +490,20 @@ PetscErrorCode IceModel::compute_ice_area(double &result) {
   PetscErrorCode ierr;
   double     area=0.0;
 
+  MaskQuery mask(vMask);
+
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (ice_thickness(i,j) > 0)
+      if (mask.icy(i, j))
         area += cell_area(i,j);
     }
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -497,18 +517,24 @@ PetscErrorCode IceModel::compute_ice_area_temperate(double &result) {
 
   ierr = Enth3.getHorSlice(Enthbase, 0.0); CHKERRQ(ierr);  // z=0 slice
 
+  MaskQuery mask(vMask);
+
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (ice_thickness(i,j) > 0) && (EC->isTemperate(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j)))) ) // FIXME issue #15
+      if (mask.icy(i, j) &&
+          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
         area += cell_area(i,j);
+      }
     }
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = Enthbase.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -522,18 +548,24 @@ PetscErrorCode IceModel::compute_ice_area_cold(double &result) {
 
   ierr = Enth3.getHorSlice(Enthbase, 0.0); CHKERRQ(ierr);  // z=0 slice
 
+  MaskQuery mask(vMask);
+
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (ice_thickness(i,j) > 0) && (!EC->isTemperate(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j)))) ) // FIXME issue #15
+      if (mask.icy(i, j) &&
+          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j))) == false) { // FIXME issue #15
         area += cell_area(i,j);
+      }
     }
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = Enthbase.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -601,6 +633,8 @@ PetscErrorCode IceModel::compute_ice_enthalpy(double &result) {
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
       if (ice_thickness(i,j) > 0) {
         const int ks = grid.kBelowHeight(ice_thickness(i,j));
         ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
