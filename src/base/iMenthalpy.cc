@@ -404,10 +404,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             //
             // Note that [E_difference] = J/kg, so
             //
-            // U_difference = E_difference * ice_density * dx * dy * dz_fine
+            // U_difference = E_difference * ice_density * dx * dy * (0.5*dz_fine)
             //
-            // is the amount of energy created (we changed enthalpy of a block
-            // of ice of volume dx*dy*dz_fine).
+            // is the amount of energy created (we changed enthalpy of
+            // a block of ice with the volume equal to
+            // dx*dy*(0.5*dz_fine); note that the control volume
+            // corresponding to the grid point at the base of the
+            // column has thickness 0.5*dz_fine, not dz_fine).
             //
             // Also, [L] = J/kg, so
             //
@@ -421,7 +424,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             // Hfrozen, we find the thickness of the basal water layer
             // we need to freeze co restore energy conservation.
 
-            Hfrozen = E_difference / L * grid.dz_fine;
+            Hfrozen = E_difference * (0.5*grid.dz_fine) / L;
           }
         }
 
