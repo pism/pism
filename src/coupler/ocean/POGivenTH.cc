@@ -132,9 +132,8 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
 
   const double rhoi = config.get("ice_density");
   const double rhow = config.get("sea_water_density");
-  const double reference_pressure = 1.01325; // pressure of atmosphere in bar
 
-  double pressure_at_shelf_base, bmeltrate, thetao, temp_base;
+  double bmeltrate, thetao, temp_base;
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = theta_ocean->begin_access(); CHKERRQ(ierr);
@@ -167,7 +166,7 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
 }
 
 PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
-                                           double sal_ocean, double theta_ocean, double zice,
+                                           double sal_ocean, double potential_temperature, double zice,
                                            double &temp_base, double &meltrate) {
 
   // This function solves the three equation model of ice-shelf ocean interaction (Hellmer and Olbers, 1989).
@@ -191,8 +190,8 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
   //        We could do this better by usings PISMs ice temperature or heat flux
   //        calculus at the bottom layers of the ice shelf.
 
-  double rhor, sal_base;
-  double ep1,ep2,ep3,ep4,ep4b,ep5;
+  double sal_base;
+  double ep1,ep2,ep3,ep4,ep4b;
   double ex1,ex2,ex3,ex4,ex5;
   double sr1,sr2,sf1,sf2,tf1,tf2,tf,sf;
 
@@ -230,7 +229,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
   // negative heat flux term in the ice (due to -kappa/D)
   //ex1 = ai*(ep1-ep2);
   ex1 = ai*ep1-ap*ep2;
-  ex2 = ep1*(ep4b-theta_ocean)+ep2*(tob+ai*sal_ocean-ep4)-ep3;
+  ex2 = ep1*(ep4b-potential_temperature)+ep2*(tob+ai*sal_ocean-ep4)-ep3;
   ex3 = sal_ocean*(ep2*(ep4-tob)+ep3);
   ex4 = ex2/ex1;
   ex5 = ex3/ex1;
