@@ -326,6 +326,9 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   ierr = result->create(grid, "hardav", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
+  MaskQuery mask(model->vMask);
+
+  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
   ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
@@ -333,7 +336,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = model->Enth3.getInternalColumn(i,j,&Eij); CHKERRQ(ierr);
       const double H = model->ice_thickness(i,j);
-      if (H > 0.0) {
+      if (mask.icy(i, j)) {
         (*result)(i,j) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
                                                      &grid.zlevels[0], Eij);
       } else { // put negative value below valid range
@@ -344,6 +347,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   ierr = model->Enth3.end_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
+  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -422,24 +426,34 @@ PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
+  IceModelVec2Int *ice_mask;
+  ice_mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
+  if (ice_mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "proc_ice_area", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   int ice_filled_cells = 0;
 
+  MaskQuery mask(*ice_mask);
+
+  ierr = ice_mask->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i)
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j)
-      if ((*thickness)(i,j) > 0) {
+      if (mask.icy(i, j)) {
         ice_filled_cells += 1;
       }
   ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = ice_mask->end_access(); CHKERRQ(ierr);
 
   ierr = result->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i)
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j)
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       (*result)(i,j) = ice_filled_cells;
+    }
+  }
   ierr = result->end_access();
 
   output = result;
@@ -747,6 +761,9 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
+  MaskQuery mask(model->vMask);
+
+  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
@@ -754,7 +771,7 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       double depth = (*thickness)(i,j),
         pressure = model->EC->getPressureFromDepth(depth);
-      if (depth > 0) {
+      if (mask.icy(i, j)) {
         ierr = model->EC->getAbsTemp((*result)(i,j),
                                      pressure,
                                      (*result)(i,j));
@@ -767,6 +784,7 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
 
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
+  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   result->metadata() = vars[0];
   output = result;
@@ -881,38 +899,44 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
 
   double *Enth;
 
+  MaskQuery mask(model->vMask);
+
+  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (model->ice_thickness(i,j) > 0.) {
+      if (mask.icy(i, j)) {
         ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-        double tithk = 0.;
-        const unsigned int ks = grid.kBelowHeight(model->ice_thickness(i,j));
+        double temperate_ice_thickness = 0.0;
+        double ice_thickness = model->ice_thickness(i,j);
+        const unsigned int ks = grid.kBelowHeight(ice_thickness);
 
         for (unsigned int k=0; k<ks; ++k) { // FIXME issue #15
-          double pressure = model->EC->getPressureFromDepth(model->ice_thickness(i,j) - grid.zlevels[k]);
+          double pressure = model->EC->getPressureFromDepth(ice_thickness - grid.zlevels[k]);
 
           if (model->EC->isTemperate(Enth[k], pressure)) {
-            tithk += grid.zlevels[k+1] - grid.zlevels[k];
+            temperate_ice_thickness += grid.zlevels[k+1] - grid.zlevels[k];
           }
         }
 
-        double pressure = model->EC->getPressureFromDepth(model->ice_thickness(i,j) - grid.zlevels[ks]);
+        double pressure = model->EC->getPressureFromDepth(ice_thickness - grid.zlevels[ks]);
         if (model->EC->isTemperate(Enth[ks], pressure)) {
-          tithk += model->ice_thickness(i,j) - grid.zlevels[ks];
+          temperate_ice_thickness += ice_thickness - grid.zlevels[ks];
         }
 
-        (*result)(i,j) = tithk;
+        (*result)(i,j) = temperate_ice_thickness;
+      } else {
+        // ice-free
+        (*result)(i,j) = grid.config.get("fill_value");
       }
     }
   }
   ierr = model->Enth3.end_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
-
-  ierr = result->mask_by(model->ice_thickness, grid.config.get("fill_value")); CHKERRQ(ierr);
+  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -942,6 +966,11 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   double *Enth;
   EnthalpyConverter *EC = model->EC;
 
+  MaskQuery mask(model->vMask);
+
+  const double fill_value = grid.config.get("fill_value");
+
+  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
@@ -951,8 +980,10 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
 
       // if we have no ice, go on to the next grid point (this cell will be
       // marked as "missing" later)
-      if (thk < 0.1)
+      if (mask.ice_free(i, j)) {
+        (*result)(i,j) = fill_value;
         continue;
+      }
 
       ierr = model->Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
       double pressure;
@@ -972,7 +1003,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
 
       // no temperate ice at all; go to the next grid point
       if (k == 0) {
-        (*result)(i,j) = 0;
+        (*result)(i,j) = 0.0;
         continue;
       }
 
@@ -985,9 +1016,9 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
 
       double
         pressure_0 = EC->getPressureFromDepth(thk - grid.zlevels[k-1]),
-        dz = grid.zlevels[k] - grid.zlevels[k-1],
-        slope1 = (Enth[k] - Enth[k-1]) / dz,
-        slope2 = (EC->getEnthalpyCTS(pressure) - EC->getEnthalpyCTS(pressure_0)) / dz;
+        dz         = grid.zlevels[k] - grid.zlevels[k-1],
+        slope1     = (Enth[k] - Enth[k-1]) / dz,
+        slope2     = (EC->getEnthalpyCTS(pressure) - EC->getEnthalpyCTS(pressure_0)) / dz;
 
       if (slope1 != slope2) {
         (*result)(i,j) = grid.zlevels[k-1] +
@@ -1005,8 +1036,7 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   ierr = model->Enth3.end_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
-
-  ierr = result->mask_by(model->ice_thickness, grid.config.get("fill_value")); CHKERRQ(ierr);
+  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
