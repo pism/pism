@@ -286,8 +286,8 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * @param[in] sea_water_salinity salinity of the ocean immediately adjacent to the shelf, [g/kg]
  * @param[in] sea_water_potential_temperature potential temperature of the sea water, [degrees Celsius]
  * @param[in] thickness thickness of the ice shelf, [meters]
- * @param[out] shelf_base_temperature computed basal temperature, [degrees Celsius]
- * @param[out] shelf_base_melt_rate computed basal melt rate, [m/second]
+ * @param[out] shelf_base_temperature_out computed basal temperature, [degrees Celsius]
+ * @param[out] shelf_base_melt_rate_out computed basal melt rate, [m/second]
  *
  * @return 0 on success
  */
@@ -295,8 +295,8 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
                                                 double sea_water_salinity,
                                                 double sea_water_potential_temperature,
                                                 double thickness,
-                                                double *shelf_base_temperature,
-                                                double *shelf_base_melt_rate) {
+                                                double *shelf_base_temperature_out,
+                                                double *shelf_base_melt_rate_out) {
 
   assert(sea_water_salinity >= 0.0);
   assert(sea_water_salinity <= 400.0); // that would be saltier than the Dead Sea
@@ -353,16 +353,16 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
   assert(basal_salinity <= 400.0); // this would be saltier than the Dead Sea
   assert(basal_salinity <= sea_water_salinity); // ice melt should lower salinity
 
-  if (shelf_base_temperature != NULL) {
-    *shelf_base_temperature = a[0] * basal_salinity + a[1] + a[2] * thickness;
+  if (shelf_base_temperature_out != NULL) {
+    *shelf_base_temperature_out = a[0] * basal_salinity + a[1] + a[2] * thickness;
   }
 
-  if (shelf_base_melt_rate != NULL) {
-    *shelf_base_melt_rate = gamma_s * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
+  if (shelf_base_melt_rate_out != NULL) {
+    *shelf_base_melt_rate_out = gamma_s * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
 
     // we use an approximation of the temperature gradient at the base
     // of the shelf that is invalid for negative melt rates.
-    assert(*shelf_base_melt_rate >= 0.0);
+    assert(*shelf_base_melt_rate_out >= 0.0);
   }
 
   return 0;

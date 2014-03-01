@@ -57,8 +57,8 @@ private:
                                        double sea_water_salinity,
                                        double sea_water_potential_temperature,
                                        double ice_thickness,
-                                       double *shelf_base_temperature,
-                                       double *shelf_base_melt_rate);
+                                       double *shelf_base_temperature_out,
+                                       double *shelf_base_melt_rate_out);
 
   PetscErrorCode btemp_bmelt_3eqn(double rhow, double rhoi,
                                   double sal_ocean, double thetao, double zice,
