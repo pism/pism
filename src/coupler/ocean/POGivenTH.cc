@@ -274,14 +274,140 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
 
 /** Compute temperature and melt rate at the base of the shelf.
  *
- * This model uses equations for the heat and salt flux balance at the
- * base of the shelf to compute the temperature at the base of the
- * shelf and the sub-shelf melt rate.
+ * Use equations for the heat and salt flux balance at the base of the
+ * shelf to compute the temperature at the base of the shelf and the
+ * sub-shelf melt rate.
  *
- * This models is not applicable in the case of basal freeze-on.
+ * @note This model is not applicable in the case of basal freeze-on.
  *
- * FIXME: fill in the details.
+ * Following [@ref HellmerOlbers1989], let @f$ Q_T @f$ be the total heat
+ * flux crossing the interface between the shelf base and the ocean,
+ * @f$ Q_T^B @f$ be the amount of heat lost by the ocean due to
+ * melting of glacial ice, and @f$ Q_T^I @f$ be the conductive flux
+ * into the ice column.
  *
+ * @f$ Q_{T} @f$ is parameterized by (see [@ref HellmerOlbers1989], equation
+ * 10):
+ *
+ * @f[ Q_{T} = \rho_W\, c_{pW}\, \gamma_{T}\, (T^B - T^W),@f]
+ *
+ * where @f$ \rho_{W} @f$ is the sea water density, @f$ c_{pW} @f$ is
+ * the heat capacity of sea water, and @f$ \gamma_{T} @f$ is a
+ * turbulent heat exchange coefficient.
+ *
+ * We assume that the difference between the basal temperature and
+ * adjacent ocean temperature @f$ T^B - T^W @f$ is well approximated
+ * by @f$ \Theta_B - \Theta_W, @f$ where @f$ \Theta_{\cdot} @f$ is the
+ * corresponding potential temperature.
+ *
+ * @f$ Q_T^B @f$ is parameterized by (see [@ref HellmerOlbers1989], equation 11):
+ *
+ * @f[ Q_T^B = \rho_I\, L\, \dot h, @f]
+ *
+ * where @f$ \rho_I @f$ is the ice density, @f$ L @f$ is the latent
+ * heat of fusion, and @f$ \dot h @f$ is the ice thickening rate
+ * (equal to minus the melt rate).
+ *
+ * The conductive flux into the ice column is parameterized by ([@ref
+ * Hellmeretal1998], equation 7):
+ *
+ * @f[ Q_T^I = \rho_I\, c_{pI}\, \kappa\, T_{\text{grad}}, @f]
+ *
+ * where @f$ \rho_I @f$ is the ice density, @f$ c_{pI} @f$ is the heat
+ * capacity of ice, @f$ \kappa @f$ is the ice thermal diffusivity, and
+ * @f$ T_{\text{grad}} @f$ is the vertical temperature gradient at the
+ * base of a column of ice.
+ *
+ * We use the parameterization of the temperature gradient from [@ref
+ * Hellmeretal1998], equation 13:
+ *
+ * @f[ T_{\text{grad}} = -\Delta T\, \frac{\dot h}{\kappa}, @f]
+ *
+ * where @f$ \Delta T @f$ is the difference between the ice
+ * temperature at the top of the ice column and its bottom:
+ * @f$ \Delta T = T^S - T^B. @f$ With this parameterization, we have
+ *
+ * @f[ Q_T^I = \rho_I\, c_{pI}\, {\dot h}\, (T^S - T^B). @f]
+ *
+ * Now, the heat flux balance implies
+ *
+ * @f[ Q_T = Q_T^B + Q_T^I. @f]
+ *
+ * For the salt flux balance, we have
+ *
+ * @f[ Q_S = Q_S^B + Q_S^I, @f]
+ *
+ * where @f$ Q_S @f$ is the total salt flux across the interface, @f$
+ * Q_S^B @f$ is the salt input as a result of freezing, @f$ Q_S^I = 0
+ * @f$ is the salt flux due to molecular diffusion of salt through
+ * ice.
+ *
+ * @f$ Q_S @f$ is parameterized by ([@ref Hellmeretal1998], equation 13)
+ *
+ * @f[ Q_S = \rho_W\, \gamma_S\, (S^B - S^W), @f]
+ *
+ * where @f$ \gamma_S @f$ is a turbulent salt exchange coefficient,
+ * @f$ S_B @f$ is salinity at the shelf base, and @f$ S^W @f$ is the
+ * salinity of adjacent ocean.
+ *
+ * The basal salt flux @f$ Q_S^B @f$ is parameterized by ([@ref
+ * Hellmeretal1998], equation 14)
+ *
+ * @f[ Q_S^B = \rho_W\, S^B\, {\dot h}. @f]
+ * 
+ * To avoid converting shelf base temperature to shelf base potential
+ * temperature and back, we use following parameterizations:
+ *
+ * @f[ T^{B}(S,h) = a_0\cdot S + a_1 + a_2\cdot h, @f]
+ *
+ * @f[ \Theta^{B}(S,h) = b_0\cdot S + b_1 + b_2\cdot h, @f]
+ *
+ * where @f$ S @f$ is salinity and @f$ h @f$ is ice shelf thickness.
+ *
+ * The parameterization for the basal temperature @f$ T^B(S,h) @f$ is
+ * based on [@ref Hellmeretal1998] and [@ref FoldvikKvinge1974].
+ *
+ * Given this parameterization and a function @f$ \Theta_T^B(T)
+ * @f$ one can define @f$ \Theta^B_{*}(S,h) = \Theta_T^B(T^B(S,h) @f$.
+ *
+ * The parameterization @f$ \Theta^B(S,h) @f$ used here was produced
+ * by linearizing @f$ \Theta^B_{*}(S,h) @f$ near the melting point.
+ * (The definition of @f$ \Theta_T^B(T), @f$, converting in situ
+ * temperature into potential temperature, was adopted from FESOM
+ * [@ref Wangetal2013]).
+ *
+ * Treating ice thickness, sea water salinity, and sea water potential
+ * temperature as "known" we can write down a system of equations
+ *
+ * @f{align*}{
+ * Q_T &= Q_T^B + Q_T^I,\\
+ * Q_S &= Q_S^B + Q_S^I,\\
+ * T^{B}(S,h) &= a_0\cdot S + a_1 + a_2\cdot h,\\
+ * \Theta^{B}(S,h) &= b_0\cdot S + b_1 + b_2\cdot h\\
+ * @f}
+ *
+ * and simplify it to produce a quadratic equation for the salinity at the shelf base, @f$ S^B @f$:
+ *
+ * @f[ A\cdot (S^B)^2 + B\cdot S^B + C = 0 @f]
+ *
+ * with
+ * @f{align*}{
+ * A &= a_{0}\,\gamma_S\,c_{pI}-b_{0}\,\gamma_T\,c_{pW}\\
+ * B &= \gamma_S\,\left(L-c_{pI}\,\left(T^S+a_{0}\,S^W-a_{2}\,h-a_{1}\right)\right)+
+ *      \gamma_T\,c_{pW}\,\left(\Theta^W-b_{2}\,h-b_{1}\right)\\
+ * C &= -\gamma_S\,S^W\,\left(L-c_{pI}\,\left(T^S-a_{2}\,h-a_{1}\right)\right)
+ * @f}
+ *
+ * Once @f$ S_B @f$ is found by solving this quadratic equation, we can
+ * compute the basal temperature using the parameterization for @f$
+ * T^{B}(S,h) @f$.
+ *
+ * To find the basal melt rate, we solve the salt flux balance
+ * equation for @f$ {\dot h}, @f$ obtaining
+ *
+ * @f[ w_b={{\gamma_S\,\rho_W\,\left(S^W-S^B\right)}\over{\rho_I\,S^B}}. @f]
+ * 
+ * 
  * @param[in] c physical constants, stored here to avoid looking them up in a double for loop
  * @param[in] sea_water_salinity salinity of the ocean immediately adjacent to the shelf, [g/kg]
  * @param[in] sea_water_potential_temperature potential temperature of the sea water, [degrees Celsius]
@@ -319,21 +445,21 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
   const double gamma_s = 5.05e-7;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
 
   const double
-    cp_i    = c.ice_specific_heat_capacity,
-    cp_w    = c.sea_water_specific_heat_capacity,
+    c_pI    = c.ice_specific_heat_capacity,
+    c_pW    = c.sea_water_specific_heat_capacity,
     L       = c.water_latent_heat_fusion,
-    Ts      = c.shelf_top_surface_temperature,
-    Sm      = sea_water_salinity,
-    Theta_m = sea_water_potential_temperature;
+    T_S     = c.shelf_top_surface_temperature,
+    S_W     = sea_water_salinity,
+    Theta_W = sea_water_potential_temperature;
 
   // We solve a quadratic equation for Sb, the salinity at the shelf
   // base.
   //
   // A*Sb^2 + B*Sb + C = 0
-  const double A = a[0] * gamma_s * cp_i - b[0] * gamma_t * cp_w;
-  const double B = (gamma_s * (L - cp_i * (Ts + a[0] * Sm - a[2] * thickness - a[1])) +
-                    gamma_t * cp_w * (Theta_m - b[2] * thickness - b[1]));
-  const double C = -gamma_s * Sm * (L - cp_i * (Ts - a[2] * thickness - a[1]));
+  const double A = a[0] * gamma_s * c_pI - b[0] * gamma_t * c_pW;
+  const double B = (gamma_s * (L - c_pI * (T_S + a[0] * S_W - a[2] * thickness - a[1])) +
+                    gamma_t * c_pW * (Theta_W - b[2] * thickness - b[1]));
+  const double C = -gamma_s * S_W * (L - c_pI * (T_S - a[2] * thickness - a[1]));
   // Find two roots of the equation:
   const double S1 = (-B + sqrt(B*B - 4.0 * A * C)) / (2.0 * A);
   const double S2 = (-B - sqrt(B*B - 4.0 * A * C)) / (2.0 * A);

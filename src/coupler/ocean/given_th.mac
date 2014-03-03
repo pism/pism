@@ -10,19 +10,20 @@ set_tex_environment_default("@f[", "@f]")$
 texput_list(l) := map(lambda([x], apply(texput, x)), l)$
 
 texput_list([
-  [ice_heat_capacity, "c_{p,\\text{ice}}"],
-  [ocean_heat_capacity, "c_{p,\\text{ocean}}"],
-  [Sb, "S_b"],
-  [Sm, "S_m"],
-  [gamma_s, "\\gamma_s"],
-  [gamma_t, "\\gamma_t"],
-  [Ts, "T_{\\text{shelf surface}}"],
-  [Theta_m, "\\Theta_m"],
-  [nounify(Tb), "T_b"],
-  [nounify(Theta_b), "\\Theta_b"],
+  [ice_heat_capacity, "c_{pI}"],
+  [ocean_heat_capacity, "c_{pW}"],
+  [Sb, "S^B"],
+  [Sm, "S^W"],
+  [gamma_s, "\\gamma_S"],
+  [gamma_t, "\\gamma_T"],
+  [Ts, "T^S"],
+  [Theta_m, "\\Theta^W"],
+  [nounify(Tb), "T^B"],
+  [nounify(Theta_b), "\\Theta^B"],
   [melt_rate, "w_b"],
-  [ocean_density, "\\rho_{\\text{ocean}}"],
-  [ice_density, "\\rho_{\\text{ice}}"]
+  [ocean_density, "\\rho_W"],
+  [ice_density, "\\rho_I"],
+  [ice_thickness, "h"]
   ])$
 
 /* $\dot h$ is defined to me minus the melt rate */
