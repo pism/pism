@@ -353,7 +353,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * The basal salt flux @f$ Q_S^B @f$ is parameterized by ([@ref
  * Hellmeretal1998], equation 14)
  *
- * @f[ Q_S^B = \rho_W\, S^B\, {\dot h}. @f]
+ * @f[ Q_S^B = \rho_I\, S^B\, {\dot h}. @f]
  * 
  * To avoid converting shelf base temperature to shelf base potential
  * temperature and back, we use following parameterizations:
