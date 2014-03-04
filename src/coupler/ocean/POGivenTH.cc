@@ -279,6 +279,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * sub-shelf melt rate.
  *
  * @note This model is not applicable in the case of basal freeze-on.
+ * Negative melt rates are set to zero.
  *
  * Following [@ref HellmerOlbers1989], let @f$ Q_T @f$ be the total heat
  * flux crossing the interface between the shelf base and the ocean,
@@ -300,7 +301,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * by @f$ \Theta_B - \Theta_W, @f$ where @f$ \Theta_{\cdot} @f$ is the
  * corresponding potential temperature.
  *
- * @f$ Q_T^B @f$ is parameterized by (see [@ref HellmerOlbers1989], equation 11):
+ * @f$ Q_T^B @f$ is (see [@ref HellmerOlbers1989], equation 11):
  *
  * @f[ Q_T^B = \rho_I\, L\, \dot h, @f]
  *
@@ -338,7 +339,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * @f[ Q_S = Q_S^B + Q_S^I, @f]
  *
  * where @f$ Q_S @f$ is the total salt flux across the interface, @f$
- * Q_S^B @f$ is the salt input as a result of freezing, @f$ Q_S^I = 0
+ * Q_S^B @f$ is the basal salt flux (negative for melting), @f$ Q_S^I = 0
  * @f$ is the salt flux due to molecular diffusion of salt through
  * ice.
  *
@@ -350,13 +351,14 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * @f$ S_B @f$ is salinity at the shelf base, and @f$ S^W @f$ is the
  * salinity of adjacent ocean.
  *
- * The basal salt flux @f$ Q_S^B @f$ is parameterized by ([@ref
- * Hellmeretal1998], equation 14)
+ * The basal salt flux @f$ Q_S^B @f$ is ([@ref
+ * Hellmeretal1998], equation 10)
  *
  * @f[ Q_S^B = \rho_I\, S^B\, {\dot h}. @f]
- * 
+ *
  * To avoid converting shelf base temperature to shelf base potential
- * temperature and back, we use following parameterizations:
+ * temperature and back, we use two linearizations of the freezing point equation
+ * for sea water for in-situ and for potential temperature, respectively:
  *
  * @f[ T^{B}(S,h) = a_0\cdot S + a_1 + a_2\cdot h, @f]
  *
@@ -364,15 +366,15 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  *
  * where @f$ S @f$ is salinity and @f$ h @f$ is ice shelf thickness.
  *
- * The parameterization for the basal temperature @f$ T^B(S,h) @f$ is
- * based on [@ref Hellmeretal1998] and [@ref FoldvikKvinge1974].
+ * The linearization coefficients for the basal temperature @f$ T^B(S,h) @f$ are
+ * taken from [@ref Hellmeretal1998], going back to [@ref FoldvikKvinge1974].
  *
- * Given this parameterization and a function @f$ \Theta_T^B(T)
+ * Given @f$ T^B(S,h) @f$ and a function @f$ \Theta_T^B(T)
  * @f$ one can define @f$ \Theta^B_{*}(S,h) = \Theta_T^B\left(T^B(S,h)\right) @f$.
  *
  * The parameterization @f$ \Theta^B(S,h) @f$ used here was produced
  * by linearizing @f$ \Theta^B_{*}(S,h) @f$ near the melting point.
- * (The definition of @f$ \Theta_T^B(T), @f$, converting in situ
+ * (The definition of @f$ \Theta_T^B(T) @f$, converting in situ
  * temperature into potential temperature, was adopted from FESOM
  * [@ref Wangetal2013]).
  *
@@ -405,9 +407,9 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * To find the basal melt rate, we solve the salt flux balance
  * equation for @f$ {\dot h}, @f$ obtaining
  *
- * @f[ w_b={{\gamma_S\,\rho_W\,\left(S^W-S^B\right)}\over{\rho_I\,S^B}}. @f]
- * 
- * 
+ * @f[ w_b = -\dot h ={{\gamma_S\,\rho_W\,\left(S^W-S^B\right)}\over{\rho_I\,S^B}}. @f]
+ *
+ *
  * @param[in] c physical constants, stored here to avoid looking them up in a double for loop
  * @param[in] sea_water_salinity salinity of the ocean immediately adjacent to the shelf, [g/kg]
  * @param[in] sea_water_potential_temperature potential temperature of the sea water, [degrees Celsius]
@@ -488,7 +490,10 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
 
     // we use an approximation of the temperature gradient at the base
     // of the shelf that is invalid for negative melt rates.
-    assert(*shelf_base_melt_rate_out >= 0.0);
+    // FIXME: shelf base temperature is not correct for negative melt rates.
+    if (*shelf_base_melt_rate_out < 0.0)
+      *shelf_base_melt_rate_out = 0.0;
+    //assert(*shelf_base_melt_rate_out >= 0.0);
   }
 
   return 0;
