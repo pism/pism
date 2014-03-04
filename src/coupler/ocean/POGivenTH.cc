@@ -368,7 +368,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * based on [@ref Hellmeretal1998] and [@ref FoldvikKvinge1974].
  *
  * Given this parameterization and a function @f$ \Theta_T^B(T)
- * @f$ one can define @f$ \Theta^B_{*}(S,h) = \Theta_T^B(T^B(S,h) @f$.
+ * @f$ one can define @f$ \Theta^B_{*}(S,h) = \Theta_T^B\left(T^B(S,h)\right) @f$.
  *
  * The parameterization @f$ \Theta^B(S,h) @f$ used here was produced
  * by linearizing @f$ \Theta^B_{*}(S,h) @f$ near the melting point.
