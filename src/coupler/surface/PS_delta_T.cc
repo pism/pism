@@ -38,7 +38,7 @@ PS_delta_T::~PS_delta_T() {
 
 PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   option_prefix = "-surface_delta_T";
-  offset_name	= "delta_T";
+  offset_name   = "delta_T";
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
@@ -49,9 +49,9 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-				   "surface mass balance (accumulation/ablation) rate");
+                                   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-				   "land_ice_surface_specific_mass_balance");
+                                   "land_ice_surface_specific_mass_balance");
   climatic_mass_balance.set_units("kg m-2 s-1");
   climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 

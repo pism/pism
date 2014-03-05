@@ -46,8 +46,8 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
-		    "  air temperature parameterization and using stored time-independent precipitation...\n");
+                    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
+                    "  air temperature parameterization and using stored time-independent precipitation...\n");
   CHKERRQ(ierr);
 
   reference =

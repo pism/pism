@@ -214,7 +214,7 @@ PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
   }
 
   ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
-					  basal_frictional_heating); CHKERRQ(ierr);
+                                          basal_frictional_heating); CHKERRQ(ierr);
   
   return 0;
 }
@@ -267,7 +267,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
         double h_x = 0.0, h_y = 0.0;
         // FIXME: we need to handle grid periodicity correctly.
         if (m.grounded(i,j) && (use_eta == true)) {
-	        // in grounded case, differentiate eta = H^{8/3} by chain rule
+                // in grounded case, differentiate eta = H^{8/3} by chain rule
           if (thk(i,j) > 0.0) {
             const double myH = (thk(i,j) < minThickEtaTransform ?
                                      minThickEtaTransform : thk(i,j));
@@ -313,12 +313,12 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
               // This driving stress computation has to match the calving front
               // stress boundary condition in SSAFD::assemble_rhs().
-	      if (cfbc) {
-		if (m.icy(i,j) && m.ice_free(i+1,j))
-		  east = 0;
-		if (m.icy(i,j) && m.ice_free(i-1,j))
-		  west = 0;
-	      }
+              if (cfbc) {
+                if (m.icy(i,j) && m.ice_free(i+1,j))
+                  east = 0;
+                if (m.icy(i,j) && m.ice_free(i-1,j))
+                  west = 0;
+              }
 
               if (east + west > 0)
                 h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
@@ -339,12 +339,12 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
               // This driving stress computation has to match the calving front
               // stress boundary condition in SSAFD::assemble_rhs().
-	      if (cfbc) {
-		if (m.icy(i,j) && m.ice_free(i,j+1))
-		  north = 0;
-		if (m.icy(i,j) && m.ice_free(i,j-1))
-		  south = 0;
-	      }
+              if (cfbc) {
+                if (m.icy(i,j) && m.ice_free(i,j+1))
+                  north = 0;
+                if (m.icy(i,j) && m.ice_free(i,j-1))
+                  south = 0;
+              }
 
               if (north + south > 0)
                 h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +

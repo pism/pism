@@ -42,9 +42,9 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-				   "surface mass balance (accumulation/ablation) rate");
+                                   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-				   "land_ice_surface_specific_mass_balance");
+                                   "land_ice_surface_specific_mass_balance");
   ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 

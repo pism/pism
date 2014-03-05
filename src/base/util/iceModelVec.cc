@@ -33,7 +33,7 @@ IceModelVec::IceModelVec() {
 
   m_da = NULL;
   m_da_stencil_width = 1;
-  m_dof = 1;			// default
+  m_dof = 1;                    // default
   begin_end_access_use_dof = true;
 
   grid = NULL;
@@ -121,7 +121,7 @@ PetscErrorCode  IceModelVec::destroy() {
     std::map<std::string,PetscViewer>::iterator i;
     for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
       if (i->second != NULL) {
-	ierr = PetscViewerDestroy(&i->second); CHKERRQ(ierr);
+        ierr = PetscViewerDestroy(&i->second); CHKERRQ(ierr);
       }
     }
   }
@@ -398,10 +398,10 @@ PetscErrorCode IceModelVec::reset_attrs(unsigned int N) {
   internal units.
  */
 PetscErrorCode IceModelVec::set_attrs(std::string my_pism_intent,
-				      std::string my_long_name,
-				      std::string my_units,
-				      std::string my_standard_name,
-				      int N) {
+                                      std::string my_long_name,
+                                      std::string my_units,
+                                      std::string my_standard_name,
+                                      int N) {
 
   metadata(N).set_string("long_name", my_long_name);
 
@@ -564,14 +564,14 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 
   if (m_dof != other.m_dof) {
     SETERRQ1(grid->com, 1, "IceModelVec::%s(...): operands have different numbers of degrees of freedom",
-	     func);
+             func);
   }
 
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(other.v, &Y_size); CHKERRQ(ierr);
   if (X_size != Y_size) {
     SETERRQ4(grid->com, 1, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))\n",
-	     func, m_name.c_str(), func, other.m_name.c_str());
+             func, m_name.c_str(), func, other.m_name.c_str());
   }
 
 

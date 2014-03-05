@@ -186,7 +186,7 @@ public:
   PISMTime *time;               //!< The time management object (hides calendar computations)
 protected:
   std::map<int,DM> dms;
-  double lambda;	 //!< quadratic vertical spacing parameter
+  double lambda;         //!< quadratic vertical spacing parameter
   PISMUnitSystem m_unit_system;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
@@ -205,5 +205,5 @@ private:
   IceGrid & operator=(IceGrid const &);
 };
 
-#endif	/* __grid_hh */
+#endif  /* __grid_hh */
 

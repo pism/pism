@@ -59,13 +59,13 @@ PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
   {
     ierr = PISMOptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
     ierr = PISMOptionsString("-dump_config", "File to write the config to",
-			     config_out, dump_config); CHKERRQ(ierr);
+                             config_out, dump_config); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (!ends_with(filename, ".nc")) {
     ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+                      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
     CHKERRQ(ierr);
   }
 
@@ -148,7 +148,7 @@ PetscErrorCode IceModel::dumpToFile(std::string filename) {
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
 PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> vars,
-					 PISM_IO_Type nctype) {
+                                         PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
 
@@ -236,7 +236,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
     } else {
       ierr = v->write(nc); CHKERRQ(ierr); // use the default data type
 
-      vars.erase(i++);		// note that it only erases variables that were
+      vars.erase(i++);          // note that it only erases variables that were
                                 // found (and saved)
     }
   }
@@ -335,37 +335,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   PetscErrorCode ierr;
   std::string o_size = get_output_size("-o_size");
 
-  // only write out these extra diagnostics if decently big
-  if (o_size == "medium" || o_size == "big") {
-    bool write_temp_pa, write_liqfrac;
-    ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);
-    if (write_temp_pa || (!config.get_flag("do_cold_ice_methods"))) {
-      // write temp_pa = pressure-adjusted temp in Celcius
-      ierr = verbPrintf(4, grid.com,
-                        "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n");
-                        CHKERRQ(ierr);
-      output_vars.insert("temp_pa");
-    }
-    ierr = PISMOptionsIsSet("-liqfrac", write_liqfrac); CHKERRQ(ierr);
-    if (write_liqfrac || (!config.get_flag("do_cold_ice_methods"))) {
-      ierr = verbPrintf(4, grid.com,
-                        "  writing liquid water fraction 'liqfrac' ...\n");
-                        CHKERRQ(ierr);
-      output_vars.insert("liqfrac");
-    }
-  }
-
-  // if user wants it, give it to them (ignore -o_size, except "none")
-  bool userWantsCTS;
-  ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
-  if (userWantsCTS) {
-    ierr = verbPrintf(4, grid.com,
-                      "  writing CTS (= E/Es) scalar field 'cts' ...\n"); CHKERRQ(ierr);
-    output_vars.insert("cts");
-  }
-
 #if (PISM_USE_PROJ4==1)
-
   if (mapping.has_attribute("proj4")) {
     output_vars.insert("lon_bounds");
     output_vars.insert("lat_bounds");
@@ -760,7 +730,7 @@ PetscErrorCode IceModel::write_snapshot() {
   ierr = flush_timeseries(); CHKERRQ(ierr);
 
   if (split_snapshots) {
-    snapshots_file_is_ready = false;	// each snapshot is written to a separate file
+    snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%s.nc",
              snapshots_filename.c_str(), grid.time->date().c_str());
   } else {

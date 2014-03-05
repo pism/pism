@@ -39,13 +39,13 @@ public:
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
   PetscErrorCode compute_uplift(double dt_beddef);
-  double t_beddef_last;		//!< last bed deformation update year
+  double t_beddef_last;         //!< last bed deformation update year
 
   IceModelVec2S topg_initial;
-  IceModelVec2S topg_last;	//!< last bed elevation
-  IceModelVec2S *thk,		//!< pointer to the current ice thickness
-    *topg,			//!< pointer to the current bed elevation
-    *uplift;			//!< pointer to the bed uplift rate field
+  IceModelVec2S topg_last;      //!< last bed elevation
+  IceModelVec2S *thk,           //!< pointer to the current ice thickness
+    *topg,                      //!< pointer to the current bed elevation
+    *uplift;                    //!< pointer to the bed uplift rate field
 };
 
 //! Pointwide isostasy bed deformation model.
@@ -57,7 +57,7 @@ public:
   virtual PetscErrorCode update(double my_t, double my_dt);
 protected:
   PetscErrorCode allocate();
-  IceModelVec2S thk_last;	//!< last ice thickness
+  IceModelVec2S thk_last;       //!< last ice thickness
 };
 
-#endif	// __PISMBedDef_hh
+#endif  // __PISMBedDef_hh

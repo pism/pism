@@ -135,5 +135,5 @@ private:
   T* array;
 };
 
-#endif	/* __deformation_hh */
+#endif  /* __deformation_hh */
 

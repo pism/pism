@@ -36,7 +36,7 @@ PSAnomaly::~PSAnomaly() {
 
 PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   PetscErrorCode ierr;
-  option_prefix	 = "-surface_anomaly";
+  option_prefix  = "-surface_anomaly";
 
   // will be de-allocated by the parent's destructor
   climatic_mass_balance_anomaly = new IceModelVec2T;
@@ -90,7 +90,7 @@ PetscErrorCode PSAnomaly::init(PISMVars &vars) {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the '-surface ...,anomaly' modifier...\n"); CHKERRQ(ierr);
+                    "* Initializing the '-surface ...,anomaly' modifier...\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "    reading anomalies from %s ...\n", filename.c_str()); CHKERRQ(ierr);

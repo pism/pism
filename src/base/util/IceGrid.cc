@@ -34,6 +34,13 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
   x0 = 0.0;
   y0 = 0.0;
 
+  // initialize these data members to get rid of a valgrind warning;
+  // correct values will be set in IceGrid::allocate()
+  xs = 0;
+  ys = 0;
+  xm = 0;
+  ym = 0;
+
   std::string word = config.get_string("grid_periodicity");
   if (word == "none")
     periodicity = NONE;
@@ -72,8 +79,8 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
   My  = static_cast<int>(config.get("grid_My"));
   Mz  = static_cast<int>(config.get("grid_Mz"));
 
-  Nx = Ny = 0;			// will be set to a correct value in allocate()
-  initial_Mz = 0;		// will be set to a correct value in
+  Nx = Ny = 0;                  // will be set to a correct value in allocate()
+  initial_Mz = 0;               // will be set to a correct value in
                                 // IceModel::check_maximum_thickness()
 
   max_stencil_width = 2;
@@ -320,13 +327,13 @@ void IceGrid::compute_nprocs() {
 
   if (Mx > My && Nx < Ny) {int _Nx = Nx; Nx = Ny; Ny = _Nx;}
 
-  if ((Mx / Nx) < 2) {		// note: integer division
+  if ((Mx / Nx) < 2) {          // note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
                 Mx, My, size);
     PISMEnd();
   }
 
-  if ((My / Ny) < 2) {		// note: integer division
+  if ((My / Ny) < 2) {          // note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
                 Mx, My, size);
     PISMEnd();
@@ -782,8 +789,8 @@ void IceGrid::check_parameters() {
     PetscPrintf(com,
                 "PISM ERROR: The computational grid is too big to fit in a NetCDF-3 file.\n"
                 "            Each 3D variable requires %lu Mb.\n"
-                "            Please use \"-o_format quilt\" or re-build PISM with parallel NetCDF-4\n"
-                "            and use \"-o_format netcdf4_parallel\" to proceed.\n",
+                "            Please use \"-o_format quilt\" or re-build PISM with parallel NetCDF-4 or HDF5\n"
+                "            and use \"-o_format netcdf4_parallel\" or \"-o_format hdf5\" to proceed.\n",
                 Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
     PISMEnd();
   }

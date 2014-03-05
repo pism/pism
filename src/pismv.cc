@@ -22,9 +22,9 @@ static char help[] =
 "  and numerical solution.  Can also just compute exact solution (-eo).\n"
 "  Currently implements tests A, B, C, D, E, F, G, H, K, L.\n\n";
 
-#include <cctype>		// toupper
+#include <cctype>               // toupper
 #include <string>
-#include <algorithm>		// std::transform()
+#include <algorithm>            // std::transform()
 #include <petscdmda.h>
 #include "IceGrid.hh"
 #include "verif/iceCompModel.hh"
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     std::vector<std::string> required;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-test", "Specifies PISM verification test",
-			       testname, test_chosen); CHKERRQ(ierr);
+                               testname, test_chosen); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

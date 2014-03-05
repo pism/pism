@@ -47,8 +47,8 @@ public:
   int a_len;                       //!< the size of the buffer
   std::vector<double> zlevels;          //!< input z levels
   bool report_range;
-  MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
-  PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only
+  MPI_Comm com;                 //!< MPI Communicator (for printing, mostly)
+  PetscMPIInt rank;             //!< MPI rank, to allocate a_raw on proc 0 only
 
 public:
   LocalInterpCtx(grid_info g, const IceGrid &grid, double z_min, double z_max);

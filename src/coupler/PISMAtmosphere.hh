@@ -60,4 +60,4 @@ protected:
   std::vector<double> m_ts_times;
 };
 
-#endif	// __PISMAtmosphere_hh
+#endif  // __PISMAtmosphere_hh

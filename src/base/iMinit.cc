@@ -673,10 +673,10 @@ PetscErrorCode IceModel::set_vars_from_options() {
   std::string filename;
 
   ierr = verbPrintf(3, grid.com,
-		    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
+                    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
 
   ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
-			   filename, boot_file_set); CHKERRQ(ierr);
+                           filename, boot_file_set); CHKERRQ(ierr);
 
   if (boot_file_set) {
     ierr = bootstrapFromFile(filename); CHKERRQ(ierr);
@@ -884,47 +884,6 @@ PetscErrorCode IceModel::allocate_submodels() {
   return 0;
 }
 
-/**
- * Attach an external PISMOceanModel instance to this IceModel.
- *
- * Call this *before* calling IceModel::init().
- *
- * IceModel will *not* de-allocate the pointer to the PISMOceanModel
- * instance passed in.
- *
- * @param input the model to attach
- *
- * @return 0
- */
-PetscErrorCode IceModel::attach_ocean_model(PISMOceanModel *input) {
-
-  assert(ocean == NULL);
-  external_ocean_model = true;
-  ocean = input;
-
-  return 0;
-}
-
-/**
- * Attach an external PISMSurfaceModel instance to this IceModel.
- *
- * Call this *before* calling IceModel::init().
- *
- * IceModel will *not* de-allocate the pointer to the PISMSurfaceModel
- * instance passed in.
- *
- * @param input the model to attach
- *
- * @return 0
- */
-PetscErrorCode IceModel::attach_surface_model(PISMSurfaceModel *input) {
-
-  assert(surface == NULL);
-  external_surface_model = true;
-  surface = input;
-
-  return 0;
-}
 
 PetscErrorCode IceModel::allocate_couplers() {
   PetscErrorCode ierr;
@@ -958,7 +917,7 @@ PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, grid.com,
-		    "Initializing boundary models...\n"); CHKERRQ(ierr);
+                    "Initializing boundary models...\n"); CHKERRQ(ierr);
 
   assert(surface != PETSC_NULL);
   ierr = surface->init(variables); CHKERRQ(ierr);
@@ -1001,7 +960,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
-			 "medium", output_vars); CHKERRQ(ierr);
+                         "medium", output_vars); CHKERRQ(ierr);
 
   ierr = init_calving(); CHKERRQ(ierr);
   ierr = init_diagnostics(); CHKERRQ(ierr);
@@ -1011,14 +970,14 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
-  // Make sure that we use the output_variable_order that works with
-  // NetCDF-4 and "quilt". (For different reasons, but mainly because
+  // Make sure that we use the output_variable_order that works with NetCDF-4,
+  // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
   // it is faster.)
   std::string o_format = config.get_string("output_format");
-  if ((o_format == "netcdf4_parallel" || o_format == "quilt") &&
+  if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       config.get_string("output_variable_order") != "xyz") {
     PetscPrintf(grid.com,
-                "PISM ERROR: output formats netcdf4_parallel and quilt require -o_order xyz.\n");
+                "PISM ERROR: output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.\n");
     PISMEnd();
   }
 
@@ -1106,7 +1065,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   {
     bool dummy;
     ierr = PISMOptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
-			 choices, model, model, dummy); CHKERRQ(ierr);
+                         choices, model, model, dummy); CHKERRQ(ierr);
 
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);

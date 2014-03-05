@@ -53,7 +53,7 @@ class IceGrid;
   ierr = verbPrintf(2, grid.com, 
                     "  reading delta T data from forcing file %s...\n", dT_file);
                     CHKERRQ(ierr);
-	 
+         
   ierr = delta_T->read(dT_file); CHKERRQ(ierr);
   \endcode
 

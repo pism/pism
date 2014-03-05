@@ -53,17 +53,17 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
 
   ierr = ftt_mask.create(grid, "ftt_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = ftt_mask.set_attrs("diagnostic",
-			    "mask specifying where to apply the force-to-thickness mechanism",
-			    "", ""); CHKERRQ(ierr); // no units and no standard name
+                            "mask specifying where to apply the force-to-thickness mechanism",
+                            "", ""); CHKERRQ(ierr); // no units and no standard name
   ierr = ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
   ftt_mask.write_in_glaciological_units = true;
 
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-				   "surface mass balance (accumulation/ablation) rate");
+                                   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-				   "land_ice_surface_specific_mass_balance");
+                                   "land_ice_surface_specific_mass_balance");
   ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
@@ -97,23 +97,23 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "", "Surface model forcing", ""); CHKERRQ(ierr);
 
   ierr = PetscOptionsString("-force_to_thk",
-			    "Specifies the target thickness file for the force-to-thickness mechanism",
-			    "", "",
-			    fttfile, PETSC_MAX_PATH_LEN, &opt_set); CHKERRQ(ierr);
+                            "Specifies the target thickness file for the force-to-thickness mechanism",
+                            "", "",
+                            fttfile, PETSC_MAX_PATH_LEN, &opt_set); CHKERRQ(ierr);
 
   if (!opt_set) {
     ierr = PetscPrintf(grid.com,
-		       "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
+                       "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
     PISMEnd();
   }
 
   ierr = PetscOptionsReal("-force_to_thk_alpha",
-			  "Specifies the force-to-thickness alpha value in per-year units",
-			  "", grid.convert(alpha, "s-1", "yr-1"),
-			  &fttalpha, &fttalphaSet); CHKERRQ(ierr);
+                          "Specifies the force-to-thickness alpha value in per-year units",
+                          "", grid.convert(alpha, "s-1", "yr-1"),
+                          &fttalpha, &fttalphaSet); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing force-to-thickness mass-balance modifier...\n"); CHKERRQ(ierr);
+                    "* Initializing force-to-thickness mass-balance modifier...\n"); CHKERRQ(ierr);
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) SETERRQ(grid.com, 1, "ERROR: land_ice_thickness is not available");
@@ -129,8 +129,8 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "    alpha = %.6f year-1 for -force_to_thk mechanism\n",
-		    grid.convert(alpha, "s-1", "yr-1")); CHKERRQ(ierr);
+                    "    alpha = %.6f year-1 for -force_to_thk mechanism\n",
+                    grid.convert(alpha, "s-1", "yr-1")); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -143,26 +143,26 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "    reading target thickness 'thk' from %s ...\n"
-		    "    (this field will appear in output file as 'ftt_target_thk')\n",
-		    fttfile); CHKERRQ(ierr);
+                    "    reading target thickness 'thk' from %s ...\n"
+                    "    (this field will appear in output file as 'ftt_target_thk')\n",
+                    fttfile); CHKERRQ(ierr);
   {
     ierr = target_thickness.set_name("thk"); CHKERRQ(ierr); // name to read by
     // set attributes for the read stage; see below for reset
     ierr = target_thickness.set_attrs("diagnostic",
-				      "target thickness for force-to-thickness mechanism (hit this at end of run)",
-				      "m",
-				      "land_ice_thickness"); CHKERRQ(ierr); // standard_name *to read by*
+                                      "target thickness for force-to-thickness mechanism (hit this at end of run)",
+                                      "m",
+                                      "land_ice_thickness"); CHKERRQ(ierr); // standard_name *to read by*
 
     ierr = target_thickness.regrid(fttfile, CRITICAL); CHKERRQ(ierr);
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
     ierr = target_thickness.set_name("ftt_target_thk"); CHKERRQ(ierr);
     ierr = target_thickness.set_attrs(
-				      "diagnostic",
-				      "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
-				      "m",
-				      ""); CHKERRQ(ierr);  // no CF standard_name, to put it mildly
+                                      "diagnostic",
+                                      "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
+                                      "m",
+                                      ""); CHKERRQ(ierr);  // no CF standard_name, to put it mildly
 
     target_thickness.write_in_glaciological_units = true;
   }
@@ -305,6 +305,8 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
                     "    updating surface mass balance using -force_to_thk mechanism ...");
   CHKERRQ(ierr);
 
+  double ice_density = config.get("ice_density");
+
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = target_thickness.begin_access(); CHKERRQ(ierr);
   ierr = ftt_mask.begin_access(); CHKERRQ(ierr);
@@ -312,7 +314,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (ftt_mask(i,j) > 0.5) {
-        result(i,j) += alpha * (target_thickness(i,j) - (*ice_thickness)(i,j));
+        result(i,j) += ice_density * alpha * (target_thickness(i,j) - (*ice_thickness)(i,j));
       }
     }
   }

@@ -27,10 +27,10 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
 }
 
 PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
-				      unsigned int stencil_width) {
+                                      unsigned int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, ghostedp,
-					     stencil_width, m_dof); CHKERRQ(ierr);
+                                             stencil_width, m_dof); CHKERRQ(ierr);
 
   m_metadata[0].init_2d("u" + my_short_name, my_grid);
   m_metadata[1].init_2d("v" + my_short_name, my_grid);

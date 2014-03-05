@@ -81,8 +81,8 @@ public:
 
     if (choices.empty()) {
       if (flag) {
-	PetscPrintf(grid.com, "ERROR: option -%s requires an argument.\n", option.c_str());
-	PISMEnd();
+        PetscPrintf(grid.com, "ERROR: option -%s requires an argument.\n", option.c_str());
+        PISMEnd();
       }
       choices.push_back(default_type);
     }
@@ -94,11 +94,11 @@ public:
     F = models[*j];
     if (!F) {
       PetscPrintf(grid.com,
-		  "ERROR: %s model \"%s\" is not available.\n"
-		  "  Available models:    %s\n"
-		  "  Available modifiers: %s\n",
-		  option.c_str(), j->c_str(),
-		  model_list.c_str(), modifier_list.c_str());
+                  "ERROR: %s model \"%s\" is not available.\n"
+                  "  Available models:    %s\n"
+                  "  Available modifiers: %s\n",
+                  option.c_str(), j->c_str(),
+                  model_list.c_str(), modifier_list.c_str());
       PISMEnd();
     }
 
@@ -113,11 +113,11 @@ public:
 
       M = modifiers[*j];
       if (!M) {
-	PetscPrintf(grid.com,
-		    "ERROR: %s modifier \"%s\" is not available.\n"
-		    "  Available modifiers: %s\n",
-		    option.c_str(), j->c_str(), modifier_list.c_str());
-	PISMEnd();
+        PetscPrintf(grid.com,
+                    "ERROR: %s modifier \"%s\" is not available.\n"
+                    "  Available modifiers: %s\n",
+                    option.c_str(), j->c_str(), modifier_list.c_str());
+        PISMEnd();
       }
 
       (*M)(grid, config, result, mod);

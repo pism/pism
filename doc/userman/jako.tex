@@ -84,11 +84,11 @@ Select \texttt{gr1km.nc} to open.  Once the topographic map appears in the Figur
 $ python pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
 \end{verbatim}
 \normalsize\end{quote}
-This call generates the red region in Figure \ref{fig:jako-basin-topg}.  Options \verb|-x A,B -y C,D| identify the grid index ranges of the terminus rectangle, and option \verb|-b| sets the border width.  To see more script options, run with \verb|--help|.
+This call generates the red region in Figure \ref{fig:jako-basin-topg}.  Options \texttt{-x A,B -y C,D} identify the grid index ranges of the terminus rectangle, and option \texttt{-b} sets the border width.  To see more script options, run with \texttt{--help}.
 \end{itemize}
 
 \subsection*{Cut out the computational domain for the regional model}
-We still need to ``cut out'' from the whole ice sheet geometry data \verb|gr1km.nc| the computational domain for the regional model.  The climate data file \texttt{g5km_climate.nc} and the boundary condition file \texttt{g5km_bc.nc} do not need this action because PISM's coupling and SSA boundary condition codes already handle interpolation and/or subsampling for such data.
+We still need to ``cut out'' from the whole ice sheet geometry data \texttt{gr1km.nc} the computational domain for the regional model.  The climate data file \texttt{g5km_climate.nc} and the boundary condition file \texttt{g5km_bc.nc} do not need this action because PISM's coupling and SSA boundary condition codes already handle interpolation and/or subsampling for such data.
 
 You may have noticed that the text output from running \texttt{pism_regional.py} included a cutout command which uses \texttt{ncks} from the NCO tools.  This command also appears as a global attribute of \texttt{jakomask.nc}:
 \begin{quote}\small
@@ -102,16 +102,16 @@ Copy and run the command that appears, something like
 $ ncks -d x,299,918 -d y,970,1394 gr1km.nc jako.nc
 \end{verbatim}
 \normalsize\end{quote}
-This command is also applied to the mask file; note the option \verb|-A| for ``append'':
+This command is also applied to the mask file; note the option \texttt{-A} for ``append'':
 \begin{quote}\small
 \begin{verbatim}
 $ ncks -A -d x,299,918 -d y,970,1394 jakomask.nc jako.nc
 \end{verbatim}
 \normalsize\end{quote}
-Now look at \verb|jako.nc|, for example with ``\verb|ncview -minmax all jako.nc|''.  This file is the full geometry data ready for a regional model.  The field \verb|ftt_mask| identifies the drainage basin, outside of which we will use simplified time-independent boundary conditions.  Specifically, outside of the \verb|ftt_mask| area, but within the computational domain defined by the extent of \verb|jako.nc|, we will essentially keep the initial thickness.  Inside the \verb|ftt_mask| area all fields will evolve normally.
+Now look at \texttt{jako.nc}, for example with ``\texttt{ncview -minmax all jako.nc}''.  This file is the full geometry data ready for a regional model.  The field \texttt{ftt_mask} identifies the drainage basin, outside of which we will use simplified time-independent boundary conditions.  Specifically, outside of the \texttt{ftt_mask} area, but within the computational domain defined by the extent of \texttt{jako.nc}, we will essentially keep the initial thickness.  Inside the \texttt{ftt_mask} area all fields will evolve normally.
 
 \subsection*{Quick start}
-The previous steps starting with the command ``\verb|./preprocess.sh|'' above, then using the command-line version of \verb|pism_regional.py|, and then doing the \verb|ncks| cut-out steps, are all accomplished in one script,
+The previous steps starting with the command ``\texttt{./preprocess.sh}'' above, then using the command-line version of \texttt{pism_regional.py}, and then doing the \texttt{ncks} cut-out steps, are all accomplished in one script,
 \begin{quote}\small
 \begin{verbatim}
 $ ./quickjakosetup.sh
@@ -120,7 +120,7 @@ $ ./quickjakosetup.sh
 Running this takes about a minute on a fast laptop, assuming data files are already downloaded.
 
 \subsection*{Spinning-up the regional model on a 5\,km grid}
-To run the PISM regional model we will need to know the number of grid points in the 1\,km grid in \verb|jako.nc|.  Do this:
+To run the PISM regional model we will need to know the number of grid points in the 1\,km grid in \texttt{jako.nc}.  Do this:
 \begin{quote}\small
 \begin{verbatim}
 $ ncdump -h jako.nc |head
@@ -133,18 +133,18 @@ $ ncdump -h jako.nc |head
 \normalsize\end{quote}
 The grid has spacing of 1\,km, so our computational domain is a 620\,km by 425\,km rectangle.  A 2\,km resolution, century-scale model run is easily achievable on a desktop or laptop computer, and that is our goal below.  A lower 5\,km resolution spin-up run, matching the resolution of the 5\,km whole ice sheet state computed earlier, is also achievable on a small computer; we do that first.
 
-The boundary condition fields in \verb|g5km_bc.nc|, from the whole ice sheet model result  \verb|g5km_gridseq.nc|, may or may not, depending on modeller intent, be spun-up adequately for the purposes of the regional model.  For instance, the intention may be to study equilibrium states with model settings special to the region.  Here, however we assume that some regional spin-up is needed, if for no other reason that the geometry used here (from the SeaRISE 1km data set) differs from that in the whole ice sheet model state.
+The boundary condition fields in \texttt{g5km_bc.nc}, from the whole ice sheet model result  \texttt{g5km_gridseq.nc}, may or may not, depending on modeller intent, be spun-up adequately for the purposes of the regional model.  For instance, the intention may be to study equilibrium states with model settings special to the region.  Here, however we assume that some regional spin-up is needed, if for no other reason that the geometry used here (from the SeaRISE 1km data set) differs from that in the whole ice sheet model state.
 
 We will get first an equilibrium 5\,km regional model, and then do a century run of a 2\,km model based on that.  While determining ``equilibrium'' requires a decision, of course, a standard satisfied here is that the ice volume in the region changes by less than 0.1 percent in the final 100 model years.  See \texttt{ivol} in \texttt{ts_spunjako_0.nc} below.
 
-The 5\,km grid\footnote{Calculate \texttt{620/5 + 1} and \texttt{425/5 + 1}, for example.} uses \verb|-Mx 125 -My 86|.  So now we do a basic run using 4 MPI processes:
+The 5\,km grid\footnote{Calculate \texttt{620/5 + 1} and \texttt{425/5 + 1}, for example.} uses \texttt{-Mx 125 -My 86}.  So now we do a basic run using 4 MPI processes:
 \begin{quote}\small
 \begin{verbatim}
 $ ./spinup.sh 4 125 86 &> out.spin5km &
 \end{verbatim}
 \normalsize\end{quote}
-You can read the \texttt{stdout} log file while it runs: ``\verb|less out.spin5km|''.  The run takes about 5 processor-hours on a 2013 laptop.   % 4.5055 proc-hours on bueler-gazelle
-It produces three files which can be viewed (e.g.~with \verb|ncview|): \verb|spunjako_0.nc|, \verb|ts_spunjako_0.nc|, and \verb|ex_spunjako_0.nc|.  Some more comments on this run are appropriate:
+You can read the \texttt{stdout} log file while it runs: ``\texttt{less out.spin5km}''.  The run takes about 5 processor-hours on a 2013 laptop.   % 4.5055 proc-hours on bueler-gazelle
+It produces three files which can be viewed (e.g.~with \texttt{ncview}): \texttt{spunjako_0.nc}, \texttt{ts_spunjako_0.nc}, and \texttt{ex_spunjako_0.nc}.  Some more comments on this run are appropriate:
 \begin{itemize}
 \item Generally the regridding techniques used at the start of this spin-up run are recommended for regional modeling.  Read the actual run command by
 \begin{quote}\small
@@ -152,22 +152,22 @@ It produces three files which can be viewed (e.g.~with \verb|ncview|): \verb|spu
 $ PISM_DO=echo ./spinup.sh 4 125 86 | less
 \end{verbatim}
 \normalsize\end{quote}
-\item  We use \verb|-boot_file| on \verb|jako.nc|, so we get to choose our grid, and (as usual in PISM with \verb|-boot_file|) the fields are interpolated to our grid.
+\item  We use \texttt{-boot_file} on \texttt{jako.nc}, so we get to choose our grid, and (as usual in PISM with \texttt{-boot_file}) the fields are interpolated to our grid.
 \item A modestly-fine vertical grid with 20 m spacing is chosen, but even finer is recommended, especially to resolve the temperate ice layer in these outlet glaciers.
-\item There is an option \verb|-no_model_strip 10| asking \verb|pismo| to put a 10\,km strip around edge of the computational domain.  This strip is entirely outside of the drainage basin defined by \verb|ftt_mask|.  In this strip the thermodynamical spun-up variables \verb|bmelt,tillwat,enthalpy,litho_temp| from \verb|g5km_bc.nc| are held fixed and used as boundary conditions for the conservation of energy model.  A key part of putting these boundary conditions into the model strip are the options
+\item There is an option \intextoption{no_model_strip} \texttt{10} asking \texttt{pismo} to put a 10\,km strip around edge of the computational domain.  This strip is entirely outside of the drainage basin defined by \texttt{ftt_mask}.  In this strip the thermodynamical spun-up variables \texttt{bmelt,tillwat,enthalpy,litho_temp} from \texttt{g5km_bc.nc} are held fixed and used as boundary conditions for the conservation of energy model.  A key part of putting these boundary conditions into the model strip are the options
 \begin{quote}\small
 \begin{verbatim}
   -regrid_file g5km_bc.nc -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc
 \end{verbatim}
 \normalsize\end{quote}
-\item Dirichlet boundary conditions \verb|u_ssa_bc,v_ssa_bc| are also regridded from \verb|g5km_bc.nc| for the sliding SSA stress balance, and the option \verb|-ssa_dirichlet_bc| then uses them during the run.  The SSA equations are solved as usual except in the \verb|no_model_strip| where these Dirichlet boundary conditions are used.  Note that the velocity tangent to the north and south edges of the computational domain is significantly nonzero, which motivates this usage.
+\item Dirichlet boundary conditions \texttt{u_ssa_bc,v_ssa_bc} are also regridded from \texttt{g5km_bc.nc} for the sliding SSA stress balance, and the option \texttt{-ssa_dirichlet_bc} then uses them during the run.  The SSA equations are solved as usual except in the \texttt{no_model_strip} where these Dirichlet boundary conditions are used.  Note that the velocity tangent to the north and south edges of the computational domain is significantly nonzero, which motivates this usage.
 \item The calving front of the glacier is handled by the following option combination:
 \begin{quote}\small
 \begin{verbatim}
    -calving ocean_kill -ocean_kill_file jako.nc -pik
 \end{verbatim}
 \normalsize\end{quote}
-This choice uses the present-day ice extent, defined by SeaRISE data in \verb|Greenland1km.nc|, to determine the location of the calving front.  Recalling that \verb|-pik| includes \verb|-cfbc|, we are applying a PIK mechanism for the stress boundary condition at the calving front.  The other PIK mechanisms are largely inactive because of \verb|-calving ocean_kill|, but they should do no harm (see section \ref{sec:pism-pik}).
+This choice uses the present-day ice extent, defined by SeaRISE data in \texttt{Greenland1km.nc}, to determine the location of the calving front.  Recalling that \texttt{-pik} includes \texttt{-cfbc}, we are applying a PIK mechanism for the stress boundary condition at the calving front.  The other PIK mechanisms are largely inactive because of \texttt{-calving ocean_kill}, but they should do no harm (see section \ref{sec:pism-pik}).
 \end{itemize}
 
 \begin{figure}[ht]
@@ -187,11 +187,11 @@ $ ./century.sh 4 311 213 spunjako_0.nc &> out.2km_100a &
 \normalsize\end{quote}
 This run requires at least 6\,GB of memory, and it takes about 16 processor-hours.
 
-It produces a file \verb|jakofine_short.nc| almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5\,km regional run (in \verb|spunjako_0.nc|) and then to ``go back'' and regrid the SSA boundary conditions from the 5\,km whole ice sheet results \verb|g5km_bc.nc|.  At the end of the run the final file \verb|jakofine.nc| is produced.  Also there is a time-series file \verb|ts_jakofine.nc| with monthly scalar time-series and a spatial time-dependent file \verb|ex_jakofine.nc|.  The surface speed at the end of this run is shown in Figure \ref{fig:jako-csurf}, with a comparison to observations.
+It produces a file \texttt{jakofine_short.nc} almost immediately and then restarts from it because we need to regrid fields from the end of the previous 5\,km regional run (in \texttt{spunjako_0.nc}) and then to ``go back'' and regrid the SSA boundary conditions from the 5\,km whole ice sheet results \texttt{g5km_bc.nc}.  At the end of the run the final file \texttt{jakofine.nc} is produced.  Also there is a time-series file \texttt{ts_jakofine.nc} with monthly scalar time-series and a spatial time-dependent file \texttt{ex_jakofine.nc}.  The surface speed at the end of this run is shown in Figure \ref{fig:jako-csurf}, with a comparison to observations.
 
 Over this 100 year period the flow appears to be relatively steady state.  Though this is not surprising because the climate forcing and boundary conditions are time-independent, a longer run reveals ongoing speed variability associated to subglacially-driven sliding cyclicity; compare \cite{vanPeltOerlemans2012}.
 
-The ice dynamics parameters chosen in \verb|spinup.sh| and \verb|century.sh|, especially the combination
+The ice dynamics parameters chosen in \texttt{spinup.sh} and \texttt{century.sh}, especially the combination
 \begin{quote}\small
 \begin{verbatim}
    -topg_to_phi 15.0,40.0,-300.0,700.0 -till_effective_fraction_overburden 0.02 \
@@ -216,5 +216,5 @@ $ basemap-plot.py -v csurf --singlerow -o jako-csurf.png jakofine.nc \
     Greenland_5km_v1.1_jako.nc
 \end{verbatim}
 \normalsize\end{quote}
-To choose a colormap \verb|foo.cpt| add option \verb|--colormap foo.cpt| in the last command. For this example \verb|PyPISMTools/colormaps/Full_saturation_spectrum_CCW.cpt| was used.
+To choose a colormap \texttt{foo.cpt} add option \texttt{--colormap foo.cpt} in the last command. For this example \texttt{PyPISMTools/colormaps/Full_saturation_spectrum_CCW.cpt} was used.
 \end{comment}

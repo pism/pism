@@ -66,7 +66,7 @@ PetscErrorCode POConstant::init(PISMVars &vars) {
 
   ierr = PISMOptionsReal("-shelf_base_melt_rate",
                           "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-			  mymeltrate, meltrate_set); CHKERRQ(ierr);
+                          mymeltrate, meltrate_set); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

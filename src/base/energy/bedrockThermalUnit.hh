@@ -130,7 +130,7 @@ protected:
   
   unsigned int Mbz;
   double Lbz;
-  std::string m_input_file;		//!< non-empty if "-i" was set
+  std::string m_input_file;             //!< non-empty if "-i" was set
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached
                 *ghf; //!< lower boundary flux, owned by the model to which we are attached

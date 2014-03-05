@@ -15,15 +15,17 @@ if [ $# -gt 2 ] ; then  # if user says "run_prog.sh 8 211 0.7" then ... and -ssa
   SSAE="$3"
 fi
 
-YEARS=100    # integration time
+YEARS=3000    # integration time
 if [ $# -gt 3 ] ; then  # if user says "run_prog.sh 8 211 0.7 200" then ... and -y 200
   YEARS="$4"
 fi
 
 PISMPREFIX=""
+#PISMPREFIX="../../../bin/"
 
 # use these for more robust SSA solves
-STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
+#STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
+STRONGKSP=""
 
 # preliminary bootstrap and diagnostic run:
 STARTNAME=startfile_Mx${M}.nc
@@ -38,16 +40,17 @@ ${cmd_diag}
 
 # prognostic run
 NAME=prog_Mx${M}_yr${YEARS}.nc
-ECALV=1e17   #  constant for eigen_calving parameterization
+ECALV=1e18   #  constant for eigen_calving parameterization
 CTHICK=50.0  #  constant thickness for thickness_calving
-dt=5
+exdt=25
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
   -ssa_dirichlet_bc -ssa_e $SSAE -y $YEARS -o $NAME -o_order zyx -o_size big \
-  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV \
+  -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -cfl_eigen_calving \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
-  -extra_file ex-${NAME} -extra_times 0:${dt}:${YEARS} -extra_vars thk,mask,csurf"
+  -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,csurf,strain_rates \
+  -options_left"
 echo "running command:"
 echo
 echo "$cmd_prog"

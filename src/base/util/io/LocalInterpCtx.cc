@@ -59,8 +59,8 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, const IceGrid &grid,
         z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
 
     PetscPrintf(com,
-		"target computational domain not a subset of source (in NetCDF file)\n"
-		"  computational domain:\n");
+                "target computational domain not a subset of source (in NetCDF file)\n"
+                "  computational domain:\n");
     PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
                 grid.x.front(), grid.x.back(),
                 grid.y.front(), grid.y.back(),

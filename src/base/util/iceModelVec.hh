@@ -187,7 +187,7 @@ public:
   virtual std::string name() const;
   virtual PetscErrorCode  set_glaciological_units(std::string units);
   virtual PetscErrorCode  set_attrs(std::string my_pism_intent, std::string my_long_name,
-				    std::string my_units, std::string my_standard_name, int component = 0);
+                                    std::string my_units, std::string my_standard_name, int component = 0);
   virtual PetscErrorCode  rename(std::string short_name, std::string long_name,
                                  std::string standard_name, int component = 0);
   virtual PetscErrorCode  read_attributes(std::string filename, int component = 0);
@@ -245,7 +245,7 @@ protected:
 
   void *array;  // will be cast to double** or double*** in derived classes
 
-  int access_counter;		// used in begin_access() and end_access()
+  int access_counter;           // used in begin_access() and end_access()
   int state_counter;            //!< Internal IceModelVec "revision number"
 
   virtual PetscErrorCode destroy();
@@ -259,6 +259,8 @@ private:
   // disable copy constructor and the assignment operator:
   IceModelVec(const IceModelVec &other);
   IceModelVec& operator=(const IceModelVec&);
+public:
+  //! Dump an IceModelVec to a file. *This is for debugging only.*
   PetscErrorCode dump(const char filename[]);
 };
 
@@ -508,7 +510,7 @@ public:
 
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name,
-				IceModelVecKind ghostedp, unsigned int stencil_width = 1);
+                                IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   using IceModelVec::copy_to;
   using IceModelVec::copy_from;
   virtual PetscErrorCode copy_to(IceModelVec &destination);
@@ -646,9 +648,9 @@ public:
   PetscErrorCode  getPlaneStarZ(int i, int j, double z,
                                 planeStar<double> *star);
   PetscErrorCode  getPlaneStar_fine(int i, int j, unsigned int k,
-				    planeStar<double> *star);
+                                    planeStar<double> *star);
   PetscErrorCode  getPlaneStar(int i, int j, unsigned int k,
-			       planeStar<double> *star);
+                               planeStar<double> *star);
 
   PetscErrorCode  getHorSlice(Vec &gslice, double z); // used in iMmatlab.cc
   PetscErrorCode  getHorSlice(IceModelVec2S &gslice, double z);

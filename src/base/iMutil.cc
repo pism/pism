@@ -199,7 +199,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   double H_min, H_max, dz_top;
   std::vector<double> new_zlevels;
   const int old_Mz = grid.Mz;
-  int N = 0; 			// the number of new levels
+  int N = 0;                    // the number of new levels
 
   ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
   if (grid.Lz >= H_max) return 0;
@@ -208,10 +208,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     grid.initial_Mz = grid.Mz;
   else if (grid.Mz > grid.initial_Mz * 2) {
     ierr = PetscPrintf(grid.com,
-		       "\n"
-		       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
-		       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
-		       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
+                       "\n"
+                       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
+                       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
+                       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -238,10 +238,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "\n"
-		    "PISM WARNING: max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)...\n"
-		    "              Adding %d new grid levels %7.4f m apart...\n",
-		    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
+                    "\n"
+                    "PISM WARNING: max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)...\n"
+                    "              Adding %d new grid levels %7.4f m apart...\n",
+                    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
 
   // Create new zlevels and zblevels:
   new_zlevels = grid.zlevels;
@@ -309,8 +309,8 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     snapshots_file_is_ready = false;
 
     ierr = verbPrintf(2, grid.com,
-		      "NOTE: Further snapshots will be saved to '%s'...\n",
-		      snapshots_filename.c_str()); CHKERRQ(ierr);
+                      "NOTE: Further snapshots will be saved to '%s'...\n",
+                      snapshots_filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;

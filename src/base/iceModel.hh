@@ -36,7 +36,7 @@ file containing a complete model state, versus bootstrapping).
 #include <signal.h>
 #include <gsl/gsl_rng.h>
 #include <petscsnes.h>
-#include <petsctime.h>		// PetscGetTime()
+#include <petsctime.h>          // PetscGetTime()
 
 #include "flowlaws.hh"
 
@@ -141,9 +141,6 @@ public:
   virtual PetscErrorCode allocate_couplers();
   virtual PetscErrorCode allocate_iceberg_remover();
 
-  virtual PetscErrorCode attach_surface_model(PISMSurfaceModel *input);
-  virtual PetscErrorCode attach_ocean_model(PISMOceanModel *input);
-
   virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode set_grid_defaults();
@@ -164,12 +161,6 @@ public:
   virtual PetscErrorCode run();
   /** Advance the current PISM run to a specific time */
   virtual PetscErrorCode run_to(double time);
-  /** Do the "preliminary" time-step. */
-  virtual PetscErrorCode init_run();
-protected:
-  /** Continue a run after init_run() or run_to().  Runs to the end_time currently set. */
-  virtual PetscErrorCode continue_run();
-public:
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
   virtual PetscErrorCode setExecName(std::string my_executable_short_name);
   virtual void reset_counters();
@@ -183,7 +174,7 @@ public:
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode set_output_size(std::string option, std::string description,
-					 std::string default_value, std::set<std::string> &result);
+                                         std::string default_value, std::set<std::string> &result);
   virtual std::string         get_output_size(std::string option);
 
   // see iMutil.cc
@@ -199,13 +190,13 @@ public:
                                         bool write_mapping,
                                         bool write_run_stats);
   virtual PetscErrorCode write_variables(const PIO &nc, std::set<std::string> vars,
-					 PISM_IO_Type nctype);
+                                         PISM_IO_Type nctype);
 protected:
 
   IceGrid &grid;
 
-  PISMConfig &config,		//!< configuration flags and parameters
-    &overrides;			//!< flags and parameters overriding config, see -config_override
+  PISMConfig &config,           //!< configuration flags and parameters
+    &overrides;                 //!< flags and parameters overriding config, see -config_override
 
   NCVariable global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters
@@ -233,14 +224,14 @@ protected:
   PISMVars variables;
 
   // state variables and some diagnostics/internals
-  IceModelVec2S ice_surface_elevation,		//!< ice surface elevation; ghosted
-    ice_thickness,		//!< ghosted
-    basal_yield_stress,		//!< ghosted
+  IceModelVec2S ice_surface_elevation,          //!< ice surface elevation; ghosted
+    ice_thickness,              //!< ghosted
+    basal_yield_stress,         //!< ghosted
     basal_melt_rate,           //!< rate of production of basal meltwater (ice-equivalent); no ghosts
-    vLongitude,	//!< Longitude; ghosted to compute cell areas
-    vLatitude,	//!< Latitude; ghosted to compute cell areas
-    bed_topography,		//!< bed topography; ghosted
-    bed_uplift_rate,	//!< bed uplift rate; no ghosts
+    vLongitude, //!< Longitude; ghosted to compute cell areas
+    vLatitude,  //!< Latitude; ghosted to compute cell areas
+    bed_topography,             //!< bed topography; ghosted
+    bed_uplift_rate,    //!< bed uplift rate; no ghosts
     geothermal_flux,   //!< geothermal flux; no ghosts
     vFD,    //!< fracture density
     vFG,    //!< fracture growth rate
@@ -250,18 +241,22 @@ protected:
     vFT,    //!< fracture toughness
     bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
     vHref,          //!< accumulated mass advected to a partially filled grid cell
-    climatic_mass_balance,		//!< accumulation/ablation rate; no ghosts
+    climatic_mass_balance,              //!< accumulation/ablation rate; no ghosts
     climatic_mass_balance_cumulative,    //!< cumulative climatic_mass_balance
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
     discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux (2D field)
-    ice_surface_temp,		//!< ice temperature at the ice surface but below firn; no ghosts
+    ice_surface_temp,           //!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
-    shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
-    shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
-    cell_area,		//!< cell areas (computed using the WGS84 datum)
+    shelfbtemp,         //!< ice temperature at the shelf base; no ghosts
+    shelfbmassflux,     //!< ice mass flux into the ocean at the shelf base; no ghosts
+    cell_area,          //!< cell areas (computed using the WGS84 datum)
     flux_divergence;    //!< flux divergence
+
+public:
+  IceModelVec2S* get_geothermal_flux();
+protected:
 
   IceModelVec2 strain_rates; //!< major and minor principal components of horizontal strain-rate tensor
   
@@ -278,9 +273,9 @@ protected:
     gl_mask_y; //!< mask to determine grounding line position in y-direction
 
   IceModelVec3
-        T3,		//!< absolute temperature of ice; K (ghosted)
+        T3,             //!< absolute temperature of ice; K (ghosted)
         Enth3,          //!< enthalpy; J / kg (ghosted)
-        tau3;		//!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
+        tau3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
   double   dt,     //!< mass continuity time step, s
@@ -289,7 +284,7 @@ protected:
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
               dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
-              gDmax,		// global max of the diffusivity
+              gDmax,            // global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
     nonneg_rule_flux_cumulative,
@@ -327,9 +322,7 @@ protected:
   // see iMenergy.cc
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
-  virtual bool checkThinNeigh(
-       double E, double NE, double N, double NW, 
-       double W, double SW, double S, double SE);
+  virtual bool checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold);
 
   // see iMenthalpy.cc
   virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
@@ -439,6 +432,10 @@ protected:
 
   PISMStressBalance *stress_balance;
 
+public:
+  PISMStressBalance* get_stress_balance();
+protected:
+
   std::map<std::string,PISMDiagnostic*> diagnostics;
   std::map<std::string,PISMTSDiagnostic*> ts_diagnostics;
 
@@ -455,11 +452,11 @@ protected:
   PetscErrorCode write_snapshot();
 
   // scalar time-series
-  bool save_ts;			//! true if the user requested time-series output
-  std::string ts_filename;		//! file to write time-series to
-  std::vector<double> ts_times;	//! times requested
-  unsigned int current_ts;	//! index of the current time
-  std::set<std::string> ts_vars;		//! variables requested
+  bool save_ts;                 //! true if the user requested time-series output
+  std::string ts_filename;              //! file to write time-series to
+  std::vector<double> ts_times; //! times requested
+  unsigned int current_ts;      //! index of the current time
+  std::set<std::string> ts_vars;                //! variables requested
   PetscErrorCode init_timeseries();
   PetscErrorCode flush_timeseries();
   PetscErrorCode write_timeseries();
@@ -490,20 +487,20 @@ protected:
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
   std::set<std::string> map_viewers, slice_viewers;
-  int     id, jd;	     // sounding indexes
+  int     id, jd;            // sounding indexes
   std::map<std::string,PetscViewer> viewers;
 
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
 
-  int event_step,		//!< total time spent doing time-stepping
-    event_velocity,		//!< total velocity computation
-    event_energy,		//!< energy balance computation
-    event_hydrology,		//!< subglacial hydrology computation
-    event_mass,			//!< mass continuity computation
-    event_age,			//!< age computation
-    event_beddef,		//!< bed deformation step
-    event_output,		//!< time spent writing the output file
+  int event_step,               //!< total time spent doing time-stepping
+    event_velocity,             //!< total velocity computation
+    event_energy,               //!< energy balance computation
+    event_hydrology,            //!< subglacial hydrology computation
+    event_mass,                 //!< mass continuity computation
+    event_age,                  //!< age computation
+    event_beddef,               //!< bed deformation step
+    event_output,               //!< time spent writing the output file
     event_output_define,        //!< time spent defining variables
     event_snapshots,            //!< time spent writing snapshots
     event_backups;              //!< time spent writing backups files

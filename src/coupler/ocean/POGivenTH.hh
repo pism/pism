@@ -36,6 +36,7 @@ public:
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
+  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 private:
   IceModelVec2S shelfbtemp, shelfbmassflux;
   IceModelVec2S *ice_thickness;
@@ -43,17 +44,28 @@ private:
 
   PetscErrorCode calc_shelfbtemp_shelfbmassflux();
 
+  struct POGivenTHConstants {
+    double shelf_top_surface_temperature;
+    double water_latent_heat_fusion;
+    double sea_water_density;
+    double sea_water_specific_heat_capacity;
+    double ice_density;
+    double ice_specific_heat_capacity;
+  };
+
+  PetscErrorCode pointwise_calculation(const POGivenTHConstants &constants,
+                                       double sea_water_salinity,
+                                       double sea_water_potential_temperature,
+                                       double ice_thickness,
+                                       double *shelf_base_temperature_out,
+                                       double *shelf_base_melt_rate_out);
+
   PetscErrorCode btemp_bmelt_3eqn(double rhow, double rhoi,
-                                  double sal_ocean, double temp_insitu, double zice,
+                                  double sal_ocean, double thetao, double zice,
                                   double &temp_base, double &meltrate);
 
-  PetscErrorCode adiabatic_temperature_gradient(double salinity, double temp_insitu, double pressure, double &adlprt_out);
-  PetscErrorCode potential_temperature(double salinity,double temp_insitu,double pressure,
-                                       double reference_pressure, double& thetao);
-  PetscErrorCode insitu_temperature(double salinity, double thetao,
-                                    double pressure,double reference_pressure,
-                                    double &temp_insitu_out);
   PetscErrorCode allocate_POGivenTH();
+
 };
 
 #endif /* _POGIVENTH_H_ */

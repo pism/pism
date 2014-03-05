@@ -17,9 +17,9 @@ either to get a different steady state or to model changes in the ice shelf.
 As in the diagnostic example, start by running `preprocess.py` in the parent
 directory.  Then do
 
-    $ ./run_prog.sh 2 211 0.6 100
+    $ ./run_prog.sh 4 211 0.6 100
 
-This 100 model year run on 2 processes and a 5 km grid took about about three
+This 100 model year run on 4 processes and a 5 km grid took about about twenty
 minutes.  It starts with a bootstrapping stage which does a `y 0` run and then
 generates `startfile_Mx211.nc`.  It then re-initializes to start the prognostic
 run itself.

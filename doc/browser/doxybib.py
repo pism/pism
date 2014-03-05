@@ -2,7 +2,7 @@
 import re
 from os import popen, system
 
-input  = "ice_bib"
+input  = "ice-bib"
 bbl    = "texput.bbl"
 output = "references.md"
 

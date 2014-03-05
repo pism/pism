@@ -124,15 +124,15 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
   ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit options", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsString("-i", "PISM input file name",
-			     m_input_file, i_set); CHKERRQ(ierr);
+                             m_input_file, i_set); CHKERRQ(ierr);
 
     int tmp = Mbz;
     ierr = PISMOptionsInt("-Mbz", "number of levels in bedrock thermal layer",
-			  tmp, Mbz_set); CHKERRQ(ierr);
+                          tmp, Mbz_set); CHKERRQ(ierr);
     Mbz = tmp;
 
     ierr = PISMOptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-			   Lbz, Lbz_set); CHKERRQ(ierr);
+                           Lbz, Lbz_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -177,7 +177,7 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
   // actual allocation:
   if ((Lbz <= 0.0) && (Mbz > 1)) {
     SETERRQ(grid.com, 1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
-	    " and more than one layers\n"); }
+            " and more than one layers\n"); }
 
   if (Mbz > 1) {
     ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);

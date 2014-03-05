@@ -54,7 +54,7 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
   air_temp_snapshot.init_2d("air_temp_snapshot", grid);
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
   air_temp_snapshot.set_string("long_name",
-			       "snapshot of the near-surface air temperature");
+                               "snapshot of the near-surface air temperature");
   ierr = air_temp_snapshot.set_units("K"); CHKERRQ(ierr);
 
   return 0;
@@ -175,9 +175,9 @@ PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
 
   // read snow precipitation rate and air_temps from file
   ierr = verbPrintf(2, grid.com,
-		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-		    "    from %s ... \n",
-		    input_file.c_str()); CHKERRQ(ierr); 
+                    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+                    "    from %s ... \n",
+                    input_file.c_str()); CHKERRQ(ierr); 
   if (do_regrid) {
     ierr = precipitation.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {

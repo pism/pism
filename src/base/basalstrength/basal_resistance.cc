@@ -63,7 +63,7 @@ IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const PIS
   : IceBasalResistancePlasticLaw(config) {
   pseudo_q = config.get("pseudo_plastic_q");
   pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
-  sliding_scale = config.get("sliding_scale_factor_reduces_tauc");
+  sliding_scale_factor_reduces_tauc = config.get("sliding_scale_factor_reduces_tauc");
 }
 
 PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) {
@@ -111,7 +111,7 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MP
   by  @f$ A @f$ . It would have exactly this effect \e if the driving
   stress were \e hypothetically completely held by the basal
   resistance. Thus this scale factor is used to reduce (if
-  `-sliding_scale`  @f$ A @f$  with  @f$ A > 1 @f$ ) or increase (if  @f$ A <
+  `-sliding_scale_factor_reduces_tauc`  @f$ A @f$  with  @f$ A > 1 @f$ ) or increase (if  @f$ A <
   1 @f$ ) the value of the (pseudo-) yield stress `tauc`. The concept
   behind this is described at
   http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
@@ -142,8 +142,8 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MP
 double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double vy) {
   const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
-  if (sliding_scale > 0.0) {
-    double Aq = pow(sliding_scale, pseudo_q);
+  if (sliding_scale_factor_reduces_tauc > 0.0) {
+    double Aq = pow(sliding_scale_factor_reduces_tauc, pseudo_q);
     return (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
   } else {
     return tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
@@ -157,8 +157,8 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
 {
   const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
-  if (sliding_scale > 0.0) {
-    double Aq = pow(sliding_scale, pseudo_q);
+  if (sliding_scale_factor_reduces_tauc > 0.0) {
+    double Aq = pow(sliding_scale_factor_reduces_tauc, pseudo_q);
     *d = (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
   } else {
     *d =  tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);

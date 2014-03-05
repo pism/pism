@@ -260,19 +260,19 @@ PetscErrorCode IceModel::createVecs() {
     ierr = gl_mask.create(grid, "gl_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask.set_attrs("internal",
                              "fractional grounded/floating mask (floating=0, grounded=1)",
-			     "", ""); CHKERRQ(ierr);
+                             "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask); CHKERRQ(ierr);
 
     ierr = gl_mask_x.create(grid, "gl_mask_x", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_x.set_attrs("internal",
-			       "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
-			       "", ""); CHKERRQ(ierr);
+                               "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
+                               "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask_x); CHKERRQ(ierr);
 
     ierr = gl_mask_y.create(grid, "gl_mask_y", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_y.set_attrs("internal",
-       			       "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
-			       "", ""); CHKERRQ(ierr);
+                               "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
+                               "", ""); CHKERRQ(ierr);
     ierr = variables.add(gl_mask_y); CHKERRQ(ierr);
   }
 
@@ -452,12 +452,12 @@ PetscErrorCode IceModel::createVecs() {
 
     if (config.get_flag("write_fd_fields")) {
       ierr = vFG.create(grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFG.set_attrs("model_state", "fracture growth rate",	"1/s", ""); CHKERRQ(ierr);
+      ierr = vFG.set_attrs("model_state", "fracture growth rate",       "1/s", ""); CHKERRQ(ierr);
       vFG.metadata().set_double("valid_min", 0.0);
       ierr = variables.add(vFG); CHKERRQ(ierr);
 
       ierr = vFH.create(grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFH.set_attrs("model_state", "fracture healing rate",	"1/s", ""); CHKERRQ(ierr);
+      ierr = vFH.set_attrs("model_state", "fracture healing rate",      "1/s", ""); CHKERRQ(ierr);
       ierr = variables.add(vFH); CHKERRQ(ierr);
 
       ierr = vFE.create(grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
@@ -465,11 +465,11 @@ PetscErrorCode IceModel::createVecs() {
       ierr = variables.add(vFE); CHKERRQ(ierr);
 
       ierr = vFA.create(grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFA.set_attrs("model_state", "age since fracturing",	"years", ""); CHKERRQ(ierr);
+      ierr = vFA.set_attrs("model_state", "age since fracturing",       "years", ""); CHKERRQ(ierr);
       ierr = variables.add(vFA); CHKERRQ(ierr);
       
       ierr = vFT.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
-      ierr = vFT.set_attrs("model_state", "fracture toughness",	"Pa", ""); CHKERRQ(ierr);
+      ierr = vFT.set_attrs("model_state", "fracture toughness", "Pa", ""); CHKERRQ(ierr);
       ierr = variables.add(vFT); CHKERRQ(ierr);
     }
   }
@@ -855,97 +855,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 }
 
 
-//! Do the preliminary time-step and re-initialize the model.
-PetscErrorCode IceModel::init_run() {
-  PetscErrorCode  ierr;
-
-  bool do_mass_conserve = config.get_flag("do_mass_conserve");
-  bool do_energy = config.get_flag("do_energy");
-  bool do_age = config.get_flag("do_age");
-  bool do_skip = config.get_flag("do_skip");
-
-  // do a one-step diagnostic run:
-  dt_TempAge = config.get("preliminary_time_step_duration");
-  ierr = verbPrintf(2,grid.com,
-      "preliminary step of %.2f model seconds to fill diagnostic quantities ...\n",
-      dt_TempAge); CHKERRQ(ierr);
-
-  // set verbosity to 1 to suppress reporting
-  int tmp_verbosity = getVerbosityLevel();
-  // if user says '-verbose 3' or higher, some feedback during prelim step
-  ierr = setVerbosityLevel(tmp_verbosity > 2 ? 2 : 1); CHKERRQ(ierr);
-
-  dt_force = -1.0;
-  maxdt_temporary = -1.0;
-  skipCountDown = 0;
-  t_TempAge = grid.time->start();
-  dt = 0.0;
-  double run_end = grid.time->end();
-
-  // FIXME:  In the case of derived class diagnostic time series this fixed
-  //         step-length can be problematic.  The fix may have to be in the derived class.
-  //         The problem is that unless the derived class fully reinitializes its
-  //         time series then there can be a request for an interpolation on [A,B]
-  //         where A>B.  See IcePSTexModel.
-  grid.time->set_end(grid.time->start() + 1); // run for 1 second
-
-  ierr = step(do_mass_conserve, do_energy, do_age, do_skip); CHKERRQ(ierr);
-
-  // print verbose messages according to user-set verbosity
-  if (tmp_verbosity > 2) {
-    ierr = PetscPrintf(grid.com,
-                       " done; reached time %s\n", grid.time->date().c_str()); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com,
-      "  re-setting model state as initialized ...\n"); CHKERRQ(ierr);
-  }
-
-  // re-initialize the model:
-  global_attributes.set_string("history", "");
-  grid.time->set(grid.time->start());
-  t_TempAge = grid.time->start();
-  dt_TempAge = 0.0;
-  grid.time->set_end(run_end);
-
-  ierr = model_state_setup(); CHKERRQ(ierr);
-
-  // restore verbosity:
-  ierr = setVerbosityLevel(tmp_verbosity); CHKERRQ(ierr);
-
-  // Write snapshots and time-series at the beginning of the run.
-  ierr = write_snapshot(); CHKERRQ(ierr);
-  ierr = write_timeseries(); CHKERRQ(ierr);
-  ierr = write_extras(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2,grid.com, "running forward ...\n"); CHKERRQ(ierr);
-
-  stdout_flags.erase(); // clear it out
-  ierr = summaryPrintLine(PETSC_TRUE, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
-  adaptReasonFlag = '$'; // no reason for no timestep
-  ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
-
-  return 0;
-}
-
-/**
- * The time-stepping method used by PISM in the "standalone" mode.
- *
- * 1. Do a 1-second-long "preliminary" time-step to compute
- *    "rate-of-change" quantities at the beginning of the run.
- * 2. Re-initialize the model.
- * 3. Run the main time-stepping loop.
- *
- * @return 0 on success
- */
-PetscErrorCode IceModel::run() {
-  PetscErrorCode  ierr;
-
-  ierr = init_run(); CHKERRQ(ierr);
-
-  ierr = continue_run(); CHKERRQ(ierr);
-
-  return 0;
-}
-
 /**
  * Run the time-stepping loop from the current model time to `time`.
  *
@@ -961,7 +870,7 @@ PetscErrorCode IceModel::run_to(double run_end) {
 
   grid.time->set_end(run_end);
 
-  ierr = continue_run(); CHKERRQ(ierr);
+  ierr = run(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -975,7 +884,7 @@ PetscErrorCode IceModel::run_to(double run_end) {
  *
  * @return 0 on success
  */
-PetscErrorCode IceModel::continue_run() {
+PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
   bool do_mass_conserve = config.get_flag("do_mass_conserve");
@@ -984,6 +893,22 @@ PetscErrorCode IceModel::continue_run() {
   bool do_skip = config.get_flag("do_skip");
 
   int stepcount = config.get_flag("count_time_steps") ? 0 : -1;
+
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+
+  // update diagnostics at the beginning of the run:
+  ierr = write_timeseries(); CHKERRQ(ierr);
+  ierr = write_extras(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com, "running forward ...\n"); CHKERRQ(ierr);
+
+  stdout_flags.erase(); // clear it out
+  ierr = summaryPrintLine(PETSC_TRUE, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  adaptReasonFlag = '$'; // no reason for no timestep
+  ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
+
+  t_TempAge = grid.time->current();
+  dt_TempAge = 0.0;
 
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
@@ -1102,4 +1027,14 @@ PetscErrorCode IceModel::init() {
 
   }
   return 0;
+}
+
+// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
+IceModelVec2S* IceModel::get_geothermal_flux() {
+  return &this->geothermal_flux;
+}
+
+// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
+PISMStressBalance* IceModel::get_stress_balance() {
+  return this->stress_balance;
 }

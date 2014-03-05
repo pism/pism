@@ -3,7 +3,7 @@ from numpy import sort
 try:
     from netCDF4 import *
 except:
-    print "ERROR: netCDF4 is installed!"
+    print "ERROR: netCDF4 is required!"
     import sys
     sys.exit(1)
 

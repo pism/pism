@@ -190,7 +190,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   double stripkm = 0.0;
   ierr = PISMOptionsReal("-no_model_strip", 
                          "width in km of strip near boundary in which modeling is turned off",
-			 stripkm, nmstripSet);
+                         stripkm, nmstripSet);
 
   if (nmstripSet) {
     ierr = verbPrintf(2, grid.com,
@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "PISMO %s (regional outlet-glacier run mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     bool iset, bfset;

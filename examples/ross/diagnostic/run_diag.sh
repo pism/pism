@@ -20,6 +20,7 @@ if [ $# -gt 2 ] ; then  # if user says "run_diag.sh 8 351 0.7" then ... and '-ss
 fi
 
 PISMPREFIX=""
+#PISMPREFIX="../../../bin/"
 
 cmd="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My $M \
   -Mz 3 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa -energy none \

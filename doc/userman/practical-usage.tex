@@ -68,13 +68,14 @@ You can, however, choose any one of the three supported output orders using the 
 To transpose dimensions in an existing file, use the \texttt{ncpdq} (``permute dimensions quickly'') tool from the NCO (\emph{NetCDF Operators}) suite.  For example, run
 \begin{verbatim}
 $ ncpdq -a t,z,zb,y,x bad.nc good.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 to turn \texttt{bad.nc} (with any inconvenient storage order) into \texttt{good.nc} using the \texttt{t,z,y,x} order.
 
 PISM also supports NetCDF-4 parallel I/O, which gives better performance in
 high-resolution runs and avoids NetCDF-3 file format limitations. (In a
 NetCDF-3 file a variable record cannot exceed 4 gigabytes.) Build PISM with
-parallel NetCDF-4 and use \txtopt{o_format}{\texttt{netcdf4_parallel}} to
+parallel NetCDF-4 and use \intextoption{o_format} \texttt{netcdf4_parallel} to
 enable this code.
 
 In addition to \texttt{-o_format netcdf4_parallel} and \texttt{netcdf3}
@@ -92,7 +93,8 @@ to be somewhat fragile, though, so use at your own risk.)
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
         -ts_times 0:1:1e4 -ts_vars ivol,iareag
-\end{verbatim} %$ just to make emacs happy
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and \ref{tab:time-series-1}~and~\ref{tab:time-series-2} for the full list of supported time-series.
 
 Note that, similarly to the snapshot-saving code (section \ref{sec:snapshots}), this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
@@ -215,7 +217,8 @@ Use options \texttt{-extra_file}, \texttt{-extra_times}, and \texttt{-extra_vars
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
         -extra_times 0:10:1e4 -extra_vars csurf,cbase
-\end{verbatim} %$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years.  Times are specified using a comma-separated list or a MATLAB-style range.  See Table \ref{tab:extras} for all the options controlling this feature.  Tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3} list all the variable choices.
 
 Note that options \intextoption{extra_times},
@@ -237,7 +240,8 @@ In addition to specifying a constant step in \texttt{-extra_times a:step:b} one 
 \begin{verbatim}
 $ pismr -i foo.nc -y 100 -o output.nc -extra_file extras.nc \
         -extra_times 0:monthly:100 -extra_vars dHdt
-\end{verbatim} %$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 will save the rate of change of the ice thickness every month for 100
 years. With \texttt{-calendar none} (the default), ``monthly'' means
 ``every $\frac 1 {12}$ of the year'', and ``yearly'' is ``every
@@ -251,7 +255,8 @@ This is especially useful when using a climate forcing file to set run duration:
 $ pismr -i foo.nc -surface given -surface_given_file climate.nc \
         -calendar gregorian -time_file climate.nc \
         -extra_times monthly -extra_file ex.nc -extra_vars thk
-\end{verbatim} %$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 will save ice thickness at the end of every month while running PISM for the duration of climate forcing data in \texttt{climate.nc}.
 
 Times given using \texttt{-extra_times} describe the reporting intervals by giving the endpoints of these reporting intervals.  The save itself occurs at the end of each interval.  This implies, for example, that \texttt{0:1:10} will produce 10 records at times 1,\dots,10 and \emph{not} 11 records.
@@ -340,9 +345,6 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \texttt{hardav} & $Pa\, s^{1/n}$ &  vertical average of ice hardness \\
     \texttt{lat} & \textsl{degrees north} & latitude \\
     \texttt{lon} & \textsl{degrees east} & longitude \\
-    \texttt{mask} & \textsl{none} & grounded/dragging/floating integer mask \\
-    \texttt{proc_ice_area} & \textsl{none} &  number of cells containing ice in a processor's domain \\
-    \texttt{rank} & \textsl{none} &  processor rank \\
    \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-2}}\\
   \bottomrule
   \end{tabular}
@@ -357,6 +359,9 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \textbf{Name} & \textbf{Units} & \textbf{Description} \\
     \midrule
     \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-1}}\\
+    \texttt{mask} & \textsl{none} & grounded/dragging/floating integer mask \\
+    \texttt{proc_ice_area} & \textsl{none} &  number of cells containing ice in a processor's domain \\
+    \texttt{rank} & \textsl{none} &  processor rank \\
     \texttt{schoofs_theta} & \textsl{1} &  multiplier $\theta$ in \cite{Schoofbasaltopg2003} \\
     \texttt{shelfbmassflux} & \textsl{m / year} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
     \texttt{shelfbtemp} & \textsl{Kelvin} & absolute temperature at ice shelf base \\
@@ -375,11 +380,6 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \texttt{topgsmooth} & \textsl{m} &  smoothed bed elevation in \cite{Schoofbasaltopg2003}\\
     \texttt{topg} & \textsl{m} & bedrock surface elevation \\
     \texttt{usurf} & \textsl{m} & ice upper surface elevation \\
-    \texttt{velbar} & \textsl{m / year} &  vertical mean of horizontal ice velocity in the X and Y directions \\
-    \texttt{velbase} & \textsl{m / year} &  horizontal velocity of ice at the base of ice in the X and Y directions\\
-    \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions\\
-    \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
-    \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
    \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-3}}\\
   \bottomrule
   \end{tabular}
@@ -394,6 +394,11 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \textbf{Name} & \textbf{Units} & \textbf{Description} \\
     \midrule
     \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-2}}\\
+    \texttt{velbar} & \textsl{m / year} &  vertical mean of horizontal ice velocity in the X and Y directions \\
+    \texttt{velbase} & \textsl{m / year} &  horizontal velocity of ice at the base of ice in the X and Y directions\\
+    \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions\\
+    \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
+    \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
     \texttt{ocean_kill_flux} & \textsl{kg / s} & calving flux due to the ``\texttt{-calving ocean_kill}'' mechanism \\
     \texttt{ocean_kill_flux_cumulative} & \textsl{Gt} & cumulative version of \texttt{ocean_kill_flux} \\
     \texttt{nonneg_flux_cumulative} & \textsl{Gt} & cumulative numerical flux created by enforcing non-negativity of ice thickness \\
@@ -898,16 +903,19 @@ Here's an example which uses the script \texttt{util/flowlineslab.py} to create 
 \begin{verbatim}
 $ flowlineslab.py                         # creates slab.nc with only an x-direction
 $ flowline.py -o slab-in.nc --expand -d y slab.nc
-\end{verbatim} %$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 produces  a PISM-ready \texttt{slab-in.nc}.  Specifically, \texttt{flowline.py} ``expands'' its input file in the y-direction.  Now we can ``bootstrap'' from \texttt{slab-in.nc}:
 \begin{verbatim}
 $ mpiexec -n 2 pismr -surface given -boot_file slab-in.nc -periodicity y \
     -Mx 201 -My 3 -Lx 1000 -Ly 4 -Lz 2000 -Mz 11 -y 10000 -o pism-out.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 To make it easier to visualize data in the file created by PISM, ``collapse'' it:
 \begin{verbatim}
 $ flowline.py -o slab-out.nc --collapse -d y pism-out.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 \subsection{Managing source code modifications}
 \label{sec:code-modifications}

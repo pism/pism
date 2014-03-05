@@ -32,7 +32,7 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   array3                 = NULL;
   first                  = -1;
   N                      = 0;
-  n_records              = 50;	// just a default
+  n_records              = 50;  // just a default
   m_report_range         = false;
   m_period               = 0;
   m_reference_time       = 0.0;
@@ -211,7 +211,7 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
 
   if (is_increasing(time) == false) {
     ierr = PetscPrintf(grid->com, "PISM ERROR: times have to be strictly increasing (read from '%s').\n",
-		       filename.c_str());
+                       filename.c_str());
     PISMEnd();
   }
 
@@ -333,7 +333,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
                                 CRITICAL, m_report_range, 0.0, v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
-		      m_name.c_str(),
+                      m_name.c_str(),
                       start + j,
                       grid->time->date(time[start + j]).c_str());
     ierr = set_record(kept + j); CHKERRQ(ierr);
@@ -359,7 +359,7 @@ PetscErrorCode IceModelVec2T::discard(int number) {
   for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (int j=grid->ys; j<grid->ys+grid->ym; ++j)
       for (unsigned int k = 0; k < N; ++k)
-	a3[i][j][k] = a3[i][j][k + number];
+        a3[i][j][k] = a3[i][j][k + number];
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   

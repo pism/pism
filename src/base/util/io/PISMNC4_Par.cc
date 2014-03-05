@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 // netcdf_par.h has to be included *after* mpi.h
 extern "C" {
 #include <netcdf_par.h>
+#include <netcdf.h>
 }
 
 int PISMNC4_Par::open(std::string fname, int mode) {

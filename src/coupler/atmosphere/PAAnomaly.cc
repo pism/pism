@@ -35,7 +35,7 @@ PAAnomaly::PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in
 PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
   PetscErrorCode ierr;
 
-  option_prefix	 = "-atmosphere_anomaly";
+  option_prefix  = "-atmosphere_anomaly";
 
   // will be de-allocated by the parent's destructor
   air_temp_anomaly      = new IceModelVec2T;

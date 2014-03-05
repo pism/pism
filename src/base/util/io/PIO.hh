@@ -220,13 +220,13 @@ public:
   grid_info();
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
-  double time,			//!< current time (seconds)
-    x_min,			//!< [x_min, x_max] is the X extent of the grid
-    x_max,			//!< [x_min, x_max] is the X extent of the grid
-    y_min,			//!< [y_min, y_max] is the Y extent of the grid
-    y_max,			//!< [y_min, y_max] is the Y extent of the grid
-    z_min,			//!< minimal value of the z dimension
-    z_max;			//!< maximal value of the z dimension
+  double time,                  //!< current time (seconds)
+    x_min,                      //!< [x_min, x_max] is the X extent of the grid
+    x_max,                      //!< [x_min, x_max] is the X extent of the grid
+    y_min,                      //!< [y_min, y_max] is the Y extent of the grid
+    y_max,                      //!< [y_min, y_max] is the Y extent of the grid
+    z_min,                      //!< minimal value of the z dimension
+    z_max;                      //!< maximal value of the z dimension
   std::vector<double> x, y, z;       //!< coordinates
 };
 

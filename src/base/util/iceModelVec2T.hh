@@ -122,11 +122,11 @@ public:
   virtual PetscErrorCode init_interpolation(const double *ts, unsigned int ts_length);
 
 protected:
-  std::vector<double> time,		//!< all the times available in filename
-    time_bounds;		//!< time bounds
-  std::string filename;		//!< file to read (regrid) from
+  std::vector<double> time,             //!< all the times available in filename
+    time_bounds;                //!< time bounds
+  std::string filename;         //!< file to read (regrid) from
   DM da3;
-  Vec v3;			//!< a 3D Vec used to store records
+  Vec v3;                       //!< a 3D Vec used to store records
   void ***array3;
   unsigned int n_records, //!< maximum number of records to store in memory
     N,                    //!< number of records kept in memory

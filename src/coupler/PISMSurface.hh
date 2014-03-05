@@ -56,5 +56,5 @@ protected:
   PISMAtmosphereModel *atmosphere;
 };
 
-#endif	// __PISMSurfaceModel_hh
+#endif  // __PISMSurfaceModel_hh
 

@@ -3,7 +3,7 @@ How do I...? {#howto}
 
 [TOC]
 
-@section config Creating and using configuration flags and parameters
+@section editing_config Creating and using configuration flags and parameters
 
 - Edit `src/pism_config.cdl`. Each flag or parameter is stored as a NetCDF attribute and should have a corresponding "_doc" attribute describing its meaning.
 

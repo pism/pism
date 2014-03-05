@@ -233,8 +233,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
     const bool sub_gl = config.get_flag("sub_groundingline");
-
-    if (sub_gl){
+    if (sub_gl == true) {
       ierr = gl_mask.begin_access(); CHKERRQ(ierr);
     }
 
@@ -271,8 +270,8 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
           // if isMarginal then only do vertical conduction for ice; ignore advection
           //   and strain heating if isMarginal
-          const bool isMarginal = checkThinNeigh(ice_thickness(i+1,j),ice_thickness(i+1,j+1),ice_thickness(i,j+1),ice_thickness(i-1,j+1),
-                                                 ice_thickness(i-1,j),ice_thickness(i-1,j-1),ice_thickness(i,j-1),ice_thickness(i+1,j-1));
+          const double thickness_threshold = 100.0; // FIXME: make configurable
+          const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
           PismMask mask_value = static_cast<PismMask>(vMask.as_int(i,j));
           ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
           CHKERRQ(ierr);
@@ -291,7 +290,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
             ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
           }
 
-        }	// end of "if there are enough points in ice to bother ..."
+        }       // end of "if there are enough points in ice to bother ..."
 
         // prepare for melting/refreezing
         double bwatnew = bwatcurr(i,j);
@@ -382,9 +381,9 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
         }
 
-	if (sub_gl) {
-	  basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
-	}
+        if (sub_gl == true) {
+          basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
+        }
 
     }
   }
@@ -393,7 +392,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     SETERRQ(grid.com, 1,"too many low temps");
   }
 
-  if (sub_gl){
+  if (sub_gl == true) {
     ierr = gl_mask.end_access(); CHKERRQ(ierr);
   }
 

@@ -45,7 +45,6 @@ public:
 
   PetscErrorCode initThisColumn(int i, int j, bool my_ismarginal,
                                 double ice_thickness,
-                                double till_water_thickness,
                                 IceModelVec3 *u3,
                                 IceModelVec3 *v3,
                                 IceModelVec3 *w3,

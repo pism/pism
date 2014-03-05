@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -62,7 +62,7 @@ void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_i
 
           // set the run just above as a parent (if present)
           if (r > 0 && image[(r-1)*n_cols + c] > 0.0)
-            parent = (int)image[(r-1)*n_cols + c];
+            parent = (unsigned int)image[(r-1)*n_cols + c];
           else
             parent = 0;
 
@@ -87,7 +87,7 @@ void cc(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_i
         }
 
         if (r > 0 && image[(r-1)*n_cols + c] > 0.0)
-          run_union(parents, (int)image[(r-1)*n_cols + c], run_number);
+          run_union(parents, (unsigned int)image[(r-1)*n_cols + c], run_number);
 
         if (mask[run_number] == 0 && fabs(image[r*n_cols + c] - mask_grounded) < eps)
           mask[run_number] = 1;

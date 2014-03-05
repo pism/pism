@@ -223,7 +223,7 @@ def final_corrections(filename):
     bcflag[thk < 1.0] = 0
 
     # modifications for the prognostic run
-    # this is to avoid grounding (Why? -- CK)
+    # this is to avoid grounding in the ice-shelf interior to make the results comparable to the diagnostic flow field
     topg[np.logical_or(mask == ocean_icy, mask == ocean_ice_free)] = -2000.0
 
     # cap temperature out in the ocean:

@@ -69,8 +69,8 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
 
   if (!exists) {
     ierr = PetscPrintf(com,
-		      "PISM ERROR: Can't find '%s' ('%s') in '%s'.\n",
-		       short_name.c_str(), standard_name.c_str(),
+                      "PISM ERROR: Can't find '%s' ('%s') in '%s'.\n",
+                       short_name.c_str(), standard_name.c_str(),
                        nc.inq_filename().c_str());
     CHKERRQ(ierr);
     PISMEnd();
@@ -80,9 +80,9 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
 
   if (dims.size() != 1) {
     ierr = PetscPrintf(com,
-		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
-		       "            but a time-series variable can only depend on 1 dimension.\n",
-		       short_name.c_str(),
+                       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
+                       "            but a time-series variable can only depend on 1 dimension.\n",
+                       short_name.c_str(),
                        nc.inq_filename().c_str(),
                        dims.size()); CHKERRQ(ierr);
     PISMEnd();
@@ -103,7 +103,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
   }
   if (!is_increasing) {
     ierr = PetscPrintf(com, "PISM ERROR: dimension '%s' has to be strictly increasing (read from '%s').\n",
-		       tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
+                       tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
     PISMEnd();
   }
 
@@ -127,9 +127,9 @@ PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
-		       dimension.get_name().c_str(),
-		       var.get_name().c_str(),
-		       nc.inq_filename().c_str()); CHKERRQ(ierr);
+                       dimension.get_name().c_str(),
+                       var.get_name().c_str(),
+                       nc.inq_filename().c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -157,11 +157,11 @@ PetscErrorCode Timeseries::report_range() {
   std::string spacer(var.get_name().size(), ' ');
 
   ierr = verbPrintf(2, com,
-		    "  FOUND  %s / %-60s\n"
+                    "  FOUND  %s / %-60s\n"
                     "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-		    var.get_name().c_str(),
-		    var.get_string("long_name").c_str(), spacer.c_str(), min, max,
-		    var.get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+                    var.get_name().c_str(),
+                    var.get_string("long_name").c_str(), spacer.c_str(), min, max,
+                    var.get_string("glaciological_units").c_str()); CHKERRQ(ierr);
 
   return 0;
 }
@@ -237,7 +237,7 @@ double Timeseries::operator()(double t) {
   int i = (int)(j - time.begin());
 
   if (i == 0) {
-    return values[0];	// out of range (on the left)
+    return values[0];   // out of range (on the left)
   }
 
   double dt = time[i] - time[i - 1];
@@ -255,7 +255,7 @@ double Timeseries::operator[](unsigned int j) const {
 #if (PISM_DEBUG==1)
   if (j >= values.size()) {
     PetscPrintf(com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
-		var.get_name().c_str(), values.size(), j);
+                var.get_name().c_str(), values.size(), j);
     PISMEnd();
   }
 #endif
