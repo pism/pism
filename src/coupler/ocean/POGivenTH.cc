@@ -20,6 +20,7 @@
 #include "IceGrid.hh"
 #include "PISMVars.hh"
 
+#include <gsl/gsl_poly.h>
 #include <cassert>
 
 /* TO DO:
@@ -272,14 +273,21 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
   return 0;
 }
 
-/** Compute temperature and melt rate at the base of the shelf.
+/** @brief Compute temperature and melt rate at the base of the shelf. Based on the paper by Hellmer and Olbers, 1989.
  *
  * Use equations for the heat and salt flux balance at the base of the
  * shelf to compute the temperature at the base of the shelf and the
  * sub-shelf melt rate.
  *
  * @note This model is not applicable in the case of basal freeze-on.
- * Negative melt rates are set to zero.
+ * We use an approximation of the temperature gradient at the base of
+ * the shelf that is invalid for negative melt rates. Negative melt
+ * rates are set to zero.
+ *
+ * @note The linearized equation for the freezing point of seawater as
+ * a function of salinity and pressure (ice thickness) is only valid
+ * for salinity ranges from 4 to 40 psu (see [@ref
+ * HollandJenkins1999]).
  *
  * Following [@ref HellmerOlbers1989], let @f$ Q_T @f$ be the total heat
  * flux crossing the interface between the shelf base and the ocean,
@@ -303,10 +311,10 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  *
  * @f$ Q_T^B @f$ is (see [@ref HellmerOlbers1989], equation 11):
  *
- * @f[ Q_T^B = \rho_I\, L\, \dot h, @f]
+ * @f[ Q_T^B = \rho_I\, L\, \frac{\partial h}{\partial t}, @f]
  *
  * where @f$ \rho_I @f$ is the ice density, @f$ L @f$ is the latent
- * heat of fusion, and @f$ \dot h @f$ is the ice thickening rate
+ * heat of fusion, and @f$ \frac{\partial h}{\partial t} @f$ is the ice thickening rate
  * (equal to minus the melt rate).
  *
  * The conductive flux into the ice column is parameterized by ([@ref
@@ -322,13 +330,13 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * We use the parameterization of the temperature gradient from [@ref
  * Hellmeretal1998], equation 13:
  *
- * @f[ T_{\text{grad}} = -\Delta T\, \frac{\dot h}{\kappa}, @f]
+ * @f[ T_{\text{grad}} = -\Delta T\, \frac{\frac{\partial h}{\partial t}}{\kappa}, @f]
  *
  * where @f$ \Delta T @f$ is the difference between the ice
  * temperature at the top of the ice column and its bottom:
  * @f$ \Delta T = T^S - T^B. @f$ With this parameterization, we have
  *
- * @f[ Q_T^I = \rho_I\, c_{pI}\, {\dot h}\, (T^S - T^B). @f]
+ * @f[ Q_T^I = \rho_I\, c_{pI}\, {\frac{\partial h}{\partial t}}\, (T^S - T^B). @f]
  *
  * Now, the heat flux balance implies
  *
@@ -354,7 +362,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * The basal salt flux @f$ Q_S^B @f$ is ([@ref
  * Hellmeretal1998], equation 10)
  *
- * @f[ Q_S^B = \rho_I\, S^B\, {\dot h}. @f]
+ * @f[ Q_S^B = \rho_I\, S^B\, {\frac{\partial h}{\partial t}}. @f]
  *
  * To avoid converting shelf base temperature to shelf base potential
  * temperature and back, we use two linearizations of the freezing point equation
@@ -405,9 +413,9 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * T^{B}(S,h) @f$.
  *
  * To find the basal melt rate, we solve the salt flux balance
- * equation for @f$ {\dot h}, @f$ obtaining
+ * equation for @f$ {\frac{\partial h}{\partial t}}, @f$ obtaining
  *
- * @f[ w_b = -\dot h ={{\gamma_S\,\rho_W\,\left(S^W-S^B\right)}\over{\rho_I\,S^B}}. @f]
+ * @f[ w_b = -\frac{\partial h}{\partial t} = \frac{\gamma_S\, \rho_W\, (S^W - S^B)}{\rho_I\, S^B}. @f]
  *
  *
  * @param[in] c physical constants, stored here to avoid looking them up in a double for loop
@@ -425,10 +433,19 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
                                                 double thickness,
                                                 double *shelf_base_temperature_out,
                                                 double *shelf_base_melt_rate_out) {
-
-  assert(sea_water_salinity >= 0.0);
-  assert(sea_water_salinity <= 400.0); // that would be saltier than the Dead Sea
   assert(thickness >= 0.0);
+
+  // This model works for sea water salinity in the range of [4, 40]
+  // psu. Ensure that input salinity is in this range.
+  const double
+    min_salinity = 4.0,
+    max_salinity = 40.0;
+
+  if (sea_water_salinity < min_salinity) {
+    sea_water_salinity = min_salinity;
+  } else if (sea_water_salinity > max_salinity) {
+    sea_water_salinity = max_salinity;
+  }
 
   // Coefficients for linearized freezing point equation for in situ
   // temperature:
@@ -462,39 +479,32 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
   const double B = (gamma_s * (L - c_pI * (T_S + a[0] * S_W - a[2] * thickness - a[1])) +
                     gamma_t * c_pW * (Theta_W - b[2] * thickness - b[1]));
   const double C = -gamma_s * S_W * (L - c_pI * (T_S - a[2] * thickness - a[1]));
-  // Find two roots of the equation:
-  const double S1 = (-B + sqrt(B*B - 4.0 * A * C)) / (2.0 * A);
-  const double S2 = (-B - sqrt(B*B - 4.0 * A * C)) / (2.0 * A);
 
-  // Both roots cannot be negative at the same time
-  assert((S1 < 0.0 && S2 < 0.0) == false);
+  double S1 = 0.0, S2 = 0.0;
+  const int n_roots = gsl_poly_solve_quadratic(A, B, C, &S1, &S2);
 
-  // pick the positive root
-  double basal_salinity = 0.0;
-  if (S1 > 0.0) {
-    basal_salinity = S1;
-  } else {
-    basal_salinity = S2;
+  assert(n_roots > 0);
+  assert(S2 > 0.0);             // The bigger root should be positive.
+
+  double basal_salinity = S2;   // Pick the bigger of the two roots.
+
+  // Clip basal salinity so that we can use the freezing point
+  // temperature parameterization to recover shelf base temperature.
+  if (basal_salinity <= min_salinity) {
+    basal_salinity = min_salinity;
+  } else if (basal_salinity >= max_salinity) {
+    basal_salinity = max_salinity;
   }
 
-  assert(basal_salinity >= 0.0);
-  assert(basal_salinity <= 400.0); // this would be saltier than the Dead Sea
-  assert(basal_salinity <= sea_water_salinity); // ice melt should lower salinity
+  *shelf_base_temperature_out = a[0] * basal_salinity + a[1] + a[2] * thickness;
 
-  if (shelf_base_temperature_out != NULL) {
-    *shelf_base_temperature_out = a[0] * basal_salinity + a[1] + a[2] * thickness;
-  }
+  *shelf_base_melt_rate_out = gamma_s * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
 
-  if (shelf_base_melt_rate_out != NULL) {
-    *shelf_base_melt_rate_out = gamma_s * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
-
-    // we use an approximation of the temperature gradient at the base
-    // of the shelf that is invalid for negative melt rates.
-    // FIXME: shelf base temperature is not correct for negative melt rates.
-    if (*shelf_base_melt_rate_out < 0.0)
-      *shelf_base_melt_rate_out = 0.0;
-    //assert(*shelf_base_melt_rate_out >= 0.0);
-  }
+  // This should never happen (see docs above), but to ensure
+  // reasonable outputs from this model we reset negative melt
+  // rates. (FIXME)
+  if (*shelf_base_melt_rate_out < 0.0)
+    *shelf_base_melt_rate_out = 0.0;
 
   return 0;
 }
