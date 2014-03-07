@@ -62,6 +62,9 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
 
   ierr = DMCreateGlobalVector(m_da, &v); CHKERRQ(ierr);
 
+  m_dof = 1;
+
+  m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
   m_metadata[0].init_3d(m_name, mygrid, zlevels);
   m_metadata[0].get_z().set_name(z_name);
 
