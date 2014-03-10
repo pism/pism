@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2014 David Maxwell and Constantine Khroulev
 # 
 # This file is part of PISM.
 # 
@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PISM
-import math, time
+import time
 
 # The main code for a run follows:
 if __name__ == '__main__':
@@ -60,4 +60,3 @@ if __name__ == '__main__':
   PISM.verbPrintf(2,context.com,"Solve time %g seconds.\n",solve_t)
 
   ssa_run.write(output_file)
-  ssa_run.teardown()
