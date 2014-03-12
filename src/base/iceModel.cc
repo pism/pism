@@ -642,7 +642,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   // (or similar) and iterate over that instead.
   {
     bool restrict_dt = false;
-    double current_time = grid.time->current();
+    const double current_time = grid.time->current();
     std::vector<double> dt_restrictions;
     if (maxdt_temporary > 0)
       dt_restrictions.push_back(maxdt_temporary);

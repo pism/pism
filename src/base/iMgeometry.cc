@@ -20,6 +20,7 @@
 #include <cstring>
 #include <petscdmda.h>
 #include <assert.h>
+#include <algorithm>
 
 #include "iceModel.hh"
 #include "Mask.hh"
