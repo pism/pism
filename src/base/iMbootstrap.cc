@@ -51,35 +51,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
 
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
-  assert(surface != NULL);
-
-  {
-    double max_dt = 0;
-    bool restrict = false;
-    ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
-
-    if (restrict == true) {
-      max_dt = PetscMin(1.0, max_dt);
-    } else {
-      max_dt = grid.convert(1.0, "year", "seconds");
-    }
-    
-    ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  }
-
-  assert(ocean != NULL);
-
-  {
-    double max_dt = 0;
-    bool restrict = false;
-    // FIXME: this will break if an ocean model requires contiguous update intervals
-    ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
-
-    if (restrict == false)
-      max_dt = grid.convert(1, "year", "seconds");
-
-    ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  }
+  ierr = init_step_couplers(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
