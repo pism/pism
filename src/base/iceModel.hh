@@ -142,6 +142,7 @@ public:
   virtual PetscErrorCode allocate_iceberg_remover();
 
   virtual PetscErrorCode init_couplers();
+  virtual PetscErrorCode init_step_couplers();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode model_state_setup();
