@@ -328,7 +328,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
         for (int k = 0; k < Nseries; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
             snow_depth(i,j)       = 0.0;
-            while (next_snow_depth_reset < ts[k])
+            while (next_snow_depth_reset <= ts[k])
               next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1);
           }
 
