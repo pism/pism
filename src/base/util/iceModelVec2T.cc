@@ -427,9 +427,8 @@ double IceModelVec2T::max_timestep(double my_t) {
 }
 
 /*
- * \brief Use linear interpolation to initialize IceModelVec2T with
- * the value at time `my_t`, assuming that data is periodic with
- * period `m_period` seconds.
+ * \brief Use piecewise-constant interpolation to initialize
+ * IceModelVec2T with the value at time `my_t`.
  *
  * \note This method does not check if an update() call is necessary!
  *
@@ -485,8 +484,8 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
 }
 
 /**
- * \brief Compute weights for the piecewise-linear interpolation. This is used *both*
- * for time-series and "snapshots".
+ * \brief Compute weights for the piecewise-constant interpolation.
+ * This is used *both* for time-series and "snapshots".
  *
  * @param ts requested times, in seconds
  * @param ts_length number of requested times (length of the `ts` array)
@@ -542,7 +541,7 @@ PetscErrorCode IceModelVec2T::init_interpolation(const double *ts, unsigned int 
 
 /** 
  * \brief Compute values of the time-series using precomputed indices
- * and interpolation weights (linear interpolation).
+ * (and piecewise-constant interpolation).
  *
  * @param i,j map-plane grid point
  * @param result pointer to an allocated array of `weights.size()` `double`
@@ -561,7 +560,7 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, double *result) {
 }
 
 //! \brief Finds the average value at i,j over the interval (my_t, my_t +
-//! my_dt) using trapezoidal rule.
+//! my_dt) using the rectangle rule.
 /*!
   Can (and should) be optimized. Later, though.
  */
