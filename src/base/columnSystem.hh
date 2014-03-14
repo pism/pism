@@ -34,6 +34,42 @@ Derived classes will actually set up instances of the system.
 The sequence requires setting the column-independent (public) data members,
 calling the initAllColumns() routine, and then setting up and solving
 the system in each column.
+
+The tridiagonal algorithm here comes from Numerical Recipes in C
+Section 2.4, page 50.  It solves the system:
+
+    [b_1  c_1   0   ...                           ] [  u_1  ]   [   r_1   ]
+    [a_2  b_2  c_2  ...                           ] [  u_2  ]   [   r_2   ]
+    [               ...                           ].[  ...  ] = [   ...   ]
+    [               ...  a_{N-1}  b_{N-1}  c_{N-1}] [u_{N-1}]   [ r_{N-1} ]
+    [               ...     0     a_N      b_N    ] [  u_N  ]   [   r_N   ]
+
+HOWEVER... the version in this code is different from Numerical
+Recipes in two ways:
+   a) Indexing is zero-based
+   b) Variables have been renamed.
+
+          NR      PISM
+          ==================
+          a       L       "Lower Diagonal" (L doesn't use index 0)
+          b       D       "Diagonal"
+          c       U       "Upper Diagonal"
+          u       x
+          r       rhs
+          bet     b
+          j       k
+          n       n
+          gam     work
+
+
+Therefore... this version of the code solves the following problem:
+
+    [D_0  U_0   0   ...                           ] [  x_0  ]   [   r_0   ]
+    [L_1  D_1  U_1  ...                           ] [  x_1  ]   [   r_1   ]
+    [               ...                           ].[  ...  ] = [   ...   ]
+    [               ...  L_{N-2}  D_{N-2}  U_{N-2}] [x_{N-2}]   [ r_{N-2} ]
+    [               ...     0     L_{N-1}  D_{N-1}] [x_{N-1}]   [ r_{N-1} ]
+
  */
 class columnSystemCtx {
 
