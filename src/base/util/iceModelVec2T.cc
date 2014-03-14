@@ -234,6 +234,11 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
   std::vector<double>::iterator i, j;
   unsigned int m, n, last;
 
+  if (m_period != 0) {
+    // we read all data in IceModelVec2T::init() (see above)
+    return 0;
+  }
+
   if (N > 0) {
     last = first + (N - 1);
 
