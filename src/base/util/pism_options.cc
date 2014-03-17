@@ -382,7 +382,7 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
   result = (int) strtol(str, &endptr, 10);
   if (*endptr != '\0') {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "PISM ERROR: Can't parse \"%s %s\": (%s is not a number).\n",
+                       "PISM ERROR: Can't parse \"%s %s\": (%s is not an integer).\n",
                        option.c_str(), str, str); CHKERRQ(ierr);
     PISMEnd();
   }
@@ -673,6 +673,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   ierr = config.scalar_from_option("adapt_ratio",
                                    "adaptive_timestepping_ratio"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("timestep_hit_multiples",
+                                   "timestep_hit_multiples"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);

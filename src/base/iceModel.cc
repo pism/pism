@@ -124,6 +124,8 @@ void IceModel::reset_counters() {
   dt_force        = 0.0;
   skipCountDown   = 0;
 
+  timestep_hit_multiples_last_time = grid.time->current();
+
   grounded_basal_ice_flux_cumulative = 0;
   nonneg_rule_flux_cumulative        = 0;
   sub_shelf_ice_flux_cumulative      = 0;
@@ -636,50 +638,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li call additionalAtStartTimestep() to let derived classes do more
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
-  //! \li determine the maximum time-step boundary models can take
-
-  // FIXME: we should probably create a std::vector<PISMComponent_TS*>
-  // (or similar) and iterate over that instead.
-  {
-    bool restrict_dt = false;
-    const double current_time = grid.time->current();
-    std::vector<double> dt_restrictions;
-    if (maxdt_temporary > 0)
-      dt_restrictions.push_back(maxdt_temporary);
-
-    double apcc_dt = 0.0;
-    ierr = surface->max_timestep(current_time, apcc_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(apcc_dt);
-
-    double opcc_dt = 0.0;
-    ierr = ocean->max_timestep(current_time, opcc_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(opcc_dt);
-
-    double hydro_dt = 0.0;
-    ierr = subglacial_hydrology->max_timestep(current_time, hydro_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(hydro_dt);
-
-    //! \li apply the time-step restriction from the -ts_{times,file,vars} mechanism
-    double ts_dt = 0.0;
-    ierr = ts_max_timestep(current_time, ts_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(ts_dt);
-
-    //! \li apply the time-step restriction from the -extra_{times,file,vars}
-    //! mechanism
-    double extras_dt = 0.0;
-    ierr = extras_max_timestep(current_time, extras_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(extras_dt);
-
-    // find the smallest of the max. time-steps reported by boundary models:
-    if (dt_restrictions.empty() == false)
-      maxdt_temporary = *std::min_element(dt_restrictions.begin(), dt_restrictions.end());
-  }
-
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
   //! horizontal velocity is updated
@@ -740,17 +698,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   stdout_flags += (updateAtDepth ? "v" : "V");
 
-  // communication here for global max; sets CFLmaxdt2D
-  ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);
-
-  if (updateAtDepth) {
-    // communication here for global max; sets CFLmaxdt
-    ierr = computeMax3DVelocities(); CHKERRQ(ierr);
-  }
-
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
-  ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
+  ierr = max_timestep(dt, skipCountDown); CHKERRQ(ierr);
 
   //! \li Update surface and ocean models.
   ierr = surface->update(grid.time->current(), dt); CHKERRQ(ierr);
@@ -844,8 +794,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   // end the flag line
-  char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);
-  stdout_flags += tempstr;
+  stdout_flags += " " + adaptReasonFlag;
 
 #if (PISM_DEBUG==1)
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
@@ -925,7 +874,7 @@ PetscErrorCode IceModel::run() {
     bool updateAtDepth = skipCountDown == 0;
     bool tempAgeStep = updateAtDepth && (do_energy || do_age);
 
-    const bool show_step = tempAgeStep || adaptReasonFlag == 'e';
+    const bool show_step = tempAgeStep || adaptReasonFlag == "end";
     ierr = summary(show_step); CHKERRQ(ierr);
 
     // writing these fields here ensures that we do it after the last time-step
