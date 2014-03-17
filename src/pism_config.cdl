@@ -160,9 +160,6 @@ netcdf pism_config {
     pism_config:bootstrapping_temperature_heuristic = "smb";
     pism_config:bootstrapping_temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.";
 
-    pism_config:preliminary_time_step_duration = 1.0;
-    pism_config:preliminary_time_step_duration_doc = "s; Duration of the time step taken before the run, so as to fill diagnostic quantities.";
-
     pism_config:sia_enhancement_factor = 1.0;
     pism_config:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";
 
