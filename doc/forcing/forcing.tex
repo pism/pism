@@ -808,7 +808,7 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
 
 The default PDD model used by PISM, turned on by option
 \texttt{-surface pdd}, is based on~\cite{CalovGreve05} and
-EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+EISMINT-Greenland intercomparison (see~\cite{RitzEISMINT}).
 
 Our model computes the solid (snow) precipitation rate using the air
 temperature threshold with a linear transition. All precipitation
@@ -873,6 +873,12 @@ factors using formulas (6) and (7) in~\cite{Faustoetal2009}; set
 daily variability (\intextoption{pdd_std_dev} option) is 2.53 degrees under the
 \intextoption{pdd_fausto} option~\cite{Faustoetal2009}. See also configuration
 parameters with the \texttt{pdd_fausto} prefix.
+
+Note that when used with periodic climate data (air temperature and
+precipitation) that is read from a file (see section
+\ref{sec:atmosphere-given}), use of \texttt{-timestep_hit_multiplies
+  X} is recommended. (Here \texttt{X} is the length of the climate
+data period in years.)
 
 \subsection{PIK}
 \label{sec:surface-pik}

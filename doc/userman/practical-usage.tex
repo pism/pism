@@ -715,7 +715,7 @@ kill -TERM 8920
 At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
 \small
 \begin{verbatim}
-v$Eh  d (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
+v$Eh  diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
 S -124791.571:  3.11640   2.25720      3.62041    18099.93737
 y  SSA:     3 outer iterations, ~17.0 KSP iterations each
 \end{verbatim}
@@ -723,12 +723,12 @@ y  SSA:     3 outer iterations, ~17.0 KSP iterations each
 
 The characters ``\texttt{v\$Eh}'' at the beginning of the flags line, the first line in the above example, give a very terse description of which physical processes were modeled in that time step.  Here ``\texttt{v}'' means that a stress balance was solved to compute the velocity.  Then the enthalpy was updated (``\texttt{E}'') and the ice thickness and surface elevation were updated (``\texttt{h}'').  The rest of the flags line looks like
 
-  ``\texttt{d (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)}''
+  ``\texttt{diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)}''
 
 \noindent Recall that the PISM time step is determined by an
 adaptive mechanism.  Stable mass conservation and conservation of energy solutions
 require such an adaptive time-stepping scheme \cite{BBL}.  The first character
-we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason''
+we see here, namely ``\texttt{diffusivity}'', is the adaptive-timestepping ``reason''
 flag.  See Table \ref{tab:adaptiveflag}.  We also see that
 there was a major time step of $0.83945$ model years divided into $2$ substeps of
 about $0.42$ years.  The \intextoption{skip} option enables this mechanism, while
@@ -736,7 +736,7 @@ about $0.42$ years.  The \intextoption{skip} option enables this mechanism, whil
 mechanism may choose to take fewer substeps than \texttt{-skip_max} so as to
 satisfy certain numerical stability criteria, however.
 
-The second line in the above, the line which starts with ``\verb|S|'', is the summary.  Its format, and the units for these numbers, is simple and is given by a couple of lines printed near the beginning of the standard output for the run:
+The second line in the above, the line which starts with ``\texttt{S}'', is the summary.  Its format, and the units for these numbers, is simple and is given by a couple of lines printed near the beginning of the standard output for the run:
 \small
 \begin{verbatim}
 P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel
@@ -749,17 +749,25 @@ The third line of the above example shows that the SSA stress balance was solved
 
 \begin{table}[ht]
 \centering
-\begin{tabular}{p{0.05\linewidth}p{0.9\linewidth}}\toprule
-\textbf{Flag} & \textbf{Active adaptive constraint} \\ \midrule
-\texttt{c} & three-dimensional CFL for temperature/age advection \cite{BBL} \\
-\texttt{d} & diffusivity for SIA mass conservation \cite{BBL,HindmarshPayne} \\
-\texttt{e} & end of prescribed run time \\
-\texttt{f} & \texttt{-dt_force} set; generally option \texttt{-dt_force}, which overrides the adaptive scheme; \emph{should not be used}  \\
-\texttt{m} & maximum allowed $\Delta t$ applies; set with \texttt{-max_dt} \\
-\texttt{t} & maximum $\Delta t$ was temporarily set by a derived class, or by the mechanism which saves time-series of spatially-varying quantities \\
-\texttt{u} & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
-\bottomrule
-\normalsize
+\begin{tabular}{p{0.3\linewidth}p{0.65\linewidth}}\toprule
+  \textbf{PISM output} & \textbf{Active adaptive constraint or PISM sub-system \mbox{that limited time-step size}} \\ \midrule
+  \texttt{3D CFL} & three-dimensional CFL for temperature/age advection \cite{BBL} \\
+  \texttt{diffusivity} & diffusivity for SIA mass conservation \cite{BBL,HindmarshPayne} \\
+  \texttt{end of the run} & end of prescribed run time \\
+  \texttt{fixed} & \texttt{-dt_force} set; generally option \texttt{-dt_force}, which overrides the adaptive scheme; \emph{should not be used}  \\
+  \texttt{max} & maximum allowed $\Delta t$ applies; set with \texttt{-max_dt} \\
+  \texttt{internal (derived class)} & maximum $\Delta t$ was temporarily set by a derived class \\
+  \texttt{2D CFL} & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
+  \texttt{-ts_... reporting} & the \texttt{-ts_times} option and the \mbox{\texttt{ts_force_output_times}} \mbox{configuration flag}; see section \ref{sec:saving-time-series} \\
+  \texttt{-extra_... reporting} & the \texttt{-extra_times} option; see section \ref{sec:saving-spat-vari} \\
+  \texttt{surface} & a surface or an atmosphere model \\
+  \texttt{ocean} & an ocean model \\
+  \texttt{hydrology} & a hydrology model stability criterion, see section \ref{subsect:subhydro} \\
+  \texttt{BTU} & time-the bedrock thermal layer model, see section \ref{subsect:energy} \\
+  \texttt{eigencalving} & the eigen-calving model, see section \ref{sec:calving} \\
+  
+  \bottomrule
+  \normalsize
 \end{tabular}
 \caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}
 \label{tab:adaptiveflag}
@@ -767,7 +775,7 @@ The third line of the above example shows that the SSA stress balance was solved
 
 \begin{table}[ht]
   \centering
- \begin{tabular}{lp{0.7\linewidth}}
+ \begin{tabular}{lp{0.6\linewidth}}
     \toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -788,7 +796,9 @@ The third line of the above example shows that the SSA stress balance was solved
     temperature field should be updated when the surface changes significantly,
     and likewise the basal sliding velocity if it comes (as it should) from the
     SSA calculation.\\
-    \bottomrule
+
+   \txtopt{timestep_hit_multiples}{(years)} & Hit multiples of the number of model years specified. For example, if stability criteria require a time-step of 11 years and the \texttt{-timestep_hit_multiples 3} option is set, PISM will take a 9 model year long time step. This can be useful to enforce consistent sampling of periodic climate data.\\
+   \bottomrule
   \end{tabular}
 \caption{Options controlling time-stepping}
 \label{tab:time-stepping}
