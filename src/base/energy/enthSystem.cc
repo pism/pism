@@ -36,9 +36,11 @@ enthSystemCtx::enthSystemCtx(const PISMConfig &config,
   R_cold   = -1.0;
   R_temp   = -1.0;
   m_lambda = -1.0;
-  a0 = GSL_NAN;
-  a1 = GSL_NAN;
-  b  = GSL_NAN;
+  for (int i=0; i<2; ++i) {
+    a0[i] = GSL_NAN;
+    a1[i] = GSL_NAN;
+    b[i]  = GSL_NAN;
+  }
 
   ice_rho = config.get("ice_density");
   ice_c   = config.get("ice_specific_heat_capacity");
@@ -185,18 +187,6 @@ double enthSystemCtx::compute_lambda() {
 }
 
 
-PetscErrorCode enthSystemCtx::setDirichletSurface(double my_Enth_surface) {
-#if (PISM_DEBUG==1)
-  if ((nu < 0.0) || (R_cold < 0.0) || (R_temp < 0.0)) {
-    SETERRQ(PETSC_COMM_SELF, 2, "setDirichletSurface() should only be called after\n"
-            "  initAllColumns() in enthSystemCtx");
-  }
-#endif
-  Enth_ks = my_Enth_surface;
-  return 0;
-}
-
-
 PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer, bool show_col_dependent) {
   PetscErrorCode ierr;
 
@@ -233,11 +223,11 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer, bool show_col_de
                      "  ismarginal,lambda = %d,%10.3f\n",
                      (int)ismarginal,m_lambda); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-                     "  Enth_ks = %10.3e\n",
-                     Enth_ks); CHKERRQ(ierr);
+                     "  a0[0],a1[0],b[0] = %10.3e,%10.3e\n",
+                     a0[0],a1[0],b[0]); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-                     "  a0,a1,b = %10.3e,%10.3e\n",
-                     a0,a1,b); CHKERRQ(ierr);
+                     "  a0[1],a1[1],b[1] = %10.3e,%10.3e\n",
+                     a0[1],a1[1],b[1]); CHKERRQ(ierr);
   }
   ierr = PetscViewerASCIIPrintf(viewer,
                      ">>\n\n"); CHKERRQ(ierr);
@@ -263,17 +253,17 @@ PetscErrorCode enthSystemCtx::checkReadyToSolve() {
 This method should only be called if everything but the basal boundary condition
 is already set.
  */
-PetscErrorCode enthSystemCtx::setDirichletBasal(double Y) {
+PetscErrorCode enthSystemCtx::setDirichletBC(WhichBoundary bix, double Y) {
 #if (PISM_DEBUG==1)
   PetscErrorCode ierr;
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
-  if (gsl_isnan(a0) == 0 || gsl_isnan(a1) == 0 || gsl_isnan(b) == 0) {
-    SETERRQ(PETSC_COMM_SELF, 1, "setting basal boundary conditions twice in enthSystemCtx");
+  if (gsl_isnan(a0[bix]) == 0 || gsl_isnan(a1[bix]) == 0 || gsl_isnan(b[bix]) == 0) {
+    SETERRQ(PETSC_COMM_SELF, 1, "setting boundary conditions #%d twice in enthSystemCtx", bix);
   }
 #endif
-  a0 = 1.0;
-  a1 = 0.0;
-  b  = Y;
+  a0[bix] = 1.0;
+  a1[bix] = 0.0;
+  b[bix]  = Y;
   return 0;
 }
 
@@ -296,41 +286,48 @@ The error in the pure conductive and smooth conductivity case is \f$O(\Delta z^2
 This method should only be called if everything but the basal boundary condition
 is already set.
  */
-PetscErrorCode enthSystemCtx::setBasalHeatFlux(double hf) {
+PetscErrorCode enthSystemCtx::setHeatFluxBC(WhichBoundary bix, double hf) {
  PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
-  if (gsl_isnan(a0) == 0 || gsl_isnan(a1) == 0 || gsl_isnan(b) == 0) {
+  if (gsl_isnan(a0[bix]) == 0 || gsl_isnan(a1[bix]) == 0 || gsl_isnan(b) == 0) {
     SETERRQ(PETSC_COMM_SELF, 1, "setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
+
+  // The layer of the boundary, and one removed from the boundary
+  const int l0 = (bix == BASAL ? 0 : m_ks);
+  const int l1 = (bix == BASAL ? 1 : m_ks-1);
+  // Heat flow INTO the ice sheet (up for bottom boundary, down for top)
+  const int hf_into = (bix == BASAL ? hf : -hf);
+
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_rho) * dt / PetscSqr(dz)
   const double
-    K = (ice_rho * PetscSqr(dz) * R[0]) / dt,
-    Y = - hf / K;
+    K = (ice_rho * PetscSqr(dz) * R[l0]) / dt,
+    Y = - hf_into / K;
   const double
-    Rc = R[0],
-    Rr = R[1],
+    Rc = R[l0],
+    Rr = R[l1],
     Rminus = Rc,
     Rplus  = 0.5 * (Rc + Rr);
-  a0 = 1.0 + Rminus + Rplus;  // = D[0]
-  a1 = - Rminus - Rplus;      // = U[0]
+  a0[bix] = 1.0 + Rminus + Rplus;    // = D[l0]
+  a1[bix] = - Rminus - Rplus;      // = U[l0]
   // next line says 
   //   (E(+dz) - E(-dz)) / (2 dz) = Y
   // or equivalently
   //   E(-dz) = E(+dz) + X
   const double X = - 2.0 * dz * Y;
   // zero vertical velocity contribution
-  b = Enth[0] + Rminus * X;   // = rhs[0]
+  b = Enth[l0] + Rminus * X;   // = rhs[0]
   if (!ismarginal) {
     planeStar<double> ss;
     ierr = Enth3->getPlaneStar_fine(i,j,0,&ss); CHKERRQ(ierr);
-    const double UpEnthu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
-                                             u[0] * (ss.ij  - ss.w) / dx;
-    const double UpEnthv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
-                                             v[0] * (ss.ij  - ss.s) / dy;
-    b += dt * ((strain_heating[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
+    const double UpEnthu = (u[l0] < 0) ? u[l0] * (ss.e -  ss.ij) / dx :
+                                             u[l0] * (ss.ij  - ss.w) / dx;
+    const double UpEnthv = (v[l0] < 0) ? v[l0] * (ss.n -  ss.ij) / dy :
+                                             v[l0] * (ss.ij  - ss.s) / dy;
+    b += dt * ((strain_heating[l0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
   }
   return 0;
 }
@@ -402,9 +399,9 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
 
   // k=0 equation is already established
   // L[0] = 0.0;  // not allocated
-  D[0]   = a0;
-  U[0]   = a1;
-  rhs[0] = b;
+  D[0]   = a0[0];
+  U[0]   = a1[0];
+  rhs[0] = b[0];
 
   // generic ice segment in k location (if any; only runs if ks >= 2)
   for (int k = 1; k < m_ks; k++) {
@@ -436,11 +433,20 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
     }
   }
 
+#if 0
   // set Dirichlet boundary condition at top
   if (m_ks > 0) L[m_ks] = 0.0;
   D[m_ks] = 1.0;
   if (m_ks < Mz-1) U[m_ks] = 0.0;
   rhs[m_ks] = Enth_ks;
+#else
+  // Set boundary condition at top
+  L[m_ks] = a1[1];
+  D[m_ks] = a0[1];
+  // U[m_ks] = 0.0;      // Not allocated
+  rhs[m_ks] = b[1]
+#endif
+
 
   // solve it; note drainage is not addressed yet and post-processing may occur
   int pivoterr = solveTridiagonalSystem(m_ks+1, x);
@@ -456,7 +462,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
 
   // air above
   for (int k = m_ks+1; k < Mz; k++) {
-    x[k] = Enth_ks;
+    x[k] = x[m_ks+1];
   }
 
 #if (PISM_DEBUG==1)

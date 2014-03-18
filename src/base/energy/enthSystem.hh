@@ -33,7 +33,7 @@ class EnthalpyConverter;
   the ice has a Dirichlet condition.
 */
 class enthSystemCtx : public columnSystemCtx {
-
+  enum WhichBoundary { BASAL, SURFACE };
 public:
   enthSystemCtx(const PISMConfig &config,
                 IceModelVec3 &my_Enth3,
@@ -52,9 +52,9 @@ public:
 
   double k_from_T(double T);
 
-  PetscErrorCode setDirichletSurface(double my_Enth_surface);
-  PetscErrorCode setDirichletBasal(double Y);
-  PetscErrorCode setBasalHeatFlux(double hf);
+  PetscErrorCode setDirichletBC(WhichBoundary bix, double Y);
+  /** @param hf UPWARD heat flow */
+  PetscErrorCode setHeatFluxBC(WhichBoundary bix, double hf);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
   PetscErrorCode viewSystem(PetscViewer viewer) const;
@@ -79,9 +79,8 @@ protected:
     dx, dy, dz, dt, nu, R_cold, R_temp, R_factor;
 
   double ice_thickness,
-    m_lambda,              //!< implicit FD method parameter
-    Enth_ks;             //!< top surface Dirichlet B.C.
-  double a0, a1, b;   // coefficients of the first (basal) equation
+    m_lambda;              //!< implicit FD method parameter
+  double a0[2], a1[2], b[2];   // coefficients of the first (basal: 0) and last (top: 1) equations
   bool ismarginal, c_depends_on_T, k_depends_on_T;
   std::vector<double> R; // values of k \Delta t / (\rho c \Delta x^2)
 

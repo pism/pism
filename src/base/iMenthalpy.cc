@@ -327,7 +327,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
       // set boundary conditions and update enthalpy
       {
-        ierr = esys.setDirichletSurface(Enth_ks); CHKERRQ(ierr);
+        ierr = esys.setDirichletBC(enthSystemCtx::SURFACE, Enth_ks); CHKERRQ(ierr);
 
         // determine lowest-level equation at bottom of ice; see
         // decision chart in the source code browser and page
@@ -338,13 +338,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
           double Enth0;
           ierr = EC->getEnthPermissive(shelfbtemp(i, j), 0.0, EC->getPressureFromDepth(ice_thickness(i, j)),
                                        Enth0); CHKERRQ(ierr);
-          ierr = esys.setDirichletBasal(Enth0); CHKERRQ(ierr);
+          ierr = esys.setDirichletBC(enthSystemCtx::BASAL, Enth0); CHKERRQ(ierr);
         } else if (base_is_cold) {
           // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
-          ierr = esys.setBasalHeatFlux(basal_heat_flux(i, j) + (*Rb)(i, j)); CHKERRQ(ierr);
+          ierr = esys.setHeatFluxBC(enthSystemCtx::BASAL, basal_heat_flux(i, j) + (*Rb)(i, j)); CHKERRQ(ierr);
         } else {
           // warm, grounded base case
-          ierr = esys.setBasalHeatFlux(0.0); CHKERRQ(ierr);
+          ierr = esys.setHeatFluxBC(enthSystemCtx::BASAL, 0.0); CHKERRQ(ierr);
         }
 
         // solve the system
