@@ -659,6 +659,12 @@ public:
   PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, double **H);
   PetscErrorCode  extend_vertically(int old_Mz, double fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
+
+  /** Sum a 3-D vector in the Z direction to create a 2-D vector.
+  Computes output = B*output + A*sum_columns(input)
+  @see https://github.com/pism/pism/issues/229 */
+  PetscErrorCode  sumColumns(IceModelVec2S &output, double A=1.0, double B=0.0);
+
 protected:
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };

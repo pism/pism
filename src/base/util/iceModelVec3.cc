@@ -565,6 +565,54 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
   return 0;
 }
 
+/** Sum a 3-D vector in the Z direction to create a 2-D vector.
+
+<p>Note that this sums up all the values in a column, including ones
+above the ice. This may or may not be what you need. Also, take a look
+at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.</p>
+
+<p>As for the difference between IceModelVec2 and IceModelVec2S, the
+former can store fields with more than 1 "degree of freedom" per grid
+point (such as 2D fields on the "staggered" grid, with the first
+degree of freedom corresponding to the i-offset and second to
+j-offset).</p>
+
+<p>IceModelVec2S is just IceModelVec2 with "dof == 1", and
+IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra
+methods, of course.)</p>
+
+<p>Either one of IceModelVec2 and IceModelVec2S would work in this
+case.</p>
+
+Computes output = B*output + A*sum_columns(input) + C
+
+@see https://github.com/pism/pism/issues/229 */
+PetscErrorCode IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B)
+{
+  IceModelVec3 &input(*this);
+  PetscScalar *column = NULL;
+  IceGrid &grid = *input.get_grid();
+  int ierr = 0;
+
+  ierr = input.begin_access(); CHKERRQ(ierr);
+  ierr = output.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      ierr = input.getInternalColumn(i, j, &column); CHKERRQ(ierr);
+
+      PetscScalar scalar_sum = 0;
+      for (unsigned int k = 0; k < grid.Mz; ++k) scalar_sum += column[k];
+      output(i,j) = B*output(i,j) + A*scalar_sum;
+    }
+  }
+  ierr = output.end_access(); CHKERRQ(ierr);
+  ierr = input.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+
 //! Handles the memory allocation/deallocation and copying. Does not fill the values of the new layer.
 PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   PetscErrorCode ierr;
