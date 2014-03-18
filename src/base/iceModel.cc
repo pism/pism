@@ -794,6 +794,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   if (do_mass_continuity) {
     ierr = massContExplicitStep(); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
+    ierr = massContPostHook(); CHKERRQ(ierr); // User-defined operation after other mass continuity stuff.
+
 
     // Note that there are three adaptive time-stepping criteria. Two of them
     // (using max. diffusion and 2D CFL) are limiting the mass-continuity
@@ -1029,12 +1031,3 @@ PetscErrorCode IceModel::init() {
   return 0;
 }
 
-// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
-IceModelVec2S* IceModel::get_geothermal_flux() {
-  return &this->geothermal_flux;
-}
-
-// FIXME: THIS IS BAD! (Provides unguarded access to IceModel's internals.)
-PISMStressBalance* IceModel::get_stress_balance() {
-  return this->stress_balance;
-}
