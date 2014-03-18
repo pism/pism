@@ -33,8 +33,8 @@ class EnthalpyConverter;
   the ice has a Dirichlet condition.
 */
 class enthSystemCtx : public columnSystemCtx {
-  enum WhichBoundary { BASAL, SURFACE };
 public:
+  enum WhichBoundary { BASAL, SURFACE };
   enthSystemCtx(const PISMConfig &config,
                 IceModelVec3 &my_Enth3,
                 double my_dx,  double my_dy,

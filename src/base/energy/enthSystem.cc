@@ -325,7 +325,7 @@ PetscErrorCode enthSystemCtx::setHeatFluxBC(WhichBoundary bix, double hf) {
   //   E(-dz) = E(+dz) + X
   const double X = - 2.0 * dz * Y;
   // zero vertical velocity contribution
-  b = Enth[l0] + Rminus * X;   // = rhs[0]
+  b[bix] = Enth[l0] + Rminus * X;   // = rhs[0]
   if (!ismarginal) {
     planeStar<double> ss;
     ierr = Enth3->getPlaneStar_fine(i,j,0,&ss); CHKERRQ(ierr);
@@ -333,7 +333,7 @@ PetscErrorCode enthSystemCtx::setHeatFluxBC(WhichBoundary bix, double hf) {
                                              u[l0] * (ss.ij  - ss.w) / dx;
     const double UpEnthv = (v[l0] < 0) ? v[l0] * (ss.n -  ss.ij) / dy :
                                              v[l0] * (ss.ij  - ss.s) / dy;
-    b += dt * ((strain_heating[l0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
+    b[bix] += dt * ((strain_heating[l0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
   }
   return 0;
 }
@@ -451,7 +451,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
   L[m_ks] = a1[1];
   D[m_ks] = a0[1];
   // U[m_ks] = 0.0;      // Not allocated
-  rhs[m_ks] = b[1]
+  rhs[m_ks] = b[1];
 #endif
 
 
