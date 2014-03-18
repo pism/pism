@@ -66,7 +66,7 @@ Therefore... this version of the code solves the following problem:
 
     [D_0  U_0   0   ...                           ] [  x_0  ]   [   r_0   ]
     [L_1  D_1  U_1  ...                           ] [  x_1  ]   [   r_1   ]
-    [               ...                           ].[  ...  ] = [   ...   ]
+    [ 0   L_2  D_2  ...                           ].[  ...  ] = [   ...   ]
     [               ...  L_{N-2}  D_{N-2}  U_{N-2}] [x_{N-2}]   [ r_{N-2} ]
     [               ...     0     L_{N-1}  D_{N-1}] [x_{N-1}]   [ r_{N-1} ]
 
