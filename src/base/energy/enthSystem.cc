@@ -115,6 +115,7 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
   ice_thickness = my_ice_thickness;
   ismarginal    = my_ismarginal;
 
+  // m_ks = Number of layers in the column (there will be one additional variable)
   m_ks = static_cast<int>(floor(ice_thickness/dz));
   ierr = setIndicesAndClearThisColumn(my_i, my_j, m_ks); CHKERRQ(ierr);
 
@@ -146,7 +147,7 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
   return 0;
 }
 
-//! Compute the CTS value of enthalpy in an ice column.
+//! Compute the CTS (Cold/Temperate Transition Surface) value of enthalpy in an ice column.
 /*!
 Return argument Enth_s[Mz] has the enthalpy value for the pressure-melting
 temperature at the corresponding z level.
@@ -301,8 +302,13 @@ PetscErrorCode enthSystemCtx::setHeatFluxBC(WhichBoundary bix, double hf) {
   // Heat flow INTO the ice sheet (up for bottom boundary, down for top)
   const int hf_into = (bix == BASAL ? hf : -hf);
 
+  // ice_k = ice_thermal_conductivity
+  // ice_c = ice_specific_heat_capacity
+  // ice_K = icek / ice_c
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_rho) * dt / PetscSqr(dz)
+  // R varies in column because it depends on K (conductivity & heat capacity),
+  //     which varies with temperature/enthalpy.
   const double
     K = (ice_rho * PetscSqr(dz) * R[l0]) / dt,
     Y = - hf_into / K;
@@ -339,7 +345,7 @@ PetscErrorCode enthSystemCtx::setHeatFluxBC(WhichBoundary bix, double hf) {
 with time steps \f$\Delta t\f$ and spatial steps \f$\Delta z\f$ we define
   \f[ R = \frac{D \Delta t}{\Delta z^2}. \f]
 This is used in an implicit method to write each line in the linear system, for
-example [\ref MortonMayers]:
+example [\ref MortonMayers] p. 23:
   \f[ -R U_{j-1}^{n+1} + (1+2R) U_j^{n+1} - R U_{j+1}^{n+1} = U_j^n. \f]
   
 In the case of conservation of energy [\ref AschwandenBuelerKhroulevBlatter],
@@ -397,6 +403,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
             "  setting basal boundary condition in enthSystemCtx"); }
 #endif
 
+  // Basal Boundary Condition
   // k=0 equation is already established
   // L[0] = 0.0;  // not allocated
   D[0]   = a0[0];

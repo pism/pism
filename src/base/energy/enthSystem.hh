@@ -61,6 +61,7 @@ public:
 
   PetscErrorCode solveThisColumn(double *x);
 
+  /** Number of layers in this column.  k=0 is basal layer, k=ks() is surface layer. */
   int ks()
   { return m_ks; }
 
