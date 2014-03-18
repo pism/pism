@@ -32,7 +32,7 @@ STARTNAME=startfile_Mx${M}.nc
 cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -boot_file ../Ross_combined.nc -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given -stress_balance ssa \
   -yield_stress constant -tauc 1e6 -pik -ssa_dirichlet_bc -ssa_e $SSAE \
-  $STRONGKSP -y 0 -ys 0.0 -o $STARTNAME -o_order zyx "
+  $STRONGKSP -y 0.1 -ys 0.0 -o $STARTNAME -o_order zyx "
 echo "running command:"
 echo
 echo "$cmd_diag"
@@ -45,8 +45,8 @@ CTHICK=50.0  #  constant thickness for thickness_calving
 exdt=25
 cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -surface given -stress_balance ssa -yield_stress constant -tauc 1e6 -pik \
-  -ssa_dirichlet_bc -ssa_e $SSAE -y $YEARS -o $NAME -o_order zyx -o_size big \
   -calving eigen_calving,thickness_calving -eigen_calving_K $ECALV -cfl_eigen_calving \
+  -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_order zyx -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
   -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,csurf,strain_rates \
