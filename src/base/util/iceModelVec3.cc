@@ -584,7 +584,7 @@ methods, of course.)</p>
 <p>Either one of IceModelVec2 and IceModelVec2S would work in this
 case.</p>
 
-Computes output = B*output + A*sum_columns(input) + C
+Computes output = A*output + B*sum_columns(input) + C
 
 @see https://github.com/pism/pism/issues/229 */
 PetscErrorCode IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B)
@@ -602,7 +602,7 @@ PetscErrorCode IceModelVec3::sumColumns(IceModelVec2S &output, double A, double 
 
       PetscScalar scalar_sum = 0;
       for (unsigned int k = 0; k < grid.Mz; ++k) scalar_sum += column[k];
-      output(i,j) = B*output(i,j) + A*scalar_sum;
+      output(i,j) = A*output(i,j) + B*scalar_sum;
     }
   }
   ierr = output.end_access(); CHKERRQ(ierr);
