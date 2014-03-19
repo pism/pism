@@ -27,6 +27,7 @@
 #include "PISMSurface.hh"
 #include "PISMHydrology.hh"
 #include <sstream>
+#include <algorithm>
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
@@ -166,33 +167,30 @@ PetscErrorCode IceModel::max_timestep_diffusivity(double &dt_result) {
  * using the CFL stability criterion) and "short" (typically
  * determined using the diffusivity-based stability criterion) time
  * step lengths.
- * 
+ *
  *
  * @param[in] input_dt long time-step
  * @param[in] input_dt_diffusivity short time-step
- * @param[out] skip_counter 
  *
- * @return 0 on success
+ * @return new skip counter
  */
-PetscErrorCode IceModel::update_skip_counter(double input_dt,
-                                             double input_dt_diffusivity,
-                                             unsigned int &skip_counter) {
-  if (config.get_flag("do_skip") == true) {
-    const unsigned int skip_max = static_cast<int>(config.get("skip_max"));
+unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
 
-    skip_counter = skip_max;
-
-    if (input_dt_diffusivity > 0.0) {
-      const double  conservativeFactor = 0.95;
-      double counter = floor(conservativeFactor * (input_dt / input_dt_diffusivity));
-      skip_counter = static_cast<unsigned int>(counter);
-      if (skip_counter > skip_max) {
-        skip_counter = skip_max;
-      }
-    }
-  } else {
-    skip_counter = 0;
+  if (config.get_flag("do_skip") == false) {
+    return 0;
   }
+
+  const unsigned int skip_max = static_cast<int>(config.get("skip_max"));
+
+  if (input_dt_diffusivity > 0.0) {
+    const double conservativeFactor = 0.95;
+    const double counter = floor(conservativeFactor * (input_dt / input_dt_diffusivity));
+    const unsigned int result = static_cast<unsigned int>(counter);
+    return std::min(result, skip_max);
+  } else {
+    return skip_max;
+  }
+
   return 0;
 }
 
@@ -206,13 +204,13 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
 @param[out] dt_result computed maximum time step
 @param[in,out] skip_counter time-step skipping counter
  */
-PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_counter) {
+PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
   PetscErrorCode ierr;
 
   const bool updateAtDepth = (skipCountDown == 0);
-  const double timeToEnd = grid.time->end() - grid.time->current();
+  const double time_to_end = grid.time->end() - grid.time->current();
 
-  // FIXME: we should probably create a std::vector<PISMComponent_TS*>
+  // FIXME: we should probably create a std::vector<const PISMComponent_TS*>
   // (or similar) and iterate over that instead.
   bool restrict_dt = false;
   const double current_time = grid.time->current();
@@ -226,14 +224,14 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
   // Always consider maxdt_temporary.
   //
   // FIXME: maxdt_temporary is used by iceCompModel (and only there).
-  // It should be removed.
+  // It should probably be removed.
   if (maxdt_temporary > 0.0) {
     dt_restrictions["internal (derived class)"] = maxdt_temporary;
   }
 
   // Never go past the end of a run.
-  if (timeToEnd > 0.0) {
-    dt_restrictions["end of the run"] = timeToEnd;
+  if (time_to_end > 0.0) {
+    dt_restrictions["end of the run"] = time_to_end;
   }
 
   //! Always apply the time-step restriction from the
@@ -309,12 +307,9 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
 
       dt_restrictions["2D CFL"] = CFLmaxdt2D;
 
-      // note: also sets skip_counter;  if skip_counter > 0 then it will get
-      // decremented at the mass balance step
       double max_dt_diffusivity = 0.0;
       ierr = max_timestep_diffusivity(max_dt_diffusivity); CHKERRQ(ierr);
       dt_restrictions["diffusivity"] = max_dt_diffusivity;
-
     }
   }
 
@@ -351,24 +346,22 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
         timestep_hit_multiples_last_time = next_time;
 
         std::stringstream str;
-        str << "(hit multiples of " << timestep_hit_multiples << " years)";
+        str << "(hit multiples of " << timestep_hit_multiples << " years; overrides " << adaptReasonFlag << ")";
         adaptReasonFlag = str.str();
       }
     }
   }
 
-  ierr = update_skip_counter(dt_result, dt_restrictions["diffusivity"],
-                             skip_counter); CHKERRQ(ierr);
-
+  skip_counter_result = skip_counter(dt_result, dt_restrictions["diffusivity"]);
 
   // "max", "internal (derived class)", and "end of the run" limit the "big" time-step (in
   // the context of the "skipping" mechanism), so we might need to
-  // reset the skip_counter to 1.
+  // reset the skip_counter_result to 1.
   if ((adaptReasonFlag == "max" ||
        adaptReasonFlag == "internal (derived class)" ||
        adaptReasonFlag == "end of the run") &&
-      skip_counter > 1) {
-    skip_counter = 1;
+      skip_counter_result > 1) {
+    skip_counter_result = 1;
   }
 
   return 0;

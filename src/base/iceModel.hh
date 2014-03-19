@@ -315,9 +315,7 @@ protected:
   virtual PetscErrorCode max_timestep_diffusivity(double &dt_result);
   virtual PetscErrorCode max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual PetscErrorCode countCFLViolations(double* CFLviol);
-  virtual PetscErrorCode update_skip_counter(double input_dt,
-                                             double input_dt_diffusivity,
-                                             unsigned int &skip_counter);
+  virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
