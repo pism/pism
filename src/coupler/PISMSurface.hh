@@ -33,14 +33,18 @@ class IceModelVec2S;
 //! \brief The interface of PISM's surface models.
 class PISMSurfaceModel : public PISMComponent_TS {
 public:
+  enum BCType {DIRICHLET, NEUMANN};
   PISMSurfaceModel(IceGrid &g, const PISMConfig &conf);
   virtual ~PISMSurfaceModel();
 
   // the interface:
+  /** Most surface models impose a Dirichlet boundary condition for energy. */
+  virtual BCType get_conduction_bc_type() { return DIRICHLET; }
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_hflux(IceModelVec2S &result) { return 1; }
   virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 

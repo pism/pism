@@ -515,6 +515,17 @@ PetscErrorCode IceModel::createVecs() {
                                    "1", ""); CHKERRQ(ierr);
   // ierr = variables.add(liqfrac_surface); CHKERRQ(ierr);
 
+  // Conductive heat flux into ice surface (from PSSurface Neumann b.c.)
+  ierr = ice_surface_hflux.create(grid, "ice_surface_hflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = ice_surface_hflux.set_attrs(
+                                    "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
+                                    "annual average ice surface temperature, below firn processes",
+                                    "W m-2",
+                                    "");
+  CHKERRQ(ierr);
+
+
+
   // ice mass balance rate at the base of the ice shelf; sign convention for
   //   vshelfbasemass matches standard sign convention for basal melt rate of
   //   grounded ice

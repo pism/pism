@@ -234,8 +234,12 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   // Now get map-plane coupler fields: Dirichlet upper surface
   // boundary and mass balance lower boundary under shelves
   assert(surface != NULL);
+  PISMSurfaceModel::BCType conduction_bc_type = surface->get_conduction_bc_type();
   ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
   ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
+  if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+      ierr = surface->ice_surface_hflux(ice_surface_hflux); CHKERRQ(ierr);
+  }
 
   assert(ocean != NULL);
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
@@ -254,6 +258,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   ierr = subglacial_hydrology->till_water_thickness(till_water_thickness); CHKERRQ(ierr);
 
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
+  if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+    ierr = ice_surface_hflux.begin_access(); CHKERRQ(ierr);
+  }
 
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
@@ -299,7 +306,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         depth_ks = ice_thickness(i, j) - esys.ks() * grid.dz_fine,
         p_ks     = EC->getPressureFromDepth(depth_ks); // FIXME issue #15
 
-      double Enth_ks;
+      double Enth_ks = 0;
       ierr = EC->getEnthPermissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
                                    p_ks, Enth_ks); CHKERRQ(ierr);
 
@@ -327,7 +334,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
       // set boundary conditions and update enthalpy
       {
-        ierr = esys.setDirichletBC(enthSystemCtx::SURFACE, Enth_ks); CHKERRQ(ierr);
+        if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+          ierr = esys.setHeatFluxBC(enthSystemCtx::SURFACE, ice_surface_hflux(i,j)); CHKERRQ(ierr);
+        } else {
+          ierr = esys.setDirichletBC(enthSystemCtx::SURFACE, Enth_ks); CHKERRQ(ierr);
+        }
 
         // determine lowest-level equation at bottom of ice; see
         // decision chart in the source code browser and page
@@ -503,6 +514,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   }
 
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
+  if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+    ierr = ice_surface_hflux.end_access(); CHKERRQ(ierr);
+  }
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 

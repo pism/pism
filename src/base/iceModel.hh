@@ -246,9 +246,19 @@ protected:
     grounded_basal_flux_2D_cumulative, //!< grounded basal (melt/freeze-on) cumulative flux
     floating_basal_flux_2D_cumulative, //!< floating (sub-shelf) basal (melt/freeze-on) cumulative flux
     nonneg_flux_2D_cumulative,         //!< cumulative nonnegative-rule flux
-    discharge_flux_2D_cumulative,      //!< cumulative discharge (calving) flux (2D field)
-    ice_surface_temp,           //!< ice temperature at the ice surface but below firn; no ghosts
-    liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
+    discharge_flux_2D_cumulative;      //!< cumulative discharge (calving) flux (2D field)
+
+  IceModelVec2S ice_surface_temp;           //!< ice temperature at the ice surface but below firn; no ghosts
+  IceModelVec2S liqfrac_surface;    //!< ice liquid water fraction at the top surface of the ice
+
+  /** Conductive heat flux at the surface.
+  This is only used if the Neumann b.c. is chosen for the top surface.  And then,
+  ice_surface_temp / liqfrac_surface will NOT be used as a top boundary condition.
+  EVEN SO, the surfce_model must still provide ice_surface_temp and liqfrac_surface,
+  they are used in many other places. */
+  IceModelVec2S ice_surface_hflux;
+
+  IceModelVec2S
     shelfbtemp,         //!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,     //!< ice mass flux into the ocean at the shelf base; no ghosts
     cell_area,          //!< cell areas (computed using the WGS84 datum)
