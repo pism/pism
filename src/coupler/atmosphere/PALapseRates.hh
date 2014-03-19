@@ -36,9 +36,9 @@ public:
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
 
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
-  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *result);
-  virtual PetscErrorCode temp_time_series(int i, int j, PetscReal *result);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
+  virtual PetscErrorCode precip_time_series(int i, int j, double *result);
+  virtual PetscErrorCode temp_time_series(int i, int j, double *result);
 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
@@ -47,7 +47,7 @@ public:
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:
-  PetscReal precip_lapse_rate;
+  double precip_lapse_rate;
   NCSpatialVariable precipitation, air_temp;
 private:
   PetscErrorCode allocate_PALapseRates();

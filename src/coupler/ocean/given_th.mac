@@ -1,0 +1,102 @@
+display2d : true $
+linel : 250$
+leftjust : true $
+
+unorder()$
+orderless(A, B, C)$
+
+set_tex_environment_default("@f[", "@f]")$
+
+texput_list(l) := map(lambda([x], apply(texput, x)), l)$
+
+texput_list([
+  [ice_heat_capacity, "c_{pI}"],
+  [ocean_heat_capacity, "c_{pW}"],
+  [Sb, "S^B"],
+  [Sm, "S^W"],
+  [gamma_s, "\\gamma_S"],
+  [gamma_t, "\\gamma_T"],
+  [Ts, "T^S"],
+  [Theta_m, "\\Theta^W"],
+  [nounify(Tb), "T^B"],
+  [nounify(Theta_b), "\\Theta^B"],
+  [melt_rate, "w_b"],
+  [ocean_density, "\\rho_W"],
+  [ice_density, "\\rho_I"],
+  [ice_thickness, "h"]
+  ])$
+
+/* $\dot h$ is defined to me minus the melt rate */
+h_dot : - melt_rate$
+
+delta_T : Ts - Tb$
+
+/* temperature gradient at the base of the ice; assume linear
+temperature profile throughout the thickness of the shelf */
+grad_T : - delta_T * h_dot / ice_thermal_diffusivity$
+
+/* heat flux at the ice-brine interface */
+Qti : ice_density * ice_heat_capacity * ice_thermal_diffusivity * grad_T$
+
+/* heat flux into the ocean (due to melting) */
+Qtb : ice_density * h_dot * L$
+
+/* heat flux into the ocean mixed layer */
+Qtm : ocean_density * ocean_heat_capacity * gamma_t * (Theta_b - Theta_m)$
+
+/* salinity in the ice */
+Si : 0$
+
+/* salinity flux into the ice */
+Qsi : 0$
+
+/* salt flux at the base (10) */
+Qsb : ice_density * h_dot * (Sb - Si)$
+
+/* salinity flux into the mixed ocean layer */
+Qsm : ocean_density * gamma_s * (Sb - Sm)$
+
+/* parameterization of the melting point temperature */
+Tb(Sb, ice_thickness) := a[1] + a[0] * Sb + a[2] * ice_thickness$
+
+/* parameterization of the potential temperature corresponding to the
+melting point */
+Theta_b(Sb, ice_thickness) := b[1] + b[0] * Sb + b[2] * ice_thickness$
+
+/* heat flux balance: LHS is ice, RHS is ocean */
+heat_flux_balance : Qtb + Qti = Qtm$
+
+/* salt flux balance */
+salt_flux_balance : Qsb + Qsi = Qsm$
+
+/* Solve the salt flux balance equation for the melt rate, then
+substitute the melt rate and linearized equations for Tb and Theta_b
+into the heat flux balance */
+eq : heat_flux_balance, solve(salt_flux_balance, melt_rate), Tb = Tb(Sb, ice_thickness), Theta_b = Theta_b(Sb, ice_thickness)$
+eq : eq - rhs(eq)$
+
+/* expand the left hand side: */
+eq_lhs : lhs(expand(eq*Sb/ocean_density))$
+
+/* eq is a quadratic equation like this one: */
+eq_quadratic : A*x^2 + B*x + C = 0$
+
+/* with these coefficients */
+A : factorsum(coeff(eq_lhs, Sb, 2))$
+B : factorsum(coeff(eq_lhs, Sb, 1))$
+C : factorsum(coeff(eq_lhs, Sb, 0))$
+
+eq_melt_rate : factor(solve(salt_flux_balance, melt_rate)[1])$
+
+tex('Tb(Sb,p) = Tb(Sb,p));
+tex('Theta_b(Sb,p) = Theta_b(Sb,p));
+tex(eq_quadratic);
+tex('A = A);
+tex('B = B);
+tex('C = C);
+
+tex(eq_melt_rate);
+
+grind('A = A);
+grind('B = B);
+grind('C = C);

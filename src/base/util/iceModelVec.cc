@@ -33,7 +33,7 @@ IceModelVec::IceModelVec() {
 
   m_da = NULL;
   m_da_stencil_width = 1;
-  m_dof = 1;			// default
+  m_dof = 1;                    // default
   begin_end_access_use_dof = true;
 
   grid = NULL;
@@ -121,7 +121,7 @@ PetscErrorCode  IceModelVec::destroy() {
     std::map<std::string,PetscViewer>::iterator i;
     for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
       if (i->second != NULL) {
-	ierr = PetscViewerDestroy(&i->second); CHKERRQ(ierr);
+        ierr = PetscViewerDestroy(&i->second); CHKERRQ(ierr);
       }
     }
   }
@@ -138,8 +138,8 @@ GlobalMax,GlobalMin \e are needed, when m_has_ghosts==true, to get correct
 values because Vecs created with DACreateLocalVector() are of type
 VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
  */
-PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
-  PetscReal my_min = 0.0, my_max = 0.0, gmin = 0.0, gmax = 0.0;
+PetscErrorCode IceModelVec::range(double &min, double &max) {
+  double my_min = 0.0, my_max = 0.0, gmin = 0.0, gmax = 0.0;
   PetscErrorCode ierr;
   assert(v != NULL);
 
@@ -159,20 +159,44 @@ PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
   return 0;
 }
 
+/** Convert from `int` to PETSc's `NormType`.
+ * 
+ *
+ * @param[in] input norm type as an integer
+ *
+ * @return norm type as PETSc's `NormType`.
+ */
+NormType IceModelVec::int_to_normtype(int input) {
+  assert(input == NORM_1 || input == NORM_2 || input == NORM_INFINITY);
+
+  switch (input) {
+  case NORM_1:
+    return NORM_1;
+  case NORM_2:
+    return NORM_2;
+  default:
+  case NORM_INFINITY:
+    return NORM_INFINITY;
+  }
+}
 
 //! Computes the norm of an IceModelVec by calling PETSc VecNorm.
 /*!
 See comment for range(); because local Vecs are VECSEQ, needs a reduce operation.
 See src/trypetsc/localVecMax.c.
 
-\note This method works for all IceModelVecs, including ones with dof > 1. You might want to use norm_all() for IceModelVec2Stag, though.
+D@\note This method works for all IceModelVecs, including ones with
+dof > 1. You might want to use norm_all() for IceModelVec2Stag,
+though.
  */
-PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
+PetscErrorCode IceModelVec::norm(int n, double &out) {
   PetscErrorCode ierr;
-  PetscReal my_norm, gnorm;
+  double my_norm, gnorm;
   assert(v != NULL);
 
-  ierr = VecNorm(v, n, &my_norm); CHKERRQ(ierr);
+  NormType type = int_to_normtype(n);
+
+  ierr = VecNorm(v, type, &my_norm); CHKERRQ(ierr);
 
   if (m_has_ghosts == true) {
     // needs a reduce operation; use PISMGlobalMax if NORM_INFINITY,
@@ -190,7 +214,7 @@ PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
     } else if (n == NORM_INFINITY) {
       ierr = PISMGlobalMax(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
     } else {
-      SETERRQ1(grid->com, 2, "IceModelVec::norm(...): unknown NormType (called as %s.norm(...))\n",
+      SETERRQ1(grid->com, 2, "IceModelVec::norm(...): unknown norm type (called as %s.norm(...))\n",
          m_name.c_str());
     }
     out = gnorm;
@@ -199,7 +223,6 @@ PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
   }
   return 0;
 }
-
 
 //! Result: v <- sqrt(v), elementwise.  Calls VecSqrt(v).
 /*!
@@ -215,7 +238,7 @@ PetscErrorCode IceModelVec::squareroot() {
 
 
 //! Result: v <- v + alpha * x. Calls VecAXPY.
-PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
+PetscErrorCode IceModelVec::add(double alpha, IceModelVec &x) {
   assert(v != NULL && x.v != NULL);
 
   PetscErrorCode ierr = checkCompatibility("add", x); CHKERRQ(ierr);
@@ -225,7 +248,7 @@ PetscErrorCode IceModelVec::add(PetscScalar alpha, IceModelVec &x) {
 }
 
 //! Result: v[j] <- v[j] + alpha for all j. Calls VecShift.
-PetscErrorCode IceModelVec::shift(PetscScalar alpha) {
+PetscErrorCode IceModelVec::shift(double alpha) {
   assert(v != NULL);
 
   PetscErrorCode ierr = VecShift(v, alpha); CHKERRQ(ierr);
@@ -233,7 +256,7 @@ PetscErrorCode IceModelVec::shift(PetscScalar alpha) {
 }
 
 //! Result: v <- v * alpha. Calls VecScale.
-PetscErrorCode IceModelVec::scale(PetscScalar alpha) {
+PetscErrorCode IceModelVec::scale(double alpha) {
   assert(v != NULL);
 
   PetscErrorCode ierr = VecScale(v, alpha); CHKERRQ(ierr);
@@ -375,10 +398,10 @@ PetscErrorCode IceModelVec::reset_attrs(unsigned int N) {
   internal units.
  */
 PetscErrorCode IceModelVec::set_attrs(std::string my_pism_intent,
-				      std::string my_long_name,
-				      std::string my_units,
-				      std::string my_standard_name,
-				      int N) {
+                                      std::string my_long_name,
+                                      std::string my_units,
+                                      std::string my_standard_name,
+                                      int N) {
 
   metadata(N).set_string("long_name", my_long_name);
 
@@ -537,18 +560,18 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
 PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &other) {
   PetscErrorCode ierr;
-  PetscInt X_size, Y_size;
+  int X_size, Y_size;
 
   if (m_dof != other.m_dof) {
     SETERRQ1(grid->com, 1, "IceModelVec::%s(...): operands have different numbers of degrees of freedom",
-	     func);
+             func);
   }
 
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(other.v, &Y_size); CHKERRQ(ierr);
   if (X_size != Y_size) {
     SETERRQ4(grid->com, 1, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))\n",
-	     func, m_name.c_str(), func, other.m_name.c_str());
+             func, m_name.c_str(), func, other.m_name.c_str());
   }
 
 
@@ -651,7 +674,7 @@ PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) {
 }
 
 //! Result: v[j] <- c for all j.
-PetscErrorCode  IceModelVec::set(const PetscScalar c) {
+PetscErrorCode  IceModelVec::set(const double c) {
   PetscErrorCode ierr;
   assert(v != NULL);
   ierr = VecSet(v,c); CHKERRQ(ierr);
@@ -662,7 +685,7 @@ PetscErrorCode  IceModelVec::set(const PetscScalar c) {
 /*! Both prints and error message at stdout and returns nonzero. */
 PetscErrorCode IceModelVec::has_nan() {
   PetscErrorCode ierr;
-  PetscReal tmp;
+  double tmp;
 
   ierr = norm(NORM_INFINITY, tmp); CHKERRQ(ierr);
 
@@ -675,7 +698,7 @@ PetscErrorCode IceModelVec::has_nan() {
 }
 
 void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
-  PetscReal ghost_width = 0;
+  double ghost_width = 0;
   if (m_has_ghosts) ghost_width = m_da_stencil_width;
   bool out_of_range = (i < grid->xs - ghost_width) ||
     (i > grid->xs + grid->xm + ghost_width) ||
@@ -729,14 +752,18 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
 }
 
 //! \brief Computes the norm of all components.
-PetscErrorCode IceModelVec::norm_all(NormType n, std::vector<PetscReal> &result) {
+PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
   PetscErrorCode ierr;
-  PetscReal *norm_result;
+  double *norm_result;
 
-  norm_result = new PetscReal[m_dof];
+  assert(n == NORM_1 || n == NORM_2 || n == NORM_INFINITY);
+
+  norm_result = new double[m_dof];
   result.resize(m_dof);
 
-  ierr = VecStrideNormAll(v, n, norm_result); CHKERRQ(ierr);
+  NormType type = this->int_to_normtype(n);
+
+  ierr = VecStrideNormAll(v, type, norm_result); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
     // needs a reduce operation; use PISMGlobalMax if NORM_INFINITY,
@@ -764,7 +791,7 @@ PetscErrorCode IceModelVec::norm_all(NormType n, std::vector<PetscReal> &result)
         ierr = PISMGlobalMax(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
       }
     } else {
-      SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown NormType (called as %s.norm_all(...))\n",
+      SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))\n",
          m_name.c_str());
     }
   } else {

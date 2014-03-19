@@ -87,8 +87,8 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
   ierr = tmp->begin_access();              CHKERRQ(ierr);
   ierr = mask->begin_access();             CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if ((*tmp)(i, j) > 0 || m.grounded(i, j) ) // FIXME: use GeometryCalculator
         m_ocean_kill_mask(i, j) = 0;
       else
@@ -112,9 +112,9 @@ PetscErrorCode PISMOceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
   ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
   ierr = pism_mask.begin_access();         CHKERRQ(ierr);
   ierr = ice_thickness.begin_access();     CHKERRQ(ierr);
-  PetscInt GHOSTS = grid.max_stencil_width;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = grid.max_stencil_width;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       if (m_ocean_kill_mask(i, j) > 0.5) {
         pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
         ice_thickness(i, j) = 0.0;

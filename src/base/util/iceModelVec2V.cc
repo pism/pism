@@ -27,10 +27,10 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
 }
 
 PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
-				      unsigned int stencil_width) {
+                                      unsigned int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, ghostedp,
-					     stencil_width, m_dof); CHKERRQ(ierr);
+                                             stencil_width, m_dof); CHKERRQ(ierr);
 
   m_metadata[0].init_2d("u" + my_short_name, my_grid);
   m_metadata[1].init_2d("v" + my_short_name, my_grid);
@@ -50,13 +50,13 @@ PetscErrorCode IceModelVec2V::get_array(PISMVector2** &a) {
 PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PISMVector2** a;
-  PetscScalar **mag;
+  double **mag;
 
   ierr = result.get_array(mag); CHKERRQ(ierr);
   ierr = get_array(a);
 
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
       mag[i][j] = a[i][j].magnitude();
     }
   }
@@ -137,11 +137,11 @@ PetscErrorCode IceModelVec2V::rename(std::string short_name,
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::add(PetscScalar alpha, IceModelVec &x) {
+PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }
 
-PetscErrorCode IceModelVec2V::add(PetscScalar alpha, IceModelVec &x, IceModelVec &result) {
+PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) {
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 

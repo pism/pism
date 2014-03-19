@@ -39,7 +39,7 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
   offset->set_units("m / second", "m / year");
   offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "precipitation offsets");
+  offset->set_attr("long_name", "precipitation offsets, units of ice-equivalent thickness");
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -48,7 +48,7 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "near-surface air temperature");
+  precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
@@ -75,7 +75,7 @@ PetscErrorCode PA_delta_P::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_delta_P::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PA_delta_P::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
@@ -95,7 +95,7 @@ PetscErrorCode PA_delta_P::mean_precipitation(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PA_delta_P::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PA_delta_P::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
   
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)

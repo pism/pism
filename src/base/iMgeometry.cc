@@ -47,18 +47,14 @@
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
 
-  ierr = update_mask(vbed, vH, vMask); CHKERRQ(ierr);
-  ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
+  ierr = update_mask(bed_topography, ice_thickness, vMask); CHKERRQ(ierr);
+  ierr = update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation); CHKERRQ(ierr);
 
   if (config.get_flag("kill_icebergs") && iceberg_remover != NULL) {
-    ierr = iceberg_remover->update(vMask, vH); CHKERRQ(ierr);
+    ierr = iceberg_remover->update(vMask, ice_thickness); CHKERRQ(ierr);
     // the call above modifies ice thickness and updates the mask
     // accordingly
-    ierr = update_surface_elevation(vbed, vH, vh); CHKERRQ(ierr);
-  }
-
-  if (config.get_flag("sub_groundingline")) {
-    ierr = sub_gl_position(); CHKERRQ(ierr);
+    ierr = update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation); CHKERRQ(ierr);
   }
 
   return 0;
@@ -68,36 +64,36 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
  * Update ice cover mask using the floatation criterion, sea level
  * elevation, ice thickness, and bed topography.
  *
- * @param[in]  bed_topography
- * @param[in]  ice_thickness
- * @param[out] result
+ * @param[in]  bed bedrock surface elevation
+ * @param[in]  thickness ice thicnness
+ * @param[out] result cell type mask
  *
  * @return 0 on success.
  */
-PetscErrorCode IceModel::update_mask(IceModelVec2S &bed_topography,
-                                     IceModelVec2S &ice_thickness,
+PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
+                                     IceModelVec2S &thickness,
                                      IceModelVec2Int &result) {
   PetscErrorCode ierr;
-  PetscReal sea_level;
+  double sea_level;
 
   assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr = ice_thickness.begin_access();  CHKERRQ(ierr);
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
+  ierr = thickness.begin_access();  CHKERRQ(ierr);
+  ierr = bed.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access();         CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 2;
-  for (PetscInt i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      result(i, j) = gc.mask(bed_topography(i, j), ice_thickness(i,j));
+  int GHOSTS = 2;
+  for (int i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      result(i, j) = gc.mask(bed(i, j), thickness(i,j));
     } // inner for loop (j)
   } // outer for loop (i)
 
-  ierr = ice_thickness.end_access();  CHKERRQ(ierr);
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
+  ierr = thickness.end_access();  CHKERRQ(ierr);
+  ierr = bed.end_access(); CHKERRQ(ierr);
   ierr = result.end_access();         CHKERRQ(ierr);
 
   return 0;
@@ -110,17 +106,17 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed_topography,
  * Uses ghosts of `bed_topography`, `ice_thickness`. Updates ghosts of
  * the `result`.
  *
- * @param[in] bed_topography 
- * @param[in] ice_thickness 
+ * @param[in] bed bedrock surface elevation
+ * @param[in] thickness ice thickness
  * @param[out] result computed surface elevation
  *
  * @return 0 on success.
  */
-PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed_topography,
-                                                  IceModelVec2S &ice_thickness,
+PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
+                                                  IceModelVec2S &thickness,
                                                   IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PetscReal sea_level;
+  double sea_level;
 
   assert(ocean != NULL);
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
@@ -128,23 +124,23 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed_topography,
   GeometryCalculator gc(sea_level, config);
 
   ierr = result.begin_access();         CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access();  CHKERRQ(ierr);
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
+  ierr = thickness.begin_access();  CHKERRQ(ierr);
+  ierr = bed.begin_access(); CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 2;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      // take this opportunity to check that ice_thickness(i, j) >= 0
-      if (ice_thickness(i, j) < 0) {
+  int GHOSTS = 2;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      // take this opportunity to check that thickness(i, j) >= 0
+      if (thickness(i, j) < 0) {
         SETERRQ2(grid.com, 1, "Thickness negative at point i=%d, j=%d", i, j);
       }
-      result(i, j) = gc.surface(bed_topography(i, j), ice_thickness(i, j));
+      result(i, j) = gc.surface(bed(i, j), thickness(i, j));
     }
   }
 
   ierr = result.end_access();         CHKERRQ(ierr);
-  ierr = ice_thickness.end_access();  CHKERRQ(ierr);
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
+  ierr = thickness.end_access();  CHKERRQ(ierr);
+  ierr = bed.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -171,8 +167,8 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed_topography,
  * @param[in,out] SIA_flux SIA flux to be adjusted
  */
 void IceModel::adjust_flow(planeStar<int> mask,
-                           planeStar<PetscScalar> &SSA_velocity,
-                           planeStar<PetscScalar> &SIA_flux) {
+                           planeStar<double> &SSA_velocity,
+                           planeStar<double> &SIA_flux) {
 
   // Prepare to loop over neighbors:
   // directions
@@ -311,9 +307,9 @@ void IceModel::adjust_flow(planeStar<int> mask,
 void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
                                      planeStar<PISMVector2> in_SSA_velocity,
-                                     planeStar<PetscScalar> in_SIA_flux,
-                                     planeStar<PetscScalar> &out_SSA_velocity,
-                                     planeStar<PetscScalar> &out_SIA_flux) {
+                                     planeStar<double> in_SIA_flux,
+                                     planeStar<double> &out_SSA_velocity,
+                                     planeStar<double> &out_SIA_flux) {
 
   planeStar<int> mask = vMask.int_star(i,j);
   PISM_Direction dirs[4] = {North, East, South, West};
@@ -496,32 +492,27 @@ earlier. (CK)
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
   
-  // FIXME: this call does not belong here.
-  if (config.get_flag("do_fracture_density") && config.get_flag("use_ssa_velocity")) {
-    ierr = calculateFractureDensity(); CHKERRQ(ierr);
-  }
-    
-  PetscScalar
+  double
     // totals over the processor's domain:
-    proc_H_to_Href_flux = 0,
-    proc_Href_to_H_flux = 0,
-    proc_grounded_basal_ice_flux = 0,
-    proc_nonneg_rule_flux = 0,
-    proc_sub_shelf_ice_flux = 0,
-    proc_sum_divQ_SIA = 0,
-    proc_sum_divQ_SSA = 0,
-    proc_surface_ice_flux = 0,
+    proc_H_to_Href_flux           = 0,
+    proc_Href_to_H_flux           = 0,
+    proc_grounded_basal_ice_flux  = 0,
+    proc_nonneg_rule_flux         = 0,
+    proc_sub_shelf_ice_flux       = 0,
+    proc_sum_divQ_SIA             = 0,
+    proc_sum_divQ_SSA             = 0,
+    proc_surface_ice_flux         = 0,
     // totals over all processors:
-    total_H_to_Href_flux = 0,
-    total_Href_to_H_flux = 0,
+    total_H_to_Href_flux          = 0,
+    total_Href_to_H_flux          = 0,
     total_grounded_basal_ice_flux = 0,
-    total_nonneg_rule_flux = 0,
-    total_sub_shelf_ice_flux = 0,
-    total_sum_divQ_SIA = 0,
-    total_sum_divQ_SSA = 0,
-    total_surface_ice_flux = 0;
+    total_nonneg_rule_flux        = 0,
+    total_sub_shelf_ice_flux      = 0,
+    total_sum_divQ_SIA            = 0,
+    total_sum_divQ_SSA            = 0,
+    total_surface_ice_flux        = 0;
 
-  const PetscScalar dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx, dy = grid.dy;
   bool
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     compute_cumulative_climatic_mass_balance = climatic_mass_balance_cumulative.was_created(),
@@ -530,17 +521,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
     compute_cumulative_floating_basal_flux = floating_basal_flux_2D_cumulative.was_created(),
     compute_flux_divergence = flux_divergence.was_created();
 
-  // FIXME: use corrected cell areas (when available)
-  PetscScalar factor = config.get("ice_density") * (dx * dy);
+  double ice_density = config.get("ice_density"),
+    meter_per_s_to_kg_per_m2 = dt * ice_density;
 
   assert(surface != NULL);
-  ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
+  ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
 
   assert(ocean != NULL);
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
 
   IceModelVec2S &vHnew = vWork2d[0];
-  ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
+  ierr = ice_thickness.copy_to(vHnew); CHKERRQ(ierr);
 
   IceModelVec2S &H_residual = vWork2d[1];
 
@@ -550,16 +541,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vh.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
-  ierr = Qdiff->begin_access(); CHKERRQ(ierr);
-  ierr = vel_advective->begin_access(); CHKERRQ(ierr);
-  ierr = acab.begin_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access();  CHKERRQ(ierr);
-  ierr = vHnew.begin_access(); CHKERRQ(ierr);
+  ierr = cell_area.begin_access();             CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
+  ierr = ice_surface_elevation.begin_access(); CHKERRQ(ierr);
+  ierr = bed_topography.begin_access();        CHKERRQ(ierr);
+  ierr = basal_melt_rate.begin_access();       CHKERRQ(ierr);
+  ierr = Qdiff->begin_access();                CHKERRQ(ierr);
+  ierr = vel_advective->begin_access();        CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access();        CHKERRQ(ierr);
+  ierr = vMask.begin_access();                 CHKERRQ(ierr);
+  ierr = vHnew.begin_access();                 CHKERRQ(ierr);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool do_part_grid = config.get_flag("part_grid"),
@@ -602,27 +594,40 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   MaskQuery mask(vMask);
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
+
+      // These constants are used to convert ice equivalent
+      // thicknesses and thickening rates to kg, for accounting of
+      // fluxes during the current time-step.
+      const double
+        meter_to_kg       = cell_area(i,j) * ice_density,
+        meter_per_s_to_kg = meter_to_kg * dt;
 
       // Divergence terms:
-      double divQ_SIA = 0.0, divQ_SSA = 0.0;
+      double
+        divQ_SIA = 0.0,         // units: [m s-1]
+        divQ_SSA = 0.0;         // units: [m s-1]
 
       // Source terms:
+      // Note: here we convert surface mass balance from [kg m-2 s-1] to [m s-1]:
       double
-        surface_mass_balance = acab(i, j),
-        meltrate_grounded = 0.0,
-        meltrate_floating = 0.0,
-        H_to_Href_flux    = 0.0,
-        Href_to_H_flux    = 0.0,
-        nonneg_rule_flux  = 0.0;
+        surface_mass_balance = climatic_mass_balance(i, j) / ice_density, // units: [m s-1]
+        meltrate_grounded    = 0.0, // units: [m s-1]
+        meltrate_floating    = 0.0, // units: [m s-1]
+        H_to_Href_flux       = 0.0, // units: [m]
+        Href_to_H_flux       = 0.0, // units: [m]
+        nonneg_rule_flux     = 0.0; // units: [m]
 
       if (include_bmr_in_continuity) {
-        meltrate_floating = shelfbmassflux(i, j);
+        // convert from [kg m-2 s-1] to [m s-1]:
+        meltrate_floating = shelfbmassflux(i, j) / ice_density;
+        // basal melt rate is computed by PISM itself and has units of
+        // [m s-1] already
         meltrate_grounded = basal_melt_rate(i, j);
       }
 
-      planeStar<PetscScalar> Q, v;
+      planeStar<double> Q, v;
       cell_interface_fluxes(dirichlet_bc, i, j,
                             vel_advective->star(i, j), Qdiff->star(i, j),
                             v, Q);
@@ -635,10 +640,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
         // Plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
-        divQ_SSA += ( v.e * (v.e > 0 ? vH(i, j) : vH(i + 1, j))
-                      - v.w * (v.w > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
-        divQ_SSA += ( v.n * (v.n > 0 ? vH(i, j) : vH(i, j + 1))
-                      - v.s * (v.s > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
+        divQ_SSA += ( v.e * (v.e > 0 ? ice_thickness(i, j) : ice_thickness(i + 1, j))
+                      - v.w * (v.w > 0 ? ice_thickness(i - 1, j) : ice_thickness(i, j)) ) / dx;
+        divQ_SSA += ( v.n * (v.n > 0 ? ice_thickness(i, j) : ice_thickness(i, j + 1))
+                      - v.s * (v.s > 0 ? ice_thickness(i, j - 1) : ice_thickness(i, j)) ) / dy;
       }
 
       // Set source terms
@@ -668,12 +673,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
             vHref(i, j) = 0;
           }
 
-          PetscReal H_threshold = get_threshold_thickness(vMask.int_star(i, j),
-                                                          vH.star(i, j),
-                                                          vh.star(i, j),
-                                                          vbed(i,j),
+          double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
+                                                          ice_thickness.star(i, j),
+                                                          ice_surface_elevation.star(i, j),
+                                                          bed_topography(i,j),
                                                           reduce_frontal_thickness);
-          PetscReal coverage_ratio = 1.0;
+          double coverage_ratio = 1.0;
           if (H_threshold > 0.0)
             coverage_ratio = vHref(i, j) / H_threshold;
 
@@ -688,15 +693,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
             // A cell that became "full" experiences both SMB and basal melt.
           } else {
+            // An empty of partially-filled cell experiences neither.
             surface_mass_balance = 0.0;
             meltrate_floating    = 0.0;
           }
 
           // In this case the SSA flux goes into the Href variable and does not
           // directly contribute to ice thickness at this location.
-          proc_sum_divQ_SIA += - divQ_SIA;
-          proc_sum_divQ_SSA += - divQ_SSA;
-          divQ_SIA = divQ_SSA = 0;
+          proc_sum_divQ_SIA += - divQ_SIA * meter_per_s_to_kg;
+          proc_sum_divQ_SSA += - divQ_SSA * meter_per_s_to_kg;
+          divQ_SIA           = 0.0;
+          divQ_SSA           = 0.0;
         } else { // end of "if (part_grid...)
 
           // Standard ice-free ocean case:
@@ -704,7 +711,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
           meltrate_floating    = 0.0;
         }
       } // end of "if (ice_free_ocean)"
-
 
       // Dirichlet BC case (should go last to override previous settings):
       if (dirichlet_bc && vBCMask.as_int(i,j) == 1) {
@@ -717,7 +723,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       if (compute_flux_divergence == true) {
-	flux_divergence(i, j) = divQ_SIA + divQ_SSA;
+        flux_divergence(i, j) = divQ_SIA + divQ_SSA;
       }
 
       vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation
@@ -730,51 +736,57 @@ PetscErrorCode IceModel::massContExplicitStep() {
         nonneg_rule_flux += -vHnew(i, j);
 
         if (compute_cumulative_nonneg_flux)
-          nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * factor; // factor=dx*dy*rho
+          // convert from [m] to [kg m-2]:
+          nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * ice_density; // units: [kg m-2]
 
         // this has to go *after* accounting above!
         vHnew(i, j) = 0.0;
       }
 
       // Track cumulative surface mass balance. Note that this keeps track of
-      // cumulative acab at all the grid cells (including ice-free cells).
+      // cumulative climatic_mass_balance at all the grid cells (including ice-free cells).
       if (compute_cumulative_climatic_mass_balance) {
-        climatic_mass_balance_cumulative(i, j) += acab(i, j) * dt;
+        // surface_mass_balance has the units of [m s-1]; convert to [kg m-2]
+        climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
       }
 
       if (compute_cumulative_grounded_basal_flux) {
-        grounded_basal_flux_2D_cumulative(i, j) += -meltrate_grounded * dt;
+        // meltrate_grounded has the units of [m s-1]; convert to [kg m-2]
+        grounded_basal_flux_2D_cumulative(i, j) += -meltrate_grounded * meter_per_s_to_kg_per_m2;
       }
 
       if (compute_cumulative_floating_basal_flux) {
-        floating_basal_flux_2D_cumulative(i, j) += -meltrate_floating * dt;
+        // meltrate_floating has the units of [m s-1]; convert to [kg m-2]
+        floating_basal_flux_2D_cumulative(i, j) += -meltrate_floating * meter_per_s_to_kg_per_m2;
       }
 
       // time-series accounting:
       {
-        proc_grounded_basal_ice_flux -= meltrate_grounded;
-        proc_sub_shelf_ice_flux      -= meltrate_floating;
-        proc_surface_ice_flux        += surface_mass_balance;
-        proc_nonneg_rule_flux        += nonneg_rule_flux;
-        proc_sum_divQ_SIA += - divQ_SIA;
-        proc_sum_divQ_SSA += - divQ_SSA;
-        proc_H_to_Href_flux -= H_to_Href_flux;
-        proc_Href_to_H_flux += Href_to_H_flux;
+        // all these are in units of [kg]
+        proc_grounded_basal_ice_flux += - meltrate_grounded    * meter_per_s_to_kg;
+        proc_sub_shelf_ice_flux      += - meltrate_floating    * meter_per_s_to_kg;
+        proc_surface_ice_flux        +=   surface_mass_balance * meter_per_s_to_kg;
+        proc_sum_divQ_SIA            += - divQ_SIA             * meter_per_s_to_kg;
+        proc_sum_divQ_SSA            += - divQ_SSA             * meter_per_s_to_kg;
+        proc_nonneg_rule_flux        +=   nonneg_rule_flux     * meter_to_kg;
+        proc_H_to_Href_flux          += - H_to_Href_flux       * meter_to_kg;
+        proc_Href_to_H_flux          +=   Href_to_H_flux       * meter_to_kg;
       }
 
     } // end of the inner (j) for loop
   } // end of the outer (i) for loop
 
-  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = Qdiff->end_access(); CHKERRQ(ierr);
-  ierr = vel_advective->end_access(); CHKERRQ(ierr);
-  ierr = acab.end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
-  ierr = vh.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vHnew.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.end_access();       CHKERRQ(ierr);
+  ierr = vMask.end_access();                 CHKERRQ(ierr);
+  ierr = Qdiff->end_access();                CHKERRQ(ierr);
+  ierr = vel_advective->end_access();        CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access();        CHKERRQ(ierr);
+  ierr = bed_topography.end_access();        CHKERRQ(ierr);
+  ierr = ice_surface_elevation.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();         CHKERRQ(ierr);
+  ierr = vHnew.end_access();                 CHKERRQ(ierr);
+  ierr = cell_area.end_access();             CHKERRQ(ierr);
 
   if (compute_flux_divergence) {
     ierr = flux_divergence.end_access(); CHKERRQ(ierr);
@@ -819,27 +831,18 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = PISMGlobalSum(&proc_Href_to_H_flux,     &total_Href_to_H_flux,     grid.com); CHKERRQ(ierr);
     ierr = PISMGlobalSum(&proc_H_to_Href_flux,     &total_H_to_Href_flux,     grid.com); CHKERRQ(ierr);
 
-    // these are computed using accumulation/ablation or melt rates, so we need
-    // to multiply by dt
-    grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux * factor * dt;
-    sub_shelf_ice_flux_cumulative += total_sub_shelf_ice_flux * factor * dt;
-    surface_ice_flux_cumulative   += total_surface_ice_flux   * factor * dt;
-    sum_divQ_SIA_cumulative       += total_sum_divQ_SIA       * factor * dt;
-    sum_divQ_SSA_cumulative       += total_sum_divQ_SSA       * factor * dt;
-    // these are computed using ice thickness and are "cumulative" already
-    nonneg_rule_flux_cumulative   += total_nonneg_rule_flux   * factor;
-    Href_to_H_flux_cumulative     += total_Href_to_H_flux     * factor;
-    H_to_Href_flux_cumulative     += total_H_to_Href_flux     * factor;
+    grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux;
+    sub_shelf_ice_flux_cumulative      += total_sub_shelf_ice_flux;
+    surface_ice_flux_cumulative        += total_surface_ice_flux;
+    sum_divQ_SIA_cumulative            += total_sum_divQ_SIA;
+    sum_divQ_SSA_cumulative            += total_sum_divQ_SSA;
+    nonneg_rule_flux_cumulative        += total_nonneg_rule_flux;
+    Href_to_H_flux_cumulative          += total_Href_to_H_flux;
+    H_to_Href_flux_cumulative          += total_H_to_Href_flux;
   }
 
-  // finally copy vHnew into vH and communicate ghosted values
-  ierr = vHnew.update_ghosts(vH); CHKERRQ(ierr);
-
-  // the following calls are new routines adopted from PISM-PIK. The place and
-  // order is not clear yet!
-
-  // There is no reporting of single ice fluxes yet in comparison to total ice
-  // thickness change.
+  // finally copy vHnew into ice_thickness and communicate ghosted values
+  ierr = vHnew.update_ghosts(ice_thickness); CHKERRQ(ierr);
 
   // distribute residual ice mass if desired
   if (do_redist) {
@@ -853,133 +856,239 @@ PetscErrorCode IceModel::massContExplicitStep() {
   return 0;
 }
 
-/*
-display2d:false;
+/**
+   @brief Updates the fractional "floatation mask".
 
-eq1 : rho_ice * H = rho_ocean * (sea_level - bed);
-eq7: bed(lambda) := bed[i] * (1-lambda) + bed[i+1]*lambda;
-eq8: H(lambda) := H[i] * (1-lambda) + H[i+1]*lambda;
+   This mask ranges from 0 to 1 and is equal to the fraction of the
+   cell (by area) that is grounded.
 
-eq1, H=H(lambda), bed=bed(lambda)$
-eq9: solve(%, lambda)$
-eq9;
+   Currently it is used to adjust the basal drag near the grounding
+   line in the SSAFD stress balance model and the basal melt rate
+   computation in the temperature-based energy balance code
+   (IceModel::temperatureStep() and IceModel::enthalpyAndDrainageStep()).
+
+   We use the 1D (flow line) parameterization of the sub-grid
+   grounding line position due to [@ref Gladstoneetal2012], (section
+   3.1.1) and generalize it to the case of arbitrary sea level
+   elevation. Then this sub-grid grounding line position is used to
+   compute the grounded area fraction for each cell.
+
+   We use the "LI" 1D grounding line position parameterization in "x"
+   and "y" directions *independently*. The grounding line positions in
+   the "x" and "y" directions (@f$ \lambda_x @f$ and @f$ \lambda_y
+   @f$) are then interpreted as *width* and *height* of a rectangular
+   sub-set of the cell. The grounded area is computed as the product
+   of these two: @f$ A_g = \lambda_x \times \lambda_y. @f$
+
+   Consider a cell at `(i,j)` and assume that the ice is grounded
+   there and floating at `(i+1,j)`.
+
+   Assume that the ice thickness and bedrock elevation change linearly
+   from `(i,j)` to `(i+1,j)` and drop the `j` index for clarity:
+
+   @f{align*}{
+   H(\lambda) &= H_{i}(1 - \lambda) + H_{i+1}\lambda,\\
+   b(\lambda) &= b_{i}(1 - \lambda) + b_{i+1}\lambda.\\
+   @f}
+
+   Here @f$ \lambda @f$ is the dimensionless variable parameterizing
+   the sub-grid grounding line position, ranging from 0 to 1.
+
+   Now, substituting @f$ b(\lambda) @f$ and @f$ H(\lambda) @f$ into
+   the floatation criterion
+
+   @f{align*}{
+   \mu\cdot H(\lambda) &= z_{\text{sea level}} - b(\lambda),\\
+   \mu &= \rho_{\text{ice}} / \rho_{\text{sea water}}.
+   @f}
+
+   and solving for @f$ \lambda @f$, we get
+
+   @f{align*}{
+   \lambda_{g} &= \frac{\alpha}{\alpha - \beta}\\
+   & \text{where} \\
+   \alpha &= \mu\cdot H_{i} + b_{i} - z_{\text{sea level}}\\
+   \beta &= \mu\cdot H_{i+1} + b_{i+1} - z_{\text{sea level}}.
+   @f}
+
+   Note that [@ref Gladstoneetal2012] describe a parameterization of
+   the grounding line position within a cell defined as the interval
+   from the grid point `(i)` to the grid point `(i+1)`, with the ice
+   thickness @f$ H @f$ and the bed elevation @f$ b @f$ defined *at
+   grid points* (boundaries of a 1D cell).
+
+   Here we compute a grounded fraction of the **cell centered at the
+   grid point**. Grid-point-centered cells and cells with grid points
+   at their corners are shifted by 0.5 of a cell width relative to
+   each other.
+
+   This explains if-clauses like this one:
+   ~~~ c++
+   if (lambda_g < 0.5)
+     gl_mask_gr_x += (lambda_g - 0.5);
+   ~~~
+
+   they convert the sub-grid grounding line position into the form
+   used by PISM.
+
+   FIXME: sometimes alpha<0 (slightly below flotation) even though the
+   mask says grounded
  */
-PetscErrorCode IceModel::sub_gl_position() {
+PetscErrorCode IceModel::update_floatation_mask() {
   PetscErrorCode ierr;
-
-  if (ocean == PETSC_NULL) {  SETERRQ(grid.com, 1, "PISM ERROR: ocean == PETSC_NULL");  }
-  PetscReal sea_level;
-  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
   MaskQuery mask(vMask);
 
-  PetscReal ice_rho = config.get("ice_density"),
-    ocean_rho = config.get("sea_water_density"),
-    rhoq = ice_rho/ocean_rho;
+  double
+    ice_density   = config.get("ice_density"),
+    ocean_density = config.get("sea_water_density"),
+    mu            = ice_density / ocean_density,
+    sea_level     = 0.0;
 
-  IceModelVec2S &gl_mask_new = vWork2d[0];
-  IceModelVec2S &gl_mask_unground_x = vWork2d[1];
-  IceModelVec2S &gl_mask_unground_y = vWork2d[2];
+  assert(ocean != NULL);
+  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
-  ierr =    vH.begin_access(); CHKERRQ(ierr);
-  ierr =  vbed.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = gl_mask.begin_access(); CHKERRQ(ierr);
-  ierr = gl_mask_new.begin_access(); CHKERRQ(ierr);
-  ierr = gl_mask_unground_x.begin_access(); CHKERRQ(ierr);
-  ierr = gl_mask_unground_y.begin_access(); CHKERRQ(ierr);
-  
-  ierr = gl_mask_new.set(0.0); CHKERRQ(ierr);
-  //gl_mask_unground_x/y state fraction of ungrounding in each, hence start with 1.0
-  //only used for floating or ice free regions
-  ierr = gl_mask_unground_x.set(1.0); CHKERRQ(ierr);
-  ierr = gl_mask_unground_y.set(1.0); CHKERRQ(ierr);
+  ierr = gl_mask.set(0.0);   CHKERRQ(ierr);
+  ierr = gl_mask_x.set(0.0); CHKERRQ(ierr);
+  ierr = gl_mask_y.set(0.0); CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  ierr = ice_thickness.begin_access();  CHKERRQ(ierr);
+  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access();          CHKERRQ(ierr);
+  ierr = gl_mask.begin_access();        CHKERRQ(ierr);
+  ierr = gl_mask_x.begin_access();      CHKERRQ(ierr);
+  ierr = gl_mask_y.begin_access();      CHKERRQ(ierr);
 
-      PetscReal xpart1=0.0, xpart2=0.0, interpol=0.0, gl_mask_x=0.0, gl_mask_y=0.0;
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
+      double
+        alpha        = 0.0,
+        beta         = 0.0,
+        lambda_g     = 0.0,
+        gl_mask_gr_x = 1.0,
+        gl_mask_gr_y = 1.0,
+        gl_mask_fl_x = 1.0,
+        gl_mask_fl_y = 1.0;
+
+      // grounded part
       if (mask.grounded(i, j)) {
-        gl_mask_x=1.0;
-        gl_mask_y=1.0;
-      }
+        alpha = mu*ice_thickness(i, j) + bed_topography(i, j) - sea_level;
 
-      if (mask.grounded(i, j) && (mask.floating_ice(i+1, j) || mask.ice_free_ocean(i+1, j))) {
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i+1, j)-sea_level+vH(i+1, j)*rhoq;
-        interpol=xpart1/(xpart1-xpart2);
-        if (interpol<0.5)
-          gl_mask_x+=(interpol-0.5);
-        else
-          gl_mask_unground_x(i+1,j)-=(interpol-0.5);
-          //gl_mask_new(i+1,j)+=(interpol-0.5);
+        if (mask.ocean(i + 1, j)) {
 
-        ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
-      }
+          beta = mu*ice_thickness(i + 1, j) + bed_topography(i + 1, j) - sea_level;
 
-      if (mask.grounded(i, j) && (mask.floating_ice(i-1, j) || mask.ice_free_ocean(i-1, j))){
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i-1, j)-sea_level+vH(i-1, j)*rhoq;
-        interpol=xpart1/(xpart1-xpart2);
-        if (interpol<0.5)
-          gl_mask_x+=(interpol-0.5);
-        else{
-          gl_mask_unground_x(i-1,j)-=(interpol-0.5);
-          //gl_mask_new(i-1,j)+=(interpol-0.5);
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g < 0.5)
+            gl_mask_gr_x += (lambda_g - 0.5);
+
+        } else if (mask.ocean(i - 1, j)) {
+
+          beta = mu*ice_thickness(i - 1, j) + bed_topography(i - 1, j) - sea_level;
+
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g < 0.5)
+            gl_mask_gr_x += (lambda_g - 0.5);
+
+        } else if (mask.ocean(i, j + 1)) {
+
+          beta = mu*ice_thickness(i, j + 1) + bed_topography(i, j + 1) - sea_level;
+
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g < 0.5)
+            gl_mask_gr_y += (lambda_g - 0.5);
+
+        } else if (mask.ocean(i, j - 1)) {
+
+          beta = mu*ice_thickness(i, j - 1) + bed_topography(i, j - 1) - sea_level;
+
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g < 0.5)
+            gl_mask_gr_y += (lambda_g - 0.5);
+
         }
 
-        ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
+        gl_mask_x(i,j) = gl_mask_gr_x;
+        gl_mask_y(i,j) = gl_mask_gr_y;
+        gl_mask(i,j)   = gl_mask_gr_x * gl_mask_gr_y;
       }
 
-      if (mask.grounded(i, j) && (mask.floating_ice(i, j+1) || mask.ice_free_ocean(i, j+1))){
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i, j+1)-sea_level+vH(i, j+1)*rhoq;
-        interpol=xpart1/(xpart1-xpart2);
-        if (interpol<0.5)
-          gl_mask_y+=(interpol-0.5);
-        else
-          gl_mask_unground_y(i,j+1)-=(interpol-0.5);
-          //gl_mask_new(i,j+1)+=(interpol-0.5);
+      // floating part
+      if (mask.floating_ice(i, j)) {
+        beta = mu*ice_thickness(i, j) + bed_topography(i, j) - sea_level;
 
-        ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
+        if (mask.grounded(i - 1, j)) {
+
+          alpha = mu*ice_thickness(i - 1, j) + bed_topography(i - 1, j) - sea_level;
+
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g >= 0.5)
+            gl_mask_fl_x -= (lambda_g - 0.5);
+
+        } else if (mask.grounded(i + 1, j)) {
+
+          alpha = mu*ice_thickness(i + 1, j) + bed_topography(i + 1, j) - sea_level;
+
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g >= 0.5)
+            gl_mask_fl_x -= (lambda_g - 0.5);
+
+        } else if (mask.grounded(i, j - 1)) {
+
+          alpha = mu*ice_thickness(i, j - 1) + bed_topography(i, j - 1) - sea_level;
+
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g >= 0.5)
+            gl_mask_fl_y -= (lambda_g - 0.5);
+
+        } else if (mask.grounded(i, j + 1)) {
+
+          alpha = mu*ice_thickness(i, j + 1) + bed_topography(i, j + 1) - sea_level;
+
+          assert(alpha - beta != 0.0);
+          lambda_g = alpha / (alpha - beta);
+          lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
+
+          if (lambda_g >= 0.5)
+            gl_mask_fl_y -= (lambda_g - 0.5);
+
+        }
+
+        gl_mask_x(i,j) = 1.0 - gl_mask_fl_x;
+        gl_mask_y(i,j) = 1.0 - gl_mask_fl_y;
+        gl_mask(i,j)   = 1.0 - gl_mask_fl_x * gl_mask_fl_y;
       }
-
-      if (mask.grounded(i, j) && (mask.floating_ice(i, j-1) || mask.ice_free_ocean(i, j-1))){
-        xpart1=vbed(i, j)-sea_level+vH(i, j)*rhoq;
-        xpart2=vbed(i, j-1)-sea_level+vH(i, j-1)*rhoq;
-        interpol=xpart1/(xpart1-xpart2);
-        if (interpol<0.5)
-          gl_mask_y+=(interpol-0.5);
-        else
-          gl_mask_unground_y(i,j-1)-=(interpol-0.5);
-          //gl_mask_new(i,j-1)+=(interpol-0.5);
-
-
-        ierr = verbPrintf(2, grid.com,"!!! PISM_INFO: h1=%f, h2=%f, interpol=%f at i=%d, j=%d\n",xpart1,xpart2,interpol,i,j); CHKERRQ(ierr);
-      }
-      if (mask.grounded(i, j))
-        gl_mask_new(i,j) = gl_mask_x * gl_mask_y;
     } // inner for loop (j)
   } // outer for loop (i)
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      if (mask.floating_ice(i,j) || mask.ice_free_ocean(i,j))
-        gl_mask_new(i,j) = 1.0 - gl_mask_unground_x(i,j) * gl_mask_unground_y(i,j);
-    }
-  }
-
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = gl_mask.end_access(); CHKERRQ(ierr);
-  ierr = gl_mask_new.end_access(); CHKERRQ(ierr);
-  ierr = gl_mask_unground_x.end_access(); CHKERRQ(ierr);
-  ierr = gl_mask_unground_y.end_access(); CHKERRQ(ierr);
-
-
-  ierr = gl_mask_new.copy_to(gl_mask); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();  CHKERRQ(ierr);
+  ierr = bed_topography.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access();          CHKERRQ(ierr);
+  ierr = gl_mask.end_access();        CHKERRQ(ierr);
+  ierr = gl_mask_x.end_access();      CHKERRQ(ierr);
+  ierr = gl_mask_y.end_access();      CHKERRQ(ierr);
 
   return 0;
 }

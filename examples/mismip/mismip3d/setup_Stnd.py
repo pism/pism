@@ -45,7 +45,7 @@ accumrate = float(accumrate)
 
 
 secpera   = 31556926.
-
+ice_density = 910.0             # [kg m-3]
 
 yExtent = 2*boxWidth # in km
 xExtent = 2*800 # in km
@@ -163,10 +163,10 @@ vars = {'y':   	['m',
 		'surface_temperature',
 		248.0,
 		ice_surface_temp],
-	'climatic_mass_balance': ['m s-1',
+	'climatic_mass_balance': ['kg m-2 year-1',
 		'mean annual net ice equivalent accumulation rate',
 		'land_ice_surface_specific_mass_balance',
-		0.2/3e7,
+		0.2 * ice_density,
 		precip],
 }
 

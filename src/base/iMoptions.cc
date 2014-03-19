@@ -39,7 +39,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   bool flag;
 
   ierr = verbPrintf(3, grid.com,
-		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
+                    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Options overriding config flags and parameters", ""); CHKERRQ(ierr);
 
@@ -81,26 +81,21 @@ PetscErrorCode  IceModel::setFromOptions() {
   // implements an option e.g. described in \ref Greve that is the
   // enhancement factor is coupled to the age of the ice with
   // e = 1 (A < 11'000 years), e = 3 otherwise
-  if (config.get_flag("do_e_age_coupling")) {
+  if (config.get_flag("e_age_coupling")) {
     ierr = verbPrintf(2, grid.com,
-		      "  setting age-dependent enhancement factor: "
+                      "  setting age-dependent enhancement factor: "
                       "e=1 if A<11'000 years, e=3 otherwise\n"); CHKERRQ(ierr);
 
   }
-
-
-  // old options
-  ierr = check_old_option_and_stop(grid.com, "-sliding_scale_brutal",
-                                   "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Assembles a list of variables corresponding to an output file size.
 PetscErrorCode IceModel::set_output_size(std::string option,
-					 std::string description,
-					 std::string default_value,
-					 std::set<std::string> &result) {
+                                         std::string description,
+                                         std::string default_value,
+                                         std::set<std::string> &result) {
   PetscErrorCode ierr;
   std::set<std::string> choices;
   std::string keyword;
@@ -117,8 +112,8 @@ PetscErrorCode IceModel::set_output_size(std::string option,
   choices.insert("medium");
   choices.insert("big");
   ierr = PISMOptionsList(grid.com, option,
-			 description, choices,
-			 default_value, keyword, flag); CHKERRQ(ierr);
+                         description, choices,
+                         default_value, keyword, flag); CHKERRQ(ierr);
 
   // Add all the model-state variables:
   std::set<std::string> vars = variables.keys();
@@ -189,8 +184,8 @@ PetscErrorCode IceModel::set_output_size(std::string option,
   if (btu != NULL)
     btu->add_vars_to_output(keyword, result);
 
-  if (basal_yield_stress != NULL)
-    basal_yield_stress->add_vars_to_output(keyword, result);
+  if (basal_yield_stress_model != NULL)
+    basal_yield_stress_model->add_vars_to_output(keyword, result);
 
   // Ask the stress balance module to add more variables:
   if (stress_balance != NULL)
@@ -220,8 +215,8 @@ std::string IceModel::get_output_size(std::string option) {
   choices.insert("medium");
   choices.insert("big");
   PISMOptionsList(grid.com, option,
-		  "UNKNOWN", choices,
-		  "UNKNOWN", keyword, flag);
+                  "UNKNOWN", choices,
+                  "UNKNOWN", keyword, flag);
   return keyword;
 }
 

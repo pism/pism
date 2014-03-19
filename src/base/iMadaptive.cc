@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2013 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2014 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,8 +37,8 @@ The maximum vertical velocity is computed but it does not affect
  */
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
-  PetscScalar *u, *v, *w;
-  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years", "years", "seconds");
+  double *u, *v, *w;
+  double locCFLmaxdt = config.get("maximum_time_step_years", "years", "seconds");
 
   IceModelVec3 *u3, *v3, *w3;
 
@@ -46,28 +46,28 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
 
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   // update global max of abs of velocities for CFL; only velocities under surface
-  PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  double   maxu=0.0, maxv=0.0, maxw=0.0;
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
       if (mask.icy(i, j)) {
-        const PetscInt ks = grid.kBelowHeight(vH(i, j));
+        const int ks = grid.kBelowHeight(ice_thickness(i, j));
         ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
         ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
         ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
-        for (PetscInt k = 0; k <= ks; ++k) {
-          const PetscReal absu = PetscAbs(u[k]),
+        for (int k = 0; k <= ks; ++k) {
+          const double absu = PetscAbs(u[k]),
                           absv = PetscAbs(v[k]);
           maxu = PetscMax(maxu, absu);
           maxv = PetscMax(maxv, absv);
           maxw = PetscMax(maxw, PetscAbs(w[k]));
-          const PetscReal denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
+          const double denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
           if (denom > 0.0)
             locCFLmaxdt = PetscMin(locCFLmaxdt, 1.0 / denom);
         }
@@ -79,7 +79,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = PISMGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
@@ -91,16 +91,17 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
 
 //! Compute the CFL constant associated to first-order upwinding for the sliding contribution to mass continuity.
 /*!
-This procedure computes the maximum horizontal speed in the SSA areas.  In
-particular it computes CFL constant for the upwinding, in massContExplicitStep(),
-which applies to the basal component of mass flux.
+  This procedure computes the maximum horizontal speed in the icy
+  areas. In particular it computes CFL constant for the upwinding, in
+  massContExplicitStep(), which applies to the basal component of mass
+  flux.
 
-That is, because the map-plane mass continuity is advective in the
-sliding case we have a CFL condition.
+  That is, because the map-plane mass continuity is advective in the
+  sliding case we have a CFL condition.
  */
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
-  PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years", "years", "seconds");
+  double locCFLmaxdt2D = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
@@ -110,10 +111,10 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
 
   ierr = vel.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.icy(i, j)) {
-        const PetscReal denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
+        const double denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
         if (denom > 0.0)
           locCFLmaxdt2D = PetscMin(locCFLmaxdt2D, 1.0/denom);
       }
@@ -142,22 +143,22 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
   ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr);
 
-  PetscReal dt_from_diffus = -1.0;
+  double dt_from_diffus = -1.0;
   if (gDmax > 0.0) {
-    const PetscReal adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
-    const PetscReal
+    const double adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
+    const double
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
     dt_from_diffus = adaptTimeStepRatio * 2 / (gDmax * gridfactor);
   }
 
   if (config.get_flag("do_skip") && skipCountDown == 0) {
-    const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
+    const int skip_max = static_cast<int>(config.get("skip_max"));
     if (dt_from_diffus > 0.0) {
-      const PetscReal  conservativeFactor = 0.95;
+      const double  conservativeFactor = 0.95;
       // typically "dt" in next line is from CFL for advection in temperature equation,
       //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
       //   in basal sliding case, or max_dt
-      skipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
+      skipCountDown = (int) floor(conservativeFactor * (dt / dt_from_diffus));
       skipCountDown = ( skipCountDown >  skip_max) ?  skip_max :  skipCountDown;
     } else
       skipCountDown = skip_max;
@@ -185,7 +186,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_energy = config.get_flag("do_energy");
 
-  const PetscScalar timeToEnd = grid.time->end() - grid.time->current();
+  const double timeToEnd = grid.time->end() - grid.time->current();
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism
     adaptReasonFlag = 'f';
@@ -207,7 +208,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       }
     }
     if (btu) {
-      PetscReal btu_dt;
+      double btu_dt;
       bool restrict;
       ierr = btu->max_timestep(grid.time->current(),
                                btu_dt, restrict); CHKERRQ(ierr);
@@ -231,7 +232,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
 
     if (eigen_calving != NULL) {
       bool restrict;
-      PetscReal dt_from_eigencalving;
+      double dt_from_eigencalving;
       ierr = eigen_calving->max_timestep(grid.time->current(),
                                          dt_from_eigencalving, restrict); CHKERRQ(ierr);
       if (restrict == true && dt_from_eigencalving < dt) {
@@ -266,36 +267,36 @@ violations on that same fine grid. (FIXME: should we actually use the fine grid?
 Communication is needed to determine total CFL violation count over entire grid.
 It is handled by temperatureAgeStep(), not here.
 */
-PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
+PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
   PetscErrorCode  ierr;
 
-  const PetscScalar cflx = grid.dx / dt_TempAge,
+  const double cflx = grid.dx / dt_TempAge,
                     cfly = grid.dy / dt_TempAge;
 
-  PetscScalar *u, *v;
+  double *u, *v;
   IceModelVec3 *u3, *v3, *dummy;
   ierr = stress_balance->get_3d_velocity(u3, v3, dummy); CHKERRQ(ierr);
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt  fks = grid.kBelowHeight(vH(i,j));
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const int  fks = grid.kBelowHeight(ice_thickness(i,j));
 
       ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
       ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
 
       // check horizontal CFL conditions at each point
-      for (PetscInt k=0; k<=fks; k++) {
+      for (int k=0; k<=fks; k++) {
         if (PetscAbs(u[k]) > cflx)  *CFLviol += 1.0;
         if (PetscAbs(v[k]) > cfly)  *CFLviol += 1.0;
       }
     }
   }
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = u3->end_access();  CHKERRQ(ierr);
   ierr = v3->end_access();  CHKERRQ(ierr);
 

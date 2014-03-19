@@ -44,7 +44,6 @@
 #include "bedrockThermalUnit.hh"
 #include "flowlaw_factory.hh"
 #include "basal_resistance.hh"
-#include "PISMProf.hh"
 #include "pism_options.hh"
 #include "PISMIcebergRemover.hh"
 #include "PISMOceanKill.hh"
@@ -170,7 +169,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
     z_spacing_set, periodicity_set;
-  PetscReal x_scale = grid.Lx / 1000.0,
+  double x_scale = grid.Lx / 1000.0,
     y_scale = grid.Ly / 1000.0,
     z_scale = grid.Lz;
 
@@ -422,7 +421,7 @@ PetscErrorCode IceModel::grid_setup() {
     }
 
     bool procs_x_set, procs_y_set;
-    std::vector<PetscInt> tmp_x, tmp_y;
+    std::vector<int> tmp_x, tmp_y;
     ierr = PISMOptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
                                tmp_x, procs_x_set); CHKERRQ(ierr);
     ierr = PISMOptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
@@ -453,10 +452,10 @@ PetscErrorCode IceModel::grid_setup() {
       grid.procs_x.resize(grid.Nx);
       grid.procs_y.resize(grid.Ny);
 
-      for (PetscInt j=0; j < grid.Nx; j++)
+      for (int j=0; j < grid.Nx; j++)
         grid.procs_x[j] = tmp_x[j];
 
-      for (PetscInt j=0; j < grid.Ny; j++)
+      for (int j=0; j < grid.Ny; j++)
         grid.procs_y[j] = tmp_y[j];
     } else {
       grid.compute_ownership_ranges();
@@ -524,7 +523,7 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    PetscReal max_dt = 0;
+    double max_dt = 0;
     bool restrict = false;
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
@@ -551,9 +550,9 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = subglacial_hydrology->init(variables); CHKERRQ(ierr);
   }
 
-  // basal_yield_stress->init() needs bwat so this must happen after subglacial_hydrology->init()
-  if (basal_yield_stress) {
-    ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
+  // basal_yield_stress_model->init() needs bwat so this must happen after subglacial_hydrology->init()
+  if (basal_yield_stress_model) {
+    ierr = basal_yield_stress_model->init(variables); CHKERRQ(ierr);
   }
 
   if (climatic_mass_balance_cumulative.was_created()) {
@@ -674,10 +673,10 @@ PetscErrorCode IceModel::set_vars_from_options() {
   std::string filename;
 
   ierr = verbPrintf(3, grid.com,
-		    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
+                    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
 
   ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
-			   filename, boot_file_set); CHKERRQ(ierr);
+                           filename, boot_file_set); CHKERRQ(ierr);
 
   if (boot_file_set) {
     ierr = bootstrapFromFile(filename); CHKERRQ(ierr);
@@ -717,49 +716,48 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   if (stress_balance != NULL)
     return 0;
 
-  bool
-    use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_sia = config.get_flag("do_sia"),
-    do_stressbalance_constant = config.get_flag("do_stressbalance_constant");
+  std::string model = config.get_string("stress_balance_model");
 
-  // If both SIA and SSA are "on", the SIA and SSA velocities are always added
-  // up (there is no switch saying "do the hybrid").
-  if (stress_balance == NULL) {
-    ShallowStressBalance *my_stress_balance;
-    if (use_ssa_velocity) {
-      std::string ssa_method = config.get_string("ssa_method");
-      if(ssa_method == "fd") {
-        my_stress_balance = new SSAFD(grid, *basal, *EC, config);
-      } else if(ssa_method == "fem") {
-        my_stress_balance = new SSAFEM(grid, *basal, *EC, config);
-      } else {
-        SETERRQ(grid.com, 1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
-      }
+  ShallowStressBalance *sliding = NULL;
+  if (model == "none" || model == "sia") {
+    sliding = new ZeroSliding(grid, *EC, config);
+  } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
+    sliding = new PrescribedSliding(grid, *EC, config);
+  } else if (model == "ssa" || model == "ssa+sia") {
+    std::string method = config.get_string("ssa_method");
+
+    if (method == "fem") {
+      sliding = new SSAFEM(grid, *EC, config);
+    } else if (method == "fd") {
+      sliding = new SSAFD(grid, *EC, config);
     } else {
-      if (do_stressbalance_constant)
-        my_stress_balance = new SSB_Constant(grid, *basal, *EC, config);
-      else
-        my_stress_balance = new SSB_Trivial(grid, *basal, *EC, config);
+      SETERRQ(grid.com, 1, "invalid ssa method");
     }
-    SSB_Modifier *my_modifier;
-    if (do_sia) {
-      my_modifier = new SIAFD(grid, *EC, config);
-    } else {
-      my_modifier = new SSBM_Trivial(grid, *EC, config);
-    }
-    // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
-    stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                           my_modifier, config);
 
-    // PISM stress balance computations are diagnostic, i.e. do not
-    // have a state that changes in time.  Therefore this call can be here
-    // and not in model_state_setup().  We don't need to re-initialize after
-    // the "diagnostic time step".
-    ierr = stress_balance->init(variables); CHKERRQ(ierr);
+  } else {
+    SETERRQ(grid.com, 1, "invalid stress balance model");
+  }
 
-    if (config.get_flag("include_bmr_in_continuity")) {
-      ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
-    }
+  SSB_Modifier *modifier = NULL;
+  if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
+    modifier = new ConstantInColumn(grid, *EC, config);
+  } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
+    modifier = new SIAFD(grid, *EC, config);
+  } else {
+    SETERRQ(grid.com, 1, "invalid stress balance model");
+  }
+
+  // ~PISMStressBalance() will de-allocate sliding and modifier.
+  stress_balance = new PISMStressBalance(grid, sliding, modifier, config);
+
+  // PISM stress balance computations are diagnostic, i.e. do not
+  // have a state that changes in time.  Therefore this call can be here
+  // and not in model_state_setup().  We don't need to re-initialize after
+  // the "diagnostic time step".
+  ierr = stress_balance->init(variables); CHKERRQ(ierr);
+
+  if (config.get_flag("include_bmr_in_continuity")) {
+    ierr = stress_balance->set_basal_melt_rate(&basal_melt_rate); CHKERRQ(ierr);
   }
 
   return 0;
@@ -821,38 +819,25 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
 //! \brief Decide which basal yield stress model to use.
 PetscErrorCode IceModel::allocate_basal_yield_stress() {
 
-  if (basal_yield_stress != NULL)
+  if (basal_yield_stress_model != NULL)
     return 0;
 
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+  std::string model = config.get_string("stress_balance_model");
 
-  if (use_ssa_velocity) {
+  // only these two use the yield stress (so far):
+  if (model == "ssa" || model == "ssa+sia") {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress = new PISMConstantYieldStress(grid, config);
+      basal_yield_stress_model = new PISMConstantYieldStress(grid, config);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress = new PISMMohrCoulombYieldStress(grid, config, subglacial_hydrology);
+      basal_yield_stress_model = new PISMMohrCoulombYieldStress(grid, config, subglacial_hydrology);
     } else {
       PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
                   yield_stress_model.c_str());
       PISMEnd();
     }
   }
-
-  return 0;
-}
-
-//! \brief Decide which basal resistance law to use.
-PetscErrorCode IceModel::allocate_basal_resistance_law() {
-
-  if (basal != NULL)
-    return 0;
-
-  if (config.get_flag("do_pseudo_plastic_till") == true)
-    basal = new IceBasalResistancePseudoPlasticLaw(config);
-  else
-    basal = new IceBasalResistancePlasticLaw(config);
 
   return 0;
 }
@@ -882,9 +867,6 @@ PetscErrorCode IceModel::allocate_submodels() {
 
   ierr = allocate_iceberg_remover(); CHKERRQ(ierr);
 
-  // this has to happen before allocate_stressbalance() is called
-  ierr = allocate_basal_resistance_law(); CHKERRQ(ierr);
-
   ierr = allocate_stressbalance(); CHKERRQ(ierr);
 
   // this has to happen *after* allocate_stressbalance()
@@ -902,47 +884,6 @@ PetscErrorCode IceModel::allocate_submodels() {
   return 0;
 }
 
-/**
- * Attach an external PISMOceanModel instance to this IceModel.
- *
- * Call this *before* calling IceModel::init().
- *
- * IceModel will *not* de-allocate the pointer to the PISMOceanModel
- * instance passed in.
- *
- * @param input the model to attach
- *
- * @return 0
- */
-PetscErrorCode IceModel::attach_ocean_model(PISMOceanModel *input) {
-
-  assert(ocean == NULL);
-  external_ocean_model = true;
-  ocean = input;
-
-  return 0;
-}
-
-/**
- * Attach an external PISMSurfaceModel instance to this IceModel.
- *
- * Call this *before* calling IceModel::init().
- *
- * IceModel will *not* de-allocate the pointer to the PISMSurfaceModel
- * instance passed in.
- *
- * @param input the model to attach
- *
- * @return 0
- */
-PetscErrorCode IceModel::attach_surface_model(PISMSurfaceModel *input) {
-
-  assert(surface == NULL);
-  external_surface_model = true;
-  surface = input;
-
-  return 0;
-}
 
 PetscErrorCode IceModel::allocate_couplers() {
   PetscErrorCode ierr;
@@ -976,7 +917,7 @@ PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, grid.com,
-		    "Initializing boundary models...\n"); CHKERRQ(ierr);
+                    "Initializing boundary models...\n"); CHKERRQ(ierr);
 
   assert(surface != PETSC_NULL);
   ierr = surface->init(variables); CHKERRQ(ierr);
@@ -991,7 +932,7 @@ PetscErrorCode IceModel::init_couplers() {
 //! Allocates work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   // various internal quantities
   // 2d work vectors
@@ -1019,7 +960,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
-			 "medium", output_vars); CHKERRQ(ierr);
+                         "medium", output_vars); CHKERRQ(ierr);
 
   ierr = init_calving(); CHKERRQ(ierr);
   ierr = init_diagnostics(); CHKERRQ(ierr);
@@ -1029,31 +970,16 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
-  // Make sure that we use the output_variable_order that works with
-  // NetCDF-4 and "quilt". (For different reasons, but mainly because
+  // Make sure that we use the output_variable_order that works with NetCDF-4,
+  // "quilt", and HDF5 parallel I/O. (For different reasons, but mainly because
   // it is faster.)
   std::string o_format = config.get_string("output_format");
-  if ((o_format == "netcdf4_parallel" || o_format == "quilt") &&
+  if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       config.get_string("output_variable_order") != "xyz") {
     PetscPrintf(grid.com,
-                "PISM ERROR: output formats netcdf4_parallel and quilt require -o_order xyz.\n");
+                "PISM ERROR: output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.\n");
     PISMEnd();
   }
-
-  event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
-  event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
-
-  event_energy  = grid.profiler->create("energy",   "time spent inside energy time-stepping");
-  event_hydrology = grid.profiler->create("hydrology",   "time spent inside hydrology time-stepping");
-  event_age     = grid.profiler->create("age",      "time spent inside age time-stepping");
-  event_mass    = grid.profiler->create("masscont", "time spent inside mass continuity time-stepping");
-
-  event_beddef  = grid.profiler->create("bed_def",  "time spent updating the bed deformation model");
-
-  event_output    = grid.profiler->create("output", "time spent writing output files");
-  event_output_define = grid.profiler->create("output_define", "time spent defining variables");
-  event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
-  event_backups   = grid.profiler->create("backups", "time spent writing backups");
 
   return 0;
 }
@@ -1113,13 +1039,13 @@ PetscErrorCode IceModel::init_calving() {
   std::set<std::string>::iterator j = methods.begin();
   std::string unused;
   while (j != methods.end()) {
-    unused += *j;
+    unused += (*j + ",");
     ++j;
   }
 
   if (unused.empty() == false) {
     ierr = verbPrintf(2, grid.com,
-                      "PISM ERROR: calving method(s) %s are unknown and are ignored.\n",
+                      "PISM ERROR: calving method(s) [%s] are unknown and are ignored.\n",
                       unused.c_str()); CHKERRQ(ierr);
   }
 
@@ -1131,9 +1057,6 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   std::string model = config.get_string("bed_deformation_model");
   std::set<std::string> choices;
 
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_lc",  "-bed_def"); CHKERRQ(ierr);
-
   choices.insert("none");
   choices.insert("iso");
   choices.insert("lc");
@@ -1142,7 +1065,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   {
     bool dummy;
     ierr = PISMOptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
-			 choices, model, model, dummy); CHKERRQ(ierr);
+                         choices, model, model, dummy); CHKERRQ(ierr);
 
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);

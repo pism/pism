@@ -24,39 +24,48 @@
 
 class POGivenTH : public PGivenClimate<POModifier,PISMOceanModel>
 {
-
 public:
   POGivenTH(IceGrid &g, const PISMConfig &conf);
   virtual ~POGivenTH();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode sea_level_elevation(double &result);
 
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual PetscErrorCode calc_shelfbtemp_shelfbmassflux();
-
-  virtual PetscErrorCode btemp_bmelt_3eqn( PetscReal rhow, PetscReal rhoi,
-                                                        PetscReal sal_ocean, PetscReal temp_insitu, PetscReal zice,
-                                                        PetscReal &temp_base, PetscReal &meltrate);
-
-  virtual PetscErrorCode adiabatic_temperature_gradient(PetscReal salinity, PetscReal temp_insitu, PetscReal pressure, PetscReal &adlprt_out);
-  virtual PetscErrorCode potential_temperature(PetscReal salinity,PetscReal temp_insitu,PetscReal pressure,
-                                                    PetscReal reference_pressure, PetscReal& thetao);
-  virtual PetscErrorCode insitu_temperature(PetscReal salinity, PetscReal thetao,
-                                                 PetscReal pressure,PetscReal reference_pressure,
-                                                 PetscReal &temp_insitu_out);
-
-protected:
-  IceModelVec2T *shelfbtemp, *shelfbmassflux;
+  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
+private:
+  IceModelVec2S shelfbtemp, shelfbmassflux;
   IceModelVec2S *ice_thickness;
   IceModelVec2T *theta_ocean, *salinity_ocean;
 
-private:
+  PetscErrorCode calc_shelfbtemp_shelfbmassflux();
+
+  struct POGivenTHConstants {
+    double shelf_top_surface_temperature;
+    double water_latent_heat_fusion;
+    double sea_water_density;
+    double sea_water_specific_heat_capacity;
+    double ice_density;
+    double ice_specific_heat_capacity;
+  };
+
+  PetscErrorCode pointwise_calculation(const POGivenTHConstants &constants,
+                                       double sea_water_salinity,
+                                       double sea_water_potential_temperature,
+                                       double ice_thickness,
+                                       double *shelf_base_temperature_out,
+                                       double *shelf_base_melt_rate_out);
+
+  PetscErrorCode btemp_bmelt_3eqn(double rhow, double rhoi,
+                                  double sal_ocean, double thetao, double zice,
+                                  double &temp_base, double &meltrate);
+
   PetscErrorCode allocate_POGivenTH();
+
 };
 
 #endif /* _POGIVENTH_H_ */

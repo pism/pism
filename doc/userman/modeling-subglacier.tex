@@ -1,40 +1,43 @@
-
 \section{Modeling choices:  The subglacier}
 \label{sec:modeling-subglacier}
-
 
 \subsection{Controlling basal strength}  \label{subsect:basestrength}
 \optsection{Basal strength and sliding}
 
-When using option \texttt{-ssa_sliding}, the SIA+SSA hybrid model, a sub-model for basal resistance is required.  That is, a \emph{sliding law} must be chosen.  Table \ref{tab:basal-strength} describes the options that control how basal resistance is computed.
-
-In PISM the strength value is always a basal yield stress $\tau_c$ (=\texttt{tauc} in PISM output files).  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly-observed mixture of liquid water, ice, granular till, and bedrock bumps.  The yield stress concept also extends to the power law form, and thus most standard sliding laws can be chosen by user options (below).
-
-One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress.  Specifically, where \texttt{tauc} $<$ \texttt{taud_mag} you are likely to see sliding if option \texttt{ssa_sliding} is used.
-
-The value of $\tau_c$ is determined in part by a subglacial hydrology model, including the modeled till-pore water pressure \texttt{tillwat} (subsection \ref{subsect:subhydro}).  The value of $\tau_c$ is also determined in part by a stored basal material property $\phi=$\texttt{tillphi}, the ``till friction angle'' \cite{Paterson}.  These quantities combine in the Mohr-Coulomb criterion \cite[Chapter 8]{Paterson} to determine the basal yield stress:
-\begin{equation}
-   \tau_c = c_{0} + (\tan\phi)\,N_{til}.  \label{eq:mohrcoulomb}
-\end{equation}
-Here $c_0$ is called the ``till cohesion'', whose default value in PISM is zero \cite[formula (2.4)]{SchoofStream}.
-
-The effective pressure on the till $N_{til}$ is a modeled quantity determined by assuming a compressible saturated till.  In this compressible-till model the till effective pressure $N_{til}$ is a locally-computable function of the amount of water in the till $W_{til} =$ \texttt{tillwat} \cite{BuelervanPeltDRAFT}:
-\begin{equation}
-N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right)}  \label{eq:computeNtil}
-\end{equation}
-The following options control this local model:\begin{itemize}
-\item \texttt{-till_reference_void_ratio}$= e_0$, dimensionless, with default value 0.69 \cite{Tulaczyketal2000b},
-\item \texttt{-till_compressibility_coefficient} $= C_c$, dimensionless, with default value 0.12 \cite{Tulaczyketal2000b},
-\item \texttt{-till_effective_fraction_overburden}$= \delta$, dimensionless, with default value 0.01, and
-\item \texttt{-hydrology_tillwat_max}$= W_{til}^{max}$, with units of meters and default value 2 meters.
+When using option \intextoption{stress_balance ssa+sia}, the SIA+SSA hybrid stress balance, a model for basal resistance is required.  This model for basal resistance is based, at least conceptually, on the hypothesis that the ice sheet is underlain by a layer of till \cite{Clarke05}.  The user can control the parts of this model:\begin{itemize}
+\item the so-called sliding law, typically a power law, which relates the ice base (sliding) velocity to the basal shear stress, and which has a coefficient which is or has the units of a yield stress,
+\item the model relating the effective pressure on the till layer to the yield stress of that layer, and
+\item the model for relating the amount of water stored in the till to the effective pressure on the till.
 \end{itemize}
+This subsection explains the relevant options.
 
-Lower effective pressure means that more of the weight of the ice is carried by pressurized water and thus that the ice can slide more easily because the shear stress needed to slide is smaller.  The amount of water in the till is a nontrivial output of the hydrology and conservation-of-energy submodels in PISM.  The non-conserving hydrology model \texttt{-hydrology null} has been extensively used in modelling ice streaming \cite{BBssasliding,BKAJS,Winkelmannetal2011}, while many other possible combinations of basal strength models and hydrology models have not been extensively tested.
+The primary example of \texttt{-stress_balance ssa+sia} usage is in section \ref{sec:start} of this Manual, but the option is also used in sections \ref{subsect:MISMIP}, \ref{subsect:MISMIP3d}, \ref{sec:storglaciaren}, and \ref{sec:jako}.
 
-In any case the meaning of the yield stress is that the (vector) basal shear stress is at most the yield stress, and only once the shear stress reaches the yield value can there be sliding:
-\begin{equation*}
-   |\tau_b| \le \tau_c \quad \text{and} \quad \tau_b = \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0.
-\end{equation*}
+In PISM the key coefficient in the sliding is always denoted as yield stress $\tau_c$, which is \texttt{tauc} in PISM output files.  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly-observed mixture of pressurized liquid water, ice, granular till, and bedrock bumps.  The yield stress concept also extends to the power law form, and thus most standard sliding laws can be chosen by user options (below).  One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress (\texttt{taud_mag} in PISM output files).  Specifically, where $\text{\tt tauc} < \text{\tt taud_mag}$ you are likely to see sliding if option \texttt{-stress_balance ssa+sia} is used.
+
+A historical note on modeling basal sliding is in order.  Sliding can be added directly to a SIA stress balance model by making the sliding velocity a local function of the basal value of the driving stress.  Such an SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and in EISMINT II experiment H \cite{EISMINT00}, among other places.  This kind of sliding is \emph{not} recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress \cite{BBssasliding,Fowler01}.  Within PISM, for historical reasons, there is an implementation of SIA-based sliding only for verification test E; see section \ref{sec:verif}.  PISM does \emph{not} support this SIA-based sliding mode in other contexts.
+
+\subsubsection*{Choosing the sliding law}  In PISM the sliding law can be chosen to be a purely-plastic (Coulomb) model, namely,
+\begin{equation}
+   |\tau_b| \le \tau_c \quad \text{and} \quad \tau_b = \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0,
+\label{eq:plastic}
+\end{equation}
+which says that the (vector) basal shear stress $\tau_b$ is at most the yield stress $\tau_c$, and only when the shear stress reaches the yield value can there be sliding.  Alternatively, the sliding law can be chosen to be a power law,
+\begin{equation}
+\tau_b = \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}}.
+\label{eq:pseudoplastic}
+\end{equation}
+Condition \eqref{eq:plastic} is studied in \cite{SchoofStream} and \cite{SchoofTill} in particular.  Power laws for sliding are common across the glaciological literature (e.g.~see \cite{CuffeyPaterson,GreveBlatter2009}), but we explain here the specific form of equation \eqref{eq:pseudoplastic}, which allows the coefficient $\tau_c$ to have units of stress regardless of the power $q$.
+
+In both of the above equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic} we call $\tau_c$ the \emph{yield stress}.  We call the power law \eqref{eq:pseudoplastic} a ``pseudo-plastic'' law with power $q$ and threshold velocity $u_{\text{threshold}}$.  Note that at the threshold velocity the basal shear stress $\tau_b$ has exact magnitude $\tau_c$.  In equation \eqref{eq:pseudoplastic}, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The plastic model \eqref{eq:plastic} is the $q=0$ case of \eqref{eq:pseudoplastic}.
+
+See Table \ref{tab:sliding-power-law} for options controlling the choice of sliding law. The purely plastic case is the default; just use \texttt{-stress_balance ssa} \texttt{-stress_balance ssa+sia} to turn it on.
+
+\begin{quote}
+  \textbf{WARNING!} Options \texttt{-pseudo_plastic_q} and \texttt{-pseudo_plastic_uthreshold} have no effect if \texttt{-pseudo_plastic} is not set.
+\end{quote}
+
+In both equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic}, $\tau_c$ corresponds to the variable \texttt{tauc} in PISM output files.
 
 \begin{table}
   \centering
@@ -42,120 +45,132 @@ In any case the meaning of the yield stress is that the (vector) basal shear str
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{yield_stress constant} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.  Normally used in combination with \texttt{-tauc}. \\
-    \intextoption{pseudo_plastic} & enables the pseudo-plastic till model \\
-    \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
-    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
-    \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
-    \intextoption{pseudo_plastic_q} & Set the exponent $q$.\\
-    \txtopt{pseudo_plastic_uthreshold}{(m/a)} & Set $u_{\text{threshold}}$. The default is $100$ m/a.\\
-    \txtopt{topg_to_phi}{\emph{list of 4 numbers}} & Compute $\phi$ using equation \eqref{eq:2}.\\
-    \intextoption{tauc} &   Directly set the till yield stress $\tau_c$ in units of Pa.  Only effective if used with \texttt{-yield_stress constant}, because otherwise $\tau_c$ is updated dynamically.
-   \\ \bottomrule
+    \intextoption{pseudo_plastic} & Enables the pseudo-plastic power law model.  If this is not set the sliding law is purely-plastic, so \texttt{pseudo_plastic_q} and \texttt{pseudo_plastic_uthreshold} are inactive. \\
+    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of the plastic law, in the formula $\tau_b = \tau_c \mathbf{u}/\sqrt{|\mathbf{u}|^2 + \eps^2}$.  The default is $0.01$ m/a.  This parameter is inactive if \texttt{-pseudo_plastic} is set. \\
+    \intextoption{pseudo_plastic_q} & Set the exponent $q$ in \eqref{eq:pseudoplastic}.  The default is $0.25$. \\
+    \txtopt{pseudo_plastic_uthreshold}{(m/a)} & Set $u_{\text{threshold}}$ in \eqref{eq:pseudoplastic}.  The default is $100$ m/a.\\ \bottomrule
   \end{tabular}
-\caption{Basal strength command-line options}
-\label{tab:basal-strength}
+\caption{Sliding law command-line options}
+\label{tab:sliding-power-law}
 \end{table}
 
-As noted, the yield stress $\tau_c$ can also be part of a power law model, a ``pseudo-plastic'' law.  Here stress is a power of basal sliding velocity $\mathbf{u}$, but in a form where the coefficient has units of stress:
-\begin{equation}
-\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.
-\label{eq:pseudopower}
-\end{equation}
-The plastic law is the case $q=0$.  Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.
-
-\begin{quote}
-  \textbf{WARNING!} Options \texttt{-pseudo_plastic_q} and \texttt{-pseudo_plastic_uthreshold} have no effect if \texttt{-pseudo_plastic} is not set.
-\end{quote}
-
-The purely plastic case is the default; just use \texttt{-ssa_sliding} to turn it on.  Options \texttt{-yield_stress constant} and \texttt{-tauc} can be used to fix the yield stress in time and possibly space.  On the other hand the normal modeling case is where variations in yield stress, both in time and space, are part of the explanation of the locations of ice streams \cite{SchoofStream}.
-
-Equation \eqref{eq:pseudopower} is a very flexible power law form.  For example, the linear case is $q=1$, in which case if $\beta=\tau_c/u_{\text{threshold}}$ then the law is of the form
-    $$\tau_b = \beta \mathbf{u}$$
-(The ``$\beta$'' coefficient is also called $\beta^2$ in some sources \cite[for example]{MacAyeal}.)  If you want such a linear sliding law, and you have a value $\beta=$\texttt{beta} in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then you can use this option combination:
+Equation \eqref{eq:pseudoplastic} is a very flexible power law form.  For example, the linear case is $q=1$, in which case if $\beta=\tau_c/u_{\text{threshold}}$ then the law is of the form
+\begin{equation*}
+  \tau_b = \beta \mathbf{u}  
+\end{equation*}
+(The ``$\beta$'' coefficient is also called $\beta^2$ in some sources \cite[for example]{MacAyeal}.)  If you want such a linear sliding law, and you have a value $\beta=$\texttt{beta} in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then use this option combination:
 \begin{verbatim}
 -pseudo_plastic -pseudo_plastic_q 1.0 -pseudo_plastic_uthreshold 3.1556926e7 \
   -yield_stress constant -tauc beta
 \end{verbatim}
-\noindent (You are setting $u_{\text{threshold}}$ to 1 $\text{m}\,\text{s}^{-1}$ but using units $\text{m}\,\text{a}^{-1}$.)  More generally, it is common in the literature to see power-law sliding relations in the form
-    $$\tau_b = C |\mathbf{u}|^{m-1} \mathbf{u},$$
-as, for example, in section \ref{subsect:MISMIP}.  In that case, use this option combination:
+\noindent This sets $u_{\text{threshold}}$ to 1 $\text{m}\,\text{s}^{-1}$ but using units $\text{m}\,\text{a}^{-1}$.
+
+More generally, it is common in the literature to see power-law sliding relations in the form
+\begin{equation*}
+  \tau_b = C |\mathbf{u}|^{m-1} \mathbf{u},
+\end{equation*}
+where $C$ is a constant, as for example in sections \ref{subsect:MISMIP} and \ref{subsect:MISMIP3d}.  In that case, use this option combination:
 \begin{verbatim}
 -pseudo_plastic -pseudo_plastic_q m -pseudo_plastic_uthreshold 3.1556926e7 \
   -yield_stress constant -tauc C
 \end{verbatim}
 
-Recall the Mohr-Coulomb equation \eqref{eq:mohrcoulomb} which determines the yield stress $\tau_c$ from the till friction angle $\phi=$\texttt{tillphi} among other factors.  We find that an effective, though heuristic, way to determine \texttt{tillphi} is to make it a function of bed elevation \cite{Winkelmannetal2011}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.  PISM has a mechanism setting $\phi$=\texttt{tillphi} to be a \emph{piecewise-linear} function of bed elevation.  The option is
+\subsubsection*{Determining the yield stress}
+
+Other than setting it to a constant in some special cases, the above discussion does not determine the yield stress $\tau_c$.  As shown in Table \ref{tab:yieldstress}, there are two schemes for determining $\tau_c$:
+\begin{itemize}
+\item \texttt{-yield_stress mohr_coulomb} (the default) determines the yields stress by models of a till material property (the till friction angle) and a model of the effective pressure on the saturated till.
+\item \texttt{-yield_stress constant} requires the yield stress to be supplied as time-independent data, or set to a time- and space-independent constant by a run-time option, while
+\end{itemize}
+
+In particular, option combination \texttt{-yield_stress constant -tauc X} can be used to fix the yield stress to have value $\tau_c=$\texttt{X} at all grounded locations and all times if desired, but note this is not necessarily a good modelling choice.
+
+In normal modelling cases, variations in yield stress are part of the explanation of the locations of ice streams \cite{SchoofStream}.  The default model \texttt{-yield_stress mohr_coulomb} determines these variations in time and space.  The value of $\tau_c$ is determined in part by a subglacial hydrology model, including the modeled till-pore water amount \texttt{tillwat} (subsection \ref{subsect:subhydro}), which then determines the effective pressure $N_{til}$ (see below).  The value of $\tau_c$ is also determined in part by a material property field $\phi=$\texttt{tillphi}, the ``till friction angle''.  These quantities are related by the Mohr-Coulomb criterion \cite{CuffeyPaterson}:
+\begin{equation}
+   \tau_c = c_{0} + (\tan\phi)\,N_{til}.  \label{eq:mohrcoulomb}
+\end{equation}
+Here $c_0$ is called the ``till cohesion'', whose default value in PISM is zero \cite[formula (2.4)]{SchoofStream} but which can be set by option \intextoption{till_c_0}.
+
+\begin{table}
+  \centering
+ \begin{tabular}{lp{0.6\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{yield_stress mohr_coulomb} &   The default.  Use equation \eqref{eq:mohrcoulomb} to determine $\tau_c$.  Only effective if \texttt{-stress_balance ssa} or \texttt{-stress_balance ssa+sia} is also set. \\
+    \intextoption{till_c_0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
+   \intextoption{tauc_slippery_grounding_lines} & If set, reduces the basal yield stress at grounded-below-sea-level grid points one cell away from floating ice or ocean.  Specifically, it replaces the normally-computed $\tau_c$ from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of $\tau_c$ from Mohr-Coulomb, i.e.~using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the reported amount of till water, nor does this mechanism affect water conservation. \\
+    \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
+    \txtopt{topg_to_phi}{\emph{list of 4 numbers}} & Compute $\phi$ using equation \eqref{eq:phipiecewise}.\\ \midrule
+    \intextoption{yield_stress constant} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-stress_balance ssa} or \texttt{-stress_balance ssa+sia} is also set. \\
+    \intextoption{tauc} &   Directly set the till yield stress $\tau_c$, in units Pa, at all grounded locations and all times.  Only effective if used with \texttt{-yield_stress constant}, because otherwise $\tau_c$ is updated dynamically. \\ \bottomrule
+  \end{tabular}
+\caption{Command-line options controlling how yield stress is determined.}
+\label{tab:yieldstress}
+\end{table}
+
+We find that an effective, though heuristic, way to determine $\phi=$\texttt{tillphi} is to make it a function of bed elevation \cite{AschwandenAdalgeirsdottirKhroulev,Martinetal2011,Winkelmannetal2011}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.  PISM has a mechanism setting $\phi$=\texttt{tillphi} to be a \emph{piecewise-linear} function of bed elevation.  The option is
 \begin{verbatim}
 -topg_to_phi phimin,phimax,bmin,bmax
 \end{verbatim}
-Thus the user supplies 4 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$, where $b$ stands for the bed elevation.  To explain these, we define the rate $M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})$.  Then
+\newcommand{\phimin}{\phi_{\mathrm{min}}}
+\newcommand{\phimax}{\phi_{\mathrm{max}}}
+\newcommand{\bmin}{b_{\mathrm{min}}}
+\newcommand{\bmax}{b_{\mathrm{max}}}
+Thus the user supplies 4 parameters: $\phimin$, $\phimax$, $\bmin$, $\bmax$, where $b$ stands for the bed elevation.  To explain these, we define $M = (\phimax - \phimin) / (\bmax - \bmin)$.  Then
 \begin{equation}
-  \phi(x,y) = \begin{cases}
-    \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
-    \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
-    &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
-    \phi_{\text{max}}, & b_{\text{max}} \le b(x,y). \end{cases}\label{eq:2}
+  \phi(x,y) =
+  \begin{cases}
+    \phimin, & b(x,y) \le \bmin, \\
+    \phimin + (b(x,y) - \bmin) \,M, & \bmin < b(x,y) < \bmax, \\
+    \phimax, & \bmax \le b(x,y).
+  \end{cases}
+  \label{eq:phipiecewise}
 \end{equation}
 
-See the \emph{PISM Source Code browser}, source files in \texttt{src/base/basalstrength}, and \cite{BBssasliding,BKAJS,Martinetal2011,Winkelmannetal2011} for more details on how basal resistance is computed, and how it affects ice dynamics.
-
-\begin{quote}
-  It is worth noting that an earth deformation model (see section
-  \ref{subsect:beddef}) changes $b(x,y)$ used in (\ref{eq:2}), so a sequence of
-  runs such as
+It is worth noting that an earth deformation model (see section \ref{subsect:beddef}) changes $b(x,y)=$ used in \eqref{eq:phipiecewise}, so that a sequence of runs such as
 \begin{verbatim}
-pismr -i foo.nc -bed_def lc -ssa_sliding -topg_to_phi 10,30,-50,0 ... -o bar.nc
-pismr -i bar.nc -bed_def lc -ssa_sliding -topg_to_phi 10,30,-50,0 ... -o baz.nc
+pismr -i foo.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o bar.nc
+pismr -i bar.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o baz.nc
 \end{verbatim}
-  will use \emph{different} \texttt{tillphi} fields in the first and second
-  runs. PISM will print a warning during initialization of the second run:
+will use \emph{different} \texttt{tillphi} fields in the first and second runs.  PISM will print a warning during initialization of the second run:
 \begin{verbatim}
 * Initializing the default basal yield stress model...
   option -topg_to_phi seen; creating tillphi map from bed elev ...
 PISM WARNING: -topg_to_phi computation will override the 'tillphi' field
               present in the input file 'bar.nc'!
 \end{verbatim}
-  Omitting the \texttt{-topg_to_phi} option will make PISM continue the first
-  run above with the same \texttt{tillphi} field.
-\end{quote}
+Omitting the \texttt{-topg_to_phi} option in the second run would make PISM continue with the same \texttt{tillphi} field which was set in the first run.
 
-The major example of \texttt{-ssa_sliding} usage is in the first section of this manual.  A simpler artificial example, in which sliding happens in the ``trough'', is
-\begin{verbatim}
-pisms -eisII I -ssa_sliding -Mx 91 -My 91 -Mz 51 \
-      -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
-\end{verbatim}
+\subsection*{Determining the effective pressure}  When using the default option \texttt{-yield_stress mohr_coulomb}, the effective pressure on the till $N_{til}$ is determined by the modeled amount of water in the till.  Lower effective pressure means that more of the weight of the ice is carried by the pressurized water in the till and thus the ice can slide more easily.  That is, equation \eqref{eq:mohrcoulomb} sets the value of $\tau_c$ proportionately to $N_{til}$.  The amount of water in the till is, however, a nontrivial output of the hydrology (subsection \ref{subsect:subhydro}) and conservation-of-energy (section \ref{subsect:energy}) submodels in PISM.
 
-A final note on basal sliding is in order.  Sliding in the SIA stress balance model has been proposed, where the velocity of sliding is a local function of the driving stress at the base.  Such a SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and other places.  This kind of sliding is \emph{not} recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress.  Within PISM, for historical reasons, there is an implementation of SIA-based sliding for verification test E; see \texttt{SIA_Sliding.cc}.  PISM does \emph{not} support this sliding mode in other contexts without modifications of the source code.
+Following \cite{Tulaczyketal2000}, based on laboratory experiments with till extracted from an ice stream in Antarctica, we use the following parameterization:
+\begin{equation}
+N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right)}  \label{eq:computeNtil}
+\end{equation}
+Here $P_o$ is the ice overburden pressure which is determined entirely by the ice thickness and density, $W_{til}=$ \texttt{tillwat} is the effective thickness of water in the till, $W_{til}^{max}$ is the maximum amount of water in the till (see subsection \ref{subsect:subhydro}), and the remaining parameters are set by options in Table \ref{tab:effective-pressure}.
+
+\begin{table}
+  \centering
+ \begin{tabular}{lp{0.6\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{till_reference_void_ratio} & $= e_0$ in \eqref{eq:computeNtil}, dimensionless, with default value 0.69 \cite{Tulaczyketal2000} \\
+    \intextoption{till_compressibility_coefficient} & $= C_c$ in \eqref{eq:computeNtil}, dimensionless, with default value 0.12 \cite{Tulaczyketal2000} \\
+    \intextoption{till_effective_fraction_overburden} & $= \delta$ in \eqref{eq:computeNtil}, dimensionless, with default value 0.01 \\ \bottomrule
+  \end{tabular}
+\caption{Command-line options controlling how till effective pressure $N_{til}$ in equation \eqref{eq:mohrcoulomb} is determined.}
+\label{tab:effective-pressure}
+\end{table}
 
 
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
 \optsection{Subglacial hydrology}
 
-At the present time, only simple subglacial hydrology models are implemented and documented in PISM.  At the most basic level, the energy conservation calculation generates basal melt.  According to the hydrology model, some of that water is stored locally in a layer of modeled till under the ice sheet.  That till is a key part of the model for sliding and ice streams \cite{Clarke05,SchoofTill,SchoofStream}.  In one documented model, water can be transported horizontally down the gradient of the modeled hydraulic potential.
+At the present time, two simple subglacial hydrology models are implemented and documented in PISM, namely \texttt{-hydrology null} and \texttt{-hydrology routing}.  The water source for both of these models is the energy conservation model which computes the basal melt rate \texttt{bmelt}, but see also option \texttt{-input_to_bed_file} (Table \ref{tab:hydrology}) for a mechanism to add water directly into the subglacial layer.  Some of the water put into the subglacial layer is stored locally in a layer of subglacial till by the hydrology model.  Depending on the hydrology model, some water is transported horizontally according to the gradient of the modeled hydraulic potential.
 
-Table \ref{tab:hydrology} documents subglacial hydrology model choices, and options for controlling them.
-
-In the default model (\intextoption{hydrology} \texttt{null}) the water is \emph{not} conserved but it is stored locally in the till up to a specified amount \cite{BBssasliding}; option \intextoption{hydrology_tillwat_max} controls that amount.  The water is not conserved in the sense that water above the \texttt{tillwat_max} level is lost permanently.
-
-In the other documented model (\texttt{-hydrology routing}) the water \emph{is} conserved in the map-plane.  Some water still gets put into the till, with the same maximum, but excess water is horizontally-transported.  It will flow in the direction of the negative of the gradient of the modeled hydraulic potential.  In the \texttt{routing} model the potential is calculated by assuming that the transportable subglacial water is at the overburden pressure \cite{Siegertetal2009}, an assumption which does not relate to the modeled effective pressure on the till.  Ultimately the transportable water will reach the ice sheet grounding line or ice-free-land margin, at which point it will be lost.  The amount that is lost this way is reported to the user.
-
-In either model, a state (i.e.~input and output) variable \texttt{tillwat} is the effective thickness of the layer of liquid water in the till.  This layer of water relates to the basal boundary condition of the stress balance scheme, that is, it is used in computing the till yield stress $\tau_c$=\texttt{tauc}; see the previous subsection.  An additional state variable \texttt{bwat} is used by the \intextoption{hydrology} \texttt{routing} model.  It is the effective thickness of the layer of transportable water.
-
-Several parameters are used in determining how water flows in the \texttt{routing} model.  Specifically, the horizontal subglacial water flux is determined by a generalized Darcy flux relation \cite{Clarke05,Schoofetal2012}
-\begin{equation}  \label{eq:flux}
-\bq = - k\, W^\alpha\, |\grad \psi|^{\beta-2} \grad \psi
-\end{equation}
-where $\bq$ is the lateral water flux, $W$(= bwat) is the effective thickness of the layer of transportable water, $\psi$ is the hydraulic potential, and $k$, $\alpha$, $\beta$ are controllable parameters (Table \ref{tab:hydrology}).  As noted, in the \texttt{routing} model the hydraulic potential is determined by the ice overburden pressure, so that $\psi = \rho_i g H + \rho_w g (b + W)$ where $g$ is gravity, $\rho_i$ is ice density, $\rho_w$ is fresh water density, $H$ is ice thickness, and $b$ is the local bedrock elevation.
-
-For most choices of the relevant parameters and most grid spacings, the \texttt{routing} model is at least two orders of magnitude more expensive computationally than is the \texttt{null} model.  This follows directly from the CFL-type time-step restriction on lateral flow of a fluid with velocity on the order of centimeters to meters per second  (subglacial liquid water) compared to the much slower velocity of the flowing ice above.  Therefore the user should start with short runs of order a few model years, use option \intextoption{report_mass_accounting} to see the time-stepping behavior at \texttt{stdout}, and use \texttt{daily} or even \texttt{hourly} reporting for scalar and spatially-distributed time-series to see hydrology model behavior.
- 
-% FIXME   the transfer mechanism  W_til <--> W is not documented; controlled by options
-% hydrology_tillwat_rate, hydrology_tillwat_transfer_proportion
-
-% FIXME  -hydrology distributed is not documented; controlled by options
-% hydrology_roughness_scale, hydrology_cavitation_opening_coefficient,
-% hydrology_creep_closure_coefficient, hydrology_regularizing_porosity
+In both hydrology models a state variable \texttt{tillwat} records the effective thickness of the layer of liquid water in the till, and it is used to compute the effective pressure on the till (see the previous subsection).  The pressure of the transportable water \texttt{bwat} in the \texttt{routing} model does not relate directly to the effective pressure on the till.
 
 \begin{table}
   \centering
@@ -163,53 +178,110 @@ For most choices of the relevant parameters and most grid spacings, the \texttt{
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{hydrology} [\texttt{null}$\big|$\texttt{routing}] & Choose subglacial hydrology model. \\
-%    \intextoption{hydrology} & Choose one of \texttt{null}, \texttt{routing}, \texttt{distributed}. \\
-    \txtopt{hydrology_hydraulic_conductivity}{$k$} &  Applies to \texttt{-hydrology routing}; $=k$ in formula \eqref{eq:flux}.  \\
-    \txtopt{hydrology_null_strip}{(km)} &  Applies to \texttt{-hydrology routing}.  In the boundary strip water is removed and this is reported.  This option simply specifies the width of this strip, which should typically be one or two grid cells. \\
-    \txtopt{hydrology_gradient_power_in_flux}{$\beta$} &  Applies to \texttt{-hydrology routing}; power $\beta$ in formula \eqref{eq:flux}.  \\
     \txtopt{hydrology_tillwat_max}{(m)} & Maximum effective thickness for water stored in till. \\
-    \small\txtopt{hydrology_tillwat_decay_rate_null}{(m/a)}\normalsize &  Applies only to \texttt{-hydrology null}.  Water stored in till accumulates at the computed basal melt rate minus this rate. \\
-    \txtopt{hydrology_thickness_power_in_flux}{$\alpha$} &  Applies to \texttt{-hydrology routing}; power $\alpha$ in formula \eqref{eq:flux}.  \\
-    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy computed basal melt rate with a constant.  Use option \intextoption{hydrology_const_bmelt} to specify the rate (as water thickness per time). \\
-%    \intextoption{init_P_from_steady}  & Only applies to \texttt{-hydrology distributed}. \\
-    \intextoption{input_to_bed_file} & Option \texttt{-input_to_bed_file foo.nc} specifies that file \texttt{foo.nc} contains time-dependent field \texttt{inputtobed} which has units of water thickness per time.  Additional options \intextoption{input_to_bed_period} and \intextoption{input_to_bed_reference_year} allow additional control. \\
-    \intextoption{report_mass_accounting} &  At each major model time-step the amount of subglacial water lost to ice-free land, to the ocean, and into the ``null strip'' is reported. \\
+    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy computed basal melt rate \texttt{bmelt} with a constant. \\
+    \txtopt{hydrology_const_bmelt}{(m/a)} & If \texttt{-hydrology_use_const_bmelt} is set then use this to set the constant the rate (as water thickness per time). \\
+    \fileopt{input_to_bed_file} & Specifies a NetCDF file which contains a time-dependent field \texttt{inputtobed} which has units of water thickness per time.  This rate is added to the \texttt{bmelt} rate. \\
+% FIXME: leave undocumented?    \txtopt{input_to_bed_period}{(a)} & The period, in years, of \texttt{-input_to_bed_file} data. \\
+% FIXME: leave undocumented?    \txtopt{input_to_bed_reference_year}{(a)} & The reference year for periodizing the \texttt{-input_to_bed_file} data. \\
     \bottomrule
   \end{tabular}
-\caption{Subglacial hydrology command-line options}
+\caption{Subglacial hydrology command-line options for all hydrology models.}
 \label{tab:hydrology}
 \end{table}
+
+\subsubsection*{The default model \texttt{-hydrology null} model}  In this model the water is \emph{not} conserved but it is stored locally in the till up to a specified amount; option \intextoption{hydrology_tillwat_max} sets that amount.  The water is not conserved in the sense that water above the \texttt{hydrology_tillwat_max} level is lost permanently.  This model is based on the ``undrained plastic bed'' concept of \cite{Tulaczyketal2000b}; see also \cite{BBssasliding}.  See Table \ref{tab:hydrologynull}.
+
+This non-conserving \texttt{-hydrology null} model has been extensively used, in combination with the Mohr-Coulomb till described in subsection \ref{subsect:basestrength} above, in modelling ice streaming \cite[among others]{AschwandenAdalgeirsdottirKhroulev,BBssasliding}.  Many other combinations of the basal strength models and hydrology models in PISM have not been significantly tested.
+
+\begin{table}
+  \centering
+ \begin{tabular}{lp{0.55\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{hydrology null} & The default model.  Not mass conserving in the map-plane but much faster than \texttt{-hydrology routing}.  Based on ``undrained plastic bed'' model of \cite{Tulaczyketal2000b}. \\
+    \small\txtopt{hydrology_tillwat_decay_rate_null}{(m/a)}\normalsize &  Applies only to \texttt{-hydrology null}.  Water stored in till accumulates at the computed basal melt rate minus this rate. \\    \bottomrule
+  \end{tabular}
+\caption{Subglacial hydrology command-line options for the \texttt{-hydrology null} model}
+\label{tab:hydrologynull}
+\end{table}
+
+\subsubsection*{The mass-conserving \texttt{-hydrology routing} model}  In this model the water \emph{is} conserved in the map-plane.  Some water still gets put into the till, with the same maximum value \texttt{hydrology_tillwat_max}, but excess water is horizontally-transported.  An additional state variable \texttt{bwat} is used by \texttt{routing} for the effective thickness of the layer of transportable water.  This transportable water will flow in the direction of the negative of the gradient of the modeled hydraulic potential.  In the \texttt{routing} model this potential is calculated by assuming that the transportable subglacial water is at the overburden pressure \cite{Siegertetal2009}.  Ultimately the transportable water will reach the ice sheet grounding line or ice-free-land margin, at which point it will be lost.  The amount that is lost this way is reported to the user.
+
+In this model there is an additional equation for transfer of water between the till (\texttt{tillwat}) and the transport system (\texttt{bwat}).  This transfer is governed by the differential equation
+\begin{equation}  \label{eq:hydrologytransfer}
+  \frac{\partial W_{til}}{\partial t} = \mu \left(\min\left\{\omega W,W_{til}^{max}\right\} - W_{til}\right)
+\end{equation}
+where $W_{til}=$ \texttt{tillwat} is the effective thickness of water in the till, $W=$ \texttt{bwat} is the effective thickness of water in the transport system, $\mu$ is the rate coefficient for the transfer, and $\omega$ is the proportion of $W$ that $W_{til}$ tends toward.  At all times $0 \le W_{til} \le W_{til}^{max}$ in this model.  Table \ref{tab:hydrologyrouting} describes how these parameters are set.
+
+Several parameters are used in determining how water flows in the \texttt{routing} model.  Specifically, the horizontal subglacial water flux is determined by a generalized Darcy flux relation \cite{Clarke05,Schoofetal2012}
+\begin{equation}  \label{eq:flux}
+\bq = - k\, W^\alpha\, |\grad \psi|^{\beta-2} \grad \psi
+\end{equation}
+where $\bq$ is the lateral water flux, $W=$ \texttt{bwat} is the effective thickness of the layer of transportable water, $\psi$ is the hydraulic potential, and $k$, $\alpha$, $\beta$ are controllable parameters (Table \ref{tab:hydrologyrouting}).
+
+In the \texttt{routing} model the hydraulic potential $\psi$ is determined by
+\begin{equation}
+\psi = P_o + \rho_w g (b + W)  \label{eq:hydraulicpotential}
+\end{equation}
+where $P_o=\rho_i g H$ is the ice overburden pressure, $g$ is gravity, $\rho_i$ is ice density, $\rho_w$ is fresh water density, $H$ is ice thickness, and $b$ is the bedrock elevation.
+
+For most choices of the relevant parameters and most grid spacings, the \texttt{routing} model is at least two orders of magnitude more expensive computationally than is the \texttt{null} model.  This follows directly from the CFL-type time-step restriction on lateral flow of a fluid with velocity on the order of centimeters to meters per second (i.e.~the subglacial liquid water \texttt{bwat}) compared to the much slower velocity of the flowing ice above.  Therefore the user should start with short runs of order a few model years, use option \intextoption{report_mass_accounting} to see the time-stepping behavior at \texttt{stdout}, and use \texttt{daily} or even \texttt{hourly} reporting for scalar and spatially-distributed time-series to see hydrology model behavior.
+
+\begin{table}
+  \centering
+ \begin{tabular}{lp{0.55\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{hydrology routing} & Choose the mass-conserving horizontal transport model in which the pressure of transportable water is equal to overburden pressure. \\
+    \txtopt{hydrology_hydraulic_conductivity}{$k$} &  $=k$ in formula \eqref{eq:flux}.  \\
+    \txtopt{hydrology_null_strip}{(km)} &  In the boundary strip water is removed and this is reported.  This option simply specifies the width of this strip, which should typically be one or two grid cells. \\
+    \txtopt{hydrology_gradient_power_in_flux}{$\beta$} &  $=\beta$ in formula \eqref{eq:flux}.  \\
+    \txtopt{hydrology_thickness_power_in_flux}{$\alpha$} &  $=\alpha$ in formula \eqref{eq:flux}.  \\
+    \intextoption{report_mass_accounting} &  At each major model time-step the amount of subglacial water lost to ice-free land, to the ocean, and into the ``null strip'' is reported. \\
+    \txtopt{hydrology_tillwat_rate}{($\text{s}^{-1}$)} & $=\mu$ in equation \eqref{eq:hydrologytransfer}.  Rate coefficient for $W \leftrightarrow W_{til}$ transfer mechanism.  Defaults to $10^{-6} \text{s}^{-1}$. \\
+    \intextoption{hydrology_tillwat_transfer_proportion} & $=\omega$ in equation \eqref{eq:hydrologytransfer}; dimensionless.  In $W \leftrightarrow W_{til}$ transfer mechanism, $W_{til}$ will be comparable to this multiple of $W$.  Defaults to $100$. \\    \bottomrule
+  \end{tabular}
+\caption{Command-line options specific to hydrology model \texttt{routing}.}
+\label{tab:hydrologyrouting}
+\end{table}
+
+% FIXME  -hydrology distributed is not documented; controlled by options
+% hydrology_roughness_scale, hydrology_cavitation_opening_coefficient,
+% hydrology_creep_closure_coefficient, hydrology_regularizing_porosity
+%    \intextoption{init_P_from_steady}  & Only applies to \texttt{-hydrology distributed}. \\
 
 
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}
 
-The option \txtopt{bed_def}{[none, iso, lc]} turns on bed deformation models.
+The option \txtopt{bed_def}{[\texttt{iso, lc}]} turns one of the two available bed deformation models.
 
 The first model \texttt{-bed_def iso}, is instantaneous pointwise isostasy.  This model assumes that the bed at the starting time is in equilibrium with the load.  Then, as the ice geometry evolves, the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle, so its value is determined by setting the values of \texttt{lithosphere_density} and \texttt{ice_density} in the configuration file; see subsection \ref{sec:pism-defaults}.  For an example and verification, see Test H in Verification section. 
 
-The second model \texttt{-bed_def lc} is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It imposes  essentially no computational burden because the Fast Fourier Transform is used to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and if that uplift field is put in a NetCDF variable with standard name \texttt{tendency_of_bedrock_altitude} in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
+The second model \texttt{-bed_def lc} is much more physical.  It is based on papers by Lingle and Clark \cite{LingleClark} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It imposes  essentially no computational burden because the Fast Fourier Transform is used to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and if that uplift field is put in a NetCDF variable with standard name \texttt{tendency_of_bedrock_altitude} in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
 
-Minimal example runs to compare these models:
+Here are minimal example runs to compare these models:
 \begin{verbatim}
 $ mpiexec -n 4 pisms -eisII A -y 8000 -o eisIIA_nobd.nc
 $ mpiexec -n 4 pisms -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
 $ mpiexec -n 4 pisms -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 \end{verbatim}
-Compare the \texttt{topg}, \texttt{usurf}, and \texttt{dbdt} variables in the resulting output files.
-
-Test H in section \ref{sec:verif} can be used to reproduce the comparison done in \cite{BLKfastearth}.
+Compare the \texttt{topg}, \texttt{usurf}, and \texttt{dbdt} variables in the resulting output files.  See also the comparison done in \cite{BLKfastearth}.
 
 
 \subsection{Parameterization of bed roughness in the SIA} \label{subsect:bedsmooth} \index{Parameterization of bed roughness}
 \optsection{Parameterization of bed roughness}
 
-Schoof \cite{Schoofbasaltopg2003} describes how to alter the SIA stress balance to model ice flow over significant subglacial bedrock topgraphy.  One uses a smoothed (spatially-averaged) bed, but one also lowers the SIA diffusivity, in a precise way, related to how much the topography was smoothed-away.  As a practical matter for PISM, this theory improves the SIA's ability to handle bed roughness because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography.  There is also a mild performance boost because of the reduction of diffusivity.  For additional technical description of PISM's implementation, see the \emph{Browser} page ``Using Schoof's (2003) parameterized bed roughness technique in PISM''.
+Schoof \cite{Schoofbasaltopg2003} describes how to alter the SIA stress balance to model ice flow over bumpy bedrock topgraphy.  One computes the amount by which bumpy topography lowers the SIA diffusivity.  An internal quantity used in this method is a smoothed version of the bedrock topography.  As a practical matter for PISM, this theory improves the SIA's ability to handle bed roughness because it parameterizes the effects of ``higher-order'' stresses which act on the ice as it flows over bumps.  For additional technical description of PISM's implementation, see the \emph{Browser} page ``Using Schoof's (2003) parameterized bed roughness technique in PISM''.
 
-There is only one associated option: \intextoption{bed_smoother_range} gives the half-width of the square smoothing domain in meters.  If zero is given, \texttt{-bed_smoother_range 0} then the mechanism is turned off.  The mechanism is on by default using executable \texttt{pismr}, with the half-width set to 5 km (\texttt{-bed_smoother_range 5.0e3}), giving the recommended smoothing size of 10 km \cite{Schoofbasaltopg2003}.  This mechanism is turned off by default in executables \texttt{pisms} and \texttt{pismv}.
+This parameterization is ``on'' by default when using \texttt{pismr}.  There is only one associated option: \intextoption{bed_smoother_range} gives the half-width of the square smoothing domain in meters.  If zero is given, \texttt{-bed_smoother_range 0} then the mechanism is turned off.  The mechanism is on by default using executable \texttt{pismr}, with the half-width set to 5 km (\texttt{-bed_smoother_range 5.0e3}), giving Schoof's recommended smoothing size of 10 km \cite{Schoofbasaltopg2003}.
 
-PISM writes fields \texttt{topgsmooth}, \texttt{schoofs_theta}, \texttt{thksmooth} from this mechanism.  (Regarding the last, the thickness is never actually smoothed.  However, the thickness relative to the smoothed bedrock elevation, i.e.~the difference between the unsmoothed surface elevation and the smoothed bedrock elevation, is used internally in the mechanism.)
+This mechanism is turned off by default in executables \texttt{pisms} and \texttt{pismv}.
+
+Under the default setting \texttt{-o_size medium}, PISM writes fields \texttt{topgsmooth} and \texttt{schoofs_theta} from this mechanism.  The thickness relative to the smoothed bedrock elevation, namely \texttt{topgsmooth}, is the difference between the unsmoothed surface elevation and the smoothed bedrock elevation.  It is \emph{only used internally by this mechanism}, to compute a modified value of the diffusivity; the rest of PISM does not use this or any other smoothed bed.  The field \texttt{schoofs_theta} is a number $\theta$ between $0$ and $1$, with values significantly below zero indicating a reduction in diffusivity, essentially a drag coefficient, from bumpy bed.
 
 
 %%% Local Variables: 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,9 +20,16 @@
 #include "PISMOcean.hh"
 #include "iceModelVec.hh"
 
+/** Set `result` to the melange back pressure fraction.
+ *
+ * This default implementation sets `result` to 0.0.
+ *
+ * @param[out] result back pressure fraction
+ *
+ * @return 0 on success
+ */
 PetscErrorCode PISMOceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
-

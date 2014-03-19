@@ -1,5 +1,5 @@
 Bibliography
 =====================
 
-.. bibliography:: ice_bib.bib
+.. bibliography:: ice-bib.bib
  :style: alpha

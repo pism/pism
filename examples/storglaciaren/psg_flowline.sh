@@ -63,7 +63,7 @@ echo
 PCONFIG=psg_config.nc
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -cts -config_override $PCONFIG"
+PISM="${PISM_PREFIX}${PISM_EXEC} -cts -config_override $PCONFIG -o_order zyx"
 
 
 DATANAME=storglaciaren_flowline.nc
@@ -104,22 +104,22 @@ echo ""
 
 
 
-EB="-e 0.3"
-#PARAMS="$TILLPHI -pseudo_plastic_uthreshold $uth"
-PARAMS="-plastic_phi"
+EB="-sia_e 0.3"
 
-#PETSCSTUFF="-pc_type lu -pc_factor_mat_solver_package mumps"
-PETSCSTUFF="-ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu"
+#PARAMS="-pseudo_plastic -pseudo_plastic_q 0.75 -pseudo_plastic_uthreshold 10.0 -yield_stress mohr_coulomb -plastic_phi 40.0"
+PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -pseudo_plastic_uthreshold 100.0 -yield_stress mohr_coulomb -plastic_phi 40.0"
+
+PETSCSTUFF="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
 
 
-FULLPHYS="-ssa_sliding -thk_eff $PARAMS $PETSCSTUFF"
+FULLPHYS="-stress_balance ssa+sia $PARAMS $PETSCSTUFF"
 
 SMOOTHRUNLENGTH=1
 NOMASSRUNLENGTH=500
 
 STEP=1
 
-EXVARS="enthalpybase,temppabase,tempicethk,bmelt,bwat,usurf,csurf,mask,hardav,thk" # add mask, so that check_stationarity.py ignores ice-free areas.
+EXVARS="enthalpybase,temppabase,tempicethk,bmelt,tillwat,usurf,csurf,mask,hardav,thk" # add mask, so that check_stationarity.py ignores ice-free areas.
 
 PREFIX=psg_flowline_
 
@@ -127,7 +127,7 @@ PREFIX=psg_flowline_
 OUTNAME=$PREFIX${GS}m_pre$SMOOTHRUNLENGTH.nc
 echo
 echo "$SCRIPTNAME  bootstrapping plus short smoothing run for ${SMOOTHRUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -boot_file $INNAME $GRID \
+cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -boot_file $INNAME $GRID \
   $COUPLER -y ${SMOOTHRUNLENGTH} -o $OUTNAME"
 $PISM_DO $cmd
 
@@ -138,14 +138,13 @@ EXNAME=ex_${OUTNAME}
 EXTIMES=0:25:${NOMASSRUNLENGTH}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) sia run to achieve approximate enthalpy equilibrium, for ${NOMASSRUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER \
+cmd="$PISM_MPIDO $NN $PISM $EB -i $INNAME $COUPLER \
   -no_mass -y ${NOMASSRUNLENGTH} \
   -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES -o $OUTNAME"
 $PISM_DO $cmd
 
 
-# We use the force-to-thickness mechanism to infer the mass balance
-
+# use the force-to-thickness mechanism to infer the mass balance
 STARTYEAR=0
 RUNLENGTH=10
 ENDTIME=$(($STARTYEAR + $RUNLENGTH))
@@ -156,7 +155,7 @@ TSNAME=ts_${OUTNAME}
 TSTIMES=$STARTYEAR:$STEP:$ENDTIME
 echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_FORCING $FULLPHYS\
+cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_FORCING $FULLPHYS\
      -force_to_thk $INNAME -force_to_thk_alpha $FTALPHA \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
@@ -180,7 +179,7 @@ EXTIMES=$STARTYEAR:$STEP:$ENDTIME
 
 echo
 echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
+cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"

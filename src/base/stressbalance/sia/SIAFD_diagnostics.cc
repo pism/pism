@@ -74,7 +74,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode SIAFD_topgsmooth::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result;
-  PetscInt WIDE_STENCIL = grid.max_stencil_width;
+  int WIDE_STENCIL = grid.max_stencil_width;
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "topgsmooth", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);

@@ -30,7 +30,7 @@ bool IceModelVec3BTU::good_init() {
 
 
 PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name[], bool local,
-                                      int Mbz, PetscReal myLbz, int stencil_width) {
+                                      int Mbz, double myLbz, int stencil_width) {
   PetscErrorCode ierr;
   grid = &mygrid;
 
@@ -75,7 +75,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
   return 0;
 }
 
-PetscErrorCode IceModelVec3BTU::get_layer_depth(PetscReal &depth) {
+PetscErrorCode IceModelVec3BTU::get_layer_depth(double &depth) {
   if (!good_init()) {
     SETERRQ1(grid->com, 1,"get_layer_depth() says IceModelVec3BTU with name %s was not properly created\n",
              m_name.c_str());
@@ -84,7 +84,7 @@ PetscErrorCode IceModelVec3BTU::get_layer_depth(PetscReal &depth) {
   return 0;
 }
 
-PetscErrorCode IceModelVec3BTU::get_spacing(PetscReal &dzb) {
+PetscErrorCode IceModelVec3BTU::get_spacing(double &dzb) {
   if (!good_init()) {
     SETERRQ1(grid->com, 1,"get_spacing() says IceModelVec3BTU with name %s was not properly created\n",
              m_name.c_str());
@@ -104,8 +104,8 @@ PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, const PISMConfig &conf)
   bed_k   = config.get("bedrock_thermal_conductivity");
   bed_D   = bed_k / (bed_rho * bed_c);
 
-  Mbz = (PetscInt)config.get("grid_Mbz");
-  Lbz = (PetscInt)config.get("grid_Lbz");
+  Mbz = (int)config.get("grid_Mbz");
+  Lbz = (int)config.get("grid_Lbz");
   m_input_file.clear();
 
   PetscErrorCode ierr = allocate(); CHKERRCONTINUE(ierr);
@@ -124,15 +124,15 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
   ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit options", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsString("-i", "PISM input file name",
-			     m_input_file, i_set); CHKERRQ(ierr);
+                             m_input_file, i_set); CHKERRQ(ierr);
 
     int tmp = Mbz;
     ierr = PISMOptionsInt("-Mbz", "number of levels in bedrock thermal layer",
-			  tmp, Mbz_set); CHKERRQ(ierr);
+                          tmp, Mbz_set); CHKERRQ(ierr);
     Mbz = tmp;
 
     ierr = PISMOptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
-			   Lbz, Lbz_set); CHKERRQ(ierr);
+                           Lbz, Lbz_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -177,7 +177,7 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
   // actual allocation:
   if ((Lbz <= 0.0) && (Mbz > 1)) {
     SETERRQ(grid.com, 1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
-	    " and more than one layers\n"); }
+            " and more than one layers\n"); }
 
   if (Mbz > 1) {
     ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
@@ -288,10 +288,10 @@ This is a formula for the maximum stable timestep.  For more, see [\ref MortonMa
 
 The above describes the general case where Mbz > 1.
  */
-PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict) {
+PetscErrorCode PISMBedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
 
   if (temp.was_created()) {
-    PetscReal dzb;
+    double dzb;
     temp.get_spacing(dzb);
     my_dt = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
     restrict = true;
@@ -315,7 +315,7 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 
 FIXME:  now a trapezoid rule could be used
 */
-PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PISMBedThermalUnit::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if (temp.was_created() == false)
@@ -349,7 +349,7 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
               m_t,m_dt,my_t,my_dt); }
   }
   // CHECK: is desired time-step too long?
-  PetscScalar my_max_dt;
+  double my_max_dt;
   bool restrict_dt;
   ierr = max_timestep(my_t, my_max_dt, restrict_dt); CHKERRQ(ierr);
   if (restrict_dt && my_max_dt < my_dt) {
@@ -362,34 +362,34 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal my_t, PetscReal my_dt) {
   assert(bedtoptemp != NULL);
   assert(ghf != NULL);
 
-  PetscReal dzb;
+  double dzb;
   temp.get_spacing(dzb);
-  const PetscInt  k0  = Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
+  const int  k0  = Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
 
 #if (PISM_DEBUG==1)
   for (unsigned int k = 0; k < Mbz; k++) { // working upward from base
-    const PetscReal  z = - Lbz + (double)k * dzb;
+    const double  z = - Lbz + (double)k * dzb;
     ierr = temp.isLegalLevel(z); CHKERRQ(ierr);
   }
 #endif
 
-  const PetscReal bed_R  = bed_D * my_dt / (dzb * dzb);
+  const double bed_R  = bed_D * my_dt / (dzb * dzb);
 
-  PetscScalar *Tbold;
-  std::vector<PetscScalar> Tbnew(Mbz);
+  double *Tbold;
+  std::vector<double> Tbnew(Mbz);
 
   ierr = temp.begin_access(); CHKERRQ(ierr);
   ierr = ghf->begin_access(); CHKERRQ(ierr);
   ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
 
       ierr = temp.getInternalColumn(i,j,&Tbold); CHKERRQ(ierr); // Tbold actually points into temp memory
       Tbold[k0] = (*bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
-      const PetscReal Tbold_negone = Tbold[1] + 2 * (*ghf)(i,j) * dzb / bed_k;
+      const double Tbold_negone = Tbold[1] + 2 * (*ghf)(i,j) * dzb / bed_k;
       Tbnew[0] = Tbold[0] + bed_R * (Tbold_negone - 2 * Tbold[0] + Tbold[1]);
-      for (PetscInt k = 1; k < k0; k++) { // working upward from base
+      for (int k = 1; k < k0; k++) { // working upward from base
         Tbnew[k] = Tbold[k] + bed_R * (Tbold[k-1] - 2 * Tbold[k] + Tbold[k+1]);
       }
       Tbnew[k0] = (*bedtoptemp)(i,j);
@@ -424,15 +424,15 @@ PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &res
     return 0;
   }
 
-  PetscReal dzb;
+  double dzb;
   temp.get_spacing(dzb);
-  const PetscInt  k0  = Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
+  const int  k0  = Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
-  PetscScalar *Tb;
+  double *Tb;
   ierr = temp.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
       if (Mbz >= 3) {
         result(i,j) = - bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
@@ -457,19 +457,19 @@ PetscErrorCode PISMBedThermalUnit::bootstrap() {
                     "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
   CHKERRQ(ierr);
 
-  PetscScalar* Tb;
-  PetscReal dzb;
+  double* Tb;
+  double dzb;
   temp.get_spacing(dzb);
-  const PetscInt k0 = Mbz-1; // Tb[k0] = ice/bedrock interface temp
+  const int k0 = Mbz-1; // Tb[k0] = ice/bedrock interface temp
 
   ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
   ierr = ghf->begin_access(); CHKERRQ(ierr);
   ierr = temp.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr); // Tb points into temp memory
       Tb[k0] = (*bedtoptemp)(i,j);
-      for (PetscInt k = k0-1; k >= 0; k--) {
+      for (int k = k0-1; k >= 0; k--) {
         Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / bed_k;
       }
     }

@@ -28,12 +28,6 @@ netcdf pism_config {
     pism_config:stress_balance_model = "sia_only";
     pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
 
-    pism_config:do_stressbalance_constant = "no";
-    pism_config:do_stressbalance_constant_doc = "Use the 'constant' stress balance (reads u,v from a file).";
-
-    pism_config:do_sia = "yes";
-    pism_config:do_sia_doc = "Use the SIA stress balance (possibly as a part of a hybrid).";
-
     pism_config:do_skip = "no";
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
 
@@ -47,7 +41,7 @@ netcdf pism_config {
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
 
     pism_config:do_pseudo_plastic_till = "no";
-    pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
+    pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model (basal sliding law).";
 
     pism_config:verbose_pik_messages = "no";
     pism_config:verbose_pik_messages_doc = "Display verbose PIK messages e.g. about iceberg removal.";
@@ -67,8 +61,8 @@ netcdf pism_config {
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
 
-    pism_config:cfl_eigencalving = "false";
-    pism_config:cfl_eigencalving_doc = "apply CFL criterion for eigen-calving rate front retreat";
+    pism_config:cfl_eigen_calving = "false";
+    pism_config:cfl_eigen_calving_doc = "apply CFL criterion for eigen-calving rate front retreat";
 
     pism_config:calving_methods = "";
     pism_config:calving_methods_doc = "comma-separated list of calving methods; one or more of 'eigen_calving', 'ocean_kill', 'float_kill', 'thickness_calving'";
@@ -89,16 +83,13 @@ netcdf pism_config {
     pism_config:bed_def_lc_elastic_model_doc = "Use the elastic part of the Lingle-Clark bed deformation model.";
 
     pism_config:is_dry_simulation = "no";
-    pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation";
+    pism_config:is_dry_simulation_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
 
-    pism_config:use_ssa_velocity = "no";
-    pism_config:use_ssa_velocity_doc = "Use the equations of the shallow shelf approximation [@ref MacAyeal, @ref Morland, @ref SchoofStream, @ref WeisGreveHutter] for ice shelves and dragging ice shelves (%i.e. ice streams) where so-indicated by the mask";
+    pism_config:stress_balance_model = "sia";
+    pism_config:stress_balance_model_doc = "the stress balance model; the choices are 'none', 'prescribed_sliding', 'sia', 'ssa', 'prescribed_sliding+sia', 'ssa+sia'.";
 
     pism_config:write_ssa_system_to_matlab = "no";
     pism_config:write_ssa_system_to_matlab_doc = "Specifies whether to write the SSA system to a matlab file";
-
-    pism_config:scalebrutalSet = "false";
-    pism_config:scalebrutalSet_doc = "Enhance sliding speed brutally.";
 
     pism_config:include_bmr_in_continuity = "yes";
     pism_config:include_bmr_in_continuity_doc = "Include basal melt rate in the continuity equation";
@@ -121,11 +112,14 @@ netcdf pism_config {
     pism_config:use_temperature_dependent_thermal_conductivity = "no";
     pism_config:use_temperature_dependent_thermal_conductivity_doc = "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [@ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.";
 
-    pism_config:nuBedrockSet = "false";
-    pism_config:nuBedrockSet_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
+    pism_config:nu_bedrock = 5.0e15;
+    pism_config:nu_bedrock_doc = "Pa s; Staggered Viscosity used as side friction parameterization.";
+
+    pism_config:nu_bedrock_set = "false";
+    pism_config:nu_bedrock_set_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
 
     pism_config:sub_groundingline  = "false";
-    pism_config:sub_groundingline_doc = "The Pattyn et al. interpolation scheme expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
+    pism_config:sub_groundingline_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
 
     pism_config:tauc_slippery_grounding_lines = "no";
     pism_config:tauc_slippery_grounding_lines_doc = "If yes, replace normally-computed tauc from Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the reported amount of till water, nor does this mechanism affect water conservation.";
@@ -163,8 +157,8 @@ netcdf pism_config {
     pism_config:bootstrapping_tillphi_value_no_var = 15.0;
     pism_config:bootstrapping_tillphi_value_no_var_doc = "degrees; till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
 
-    pism_config:bootstrapping_no_smb_in_initial_temp = "no";
-    pism_config:bootstrapping_no_smb_in_initial_temp_doc = "if 'no' then use the method in IceModel::putTempAtDepth() which includes the surface mass balance; if 'yes' use the old PISM method which does not use smb";
+    pism_config:bootstrapping_temperature_heuristic = "smb";
+    pism_config:bootstrapping_temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.";
 
     pism_config:preliminary_time_step_duration = 1.0;
     pism_config:preliminary_time_step_duration_doc = "s; Duration of the time step taken before the run, so as to fill diagnostic quantities.";
@@ -175,8 +169,11 @@ netcdf pism_config {
     pism_config:ssa_enhancement_factor = 1.0;
     pism_config:ssa_enhancement_factor_doc = "; Flow enhancement factor for SSA";
 
-    pism_config:sliding_scale_brutal = 1.0;
-    pism_config:sliding_scale_brutal_doc = "; Brutal SSA Sliding Scale";
+    pism_config:brutal_sliding = "false";
+    pism_config:brutal_sliding_doc = "Enhance sliding speed brutally.";
+
+    pism_config:brutal_sliding_scale = 1.0;
+    pism_config:brutal_sliding_scale_doc = "; Brutal SSA Sliding Scale";
 
     pism_config:ice_grain_size = 1.0;
     pism_config:ice_grain_size_doc = "mm; Default constant ice grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
@@ -184,8 +181,8 @@ netcdf pism_config {
     pism_config:compute_grain_size_using_age = "no";
     pism_config:compute_grain_size_using_age_doc = "Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt [@ref GoldsbyKohlstedt] flow law";
 
-    pism_config:do_e_age_coupling = "no";
-    pism_config:do_e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
+    pism_config:e_age_coupling = "no";
+    pism_config:e_age_coupling_doc = "Couple the SIA enhancement factor to age as in [@ref Greve].";
 
     pism_config:start_year = 0;
     pism_config:start_year_doc = "years; Start year.";
@@ -289,8 +286,8 @@ netcdf pism_config {
     pism_config:till_compressibility_coefficient = 0.12;
     pism_config:till_compressibility_coefficient_doc = "[pure]; coefficient of compressiblity of till; value from [@ref Tulaczyketal2000]";
 
-    pism_config:till_effective_fraction_overburden = 0.01;
-    pism_config:till_effective_fraction_overburden_doc = "[pure]; = delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [@ref Tulaczyketal2000]";
+    pism_config:till_effective_fraction_overburden = 0.02;
+    pism_config:till_effective_fraction_overburden_doc = "[pure]; = delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [@ref Tulaczyketal2000]; default value from Greenland and Antarctic model runs";
 
     pism_config:mu_sliding = 0.0;
     pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. *This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.*  See Appendix B of [@ref BBssasliding] for the dangers in this mechanism.";
@@ -315,9 +312,6 @@ netcdf pism_config {
 
     pism_config:thickness_calving_threshold = 50.0;
     pism_config:thickness_calving_threshold_doc = "m; When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
-
-    pism_config:nuBedrock = 5.0e15;
-    pism_config:nuBedrock_doc = "Pa s; Staggered Viscosity used as side friction parameterization.";
 
 
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
@@ -595,12 +589,6 @@ netcdf pism_config {
     pism_config:ssa_flow_law = "gpbld";
     pism_config:ssa_flow_law_doc = "The SSA flow law. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
 
-    pism_config:blatter_flow_law = "gpbld";
-    pism_config:blatter_flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model. Choose one of 'pb', 'custom', 'gpbld', 'hooke', 'arr', 'arrwarm'.";
-
-    pism_config:blatter_enhancement_factor = 1.0;
-    pism_config:blatter_enhancement_factor_doc = "; Flow enhancement factor for the Blatter stress balance flow law";
-
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
 
@@ -717,9 +705,6 @@ netcdf pism_config {
    pism_config:grid_Mz = 31;
    pism_config:grid_Mz_doc = "; Number of vertical grid levels in the ice.";
 
-   pism_config:blatter_Mz = 5;
-   pism_config:blatter_Mz_doc = "; Number of vertical grid levels in the ice (in the Blatter solver).";
-
    pism_config:grid_Mbz = 1;
    pism_config:grid_Mbz_doc = "; Number of thermal bedrock layers; 1 level corresponds to no bedrock.";
 
@@ -750,11 +735,11 @@ netcdf pism_config {
    pism_config:output_variable_order = "xyz";
    pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
-   pism_config:output_medium = "acab tillwat tillwp cbar cbase csurf cflx climatic_mass_balance diffusivity ice_surface_temp mask schoofs_theta tauc taud_mag topgsmooth usurf wvelsurf temp_pa liqfrac enthalpy IcebergMask edot_1 edot_2";
+   pism_config:output_medium = "climatic_mass_balance tillwat tillwp cbar cbase csurf cflx climatic_mass_balance diffusivity ice_surface_temp mask schoofs_theta tauc taud_mag topgsmooth usurf wvelsurf temp_pa liqfrac enthalpy IcebergMask edot_1 edot_2";
 
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by boundary models.";
 
-   pism_config:output_big = "acab age bfrict bheatflx bmelt tillwat tillwp cbar cbase cell_area cflx climatic_mass_balance csurf dbdt diffusivity enthalpy enthalpybase enthalpysurf flux_divergence hardav ice_surface_temp lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH";
+   pism_config:output_big = "climatic_mass_balance age bfrict bheatflx bmelt tillwat tillwp cbar cbase cell_area cflx climatic_mass_balance csurf dbdt diffusivity enthalpy enthalpybase enthalpysurf flux_divergence hardav ice_surface_temp lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH";
 
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 

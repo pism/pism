@@ -29,7 +29,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 {
   PetscErrorCode ierr;
 
-  const PetscInt WIDE_STENCIL = 2;
+  const int WIDE_STENCIL = 2;
   
   // ice surface elevation
   ierr = surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
@@ -120,9 +120,20 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   return 0;
 }
 
+SSATestCase::SSATestCase(MPI_Comm com, PISMConfig &c)
+  : config(c), grid(com, config), enthalpyconverter(0), ssa(0)
+{
+  // empty
+}
+
+SSATestCase::~SSATestCase()
+{
+  delete enthalpyconverter;
+  delete ssa;
+}
 
 //! Initialize the test case at the start of a run
-PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory)
+PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 {
   PetscErrorCode ierr;
 
@@ -141,7 +152,7 @@ PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory
   ierr = buildSSACoefficients(); CHKERRQ(ierr);
 
   // Allocate the actual SSA solver.
-  ssa = ssafactory(grid, *basal, *enthalpyconverter, config);
+  ssa = ssafactory(grid, *enthalpyconverter, config);
   ierr = ssa->init(vars); CHKERRQ(ierr); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.
@@ -171,9 +182,9 @@ PetscErrorCode SSATestCase::report(std::string testname) {
   ierr = ssa->stdout_report(ssa_stdout); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,ssa_stdout.c_str()); CHKERRQ(ierr);
   
-  PetscScalar maxvecerr = 0.0, avvecerr = 0.0, 
+  double maxvecerr = 0.0, avvecerr = 0.0, 
     avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
-  PetscScalar gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
+  double gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
     gmaxuerr = 0.0, gmaxverr = 0.0;
 
   if (config.get_flag("do_pseudo_plastic_till") &&
@@ -189,25 +200,25 @@ PetscErrorCode SSATestCase::report(std::string testname) {
   ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
   ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar exactvelmax = 0, gexactvelmax = 0;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar uexact, vexact;
-      PetscScalar myx = grid.x[i], myy = grid.y[j];
+  double exactvelmax = 0, gexactvelmax = 0;
+  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+      double uexact, vexact;
+      double myx = grid.x[i], myy = grid.y[j];
 
       exactSolution(i,j,myx,myy,&uexact,&vexact);
 
-      PetscScalar exactnormsq=sqrt(uexact*uexact+vexact*vexact);
+      double exactnormsq=sqrt(uexact*uexact+vexact*vexact);
       exactvelmax = PetscMax(exactnormsq,exactvelmax);
 
       // compute maximum errors
-      const PetscScalar uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
-      const PetscScalar verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
+      const double uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
+      const double verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
       avuerr = avuerr + uerr;
       avverr = avverr + verr;
       maxuerr = PetscMax(maxuerr,uerr);
       maxverr = PetscMax(maxverr,verr);
-      const PetscScalar vecerr = sqrt(uerr * uerr + verr * verr);
+      const double vecerr = sqrt(uerr * uerr + verr * verr);
       maxvecerr = PetscMax(maxvecerr,vecerr);
       avvecerr = avvecerr + vecerr;
     }
@@ -344,9 +355,9 @@ PetscErrorCode SSATestCase::report_netcdf(std::string testname,
   return 0;
 }
 
-PetscErrorCode SSATestCase::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
-                                          PetscReal /*x*/, PetscReal /*y*/,
-                                          PetscReal *u, PetscReal *v )
+PetscErrorCode SSATestCase::exactSolution(int /*i*/, int /*j*/, 
+                                          double /*x*/, double /*y*/,
+                                          double *u, double *v )
 {
   *u=0; *v=0;
   return 0;
@@ -389,9 +400,9 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   exact.write_in_glaciological_units = true;
 
   ierr = exact.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar myx = grid.x[i], myy = grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+      double myx = grid.x[i], myy = grid.y[j];
       exactSolution(i,j,myx,myy,&(exact(i,j).u),&(exact(i,j).v));
     }
   }
@@ -405,8 +416,8 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
 
 /*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
 half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
-PetscErrorCode init_shallow_grid(IceGrid &grid, PetscReal Lx, 
-                                 PetscReal Ly, PetscInt Mx, PetscInt My, Periodicity p)
+PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx, 
+                                 double Ly, int Mx, int My, Periodicity p)
 {
   PetscErrorCode ierr;
   

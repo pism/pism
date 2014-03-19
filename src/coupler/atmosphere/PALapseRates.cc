@@ -25,7 +25,7 @@ PALapseRates::PALapseRates(IceGrid &g, const PISMConfig &conf, PISMAtmosphereMod
     air_temp(g.get_unit_system())
 {
   precip_lapse_rate = 0;
-  option_prefix	    = "-atmosphere_lapse_rate";
+  option_prefix     = "-atmosphere_lapse_rate";
 
   PetscErrorCode ierr = allocate_PALapseRates(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -43,7 +43,7 @@ PetscErrorCode PALapseRates::allocate_PALapseRates() {
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name",
-			   "ice-equivalent precipitation rate with a lapse-rate correction");
+                           "ice-equivalent precipitation rate with a lapse-rate correction");
   ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
@@ -121,7 +121,7 @@ PetscErrorCode PALapseRates::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PALapseRates::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
   ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
 
@@ -132,9 +132,9 @@ PetscErrorCode PALapseRates::init_timeseries(PetscReal *ts, unsigned int N) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PALapseRates::temp_time_series(int i, int j, double *values) {
   PetscErrorCode ierr;
-  std::vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<double> usurf(m_ts_times.size());
 
   ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
 
@@ -147,9 +147,9 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, PetscReal *values) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::precip_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PALapseRates::precip_time_series(int i, int j, double *values) {
   PetscErrorCode ierr;
-  std::vector<PetscScalar> usurf(m_ts_times.size());
+  std::vector<double> usurf(m_ts_times.size());
 
   ierr = input_model->precip_time_series(i, j, values); CHKERRQ(ierr);
 

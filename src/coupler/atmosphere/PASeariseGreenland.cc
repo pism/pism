@@ -46,8 +46,8 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
-		    "  air temperature parameterization and using stored time-independent precipitation...\n");
+                    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
+                    "  air temperature parameterization and using stored time-independent precipitation...\n");
   CHKERRQ(ierr);
 
   reference =
@@ -69,7 +69,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, double *values) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = precipitation(i,j);
@@ -80,7 +80,7 @@ PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, PetscReal 
 //! \brief Updates mean annual and mean July near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
-PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if (lat->metadata().has_attribute("missing_at_bootstrap")) {
@@ -103,7 +103,7 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  const PetscReal 
+  const double 
     d_ma     = config.get("snow_temp_fausto_d_ma"),      // K
     gamma_ma = config.get("snow_temp_fausto_gamma_ma"),  // K m-1
     c_ma     = config.get("snow_temp_fausto_c_ma"),      // K (degN)-1
@@ -121,8 +121,8 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal my_t, PetscReal my_dt) {
   ierr = air_temp_mean_annual.begin_access();  CHKERRQ(ierr);
   ierr = air_temp_mean_july.begin_access();  CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
       air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
       air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
     }

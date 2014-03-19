@@ -61,7 +61,7 @@ def generate_config():
     nc.close()
 
 def run_pism(opts):
-    cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP_regression.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -ssa_sliding -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
+    cmd = "%s %s/pismr -config_override testPconfig.nc -boot_file inputforP_regression.nc -Mx %d -My %d -Mz 11 -Lz 4000 -hydrology distributed -report_mass_accounting -y 0.08333333333333 -max_dt 0.01 -no_mass -energy none -stress_balance ssa+sia -ssa_dirichlet_bc -o end.nc" % (opts.MPIEXEC, opts.PISM_PATH, 21, 21)
 
     print cmd
     subprocess.call(shlex.split(cmd))
@@ -70,10 +70,10 @@ def check_drift(file1, file2):
     nc1 = NC(file1)
     nc2 = NC(file2)
 
-    stored_drift = {'bwat_max' : 0.024260130035419047,
-                    'bwp_max'  : 81469.815066235577,
-                    'bwp_avg'  : 6836.2361688114497,
-                    'bwat_avg' : 0.0040625953297697154}
+    stored_drift = {'bwat_max': 0.024263951766380631,
+                    'bwp_max':  81658.173074602877,
+                    'bwp_avg':  7152.4179414459632,
+                    'bwat_avg': 0.004056179416920525}
 
     drift = {}
     for name in ("bwat", "bwp"):
@@ -84,7 +84,7 @@ def check_drift(file1, file2):
         drift["%s_max" % name] = np.max(diff)
         drift["%s_avg" % name] = np.average(diff)
 
-    print "drift = ", drift
+    print "drift        = ", drift
     print "stored_drift = ", stored_drift
 
     for name in drift.keys():

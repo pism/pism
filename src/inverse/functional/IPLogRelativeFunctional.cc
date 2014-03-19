@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,16 +25,16 @@ J(x)=1
 \f]
 if \f$|x| = \mathtt{scale}\f$ everywhere.
 */
-PetscErrorCode IPLogRelativeFunctional::normalize(PetscReal scale) {
+PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal scale_sq = scale*scale;
+  double scale_sq = scale*scale;
 
-  PetscReal **w_a;
-  PetscReal w = 1.;
+  double **w_a;
+  double w = 1.;
 
   PISMVector2 **u_obs_a;
   ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
@@ -42,13 +42,13 @@ PetscErrorCode IPLogRelativeFunctional::normalize(PetscReal scale) {
   if(m_weights){
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
   }
-  for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+  for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       PISMVector2 &u_obs_ij = u_obs_a[i][j];
       if( m_weights ) {
         w = w_a[i][j];
       }
-      PetscReal obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
+      double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
       value += log( 1 + w*scale_sq/obsMagSq);
     }
   }
@@ -62,14 +62,14 @@ PetscErrorCode IPLogRelativeFunctional::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **w_a;
-  PetscReal w = 1;
+  double **w_a;
+  double w = 1;
 
   PISMVector2 **x_a;
   ierr = x.get_array(x_a); CHKERRQ(ierr);
@@ -79,14 +79,14 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, PetscReal *OUT
   if(m_weights){
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
   }
-  for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+  for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       PISMVector2 &x_ij = x_a[i][j];
       PISMVector2 &u_obs_ij = u_obs_a[i][j];
       if( m_weights ) {
         w = w_a[i][j];
       }
-      PetscReal obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
+      double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
       value += log( 1 + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v)/obsMagSq);
     }
   }
@@ -109,8 +109,8 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
 
   gradient.set(0);
 
-  PetscReal **w_a;
-  PetscReal w = 1;
+  double **w_a;
+  double w = 1;
 
   PISMVector2 **x_a;
   ierr = x.get_array(x_a); CHKERRQ(ierr);
@@ -123,15 +123,15 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
   if(m_weights){
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
   }
-  for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+  for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       PISMVector2 &x_ij = x_a[i][j];
       PISMVector2 &u_obs_ij = u_obs_a[i][j];
       if( m_weights ) {
         w = w_a[i][j];
       }
-      PetscReal obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
-      PetscReal dJdxsq =  w/( obsMagSq + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v));
+      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+      double dJdxsq =  w/( obsMagSq + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v));
 
       gradient_a[i][j].u = dJdxsq*2*x_ij.u/m_normalization;
       gradient_a[i][j].v = dJdxsq*2*x_ij.v/m_normalization;

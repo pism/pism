@@ -1,4 +1,4 @@
-// Copyright (C) 2011 David Maxwell
+// Copyright (C) 2011, 2014 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,15 +21,15 @@
 #include "pism_python_signal.hh"
 #include "pism_const.hh"
 
-PetscErrorCode globalMax(PetscReal local_max, PetscReal *result, MPI_Comm comm)
+PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm)
 {
   return PISMGlobalMax(&local_max,result,comm);
 }
-PetscErrorCode globalMin(PetscReal local_min, PetscReal *result, MPI_Comm comm)
+PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm)
 {
   return PISMGlobalMin(&local_min,result,comm);  
 }
-PetscErrorCode globalSum(PetscReal local_sum, PetscReal *result, MPI_Comm comm)
+PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
 {
   return PISMGlobalSum(&local_sum,result,comm);  
 }

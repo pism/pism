@@ -29,7 +29,6 @@
 #include "pism_const.hh"
 
 // atmosphere models:
-#include "PAEismintGreenland.hh"
 #include "PAGivenClimate.hh"
 #include "PALapseRates.hh"
 #include "PASeariseGreenland.hh"
@@ -77,11 +76,6 @@ static void create_pa_searise_greenland(IceGrid& g, const PISMConfig& conf, PISM
   result = new PA_SeaRISE_Greenland(g, conf);
 }
 
-static void create_pa_eismint_greenland(IceGrid& g, const PISMConfig& conf,
-					PISMAtmosphereModel* &result) {
-  result = new PA_EISMINT_Greenland(g, conf);
-}
-
 static void create_pa_yearly_cycle(IceGrid& g, const PISMConfig& conf,
                                    PISMAtmosphereModel* &result) {
   result = new PACosineYearlyCycle(g, conf);
@@ -115,7 +109,6 @@ static void create_pa_anomaly(IceGrid& g, const PISMConfig& conf,
 void PAFactory::add_standard_types() {
   add_model("given",             &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
-  add_model("eismint_greenland", &create_pa_eismint_greenland);
   add_model("pik",               &create_pa_constant_pik);
   add_model("yearly_cycle",      &create_pa_yearly_cycle);
   set_default("given");

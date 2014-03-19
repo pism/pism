@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011-2012 the PISM authors
+# Copyright (C) 2011-2014 the PISM authors
 
 # downloads SeaRISE "1km Greenland data set" NetCDF file,
 # adjusts metadata, saves under new name with fields needed
@@ -65,21 +65,24 @@ echo "creating PISM-readable climate file $CLIMATEFILE from airtemp2m and smb in
 ncks -O -v mapping,smb,airtemp2m $DATANAME $CLIMATEFILE
 ncrename -O -v airtemp2m,ice_surface_temp $CLIMATEFILE
 ncatted -O -a units,ice_surface_temp,a,c,"Celsius" $CLIMATEFILE
-ncap -O -s "climatic_mass_balance=(1000.0/910.0)*smb" $CLIMATEFILE $CLIMATEFILE
+# convert SMB from liquid water equivalent thickness per year to [kg m-2 year-1];
+# assume water density of 1000.0 [kg m-3]
+ncap -O -s "climatic_mass_balance=1000.0*smb" $CLIMATEFILE $CLIMATEFILE
 ncatted -O -a standard_name,climatic_mass_balance,a,c,"land_ice_surface_specific_mass_balance" $CLIMATEFILE
-ncatted -O -a units,climatic_mass_balance,a,c,"meters/year" $CLIMATEFILE
+ncatted -O -a units,climatic_mass_balance,a,c,"kg m-2 year-1" $CLIMATEFILE
 ncks -O -x -v smb $CLIMATEFILE $CLIMATEFILE
 echo "... done"
 echo
 
-# get pre-computed PISM result
-echo "fetching pre-computed PISM whole ice-sheet result on 5km grid"
+
+# get locally-generated or pre-computed PISM result
+echo "checking for locally-generated, or fetching, pre-computed PISM whole ice-sheet result on 5km grid"
 URL=http://www.pism-docs.org/download
-WHOLE=g5km_0_ftt.nc
+WHOLE=g5km_gridseq.nc
 wget -nc ${URL}/$WHOLE
 BCFILE=g5km_bc.nc
 echo "creating PISM-readable boundary conditions file $BCFILE from whole ice sheet result ..."
-ncks -O -v u_ssa,v_ssa,bmelt,bwat,enthalpy,litho_temp $WHOLE $BCFILE
+ncks -O -v u_ssa,v_ssa,bmelt,tillwat,enthalpy,litho_temp $WHOLE $BCFILE
 # rename u_ssa and v_ssa so that they are specified as b.c.
 ncrename -O -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
 echo "... done"

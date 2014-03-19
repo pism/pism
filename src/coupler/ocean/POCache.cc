@@ -20,6 +20,8 @@
 #include "POCache.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
+#include <algorithm>
+#include <cassert>
 
 POCache::POCache(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
   : POModifier(g, conf, in) {
@@ -41,14 +43,20 @@ PetscErrorCode POCache::allocate_POCache() {
   ierr = m_shelf_base_mass_flux.set_attrs("climate_state",
                                           "ice mass flux from ice shelf base"
                                           " (positive flux is loss from ice shelf)",
-                                          "m s-1", ""); CHKERRQ(ierr);
-  ierr = m_shelf_base_mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+                                          "kg m-2 s-1", ""); CHKERRQ(ierr);
+  ierr = m_shelf_base_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   m_shelf_base_mass_flux.write_in_glaciological_units = true;
 
   ierr = m_shelf_base_temperature.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_shelf_base_temperature.set_attrs("climate_state",
                                             "absolute temperature at ice shelf base",
                                             "K", ""); CHKERRQ(ierr);
+  ierr = m_melange_back_pressure_fraction.create(grid,"melange_back_pressure_fraction",
+                                                 WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = m_melange_back_pressure_fraction.set_attrs("climate_state",
+                                                    "melange back pressure fraction",
+                                                    "1", ""); CHKERRQ(ierr);
+
 
   return 0;
 }
@@ -88,11 +96,23 @@ PetscErrorCode POCache::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POCache::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode POCache::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
-  if (my_t + my_dt > m_next_update_time) {
-    ierr = input_model->update(my_t + 0.5*my_dt,
-                               grid.convert(1.0, "year", "seconds")); CHKERRQ(ierr);
+
+  // ignore my_dt and always use 1 year long time-steps when updating
+  // an input model
+  (void) my_dt;
+
+  if (my_t >= m_next_update_time ||
+      fabs(my_t - m_next_update_time) < 1.0) {
+
+    double
+      one_year_from_now = grid.time->increment_date(my_t, 1.0),
+      update_dt         = one_year_from_now - my_t;
+
+    assert(update_dt > 0.0);
+
+    ierr = input_model->update(my_t, update_dt); CHKERRQ(ierr);
 
     m_next_update_time = grid.time->increment_date(m_next_update_time,
                                                    m_update_interval_years);
@@ -100,13 +120,14 @@ PetscErrorCode POCache::update(PetscReal my_t, PetscReal my_dt) {
     ierr = input_model->sea_level_elevation(m_sea_level);                 CHKERRQ(ierr); 
     ierr = input_model->shelf_base_temperature(m_shelf_base_temperature); CHKERRQ(ierr); 
     ierr = input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);     CHKERRQ(ierr); 
+    ierr = input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
 
-PetscErrorCode POCache::sea_level_elevation(PetscReal &result) {
+PetscErrorCode POCache::sea_level_elevation(double &result) {
   result = m_sea_level;
   return 0;
 }
@@ -123,8 +144,15 @@ PetscErrorCode POCache::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
+PetscErrorCode POCache::melange_back_pressure_fraction(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  ierr = m_melange_back_pressure_fraction.copy_to(result); CHKERRQ(ierr);
+  return 0;
+}
 
-PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+
+PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc,
+                                         PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
@@ -135,6 +163,11 @@ PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &
   if (set_contains(vars, m_shelf_base_temperature.metadata().get_string("short_name"))) {
     ierr = m_shelf_base_temperature.define(nc, nctype); CHKERRQ(ierr);
     vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
+  }
+
+  if (set_contains(vars, m_melange_back_pressure_fraction.metadata().get_string("short_name"))) {
+    ierr = m_melange_back_pressure_fraction.define(nc, nctype); CHKERRQ(ierr);
+    vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
   }
 
   ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -155,8 +188,38 @@ PetscErrorCode POCache::write_variables(std::set<std::string> vars, const PIO &n
     vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
   }
 
+  if (set_contains(vars, m_melange_back_pressure_fraction.metadata().get_string("short_name"))) {
+    ierr = m_melange_back_pressure_fraction.write(nc); CHKERRQ(ierr);
+    vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
+  }
+
   ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }
 
+PetscErrorCode POCache::max_timestep(double t, double &dt, bool &restrict) {
+  dt       = m_next_update_time - t;
+  restrict = true;
+
+  // if we got very close to the next update time, set time step
+  // length to the interval between updates
+  if (dt < 1.0) {
+    double update_time_after_next = grid.time->increment_date(m_next_update_time,
+                                                              m_update_interval_years);
+
+    dt = update_time_after_next - m_next_update_time;
+    assert(dt > 0.0);
+  }
+
+  bool input_restrict = false;
+  double input_model_dt = 0.0;
+  assert(input_model != NULL);
+
+  PetscErrorCode ierr = input_model->max_timestep(t, input_model_dt, input_restrict); CHKERRQ(ierr);
+  if (input_restrict == true) {
+    dt = std::min(input_model_dt, dt);
+  }
+
+  return 0;
+}

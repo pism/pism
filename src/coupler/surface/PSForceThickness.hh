@@ -34,16 +34,16 @@ public:
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   std::string input_file;
-  PetscReal alpha;
-  IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
+  double alpha;
+  IceModelVec2S *ice_thickness; //!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask;
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+  NCSpatialVariable climatic_mass_balance, climatic_mass_balance_original, ice_surface_temp;
 private:
   PetscErrorCode allocate_PSForceThickness();
 };

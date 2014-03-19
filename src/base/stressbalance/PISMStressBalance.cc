@@ -131,7 +131,7 @@ PetscErrorCode PISMStressBalance::get_diffusive_flux(IceModelVec2Stag* &result) 
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::get_max_diffusivity(PetscReal &D) {
+PetscErrorCode PISMStressBalance::get_max_diffusivity(double &D) {
   PetscErrorCode ierr;
   ierr = m_modifier->get_max_diffusivity(D); CHKERRQ(ierr);
   return 0;
@@ -170,7 +170,7 @@ PetscErrorCode PISMStressBalance::compute_2D_stresses(IceModelVec2V &velocity, I
 }
 
 //! \brief Extend the grid vertically.
-PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
+PetscErrorCode PISMStressBalance::extend_the_grid(int old_Mz) {
   PetscErrorCode ierr;
 
   ierr = m_w.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
@@ -233,10 +233,10 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
     ierr = bmr->begin_access(); CHKERRQ(ierr);
   }
 
-  PetscScalar *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
+  double *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
 
       ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
@@ -292,13 +292,13 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
         v_y = D_y * (south * (v_ij[0] - v_jm1[0]) + north * (v_jp1[0] - v_ij[0]));
 
       // within the ice and above:
-      PetscScalar old_integrand = u_x + v_y;
+      double old_integrand = u_x + v_y;
       for (unsigned int k = 1; k < grid.Mz; ++k) {
         u_x = D_x * (west  * (u_ij[k] - u_im1[k]) + east  * (u_ip1[k] - u_ij[k]));
         v_y = D_y * (south * (v_ij[k] - v_jm1[k]) + north * (v_jp1[k] - v_ij[k]));
-        const PetscScalar new_integrand = u_x + v_y;
+        const double new_integrand = u_x + v_y;
 
-        const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
+        const double dz = grid.zlevels[k] - grid.zlevels[k-1];
 
         w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
 
@@ -428,15 +428,15 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
   ierr = u->begin_access(); CHKERRQ(ierr);
   ierr = v->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscScalar H  = (*thickness)(i,j);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double H  = (*thickness)(i,j);
       int         ks = grid.kBelowHeight(H);
-      PetscScalar
+      double
         *u_ij, *u_w, *u_n, *u_e, *u_s,
         *v_ij, *v_w, *v_n, *v_e, *v_s;
-      PetscScalar u_x, u_y, u_z, v_x, v_y, v_z;
-      PetscScalar *Sigma, *E_ij;
+      double u_x, u_y, u_z, v_x, v_y, v_z;
+      double *Sigma, *E_ij;
 
       ierr = u->getInternalColumn(i,     j,     &u_ij); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i - 1, j,     &u_w);  CHKERRQ(ierr);
@@ -480,7 +480,7 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
       int remaining_levels = grid.Mz - (ks + 1);
       if (remaining_levels > 0) {
         ierr = PetscMemzero(&Sigma[ks+1],
-                            remaining_levels*sizeof(PetscScalar)); CHKERRQ(ierr);
+                            remaining_levels*sizeof(double)); CHKERRQ(ierr);
       }
     }   // j-loop
   }     // i-loop

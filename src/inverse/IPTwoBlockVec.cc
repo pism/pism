@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -39,12 +39,12 @@ PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   ierr = PetscObjectGetComm((PetscObject)a,&comm_b); CHKERRQ(ierr);
   assert(comm==comm_b);
   
-  PetscInt lo_a, hi_a;
+  int lo_a, hi_a;
   ierr = VecGetOwnershipRange(a,&lo_a,&hi_a); CHKERRQ(ierr); 
   ierr = VecGetSize(a,&m_na_global); CHKERRQ(ierr);
   m_na_local = hi_a-lo_a;
 
-  PetscInt lo_b, hi_b;
+  int lo_b, hi_b;
   ierr = VecGetOwnershipRange(b,&lo_b,&hi_b); CHKERRQ(ierr); 
   ierr = VecGetSize(b,&m_nb_global); CHKERRQ(ierr);
   m_nb_local = hi_b-lo_b;

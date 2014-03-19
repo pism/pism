@@ -18,8 +18,8 @@
 
 #include "PISMNC4File.hh"
 
-#include <cstring>		// memset
-#include <cstdio>		// stderr, fprintf
+#include <cstring>              // memset
+#include <cstdio>               // stderr, fprintf
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:

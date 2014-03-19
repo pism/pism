@@ -4,9 +4,9 @@
 configure_file(../pism-macros.tex pism-macros.tex @ONLY)
 
 # Copy the bibliography file (note the change in the file name)
-configure_file (../ice_bib.bib ice-bib.bib COPYONLY)
+configure_file (../ice-bib.bib ice-bib.bib COPYONLY)
 
-# The list of all the source files, with section number:
+# The list of all the source files for the User's Manual, with section number:
 set (latex_sources
   manual.tex                   # preamble and structure
   getting-started.tex          # 2
@@ -19,7 +19,7 @@ set (latex_sources
   practical-usage.tex          # 9
   verification.tex             # 10
   simplified-geometry.tex      # 11
-  ross.tex                     # 12
+  validation.tex               # 12
   storglaciaren.tex            # 13
   jako.tex                     # 14
   )

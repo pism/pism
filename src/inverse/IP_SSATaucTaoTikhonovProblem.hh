@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,11 @@
 #ifndef IP_SSATAUCTAOTIKHONOVPROBLEM_HH_HB8UWICX
 #define IP_SSATAUCTAOTIKHONOVPROBLEM_HH_HB8UWICX
 
+#ifdef PISM_USE_TR1
 #include <tr1/memory>
+#else
+#include <memory>
+#endif
 
 #include "IPTaoTikhonovProblem.hh"
 #include "IP_SSATaucForwardProblem.hh"
@@ -46,7 +50,7 @@ public:
 
   IP_SSATaucTaoTikhonovProblem( IP_SSATaucForwardProblem &forward, 
                           IP_SSATaucTaoTikhonovProblem::DesignVec &d0, 
-                          IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, PetscReal eta, 
+                          IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, double eta, 
                           IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec>&designFunctional, 
                           IPFunctional<IP_SSATaucTaoTikhonovProblem::StateVec>&stateFunctional) :
         IPTaoTikhonovProblem<IP_SSATaucForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};

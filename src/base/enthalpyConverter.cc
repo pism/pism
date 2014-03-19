@@ -24,7 +24,7 @@
 EnthalpyConverter::EnthalpyConverter(const PISMConfig &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
-  g     = config.get("standard_gravity");			 // m s-2
+  g     = config.get("standard_gravity");                        // m s-2
   L     = config.get("water_latent_heat_fusion");                // J kg-1
   p_air = config.get("surface_pressure");                        // Pa
   rho_i = config.get("ice_density");                             // kg m-3
@@ -187,7 +187,7 @@ The pressure-adjusted temperature is:
  */
 PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) const {
   PetscErrorCode ierr;
-  double T = 0;	 // initialized to avoid a compiler warning
+  double T = 0;  // initialized to avoid a compiler warning
   ierr = getAbsTemp(E,p,T);
 #if PISM_DEBUG==1
   CHKERRQ(ierr);

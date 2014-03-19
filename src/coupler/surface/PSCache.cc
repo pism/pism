@@ -20,6 +20,8 @@
 #include "PSCache.hh"
 #include "PISMTime.hh"
 #include "pism_options.hh"
+#include <cassert>
+#include <algorithm>            // for std::min
 
 PSCache::PSCache(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
   : PSModifier(g, conf, in) {
@@ -39,10 +41,10 @@ PetscErrorCode PSCache::allocate_PSCache() {
 
   ierr = m_mass_flux.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_mass_flux.set_attrs("climate_state",
-                               "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                               "m s-1",
+                               "surface mass balance (accumulation/ablation) rate",
+                               "kg m-2 s-1",
                                "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
-  ierr = m_mass_flux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = m_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   m_mass_flux.write_in_glaciological_units = true;
 
   ierr = m_temperature.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -100,21 +102,58 @@ PetscErrorCode PSCache::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSCache::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PSCache::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
-  if (my_t + my_dt > m_next_update_time) {
-    ierr = input_model->update(my_t + 0.5*my_dt,
-                               grid.convert(1.0, "year", "seconds")); CHKERRQ(ierr);
+  // ignore my_dt and always use 1 year long time-steps when updating
+  // an input model
+  (void) my_dt;
+
+  if (my_t >= m_next_update_time ||
+      fabs(my_t - m_next_update_time) < 1.0) {
+
+    double
+      one_year_from_now = grid.time->increment_date(my_t, 1.0),
+      update_dt         = one_year_from_now - my_t;
+
+    assert(update_dt > 0.0);
+
+    ierr = input_model->update(my_t, update_dt); CHKERRQ(ierr);
 
     m_next_update_time = grid.time->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
-    ierr = input_model->ice_surface_mass_flux(m_mass_flux);                         CHKERRQ(ierr); 
-    ierr = input_model->ice_surface_temperature(m_temperature);                     CHKERRQ(ierr); 
-    ierr = input_model->ice_surface_liquid_water_fraction(m_liquid_water_fraction); CHKERRQ(ierr); 
-    ierr = input_model->mass_held_in_surface_layer(m_mass_held_in_surface_layer);   CHKERRQ(ierr); 
-    ierr = input_model->surface_layer_thickness(m_surface_layer_thickness);         CHKERRQ(ierr); 
+    ierr = input_model->ice_surface_mass_flux(m_mass_flux);                         CHKERRQ(ierr);
+    ierr = input_model->ice_surface_temperature(m_temperature);                     CHKERRQ(ierr);
+    ierr = input_model->ice_surface_liquid_water_fraction(m_liquid_water_fraction); CHKERRQ(ierr);
+    ierr = input_model->mass_held_in_surface_layer(m_mass_held_in_surface_layer);   CHKERRQ(ierr);
+    ierr = input_model->surface_layer_thickness(m_surface_layer_thickness);         CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode PSCache::max_timestep(double t, double &dt, bool &restrict) {
+  dt       = m_next_update_time - t;
+  restrict = true;
+
+  // if we got very close to the next update time, set time step
+  // length to the interval between updates
+  if (dt < 1.0) {
+    double update_time_after_next = grid.time->increment_date(m_next_update_time,
+                                                              m_update_interval_years);
+
+    dt = update_time_after_next - m_next_update_time;
+    assert(dt > 0.0);
+  }
+
+  bool input_restrict = false;
+  double input_model_dt = 0.0;
+  assert(input_model != NULL);
+
+  PetscErrorCode ierr = input_model->max_timestep(t, input_model_dt, input_restrict); CHKERRQ(ierr);
+  if (input_restrict == true) {
+    dt = std::min(input_model_dt, dt);
   }
 
   return 0;

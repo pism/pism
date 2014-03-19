@@ -118,9 +118,9 @@ PetscErrorCode PBLingleClark::allocate() {
 
   if (grid.rank == 0) {
     ierr = bdLC.settings(config, use_elastic_model,
-			 grid.Mx, grid.My, grid.dx, grid.dy,
-			 4,     // use Z = 4 for now; to reduce global drift?
-			 &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
+                         grid.Mx, grid.My, grid.dx, grid.dy,
+                         4,     // use Z = 4 for now; to reduce global drift?
+                         &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0);
     CHKERRQ(ierr);
 
     ierr = bdLC.alloc(); CHKERRQ(ierr);
@@ -152,7 +152,7 @@ PetscErrorCode PBLingleClark::init(PISMVars &vars) {
   ierr = PISMBedDef::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the Lingle-Clark bed deformation model...\n"); CHKERRQ(ierr);
+                    "* Initializing the Lingle-Clark bed deformation model...\n"); CHKERRQ(ierr);
 
   ierr = correct_topg(); CHKERRQ(ierr);
 
@@ -250,7 +250,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
 
 //! Update the Lingle-Clark bed deformation model.
-PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if ((fabs(my_t - m_t)   < 1e-12) &&
@@ -260,10 +260,10 @@ PetscErrorCode PBLingleClark::update(PetscReal my_t, PetscReal my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  PetscReal t_final = m_t + m_dt;
+  double t_final = m_t + m_dt;
 
   // Check if it's time to update:
-  PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
+  double dt_beddef = t_final - t_beddef_last; // in seconds
   if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < grid.time->end()) ||
       dt_beddef < 1e-12)

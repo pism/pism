@@ -29,7 +29,7 @@ public:
   virtual ~PO_delta_SL();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode sea_level_elevation(double &result);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,

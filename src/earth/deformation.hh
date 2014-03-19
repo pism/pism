@@ -50,7 +50,7 @@ public:
   ~BedDeformLC();
   PetscErrorCode settings(const PISMConfig &config,
                           bool myinclude_elastic,
-                          int myMx, int myMy, PetscReal mydx, PetscReal mydy,
+                          int myMx, int myMy, double mydx, double mydy,
                           int myZ,
                           Vec* myHstart, Vec* mybedstart, Vec* myuplift,  // initial state
                           Vec* myH,     // generally gets changed by calling program
@@ -59,28 +59,28 @@ public:
   PetscErrorCode alloc();
   PetscErrorCode init();
   PetscErrorCode uplift_init();
-  PetscErrorCode step(const PetscScalar dtyear, const PetscScalar yearFromStart);
+  PetscErrorCode step(const double dtyear, const double yearFromStart);
 
 protected:
   bool        include_elastic;
   int         Mx, My;
-  PetscReal   dx, dy;
+  double   dx, dy;
   int         Z;                // factor by which fat FFT domain is larger than
                                 // region of physical interest
-  PetscScalar icerho,           // ice density (for computing load from volume)
+  double icerho,           // ice density (for computing load from volume)
     rho,                        // earth density
     eta,                        // mantle viscosity
     D;                          // lithosphere flexural rigidity
 
 private:
-  PetscScalar   standard_gravity;
+  double   standard_gravity;
   bool          settingsDone, allocDone;
-  PetscInt      Nx, Ny,         // fat sizes
+  int      Nx, Ny,         // fat sizes
                 Nxge, Nyge;     // fat with boundary sizes
-  PetscInt      i0_plate,  j0_plate; // indices into fat array for corner of thin
-  PetscScalar   Lx, Ly;         // half-lengths of the physical domain
-  PetscScalar   Lx_fat, Ly_fat; // half-lengths of the FFT (spectral) computational domain
-  PetscScalar  *cx, *cy;        // coeffs of derivatives in Fourier space
+  int      i0_plate,  j0_plate; // indices into fat array for corner of thin
+  double   Lx, Ly;         // half-lengths of the physical domain
+  double   Lx_fat, Ly_fat; // half-lengths of the FFT (spectral) computational domain
+  double  *cx, *cy;        // coeffs of derivatives in Fourier space
   Vec          *H, *bed, *H_start, *bed_start, *uplift; // pointers to sequential
   Vec           Hdiff, dbedElastic, // sequential; working space
                 U, U_start,     // sequential and fat
@@ -89,33 +89,33 @@ private:
   fftw_complex *fftw_input, *fftw_output, *loadhat; // 2D sequential
   fftw_plan     dft_forward, dft_inverse;
 
-  void tweak(PetscReal seconds_from_start);
+  void tweak(double seconds_from_start);
 
   void clear_fftw_input();
   void copy_fftw_output(fftw_complex *buffer);
-  void set_fftw_input(Vec input, PetscReal normalization, int M, int N, int i0, int j0);
-  void get_fftw_output(Vec output, PetscReal normalization, int M, int N, int i0, int j0);
+  void set_fftw_input(Vec input, double normalization, int M, int N, int i0, int j0);
+  void get_fftw_output(Vec output, double normalization, int M, int N, int i0, int j0);
 };
 
 class PetscVecAccessor2D {
 public:
-  PetscVecAccessor2D(Vec vec, PetscInt my_Mx, PetscInt my_My)
+  PetscVecAccessor2D(Vec vec, int my_Mx, int my_My)
     : Mx(my_Mx), My(my_My), i_offset(0), j_offset(0), v(vec)
   { VecGetArray2d(v, Mx, My, 0, 0, &array); }
 
-  PetscVecAccessor2D(Vec vec, PetscInt my_Mx, PetscInt my_My, PetscInt i0, PetscInt j0)
+  PetscVecAccessor2D(Vec vec, int my_Mx, int my_My, int i0, int j0)
     : Mx(my_Mx), My(my_My), i_offset(i0), j_offset(j0), v(vec)
   { VecGetArray2d(v, Mx, My, 0, 0, &array); }
 
   ~PetscVecAccessor2D()
   { VecRestoreArray2d(v, Mx, My, 0, 0, &array); }
 
-  inline PetscScalar& operator()(int i, int j)
+  inline double& operator()(int i, int j)
   { return array[i + i_offset][j + j_offset]; }
 private:
-  PetscInt Mx, My, i_offset, j_offset;
+  int Mx, My, i_offset, j_offset;
   Vec v;
-  PetscScalar **array;
+  double **array;
 };
 
 template <class T>
@@ -135,5 +135,5 @@ private:
   T* array;
 };
 
-#endif	/* __deformation_hh */
+#endif  /* __deformation_hh */
 

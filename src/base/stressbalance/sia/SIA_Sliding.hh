@@ -30,22 +30,9 @@
 class SIA_Sliding : public ShallowStressBalance
 {
 public:
-  SIA_Sliding(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              EnthalpyConverter &e, const PISMConfig &conf)
-    : ShallowStressBalance(g, b, e, conf)
-  {
-    verification_mode = false;
-    eisII_experiment = "";
-    allocate();
-  }
+  SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
 
-  virtual ~SIA_Sliding()
-  {
-    if (flow_law != NULL) {
-      delete flow_law;
-      flow_law = NULL;
-    }
-  }
+  virtual ~SIA_Sliding();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -80,10 +67,10 @@ protected:
   virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscScalar basalVelocitySIA(PetscScalar /*x*/, PetscScalar /*y*/,
-                                       PetscScalar H, PetscScalar T,
-                                       PetscScalar /*alpha*/, PetscScalar mu,
-                                       PetscScalar min_T) const;
+  virtual double basalVelocitySIA(double /*x*/, double /*y*/,
+                                       double H, double T,
+                                       double /*alpha*/, double mu,
+                                       double min_T) const;
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *surface, *bed, work_2d;
   IceModelVec3 *enthalpy;

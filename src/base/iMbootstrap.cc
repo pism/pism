@@ -47,14 +47,14 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); 
 
   ierr = verbPrintf(2, grid.com,
-		    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+                    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
 
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
   assert(surface != NULL);
 
   {
-    PetscReal max_dt = 0;
+    double max_dt = 0;
     bool restrict = false;
     ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
 
@@ -70,7 +70,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   assert(ocean != NULL);
 
   {
-    PetscReal max_dt = 0;
+    double max_dt = 0;
     bool restrict = false;
     // FIXME: this will break if an ocean model requires contiguous update intervals
     ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
@@ -82,7 +82,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
+                    "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
 
   // Fill 3D fields using heuristics:
   ierr = bootstrap_3d(); CHKERRQ(ierr);
@@ -101,7 +101,7 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
-		    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
+                    "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
 
   // report on resulting computational box, rescale grid, actually create a
   // local interpolation context
@@ -133,17 +133,17 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
 
   if (maskExists) {
     ierr = verbPrintf(2, grid.com, 
-		      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
+                      "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
 
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
-		      CHKERRQ(ierr);
+                      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
+                      CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(2, grid.com, 
-		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
+                    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, OPTIONAL); CHKERRQ(ierr);
   if (!lonExists) {
@@ -155,11 +155,11 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
     vLatitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  ierr = vH.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
-  ierr = vbed.regrid(filename, OPTIONAL, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
+  ierr = ice_thickness.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  ierr = bed_topography.regrid(filename, OPTIONAL, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
   ierr = basal_melt_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr = vGhf.regrid(filename, OPTIONAL, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
-  ierr = vuplift.regrid(filename, OPTIONAL, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+  ierr = geothermal_flux.regrid(filename, OPTIONAL, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
+  ierr = bed_uplift_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled
@@ -182,8 +182,8 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   }
 
   // check if Lz is valid
-  PetscReal thk_min, thk_max;
-  ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);
+  double thk_min, thk_max;
+  ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
 
   if (thk_max > grid.Lz) {
     PetscPrintf(grid.com,
@@ -207,14 +207,14 @@ PetscErrorCode IceModel::bootstrap_3d() {
   }
   
   ierr = verbPrintf(2, grid.com, "  filling ice temperatures using surface temps (and %s)\n",
-     (config.get_flag("bootstrapping_no_smb_in_initial_temp")
-        ? "quartic guess sans smb" : "mass balance for velocity estimate") );
+                    (config.get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
+                     ? "quartic guess sans smb" : "mass balance for velocity estimate") );
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods") == false) {
     ierr = verbPrintf(2, grid.com,
-		      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+                      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
     CHKERRQ(ierr);
   }
 
@@ -243,10 +243,10 @@ Within the column denote the temperature by \f$T(z)\f$ at height \f$z\f$ above
 the base of the ice.  Suppose the column of ice has height \f$H\f$, the ice
 thickness.
 
-There are two alternative bootstrap methods determined by the boolean
-`usesmb = !(config.get("bootstrapping_no_smb_in_initial_temp"))`.
+There are two alternative bootstrap methods determined by the configuration parameter
+`config.get("bootstrapping_temperature_heuristic"))`. Allowed values are `"smb"` and `"quartic_guess"`.
 
-1. If `usesmb` is true, which is the default, and if \f$m>0\f$,
+1. If the `smb` method is chosen, which is the default, and if \f$m>0\f$,
 then the method sets the ice
 temperature to the solution of the steady problem [\ref Paterson]
   \f[\rho_i c w \frac{\partial T}{\partial z} = k_i \frac{\partial^2 T}{\partial z^2} \qquad \text{with boundary conditions} \qquad T(H) = T_s \quad \text{and} \quad \frac{\partial T}{\partial z}(0) = - \frac{g}{k_i}, \f]
@@ -268,7 +268,7 @@ to the base, is taken to be zero.  Thus the solution is
   \f[ T(z) = \frac{g}{k_i} \left( H - z \right) + T_s, \f]
 a straight line whose slope is determined by the geothermal flux and whose value
 at the ice surface is the surface temperature, \f$T(H) = T_s\f$.
-2. If `usesmb` is false then the "quartic guess" formula which was in older
+2. If the `quartic_guess` method is chosen, the "quartic guess" formula which was in older
 versions of PISM is used.  Namely, within the ice we set
 \f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]
 where \f$\alpha,\beta\f$ are chosen so that
@@ -291,10 +291,10 @@ bootstrap temperature profile in the bedrock.
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
 
-  PetscScalar *T = new PetscScalar[grid.Mz];
+  double *T = new double[grid.Mz];
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
-             usesmb  = config.get_flag("bootstrapping_no_smb_in_initial_temp") == false;
-  const PetscScalar
+             usesmb  = config.get_string("bootstrapping_temperature_heuristic") == "smb";
+  const double
     ice_k = config.get("ice_thermal_conductivity"),
     melting_point_temp = config.get("water_melting_point_temperature"),
     ice_density = config.get("ice_density"),
@@ -307,7 +307,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
   {
     ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     if (usesmb == true) {
-      ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
+      ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
+      // convert from [kg m-2 s-1] to [m / s]
+      ierr = climatic_mass_balance.scale(1.0 / config.get("ice_density")); CHKERRQ(ierr);
     }
   }
 
@@ -317,45 +319,45 @@ PetscErrorCode IceModel::putTempAtDepth() {
   else
     result = &Enth3;
 
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  ierr = acab.begin_access(); CHKERRQ(ierr);
-  ierr =   vH.begin_access();   CHKERRQ(ierr);
-  ierr = vGhf.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = ice_surface_temp.begin_access();      CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
+  ierr = geothermal_flux.begin_access();       CHKERRQ(ierr);
+  ierr = result->begin_access();               CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar HH = vH(i,j),
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double HH = ice_thickness(i,j),
                         Ts = ice_surface_temp(i,j),
-                        gg = vGhf(i,j);
+                        gg = geothermal_flux(i,j);
       const unsigned int ks = grid.kBelowHeight(HH);
 
       // within ice
       if (usesmb == true) { // method 1:  includes surface mass balance in estimate
-        const PetscScalar mm = acab(i,j);
+        const double mm = climatic_mass_balance(i,j);
         if (mm <= 0.0) { // negative or zero surface mass balance case: linear
           for (unsigned int k = 0; k < ks; k++) {
-            const PetscScalar z = grid.zlevels[k],
+            const double z = grid.zlevels[k],
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = gg / ice_k * (HH - z) + Ts;
             T[k] = PetscMin(Tpmp,T[k]);
           }
         } else { // positive surface mass balance case
-          const PetscScalar C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+          const double C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
             gamma0 = sqrt(mm * HH / (2.0 * KK));
 
           for (unsigned int k = 0; k < ks; k++) {
-            const PetscScalar z = grid.zlevels[k],
+            const double z = grid.zlevels[k],
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
             T[k] = Ts + C0 * ( erf(gamma0) - erf(gamma0 * z / HH) );
             T[k] = PetscMin(Tpmp,T[k]);
           }
         }
       } else { // method 2:  does not use smb
-        const PetscScalar beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
+        const double beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
                           alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
         for (unsigned int k = 0; k < ks; k++) {
-          const PetscScalar depth = HH - grid.zlevels[k],
+          const double depth = HH - grid.zlevels[k],
                             Tpmp = melting_point_temp - beta_CC_grad * depth,
                             d2 = depth * depth;
           T[k] = PetscMin(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
@@ -365,27 +367,27 @@ PetscErrorCode IceModel::putTempAtDepth() {
       // above ice
       for (unsigned int k = ks; k < grid.Mz; k++)
         T[k] = ice_surface_temp(i,j);
-      
+
       // convert to enthalpy if that's what we are calculating
       if (!do_cold) {
         for (unsigned int k = 0; k < grid.Mz; ++k) {
-          const PetscScalar depth = HH - grid.zlevels[k];
-          const PetscScalar pressure = EC->getPressureFromDepth(depth);
+          const double depth = HH - grid.zlevels[k];
+          const double pressure = EC->getPressureFromDepth(depth);
           // reuse T to store enthalpy; assume that the ice is cold
           ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
         }
       }
 
       ierr = result->setInternalColumn(i,j,T); CHKERRQ(ierr);
-      
+
     }
   }
 
-  ierr =     vH.end_access(); CHKERRQ(ierr);
-  ierr =   vGhf.end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr =   ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr =   acab.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access();         CHKERRQ(ierr);
+  ierr = geothermal_flux.end_access();       CHKERRQ(ierr);
+  ierr = result->end_access();               CHKERRQ(ierr);
+  ierr = ice_surface_temp.end_access();      CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   delete [] T;
 

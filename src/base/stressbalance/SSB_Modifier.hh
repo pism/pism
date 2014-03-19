@@ -44,7 +44,7 @@ public:
   { result = &diffusive_flux; return 0; }
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(PetscReal &result)
+  virtual PetscErrorCode get_max_diffusivity(double &result)
   { result = D_max; return 0; }
 
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result,
@@ -55,7 +55,7 @@ public:
   { result = &strain_heating; return 0; }
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+  virtual PetscErrorCode extend_the_grid(int old_Mz);
 
   virtual PetscErrorCode stdout_report(std::string &result)
   { result = ""; return 0; }
@@ -67,7 +67,7 @@ protected:
 
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
-  PetscReal D_max;
+  double D_max;
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, strain_heating;
 
@@ -76,11 +76,11 @@ protected:
 
 
 //! The trivial Shallow Stress Balance modifier.
-class SSBM_Trivial : public SSB_Modifier
+class ConstantInColumn : public SSB_Modifier
 {
 public:
-  SSBM_Trivial(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
-  virtual ~SSBM_Trivial();
+  ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  virtual ~ConstantInColumn();
 
   virtual PetscErrorCode init(PISMVars &vars);
 

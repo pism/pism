@@ -43,31 +43,31 @@ public:
   { };
 
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j, 
+    double x, double y, double *u, double *v );
 
 };
 
-const PetscScalar m_schoof = 10; // (pure number)
-const PetscScalar L_schoof = 40e3; // meters
-const PetscScalar aspect_schoof = 0.05; // (pure)
-const PetscScalar H0_schoof = aspect_schoof * L_schoof; 
+const double m_schoof = 10; // (pure number)
+const double L_schoof = 40e3; // meters
+const double aspect_schoof = 0.05; // (pure)
+const double H0_schoof = aspect_schoof * L_schoof; 
                                        // = 2000 m THICKNESS
-const PetscScalar B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
+const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
                                      // given on p. 239 of Schoof; why so big?
-const PetscScalar p_schoof = 4.0/3.0; // = 1 + 1/n
+const double p_schoof = 4.0/3.0; // = 1 + 1/n
 
 
-PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
-  PetscReal Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  PetscReal Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
+  double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
+  double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -75,9 +75,9 @@ PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
 
 PetscErrorCode SSATestCaseI::initializeSSAModel()
 {
-  basal = new IceBasalResistancePlasticLaw(config);
-
   enthalpyconverter = new EnthalpyConverter(config);
+
+  config.set_flag("do_pseudo_plastic_till", false);
 
   config.set_string("ssa_flow_law", "isothermal_glen");
   config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
@@ -100,14 +100,14 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 
   ierr = tauc.begin_access(); CHKERRQ(ierr);
 
-  PetscScalar standard_gravity = config.get("standard_gravity"),
+  double standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar y = grid.y[j];
-      const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice_rho * standard_gravity * H0_schoof * tan(theta);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double y = grid.y[j];
+      const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
+      const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
       tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
     }
   }
@@ -120,10 +120,10 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = surface.begin_access(); CHKERRQ(ierr);
   ierr = bed.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk, myu, myv;
-      const PetscScalar myx = grid.x[i], myy=grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double junk, myu, myv;
+      const double myx = grid.x[i], myy=grid.y[j];
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
       surface(i,j) = bed(i,j) + H0_schoof;
@@ -157,11 +157,11 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 }
 
 
-PetscErrorCode SSATestCaseI::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
-                                           PetscReal x, PetscReal y,
-                                           PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseI::exactSolution(int /*i*/, int /*j*/, 
+                                           double x, double y,
+                                           double *u, double *v)
 {
-  PetscReal junk1, junk2;
+  double junk1, junk2;
   exactI(m_schoof, x,y, &junk1, &junk2,u,v); 
   return 0;
 }
@@ -197,8 +197,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=11;
-    PetscInt My=61;
+    int Mx=11;
+    int My=61;
     std::string output_file = "ssa_test_i.nc";
 
     std::set<std::string> ssa_choices;
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }

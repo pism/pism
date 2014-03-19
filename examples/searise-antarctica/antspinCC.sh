@@ -17,7 +17,7 @@ echo "$SCRIPTNAME   run preprocess.sh before this..."
 set -e  # exit on error
 
 echo "$SCRIPTNAME   Constant-climate spinup script using SeaRISE-Antarctica data"
-echo "$SCRIPTNAME      and -ssa_sliding and -pik"
+echo "$SCRIPTNAME      and -stress_balance ssa+sia and -pik"
 echo "$SCRIPTNAME   Run as './antspinCC.sh NN' for NN procs and 30km grid"
 
 # naming files, directories, executables
@@ -79,7 +79,7 @@ PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -sur
 # sliding related options:
 PARAMS="-pseudo_plastic -pseudo_plastic_q 0.25 -till_effective_fraction_overburden 0.02 -tauc_slippery_grounding_lines"
 TILLPHI="-topg_to_phi 15.0,40.0,-300.0,700.0"
-FULLPHYS="-ssa_sliding -hydrology null $PARAMS $TILLPHI"
+FULLPHYS="-stress_balance ssa+sia -hydrology null $PARAMS $TILLPHI"
 
 # use these if KSP "diverged" errors occur
 STRONGKSP="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
@@ -105,9 +105,6 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -boot_file ${INNAME} $GRID
 	-y $RUNTIME -o $RESNAMEONE"
 $DO $cmd
 #exit # <-- uncomment to stop here
-
-# replace topg with topgsmooth in file $RESNAMEONE
-PISM_DO=$PISM_DO ./topgreplace.sh $RESNAMEONE
 
 stage=smoothing
 RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
@@ -166,7 +163,7 @@ $DO $cmd
 #exit # <-- comment to stop here
 
 # #######################################
-## do a regridding to fine grid and reset year to 0 (demonstrate for only 1000 model years):
+## do a regridding to fine grid and reset year to 0 and run for 2000 model years:
 # #######################################
 GRID=$FIFTEENKMGRID
 SKIP=$SKIPFIFTEENKM
@@ -175,38 +172,15 @@ stage=run_regrid_${GRIDNAME}
 INNAME=$RESNAME
 RESNAME=${RESDIR}$stage.nc
 TSNAME=${RESDIR}ts_$stage.nc
-RUNTIME=1000
+RUNTIME=2000
 EXTRANAME=${RESDIR}extra_$stage.nc
 expackage="-extra_times 0:10:$RUNTIME -extra_vars $exvars"
 
 echo
-echo "$SCRIPTNAME  continue but regrid to $GRIDNAME"
+echo "$SCRIPTNAME  continue but regrid to $GRIDNAME and run for 2000 a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
     -boot_file $PISM_INDATANAME $GRID \
     -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt \
-    $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
-    -ys 0 -y $RUNTIME \
-    -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-    -extra_file $EXTRANAME $expackage \
-    -o $RESNAME -o_size big"
-
-$DO $cmd
-
-
-# continue run after smoothing topg
-
-# replace topg with topgsmooth in file $RESNAMEONE
-PISM_DO=$PISM_DO ./topgreplace.sh $RESNAME
-
-INNAME=$RESNAME
-stage=run_cont_${GRIDNAME}
-RESNAME=${RESDIR}$stage.nc
-TSNAME=${RESDIR}ts_$stage.nc
-RUNTIME=1000
-EXTRANAME=${RESDIR}extra_$stage.nc
-echo "$SCRIPTNAME  continue on $GRIDNAME grid"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
-    -i $INNAME \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
     -ts_file $TSNAME -ts_times 0:1:$RUNTIME \

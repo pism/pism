@@ -32,11 +32,11 @@ public:
   virtual ~PA_SeaRISE_Greenland();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 protected:
   IceModelVec2S *lat, *lon, *surfelev;
 };
 
 
-#endif	// __PASeariseGreenland_hh
+#endif  // __PASeariseGreenland_hh

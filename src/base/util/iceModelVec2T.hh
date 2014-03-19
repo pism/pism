@@ -77,8 +77,8 @@
   ierr = v.update(t, max_dt); CHKERRQ(ierr);
 
   ierr = v.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
+    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
       ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
       // do more
     }
@@ -112,21 +112,21 @@ public:
 
   virtual PetscErrorCode interp(double my_t);
 
-  virtual PetscErrorCode interp(int i, int j, PetscScalar *results);
+  virtual PetscErrorCode interp(int i, int j, double *results);
 
   virtual PetscErrorCode average(double my_t, double my_dt);
   virtual PetscErrorCode average(int i, int j, double &result);
 
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
-  virtual PetscErrorCode init_interpolation(const PetscScalar *ts, unsigned int ts_length);
+  virtual PetscErrorCode init_interpolation(const double *ts, unsigned int ts_length);
 
 protected:
-  std::vector<double> time,		//!< all the times available in filename
-    time_bounds;		//!< time bounds
-  std::string filename;		//!< file to read (regrid) from
+  std::vector<double> time,             //!< all the times available in filename
+    time_bounds;                //!< time bounds
+  std::string filename;         //!< file to read (regrid) from
   DM da3;
-  Vec v3;			//!< a 3D Vec used to store records
+  Vec v3;                       //!< a 3D Vec used to store records
   void ***array3;
   unsigned int n_records, //!< maximum number of records to store in memory
     N,                    //!< number of records kept in memory
@@ -140,7 +140,7 @@ protected:
   double m_reference_time;      // in seconds
 
   virtual PetscErrorCode destroy();
-  virtual PetscErrorCode get_array3(PetscScalar*** &a3);
+  virtual PetscErrorCode get_array3(double*** &a3);
   virtual PetscErrorCode update(unsigned int start);
   virtual PetscErrorCode discard(int N);
 };

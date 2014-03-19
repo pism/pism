@@ -40,27 +40,29 @@ PetscErrorCode IceModel::do_calving() {
     &old_Href = vWork2d[1];
 
   if (compute_cumulative_discharge) {
-    ierr = vH.copy_to(old_H); CHKERRQ(ierr);
-    ierr = vHref.copy_to(old_Href); CHKERRQ(ierr);
+    ierr = ice_thickness.copy_to(old_H); CHKERRQ(ierr);
+    if (vHref.was_created()) {
+      ierr = vHref.copy_to(old_Href); CHKERRQ(ierr);
+    }
   }
 
   // eigen-calving should go first: it uses the ice velocity field,
   // which is defined at grid points that were icy at the *beginning*
   // of a time-step.
   if (eigen_calving != NULL) {
-    ierr = eigen_calving->update(dt, vMask, vHref, vH); CHKERRQ(ierr);
+    ierr = eigen_calving->update(dt, vMask, vHref, ice_thickness); CHKERRQ(ierr);
   }
 
   if (ocean_kill_calving != NULL) {
-    ierr = ocean_kill_calving->update(vMask, vH); CHKERRQ(ierr);
+    ierr = ocean_kill_calving->update(vMask, ice_thickness); CHKERRQ(ierr);
   }
 
   if (float_kill_calving != NULL) {
-    ierr = float_kill_calving->update(vMask, vH); CHKERRQ(ierr);
+    ierr = float_kill_calving->update(vMask, ice_thickness); CHKERRQ(ierr);
   }
 
   if (thickness_threshold_calving != NULL) {
-    ierr = thickness_threshold_calving->update(vMask, vH); CHKERRQ(ierr);
+    ierr = thickness_threshold_calving->update(vMask, ice_thickness); CHKERRQ(ierr);
   }
 
   // This call removes icebergs, too.
@@ -68,7 +70,7 @@ PetscErrorCode IceModel::do_calving() {
 
   ierr = Href_cleanup(); CHKERRQ(ierr);
 
-  ierr = update_cumulative_discharge(vH, old_H, vHref, old_Href); CHKERRQ(ierr);
+  ierr = update_cumulative_discharge(ice_thickness, old_H, vHref, old_Href); CHKERRQ(ierr);
 
   return 0;
 }
@@ -76,7 +78,7 @@ PetscErrorCode IceModel::do_calving() {
 /**
  * Clean up the Href field.
  *
- * Href(i,j) > 0 is allowed only if vH(i,j) == 0 and (i,j) has a
+ * Href(i,j) > 0 is allowed only if ice_thickness(i,j) == 0 and (i,j) has a
  * floating ice neighbor.
  */
 PetscErrorCode IceModel::Href_cleanup() {
@@ -87,15 +89,15 @@ PetscErrorCode IceModel::Href_cleanup() {
 
   MaskQuery mask(vMask);
 
-  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = vHref.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
 
-      if (vH(i, j) > 0 && vHref(i, j) > 0) {
-        vH(i, j) += vHref(i, j);
+      if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
+        ice_thickness(i, j) += vHref(i, j);
         vHref(i, j) = 0.0;
       }
 
@@ -108,13 +110,15 @@ PetscErrorCode IceModel::Href_cleanup() {
 
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vHref.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
 /**
  * Updates the cumulative ice discharge into the ocean.
+ *
+ * Units: kg, computed as thickness [m] * cell_area [m2] * density [kg m-3].
  *
  * @param thickness current ice thickness
  * @param thickness_old old ice thickness
@@ -135,7 +139,7 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
   const bool
     update_2d_discharge = discharge_flux_2D_cumulative.was_created(),
     use_Href = Href.was_created() && Href_old.was_created();
-  PetscReal my_total_discharge = 0.0, total_discharge;
+  double my_total_discharge = 0.0, total_discharge;
 
   ierr = thickness.begin_access(); CHKERRQ(ierr);
   ierr = thickness_old.begin_access(); CHKERRQ(ierr);
@@ -151,19 +155,20 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
     ierr = Href_old.begin_access(); CHKERRQ(ierr);
   }
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (mask.ice_free_ocean(i,j)) {
         double
           delta_H    = thickness(i,j) - thickness_old(i,j),
-          delta_Href, discharge;
+          delta_Href = 0.0,
+          discharge  = 0.0;
 
         if (use_Href)
           delta_Href = Href(i,j) - Href_old(i,j);
         else
           delta_Href = 0.0;
 
-        discharge  = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
+        discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
 
         if (update_2d_discharge)
           discharge_flux_2D_cumulative(i,j) += discharge;

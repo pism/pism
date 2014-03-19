@@ -36,7 +36,7 @@ PO_delta_T::~PO_delta_T() {
 
 PetscErrorCode PO_delta_T::allocate_PO_delta_T() {
   option_prefix = "-ocean_delta_T";
-  offset_name	= "delta_T";
+  offset_name   = "delta_T";
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
@@ -48,8 +48,8 @@ PetscErrorCode PO_delta_T::allocate_PO_delta_T() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("m s-1");
-  shelfbmassflux.set_glaciological_units("m year-1");
+  shelfbmassflux.set_units("kg m-2 s-1");
+  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");

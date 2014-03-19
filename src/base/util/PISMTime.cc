@@ -178,7 +178,7 @@ PetscErrorCode PISMTime::process_ye(double &result, bool &flag) {
 PetscErrorCode PISMTime::init() {
   PetscErrorCode ierr;
   bool y_set, ys_set, ye_set;
-  PetscReal y_seconds, ys_seconds, ye_seconds;
+  double y_seconds, ys_seconds, ye_seconds;
 
   // At this point the calendar and the year length are set (in the
   // constructor). The PISMTime_Calendar class will (potentially)
@@ -232,7 +232,7 @@ PetscErrorCode PISMTime::init() {
 
 std::string PISMTime::date(double T) {
   char tmp[256];
-  snprintf(tmp, 256, "%3.3f", seconds_to_years(T));
+  snprintf(tmp, 256, "%012.3f", seconds_to_years(T));
   return std::string(tmp);
 }
 

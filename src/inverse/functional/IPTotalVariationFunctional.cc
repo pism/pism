@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013  David Maxwell
+// Copyright (C) 2012, 2013, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,36 +19,36 @@
 #include "IPTotalVariationFunctional.hh"
 
 IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid &grid, 
-  PetscReal c, PetscReal exponent, PetscReal eps, 
+  double c, double exponent, double eps, 
   IceModelVec2Int *dirichletLocations) : 
     IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations),
     m_c(c), m_lebesgue_exp(exponent), m_epsilon_sq(eps*eps) {
 }
 
-PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT) {
+PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **x_a;
-  PetscReal x_e[FEQuadrature::Nk];
-  PetscReal x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
+  double **x_a;
+  double x_e[FEQuadrature::Nk];
+  double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   DirichletData dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
 
   // Loop through all LOCAL elements.
-  PetscInt xs = m_element_index.lxs, xm = m_element_index.lxm,
+  int xs = m_element_index.lxs, xm = m_element_index.lxm,
            ys = m_element_index.lys, ym = m_element_index.lym;
-  for (PetscInt i=xs; i<xs+xm; i++) {
-    for (PetscInt j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
       m_dofmap.reset(i,j,m_grid);
 
       // Obtain values of x at the quadrature points for the element.
@@ -56,7 +56,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, PetscReal
       if(dirichletBC) dirichletBC.updateHomogeneous(m_dofmap,x_e);
       m_quadrature.computeTrialFunctionValues(x_e,x_q,dxdx_q,dxdy_q);
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
         value += m_c*JxW[q]*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q],m_lebesgue_exp/2);
       } // q
     } // j
@@ -78,30 +78,30 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   // Clear the gradient before doing anything with it.
   ierr = gradient.set(0); CHKERRQ(ierr);
 
-  PetscReal **x_a;
-  PetscReal x_e[FEQuadrature::Nk];
-  PetscReal x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
+  double **x_a;
+  double x_e[FEQuadrature::Nk];
+  double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
-  PetscReal **gradient_a;
-  PetscReal gradient_e[FEQuadrature::Nk];
+  double **gradient_a;
+  double gradient_e[FEQuadrature::Nk];
   ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  PetscScalar JxW[FEQuadrature::Nq];
+  double JxW[FEQuadrature::Nq];
   m_quadrature.getWeightedJacobian(JxW);
 
   DirichletData dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices); CHKERRQ(ierr);
 
   // Loop through all local and ghosted elements.
-  PetscInt xs = m_element_index.xs, xm = m_element_index.xm,
+  int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (PetscInt i=xs; i<xs+xm; i++) {
-    for (PetscInt j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
 
       // Reset the DOF map for this element.
       m_dofmap.reset(i,j,m_grid);
@@ -115,13 +115,13 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
       m_quadrature.computeTrialFunctionValues(x_e,x_q,dxdx_q,dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for(PetscInt k=0;k<FEQuadrature::Nk;k++){
+      for(int k=0;k<FEQuadrature::Nk;k++){
         gradient_e[k] = 0;
       }
 
-      for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        const PetscReal &dxdx_qq=dxdx_q[q],  &dxdy_qq=dxdy_q[q]; 
-        for(PetscInt k=0; k<FEQuadrature::Nk; k++ ) {
+      for (int q=0; q<FEQuadrature::Nq; q++) {
+        const double &dxdx_qq=dxdx_q[q],  &dxdy_qq=dxdy_q[q]; 
+        for(int k=0; k<FEQuadrature::Nk; k++ ) {
           gradient_e[k] += m_c*JxW[q]*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q],m_lebesgue_exp/2-1) 
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k

@@ -10,7 +10,8 @@ files="foo-11.nc bar-11.nc baz-11.nc"
 
 rm -f $files
 
-set -x -e
+set -x
+set -e
 
 OPTS="-My 121 -Mx 61 -eisII A -y 1000 -Mmax 0.925 -z_spacing equal"
 

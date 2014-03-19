@@ -106,7 +106,7 @@ protected:
   unsigned int m_n_spatial_dims;
 
 private:
-  PISMUnit m_units,		      //!< internal (PISM) units
+  PISMUnit m_units,                   //!< internal (PISM) units
     m_glaciological_units; //!< \brief for diagnostic variables: units
   //!< to use when writing to a NetCDF file and for standard out reports
   std::map<std::string, std::string> m_strings;  //!< string and boolean attributes
@@ -138,12 +138,12 @@ public:
   PetscErrorCode regrid(const PIO &file,
                         RegriddingFlag flag,
                         bool report_range,
-                        PetscScalar default_value, Vec v);
+                        double default_value, Vec v);
   PetscErrorCode regrid(const PIO &file,
                         unsigned int t_start,
                         RegriddingFlag flag,
                         bool report_range,
-                        PetscScalar default_value, Vec v);
+                        double default_value, Vec v);
 
   PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
                         bool write_in_glaciological_units);

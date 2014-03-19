@@ -18,10 +18,10 @@ netcdf gumparams {
     pism_overrides:preliminary_time_step_duration_doc = "s; 1 s is a long time, so this is better for starting up";
 
     pism_overrides:summary_time_unit_name = "second";
-    pism_overrides:summary_time_unit_name_doc = "";
+    pism_overrides:summary_time_unit_name_doc = "stdout uses seconds (not years) to show model time";
 
     pism_overrides:summary_time_use_calendar = "no";
-    pism_overrides:summary_time_use_calendar_doc = "";
+    pism_overrides:summary_time_use_calendar_doc = "stdout does not use a calendar to show model time";
 
     pism_overrides:summary_vol_scale_factor_log10 = -15;
     pism_overrides:summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3";
@@ -33,14 +33,14 @@ netcdf gumparams {
     pism_overrides:mask_icefree_thickness_standard_doc = "m; only if the fluid is less than this is a cell marked as ice free";
 
     pism_overrides:mask_is_floating_thickness_standard = 1e-8;
-    pism_overrides:mask_is_floating_thickness_standard_doc = "m; should not matter";
+    pism_overrides:mask_is_floating_thickness_standard_doc = "m; should not matter since all grounded";
 
     pism_overrides:adaptive_timestepping_ratio = 0.08;
-    pism_overrides:adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because it is more shear-thinning?";
+    pism_overrides:adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?";
 
     pism_overrides:Glen_exponent = 5.9;
-    pism_overrides:Glen_exponent_doc = "; = n;  Sayag & Worster (2012) give n = 5.9 +- 0.2";
+    pism_overrides:Glen_exponent_doc = "; = n;  Sayag & Worster (2013) give n = 5.9 +- 0.2";
 
     pism_overrides:ice_softness = 9.7316e-09;  // vs (e.g.) 4e-25 Pa-3 s-1 for ice
-    pism_overrides:ice_softness_doc = "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2012) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)";
+    pism_overrides:ice_softness_doc = "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)";
 }

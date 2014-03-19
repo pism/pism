@@ -37,6 +37,10 @@
 #include "PISMPNCFile.hh"
 #endif
 
+#if (PISM_USE_HDF5==1)
+#include "PISMNC4_HDF5.hh"
+#endif
+
 static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
   if (mode == "netcdf3") {
     return new PISMNC3File(com);
@@ -65,6 +69,11 @@ static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
 #if (PISM_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
     return new PISMPNCFile(com);
+  }
+#endif
+#if (PISM_USE_HDF5==1)
+  else if (mode == "hdf5") {
+    return new PISMNC4_HDF5(com);
   }
 #endif
   else {
@@ -354,12 +363,12 @@ PetscErrorCode PIO::inq_var(std::string short_name, std::string std_name, bool &
           found_by_standard_name = true;
           result = name;
         } else {
-	  ierr = PetscPrintf(m_com,
-			     "PISM ERROR: Inconsistency in the input file %s:\n  "
-			     "Variables '%s' and '%s' have the same standard_name ('%s').\n",
-			     inq_filename().c_str(), result.c_str(), name.c_str(), attribute.c_str());
-	  CHKERRQ(ierr);
-	  PISMEnd();
+          ierr = PetscPrintf(m_com,
+                             "PISM ERROR: Inconsistency in the input file %s:\n  "
+                             "Variables '%s' and '%s' have the same standard_name ('%s').\n",
+                             inq_filename().c_str(), result.c_str(), name.c_str(), attribute.c_str());
+          CHKERRQ(ierr);
+          PISMEnd();
         }
       }
 
@@ -446,7 +455,7 @@ PetscErrorCode PIO::inq_dimtype(std::string name, AxisType &result) const {
 
   if (tmp_units.parse(units) != 0) {
     ierr = PetscPrintf(m_com, "ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
-		       units.c_str(), name.c_str());
+                       units.c_str(), name.c_str());
     PISMEnd();
   }
 
@@ -565,15 +574,15 @@ PetscErrorCode PIO::inq_grid(std::string var_name, IceGrid *grid, Periodicity pe
   // The grid dimensions Lx/Ly are computed differently depending on the grid's
   // periodicity. For x-periodic grids, e.g., the length Lx is a little longer
   // than the difference between the maximum and minimum x-coordinates.
-  PetscReal x_max = input.x_max, x_min = input.x_min;
+  double x_max = input.x_max, x_min = input.x_min;
   if (periodicity & X_PERIODIC) {
-    PetscReal dx = (x_max-x_min)/(grid->Mx-1);
+    double dx = (x_max-x_min)/(grid->Mx-1);
     x_max += dx;
   }
 
-  PetscReal y_max = input.y_max, y_min = input.y_min;
+  double y_max = input.y_max, y_min = input.y_min;
   if (periodicity & Y_PERIODIC) {
-    PetscReal dy = (y_max-y_min)/(grid->My-1);
+    double dy = (y_max-y_min)/(grid->My-1);
     y_max += dy;
   }
 
@@ -617,7 +626,7 @@ PetscErrorCode PIO::inq_units(std::string name, bool &has_units, PISMUnit &units
   
   if (units.parse(units_string) != 0) {
     ierr = PetscPrintf(m_com, "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
-		       units_string.c_str(), name.c_str());
+                       units_string.c_str(), name.c_str());
     PISMEnd();
   }
 
@@ -920,7 +929,7 @@ PetscErrorCode PIO::get_att_text(std::string var_name, std::string att_name, std
 
 //! \brief Read a PETSc Vec using the grid "grid".
 /*!
- * Assumes that PetscScalar corresponds to C++ double.
+ * Assumes that double corresponds to C++ double.
  *
  * Vec g has to be "global" (i.e. without ghosts).
  */
@@ -938,7 +947,7 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, std::string var_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  PetscScalar *a_petsc;
+  double *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
 
   // We always use "mapped" I/O here, because we don't know where the input
@@ -971,7 +980,7 @@ PetscErrorCode PIO::inq_atttype(std::string var_name, std::string att_name, PISM
 
 //! \brief Write a PETSc Vec using the grid "grid".
 /*!
- * Assumes that PetscScalar corresponds to C++ double.
+ * Assumes that double corresponds to C++ double.
  *
  * Vec g has to be "global" (i.e. without ghosts).
  *
@@ -998,7 +1007,7 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, std::string var_name, unsigned int z_
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  PetscScalar *a_petsc;
+  double *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
 
   if (grid->config.get_string("output_variable_order") == "xyz") {
@@ -1080,7 +1089,7 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, std::string var_name,
 
 int PIO::k_below(double z, const std::vector<double> &zlevels) const {
   double z_min = zlevels.front(), z_max = zlevels.back();
-  PetscInt mcurr = 0;
+  int mcurr = 0;
 
   if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
     PetscPrintf(m_com,
@@ -1123,7 +1132,7 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const std::vector<double> &zlevels_out
 
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
-  PetscScalar *output_array;
+  double *output_array;
   ierr = VecGetArray(g, &output_array); CHKERRQ(ierr);
 
   for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
@@ -1342,9 +1351,9 @@ PetscErrorCode PIO::read_attributes(std::string name, NCVariable &variable) cons
 
   if (variable_exists == false) {
     ierr = PetscPrintf(m_com,
-		       "PISM ERROR: variable %s was not found in %s.\n"
-		       "            Exiting...\n",
-		       name.c_str(),
+                       "PISM ERROR: variable %s was not found in %s.\n"
+                       "            Exiting...\n",
+                       name.c_str(),
                        this->inq_filename().c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
@@ -1534,17 +1543,17 @@ PetscErrorCode PIO::read_valid_range(std::string name, NCVariable &variable) con
   }
 
   ierr = this->get_att_double(name, "valid_range", bounds); CHKERRQ(ierr);
-  if (bounds.size() == 2) {		// valid_range is present
+  if (bounds.size() == 2) {             // valid_range is present
     variable.set_double("valid_min", cv_convert_double(c, bounds[0]));
     variable.set_double("valid_max", cv_convert_double(c, bounds[1]));
-  } else {			// valid_range has the wrong length or is missing
+  } else {                      // valid_range has the wrong length or is missing
     ierr = this->get_att_double(name, "valid_min", bounds); CHKERRQ(ierr);
-    if (bounds.size() == 1) {		// valid_min is present
+    if (bounds.size() == 1) {           // valid_min is present
       variable.set_double("valid_min", cv_convert_double(c, bounds[0]));
     }
 
     ierr = this->get_att_double(name, "valid_max", bounds); CHKERRQ(ierr);
-    if (bounds.size() == 1) {		// valid_max is present
+    if (bounds.size() == 1) {           // valid_max is present
       variable.set_double("valid_max", cv_convert_double(c, bounds[0]));
     }
   }
@@ -1575,8 +1584,8 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
   if (!variable_exists) {
     ierr = PetscPrintf(m_com,
                        "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
-		       name.c_str(),
-		       standard_name.c_str(), this->inq_filename().c_str());
+                       name.c_str(),
+                       standard_name.c_str(), this->inq_filename().c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -1586,9 +1595,9 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
 
   if (dims.size() != 1) {
     ierr = PetscPrintf(m_com,
-		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
-		       "            but a time-series variable can only depend on 1 dimension.\n",
-		       name.c_str(), this->inq_filename().c_str(), dims.size()); CHKERRQ(ierr);
+                       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
+                       "            but a time-series variable can only depend on 1 dimension.\n",
+                       name.c_str(), this->inq_filename().c_str(), dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -1597,12 +1606,12 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
 
   if (length <= 0) {
     ierr = PetscPrintf(m_com,
-		       "PISM ERROR: Dimension %s has zero length!\n",
-		       dimension_name.c_str()); CHKERRQ(ierr);
+                       "PISM ERROR: Dimension %s has zero length!\n",
+                       dimension_name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
-  data.resize(length);		// memory allocation happens here
+  data.resize(length);          // memory allocation happens here
 
   ierr = this->enddef(); CHKERRQ(ierr);
 
@@ -1631,10 +1640,10 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
   if (metadata.has_attribute("units") == true && input_has_units == false) {
     std::string units_string = internal_units.format();
     ierr = verbPrintf(2, m_com,
-		      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-		      "              Assuming that it is in '%s'.\n",
-		      name.c_str(), long_name.c_str(),
-		      units_string.c_str()); CHKERRQ(ierr);
+                      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                      "              Assuming that it is in '%s'.\n",
+                      name.c_str(), long_name.c_str(),
+                      units_string.c_str()); CHKERRQ(ierr);
     input_units = internal_units;
   }
 
@@ -1705,8 +1714,8 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
 
   if (variable_exists == false) {
     ierr = PetscPrintf(m_com,
-		      "PISM ERROR: Can't find '%s' in '%s'.\n",
-		       name.c_str(), filename.c_str()); CHKERRQ(ierr);
+                      "PISM ERROR: Can't find '%s' in '%s'.\n",
+                       name.c_str(), filename.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -1715,9 +1724,9 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
 
   if (dims.size() != 2) {
     ierr = PetscPrintf(m_com,
-		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
-		       "            but a time-bounds variable can only depend on 2 dimension.\n",
-		       name.c_str(),
+                       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
+                       "            but a time-bounds variable can only depend on 2 dimension.\n",
+                       name.c_str(),
                        filename.c_str(), dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
@@ -1743,12 +1752,12 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
   ierr = this->inq_dimlen(dimension_name, length); CHKERRQ(ierr);
   if (length <= 0) {
     ierr = PetscPrintf(m_com,
-		       "PISM ERROR: Dimension %s has zero length!\n",
-		       dimension_name.c_str()); CHKERRQ(ierr);
+                       "PISM ERROR: Dimension %s has zero length!\n",
+                       dimension_name.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
-  data.resize(2*length);		// memory allocation happens here
+  data.resize(2*length);                // memory allocation happens here
 
   ierr = this->enddef(); CHKERRQ(ierr);
 
@@ -1793,10 +1802,10 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
   if (metadata.has_attribute("units") && input_has_units == false ) {
     std::string units_string = internal_units.format();
     ierr = verbPrintf(2, m_com,
-		      "PISM WARNING: Variable '%s' does not have the units attribute.\n"
-		      "              Assuming that it is in '%s'.\n",
-		      dimension_name.c_str(),
-		      units_string.c_str()); CHKERRQ(ierr);
+                      "PISM WARNING: Variable '%s' does not have the units attribute.\n"
+                      "              Assuming that it is in '%s'.\n",
+                      dimension_name.c_str(),
+                      units_string.c_str()); CHKERRQ(ierr);
     input_units = internal_units;
   }
 

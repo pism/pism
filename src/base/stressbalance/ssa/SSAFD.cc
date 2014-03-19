@@ -25,15 +25,35 @@
 
 #include <assert.h>
 
-SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                  EnthalpyConverter &ec, const PISMConfig &c)
+SSA *SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
 {
-  return new SSAFD(g,b,ec,c);
+  return new SSAFD(g,ec,c);
 }
+
+SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  : SSA(g,e,c) {
+  PetscErrorCode ierr = allocate_fd();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSAFD allocation failed.\n");
+    PISMEnd();
+  }
+}
+
+SSAFD::~SSAFD() {
+  PetscErrorCode ierr = deallocate_fd();
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
+    PISMEnd();
+  }
+}
+
 
 PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
   PC pc;
+
+  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
 
   // Get the PC from the KSP solver:
   ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
@@ -55,6 +75,7 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
 
   ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
     
   // Switch to using the "unpreconditioned" norm.
   ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
@@ -114,7 +135,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   // solve() call).
   ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE); CHKERRQ(ierr);
   
-  const PetscScalar power = 1.0 / flow_law->exponent();
+  const double power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
   ierr = hardness.create(grid, "hardness", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -284,8 +305,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     ierr = m_melange_back_pressure->begin_access(); CHKERRQ(ierr);
   }
 
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       if (m_vel_bc != NULL &&
           bc_locations->as_int(i, j) == 1) {
@@ -295,8 +316,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
       }
 
       if (use_cfbc) {
-        PetscScalar H_ij = (*thickness)(i,j);
-        PetscInt M_ij = mask->as_int(i,j),
+        double H_ij = (*thickness)(i,j);
+        int M_ij = mask->as_int(i,j),
           M_e = mask->as_int(i + 1,j),
           M_w = mask->as_int(i - 1,j),
           M_n = mask->as_int(i,j + 1),
@@ -313,9 +334,9 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         }
 
         if (is_marginal(i, j, bedrock_boundary)) {
-          PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
+          int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
           // direct neighbors
-	  if (bedrock_boundary) {
+          if (bedrock_boundary) {
             if (M.ice_free_ocean(M_e)) aPP = 0;
             if (M.ice_free_ocean(M_w)) aMM = 0;
             if (M.ice_free_ocean(M_n)) bPP = 0;
@@ -349,7 +370,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           }
 
           if (m_melange_back_pressure != NULL) {
-            PetscScalar lambda = (*m_melange_back_pressure)(i, j);
+            double lambda = (*m_melange_back_pressure)(i, j);
 
             // adjust the "pressure imbalance term" using the provided
             // "melange back pressure fraction".
@@ -476,9 +497,10 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 */
 PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
+  int zero_pivot_flag = 0;
 
-  const PetscScalar   dx=grid.dx, dy=grid.dy;
-  const PetscScalar   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
+  const double   dx=grid.dx, dy=grid.dy;
+  const double   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   // shortcut:
@@ -507,17 +529,17 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
    }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
-  bool nuBedrockSet=config.get_flag("nuBedrockSet");
-  if (nuBedrockSet) {
+  bool nu_bedrock_set=config.get_flag("nu_bedrock_set");
+  if (nu_bedrock_set) {
     ierr =    thickness->begin_access();  CHKERRQ(ierr);
     ierr =    bed->begin_access();        CHKERRQ(ierr);
     ierr =    surface->begin_access();    CHKERRQ(ierr);
   }
-  PetscScalar nuBedrock=config.get("nuBedrock");
-  PetscScalar HminFrozen=0.0;
+  double nu_bedrock=config.get("nu_bedrock");
+  double HminFrozen=0.0;
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // Handle the easy case: provided Dirichlet boundary conditions
       if (m_vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
@@ -532,33 +554,33 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *      c_s
        */
       // const
-      PetscScalar c_w = nuH(i-1,j,0);
-      PetscScalar c_e = nuH(i,j,0);
-      PetscScalar c_s = nuH(i,j-1,1);
-      PetscScalar c_n = nuH(i,j,1);
+      double c_w = nuH(i-1,j,0);
+      double c_e = nuH(i,j,0);
+      double c_s = nuH(i,j-1,1);
+      double c_n = nuH(i,j,1);
 
-      if (nuBedrockSet){
+      if (nu_bedrock_set){
        // if option is set, the viscosity at ice-bedrock boundary layer will
        // be prescribed and is a temperature-independent free (user determined) parameter
 
        // direct neighbors
-       PetscInt  M_e = mask->as_int(i + 1,j),
+       int  M_e = mask->as_int(i + 1,j),
                  M_w = mask->as_int(i - 1,j),
                  M_n = mask->as_int(i,j + 1),
                  M_s = mask->as_int(i,j - 1);
 
         if ((*thickness)(i,j) > HminFrozen) {
           if ((*bed)(i-1,j) > (*surface)(i,j) && M.ice_free_land(M_w)) {
-            c_w = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
+            c_w = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
           }
           if ((*bed)(i+1,j) > (*surface)(i,j) && M.ice_free_land(M_e)) {
-            c_e = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+            c_e = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
           }
           if ((*bed)(i,j+1) > (*surface)(i,j) && M.ice_free_land(M_n)) {
-            c_n = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
+            c_n = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
           }
           if ((*bed)(i,j-1) > (*surface)(i,j) && M.ice_free_land(M_s)) {
-            c_s = nuBedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+            c_s = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
           }
         }
       }
@@ -567,13 +589,13 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // non-zeros get allocated, even though we use only 13 (or 14). The
       // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
       // because this makes the code easier to understand.
-      const PetscInt sten = 18;
+      const int sten = 18;
       MatStencil row, col[sten];
 
-      PetscInt aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
-      PetscInt bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
+      int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
+      int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
-      PetscInt M_ij = mask->as_int(i,j);
+      int M_ij = mask->as_int(i,j);
 
       if (use_cfbc) {
         int
@@ -630,15 +652,15 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
             if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
             if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
             if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
-            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;				}
+            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;                           }
         }
       } // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
-      const PetscReal dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
+      const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
 
       /* Coefficients of the discretization of the first equation; u first, then v. */
-      PetscReal eq1[] = {
+      double eq1[] = {
         0,  -c_n*bPP/dy2,  0,
         -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
         0,  -c_s*bMM/dy2,  0,
@@ -648,7 +670,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* Coefficients of the discretization of the second equation; u first, then v. */
-      PetscReal eq2[] = {
+      double eq2[] = {
         c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
         (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
         -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
@@ -658,7 +680,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* i indices */
-      const PetscInt I[] = {
+      const int I[] = {
         i-1,  i,  i+1,
         i-1,  i,  i+1,
         i-1,  i,  i+1,
@@ -668,7 +690,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* j indices */
-      const PetscInt J[] = {
+      const int J[] = {
         j+1,  j+1,  j+1,
         j,  j,  j,
         j-1,  j-1,  j-1,
@@ -678,7 +700,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
 
       /* component indices */
-      const PetscInt C[] = {
+      const int C[] = {
         0,  0,  0,
         0,  0,  0,
         0,  0,  0,
@@ -692,19 +714,19 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
        *    (i.e. on left side of SSA eqns).  */
-      PetscReal beta = 0.0;
+      double beta = 0.0;
       if (include_basal_shear) {
         if (M.grounded_ice(M_ij)) {
-          beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
         } else if (M.ice_free_land(M_ij)) {
           // apply drag even in this case, to help with margins; note ice free
           // areas already have a strength extension
           beta = beta_ice_free_bedrock;
         }
         if (sub_gl){
-          // if grounding line interpolation apply here reduced basal drag
+          // reduce the basal drag at grid cells that are partially grounded:
           if (M.icy(M_ij)) {
-            beta = (*gl_mask)(i,j) * basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+            beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           }
         }
       }
@@ -716,15 +738,17 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // check diagonal entries:
       const double eps = 1e-16;
       if (fabs(eq1[4]) < eps) {
-        SETERRQ2(grid.com, 1, "first (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+        fprintf(stderr, "PISM ERROR: first  (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+        zero_pivot_flag = 1;
       }
       if (fabs(eq2[13]) < eps) {
-        SETERRQ2(grid.com, 1, "second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d", i, j);
+        fprintf(stderr, "PISM ERROR: second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+        zero_pivot_flag = 1;
       }
 
       // build equations: NOTE TRANSPOSE
       row.j = i; row.i = j;
-      for (PetscInt m = 0; m < sten; m++) {
+      for (int m = 0; m < sten; m++) {
         col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
       }
 
@@ -735,8 +759,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // set coefficients of the second equation:
       row.c = 1;
       ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
+    } // j-loop
+  } // i-loop
 
   if (m_vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
@@ -751,7 +775,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
-  if (nuBedrockSet) {
+  if (nu_bedrock_set) {
         ierr = thickness->end_access(); CHKERRQ(ierr);
         ierr = bed->end_access();       CHKERRQ(ierr);
         ierr = surface->end_access();   CHKERRQ(ierr);
@@ -762,6 +786,13 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 #if (PISM_DEBUG==1)
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 #endif
+
+  int zero_pivot_flag_global = 0;
+  MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, grid.com);
+  if (zero_pivot_flag_global != 0) {
+    fprintf(stderr, "PISM ERROR: zero pivot detected.\n");
+    return 1;
+  }
 
   return 0;
 }
@@ -842,7 +873,7 @@ PetscErrorCode SSAFD::solve() {
       ierr = pc_setup_bjacobi(); CHKERRQ(ierr);
     }
 
-    ierr = picard_iteration(static_cast<PetscInt>(config.get("max_iterations_ssafd")),
+    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
                             config.get("ssafd_relative_convergence"),
                             config.get("epsilon_ssa"));
   }
@@ -866,9 +897,9 @@ PetscErrorCode SSAFD::solve() {
     ierr = write_system_matlab(); CHKERRQ(ierr);
   }
   
-  if (config.get_flag("scalebrutalSet")){
-    const PetscScalar sliding_scale_brutalFactor = config.get("sliding_scale_brutal");
-    ierr = m_velocity.scale(sliding_scale_brutalFactor); CHKERRQ(ierr);
+  if (config.get_flag("brutal_sliding")){
+    const double brutal_sliding_scaleFactor = config.get("brutal_sliding_scale");
+    ierr = m_velocity.scale(brutal_sliding_scaleFactor); CHKERRQ(ierr);
 
     ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
   }
@@ -887,8 +918,8 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
                                        double ssa_relative_tolerance,
                                        double nuH_regularization) {
   PetscErrorCode ierr;
-  PetscReal   nuH_norm, nuH_norm_change;
-  PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
+  double   nuH_norm, nuH_norm_change;
+  int    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
   char tempstr[100] = "";
@@ -1025,7 +1056,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 PetscErrorCode SSAFD::strategy_1_regularization() {
   PetscErrorCode ierr;
   // this has no units; epsilon goes up by this ratio when previous value failed
-  const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
+  const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
   double nuH_regularization = config.get("epsilon_ssa");
   unsigned int k = 0, max_tries = 5;
 
@@ -1047,7 +1078,7 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
     nuH_regularization *= DEFAULT_EPSILON_MULTIPLIER_SSA;
 
 
-    ierr = picard_iteration(static_cast<PetscInt>(config.get("max_iterations_ssafd")),
+    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
                             config.get("ssafd_relative_convergence"),
                             nuH_regularization);
     if (ierr == 0)
@@ -1073,7 +1104,7 @@ PetscErrorCode SSAFD::strategy_2_asm() {
   
   ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
 
-  ierr = picard_iteration(static_cast<PetscInt>(config.get("max_iterations_ssafd")),
+  ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
                           config.get("ssafd_relative_convergence"),
                           config.get("epsilon_ssa"));
 
@@ -1093,12 +1124,12 @@ For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ign
 a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
 \f$L^2\f$ (much less \f$L^\infty\f$, which might not work at all).
  */
-PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) {
+PetscErrorCode SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
   PetscErrorCode ierr;
 
-  std::vector<PetscReal> nuNorm, nuChange;
+  std::vector<double> nuNorm, nuChange;
 
-  const PetscScalar area = grid.dx * grid.dy;
+  const double area = grid.dx * grid.dy;
 #define MY_NORM     NORM_1
 
   // Test for change in nu
@@ -1121,9 +1152,9 @@ PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
 PetscErrorCode SSAFD::compute_hardav_staggered() {
   PetscErrorCode ierr;
-  PetscScalar *E, *E_ij, *E_offset;
+  double *E, *E_ij, *E_offset;
 
-  E = new PetscScalar[grid.Mz];
+  E = new double[grid.Mz];
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
@@ -1132,12 +1163,12 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
 
   MaskQuery m(*mask);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = enthalpy->getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
-      for (PetscInt o=0; o<2; o++) {
-        const PetscInt oi = 1-o, oj=o;
-        PetscScalar H;
+      for (int o=0; o<2; o++) {
+        const int oi = 1-o, oj=o;
+        double H;
 
         if (m.icy(i,j) && m.icy(i+oi,j+oj))
           H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
@@ -1215,18 +1246,18 @@ PetscErrorCode SSAFD::fracture_induced_softening() {
   if (config.get_flag("do_fracture_density") == false)
     return 0;
 
-  const PetscScalar
+  const double
     epsilon = config.get("fracture_density_softening_lower_limit"),
     n_glen  = flow_law->exponent();
 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = fracture_density->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      for (PetscInt o=0; o<2; o++) {
-        const PetscInt oi = 1-o, oj=o;
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      for (int o=0; o<2; o++) {
+        const int oi = 1-o, oj=o;
 
-        const PetscScalar
+        const double
           // fracture density on the staggered grid:
           phi       = 0.5 * ((*fracture_density)(i,j) + (*fracture_density)(i+oi,j+oj)),
           // the line below implements equation (6) in the paper
@@ -1290,7 +1321,7 @@ thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
 PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
-                                            PetscReal nuH_regularization) {
+                                            double nuH_regularization) {
   PetscErrorCode ierr;
 
   IceModelVec2V &uv = m_velocity; // shortcut
@@ -1300,25 +1331,25 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
+  double ssa_enhancement_factor = flow_law->enhancement_factor(),
     n_glen = flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
-  const PetscScalar dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx, dy = grid.dy;
 
-  for (PetscInt o=0; o<2; ++o) {
-    const PetscInt oi = 1 - o, oj=o;
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int o=0; o<2; ++o) {
+    const int oi = 1 - o, oj=o;
+    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-        const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+        const double H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
         if (H < strength_extension->get_min_thickness()) {
           result(i,j,o) = strength_extension->get_notional_strength();
           continue;
         }
 
-        PetscScalar u_x, u_y, v_x, v_y;
+        double u_x, u_y, v_x, v_y;
         // Check the offset to determine how to differentiate velocity
         if (o == 0) {
           u_x = (uv(i+1,j).u - uv(i,j).u) / dx;
@@ -1332,7 +1363,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
           v_y = (uv(i,j+1).v - uv(i,j).v) / dy;
         }
 
-        PetscReal nu;
+        double nu;
         flow_law->effective_viscosity(hardness(i,j,o),
                                       secondInvariant_2D(u_x, u_y, v_x, v_y),
                                       &nu, NULL);
@@ -1378,17 +1409,17 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
  * @return 0 on success
  */
 PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
-                                                 PetscReal nuH_regularization) {
+                                                 double nuH_regularization) {
 
   PetscErrorCode ierr;
   IceModelVec2V &uv = m_velocity; // shortcut
-  PetscScalar ssa_enhancement_factor = flow_law->enhancement_factor(),
+  double ssa_enhancement_factor = flow_law->enhancement_factor(),
     n_glen = flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
 
   const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
 
-  const PetscScalar dx = grid.dx, dy = grid.dy;
+  const double dx = grid.dx, dy = grid.dy;
 
   MaskQuery m(*mask);
 
@@ -1396,9 +1427,9 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   ierr = m_work.begin_access(); CHKERRQ(ierr);
   ierr = m_velocity.begin_access(); CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 1;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 1;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
       // x-derivative, i-offset
       {
@@ -1433,8 +1464,8 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
  
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       double u_x, u_y, v_x, v_y, H, nu, W;
       // i-offset
       {
@@ -1542,9 +1573,9 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
   ierr = nuH.begin_access(); CHKERRQ(ierr);
   ierr = tmp.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      PetscReal avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
         if (avg_nuH > 1.0e14) {
           tmp(i,j) = log10(avg_nuH);
         } else {
@@ -1566,7 +1597,7 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
 }
 
 PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
-                                                PetscScalar value) {
+                                                double value) {
   PetscErrorCode ierr;
   MatStencil row, col;
   row.j = i; row.i = j;
@@ -1597,7 +1628,7 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
  */
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
 
-  const PetscInt M_ij = mask->as_int(i,j),
+  const int M_ij = mask->as_int(i,j),
     // direct neighbors
     M_e = mask->as_int(i + 1,j),
     M_w = mask->as_int(i - 1,j),

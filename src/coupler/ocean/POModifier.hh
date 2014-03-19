@@ -28,7 +28,7 @@ public:
     : Modifier<PISMOceanModel>(g, conf, in) {}
   virtual ~POModifier() {}
 
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result)
+  virtual PetscErrorCode sea_level_elevation(double &result)
   {
     PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
     return 0;

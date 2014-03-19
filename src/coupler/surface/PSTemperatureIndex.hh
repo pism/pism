@@ -37,31 +37,26 @@ pointer to an instance of the LocalMassBalance class.  This class has method
 LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
 precipitation during the ice sheet model time step, plus a variable temperature
 over that time step, to compute melt, refreeze, and surface balance.
-
-This base class reads options `-pdd_factor_snow`, `-pdd_factor_ice`,
-and `-pdd_refreeze` and sets these factors accordingly, in the case where
-the factors are independent of location.  If option `-pdd_fausto` is used
-then an object is called which updates these values based on the location.
 */
 class PSTemperatureIndex : public PISMSurfaceModel {
 public:
   PSTemperatureIndex(IceGrid &g, const PISMConfig &conf);
   virtual ~PSTemperatureIndex();
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);  
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
-  LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
+  LocalMassBalance *mbscheme;         //!< mass balance scheme to use
 
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
   DegreeDayFactors base_ddf;          //!< holds degree-day factors in location-independent case
-  PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
+  double  base_pddStdDev,        //!< K; daily amount of randomness
     base_pddThresholdTemp, //!< K; temps are positive above this
     m_next_balance_year_start;
   IceModelVec2S
@@ -70,7 +65,7 @@ protected:
     melt_rate,             //!< diagnostic output melt rate (rate at which snow
                            //!< and ice is melted, but some snow melt refreezes)
     runoff_rate,           //!< diagnostic output meltwater runoff rate
-    snow_depth;		   //!< snow depth (reset once a year)
+    snow_depth;            //!< snow depth (reset once a year)
 
   IceModelVec2S *lat, *lon, *usurf;
   //!< PSTemperatureIndex must hold these pointers in order to use

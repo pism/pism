@@ -29,16 +29,20 @@ public:
   virtual ~POCache();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode sea_level_elevation(double &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
+  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
 protected:
-  IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux;
+  IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux,
+    m_melange_back_pressure_fraction;
   double m_sea_level;
   double m_next_update_time;
   unsigned int m_update_interval_years;

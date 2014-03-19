@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2011, 2012, 2013 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -41,7 +41,6 @@ class testi(PISM.ssa.SSAExactTestCase):
   def _initPhysics(self):
     config = self.config
     config.set_flag("do_pseudo_plastic_till", False)
-    basal = PISM.IceBasalResistancePlasticLaw(config)
 
     # irrelevant
     enthalpyconverter = PISM.EnthalpyConverter(config);
@@ -49,7 +48,7 @@ class testi(PISM.ssa.SSAExactTestCase):
     config.set_string("ssa_flow_law", "isothermal_glen")
     config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
 
-    self.modeldata.setPhysics(basal,enthalpyconverter)
+    self.modeldata.setPhysics(enthalpyconverter)
 
 
   def _initSSACoefficients(self):

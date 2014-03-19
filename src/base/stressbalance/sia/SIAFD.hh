@@ -44,7 +44,7 @@ public:
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+  virtual PetscErrorCode extend_the_grid(int old_Mz);
 
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
@@ -82,7 +82,7 @@ protected:
 
   virtual PetscErrorCode compute_I();
 
-  virtual PetscScalar grainSizeVostok(PetscScalar age) const;
+  virtual double grainSizeVostok(double age) const;
 
   virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
   virtual PetscErrorCode compute_diffusivity_staggered(IceModelVec2Stag &result);
@@ -100,14 +100,14 @@ protected:
                                 // on the staggered grid
 
   PISMBedSmoother *bed_smoother;
-  const PetscInt WIDE_STENCIL;
+  const int WIDE_STENCIL;
   int bed_state_counter;
 
   // profiling
   int event_sia;
 
   // unit conversion
-  PetscReal second_to_kiloyear;
+  double second_to_kiloyear;
 };
 
 //! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the

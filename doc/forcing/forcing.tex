@@ -429,7 +429,7 @@ This section describes how to use PISM to inspect climate forcing.
 
 Recall that internally in PISM there is a separation of climate inputs from ice dynamics (see User's Manual, section~\ref*{userman-sec:climate-inputs}). This makes it possible to turn ``off'' the ice dynamics code to visualize the climate mass balance and temperature boundary conditions produced using a combination of options and input files. This is helpful during the process of creating PISM-readable data files, and modeling with such.
 
-To do this, use the option \intextoption{test_climate_models}, which is equivalent to \intextoption{no_sia}, and \intextoption{energy none} together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
+To do this, use the option \intextoption{test_climate_models} (which is equivalent to \intextoption{stress_balance none} and \intextoption{energy none}) together with PISM's reporting capabilities (\intextoption{extra_file}, \intextoption{extra_times}, \intextoption{extra_vars}).
 
 Turning ``off'' ice dynamics saves computational time while allowing one to use the same options as in an actual modeling run. Note that \intextoption{test_climate_models} does \emph{not} disable geometry updates, so one can check if surface elevation feedbacks modeled using lapse rates (and similar) work correctly. Please use the \intextoption{no_mass} command-line option to fix ice geometry. (This may be necessary if the mass balance rate data would result in extreme ice sheet growth that is not balanced by ice flow in this setup.
 
@@ -442,7 +442,7 @@ $ pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
           -ys 0 -ye 2.5
 \end{verbatim}
 Using \texttt{pisms} merely generates demonstration climate data, using
-EISMINT II choices~\cite{EISMINT00}.  The next run extracts the 
+EISMINT II choices~\cite{EISMINT00}.  The next run extracts the
 surface mass balance \variable{climatic_mass_balance} and surface temperature \variable{ice_surface_temp} from \texttt{state.nc}.
 It then does nothing interesting, exactly because a constant climate
 is used.  Viewing \texttt{movie.nc} we see these same values as from \texttt{state.nc},
@@ -462,7 +462,8 @@ $ pismr -test_climate_models -no_mass -i g20km_pre100.nc \
         -ys 0 -ye 1 -extra_times 0:1week:1 \
         -extra_file foo.nc \
         -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot,precipitation
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle in the variable \variable{air_temp} and a noticeable decrease in the surface mass balance during summer months (see variable \variable{climatic_mass_balance}). Note that \variable{ice_surface_temp} is constant in time: this is the temperature \emph{at the ice surface but below firn} and it does not include seasonal variations~\cite{Hock05}.
 
 
@@ -481,7 +482,8 @@ $ pismr -boot_file g20km_pre100.nc -Mx 51 -My 101 -Mz 11 \
         -extra_vars climatic_mass_balance,air_temp_snapshot,smelt,srunoff,saccum
         -ts_file ts.nc -ts_times 0:0.1:2.5 \
         -o bar.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 will produce \texttt{foo.nc} containing a ``movie'' very similar to the one created by the previous run, but including the full influence of ice dynamics.
 
 In addition to \texttt{foo.nc}, the latter command will produce \texttt{ts.nc} containing scalar time-series. The variable \texttt{surface_ice_flux} (the \emph{total over the ice-covered area} of the surface mass flux) can be used to detect if climate forcing is applied at the right time.
@@ -498,9 +500,10 @@ $ pismr -i g20km_pre100.nc -atmosphere searise_greenland,paleo_precip \
           -extra_times 0:1week:3 -ys 0 -ye 3 \
           -extra_file pddmovie.nc -o_order zyx \
           -extra_vars climatic_mass_balance,air_temp_snapshot
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{climatic_mass_balance}
-(instantaneous net ice equivalent accumulation (ablation) rate), \texttt{air_temp_snapshot}
+(instantaneous net accumulation (ablation) rate), \texttt{air_temp_snapshot}
 (instantaneous near-surface air temperature), \texttt{precipitation} (mean annual
 ice-equivalent precipitation rate) and some others.
 
@@ -543,7 +546,8 @@ $ pismr -i g20km_pre100.nc -surface simple \
           -extra_vars ice_surface_temp \
           -extra_file dT_movie.nc -o_order zyx \
           -test_climate_models -no_mass
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 The output \texttt{dT_movie.nc} and \texttt{pism_dT.nc} were used to create figure \ref{fig:artm-timeseries}.
 
 This figure shows the GRIP temperature offsets and the time-series of the temperature at the ice surface at a point in southern Greenland (bottom graph), confirming that the temperature offsets are used correctly.
@@ -594,7 +598,7 @@ is negligible and heat from firn processes is ignored.
     Command-line option: & \texttt{-surface~given}
     \index[options]{SA@\surface!\texttt{given}}\\
     NetCDF variables: & \variable{ice_surface_temp}, \\
-    &\variable{climatic_mass_balance} [m/s ice equivalent]\\
+    &\variable{climatic_mass_balance} [kg/m$^2$/s]\\
     C++ class: & \class{PSGivenClimate}\\
     \bottomrule
   \end{tabular}
@@ -635,7 +639,8 @@ For example, to use monthly records and period of 1 year, create a file (say,
 too). Then, run
 \begin{verbatim}
 $ pismr -surface given -surface_given_file foo.nc -surface_given_period 1
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 \noindent Notes:
 \begin{itemize}
@@ -652,7 +657,8 @@ $ pismr -surface given -surface_given_file foo.nc -surface_given_period 1
   To change the storage order in a NetCDF file, use \texttt{ncpdq}:
 \begin{verbatim}
 $ ncpdq -a t,x,y input.nc output.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
   will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the
   storage order to \texttt{t,x,y} at the same time.
 \end{itemize}
@@ -826,8 +832,7 @@ probability, in the presence of the daily variability, and thus melt may occur.
 Concretely, a normally-distributed, mean zero random temperature increment is
 added to the seasonal cycle. There is no assumed spatial correlation of daily
 variability. The standard deviation of the daily variability is controlled by
-the \intextoption{pdd_std_dev} option, and the corresponding configuration
-parameter has the same name. The default value is $5.0$ degrees
+the \texttt{pdd_std_dev} configuration parameter. The default value is $5.0$ degrees
 \cite{RitzEISMINT}.
 
 The number of positive degree days is computed as the magnitude of the
@@ -847,7 +852,7 @@ By default, the computation summarized in Figure \ref{fig:pdd-model}
 is performed every week. (This frequency is controlled by the
 \config{pdd_max_evals_per_year} parameter.) To compute mass balance
 during each week-long time-step, PISM keeps track of the current snow
-depth (units of ice-equivalent thickness). This is necessary to
+depth (using units of ice-equivalent thickness). This is necessary to
 determine if melt should be computed using the degree day factor for
 snow (\config{pdd_factor_snow}) or the corresponding factor for ice
 (\config{pdd_factor_ice}).
@@ -865,8 +870,7 @@ to October 1$^{\text{st}}$.
 
 Our PDD implementation is meant to be used with an atmosphere model
 implementing a cosine yearly cycle such as \texttt{searise_greenland} (section
-\ref{sec:atmosphere-searise-greenland}) and \texttt{eismint_greenland} (section
-\ref{sec:atmosphere-eismint-greenland}), but it is not restricted to
+\ref{sec:atmosphere-searise-greenland}), but it is not restricted to
 parameterizations like these.
 
 This code also implements latitude- and mean July temperature dependent ice and snow
@@ -883,8 +887,7 @@ parameters with the \texttt{pdd_fausto} prefix.
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~pik} \index[options]{SA@\surface!\texttt{pik}} \\
-    NetCDF variables: & \variable{climatic_mass_balance} [m/s ice
-    equivalent],\\
+    NetCDF variables: & \variable{climatic_mass_balance} [kg/m$^2$/s],\\
     &\variable{lat} (latitude), [degrees north]\\
     C++ class: & \class{PSConstantPIK}\\
     \bottomrule
@@ -1009,7 +1012,8 @@ thickness field. A basic run modifying surface model \texttt{given} would
 look like
 \begin{verbatim}
 $ pismr -i foo.nc -surface given,forcing -force_to_thk bar.nc
-\end{verbatim}%$
+\end{verbatim}
+%$ - match dollar signs to make emacs happy
 
 In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp},
 as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
@@ -1027,7 +1031,7 @@ default value specified in the \emph{Source Code Browser}
     \toprule
     Command-line option: & \texttt{-surface~...,anomaly} \index[options]{SB@\surfacemods!\texttt{anomaly}} \\
     NetCDF variables: & \variable{ice_surface_temp_anomaly}, \\
-    &\variable{climatic_mass_balance_anomaly} \mbox{[m/s ice equivalent]}\\
+    &\variable{climatic_mass_balance_anomaly} \mbox{[kg/m$^2$/s]}\\
     C++ class: & \class{PSAnomaly}\\
     \bottomrule
   \end{tabular}
@@ -1180,27 +1184,6 @@ See also the \texttt{-atmosphere ...,paleo_precip} modifier, section
 SeaRISE-Greenland formula for paleo-precipitation correction from
 present; a 7.3\% change of precipitation rate for every one degree
 Celsius of temperature change~\cite{Huybrechts02}.
-
-\subsection{EISMINT-Greenland}
-\label{sec:atmosphere-eismint-greenland}
-\optsection{\atmosphere!\texttt{eismint_greenland}}
-
-\begin{center}
-  \begin{tabular}{rp{0.5\linewidth}}
-    \toprule
-    Command-line option: & \texttt{-atmosphere~eismint_greenland} \index[options]{\atmosphere!\texttt{eismint_greenland}} \\
-    NetCDF variables: & \variable{lon}, \variable{lat},
-    \variable{precipitation} \mbox{[m/s ice equivalent]} \\
-    C++ class: & \class{PAEismintGreenland}\\
-    \bottomrule
-  \end{tabular}
-\end{center}
-
-This model~component implements the latitude, longitude, and surface elevation-dependent
-near-surface air temperature parameterization described in~\cite{RitzEISMINT}.
-
-The time-independent \variable{precipitation} field is read from an input
-(\texttt{-i} or \texttt{-boot_file}) file.
 
 \subsection{PIK}
 \label{sec:atmosphere-pik}
@@ -1404,7 +1387,7 @@ The sub-shelf ice temperature is used as a Dirichlet boundary condition in the e
 \end{center}
 
 \begin{center}
-  \bf This is the default choice..
+  \bf This is the default choice.
 \end{center}
 
 This ocean model~component implements boundary conditions at the ice/ocean interface that are constant \textbf{both} in space and time.
@@ -1459,6 +1442,33 @@ It takes one command-line option:
 \begin{itemize}
 \item \intextoption{meltfactor_pik}: a melt factor $F_{\mathrm{melt}}$ in sub-shelf-melting parameterization, see equation~(5) in~\cite{Martinetal2011}.
 \end{itemize}
+
+\subsection{Basal melt rate and temperature from thermodynamics in boundary layer}
+\label{sec:ocean-th}
+\optsection{OA@\ocean!\texttt{th}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~th} \index[options]{OA@\ocean!\texttt{th}} \\
+    NetCDF variables: & \variable{theta_ocean} (absolute potential ocean temperature), [Kelvin], \variable{salinity_ocean} (salinity of the adjacent ocean), [g/kg] \\
+    C++ class: & \class{POGivenTH}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This ocean model~component derives basal melt rate and basal temperature from thermodynamics in a boundary layer at the base of the ice shelf.
+It uses a set of three equations describing (1) the energy balance, (2) the salinity balance, and (3) the pressure and salinity dependent freezing point in the boundary layer \cite{Hellmeretal1998}. Temperature and salinity in the boundary layer are equilibrated by fluxes from the adjacent mixed ocean waters and the ice and by the melting or refreezing of ice.
+
+Inputs are potential temperature and salinity fields, for example from an ocean model.
+
+No ocean circulation is modeled, so melt water computed by this model is not fed back into the surrounding ocean.
+
+It takes one command-line option:
+\begin{itemize}
+\item \fileopt{ocean_th_file}: specifies the netcdf file providing potential temperature and salinity fields.
+\end{itemize}
+
 
 \newcommand{\oceanmods}{Ocean modifiers}
 \subsection{Modifier: Scalar sea level offsets}

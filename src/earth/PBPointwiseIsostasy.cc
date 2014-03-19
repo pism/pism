@@ -47,7 +47,7 @@ PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
   ierr = PISMBedDef::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the pointwise isostasy bed deformation model...\n"); CHKERRQ(ierr);
+                    "* Initializing the pointwise isostasy bed deformation model...\n"); CHKERRQ(ierr);
 
   ierr = thk->copy_to(thk_last);   CHKERRQ(ierr);
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
@@ -56,7 +56,7 @@ PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
 }
 
 //! Updates the pointwise isostasy model.
-PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode PBPointwiseIsostasy::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
   if ((fabs(my_t - m_t)   < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12))
@@ -65,10 +65,10 @@ PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  PetscReal t_final = m_t + m_dt;
+  double t_final = m_t + m_dt;
 
   // Check if it's time to update:
-  PetscReal dt_beddef = t_final - t_beddef_last; // in seconds
+  double dt_beddef = t_final - t_beddef_last; // in seconds
   if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < grid.time->end()) ||
       dt_beddef < 1e-12)
@@ -76,7 +76,7 @@ PetscErrorCode PBPointwiseIsostasy::update(PetscReal my_t, PetscReal my_dt) {
 
   t_beddef_last = t_final;
 
-  const PetscScalar lithosphere_density = config.get("lithosphere_density"),
+  const double lithosphere_density = config.get("lithosphere_density"),
     ice_density = config.get("ice_density"),
     f = ice_density / lithosphere_density;
 

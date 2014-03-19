@@ -51,7 +51,7 @@ static char help[] =
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(MPI_Comm com, PISMConfig &c, PetscScalar q): 
+  SSATestCaseConst(MPI_Comm com, PISMConfig &c, double q): 
     SSATestCase(com, c), basal_q(q)
   {
     PISMUnitSystem s = c.get_unit_system();
@@ -64,22 +64,22 @@ public:
   };
   
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j, 
+    double x, double y, double *u, double *v );
 
-  PetscScalar basal_q,
+  double basal_q,
     L, H0, dhdx, nu0, tauc0;
 };
 
-PetscErrorCode SSATestCaseConst::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCaseConst::initializeGrid(int Mx,int My)
 {
-  PetscReal Lx=L, Ly = L; 
+  double Lx=L, Ly = L; 
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -91,7 +91,7 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
   config.set_double("pseudo_plastic_q", basal_q);
 
   // Use a pseudo-plastic law with a constant q determined at run time
-  basal = new IceBasalResistancePseudoPlasticLaw(config);
+  config.set_flag("do_pseudo_plastic_till", true);
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
@@ -119,10 +119,10 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = bed.begin_access(); CHKERRQ(ierr);
   ierr = surface.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar myu, myv;
-      const PetscScalar myx = grid.x[i], myy=grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double myu, myv;
+      const double myx = grid.x[i], myy=grid.y[j];
 
       bed(i,j) = -myx*(dhdx);
       surface(i,j) = bed(i,j) + H0;
@@ -153,10 +153,10 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 }
 
 
-PetscErrorCode SSATestCaseConst::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
- PetscReal /*x*/, PetscReal /*y*/, PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseConst::exactSolution(int /*i*/, int /*j*/, 
+ double /*x*/, double /*y*/, double *u, double *v)
 {
-  PetscScalar earth_grav = config.get("standard_gravity"),
+  double earth_grav = config.get("standard_gravity"),
     tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
                                          "m/year", "m/second"),
     ice_rho = config.get("ice_density");
@@ -197,9 +197,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=61;
-    PetscInt My=61;
-    PetscScalar basal_q = 1.; // linear
+    int Mx=61;
+    int My=61;
+    double basal_q = 1.; // linear
     std::string output_file = "ssa_test_const.nc";
 
     std::set<std::string> ssa_choices;
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }

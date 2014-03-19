@@ -31,7 +31,7 @@ public:
   virtual ~PBLingleClark();
 
   PetscErrorCode init(PISMVars &vars);
-  PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  PetscErrorCode update(double my_t, double my_dt);
 protected:
   PetscErrorCode correct_topg();
   PetscErrorCode allocate();
@@ -41,11 +41,11 @@ protected:
   Vec g2, g2natural;  //!< global Vecs used to transfer data to/from processor 0.
   VecScatter scatter; //!< VecScatter used to transfer data to/from processor 0.
   // Vecs on processor 0:
-  Vec Hp0,			//!< ice thickness
-    bedp0,			//!< bed elevation
-    Hstartp0,			//!< initial (start-of-the-run) thickness
-    bedstartp0,			//!< initial bed elevation
-    upliftp0;			//!< bed uplift
+  Vec Hp0,                      //!< ice thickness
+    bedp0,                      //!< bed elevation
+    Hstartp0,                   //!< initial (start-of-the-run) thickness
+    bedstartp0,                 //!< initial bed elevation
+    upliftp0;                   //!< bed uplift
   BedDeformLC bdLC;
 };
 

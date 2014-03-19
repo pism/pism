@@ -114,19 +114,19 @@ PetscErrorCode IceModel::init_viewers() {
   char tmp[TEMPORARY_STRING_LENGTH];
 
   ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
-			   "Options controlling run-time diagnostic viewers",
-			   PETSC_NULL); CHKERRQ(ierr);
+                           "Options controlling run-time diagnostic viewers",
+                           PETSC_NULL); CHKERRQ(ierr);
 
-  PetscInt viewer_size = (PetscInt)config.get("viewer_size");
+  int viewer_size = (int)config.get("viewer_size");
   ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
-			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
+                         "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 
   if (flag)
     config.set_double("viewer_size", viewer_size);
 
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",
-			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
   std::string var_name;
   if (flag) {
     std::istringstream arg(tmp);

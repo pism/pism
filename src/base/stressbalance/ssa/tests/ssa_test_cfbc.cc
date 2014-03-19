@@ -62,14 +62,14 @@ public:
   virtual PetscErrorCode write_nuH(std::string filename);
 
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx, PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx, int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j,
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j,
+    double x, double y, double *u, double *v );
 
   double V0, //!< grounding line vertically-averaged velocity
     H0,      //!< grounding line thickness (meters)
@@ -97,11 +97,11 @@ PetscErrorCode SSATestCaseCFBC::write_nuH(std::string filename) {
   return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::initializeGrid(PetscInt Mx, PetscInt My)
+PetscErrorCode SSATestCaseCFBC::initializeGrid(int Mx, int My)
 {
 
-  PetscReal halfWidth = 250.0e3;  // 500.0 km length
-  PetscReal Lx = halfWidth, Ly = halfWidth;
+  double halfWidth = 250.0e3;  // 500.0 km length
+  double Lx = halfWidth, Ly = halfWidth;
   init_shallow_grid(grid, Lx, Ly, Mx, My, Y_PERIODIC);
   return 0;
 }
@@ -115,10 +115,6 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
   config.set_string("ssa_flow_law", "isothermal_glen");
   config.set_string("output_variable_order", "zyx");
 
-  if (config.get_flag("do_pseudo_plastic_till") == true)
-    basal = new IceBasalResistancePseudoPlasticLaw(config);
-  else
-    basal = new IceBasalResistancePlasticLaw(config);
 
   enthalpyconverter = new EnthalpyConverter(config);
 
@@ -143,9 +139,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar x = grid.x[i];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const double x = grid.x[i];
 
       if (i != grid.Mx - 1) {
         thickness(i, j) = H_exact(V0, H0, C, x + grid.Lx);
@@ -191,9 +187,9 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCaseCFBC::exactSolution(PetscInt i, PetscInt /*j*/,
-                                              PetscReal x, PetscReal /*y*/,
-                                              PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseCFBC::exactSolution(int i, int /*j*/,
+                                              double x, double /*y*/,
+                                              double *u, double *v)
 {
   if (i != grid.Mx - 1) {
     *u = u_exact(V0, H0, C, x + grid.Lx);
@@ -236,8 +232,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=61;
-    PetscInt My=61;
+    int Mx=61;
+    int My=61;
     std::string output_file = "ssa_test_cfbc.nc";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTCFBC options", ""); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,24 +25,24 @@ IceModelVec2V has component vectors all of length \a scale, then the funtional v
 \f[
 c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
 \f]*/
-PetscErrorCode IPMeanSquareFunctional2V::normalize(PetscReal scale) {
+PetscErrorCode IPMeanSquareFunctional2V::normalize(double scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
-  PetscReal value = 0;
+  double value = 0;
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         value += w_a[i][j];
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         value += 1;
       }
     }
@@ -53,28 +53,28 @@ PetscErrorCode IPMeanSquareFunctional2V::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
   PISMVector2 **x_a;
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         PISMVector2 &x_ij = x_a[i][j];
         value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v)*w_a[i][j];
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         PISMVector2 &x_ij = x_a[i][j];
         value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v);
       }
@@ -89,11 +89,11 @@ PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, PetscReal *OU
   return 0;
 }
 
-PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
   PISMVector2 **a_a;
   ierr = a.get_array(a_a); CHKERRQ(ierr);
@@ -102,10 +102,10 @@ PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b,
   ierr = b.get_array(b_a); CHKERRQ(ierr);
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         PISMVector2 &a_ij = a_a[i][j];
         PISMVector2 &b_ij = b_a[i][j];
         value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v)*w_a[i][j];
@@ -113,8 +113,8 @@ PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b,
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         PISMVector2 &a_ij = a_a[i][j];
         PISMVector2 &b_ij = b_a[i][j];
         value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v);
@@ -143,18 +143,18 @@ PetscErrorCode IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVe
   ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         gradient_a[i][j].u = 2*x_a[i][j].u*w_a[i][j]/m_normalization;
         gradient_a[i][j].v = 2*x_a[i][j].v*w_a[i][j]/m_normalization;
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         gradient_a[i][j].u = 2*x_a[i][j].u/m_normalization;
         gradient_a[i][j].v = 2*x_a[i][j].v/m_normalization;
       }
@@ -173,24 +173,24 @@ IceModelVec2S has entries all equal to \a scale, then the funtional value will b
 \f[
 c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
 \f]*/
-PetscErrorCode IPMeanSquareFunctional2S::normalize(PetscReal scale) {
+PetscErrorCode IPMeanSquareFunctional2S::normalize(double scale) {
   PetscErrorCode   ierr;
 
   // The local value of the weights
-  PetscReal value = 0;
+  double value = 0;
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         value += w_a[i][j];
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         value += 1;
       }
     }
@@ -201,29 +201,29 @@ PetscErrorCode IPMeanSquareFunctional2S::normalize(PetscReal scale) {
   return 0;
 }
 
-PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **x_a;
+  double **x_a;
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-        PetscReal &x_ij = x_a[i][j];
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        double &x_ij = x_a[i][j];
         value += x_ij*x_ij*w_a[i][j];
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-        PetscReal &x_ij = x_a[i][j];
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+        double &x_ij = x_a[i][j];
         value += x_ij*x_ij;
       }
     }
@@ -237,30 +237,30 @@ PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, PetscReal *OU
   return 0;
 }
 
-PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, PetscReal *OUTPUT)  {
+PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT)  {
   PetscErrorCode   ierr;
 
   // The value of the objective
-  PetscReal value = 0;
+  double value = 0;
 
-  PetscReal **a_a;
+  double **a_a;
   ierr = a.get_array(a_a); CHKERRQ(ierr);
 
-  PetscReal **b_a;
+  double **b_a;
   ierr = b.get_array(b_a); CHKERRQ(ierr);
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         value += (a_a[i][j]*b_a[i][j])*w_a[i][j];
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         value += (a_a[i][j]*b_a[i][j]);
       }
     }
@@ -281,24 +281,24 @@ PetscErrorCode IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVe
 
   gradient.set(0);
 
-  PetscReal **x_a;
+  double **x_a;
   ierr = x.get_array(x_a); CHKERRQ(ierr);
 
-  PetscReal **gradient_a;
+  double **gradient_a;
   ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
 
   if(m_weights) {
-    PetscReal **w_a;
+    double **w_a;
     ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         gradient_a[i][j] = 2*x_a[i][j]*w_a[i][j]/m_normalization;
       }
     }
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
-    for( PetscInt i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-      for( PetscInt j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
+    for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+      for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
         gradient_a[i][j] = 2*x_a[i][j]/m_normalization;
       }
     }

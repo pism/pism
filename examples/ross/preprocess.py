@@ -11,24 +11,6 @@ import subprocess
 import numpy as np
 import os
 
-# Set up the option parser
-from argparse import ArgumentParser
-parser = ArgumentParser()
-parser.description = "A script to preprocess a setup of ROSS example."
-parser.add_argument("FILE", nargs='*')
-options = parser.parse_args()
-args = options.FILE
-if len(args) == 0:
-  setup_option = "diag"
-  print("No option set, etup will be preprocessed for option 'diag'!")
-elif len(args) == 1 and args[0] in ("diag","prog"):
-  setup_option = args[0]
-  print("Setup will be preprocessed for option '%s'" % setup_option)
-else:
-    print("wrong number or kind of arguments, expect 'diag' or 'prog'!")
-    import sys
-    exit(1)
-
 smb_name = "climatic_mass_balance"
 temp_name = "ice_surface_temp"
 
@@ -134,9 +116,6 @@ def preprocess_albmap():
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
-    #smb_name = "climatic_mass_balance"
-    #temp_name = "ice_surface_temp"
-
     commands = ["wget -nc %s" % url,                # download
                 "unzip -n %s.zip" % input_filename, # unpack
                 # modify this command to cut out a different region
@@ -150,12 +129,14 @@ def preprocess_albmap():
     nc = NC.Dataset(output_filename, 'a')
 
     # fix acab
+    rho_ice = 910.0             # kg m-3
     acab = nc.variables[smb_name]
-    acab.units = "m / year"
     acab.standard_name = "land_ice_surface_specific_mass_balance"
     SMB = acab[:]
     SMB[SMB == -9999] = 0
-    acab[:] = SMB
+    # convert from m/year to kg m-2 / year:
+    acab[:] = SMB * rho_ice
+    acab.units = "kg m-2 / year"
 
     # fix artm and topg
     nc.variables[temp_name].units = "Celsius"
@@ -200,52 +181,66 @@ def final_corrections(filename):
 
     # compute the grounded/floating mask:
     mask = np.zeros(thk.shape, dtype='i')
-    rho_ice = 910.0
-    rho_seawater = 1028.0
 
-    ice_free = 0
-    grounded = 1
-    floating = 2
+    def is_grounded(thickness, bed):
+        rho_ice = 910.0
+        rho_seawater = 1028.0
+        return bed + thickness > 0 + (1 - rho_ice/rho_seawater) * thickness
+
+    grounded_icy      = 0
+    grounded_ice_free = 1
+    ocean_icy         = 2
+    ocean_ice_free    = 3
 
     My, Mx = thk.shape
     for j in xrange(My):
         for i in xrange(Mx):
-            if topg[j,i] + thk[j,i] > 0 + (1 - rho_ice/rho_seawater) * thk[j,i]:
-                mask[j,i] = grounded
-            else:
-                if thk[j,i] < 1:
-                    mask[j,i] = ice_free
+            if is_grounded(thk[j,i], topg[j,i]):
+                if thk[j,i] > 1.0:
+                    mask[j,i] = grounded_icy
                 else:
-                    mask[j,i] = floating
+                    mask[j,i] = grounded_ice_free
+            else:
+                if thk[j,i] > 1.0:
+                    mask[j,i] = ocean_icy
+                else:
+                    mask[j,i] = ocean_ice_free
 
     # compute the B.C. locations:
-    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
-    bcflag_var[:] = mask == grounded
+    bcflag = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
 
-    # mark floating cells next to grounded ones too:
-    row = np.array([-1,  0,  1, -1, 1, -1, 0, 1])
-    col = np.array([-1, -1, -1,  0, 0,  1, 1, 1])
+    # mark ocean_icy cells next to grounded_icy ones too:
+    row = np.array([ 0, -1, 1,  0])
+    col = np.array([-1,  0, 0,  1])
     for j in xrange(1, My-1):
         for i in xrange(1, Mx-1):
             nearest = mask[j + row, i + col]
 
-            if mask[j,i] == floating and np.any(nearest == grounded):
-                bcflag_var[j,i] = 1
-                if setup_option=="prog":
-                  topg[j,i]=-2000
+            if mask[j,i] == ocean_icy and np.any(nearest == grounded_icy):
+                bcflag[j,i] = 1
 
-    if setup_option=="prog":
-      #modifications for prognostic run
-      tempma = nc.variables[temp_name][:]
-      for j in xrange(My):
-        for i in xrange(Mx):
-            if bcflag_var[j,i] == 0:
-                topg[j,i]=-2000 # to avoid grounding
-            if tempma[j,i] > -20.0:
-                tempma[j,i]=-20.0 # to adjust open ocean temperatures
+    # Do not prescribe SSA Dirichlet B.C. in ice-free ocean areas:
+    bcflag[thk < 1.0] = 0
 
-      nc.variables[temp_name][:] = tempma
-      nc.variables['topg'][:] = topg
+    # modifications for the prognostic run
+    # this is to avoid grounding in the ice-shelf interior to make the results comparable to the diagnostic flow field
+    topg[np.logical_or(mask == ocean_icy, mask == ocean_ice_free)] = -2000.0
+
+    # cap temperature out in the ocean:
+    temperature = nc.variables[temp_name][:]
+    temperature[temperature > -20.0] = -20.0
+
+    nc.variables[temp_name][:] = temperature
+    nc.variables['topg'][:] = topg
+    bcflag_var = nc.createVariable('bcflag', 'i', ('y', 'x'))
+    bcflag_var[:] = bcflag
+
+    bad_bcflag_mask = np.logical_and(thk < 1.0, bcflag == 1)
+    bad_bcflag_var = nc.createVariable('bad_bcflag', 'i', ('y', 'x'))
+    bad_bcflag_var[:] = bad_bcflag_mask
+
+    mask_var = nc.createVariable('mask', 'i', ('y', 'x'))
+    mask_var[:] = mask
 
     nc.close()
 
@@ -254,7 +249,7 @@ if __name__ == "__main__":
     velocity = preprocess_ice_velocity()
     albmap = preprocess_albmap()
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc" # ice velocity on the ALBMAP grid
-    output = "Ross_combined_"+setup_option+".nc"
+    output = "Ross_combined.nc"
 
     commands = ["nc2cdo.py %s" % velocity,
                 "nc2cdo.py %s" % albmap,

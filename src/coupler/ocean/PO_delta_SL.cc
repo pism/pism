@@ -38,7 +38,7 @@ PO_delta_SL::~PO_delta_SL() {
 
 PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   option_prefix = "-ocean_delta_SL";
-  offset_name	= "delta_SL";
+  offset_name   = "delta_SL";
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
@@ -50,8 +50,8 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
-  shelfbmassflux.set_units("m s-1");
-  shelfbmassflux.set_glaciological_units("m year-1");
+  shelfbmassflux.set_units("kg m-2 s-1");
+  shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
   shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
@@ -77,7 +77,7 @@ PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PO_delta_SL::sea_level_elevation(PetscReal &result) {
+PetscErrorCode PO_delta_SL::sea_level_elevation(double &result) {
   PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
 
   if (offset)

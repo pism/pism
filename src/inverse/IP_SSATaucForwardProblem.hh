@@ -104,9 +104,9 @@ public:
   typedef IceModelVec2V StateVec;  ///< The function space for the state variable, \f$u_{\rm SSA}\f$.
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
-  IP_SSATaucForwardProblem(IceGrid &g, IceBasalResistancePlasticLaw &b,
-    EnthalpyConverter &e, IPDesignVariableParameterization &tp,
-    const PISMConfig &c);
+  IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
+                           IPDesignVariableParameterization &tp,
+                           const PISMConfig &c);
 
   virtual ~IP_SSATaucForwardProblem();
 
@@ -152,7 +152,7 @@ public:
 
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,IceModelVec2S &dzeta);
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,Vec dzeta);
-  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,PetscReal **dzeta);
+  virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u,IceModelVec2V &du,double **dzeta);
 
   virtual PetscErrorCode apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
   virtual PetscErrorCode apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);

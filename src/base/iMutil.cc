@@ -119,7 +119,7 @@ PetscErrorCode IceModel::update_run_stats() {
 
   // timing stats
   PetscLogDouble current_time, my_current_time;
-  PetscReal wall_clock_hours, proc_hours, mypph;
+  double wall_clock_hours, proc_hours, mypph;
   ierr = PISMGetTime(&my_current_time); CHKERRQ(ierr);
   MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
@@ -196,22 +196,22 @@ PetscErrorCode  IceModel::stampHistory(std::string str) {
  */
 PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;
-  PetscReal H_min, H_max, dz_top;
+  double H_min, H_max, dz_top;
   std::vector<double> new_zlevels;
   const int old_Mz = grid.Mz;
-  int N = 0; 			// the number of new levels
+  int N = 0;                    // the number of new levels
 
-  ierr = vH.range(H_min, H_max); CHKERRQ(ierr);
+  ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
   if (grid.Lz >= H_max) return 0;
 
   if (grid.initial_Mz == 0)
     grid.initial_Mz = grid.Mz;
   else if (grid.Mz > grid.initial_Mz * 2) {
     ierr = PetscPrintf(grid.com,
-		       "\n"
-		       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
-		       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
-		       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
+                       "\n"
+                       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
+                       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
+                       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -238,10 +238,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   }
 
   ierr = verbPrintf(2, grid.com,
-		    "\n"
-		    "PISM WARNING: max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)...\n"
-		    "              Adding %d new grid levels %7.4f m apart...\n",
-		    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
+                    "\n"
+                    "PISM WARNING: max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)...\n"
+                    "              Adding %d new grid levels %7.4f m apart...\n",
+                    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
 
   // Create new zlevels and zblevels:
   new_zlevels = grid.zlevels;
@@ -266,12 +266,12 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 
   // for extending the variables Enth3 and vWork3d vertically, put into
   //   vWork2d[0] the enthalpy of the air
-  PetscReal p_air = EC->getPressureFromDepth(0.0);
+  double p_air = EC->getPressureFromDepth(0.0);
   ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
                                    vWork2d[0](i,j));
          CHKERRQ(ierr);
@@ -309,8 +309,8 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     snapshots_file_is_ready = false;
 
     ierr = verbPrintf(2, grid.com,
-		      "NOTE: Further snapshots will be saved to '%s'...\n",
-		      snapshots_filename.c_str()); CHKERRQ(ierr);
+                      "NOTE: Further snapshots will be saved to '%s'...\n",
+                      snapshots_filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;

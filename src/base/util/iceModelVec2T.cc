@@ -32,7 +32,7 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   array3                 = NULL;
   first                  = -1;
   N                      = 0;
-  n_records              = 50;	// just a default
+  n_records              = 50;  // just a default
   m_report_range         = false;
   m_period               = 0;
   m_reference_time       = 0.0;
@@ -89,9 +89,9 @@ PetscErrorCode IceModelVec2T::destroy() {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::get_array3(PetscScalar*** &a3) {
+PetscErrorCode IceModelVec2T::get_array3(double*** &a3) {
   PetscErrorCode ierr = begin_access(); CHKERRQ(ierr);
-  a3 = (PetscScalar***) array3;
+  a3 = (double***) array3;
   return 0;
 }
 
@@ -211,7 +211,7 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
 
   if (is_increasing(time) == false) {
     ierr = PetscPrintf(grid->com, "PISM ERROR: times have to be strictly increasing (read from '%s').\n",
-		       filename.c_str());
+                       filename.c_str());
     PISMEnd();
   }
 
@@ -233,6 +233,11 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
   std::vector<double>::iterator i, j;
   unsigned int m, n, last;
+
+  if (m_period != 0) {
+    // we read all data in IceModelVec2T::init() (see above)
+    return 0;
+  }
 
   if (N > 0) {
     last = first + (N - 1);
@@ -333,7 +338,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
                                 CRITICAL, m_report_range, 0.0, v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
-		      m_name.c_str(),
+                      m_name.c_str(),
                       start + j,
                       grid->time->date(time[start + j]).c_str());
     ierr = set_record(kept + j); CHKERRQ(ierr);
@@ -347,7 +352,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
 //! Discard the first N records, shifting the rest of them towards the "beginning".
 PetscErrorCode IceModelVec2T::discard(int number) {
   PetscErrorCode ierr;
-  PetscScalar **a2, ***a3;
+  double **a2, ***a3;
 
   if (number == 0)
     return 0;
@@ -356,10 +361,10 @@ PetscErrorCode IceModelVec2T::discard(int number) {
 
   ierr = get_array(a2); CHKERRQ(ierr);
   ierr = get_array3(a3); CHKERRQ(ierr);
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
+  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
+    for (int j=grid->ys; j<grid->ys+grid->ym; ++j)
       for (unsigned int k = 0; k < N; ++k)
-	a3[i][j][k] = a3[i][j][k + number];
+        a3[i][j][k] = a3[i][j][k + number];
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   
@@ -369,12 +374,12 @@ PetscErrorCode IceModelVec2T::discard(int number) {
 //! Sets the record number n to the contents of the (internal) Vec v.
 PetscErrorCode IceModelVec2T::set_record(int n) {
   PetscErrorCode ierr;
-  PetscScalar **a2, ***a3;
+  double **a2, ***a3;
 
   ierr = get_array(a2); CHKERRQ(ierr);
   ierr = get_array3(a3); CHKERRQ(ierr);
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
+  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
+    for (int j=grid->ys; j<grid->ys+grid->ym; ++j)
       a3[i][j][n] = a2[i][j];
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
@@ -385,12 +390,12 @@ PetscErrorCode IceModelVec2T::set_record(int n) {
 //! Sets the (internal) Vec v to the contents of the nth record.
 PetscErrorCode IceModelVec2T::get_record(int n) {
   PetscErrorCode ierr;
-  PetscScalar **a2, ***a3;
+  double **a2, ***a3;
 
   ierr = get_array(a2); CHKERRQ(ierr);
   ierr = get_array3(a3); CHKERRQ(ierr);
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
+  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
+    for (int j=grid->ys; j<grid->ys+grid->ym; ++j)
       a2[i][j] = a3[i][j][n];
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
@@ -408,7 +413,7 @@ double IceModelVec2T::max_timestep(double my_t) {
   std::vector<double>::iterator l = upper_bound(time_bounds.begin(),
                                            time_bounds.end(), my_t);
   if (l != time_bounds.end()) {
-    PetscReal tmp = *l - my_t;
+    double tmp = *l - my_t;
 
     if (tmp > 1)                // never take time-steps shorter than 1 second
       return tmp;
@@ -453,8 +458,8 @@ PetscErrorCode IceModelVec2T::interp(double my_t) {
  */
 PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   PetscErrorCode ierr;
-  PetscScalar **a2;
-  PetscReal dt_years = grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
+  double **a2;
+  double dt_years = grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
 
   // Determine the number of small time-steps to use for averaging:
   int M = (int) ceil(n_evaluations_per_year * (dt_years));
@@ -469,8 +474,8 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   ierr = init_interpolation(&ts[0], M); CHKERRQ(ierr);
 
   ierr = get_array(a2);         // calls begin_access()
-  for (PetscInt   i = grid->xs; i < grid->xs+grid->xm; ++i) {
-    for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
+  for (int   i = grid->xs; i < grid->xs+grid->xm; ++i) {
+    for (int j = grid->ys; j < grid->ys+grid->ym; ++j) {
       ierr = average(i, j, a2[i][j]); CHKERRQ(ierr);
     }
   }
@@ -488,7 +493,7 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
  *
  * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::init_interpolation(const PetscScalar *ts, unsigned int ts_length) {
+PetscErrorCode IceModelVec2T::init_interpolation(const double *ts, unsigned int ts_length) {
   unsigned int index = 0,
     last = first + N - 1;
 
@@ -540,12 +545,12 @@ PetscErrorCode IceModelVec2T::init_interpolation(const PetscScalar *ts, unsigned
  * and interpolation weights (linear interpolation).
  *
  * @param i,j map-plane grid point
- * @param result pointer to an allocated array of `weights.size()` `PetscScalar`
+ * @param result pointer to an allocated array of `weights.size()` `double`
  *
  * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::interp(int i, int j, PetscScalar *result) {
-  PetscScalar ***a3 = (PetscScalar***) array3;
+PetscErrorCode IceModelVec2T::interp(int i, int j, double *result) {
+  double ***a3 = (double***) array3;
   unsigned int ts_length = m_interp_indices.size();
 
   for (unsigned int k = 0; k < ts_length; ++k) {
@@ -565,10 +570,10 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
   unsigned int M = m_interp_indices.size();
 
   if (N == 1) {
-    PetscScalar ***a3 = (PetscScalar***) array3;
+    double ***a3 = (double***) array3;
     result = a3[i][j][0];
   } else {
-    std::vector<PetscScalar> values(M);
+    std::vector<double> values(M);
 
     ierr = interp(i, j, &values[0]); CHKERRQ(ierr);
 

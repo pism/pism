@@ -37,7 +37,7 @@ where MX       is number of grid points,
 Example:  Try this diagnostic-only run:
   $ export MX=101 YY=0
   $ ./exactQ.py $MX $YY
-  $ pismr -o outQ$MX.nc -y $YY -boot_file initQ$MX.nc -Mx $MX -My $MX -Mz 21 -Lz 1500 -z_spacing equal -surface given -no_sia -energy none -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -cfbc -part_grid -part_redist -o_order zyx -ssa_e 1.0 -ssa_flow_law isothermal_glen
+  $ pismr -o outQ$MX.nc -y $YY -boot_file initQ$MX.nc -Mx $MX -My $MX -Mz 21 -Lz 1500 -z_spacing equal -surface given -stress_balance ssa -energy none -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -cfbc -part_grid -part_redist -o_order zyx -ssa_e 1.0 -ssa_flow_law isothermal_glen
 """
 parser.description = "A script which runs Test Q."
 (options, args) = parser.parse_args()
@@ -109,7 +109,7 @@ fill_value = nan
 # create initial fields
 topg = zeros((Mx,My)) - 1200.0  # so it is floating
 ice_surface_temp = zeros((Mx,My)) + 263.15  # -10 degrees Celsius; just a guess
-acab = zeros((Mx,My))
+climatic_mass_balance = zeros((Mx,My))
 thk  = zeros((Mx,My))
 thk[rr <= R0] = H0;
 zerossabc = zeros((Mx,My))
@@ -158,9 +158,9 @@ thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
-acab_var = def_var(nc, "climatic_mass_balance", "m s-1", fill_value)
-acab_var.standard_name = "land_ice_surface_specific_mass_balance"
-acab_var[:] = acab
+climatic_mass_balance_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", fill_value)
+climatic_mass_balance_var.standard_name = "land_ice_surface_specific_mass_balance"
+climatic_mass_balance_var[:] = climatic_mass_balance
 
 ice_surface_temp_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 ice_surface_temp_var[:] = ice_surface_temp

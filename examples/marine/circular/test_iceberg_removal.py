@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2012, 2013 Ricarda Winkelmann, Torsten Albrecht,
+# Copyright (C) 2012, 2013, 2014 Ricarda Winkelmann, Torsten Albrecht,
 # Ed Bueler, and Constantine Khroulev
 
 import numpy as np
@@ -50,7 +50,7 @@ for j in xrange(options.My):
 
         # ocean (shelf and elsewhere)
         if radius >= p.r_gl or x[i] >= 0:
-            accum[j,i] = p.accumulation_rate
+            accum[j,i] = p.accumulation_rate * p.rho_ice
             bed[j,i] = p.topg_min
 
 # cap ice thickness

@@ -24,16 +24,16 @@
 #include <proj_api.h>
 
 //! Computes the area of a triangle using vector cross product.
-static PetscReal triangle_area(PetscReal *A, PetscReal *B, PetscReal *C) {
-  PetscReal V1[3], V2[3];
+static double triangle_area(double *A, double *B, double *C) {
+  double V1[3], V2[3];
   for (int j = 0; j < 3; ++j) {
     V1[j] = B[j] - A[j];
     V2[j] = C[j] - A[j];
   }
 
   return 0.5*sqrt(PetscSqr(V1[1]*V2[2] - V2[1]*V1[2]) +
-		  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
-		  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
+                  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
+                  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
 }
 
 PetscErrorCode IceModel::compute_cell_areas() {
@@ -72,7 +72,7 @@ PetscErrorCode IceModel::compute_cell_areas() {
   }
 
   ierr = verbPrintf(2,grid.com,
-		    "* Computing cell areas, latitude and longitude\n"
+                    "* Computing cell areas, latitude and longitude\n"
                     "  using projection parameters...\n"); CHKERRQ(ierr);
 
 // Cell layout:
@@ -91,30 +91,30 @@ PetscErrorCode IceModel::compute_cell_areas() {
   ierr = vLatitude.begin_access(); CHKERRQ(ierr);
   ierr = vLongitude.begin_access(); CHKERRQ(ierr);
   ierr =  cell_area.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       double x = grid.x[i], y = grid.y[j], Z;
 
       // compute the cell area:
       double x_nw = x - dx2, y_nw = y + dy2;
       Z = 0;
       pj_transform(pism, geocent, 1, 1, &x_nw, &y_nw, &Z);
-      PetscReal nw[3] = {x_nw, y_nw, Z};
+      double nw[3] = {x_nw, y_nw, Z};
 
       double x_ne = x + dx2, y_ne = y + dy2;
       Z = 0;
       pj_transform(pism, geocent, 1, 1, &x_ne, &y_ne, &Z);
-      PetscReal ne[3] = {x_ne, y_ne, Z};
+      double ne[3] = {x_ne, y_ne, Z};
 
       double x_se = x + dx2, y_se = y - dy2;
       Z = 0;
       pj_transform(pism, geocent, 1, 1, &x_se, &y_se, &Z);
-      PetscReal se[3] = {x_se, y_se, Z};
+      double se[3] = {x_se, y_se, Z};
 
       double x_sw = x - dx2, y_sw = y - dy2;
       Z = 0;
       pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z);
-      PetscReal sw[3] = {x_sw, y_sw, Z};
+      double sw[3] = {x_sw, y_sw, Z};
 
       cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
 

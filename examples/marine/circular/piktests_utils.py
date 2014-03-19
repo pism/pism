@@ -70,10 +70,11 @@ def prepare_output_file(nc, x, y, include_vel_bc=True):
              "_FillValue" : 248.0}
     nc.define_2d_field("ice_surface_temp", attrs=attrs)
 
+    ice_density = 910.0
     attrs = {'long_name'     : "mean annual net ice equivalent accumulation rate",
-             "units"         : "m/year",
+             "units"         : "kg m-2 year-1",
              "standard_name" : "land_ice_surface_specific_mass_balance",
-             "_FillValue"    : 0.2}
+             "_FillValue"    : 0.2 * ice_density} # 0.2 m/year
     nc.define_2d_field("climatic_mass_balance", attrs=attrs)
 
     if include_vel_bc == False:

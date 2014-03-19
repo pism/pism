@@ -105,7 +105,6 @@ class Experiment:
 
         options = ["-energy none", # isothermal setup; allows selecting cold-mode flow laws
                    "-ssa_flow_law isothermal_glen", # isothermal setup
-                   "-ssa_sliding",                  # use SSA
                    "-yield_stress constant",
                    "-tauc %e" % MISMIP.C(self.experiment),
                    "-pseudo_plastic",
@@ -125,9 +124,9 @@ class Experiment:
                    ]
 
         if self.model == 1:
-            options.extend(["-no_sia"])
+            options.extend(["-stress_balance ssa"])
         else:
-            options.extend(["-sia",
+            options.extend(["-stress_balance ssa+sia",
                             "-sia_flow_law isothermal_glen", # isothermal setup
                         ])
 

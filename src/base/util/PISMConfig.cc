@@ -114,11 +114,11 @@ double PISMConfig::get_quiet(std::string name) const {
     return m_data.get_double(name);
   } else {
     PetscPrintf(m_com, "PISM ERROR: parameter '%s' is unset. (Parameters read from '%s'.)\n",
-		name.c_str(), m_config_filename.c_str());
+                name.c_str(), m_config_filename.c_str());
     PISMEnd();
   }
 
-  return 0;			// can't happen
+  return 0;                     // can't happen
 }
 
 std::string PISMConfig::get_string_quiet(std::string name) const {
@@ -127,12 +127,12 @@ std::string PISMConfig::get_string_quiet(std::string name) const {
     return m_data.get_string(name);
   else {
     PetscPrintf(m_com,
-		"PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
-		name.c_str(), m_config_filename.c_str());
+                "PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
+                name.c_str(), m_config_filename.c_str());
     PISMEnd();
   }
 
-  return std::string();		// will never happen
+  return std::string();         // will never happen
 }
 
 bool PISMConfig::get_flag_quiet(std::string name) const {
@@ -143,28 +143,28 @@ bool PISMConfig::get_flag_quiet(std::string name) const {
     const std::string &value = j->second;
 
     if ((value == "false") ||
-	(value == "no") ||
-	(value == "off"))
+        (value == "no") ||
+        (value == "off"))
       return false;
 
     if ((value == "true") ||
-	(value == "yes") ||
-	(value == "on"))
+        (value == "yes") ||
+        (value == "on"))
       return true;
 
     PetscPrintf(m_com,
-		"PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
-		"            Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
-		name.c_str(), value.c_str());
+                "PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
+                "            Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
+                name.c_str(), value.c_str());
     PISMEnd();
   }
 
   PetscPrintf(m_com,
-	      "PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
-	      name.c_str(), m_config_filename.c_str());
+              "PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
+              name.c_str(), m_config_filename.c_str());
   PISMEnd();
 
-  return true;			// will never happen
+  return true;                  // will never happen
 }
 
 
@@ -234,7 +234,7 @@ PetscErrorCode PISMConfig::flag_from_option(std::string name, std::string flag) 
 
   if (foo && no_foo) {
     PetscPrintf(m_com, "PISM ERROR: Inconsistent command-line options: both -%s and -no_%s are set.\n",
-		name.c_str(), name.c_str());
+                name.c_str(), name.c_str());
     PISMEnd();
   }
 
@@ -259,12 +259,12 @@ PetscErrorCode PISMConfig::flag_from_option(std::string name, std::string flag) 
 */
 PetscErrorCode PISMConfig::scalar_from_option(std::string name, std::string parameter) {
   PetscErrorCode ierr;
-  PetscReal value = get_quiet(parameter);
+  double value = get_quiet(parameter);
   bool flag;
 
   ierr = PISMOptionsReal("-" + name,
-			 get_string_quiet(parameter + "_doc"),
-			 value, flag); CHKERRQ(ierr);
+                         get_string_quiet(parameter + "_doc"),
+                         value, flag); CHKERRQ(ierr);
   if (flag) {
     this->set_scalar_from_option(parameter, value);
   }
@@ -308,7 +308,7 @@ PetscErrorCode PISMConfig::keyword_from_option(std::string name,
 
   ierr = PISMOptionsList(m_com, "-" + name,
                          get_string_quiet(parameter + "_doc"),
-			 choices,
+                         choices,
                          get_string_quiet(parameter), keyword, flag); CHKERRQ(ierr);
 
   if (flag) {
@@ -354,11 +354,11 @@ PetscErrorCode PISMConfig::set_keyword_from_option(std::string name, std::string
 
 
 //! Print all the attributes of a configuration variable.
-PetscErrorCode PISMConfig::print_to_stdout(PetscInt vt) const {
+PetscErrorCode PISMConfig::print_to_stdout(int vt) const {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(vt, m_com, "PISM parameters read from %s:\n",
-		    m_config_filename.c_str());
+                    m_config_filename.c_str());
 
   ierr = m_data.report_to_stdout(m_com, vt); CHKERRQ(ierr);
 

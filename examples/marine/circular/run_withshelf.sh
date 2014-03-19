@@ -15,7 +15,7 @@ fi
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 5 -Lz 4500 -Lbz 1000"
 
-pismopts="-y $length -boot_file $infile $grid -ssa_sliding -ssa_method fd"
+pismopts="-y $length -boot_file $infile $grid -stress_balance ssa+sia -ssa_method fd"
 
 doit="mpiexec -n $N pismr $pismopts"
 

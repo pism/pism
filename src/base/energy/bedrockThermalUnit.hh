@@ -31,12 +31,12 @@ public:
   virtual ~IceModelVec3BTU() {}
 
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
-                                int myMbz, PetscReal myLbz, int stencil_width = 1);
+                                int myMbz, double myLbz, int stencil_width = 1);
                                 
-  PetscErrorCode get_layer_depth(PetscReal &depth); //!< Return -Lbz value.
-  PetscErrorCode get_spacing(PetscReal &dzb);
+  PetscErrorCode get_layer_depth(double &depth); //!< Return -Lbz value.
+  PetscErrorCode get_spacing(double &dzb);
 private:
-  PetscReal Lbz;
+  double Lbz;
   bool good_init();
 };
 
@@ -111,9 +111,9 @@ public:
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);  
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual PetscErrorCode max_timestep(PetscReal /*my_t*/, PetscReal &my_dt, bool &restrict);
+  virtual PetscErrorCode max_timestep(double /*my_t*/, double &my_dt, bool &restrict);
 
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
 protected:
@@ -126,11 +126,11 @@ protected:
                              //!    This IceModelVec is only created if Mbz > 1.
 
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
-  PetscScalar    bed_rho, bed_c, bed_k, bed_D;
+  double    bed_rho, bed_c, bed_k, bed_D;
   
   unsigned int Mbz;
-  PetscReal Lbz;
-  std::string m_input_file;		//!< non-empty if "-i" was set
+  double Lbz;
+  std::string m_input_file;             //!< non-empty if "-i" was set
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached
                 *ghf; //!< lower boundary flux, owned by the model to which we are attached

@@ -216,8 +216,8 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   if (!variable_exists) {
     ierr = PetscPrintf(m_com,
                        "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
-		       get_name().c_str(),
-		       get_string("standard_name").c_str(), nc.inq_filename().c_str());
+                       get_name().c_str(),
+                       get_string("standard_name").c_str(), nc.inq_filename().c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -285,10 +285,10 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
     const std::string &units_string = get_string("units"),
       &long_name = get_string("long_name");
     ierr = verbPrintf(2, m_com,
-		      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-		      "              Assuming that it is in '%s'.\n",
-		      get_name().c_str(), long_name.c_str(),
-		      units_string.c_str()); CHKERRQ(ierr);
+                      "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                      "              Assuming that it is in '%s'.\n",
+                      get_name().c_str(), long_name.c_str(),
+                      units_string.c_str()); CHKERRQ(ierr);
     input_units = get_units();
   }
 
@@ -341,7 +341,7 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
   - uses the last record in the file
  */
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
-                                         PetscScalar default_value, Vec v) {
+                                         double default_value, Vec v) {
   PetscErrorCode ierr;
   unsigned int t_length = 0;
 
@@ -355,7 +355,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, boo
 
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                                          RegriddingFlag flag, bool do_report_range,
-                                         PetscScalar default_value, Vec v) {
+                                         double default_value, Vec v) {
   PetscErrorCode ierr;
 
   assert(m_grid != NULL);
@@ -439,7 +439,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
 //! Report the range of a \b global Vec `v`.
 PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_name) {
   PetscErrorCode ierr;
-  PetscReal min, max;
+  double min, max;
 
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
@@ -456,28 +456,28 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 
     if (found_by_standard_name) {
       ierr = verbPrintf(2, m_com,
-			" %s / standard_name=%-10s\n"
+                        " %s / standard_name=%-10s\n"
                         "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-			get_name().c_str(),
-			get_string("standard_name").c_str(), spacer.c_str(), min, max,
-			get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+                        get_name().c_str(),
+                        get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                        get_string("glaciological_units").c_str()); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, m_com,
-			" %s / WARNING! standard_name=%s is missing, found by short_name\n"
+                        " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                         "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-			get_name().c_str(),
-			get_string("standard_name").c_str(), spacer.c_str(), min, max,
-			get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+                        get_name().c_str(),
+                        get_string("standard_name").c_str(), spacer.c_str(), min, max,
+                        get_string("glaciological_units").c_str()); CHKERRQ(ierr);
     }
 
   } else {
 
     ierr = verbPrintf(2, m_com,
-		      " %s / %-10s\n"
+                      " %s / %-10s\n"
                       "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
-		      get_name().c_str(),
-		      get_string("long_name").c_str(), spacer.c_str(), min, max,
-		      get_string("glaciological_units").c_str()); CHKERRQ(ierr);
+                      get_name().c_str(),
+                      get_string("long_name").c_str(), spacer.c_str(), min, max,
+                      get_string("glaciological_units").c_str()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -485,7 +485,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 
 //! Check if the range of a \b global Vec `v` is in the range specified by valid_min and valid_max attributes.
 PetscErrorCode NCSpatialVariable::check_range(std::string filename, Vec v) {
-  PetscScalar min, max;
+  double min, max;
   PetscErrorCode ierr;
   bool failed = false;
 
@@ -754,7 +754,7 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
     if (value.empty()) continue;
 
     ierr = verbPrintf(verbosity_threshold, com, "  %s = \"%s\"\n",
-		      name.c_str(), value.c_str()); CHKERRQ(ierr);
+                      name.c_str(), value.c_str()); CHKERRQ(ierr);
   }
 
   // Print double attributes:
@@ -769,10 +769,10 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
     if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
       ierr = verbPrintf(verbosity_threshold, com, "  %s = %12.3e\n",
-		        name.c_str(), values[0]); CHKERRQ(ierr);
+                        name.c_str(), values[0]); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(verbosity_threshold, com, "  %s = %12.5f\n",
-		        name.c_str(), values[0]); CHKERRQ(ierr);
+                        name.c_str(), values[0]); CHKERRQ(ierr);
     }
 
   }

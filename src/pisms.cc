@@ -27,7 +27,6 @@ static char help[] =
 #include "eismint/iceEISModel.hh"
 #include "pism_options.hh"
 
-#include "PSDummy.hh"
 #include "POConstant.hh"
 
 int main(int argc, char *argv[]) {
@@ -44,7 +43,7 @@ int main(int argc, char *argv[]) {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     std::vector<std::string> required;
@@ -72,7 +71,8 @@ int main(int argc, char *argv[]) {
 
     ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
 
-    ierr = m.writeFiles("simp_exper.nc"); CHKERRQ(ierr);
+    // provide a default output file name if no -o option is given.
+    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

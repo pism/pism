@@ -44,7 +44,7 @@
   processor.
 */
 LocalInterpCtx::LocalInterpCtx(grid_info input, const IceGrid &grid,
-                               PetscReal z_min, PetscReal z_max) {
+                               double z_min, double z_max) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   com = grid.com;
@@ -53,14 +53,14 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, const IceGrid &grid,
 
   print_grid_info(input, grid.get_unit_system(), 3);
 
-  PetscReal eps = 1e-6;         // tolerance (one micron)
+  double eps = 1e-6;         // tolerance (one micron)
   if (!(grid.x.front() >= input.x_min - eps && grid.x.back() <= input.x_max + eps &&
         grid.y.front() >= input.y_min - eps && grid.y.back() <= input.y_max + eps &&
         z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
 
     PetscPrintf(com,
-		"target computational domain not a subset of source (in NetCDF file)\n"
-		"  computational domain:\n");
+                "target computational domain not a subset of source (in NetCDF file)\n"
+                "  computational domain:\n");
     PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
                 grid.x.front(), grid.x.back(),
                 grid.y.front(), grid.y.back(),
@@ -119,7 +119,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, const IceGrid &grid,
   x_alpha.resize(grid.xm);
 
   // x-direction
-  for (PetscInt i = 0; i < grid.xm; ++i) {
+  for (int i = 0; i < grid.xm; ++i) {
     double x = grid.x[grid.xs + i];
 
     // This is here to make it crash and burn if something goes wrong, instead
@@ -161,7 +161,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info input, const IceGrid &grid,
   y_right.resize(grid.ym);
   y_alpha.resize(grid.ym);
 
-  for (PetscInt j = 0; j < grid.ym; ++j) {
+  for (int j = 0; j < grid.ym; ++j) {
     double y = grid.y[grid.ys + j];
 
     // This is here to make it crash and burn if something goes wrong, instead

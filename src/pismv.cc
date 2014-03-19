@@ -22,14 +22,13 @@ static char help[] =
 "  and numerical solution.  Can also just compute exact solution (-eo).\n"
 "  Currently implements tests A, B, C, D, E, F, G, H, K, L.\n\n";
 
-#include <cctype>		// toupper
+#include <cctype>               // toupper
 #include <string>
-#include <algorithm>		// std::transform()
+#include <algorithm>            // std::transform()
 #include <petscdmda.h>
 #include "IceGrid.hh"
 #include "verif/iceCompModel.hh"
 
-#include "PSDummy.hh"
 #include "POConstant.hh"
 #include "pism_options.hh"
 
@@ -52,7 +51,7 @@ int main(int argc, char *argv[]) {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
+                      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     std::vector<std::string> required;
@@ -82,7 +81,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-test", "Specifies PISM verification test",
-			       testname, test_chosen); CHKERRQ(ierr);
+                               testname, test_chosen); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -92,17 +91,18 @@ int main(int argc, char *argv[]) {
     // actually construct and run one of the derived classes of IceModel
     // run derived class for compensatory source SIA solutions
     // (i.e. compensatory accumulation or compensatory heating)
-    IceCompModel mComp(g, config, overrides, testname[0]);
-    ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
+    IceCompModel m(g, config, overrides, testname[0]);
+    ierr = m.setExecName("pismv"); CHKERRQ(ierr);
 
-    ierr = mComp.init(); CHKERRQ(ierr);
+    ierr = m.init(); CHKERRQ(ierr);
 
-    ierr = mComp.run(); CHKERRQ(ierr);
+    ierr = m.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
 
-    ierr = mComp.reportErrors();  CHKERRQ(ierr);
+    ierr = m.reportErrors();  CHKERRQ(ierr);
 
-    ierr = mComp.writeFiles("verify.nc"); CHKERRQ(ierr);
+    // provide a default output file name if no -o option is given.
+    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

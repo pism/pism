@@ -45,23 +45,23 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   // Allocate internal IceModelVecs:
   ierr = air_temp_mean_annual.create(grid, "air_temp_mean_annual", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = air_temp_mean_annual.set_attrs("diagnostic",
-			   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
-			   "K", 
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
+                           "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
+                           "K", 
+                           ""); CHKERRQ(ierr);  // no CF standard_name ??
   air_temp_mean_annual.metadata().set_string("source", reference);
 
   ierr = air_temp_mean_july.create(grid, "air_temp_mean_july", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = air_temp_mean_july.set_attrs("diagnostic",
-			   "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
-			   "Kelvin",
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
+                           "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
+                           "Kelvin",
+                           ""); CHKERRQ(ierr);  // no CF standard_name ??
   air_temp_mean_july.metadata().set_string("source", reference);
 
   ierr = precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = precipitation.set_attrs("climate_state", 
-			      "mean annual ice-equivalent precipitation rate",
-			      "m s-1", 
-			      ""); CHKERRQ(ierr); // no CF standard_name ??
+                              "mean annual ice-equivalent precipitation rate",
+                              "m s-1", 
+                              ""); CHKERRQ(ierr); // no CF standard_name ??
   ierr = precipitation.set_glaciological_units("m year-1");
   precipitation.write_in_glaciological_units = true;
   precipitation.set_time_independent(true);
@@ -89,9 +89,9 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 
   // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-		    "      from %s ... \n",
-		    precip_filename.c_str()); CHKERRQ(ierr); 
+                    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+                    "      from %s ... \n",
+                    precip_filename.c_str()); CHKERRQ(ierr); 
   if (do_regrid) {
     ierr = precipitation.regrid(precip_filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {
@@ -177,7 +177,7 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PAYearlyCycle::init_timeseries(double *ts, unsigned int N) {
   // constants related to the standard yearly cycle
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(snow_temp_july_day);
@@ -194,13 +194,13 @@ PetscErrorCode PAYearlyCycle::init_timeseries(PetscReal *ts, unsigned int N) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, double *values) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
     values[k] = precipitation(i,j);
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, PetscReal *values) {
+PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, double *values) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     values[k] = air_temp_mean_annual(i,j) + (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
@@ -221,8 +221,8 @@ PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   ierr = air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
   ierr = air_temp_mean_july.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       result(i,j) = air_temp_mean_annual(i,j) + (air_temp_mean_july(i,j) - air_temp_mean_annual(i,j)) * cos_T;
     }
   }

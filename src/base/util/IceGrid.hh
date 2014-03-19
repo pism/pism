@@ -109,9 +109,9 @@ public:
   PetscErrorCode set_vertical_levels(std::vector<double> z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
-  void compute_point_neighbors(PetscReal x, PetscReal y,
+  void compute_point_neighbors(double x, double y,
                                int &i, int &j);
-  std::vector<PetscReal> compute_interp_weights(PetscReal x, PetscReal y);
+  std::vector<double> compute_interp_weights(double x, double y);
 
   void check_parameters();
 
@@ -120,10 +120,10 @@ public:
   PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
-  unsigned int kBelowHeight(PetscScalar height);
+  unsigned int kBelowHeight(double height);
   PetscErrorCode create_viewer(int viewer_size, std::string title, PetscViewer &viewer);
-  PetscReal      radius(int i, int j);
-  PetscErrorCode get_dm(PetscInt dm_dof, PetscInt stencil_width, DM &result);
+  double      radius(int i, int j);
+  PetscErrorCode get_dm(int dm_dof, int stencil_width, DM &result);
   double convert(double, const char*, const char*) const;
   PISMUnitSystem get_unit_system() const;
 
@@ -142,7 +142,7 @@ public:
 
   // Fine vertical grid and the interpolation setup:
   std::vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
-  PetscReal   dz_fine;                    //!< spacing of the fine vertical grid
+  double   dz_fine;                    //!< spacing of the fine vertical grid
   unsigned int Mz_fine;          //!< number of levels of the fine vertical grid in the ice
 
   // Array ice_storage2fine contains indices of the ice storage vertical grid
@@ -153,13 +153,13 @@ public:
 
   SpacingType ice_vertical_spacing;
   Periodicity periodicity;
-  PetscScalar dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
+  double dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
     dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
 
-  PetscScalar x0,               //!< x-coordinate of the grid center
+  double x0,               //!< x-coordinate of the grid center
     y0;                         //!< y-coordinate of the grid center
 
-  PetscScalar Lx, //!< half width of the ice model grid in x-direction (m)
+  double Lx, //!< half width of the ice model grid in x-direction (m)
     Ly;           //!< half width of the ice model grid in y-direction (m)
 
   int    Mx, //!< number of grid points in the x-direction
@@ -171,10 +171,10 @@ public:
   std::vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
-  PetscScalar dx,               //!< horizontal grid spacing
+  double dx,               //!< horizontal grid spacing
     dy;                         //!< horizontal grid spacing
 
-  PetscScalar Lz;      //!< max extent of the ice in z-direction (m)
+  double Lz;      //!< max extent of the ice in z-direction (m)
 
   unsigned int Mz; //!< number of grid points in z-direction in the ice
 
@@ -183,11 +183,10 @@ public:
   unsigned int max_stencil_width;
   //!< maximum stencil width supported by the DA in this IceGrid object
 
-  PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
   PISMTime *time;               //!< The time management object (hides calendar computations)
 protected:
   std::map<int,DM> dms;
-  PetscScalar lambda;	 //!< quadratic vertical spacing parameter
+  double lambda;         //!< quadratic vertical spacing parameter
   PISMUnitSystem m_unit_system;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
@@ -195,7 +194,7 @@ protected:
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();
 
-  PetscErrorCode create_dm(PetscInt da_dof, PetscInt stencil_width, DM &result);
+  PetscErrorCode create_dm(int da_dof, int stencil_width, DM &result);
   void destroy_dms();
 
   int dm_key(int, int);
@@ -206,5 +205,5 @@ private:
   IceGrid & operator=(IceGrid const &);
 };
 
-#endif	/* __grid_hh */
+#endif  /* __grid_hh */
 

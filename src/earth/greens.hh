@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Ed Bueler
+// Copyright (C) 2007--2009, 2014 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -49,5 +49,5 @@ double vd_integrand (double kap, void * paramsIN);
 double viscDisc(double t, double H0, double R0, double r, 
                 double rho, double grav, double D, double eta);
 
-#endif	/* __greens_hh */
+#endif  /* __greens_hh */
 

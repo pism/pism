@@ -36,16 +36,8 @@ class IceBasalResistancePlasticLaw;
 class ShallowStressBalance : public PISMComponent
 {
 public:
-  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                       EnthalpyConverter &e, const PISMConfig &conf)
-    : PISMComponent(g, conf), basal(b), flow_law(NULL), EC(e)
-  {
-    m_vel_bc = NULL; bc_locations = NULL; variables = NULL;
-    sea_level = 0;
-    allocate();
-  }
-
-  virtual ~ShallowStressBalance() {}
+  ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
 
@@ -62,7 +54,7 @@ public:
 
   //! \brief Set the sea level used to check for floatation. (Units: meters,
   //! relative to the geoid.)
-  void set_sea_level_elevation(PetscReal new_sea_level)
+  void set_sea_level_elevation(double new_sea_level)
   { sea_level = new_sea_level; }
 
   virtual PetscErrorCode update(bool fast,
@@ -92,7 +84,7 @@ public:
   // helpers:
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt /*old_Mz*/)
+  virtual PetscErrorCode extend_the_grid(int /*old_Mz*/)
   { return 0; }
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(std::string &result)
@@ -106,9 +98,9 @@ public:
 protected:
   virtual PetscErrorCode allocate();
 
-  PetscReal sea_level;
+  double sea_level;
   PISMVars *variables;
-  IceBasalResistancePlasticLaw &basal;
+  IceBasalResistancePlasticLaw *basal_sliding_law;
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
 
@@ -141,51 +133,33 @@ public:
   implementation ignores any basal resistance fields (e.g. yield stress from
   the IceModel or other user of this class).
  */
-class SSB_Trivial : public ShallowStressBalance
+class ZeroSliding : public ShallowStressBalance
 {
 public:
-  SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b,
-              EnthalpyConverter &e, const PISMConfig &conf)
-    : ShallowStressBalance(g, b, e, conf) {
-
-    // Use the SIA flow law.
-    IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
-    ice_factory.setType(config.get_string("sia_flow_law"));
-
-    ice_factory.setFromOptions();
-    ice_factory.create(&flow_law);
-  }
-  virtual ~SSB_Trivial() {
-    delete flow_law;
-  }
+  ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  virtual ~ZeroSliding();
+  
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
-  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
-  { }
+  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/);
 
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
-    dict["taud"] = new SSB_taud(this, grid, *variables);
-    dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
-  }
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/);
 
   //! Defines requested couplings fields and/or asks an attached model
   //! to do so.
   virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
-  { return 0; }
+                                          PISM_IO_Type /*nctype*/);
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
-  { return 0; }
+  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/);
 };
 
-class SSB_Constant : public SSB_Trivial {
+class PrescribedSliding : public ZeroSliding {
 public:
-  SSB_Constant(IceGrid &g, IceBasalResistancePlasticLaw &b,
-               EnthalpyConverter &e, const PISMConfig &conf);
-  virtual ~SSB_Constant();
+  PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  virtual ~PrescribedSliding();
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(PISMVars &vars);
 };

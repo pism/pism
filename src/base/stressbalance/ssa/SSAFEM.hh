@@ -26,9 +26,9 @@
 
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
-  PetscReal H,tauc,b,B;
+  double H,tauc,b,B;
   PISMVector2 driving_stress;
-  PetscInt mask;
+  int mask;
 };
 
 
@@ -54,13 +54,12 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
                              MatStructure *str, SSAFEM_SNESCallbackData *fe);
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &,
-                    EnthalpyConverter &, const PISMConfig &);
+SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
 Jed's original code is in rev 831: src/base/ssaJed/...
-The SSAFEM duplicates the functionality of SSAFD, using the finite element method.
+The SSAFEM duplicates most of the functionality of SSAFD, using the finite element method.
 */
 class SSAFEM : public SSA
 {
@@ -69,22 +68,9 @@ class SSAFEM : public SSA
                                       Mat A, Mat J,
                                       MatStructure *str, SSAFEM_SNESCallbackData *fe);
 public:
-  SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b,
-         EnthalpyConverter &e, const PISMConfig &c)
-  : SSA(g,b,e,c), element_index(g)
-  {
-    quadrature.init(grid);
-    PetscErrorCode ierr = allocate_fem();
-    if (ierr != 0) {
-      PetscPrintf(grid.com, "FATAL ERROR: SSAFEM allocation failed.\n");
-      PISMEnd();
-    }
-  }
+  SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
 
-  virtual ~SSAFEM()
-  {
-    deallocate_fem();
-  }
+  virtual ~SSAFEM();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -93,10 +79,10 @@ public:
 protected:
 
   virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
-                                             const PISMVector2 *,const PetscReal[],
-                                             PetscReal *,PetscReal *,PetscReal *,PetscReal *);
+                                             const PISMVector2 *,const double[],
+                                             double *,double *,double *,double *);
 
-  void FixDirichletValues(PetscReal local_bc_mask[],PISMVector2 **BC_vel,
+  void FixDirichletValues(double local_bc_mask[],PISMVector2 **BC_vel,
                           PISMVector2 x[], FEDOFMap &my_dofmap);
 
   virtual PetscErrorCode allocate_fem();
@@ -117,16 +103,15 @@ protected:
 
 
   // objects used internally
-  IceModelVec2S hardav;         // vertically-averaged ice hardness
   SSAFEM_SNESCallbackData callback_data;
 
   SNES         snes;
   FEStoreNode *feStore;
-  PetscReal    dirichletScale;
-  PetscReal    ocean_rho;
-  PetscReal    earth_grav;
-  PetscReal    m_beta_ice_free_bedrock;
-  PetscReal    m_epsilon_ssa;
+  double    dirichletScale;
+  double    ocean_rho;
+  double    earth_grav;
+  double    m_beta_ice_free_bedrock;
+  double    m_epsilon_ssa;
 
   FEElementMap element_index;
   FEQuadrature quadrature;

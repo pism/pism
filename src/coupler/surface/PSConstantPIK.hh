@@ -40,7 +40,7 @@ public:
 
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                                std::map<std::string, PISMTSDiagnostic*> &ts_dict);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);

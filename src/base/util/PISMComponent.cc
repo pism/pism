@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2013 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2014 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,22 +31,22 @@
   IceModel uses to initialize from.
 */
 PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name of the file found
-					      bool &do_regrid, //!< specifies whether regridding is necessary
-					      int &start    //!< "start" to use when reading from filename
-					      ) {
+                                              bool &do_regrid, //!< specifies whether regridding is necessary
+                                              int &start    //!< "start" to use when reading from filename
+                                              ) {
   PetscErrorCode ierr;
   PetscBool i_set, boot_file_set;
 
   // read file names:
   char i_file[PETSC_MAX_PATH_LEN], boot_file_file[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
-			       PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+                               PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
   ierr = PetscOptionsGetString(PETSC_NULL, "-boot_file", boot_file_file, 
-			       PETSC_MAX_PATH_LEN, &boot_file_set); CHKERRQ(ierr);
+                               PETSC_MAX_PATH_LEN, &boot_file_set); CHKERRQ(ierr);
   if (i_set) {
     if (boot_file_set) {
       ierr = PetscPrintf(grid.com,
-	"PISMClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
+        "PISMClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
       PISMEnd();
     }
     filename = i_file;

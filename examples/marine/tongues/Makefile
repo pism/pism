@@ -1,6 +1,6 @@
 M=101
 grid=-Mx ${M} -My ${M} -Mz 3 -Lz 200
-ssa=-ssa_sliding -ssa_dirichlet_bc -cfbc
+ssa=-stress_balance ssa+sia -ssa_dirichlet_bc -cfbc
 mass=-part_grid -part_redist
 misc=-o_order zyx -energy none -o output.nc
 extra=-extra_times 5 -extra_file ex.nc -extra_vars cbar,thk,mask,taud,velbar

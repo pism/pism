@@ -48,7 +48,7 @@ PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
 
   precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
-  precipitation.set_string("long_name", "near-surface air temperature");
+  precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m / year"); CHKERRQ(ierr);
 
@@ -77,7 +77,7 @@ PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_paleo_precip::init_timeseries(PetscReal *ts, unsigned int N) {
+PetscErrorCode PA_paleo_precip::init_timeseries(double *ts, unsigned int N) {
   PetscErrorCode ierr;
 
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
@@ -95,7 +95,7 @@ PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, PetscReal *result) {
+PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)

@@ -29,7 +29,7 @@ public:
   virtual ~PSCache();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
+  virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
@@ -38,6 +38,8 @@ public:
 
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+
+  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
 protected:
   IceModelVec2S m_mass_flux, m_temperature, m_liquid_water_fraction,
     m_mass_held_in_surface_layer, m_surface_layer_thickness;

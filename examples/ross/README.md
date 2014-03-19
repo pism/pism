@@ -1,62 +1,64 @@
 Ross flow model example
 =================
 
-This example demonstrates regional modeling of ice shelves. This example is an update of the EISMINT-Ross intercomparison experiment (below), using more recent data, a 5km data set for the entire Antarctic ice sheet. This example can be modified to build models of any Antarctic ice shelf, both diagnostic (ice thickness prescribed, one short time step) or prognostic (ice thickness evolution), computing flow velocity of the floating ice.
+This example demonstrates PISM modeling of ice shelves.  This model can be thought of as a validation case (see subsection 12.2 of the PISM User's Manual) or as a regional model.
 
+We use a 5km data set for the entire Antarctic ice sheet.  Thus, based on the steps here, one can build models of any Antarctic ice shelf, either diagnostic (ice thickness prescribed, velocity boundary conditions prescribed, but computing flow velocity of the floating ice) or prognostic (ice thickness evolution).
 
-These publications show the results of PISM applications to Antarctic ice shelves:
+These publications cover PISM applications to Antarctic ice shelves:
+
 * T. Albrecht, A. Levermann (2012).  *Fracture field for large-scale ice dynamics*.  Journal of Glaciology 58 (207), 165--176.
-* A. Levermann, T. Albrecht, R. Winkelmann, M. A. Martin, M. Haseloff, I. Joughin (2012) *Kinematic first-order calving law implies potential for abrupt ice-shelf retreat*.  The Cryosphere 6, 273--286. (http://www.the-cryosphere.net/6/273/2012/tc-6-273-2012.html)
-* M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  *The Potsdam Parallel Ice Sheet Model (PISM-PIK) – Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet*. The Cryosphere 5, 727--740. (http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.pdf)
-
-The early EISMINT-Ross intercomparison, which appears as an example in the PISM User's Manual in versions 0.4 and earlier, is documented by
-* D. R. MacAyeal, V. Rommelaere, Ph. Huybrechts, C.L. Hulbe, J. Determann, C. Ritz (1996). *An ice-shelf model test based on the Ross ice shelf*.  Ann. Glaciol. 23, 46--51. (http://homepages.vub.ac.be/~phuybrec/pdf/MacAyeal.Ann.Glac.23.pdf)
+* A. Levermann, T. Albrecht, R. Winkelmann, M. A. Martin, M. Haseloff, I. Joughin (2012) [*Kinematic first-order calving law implies potential for abrupt ice-shelf retreat*](http://www.the-cryosphere.net/6/273/2012/tc-6-273-2012.html).  The Cryosphere 6, 273--286.
+* M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  [*The Potsdam Parallel Ice Sheet Model (PISM-PIK)--Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet*](http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.html). The Cryosphere 5, 727--740. 
 
 Input datasets
 ==========
 
-We use the two public datasets:
-* *An improved Antarctic dataset for high resolution numerical ice sheet models (ALBMAP v1)*  by A. M. Le Brocq, A. J. Payne, and A. Vieli (http://doi.pangaea.de/10.1594/PANGAEA.734145)
-* *MEaSUREs InSAR-Based Antarctica Velocity Map*  by Rignot, E., J. Mouginot, and B. Scheuchl. 2011, (http://nsidc.org/data/nsidc-0484.html)
+We use two public datasets which are 16 Mb and 96 Mb, respectively:
 
-From these data sets, the following fields are used:
+* [*An improved Antarctic dataset for high resolution numerical ice sheet models (ALBMAP v1)*](http://doi.pangaea.de/10.1594/PANGAEA.734145)  by A. M. Le Brocq, A. J. Payne, and A. Vieli
+* [*MEaSUREs InSAR-Based Antarctica Velocity Map*](http://nsidc.org/data/nsidc-0484.html) by Rignot, E., J. Mouginot, and B. Scheuchl. 2011,
+
+From these data sets, the following fields from ALBMAP are used:
+
 * ice thickness (equivalently: the upper/lower surface elevation pair),
 * ice surface temperature,
 * ice surface mass balance,
 * bedrock topography, and
-* u and v components of the surface ice velocity for grounded ice as boundary conditions for the floating ice shelf.
+
+From the MEaSUREs data set these fields are used:
+
+* u and v components of the surface ice velocity for grounded ice
+
+These velocity components become the horizontal boundary conditions for the floating ice shelf.  The values from the interior of the ice shelf are used only by `plot.py` (below) to evaluate the model velocities.
 
 
-Running the example
+Running the examples
 =================
 
-This directory contains a script to build the setup in either (basic) diagnostic or prognostic mode:
-* `preprocess.py`: downloads and preprocessing input data
+First run
 
-    $ ./preprocess.py diag
-or 
-    $ ./preprocess.py prog
+    $ ./preprocess.py
 
-You find in the three subdirectories "diagnostic", "prognostic" and "fracture" run-scripts:
+This will download the data sets `ALBMAPv1.nc.zip` and `antarctica_ice_velocity.nc.gz` if they are not already downloaded.  Then it uses NCO and CDO tools to fix metadata.
 
-* `diagnostic/run_diag.sh`: use PISM's SSA stress balance to do a "diagnostic" run which computes flow velocity from geometry, ice hardness (a function of temperature), and observed velocities at the grounding line as boundary conditions.
+Now, depending on your intent you will choose among the three subdirectories:
 
-* `prognostic/run_prog.sh`: use PISM's SSA stress balance to do a "prognostic" run, which computes flow velocity and evolving ice thickness with a freely evolving calving front (using eigencalving parameterization)
+* `diagnostic/`: Use PISM's SSA stress balance to compute flow velocity from geometry, ice hardness (a function of temperature), and observed velocities at the grounding line as boundary conditions.  This case is documented in subsection 12.2 of the PISM User's Manual.  See `README.m` and `run_diag.sh` in the subdirectory.
 
-* `fracture/run_frac.sh`: use PISM's SSA stress balance to do a "prognostic" run which computes flow velocity, evolving ice thickness and the feedback of evolving fracture density on flow, with a prescribed calving front (ocean_kill)
-Follow the instructions and options in the separate README.md files...
+* `prognostic/`: Use PISM's SSA stress balance to do a time-stepping run, which computes evolcing flow velocity and evolving ice thickness.  There is an evolving calving front using the eigencalving parameterization (Levermann et al., 2012).  See `README.m` and `run_prog.sh` in the subdirectory.
 
-A file `Ross_result_x_Mx211.nc` will be produced.  View it with `ncview` or other NetCDF viewer.  If python tools `numpy`, `matplotlib`, and `netcdf4-python` are present, do this
+* `fracture/`: Use PISM's SSA stress balance to do a prognostic run, adding feedback of evolving fracture density on flow, but with a prescribed calving front (`-calving ocean_kill`).  See `README.m` and `run_frac.sh` in the subdirectory.
 
-    $ ./plot.py Ross_result_x_Mx211.nc
+For each of the three examples an output `.nc` file is produced.  View it with `ncview` or other NetCDF viewer.  If python tools `numpy`, `matplotlib`, and `netcdf4-python` are present, do this
 
-and view the resulting `.png` images.
+    $ ../plot.py result.nc
+
+from the subdirectory and view the output `.png` images.
 
 Notes
 ====
 
-* periodic boundary conditions at boundaries of the modeling domain
-* several fields have jumps at domain boundaries
-* clearly needs boundary conditions at the ice shelf front (`-cfbc`); runs with `-pik` or `-cfbc -part_grid -kill_icebergs` but not with `-cfbc` alone or `-cfbc -part_grid` or `-cfbc -part_grid` or `-cfbc -kill_icebergs`
-
+* Be aware of periodic boundary conditions at boundaries of the computational domain, and that several fields have jumps at domain boundaries.
+* Evolving runs need stress boundary conditions at the ice shelf front (`-cfbc`) plus removal of icebergs if they appear.  Thus you can do runs like this with `-pik` or `-cfbc -part_grid -kill_icebergs`, but simpler option combinations `-cfbc` alone or `-cfbc -part_grid` or `-cfbc -part_grid` or `-cfbc -kill_icebergs` may fail.
 

@@ -64,12 +64,12 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     # Get module dependencies:
     SWIG_GET_WRAPPER_DEPENDENCIES("${CMAKE_CURRENT_SOURCE_DIR}/PISM.i" "." python PISM_Python_deps)
 
-    SET(CMAKE_SWIG_FLAGS "")
     if(Pism_USE_TAO)
-      # I'd like to set CMAKE_SWIG_FLAGS from the CXX_DEFINES but 
-      # I can't figure out how to do this, so we just set PISM_USE_TAO
-      # explicitly
-      SET(CMAKE_SWIG_FLAGS -DPISM_USE_TAO=1 )
+      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TAO" APPEND)
+    endif()
+
+    if(Pism_USE_TR1)
+      set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPISM_USE_TR1" APPEND)
     endif()
 
     set_source_files_properties(PISM.i PROPERTIES

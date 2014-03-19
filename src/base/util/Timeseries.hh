@@ -53,7 +53,7 @@ class IceGrid;
   ierr = verbPrintf(2, grid.com, 
                     "  reading delta T data from forcing file %s...\n", dT_file);
                     CHKERRQ(ierr);
-	 
+         
   ierr = delta_T->read(dT_file); CHKERRQ(ierr);
   \endcode
 
@@ -87,6 +87,8 @@ public:
   PetscErrorCode set_units(std::string units, std::string glaciological_units);
   PetscErrorCode set_dimension_units(std::string units, std::string glaciological_units);
   std::string get_string(std::string name);
+
+  void scale(double scaling_factor);
 
   std::string short_name;
 protected:

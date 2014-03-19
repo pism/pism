@@ -46,7 +46,7 @@ Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF vis
 \end{figure}
 
 
-\subsection{First run}   \label{subsect:runscript}  Like many Unix programs, PISM allows a lot of command-line options.  In fact, because the variety of allowed ice sheet, shelf, and glacier configurations, and included sub-models, is so large, the list of possible command-line options covers sections \ref{sec:boot} through \ref{sec:practical-usage} of this manual.  In practice one often builds scripts to run PISM with the correct options, which is what we show here.  The script we use is ``\texttt{spinup.sh}'' in the \texttt{examples/std-greenland/} subdirectory of \texttt{pism/}.
+\subsection{First run}   \label{subsect:runscript}  Like many Unix programs, PISM allows a lot of command-line options.  In fact, because the variety of allowed ice sheet, shelf, and glacier configurations, and included sub-models, is so large, the list of possible command-line options covers sections \ref{sec:initboot} through \ref{sec:practical-usage} of this manual.  In practice one often builds scripts to run PISM with the correct options, which is what we show here.  The script we use is ``\texttt{spinup.sh}'' in the \texttt{examples/std-greenland/} subdirectory of \texttt{pism/}.
 
 Note that initializing ice sheets, generically called ``spin-up'', can be done by computing approximate steady states with constant boundary data, or, in some cases, by integrating paleo-climatic and long-time-scale information, also applied at the ice sheet boundary, to build a model for the present state of the ice sheet.  Both of these possibilities are illustrated in the \texttt{spinup.sh} script.  The spin-up stage of using an ice sheet model may actually require more processor-hours than follow-on ``experiment'' or ``forecast'' stages.
 
@@ -426,17 +426,17 @@ for scriptname in $(ls p10km*sh) ; do
 done
 \end{scriptvrb}
 %$
-On the same old 2012-era 4 core laptop, \texttt{runsequential.sh} took a total of just under 7 hours to complete the whole parameter study.  The runs with $q=0.1$ (the more ``plastic'' end of the basal sliding spectrum) took up to four times longer than the $q=0.5$ and $q=1.0$ runs.  Roughly speaking, values of $q$ which are close to zero imply a subglacial till model with a true yield stres, and the result is that even small changes in overall ice sheet state (geometry, energy, \dots) will cause \emph{some} location to exceed its yield stress and suddenly change flow regime.  This will shorten the time steps.  By contrast, the $e$ value is much less significant in determining run times.
+On the same old 2012-era 4 core laptop, \texttt{runsequential.sh} took a total of just under 7 hours to complete the whole parameter study.  The runs with $q=0.1$ (the more ``plastic'' end of the basal sliding spectrum) took up to four times longer than the $q=0.5$ and $q=1.0$ runs.  Roughly speaking, values of $q$ which are close to zero imply a subglacial till model with a true yield stress, and the result is that even small changes in overall ice sheet state (geometry, energy, \dots) will cause \emph{some} location to exceed its yield stress and suddenly change flow regime.  This will shorten the time steps.  By contrast, the $e$ value is much less significant in determining run times.
 
 \begin{figure}[ht]
 \centering
-\mbox{\includegraphics[height=2.6in,keepaspectratio=true]{p10km-01-1-csurf.png} \includegraphics[height=2.6in,keepaspectratio=true]{p10km-01-3-csurf.png} \includegraphics[height=2.6in,keepaspectratio=true]{p10km-01-6-csurf.png} \qquad \hspace{1.87in}}
+\mbox{\includegraphics[height=2.5in,keepaspectratio=true]{p10km-01-1-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-01-3-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-01-6-csurf.png} \qquad \hspace{1.87in}}
 
-\mbox{\includegraphics[height=2.6in,keepaspectratio=true]{p10km-05-1-csurf.png} \includegraphics[height=2.6in,keepaspectratio=true]{p10km-05-3-csurf.png} \includegraphics[height=2.6in,keepaspectratio=true]{p10km-05-6-csurf.png} 
-\includegraphics[height=2.7in,keepaspectratio=true]{Greenland-5km-v1p1-surfvelmag}}
+\mbox{\includegraphics[height=2.5in,keepaspectratio=true]{p10km-05-1-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-05-3-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-05-6-csurf.png} 
+\includegraphics[height=2.5in,keepaspectratio=true]{Greenland-5km-v1p1-surfvelmag}}
 \smallskip
 
-\mbox{\includegraphics[height=2.6in,keepaspectratio=true]{p10km-1-1-csurf.png} \includegraphics[height=2.6in,keepaspectratio=true]{p10km-1-3-csurf.png} \includegraphics[height=2.6in,keepaspectratio=true]{p10km-1-6-csurf.png} \qquad \hspace{1.87in}}
+\mbox{\includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-1-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-3-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-6-csurf.png} \qquad \hspace{1.87in}}
 
 \caption{Surface speed \texttt{csurf} from a 10 km grid parameter study.  Right-most subfigure is observed data from \texttt{Greenland_5km_v1.1.nc}.  Top row: $q=0.1$ and $e=1,3,6$ (left-to-right).  Middle row: $q=0.5$.  Bottom row: $q=1.0$.  All subfigures have common color scale (velocity m/a), as shown in the right-most figure, with 100 m/a contour shown in all cases (solid black).}
 \label{fig:paramstudy}

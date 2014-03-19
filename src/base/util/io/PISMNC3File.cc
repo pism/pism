@@ -28,7 +28,7 @@
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
 #include <cstring>              // memset
-#include <cstdio>		// stderr, fprintf
+#include <cstdio>               // stderr, fprintf
 
 PISMNC3File::PISMNC3File(MPI_Comm c)
   : PISMNCFile(c) {
@@ -278,7 +278,7 @@ int PISMNC3File::def_var(std::string name, PISM_IO_Type nctype, std::vector<std:
     }
 
     stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
-		      static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
+                      static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
   }
 
   MPI_Barrier(com);
@@ -438,9 +438,9 @@ int PISMNC3File::put_vara_double(std::string variable_name,
 
 //! \brief Put variable data (mapped).
 int PISMNC3File::put_var_double(std::string variable_name,
-				std::vector<unsigned int> start,
-				std::vector<unsigned int> count,
-				std::vector<unsigned int> imap, const double *op,
+                                std::vector<unsigned int> start,
+                                std::vector<unsigned int> count,
+                                std::vector<unsigned int> imap, const double *op,
                                 bool mapped) const {
   const int start_tag = 1,
     count_tag = 2,

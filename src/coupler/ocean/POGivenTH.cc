@@ -20,22 +20,14 @@
 #include "IceGrid.hh"
 #include "PISMVars.hh"
 
+#include <gsl/gsl_poly.h>
+#include <cassert>
+
 /* TO DO:
- *
- * Translate all comments into English.
  *
  * Add detailed references ("this implements equations (3)-(7) in Smith and
  * Jones, 2001" and similar).
  *
- * Give meaningful names to class methods (potit? pttmpr? adlprt?). Long names
- * are OK.
- *
- * All computationally expensive code should be called from the update() method.
- *
- * Make sure that the code compiles without warnings.
- *
- * Remove unused code. (It can always be recovered from an earlier version of
- * the code.)
  */
 
 POGivenTH::POGivenTH(IceGrid &g, const PISMConfig &conf)
@@ -57,8 +49,6 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
   // will be de-allocated by the parent's destructor
   theta_ocean    = new IceModelVec2T;
   salinity_ocean = new IceModelVec2T;
-  shelfbtemp     = new IceModelVec2T;
-  shelfbmassflux = new IceModelVec2T;
 
   m_fields["theta_ocean"]     = theta_ocean;
   m_fields["salinity_ocean"]  = salinity_ocean;
@@ -69,24 +59,25 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = theta_ocean->create(grid, "theta_ocean", false); CHKERRQ(ierr);
-  ierr = salinity_ocean->create(grid, "salinity_ocean", false); CHKERRQ(ierr);
-  ierr = shelfbtemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr);
-  ierr = shelfbmassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
-
   ierr = theta_ocean->set_attrs("climate_forcing",
-                        "absolute potential temperature of the adjacent ocean",
-                        "Kelvin", ""); CHKERRQ(ierr);
+                                "absolute potential temperature of the adjacent ocean",
+                                "Kelvin", ""); CHKERRQ(ierr);
+
+  ierr = salinity_ocean->create(grid, "salinity_ocean", false); CHKERRQ(ierr);
   ierr = salinity_ocean->set_attrs("climate_forcing",
-           "salinity of the adjacent ocean",
-           "g/kg", ""); CHKERRQ(ierr);
-  ierr = shelfbtemp->set_attrs("climate_forcing",
-                        "absolute temperature at ice shelf base",
-                        "Kelvin", ""); CHKERRQ(ierr);
-  ierr = shelfbmassflux->set_attrs("climate_forcing",
-           "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-           "m s-1", ""); CHKERRQ(ierr);
+                                   "salinity of the adjacent ocean",
+                                   "g/kg", ""); CHKERRQ(ierr);
 
+  ierr = shelfbtemp.create(grid, "shelfbtemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = shelfbtemp.set_attrs("climate_forcing",
+                              "absolute temperature at ice shelf base",
+                              "Kelvin", ""); CHKERRQ(ierr);
 
+  ierr = shelfbmassflux.create(grid, "shelfbmassflux", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = shelfbmassflux.set_attrs("climate_forcing",
+                                  "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+                                  "kg m-2 s-1", ""); CHKERRQ(ierr);
+  ierr = shelfbmassflux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -101,8 +92,9 @@ PetscErrorCode POGivenTH::init(PISMVars &vars) {
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
-  ierr = theta_ocean   -> init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = salinity_ocean-> init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+
+  ierr = theta_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  ierr = salinity_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
   // read time-independent data right away:
   if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
@@ -112,7 +104,7 @@ PetscErrorCode POGivenTH::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POGivenTH::update(PetscReal my_t, PetscReal my_dt) {
+PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
 
   PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
@@ -121,11 +113,19 @@ PetscErrorCode POGivenTH::update(PetscReal my_t, PetscReal my_dt) {
 
   ierr = calc_shelfbtemp_shelfbmassflux(); CHKERRQ(ierr);
 
+  // convert from [m s-1] to [kg m-2 s-1]:
+  ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);
+
   return 0;
 }
 
 PetscErrorCode POGivenTH::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbtemp->copy_to(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = shelfbtemp.copy_to(result); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
+  PetscErrorCode ierr = shelfbmassflux.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -133,57 +133,44 @@ PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
 
   PetscErrorCode ierr;
 
-  const PetscScalar rhoi = config.get("ice_density");
-  const PetscScalar rhow = config.get("sea_water_density");
-  const PetscScalar reference_pressure = 1.01325; // pressure of atmosphere in bar
+  const double rhoi = config.get("ice_density");
+  const double rhow = config.get("sea_water_density");
 
-
-  PetscReal pressure_at_shelf_base, bmeltrate, temp_insitu, temp_base;
+  double bmeltrate, thetao, temp_base;
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = theta_ocean->begin_access(); CHKERRQ(ierr);
   ierr = salinity_ocean->begin_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux->begin_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp->begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      pressure_at_shelf_base = (rhoi * (*ice_thickness)(i,j))/1000 + reference_pressure; // in bar
+      thetao = (*theta_ocean)(i,j) - 273.15; // convert from Kelvin to Celsius
 
-      // convert potential to insitu temperature
-      // FIXME: this has 3 nested functions in it which may not be efficient.
-      insitu_temperature((*salinity_ocean)(i,j), (*theta_ocean)(i,j) - 273.15, pressure_at_shelf_base, reference_pressure, temp_insitu);
-
-      btemp_bmelt_3eqn(rhow, rhoi,(*salinity_ocean)(i,j), temp_insitu, (*ice_thickness)(i,j), temp_base, bmeltrate);
-
-      //ierr = verbPrintf(2, grid.com, "temp_insitu=%f, salt_ocean=%f\n", temp_insitu,(*salinity_ocean)(i,j)); CHKERRQ(ierr);
-      //ierr = verbPrintf(2, grid.com, "bound temp=%f, salt=%f,bmelt=%f\n", temp_base,sal_base,bmeltrate); CHKERRQ(ierr);
+      btemp_bmelt_3eqn(rhow, rhoi,(*salinity_ocean)(i,j), thetao, (*ice_thickness)(i,j), temp_base, bmeltrate);
 
       // the ice/ocean boundary layer temperature is seen by PISM as shelfbtemp.
-      (*shelfbtemp)(i,j)     = temp_base + 273.15; // to Kelvin
-      (*shelfbmassflux)(i,j) = -1 * bmeltrate;
+      shelfbtemp(i,j) = temp_base + 273.15; // convert from Celsius to Kelvin
 
+      // FIXME: do we need this "-1"? (note the definition of the sub-shelf mass flux above).
+      shelfbmassflux(i,j) = bmeltrate;
     }
   }
 
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = theta_ocean->end_access(); CHKERRQ(ierr);
   ierr = salinity_ocean->end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux->end_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp->end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbmassflux->copy_to(result); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
-                                           PetscReal sal_ocean, PetscReal temp_insitu, PetscReal zice,
-                                           PetscReal &temp_base, PetscReal &meltrate){
+PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
+                                           double sal_ocean, double potential_temperature, double zice,
+                                           double &temp_base, double &meltrate) {
 
   // This function solves the three equation model of ice-shelf ocean interaction (Hellmer and Olbers, 1989).
   // Equations are
@@ -206,35 +193,46 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
   //        We could do this better by usings PISMs ice temperature or heat flux
   //        calculus at the bottom layers of the ice shelf.
 
-  PetscReal rhor, sal_base;
-  PetscReal ep1,ep2,ep3,ep4,ep5;
-  PetscReal ex1,ex2,ex3,ex4,ex5;
-  PetscReal sr1,sr2,sf1,sf2,tf1,tf2,tf,sf;
+  double sal_base;
+  double ep1,ep2,ep3,ep4,ep4b;
+  double ex1,ex2,ex3,ex4,ex5;
+  double sr1,sr2,sf1,sf2,tf1,tf2,tf,sf;
 
-  PetscReal a   = -0.0575;                // Foldvik&Kvinge (1974) [°C/psu]
-  PetscReal b   =  0.0901;                // [°C]
-  PetscReal c   =  7.61e-4;               // [°C/m]
+  // coefficients for linearized freezing point equation
+  // for in situ temperature
+  double ai   = -0.0575;                // [°C/psu] Foldvik&Kvinge (1974)
+  double bi   =  0.0901;                // [°C]
+  double ci   =  7.61e-4;               // [°C/m]
 
-  PetscReal tob=  -20.;                   //temperature at the ice surface
-  PetscReal cpw =  4180.0;                //Barnier et al. (1995)
-  PetscReal lhf =  3.33e+5;               //latent heat of fusion
-  PetscReal atk =  273.15;                //0 deg C in Kelvin
+  // coefficients for linearized freezing point equation
+  // for potential temperature
+
+  double ap  =  -0.0575;   // [°C/psu]
+  double bp  =   0.0921;   // [°C]
+  double cp  =   7.85e-4; // [°C/m]
+
+  double tob=  -20.;                   //temperature at the ice surface
+  double cpw =  4180.0;                //Barnier et al. (1995)
+  double lhf =  3.33e+5;               //latent heat of fusion
+  double atk =  273.15;                //0 deg C in Kelvin
   //FIXME: can use PISMs surface temp for tob?
-  PetscReal cpi =  152.5+7.122*(atk+tob); //Paterson:"The Physics of Glaciers"
+  double cpi =  152.5+7.122*(atk+tob); //Paterson:"The Physics of Glaciers"
 
   // Prescribe the turbulent heat and salt transfer coeff. GAT and GAS
-  PetscReal gat  = 1.00e-4;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
-  PetscReal gas  = 5.05e-7;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
+  double gat  = 1.00e-4;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
+  double gas  = 5.05e-7;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
 
   // calculate salinity and in situ temperature of ice/ocean boundary layer,
   // by solving a quadratic equation in salinity (sf).
-  ep1 = cpw*gat;
-  ep2 = cpi*gas;
-  ep3 = lhf*gas;
-  ep4 = b-c*zice;
+  ep1  = cpw*gat;
+  ep2  = cpi*gas;
+  ep3  = lhf*gas;
+  ep4  = bi-ci*zice;
+  ep4b = bp-cp*zice;
   // negative heat flux term in the ice (due to -kappa/D)
-  ex1 = a*(ep1-ep2);
-  ex2 = ep1*(ep4-temp_insitu)+ep2*(tob+a*sal_ocean-ep4)-ep3;
+  //ex1 = ai*(ep1-ep2);
+  ex1 = ai*ep1-ap*ep2;
+  ex2 = ep1*(ep4b-potential_temperature)+ep2*(tob+ai*sal_ocean-ep4)-ep3;
   ex3 = sal_ocean*(ep2*(ep4-tob)+ep3);
   ex4 = ex2/ex1;
   ex5 = ex3/ex1;
@@ -242,13 +240,13 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
   sr1 = 0.25*ex4*ex4-ex5;
   sr2 = -0.5*ex4;
   sf1 = sr2+sqrt(sr1);
-  tf1 = a*sf1+ep4;
+  tf1 = ai*sf1+ep4;
   sf2 = sr2-sqrt(sr1);
-  tf2 = a*sf2+ep4;
+  tf2 = ai*sf2+ep4;
 
   // sf is solution of quadratic equation in salinity.
   // salinities < 0 psu are not defined, therefore pick the positive of the two solutions.
-  if(sf1 > 0.){
+  if(sf1 > 0.) {
     tf = tf1;
     sf = sf1;
   }else{
@@ -269,113 +267,254 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(PetscReal rhow, PetscReal rhoi,
   // matthias.mengel: meltrate scales linear with rhow, so
   //                  the error should be not more than 1e-2.
 
-  rhor= rhoi/rhow;
-  ep5 = gas/rhor;
-
   // Calculate the melting/freezing rate [m/s]
-  meltrate = ep5*(1.0-sal_ocean/sal_base);
+  meltrate = -1*gas*rhow/rhoi*(1.0-sal_ocean/sal_base);
 
   return 0;
 }
 
+/** @brief Compute temperature and melt rate at the base of the shelf. Based on the paper by Hellmer and Olbers, 1989.
+ *
+ * Use equations for the heat and salt flux balance at the base of the
+ * shelf to compute the temperature at the base of the shelf and the
+ * sub-shelf melt rate.
+ *
+ * @note This model is not applicable in the case of basal freeze-on.
+ * We use an approximation of the temperature gradient at the base of
+ * the shelf that is invalid for negative melt rates. Negative melt
+ * rates are set to zero.
+ *
+ * @note The linearized equation for the freezing point of seawater as
+ * a function of salinity and pressure (ice thickness) is only valid
+ * for salinity ranges from 4 to 40 psu (see [@ref
+ * HollandJenkins1999]).
+ *
+ * Following [@ref HellmerOlbers1989], let @f$ Q_T @f$ be the total heat
+ * flux crossing the interface between the shelf base and the ocean,
+ * @f$ Q_T^B @f$ be the amount of heat lost by the ocean due to
+ * melting of glacial ice, and @f$ Q_T^I @f$ be the conductive flux
+ * into the ice column.
+ *
+ * @f$ Q_{T} @f$ is parameterized by (see [@ref HellmerOlbers1989], equation
+ * 10):
+ *
+ * @f[ Q_{T} = \rho_W\, c_{pW}\, \gamma_{T}\, (T^B - T^W),@f]
+ *
+ * where @f$ \rho_{W} @f$ is the sea water density, @f$ c_{pW} @f$ is
+ * the heat capacity of sea water, and @f$ \gamma_{T} @f$ is a
+ * turbulent heat exchange coefficient.
+ *
+ * We assume that the difference between the basal temperature and
+ * adjacent ocean temperature @f$ T^B - T^W @f$ is well approximated
+ * by @f$ \Theta_B - \Theta_W, @f$ where @f$ \Theta_{\cdot} @f$ is the
+ * corresponding potential temperature.
+ *
+ * @f$ Q_T^B @f$ is (see [@ref HellmerOlbers1989], equation 11):
+ *
+ * @f[ Q_T^B = \rho_I\, L\, \frac{\partial h}{\partial t}, @f]
+ *
+ * where @f$ \rho_I @f$ is the ice density, @f$ L @f$ is the latent
+ * heat of fusion, and @f$ \frac{\partial h}{\partial t} @f$ is the ice thickening rate
+ * (equal to minus the melt rate).
+ *
+ * The conductive flux into the ice column is parameterized by ([@ref
+ * Hellmeretal1998], equation 7):
+ *
+ * @f[ Q_T^I = \rho_I\, c_{pI}\, \kappa\, T_{\text{grad}}, @f]
+ *
+ * where @f$ \rho_I @f$ is the ice density, @f$ c_{pI} @f$ is the heat
+ * capacity of ice, @f$ \kappa @f$ is the ice thermal diffusivity, and
+ * @f$ T_{\text{grad}} @f$ is the vertical temperature gradient at the
+ * base of a column of ice.
+ *
+ * We use the parameterization of the temperature gradient from [@ref
+ * Hellmeretal1998], equation 13:
+ *
+ * @f[ T_{\text{grad}} = -\Delta T\, \frac{\frac{\partial h}{\partial t}}{\kappa}, @f]
+ *
+ * where @f$ \Delta T @f$ is the difference between the ice
+ * temperature at the top of the ice column and its bottom:
+ * @f$ \Delta T = T^S - T^B. @f$ With this parameterization, we have
+ *
+ * @f[ Q_T^I = \rho_I\, c_{pI}\, {\frac{\partial h}{\partial t}}\, (T^S - T^B). @f]
+ *
+ * Now, the heat flux balance implies
+ *
+ * @f[ Q_T = Q_T^B + Q_T^I. @f]
+ *
+ * For the salt flux balance, we have
+ *
+ * @f[ Q_S = Q_S^B + Q_S^I, @f]
+ *
+ * where @f$ Q_S @f$ is the total salt flux across the interface, @f$
+ * Q_S^B @f$ is the basal salt flux (negative for melting), @f$ Q_S^I = 0
+ * @f$ is the salt flux due to molecular diffusion of salt through
+ * ice.
+ *
+ * @f$ Q_S @f$ is parameterized by ([@ref Hellmeretal1998], equation 13)
+ *
+ * @f[ Q_S = \rho_W\, \gamma_S\, (S^B - S^W), @f]
+ *
+ * where @f$ \gamma_S @f$ is a turbulent salt exchange coefficient,
+ * @f$ S_B @f$ is salinity at the shelf base, and @f$ S^W @f$ is the
+ * salinity of adjacent ocean.
+ *
+ * The basal salt flux @f$ Q_S^B @f$ is ([@ref
+ * Hellmeretal1998], equation 10)
+ *
+ * @f[ Q_S^B = \rho_I\, S^B\, {\frac{\partial h}{\partial t}}. @f]
+ *
+ * To avoid converting shelf base temperature to shelf base potential
+ * temperature and back, we use two linearizations of the freezing point equation
+ * for sea water for in-situ and for potential temperature, respectively:
+ *
+ * @f[ T^{B}(S,h) = a_0\cdot S + a_1 + a_2\cdot h, @f]
+ *
+ * @f[ \Theta^{B}(S,h) = b_0\cdot S + b_1 + b_2\cdot h, @f]
+ *
+ * where @f$ S @f$ is salinity and @f$ h @f$ is ice shelf thickness.
+ *
+ * The linearization coefficients for the basal temperature @f$ T^B(S,h) @f$ are
+ * taken from [@ref Hellmeretal1998], going back to [@ref FoldvikKvinge1974].
+ *
+ * Given @f$ T^B(S,h) @f$ and a function @f$ \Theta_T^B(T)
+ * @f$ one can define @f$ \Theta^B_{*}(S,h) = \Theta_T^B\left(T^B(S,h)\right) @f$.
+ *
+ * The parameterization @f$ \Theta^B(S,h) @f$ used here was produced
+ * by linearizing @f$ \Theta^B_{*}(S,h) @f$ near the melting point.
+ * (The definition of @f$ \Theta_T^B(T) @f$, converting in situ
+ * temperature into potential temperature, was adopted from FESOM
+ * [@ref Wangetal2013]).
+ *
+ * Treating ice thickness, sea water salinity, and sea water potential
+ * temperature as "known" we can write down a system of equations
+ *
+ * @f{align*}{
+ * Q_T &= Q_T^B + Q_T^I,\\
+ * Q_S &= Q_S^B + Q_S^I,\\
+ * T^{B}(S,h) &= a_0\cdot S + a_1 + a_2\cdot h,\\
+ * \Theta^{B}(S,h) &= b_0\cdot S + b_1 + b_2\cdot h\\
+ * @f}
+ *
+ * and simplify it to produce a quadratic equation for the salinity at the shelf base, @f$ S^B @f$:
+ *
+ * @f[ A\cdot (S^B)^2 + B\cdot S^B + C = 0 @f]
+ *
+ * with
+ * @f{align*}{
+ * A &= a_{0}\,\gamma_S\,c_{pI}-b_{0}\,\gamma_T\,c_{pW}\\
+ * B &= \gamma_S\,\left(L-c_{pI}\,\left(T^S+a_{0}\,S^W-a_{2}\,h-a_{1}\right)\right)+
+ *      \gamma_T\,c_{pW}\,\left(\Theta^W-b_{2}\,h-b_{1}\right)\\
+ * C &= -\gamma_S\,S^W\,\left(L-c_{pI}\,\left(T^S-a_{2}\,h-a_{1}\right)\right)
+ * @f}
+ *
+ * Once @f$ S_B @f$ is found by solving this quadratic equation, we can
+ * compute the basal temperature using the parameterization for @f$
+ * T^{B}(S,h) @f$.
+ *
+ * To find the basal melt rate, we solve the salt flux balance
+ * equation for @f$ {\frac{\partial h}{\partial t}}, @f$ obtaining
+ *
+ * @f[ w_b = -\frac{\partial h}{\partial t} = \frac{\gamma_S\, \rho_W\, (S^W - S^B)}{\rho_I\, S^B}. @f]
+ *
+ *
+ * @param[in] c physical constants, stored here to avoid looking them up in a double for loop
+ * @param[in] sea_water_salinity salinity of the ocean immediately adjacent to the shelf, [g/kg]
+ * @param[in] sea_water_potential_temperature potential temperature of the sea water, [degrees Celsius]
+ * @param[in] thickness thickness of the ice shelf, [meters]
+ * @param[out] shelf_base_temperature_out computed basal temperature, [degrees Celsius]
+ * @param[out] shelf_base_melt_rate_out computed basal melt rate, [m/second]
+ *
+ * @return 0 on success
+ */
+PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
+                                                double sea_water_salinity,
+                                                double sea_water_potential_temperature,
+                                                double thickness,
+                                                double *shelf_base_temperature_out,
+                                                double *shelf_base_melt_rate_out) {
+  assert(thickness >= 0.0);
 
-PetscErrorCode POGivenTH::adiabatic_temperature_gradient(PetscReal salinity,PetscReal temp_insitu, PetscReal pressure, PetscReal &adlprt_out){
+  // This model works for sea water salinity in the range of [4, 40]
+  // psu. Ensure that input salinity is in this range.
+  const double
+    min_salinity = 4.0,
+    max_salinity = 40.0;
 
-  // calculates the adiabatic temperature gradient  in (K Dbar^-1) from
-  // salinity (psu), in situ temperature (degC) and in situ pressure (dbar)
-
-  // check: adlprt_out =     3.255976E-4 K dbar^-1
-  //    for salinity   =    40.0 psu
-  //     temp_insitu   =    40.0 degC
-  //         pressure  = 10000.000 dbar
-
-  PetscReal ds;
-  const PetscReal s0 = 35.0;
-  const PetscReal a0 = 3.5803e-5,   a1 = 8.5258e-6,   a2 = -6.8360e-8, a3 = 6.6228e-10;
-  const PetscReal b0 = 1.8932e-6,   b1 = -4.2393e-8;
-  const PetscReal c0 = 1.8741e-8,   c1 = -6.7795e-10, c2 = 8.7330e-12, c3 = -5.4481e-14;
-  const PetscReal d0 = -1.1351e-10, d1 = 2.7759e-12;
-  const PetscReal e0 = -4.6206e-13, e1 = 1.8676e-14,  e2 = -2.1687e-16;
-
-  ds = salinity-s0;
-  adlprt_out = (( ( (e2*temp_insitu + e1)*temp_insitu + e0 )*pressure + ( (d1*temp_insitu + d0)*ds
-                                                                      + ( (c3*temp_insitu + c2)*temp_insitu + c1 )*temp_insitu + c0 ) )*pressure
-                + (b1*temp_insitu + b0)*ds +  ( (a3*temp_insitu + a2)*temp_insitu + a1 )*temp_insitu + a0);
-
-  return 0;
-}
-
-PetscErrorCode POGivenTH::potential_temperature(PetscReal salinity,PetscReal temp_insitu,PetscReal pressure,
-                                                PetscReal reference_pressure, PetscReal& thetao){
-
-  // Calculates the potential temperature (thetao) from
-  // in situ temperature, salinity, insitu pressure and reference pressure
-  // by use of a 4th order Runge Kutta.
-
-  // check: thetao = 36.89073 DegC
-  //    for salinity           =    40.0 psu
-  //        temp_insitu        =    40.0 DegC
-  //        pressure           = 10000.0 dbar
-  //        reference_pressure =     0.0 dbar
-
-  PetscReal ct2  = 0.29289322 , ct3  = 1.707106781;
-  PetscReal cq2a = 0.58578644 , cq2b = 0.121320344;
-  PetscReal cq3a = 3.414213562, cq3b = -4.121320344;
-
-  PetscReal p,t,dp,dt,q, dd;
-
-  p  = pressure;
-  t  = temp_insitu;
-  dp = reference_pressure-pressure;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  t  = t +0.5*dt;
-  q = dt;
-  p  = p +0.5*dp;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  t  = t + ct2*(dt-q);
-  q  = cq2a*dt + cq2b*q;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  t  = t + ct3*(dt-q);
-  q  = cq3a*dt + cq3b*q;
-  p  = reference_pressure;
-  adiabatic_temperature_gradient(salinity,t,p,dd);
-  dt = dp*dd;
-  thetao = t+ (dt-q-q)/6.0;
-
-  return 0;
-}
-
-PetscErrorCode POGivenTH::insitu_temperature(PetscReal salinity, PetscReal thetao,
-                                                  PetscReal pressure,PetscReal reference_pressure,
-                                                  PetscReal &temp_insitu_out){
-
-  // Calculates the in situ temperature from salinity, potential temperature and pressure
-  // by iteration.
-
-  PetscReal tpmd = 0.001, epsi = 0., tin, pt1, ptd;
-
-  for (PetscInt iter=0; iter<101; ++iter){
-    tin  = thetao+epsi;
-    potential_temperature(salinity,tin,pressure,reference_pressure,pt1);
-    ptd  = pt1-thetao;
-    if(PetscAbs(ptd) < tpmd){
-      break;
-    }else{
-      epsi = epsi-ptd;
-    }
-    if(iter==100){ SETERRQ(grid.com, 1, "in situ temperature calculation not converging."); }
+  if (sea_water_salinity < min_salinity) {
+    sea_water_salinity = min_salinity;
+  } else if (sea_water_salinity > max_salinity) {
+    sea_water_salinity = max_salinity;
   }
 
-  temp_insitu_out = tin;
+  // Coefficients for linearized freezing point equation for in situ
+  // temperature:
+  //
+  // Tb(salinity, thickness) = a[0] * salinity + a[1] + a[2] * thickness
+  const double a[3] = {-0.0575, 0.0901, -7.61e-4};
+
+  // Coefficients for linearized freezing point equation for potential
+  // temperature
+  //
+  // Theta_b(salinity, thickness) = b[0] * salinity + b[1] + b[2] * thickness
+  const double b[3] = {-0.0575, 0.0921, -7.85e-4};
+
+  // Turbulent heat and salt transfer coefficients:
+  const double gamma_t = 1.00e-4;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
+  const double gamma_s = 5.05e-7;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
+
+  const double
+    c_pI    = c.ice_specific_heat_capacity,
+    c_pW    = c.sea_water_specific_heat_capacity,
+    L       = c.water_latent_heat_fusion,
+    T_S     = c.shelf_top_surface_temperature,
+    S_W     = sea_water_salinity,
+    Theta_W = sea_water_potential_temperature;
+
+  // We solve a quadratic equation for Sb, the salinity at the shelf
+  // base.
+  //
+  // A*Sb^2 + B*Sb + C = 0
+  const double A = a[0] * gamma_s * c_pI - b[0] * gamma_t * c_pW;
+  const double B = (gamma_s * (L - c_pI * (T_S + a[0] * S_W - a[2] * thickness - a[1])) +
+                    gamma_t * c_pW * (Theta_W - b[2] * thickness - b[1]));
+  const double C = -gamma_s * S_W * (L - c_pI * (T_S - a[2] * thickness - a[1]));
+
+  double S1 = 0.0, S2 = 0.0;
+  const int n_roots = gsl_poly_solve_quadratic(A, B, C, &S1, &S2);
+
+  assert(n_roots > 0);
+  assert(S2 > 0.0);             // The bigger root should be positive.
+
+  double basal_salinity = S2;   // Pick the bigger of the two roots.
+
+  // Clip basal salinity so that we can use the freezing point
+  // temperature parameterization to recover shelf base temperature.
+  if (basal_salinity <= min_salinity) {
+    basal_salinity = min_salinity;
+  } else if (basal_salinity >= max_salinity) {
+    basal_salinity = max_salinity;
+  }
+
+  *shelf_base_temperature_out = a[0] * basal_salinity + a[1] + a[2] * thickness;
+
+  *shelf_base_melt_rate_out = gamma_s * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
+
+  // This should never happen (see docs above), but to ensure
+  // reasonable outputs from this model we reset negative melt
+  // rates. (FIXME)
+  if (*shelf_base_melt_rate_out < 0.0)
+    *shelf_base_melt_rate_out = 0.0;
+
   return 0;
 }
 
-PetscErrorCode POGivenTH::sea_level_elevation(PetscReal &result) {
+PetscErrorCode POGivenTH::sea_level_elevation(double &result) {
   result = sea_level;
   return 0;
 }
 
-
+PetscErrorCode POGivenTH::melange_back_pressure_fraction(IceModelVec2S &result) {
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}

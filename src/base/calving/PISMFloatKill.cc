@@ -53,8 +53,8 @@ PetscErrorCode PISMFloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
 
   ierr = pism_mask.begin_access();     CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (M.floating_ice(i, j)) {
         ice_thickness(i, j) = 0.0;
         pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;

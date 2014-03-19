@@ -29,11 +29,11 @@ public:
   virtual ~PA_delta_P();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode init_timeseries(PetscReal *ts, unsigned int N);
+  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
 
-  virtual PetscErrorCode precip_time_series(int i, int j, PetscReal *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 

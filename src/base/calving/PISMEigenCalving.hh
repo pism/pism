@@ -32,12 +32,12 @@ public:
   virtual ~PISMEigenCalving();
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal dt,
+  virtual PetscErrorCode update(double dt,
                                 IceModelVec2Int &pism_mask,
                                 IceModelVec2S &Href,
                                 IceModelVec2S &ice_thickness);
 
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
 
   // empty methods that we're required to implement:
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);

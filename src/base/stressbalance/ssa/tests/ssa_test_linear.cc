@@ -60,22 +60,22 @@ public:
   }
   
 protected:
-  virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
+  virtual PetscErrorCode initializeGrid(int Mx,int My);
 
   virtual PetscErrorCode initializeSSAModel();
 
   virtual PetscErrorCode initializeSSACoefficients();
 
-  virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
-    PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
+  virtual PetscErrorCode exactSolution(int i, int j, 
+    double x, double y, double *u, double *v );
 
-  PetscScalar L, H0, dhdx, nu0, tauc0;
+  double L, H0, dhdx, nu0, tauc0;
 };
 
 
-PetscErrorCode SSATestCaseExp::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCaseExp::initializeGrid(int Mx,int My)
 {
-  PetscReal Lx=L, Ly = L; 
+  double Lx=L, Ly = L; 
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -86,7 +86,6 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
   // Use a pseudo-plastic law with linear till
   config.set_flag("do_pseudo_plastic_till", true);
   config.set_double("pseudo_plastic_q", 1.0);
-  basal = new IceBasalResistancePseudoPlasticLaw(config);
 
   // The following is irrelevant because we will force linear rheology later.
   enthalpyconverter = new EnthalpyConverter(config);
@@ -109,8 +108,8 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   ierr = thickness.set(H0); CHKERRQ(ierr);
   ierr = surface.set(H0); CHKERRQ(ierr);
   ierr = bed.set(0.); CHKERRQ(ierr);
-  // PetscScalar threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
-  // PetscScalar tauc0 = 4*nu0*H0*threshold_velocity*log(2)*log(2)/(4*L*L);
+  // double threshold_velocity = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");
+  // double tauc0 = 4*nu0*H0*threshold_velocity*log(2)*log(2)/(4*L*L);
   // printf("tauc0=%g\n",tauc0);
   ierr = tauc.set(tauc0); CHKERRQ(ierr);
   
@@ -119,10 +118,10 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   ierr = bc_mask.set(0.0); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar myu, myv;
-      const PetscScalar myx = grid.x[i], myy=grid.y[j];
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      double myu, myv;
+      const double myx = grid.x[i], myy=grid.y[j];
       
       bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
       if (edge) {
@@ -148,15 +147,15 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
 }
 
 
-PetscErrorCode SSATestCaseExp::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
-                                             PetscReal x, PetscReal /*y*/,
-                                             PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/, 
+                                             double x, double /*y*/,
+                                             double *u, double *v)
 {
-  PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
+  double tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold",
                                                    "m/year", "m/second");
-  PetscScalar v0 = grid.convert(100.0, "m/year", "m/second");
-  // PetscScalar alpha=log(2.)/(2*L);
-  PetscScalar alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
+  double v0 = grid.convert(100.0, "m/year", "m/second");
+  // double alpha=log(2.)/(2*L);
+  double alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
   *u = v0*exp( -alpha*(x-L));
   *v = 0;
   return 0;
@@ -193,8 +192,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=61;
-    PetscInt My=61;
+    int Mx=61;
+    int My=61;
     std::string output_file = "ssa_test_linear.nc";
 
     std::set<std::string> ssa_choices;
@@ -223,7 +222,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
-    SSAFactory ssafactory;
+    SSAFactory ssafactory = NULL;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
