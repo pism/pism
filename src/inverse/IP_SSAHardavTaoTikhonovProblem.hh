@@ -20,7 +20,11 @@
 #ifndef IP_SSAHARDAVTAOTIKHONOVPROBLEM_HH_HB8UWICX
 #define IP_SSAHARDAVTAOTIKHONOVPROBLEM_HH_HB8UWICX
 
+#ifdef PISM_USE_TR1
 #include <tr1/memory>
+#else
+#include <memory>
+#endif
 
 #include "IPTaoTikhonovProblem.hh"
 #include "IP_SSAHardavForwardProblem.hh"
