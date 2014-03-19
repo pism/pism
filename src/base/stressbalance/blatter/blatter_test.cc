@@ -217,11 +217,6 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter EC(config);
 
-    // This is never used (but it is a required argument of the
-    // PISMStressBalance constructor).
-    // It will be used eventually, though.
-    IceBasalResistancePlasticLaw basal(config);
-
     POConstant ocean(grid, config);
 
     ierr =  read_input_data(input_file, variables, EC); CHKERRQ(ierr);
@@ -234,7 +229,7 @@ int main(int argc, char *argv[]) {
     ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
 
     PetscLogStagePush(cold);
-    BlatterStressBalance blatter(grid, basal, EC, config);
+    BlatterStressBalance blatter(grid, EC, config);
     // Initialize the Blatter solver:
     ierr = blatter.init(variables); CHKERRQ(ierr);
     ierr = blatter.update(false, melange_back_pressure); CHKERRQ(ierr);

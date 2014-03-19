@@ -95,8 +95,7 @@ class BlatterStressBalance : public ShallowStressBalance
   friend void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
 		   PetscReal *taud, PetscReal *dtaub);
 public:
-  BlatterStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b,
-                       EnthalpyConverter &e, const PISMConfig &conf);
+  BlatterStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
 
   virtual ~BlatterStressBalance();
 

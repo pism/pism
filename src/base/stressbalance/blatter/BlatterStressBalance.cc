@@ -48,14 +48,13 @@ void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
-  blatter_stress_balance->basal.dragWithDerivative(tauc, u, v, taud, dtaub);
+  blatter_stress_balance->basal_sliding_law->drag_with_derivative(tauc, u, v, taud, dtaub);
 }
 
 BlatterStressBalance::BlatterStressBalance(IceGrid &g,
-					   IceBasalResistancePlasticLaw &b,
 					   EnthalpyConverter &e,
 					   const PISMConfig &conf)
-  : ShallowStressBalance(g, b, e, conf), min_thickness(10.0)
+  : ShallowStressBalance(g, e, conf), min_thickness(10.0)
 {
   if (allocate_blatter() != 0) {
     PetscPrintf(grid.com, "FATAL ERROR: BlatterStressBalance allocation failed.\n");
