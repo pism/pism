@@ -876,6 +876,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   ierr = config.flag_from_option("bed_def_lc_elastic_model", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("blatter_Mz", "blatter_Mz"); CHKERRQ(ierr);
+
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
 
   // old options
