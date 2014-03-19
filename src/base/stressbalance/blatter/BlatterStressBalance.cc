@@ -34,8 +34,8 @@
  */
 
 //! C-wrapper for PISM's IceFlowLaw::viscosity().
-void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
-	       PetscReal *eta, PetscReal *deta) {
+void viscosity(void *ctx, double hardness, double gamma,
+	       double *eta, double *deta) {
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
@@ -43,8 +43,8 @@ void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
 }
 
 //! C-wrapper for PISM's IceBasalResistancePlasticLaw::dragWithDerivative().
-void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
-	  PetscReal *taud, PetscReal *dtaub) {
+void drag(void *ctx, double tauc, double u, double v,
+	  double *taud, double *dtaub) {
   BlatterQ1Ctx *blatter_ctx = (BlatterQ1Ctx*)ctx;
   BlatterStressBalance *blatter_stress_balance = (BlatterStressBalance*)blatter_ctx->extra;
 
@@ -217,7 +217,7 @@ PetscErrorCode BlatterStressBalance::setup() {
   PetscErrorCode ierr;
   PrmNode **parameters;
   DM da;
-  PetscReal
+  double
     ice_density = config.get("ice_density"),
     sea_water_density = config.get("sea_water_density"),
     alpha = ice_density / sea_water_density;
@@ -230,9 +230,9 @@ PetscErrorCode BlatterStressBalance::setup() {
   ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
   ierr = tauc->begin_access(); CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 1;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  int GHOSTS = 1;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
       // compute the elevation of the bottom surface of the ice
       if ((*bed_elevation)(i,j) > -alpha * (*ice_thickness)(i,j)) {
@@ -276,28 +276,28 @@ PetscErrorCode BlatterStressBalance::initialize_ice_hardness() {
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
 
-  PetscInt GHOSTS = 1;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      PetscScalar thk = (*ice_thickness)(i,j);
+  int GHOSTS = 1;
+  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      double thk = (*ice_thickness)(i,j);
 
       // fudge ice thickness (FIXME!!!)
       if (thk < min_thickness)
 	thk += min_thickness;
 
-      PetscScalar dz_fem = thk / (Mz_fem - 1);
+      double dz_fem = thk / (Mz_fem - 1);
       ierr = enthalpy->getInternalColumn(i, j, &E); CHKERRQ(ierr);
 
       // compute ice hardness on the sigma grid
-      for (int k = 0; k < Mz_fem; ++k) {
-	PetscReal z_fem = k * dz_fem,
+      for (unsigned int k = 0; k < Mz_fem; ++k) {
+	double z_fem = k * dz_fem,
 	  depth = thk - z_fem,
 	  pressure = EC.getPressureFromDepth(depth),
 	  E_local;
 	unsigned int k0 = grid.kBelowHeight(z_fem);
 	
 	if (k0 + 1 < grid.Mz) {
-	  PetscReal lambda = (z_fem - grid.zlevels[k0]) / (grid.zlevels[k0+1] - grid.zlevels[k0]);
+	  double lambda = (z_fem - grid.zlevels[k0]) / (grid.zlevels[k0+1] - grid.zlevels[k0]);
 	  
 	  E_local = (1.0 - lambda) * E[k0] + lambda * E[k0 + 1];
 	} else {
@@ -328,7 +328,7 @@ PetscErrorCode BlatterStressBalance::transfer_velocity() {
   PetscScalar *u_ij, *v_ij;
   DM da;
   Vec X;
-  int Mz_fem = static_cast<int>(config.get("blatter_Mz"));
+  unsigned int Mz_fem = static_cast<unsigned int>(config.get("blatter_Mz"));
 
   ierr = SNESGetDM(this->snes, &da); CHKERRQ(ierr);
   ierr = SNESGetSolution(this->snes, &X); CHKERRQ(ierr);
@@ -340,23 +340,22 @@ PetscErrorCode BlatterStressBalance::transfer_velocity() {
   ierr = ice_thickness->begin_access(); CHKERRQ(ierr);
   ierr = m_velocity.begin_access(); CHKERRQ(ierr);
  
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = u.getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
       ierr = v.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
 
-      PetscReal thk = (*ice_thickness)(i,j);
+      double thk = (*ice_thickness)(i,j);
 
       // fudge ice thickness (FIXME!!!)
       if (thk < min_thickness)
 	thk += min_thickness;
 
-      PetscInt current_level = 0;
-      PetscScalar dz_fem = thk / (Mz_fem - 1);
+      double dz_fem = thk / (Mz_fem - 1);
 
       // compute vertically-averaged velocity using trapezoid rule
-      PetscReal ubar = 0, vbar = 0;
-      for (int k = 0; k < Mz_fem - 1; ++k) {
+      double ubar = 0, vbar = 0;
+      for (unsigned int k = 0; k < Mz_fem - 1; ++k) {
 	ubar += U[i][j][k].u + U[i][j][k+1].u;
 	vbar += U[i][j][k].v + U[i][j][k+1].v;
       }
@@ -365,6 +364,7 @@ PetscErrorCode BlatterStressBalance::transfer_velocity() {
       m_velocity(i,j).v = vbar * (0.5*dz_fem) / thk;
       
       // compute 3D horizontal velocity
+      int current_level = 0;
       for (unsigned int k = 0; k < grid.Mz; ++k) {
 
 	// find the FEM grid level just below the current PISM grid level
@@ -373,7 +373,7 @@ PetscErrorCode BlatterStressBalance::transfer_velocity() {
 
 	if (current_level + 1 < Mz_fem) {
 	  // use linear interpolation
-	  PetscReal z0 = current_level * dz_fem,
+	  double z0 = current_level * dz_fem,
 	    lambda = (grid.zlevels[k] - z0) / dz_fem;
 
 	  u_ij[k] = (U[i][j][current_level].u * (1 - lambda) +
@@ -423,12 +423,12 @@ PetscErrorCode BlatterStressBalance::save_velocity() {
   ierr = u_sigma.begin_access(); CHKERRQ(ierr);
   ierr = v_sigma.begin_access(); CHKERRQ(ierr);
  
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = u_sigma.getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
       ierr = v_sigma.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
 
-      for (int k = 0; k < Mz_fem; ++k) {
+      for (unsigned int k = 0; k < Mz_fem; ++k) {
 	u_ij[k] = U[i][j][k].u;
 	v_ij[k] = U[i][j][k].v;
       }
@@ -443,7 +443,7 @@ PetscErrorCode BlatterStressBalance::save_velocity() {
   return 0;
 }
 
-PetscErrorCode BlatterStressBalance::extend_the_grid(PetscInt old_Mz) {
+PetscErrorCode BlatterStressBalance::extend_the_grid(int old_Mz) {
   PetscErrorCode ierr;
   ierr = u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
   ierr = v.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);

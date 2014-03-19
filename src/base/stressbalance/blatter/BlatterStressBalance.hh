@@ -26,10 +26,10 @@
 
 // Tell the linker that these are called from the C code:
 extern "C" {
-  void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
-		 PetscReal *eta, PetscReal *deta);
-  void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
-	    PetscReal *taud, PetscReal *dtaub);
+  void viscosity(void *ctx, double hardness, double gamma,
+		 double *eta, double *deta);
+  void drag(void *ctx, double tauc, double u, double v,
+	    double *taud, double *dtaub);
 }
 
 //! \brief Blatter-Pattyn stress balance based on Jed Brown's PETSc
@@ -41,28 +41,28 @@ Solves the hydrostatic (aka Blatter/Pattyn/First Order) equations for ice sheet
 flow using multigrid.  The ice uses a power-law rheology with Glen exponent 3
 (corresponds to p=4/3 in a p-Laplacian).
 
-The equations for horizontal velocity \f$(u,v)\f$ are
-\f{align*}
+The equations for horizontal velocity @f$ (u,v) @f$ are
+@f{align*}
   - [\eta (4 u_x + 2 v_y)]_x - [\eta (u_y + v_x)]_y - [\eta u_z]_z + \rho g s_x &= 0 \\
   - [\eta (4 v_y + 2 u_x)]_y - [\eta (u_y + v_x)]_x - [\eta v_z]_z + \rho g s_y &= 0
-\f}
+@f}
 where
-  \f[\eta = B/2 (\epsilon + \gamma)^{(p-2)/2}.\f]
+  @f[\eta = B/2 (\epsilon + \gamma)^{(p-2)/2}.@f]
 is the nonlinear effective viscosity with regularization epsilon and hardness
 parameter B, written in terms of the second invariant
 
-\f[\gamma = u_x^2 + v_y^2 + u_x v_y + (1/4) (u_y + v_x)^2 + (1/4) u_z^2 + (1/4) v_z^2.\f]
+@f[\gamma = u_x^2 + v_y^2 + u_x v_y + \frac{1}{4} (u_y + v_x)^2 + \frac{1}{4} u_z^2 + \frac{1}{4} v_z^2.@f]
 
 The surface boundary conditions are the natural conditions,
 corresponding to the "zero stress" condition (see [\ref RappazReist05]). The
 basal boundary conditions are either no-slip, or a pseudo-plastic
 sliding law (see IceBasalResistancePlasticLaw).
 
-In the code, the equations for \f$(u,v)\f$ are multiplied through by \f$1/(\rho g)\f$
-so that residuals are O(1).
+In the code, the equations for @f$ (u,v) @f$ are multiplied through by @f$ 1/(\rho g) @f$ 
+so that residuals are @f$ O(1) @f$.
 
-The discretization is \f$Q_1\f$ finite elements, managed by a DA.  The grid is never
-distorted in the map \f$(x,y)\f$ plane, but the bed and surface may be bumpy.
+The discretization is @f$ Q_1 @f$ finite elements, managed by a DA.  The grid is never
+distorted in the map @f$ (x,y) @f$ plane, but the bed and surface may be bumpy.
 This is handled as usual in FEM, through the Jacobian of the coordinate
 transformation from a reference element to the physical element.
 
@@ -78,22 +78,22 @@ compatible with the small bed slope assumption:
 
 - the code evaluating the integral corresponding to the basal boundary
   condition assumes that the Jacobian of the map from the 2D reference
-  element is \f$J = \frac 1 4 \Delta x \times \Delta y\f$, which is
+  element is @f$ J = \frac{1}{4} \Delta x \times \Delta y @f$, which is
   correct only if the bed is a horizontal plane.
 
 - it assumes that the horizontal ice velocity at the base approximates
   the tangential basal ice velocity, which is also correct if the base
   of the ice is horizontal.
 
-See the source code $PETSC_DIR/src/snes/examples/tutorials/ex48.c for
+See the source code `$PETSC_DIR/src/snes/examples/tutorials/ex48.c` for
 the original implementation.
  */
 class BlatterStressBalance : public ShallowStressBalance
 {
-  friend void viscosity(void *ctx, PetscReal hardness, PetscReal gamma,
-			PetscReal *eta, PetscReal *deta);
-  friend void drag(void *ctx, PetscReal tauc, PetscReal u, PetscReal v,
-		   PetscReal *taud, PetscReal *dtaub);
+  friend void viscosity(void *ctx, double hardness, double gamma,
+			double *eta, double *deta);
+  friend void drag(void *ctx, double tauc, double u, double v,
+		   double *taud, double *dtaub);
 public:
   BlatterStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
 
@@ -102,7 +102,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+  virtual PetscErrorCode extend_the_grid(int old_Mz);
 
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(std::string &/*result*/)
@@ -140,11 +140,8 @@ protected:
   BlatterQ1Ctx ctx;
   SNES snes;
 
-  PetscReal min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
+  double min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
   std::string stdout_blatter;
-
-  // profiling
-  int event_blatter;
 };
 
 #endif /* _BLATTERSTRESSBALANCE_H_ */
