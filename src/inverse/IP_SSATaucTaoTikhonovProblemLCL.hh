@@ -19,11 +19,15 @@
 #ifndef IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 #define IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
 
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
 #include <petsc.h>
-#include <tr1/memory>
 #include "iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
@@ -38,7 +42,14 @@ class IP_SSATaucTaoTikhonovProblemLCL;
     created as subclasses of python classes.*/
 class IP_SSATaucTaoTikhonovProblemLCLListener {
 public:
+
+#ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
+#else
+  typedef std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
+#endif
+
+
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
   
