@@ -11,7 +11,7 @@ When using option \intextoption{stress_balance ssa+sia}, the SIA+SSA hybrid stre
 \end{itemize}
 This subsection explains the relevant options.
 
-The primary example of \texttt{-stress_balance ssa+sia} usage is in section \ref{sec:start} of this Manual, but the option is also used in sections \ref{subsect:MISMIP}, \ref{subsect:MISMIP3d}, \ref{sec:storglaciaren}, and \ref{sec:jako}.
+The primary example of \texttt{-stress_balance ssa+sia} usage is in section \ref{sec:start} of this Manual, but the option is also used in sections \ref{subsect:MISMIP}, \ref{subsect:MISMIP3d}, and \ref{sec:jako}.
 
 In PISM the key coefficient in the sliding is always denoted as yield stress $\tau_c$, which is \texttt{tauc} in PISM output files.  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly-observed mixture of pressurized liquid water, ice, granular till, and bedrock bumps.  The yield stress concept also extends to the power law form, and thus most standard sliding laws can be chosen by user options (below).  One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress (\texttt{taud_mag} in PISM output files).  Specifically, where $\text{\tt tauc} < \text{\tt taud_mag}$ you are likely to see sliding if option \texttt{-stress_balance ssa+sia} is used.
 
