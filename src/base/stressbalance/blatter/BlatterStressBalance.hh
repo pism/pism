@@ -69,7 +69,7 @@ transformation from a reference element to the physical element.
 Since ice-flow is tightly coupled in the z-direction (within columns), the DA is
 managed specially so that columns are never distributed, and are always
 contiguous in memory.  This amounts to reversing the meaning of X,Y,Z compared
-to the DA's internal interpretation, and then indexing as vec[i][j][k].  The
+to the DA's internal interpretation, and then indexing as `vec[i][j][k]`.  The
 exotic coarse spaces require 2D DAs which are made to use compatible domain
 decomposition relative to the 3D DAs.
 

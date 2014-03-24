@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 Jed Brown and the PISM Authors
+/* Copyright (C) 2013, 2014 Jed Brown and the PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,11 +33,11 @@
 /*! \file FE3DTools.h
 
   This file contains helper macros and functions for setting up 3D
-  \f$Q_1\f$ finite element systems.
+  @f$ Q_1 @f$ finite element systems.
 
-  In the finite element formulation, let \f$\phi_i\f$ be a trial function,
-  i.e. an element of a basis for the space \f$S_h\f$ approximating the
-  solution space and let \f$\psi\f$ be a test function.
+  In the finite element formulation, let @f$ \phi_i @f$ be a trial function,
+  i.e. an element of a basis for the space @f$ S_h @f$ approximating the
+  solution space and let @f$ \psi @f$ be a test function.
 
   Then we write
 
@@ -45,20 +45,20 @@
   u = \sum_i U_i \phi_i.
   \f]
 
-  Trial functions \f$\phi_i\f$ are piecewise-trilinear (linear in each of
-  \f$x\f$, \f$y\f$, \f$z\f$ separately) on elements.
+  Trial functions @f$ \phi_i @f$ are piecewise-trilinear (linear in each of
+  @f$ x @f$ , @f$ y @f$ , @f$ z @f$ separately) on elements.
 
-  Instead of defining \f$\phi_i\f$ for each element, we define them once
+  Instead of defining @f$ \phi_i @f$ for each element, we define them once
   on the **reference element**, the cube
-  \f$[-1,1]\times[-1,1]\times[-1,1]\f$ and use an invertible map from this
+  @f$ [-1,1]\times[-1,1]\times[-1,1] @f$ and use an invertible map from this
   element to a physical hexahedral element.
 
   **On** the reference element, pre-images of trial functions are
-  called \f$\chi_i\f$. These \f$\chi_i\f$ are also known as *element basis
-  functions*, as opposed to *global* basis functions \f$\phi_i\f$.
+  called @f$ \chi_i @f$ . These @f$ \chi_i @f$ are also known as *element basis
+  functions*, as opposed to *global* basis functions @f$ \phi_i @f$ .
 
-  In the Galerkin formulation, test functions \f$\psi\f$ are the same as
-  trial functions \f$\phi_i\f$, but it is still helpful to use different
+  In the Galerkin formulation, test functions @f$ \psi @f$ are the same as
+  trial functions @f$ \phi_i @f$ , but it is still helpful to use different
   letters for test and trial functions (this makes notation simpler).
  */
 
@@ -111,17 +111,17 @@
     (n)[3] = (x)[i][j+1];                       \
   } while (0)
 
-/*! \brief Compute partial derivatives of \f$z(\xi,\eta,\zeta)\f$ with
-    respect to \f$\xi\f$, \f$\eta\f$, and \f$\zeta\f$.
+/*! \brief Compute partial derivatives of @f$ z(\xi,\eta,\zeta) @f$ with
+    respect to @f$ \xi @f$ , @f$ \eta @f$ , and @f$ \zeta @f$ .
 
-  The function \f$z(\xi,\eta,\zeta)\f$ is defined by the map from the reference
+  The function @f$ z(\xi,\eta,\zeta) @f$ is defined by the map from the reference
   element to a physical element, i.e.
   \f[
   z (\xi, \eta, \zeta)  =  \sum_{j = 1}^8 z_j \cdot \chi_j (\xi,\eta,\zeta) .
   \f]
 
-  Here \f$\xi\f$, \f$\eta\f$ and \f$\zeta\f$ are range from \f$-1\f$
-  to \f$1\f$, so that the triple \f$(\xi,\eta,\zeta)\f$ describes an
+  Here @f$ \xi @f$ , @f$ \eta @f$ and @f$ \zeta @f$ are range from @f$ -1 @f$
+  to @f$ 1 @f$ , so that the triple @f$ (\xi,\eta,\zeta) @f$ describes an
   arbitrary point in the reference element.
 
   These derivatives are used to compute the Jacobian of this map (they
@@ -130,8 +130,8 @@
   The output of this computation is used in compute_element_info() and nowhere
   else.
 
-  \param[in] dchi derivatives of element basis functions \f$\phi\f$ with respect to
-             \f$\xi\f$, \f$\eta\f$, \f$\zeta\f$.
+  \param[in] dchi derivatives of element basis functions @f$ \phi @f$ with respect to
+  @f$ \xi @f$ , @f$ \eta @f$ , @f$ \zeta @f$ .
   \param[in]  zn[] z-coordinates of the nodes of the current element
   \param[out] dz[] partial derivatives of z
  */
@@ -148,39 +148,39 @@ void compute_z_gradient(PetscReal dchi[][3], const PetscReal zn[], PetscReal dz[
 
 /*! Compute temporaries at a quadrature point. */
 /*! Compute the following:
-   - values of shape functions \f$\phi_i\f$ at a given quadrature point
-   - values of partial derivatives of shape functions \f$\frac{\partial \phi_i}{\partial x_j}\f$ 
+   - values of shape functions @f$ \phi_i @f$ at a given quadrature point
+   - values of partial derivatives of shape functions @f$ \frac{\partial \phi_i}{\partial x_j} @f$
      at a given quadrature point
-   - \f$det(J)\cdot w\f$ factor (product of the determinant of the Jacobian of the map
+   - @f$ det(J)\cdot w @f$ factor (product of the determinant of the Jacobian of the map
      from the reference element and the quadrature weight), at a given quadrature point.
      (These are "modified" quadrature weights.)
 
    Let $J$ be the jacobian of the map from the reference element.
 
-   This function computes \f$J\f$, \f$det(J)\f$, and \f$J^{-1}\f$. The determinant is then
-   multiplied by weights corresponding to the \f$2\times2\times2\f$ Gaussian quadrature
+   This function computes @f$ J @f$ , @f$ det(J) @f$ , and @f$ J^{-1} @f$ . The determinant is then
+   multiplied by weights corresponding to the @f$ 2\times2\times2 @f$ Gaussian quadrature
    (weights are hard-wired).
 
-   The inverse \f$J^{-1}\f$ is used to compute partial derivatives of
-   shape functions (with respect to \f$x\f$,\f$y\f$,\f$z\f$) using
-   partial derivatives of reference element basis functions \f$\chi_i\f$ (with
-   respect to \f$\xi\f$,\f$\eta\f$,\f$\zeta\f$).
+   The inverse @f$ J^{-1} @f$ is used to compute partial derivatives of
+   shape functions (with respect to @f$ x @f$ , @f$ y @f$ , @f$ z @f$ ) using
+   partial derivatives of reference element basis functions @f$ \chi_i @f$ (with
+   respect to @f$ \xi @f$ , @f$ \eta @f$ , @f$ \zeta @f$ ).
 
-   In particular, \f$\nabla \phi = J^{-1} (\nabla \chi)\f$.
+   In particular, @f$ \nabla \phi = J^{-1} (\nabla \chi) @f$ .
 
    **Note:** both the Jacobian and its inverse are stored *transposed*
    here. (For no apparent reason.)
 
    \todo Quadrature weights are hard-wired!
 
-   \param[in]  chi  values of element basis functions \f$\chi_i\f$ at quadrature points
-   \param[in]  dchi values of partial derivatives of \f$\chi_i\f$ at quadrature points
+   \param[in]  chi  values of element basis functions @f$ \chi_i @f$ at quadrature points
+   \param[in]  dchi values of partial derivatives of @f$ \chi_i @f$ at quadrature points
    \param[in]  q    index of the quadrature point
    \param[in]  dx,dy horizontal grid spacing (x- and y-direction)
    \param[in]  dz   partial derivatives of z computed by calling compute_z_gradient()
-   \param[out] phi  values of shape functions \f$\phi_i\f$ at the quadrature point q
-   \param[out] dphi values of partial derivatives of shape functions \f$\phi_i\f$ at q
-   \param[out] jw   \f$det(J)\cdot w\f$
+   \param[out] phi  values of shape functions @f$ \phi_i @f$ at the quadrature point q
+   \param[out] dphi values of partial derivatives of shape functions @f$ \phi_i @f$ at q
+   \param[out] jw @f$ det(J)\cdot w @f$
  */
 void compute_element_info(PetscReal chi[8][8],PetscReal dchi[8][8][3],
 			  PetscInt q, PetscReal dx, PetscReal dy, const PetscReal dz[restrict],
@@ -208,7 +208,7 @@ void compute_element_info(PetscReal chi[8][8],PetscReal dchi[8][8][3],
 
 /*! Compute values of shape functions and their derivatives at quadrature points.
  *
- * Given coordinated of the nodes of the 2D \f$Q_1\f$ reference element
+ * Given coordinated of the nodes of the 2D @f$ Q_1 @f$ reference element
  * \f{align*}{
  * \xi  &= (-1, 1, 1, -1)\\
  * \eta &= (-1, -1, 1, 1)
@@ -220,7 +220,7 @@ void compute_element_info(PetscReal chi[8][8],PetscReal dchi[8][8][3],
  * 
  * This function pre-computes values of these element basis functions
  * and values of their derivatives at quadrature points for the
- * \f$2\times2\f$ Gaussian quadrature on the reference element.
+ * @f$ 2\times2 @f$ Gaussian quadrature on the reference element.
  * 
  * Note that with this choice of the reference element quadrature points are
  * \f[
@@ -259,7 +259,7 @@ void initialize_Q12D(PetscReal chi[4][4], PetscReal dchi[4][4][2])
 
 /*! Compute values of shape functions and their derivatives at quadrature points.
  *
- * Given coordinated of the nodes of the 3D \f$Q_1\f$ reference element
+ * Given coordinated of the nodes of the 3D @f$ Q_1 @f$ reference element
  * \f{align*}{
  * \xi   &= (-1,  1,  1, -1, -1,  1, 1, -1)\\
  * \eta  &= (-1, -1,  1,  1, -1, -1, 1,  1)\\
@@ -272,7 +272,7 @@ void initialize_Q12D(PetscReal chi[4][4], PetscReal dchi[4][4][2])
  * 
  * This function pre-computes values of these element basis functions
  * and values of their derivatives at quadrature points for the
- * \f$2\times2\times2\f$ Gaussian quadrature on the reference element.
+ * @f$ 2\times2\times2 @f$ Gaussian quadrature on the reference element.
  * 
  * Note that with this choice of the reference element quadrature points are
  * \f[

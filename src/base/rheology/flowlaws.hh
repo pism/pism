@@ -63,19 +63,26 @@ public:
   IceFlowLaw(MPI_Comm c, const char pre[],
              const PISMConfig &config,
              EnthalpyConverter *EC);
- virtual ~IceFlowLaw() {}
+  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
   //! \brief Computes effective viscosity and its derivative with respect to the
-  //! squared second invariant \f$ \gamma \f$.
+  //! squared second invariant @f$ \gamma @f$.
   /*!
+   *
+   * @f{align*}{
+   * \nu &= \frac12 B (\gamma + \epsilon)^{\frac{1-n}{2n}}.\\
+   * \frac{\partial \nu}{\partial \gamma} &= \frac{1-n}{2n} \cdot \frac12 B (\gamma + \epsilon)^{\frac{1-n}{2n}-1}\\
+   * &= \frac{1-n}{2n} \cdot \frac12 B (\gamma + \epsilon)^{\frac{1-n}{2n}}\cdot \frac{1}{\gamma + \epsilon}\\
+   * &=\nu \cdot \frac{1-n}{2n} \cdot \frac{1}{\gamma + \epsilon}.
+   * @f}
    *
    * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
    *
    * \param[in] hardness ice hardness
-   * \param[in] gamma the second invariant \f$ \gamma = \frac{1}{2} D_{ij} D_{ij}\f$ if \f$D_{ij}\f$ is the strain rate tensor
+   * \param[in] gamma the second invariant @f$ \gamma = \frac{1}{2} D_{ij} D_{ij} @f$ if @f$ D_{ij} @f$ is the strain rate tensor
    * \param[out] nu effective viscosity
-   * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
+   * \param[out] dnu derivative of @f$ \nu @f$ with respect to @f$ \gamma @f$
    */
   inline void effective_viscosity(double hardness, double gamma,
                                   double *nu, double *dnu) const {
@@ -89,9 +96,9 @@ public:
   }
 
   virtual double averaged_hardness(double thickness,
-                                      int kbelowH,
-                                      const double *zlevels,
-                                      const double *enthalpy) const;
+                                   int kbelowH,
+                                   const double *zlevels,
+                                   const double *enthalpy) const;
 
   virtual PetscErrorCode averaged_hardness_vec(IceModelVec2S &thickness,
                                                IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
