@@ -128,34 +128,59 @@ public:
   IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
-  // see iMinit.cc
-  virtual PetscErrorCode grid_setup();
-
-  virtual PetscErrorCode allocate_submodels();
-  virtual PetscErrorCode allocate_enthalpy_converter();
-  virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode allocate_bed_deformation();
-  virtual PetscErrorCode allocate_bedrock_thermal_unit();
-  virtual PetscErrorCode allocate_subglacial_hydrology();
-  virtual PetscErrorCode allocate_basal_yield_stress();
-  virtual PetscErrorCode allocate_couplers();
-  virtual PetscErrorCode allocate_iceberg_remover();
-
-  virtual PetscErrorCode init_couplers();
-  virtual PetscErrorCode set_grid_from_options();
-  virtual PetscErrorCode set_grid_defaults();
-  virtual PetscErrorCode model_state_setup();
-  virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode allocate_internal_objects();
-  virtual PetscErrorCode misc_setup();
-  virtual PetscErrorCode init_diagnostics();
-  virtual PetscErrorCode init_calving();
-
-  virtual PetscErrorCode list_diagnostics();
-
-  // see iceModel.cc
+  // -----------------------------------------------
+  /** Initialization proceeds through a hierarchical set of virtual
+  function calls.  The hierarchy of what calls what is shown below via
+  indentation of declarations.  This hierarchy is not complete, see
+  the code for more details.
+  @see iMinit.cc */
   PetscErrorCode init();
 
+    //! 1) Initialize the computational grid:
+    virtual PetscErrorCode grid_setup();
+      virtual PetscErrorCode set_grid_defaults();
+      virtual PetscErrorCode set_grid_from_options();
+
+    //! 2) Process the options:
+    // virtual PetscErrorCode setFromOptions();
+
+    //! 3) Memory allocation:
+    virtual PetscErrorCode createVecs();
+
+    //! 4) Allocate PISM components modeling some physical processes.
+    virtual PetscErrorCode allocate_submodels();
+      virtual PetscErrorCode allocate_enthalpy_converter();
+      virtual PetscErrorCode allocate_iceberg_remover();
+      virtual PetscErrorCode allocate_stressbalance();
+      virtual PetscErrorCode allocate_subglacial_hydrology();
+      virtual PetscErrorCode allocate_basal_yield_stress();
+      virtual PetscErrorCode allocate_bedrock_thermal_unit();
+      virtual PetscErrorCode allocate_bed_deformation();
+      virtual PetscErrorCode allocate_couplers();
+
+    //! 5) Allocate work vectors:
+    virtual PetscErrorCode allocate_internal_objects();
+
+    //! 6) Initialize coupler models and fill the model state variables
+    //! (from a PISM output file, from a bootstrapping file using some
+    //! modeling choices or using formulas). Calls IceModel::regrid()
+    virtual PetscErrorCode model_state_setup();
+      virtual PetscErrorCode init_couplers();
+      virtual PetscErrorCode set_vars_from_options();
+
+    //! 7) Report grid parameters:
+    // ierr = grid.report_parameters(); CHKERRQ(ierr);
+
+    //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
+    //! basal till model, initialize snapshots. This has to happen *after*
+    //! regridding.
+    virtual PetscErrorCode misc_setup();
+      virtual PetscErrorCode init_calving();
+      virtual PetscErrorCode init_diagnostics();
+  // -----------------------------------------------
+
+
+  virtual PetscErrorCode list_diagnostics();
 
   /** Run PISM in the "standalone" mode. */
   virtual PetscErrorCode run();
@@ -313,10 +338,10 @@ protected:
   
 protected:
   // see iceModel.cc
-  virtual PetscErrorCode createVecs();
 
   // See subclasses
   /** User-defined operation after other mass continuity stuff. */
+  virtual PetscErrorCode massContPreHook() { return 0; }
   virtual PetscErrorCode massContPostHook() { return 0; }
 
   // see iMadaptive.cc

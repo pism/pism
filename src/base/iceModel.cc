@@ -803,6 +803,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
+    ierr = massContPreHook(); CHKERRQ(ierr); // User-defined operation after other mass continuity stuff.
     ierr = massContExplicitStep(); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
     ierr = massContPostHook(); CHKERRQ(ierr); // User-defined operation after other mass continuity stuff.
