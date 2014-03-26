@@ -1,0 +1,37 @@
+/* heat flux balance: LHS is ice, RHS is ocean */
+heat_flux_balance : Qtb + Qti(grad_T) = Qtm$
+
+/* salt flux balance */
+salt_flux_balance : Qsb + Qsi = Qsm$
+
+/* Solve the salt flux balance equation for the melt rate, then
+substitute the melt rate and linearized equations for T_B and Theta_B
+into the heat flux balance */
+eq : heat_flux_balance, solve(salt_flux_balance, melt_rate), T_B = T_B(S_B, ice_thickness), Theta_B = Theta_B(S_B, ice_thickness)$
+eq : eq - rhs(eq)$
+
+/* expand the left hand side: */
+eq_lhs : lhs(expand(eq*S_B/ocean_density))$
+
+/* eq is a quadratic equation like this one: */
+eq_quadratic : A*x^2 + B*x + C = 0$
+
+/* with these coefficients */
+A : factorsum(coeff(eq_lhs, S_B, 2))$
+B : factorsum(coeff(eq_lhs, S_B, 1))$
+C : factorsum(coeff(eq_lhs, S_B, 0))$
+
+eq_melt_rate : factor(solve(salt_flux_balance, melt_rate)[1])$
+
+tex('T_B(S_B,p) = T_B(S_B,p));
+tex('Theta_B(S_B,p) = Theta_B(S_B,p));
+tex(eq_quadratic);
+tex('A = A);
+tex('B = B);
+tex('C = C);
+
+tex(eq_melt_rate);
+
+grind('A = A);
+grind('B = B);
+grind('C = C);

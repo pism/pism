@@ -202,7 +202,7 @@ criteria.  This procedure builds the length of the next time step by using these
 by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived classes.
 
 @param[out] dt_result computed maximum time step
-@param[in,out] skip_counter time-step skipping counter
+@param[in,out] skip_counter_result time-step skipping counter
  */
 PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
   PetscErrorCode ierr;
