@@ -874,7 +874,7 @@ PetscErrorCode IceModel::run() {
     bool updateAtDepth = skipCountDown == 0;
     bool tempAgeStep = updateAtDepth && (do_energy || do_age);
 
-    const bool show_step = tempAgeStep || adaptReasonFlag == "end";
+    const bool show_step = tempAgeStep || adaptReasonFlag == "end of the run";
     ierr = summary(show_step); CHKERRQ(ierr);
 
     // writing these fields here ensures that we do it after the last time-step
