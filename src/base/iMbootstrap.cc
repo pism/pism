@@ -127,11 +127,25 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
     vLatitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  ierr = ice_thickness.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
   ierr = bed_topography.regrid(filename, OPTIONAL, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
   ierr = basal_melt_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
   ierr = geothermal_flux.regrid(filename, OPTIONAL, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
   ierr = bed_uplift_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+
+  ierr = ice_thickness.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  // check the range of the ice thickness
+  {
+    double thk_min = 0.0, thk_max = 0.0;
+    ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
+
+    if (thk_max >= grid.Lz + 1e-6) {
+      PetscPrintf(grid.com,
+                  "PISM ERROR: Maximum ice thickness (%f meters)\n"
+                  "            exceeds the height of the computational domain (%f meters).\n"
+                  "            Stopping...\n", thk_max, grid.Lz);
+      PISMEnd();
+    }
+  }
 
   if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled
