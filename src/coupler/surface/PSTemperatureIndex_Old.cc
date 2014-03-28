@@ -245,6 +245,8 @@ PetscErrorCode PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
 PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal my_dt) {
   PetscErrorCode ierr;
 
+  const double ice_density = config.get("ice_density");
+
   // to ensure that temperature time series are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
@@ -333,7 +335,10 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
                                              melt_rate(i,j), // output
                                              runoff_rate(i,j), // output
                                              acab(i,j)); // acab = smb (output)
-                                             CHKERRQ(ierr);
+      CHKERRQ(ierr);
+
+      // convert from m/s to m/s * kg/m3 = (kg m-2)/s
+      acab(i,j) *= ice_density;
     }
   }
 
