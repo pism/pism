@@ -4,6 +4,15 @@ find_package(Doxygen)
 
 # PISM Source Code Browsers
 if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
+
+  option(Pism_DOXYGEN_DOCUMENT_ALL "Extract all (even undocumented) entities." ON)
+
+  if (Pism_DOXYGEN_DOCUMENT_ALL)
+    set(Pism_DOXYGEN_EXTRACT_ALL "YES")
+  else()
+    set(Pism_DOXYGEN_EXTRACT_ALL "NO")
+  endif()
+
   set (browser_helpers
     initialization-sequence.dot
     config_doc.py
