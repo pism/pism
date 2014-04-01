@@ -277,9 +277,14 @@ if (Pism_BUILD_EXTRA_EXECS)
 endif (Pism_BUILD_EXTRA_EXECS)
 
 add_subdirectory (calcalcs)
-add_subdirectory (inverse)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (regional)
-add_subdirectory (pythonbindings)
 
+if (Pism_DEBUG OR Pism_BUILD_PYTHON_BINDINGS)
+  add_subdirectory (pythonbindings)
+  # Right now the inverse library is not very useful without Python
+  # bindings. We can go back to building it unconditionally if someone
+  # uses it in C++ code (please let us know).
+  add_subdirectory (inverse)
+endif()
