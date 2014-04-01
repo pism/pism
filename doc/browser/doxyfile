@@ -124,7 +124,7 @@ FULL_PATH_NAMES        = YES
 # If left blank the directory from which doxygen is run is used as the
 # path to strip.
 
-STRIP_FROM_PATH        = ${PROJECT_SOURCE_DIR}/
+STRIP_FROM_PATH        = ${Pism_SOURCE_DIR}/
 
 # The STRIP_FROM_INC_PATH tag can be used to strip a user-defined part of
 # the path mentioned in the documentation of a class, which tells
@@ -558,7 +558,7 @@ WARN_LOGFILE           =
 
 INPUT = pism_config.md std_names.md mainpage.md bombproof_enth.md vertchange.md \
         bedrough.md references.md howto.md petsc.md \
-        ${PROJECT_SOURCE_DIR}/src/
+        ${Pism_SOURCE_DIR}/src/
 
 USE_MDFILE_AS_MAINPAGE = mainpage.md
 
@@ -592,9 +592,9 @@ RECURSIVE              = YES
 # excluded from the INPUT source files. This way you can easily exclude a
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = ${PROJECT_SOURCE_DIR}/src/earth/cubature.h \
-                         ${PROJECT_SOURCE_DIR}/src/earth/cubature.c \
-                         ${PROJECT_SOURCE_DIR}/src/calcalcs
+EXCLUDE                = ${Pism_SOURCE_DIR}/src/earth/cubature.h \
+                         ${Pism_SOURCE_DIR}/src/earth/cubature.c \
+                         ${Pism_SOURCE_DIR}/src/calcalcs
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded
@@ -642,8 +642,8 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = ${PROJECT_SOURCE_DIR}/doc/userman/figs/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/figs
+IMAGE_PATH             = ${Pism_SOURCE_DIR}/doc/userman/figs/ \
+                         ${Pism_SOURCE_DIR}/src/base/stressbalance/figs
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1301,8 +1301,8 @@ DOT_PATH               =
 # contain dot files that are included in the documentation (see the
 # \dotfile command).
 
-DOTFILE_DIRS           = ${PROJECT_SOURCE_DIR}/doc/browser/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/figs/
+DOTFILE_DIRS           = ${Pism_SOURCE_DIR}/doc/browser/ \
+                         ${Pism_SOURCE_DIR}/src/base/stressbalance/figs/
 
 # The DOT_GRAPH_MAX_NODES tag can be used to set the maximum number of
 # nodes that will be shown in the graph. If the number of nodes in a graph
