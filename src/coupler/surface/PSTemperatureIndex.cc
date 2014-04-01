@@ -151,9 +151,9 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com,
     "  Computing number of positive degree-days by: "); CHKERRQ(ierr);
-  if (randomized_repeatable) {
+  if (randomized) {
     ierr = verbPrintf(2, grid.com, "simulation of a random process.\n"); CHKERRQ(ierr);
-  } else if (randomized) {
+  } else if (randomized_repeatable) {
     ierr = verbPrintf(2, grid.com, "repeatable simulation of a random process.\n"); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
