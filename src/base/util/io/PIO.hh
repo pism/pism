@@ -51,7 +51,7 @@ public:
 
   PetscErrorCode check_if_exists(std::string filename, bool &result);
 
-  PetscErrorCode open(std::string filename, int mode, bool append = false);
+  PetscErrorCode open(std::string filename, PISM_IO_Mode mode);
 
   PetscErrorCode close();
 

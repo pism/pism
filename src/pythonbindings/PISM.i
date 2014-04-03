@@ -523,13 +523,9 @@ in fact be equal to PETSC_NULL, and this is OK. */
     $1 = PyInt_Check($input);
 }
 
-#define NC_NOWRITE	0	/* default is read only */
-#define NC_WRITE    	0x0001	/* read & write */
-
 // Tell SWIG that the following variables are truly constant
 %immutable PISM_Revision;
 %immutable PISM_DefaultConfigFile;
-
 
 %include "stressbalance/ssa/SNESProblem.hh"
 %template(SNESScalarProblem) SNESProblem<1,double>;

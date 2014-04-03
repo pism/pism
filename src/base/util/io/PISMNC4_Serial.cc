@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -25,12 +25,21 @@
 #endif
 #include <netcdf.h>
 
-int PISMNC4_Serial::open(std::string fname, int mode) {
+int PISMNC4_Serial::integer_open_mode(PISM_IO_Mode input) const {
+  if (input == PISM_READONLY) {
+    return NC_NOWRITE;
+  } else {
+    return NC_WRITE;
+  }
+}
+
+int PISMNC4_Serial::open(std::string fname, PISM_IO_Mode mode) {
   int stat;
 
   m_filename = fname;
 
-  stat = nc_open(m_filename.c_str(), mode, &ncid);
+  int nc_mode = integer_open_mode(mode);
+  stat = nc_open(m_filename.c_str(), nc_mode, &ncid);
 
   define_mode = false;
 

@@ -57,7 +57,7 @@ PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name o
 
   PIO nc(grid, "netcdf3");      // OK to use netcdf3
   unsigned int last_record;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
   last_record -= 1;
   ierr = nc.close(); CHKERRQ(ierr);

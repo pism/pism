@@ -81,7 +81,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Determine the grid extent from a bootstrapping file:
   PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
   bool x_dim_exists, y_dim_exists, t_exists;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = nc.inq_dim("x", x_dim_exists); CHKERRQ(ierr);
   ierr = nc.inq_dim("y", y_dim_exists); CHKERRQ(ierr);
@@ -314,7 +314,7 @@ PetscErrorCode IceModel::grid_setup() {
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.get_att_text("PISM_GLOBAL", "source", source); CHKERRQ(ierr);
 
     std::string proj4_string;
@@ -352,7 +352,7 @@ PetscErrorCode IceModel::grid_setup() {
     names.push_back("enthalpy");
     names.push_back("temp");
 
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
     bool var_exists = false;
     for (unsigned int i = 0; i < names.size(); ++i) {
@@ -601,7 +601,7 @@ PetscErrorCode IceModel::model_state_setup() {
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
     bool run_stats_exists;
 
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_var("run_stats", run_stats_exists); CHKERRQ(ierr);
     if (run_stats_exists) {
       ierr = nc.read_attributes(run_stats.get_name(), run_stats); CHKERRQ(ierr);

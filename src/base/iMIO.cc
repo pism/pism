@@ -130,7 +130,7 @@ PetscErrorCode IceModel::dumpToFile(std::string filename) {
 
   // Prepare the file
   std::string time_name = config.get_string("time_dimension_name");
-  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
+  ierr = nc.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
   ierr = nc.def_time(time_name, grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
@@ -368,7 +368,7 @@ PetscErrorCode IceModel::initFromFile(std::string filename) {
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
                     filename.c_str()); CHKERRQ(ierr);
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   // Find the index of the last record in the file:
   unsigned int last_record;
@@ -587,7 +587,7 @@ PetscErrorCode IceModel::init_enthalpy(std::string filename,
     enthalpy_exists = false;
 
   PIO nc(grid, "guess_mode");
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var("enthalpy", enthalpy_exists); CHKERRQ(ierr);
   ierr = nc.inq_var("temp", temp_exists); CHKERRQ(ierr);
   ierr = nc.inq_var("liqfrac", liqfrac_exists); CHKERRQ(ierr);
@@ -762,9 +762,9 @@ PetscErrorCode IceModel::write_snapshot() {
 
   PIO nc(grid, grid.config.get_string("output_format"));
 
-  if (!snapshots_file_is_ready) {
+  if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
-    ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        grid.time->calendar(),
                        grid.time->CF_units_string()); CHKERRQ(ierr);
@@ -773,7 +773,8 @@ PetscErrorCode IceModel::write_snapshot() {
 
     snapshots_file_is_ready = true;
   } else {
-    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append==true
+    // In this case the snapshot file is should be present.
+    ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
   }
 
   unsigned int time_length = 0;
@@ -865,7 +866,7 @@ PetscErrorCode IceModel::write_backup() {
   PIO nc(grid, grid.config.get_string("output_format"));
 
   // write metadata:
-  ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(backup_filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);

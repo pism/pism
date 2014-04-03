@@ -141,7 +141,7 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
     if (i_set) {
       bool bwp_exists = false;
       PIO nc(grid, "guess_mode");
-      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+      ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
       ierr = nc.inq_var("bwp", bwp_exists); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
       if (bwp_exists == true) {

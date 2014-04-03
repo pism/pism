@@ -98,7 +98,7 @@ int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Se
   }
 
   int mpi_size;
-  stat = input.open(patch_filename(filename, 0), PISM_NOWRITE); check(stat);
+  stat = input.open(patch_filename(filename, 0), PISM_READONLY); check(stat);
   stat = get_quilt_size(input, mpi_size); check(stat);
   stat = input.close(); check(stat);
 
@@ -106,7 +106,7 @@ int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Se
     int xs, ys;
     unsigned int xm, ym;
 
-    stat = input.open(patch_filename(filename, r), PISM_NOWRITE); check(stat);
+    stat = input.open(patch_filename(filename, r), PISM_READONLY); check(stat);
 
     stat = patch_geometry(input, xs, ys, xm, ym); check(stat);
 
@@ -189,7 +189,7 @@ int copy_all_variables(std::string filename, PISMNC4_Serial &output) {
   PISMNC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dimensions, spatial_vars;
 
-  stat = input.open(patch_filename(filename, 0), PISM_NOWRITE); check(stat);
+  stat = input.open(patch_filename(filename, 0), PISM_READONLY); check(stat);
 
   stat = output.inq_nvars(n_vars); check(stat);
 

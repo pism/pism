@@ -986,12 +986,18 @@ PetscErrorCode IceCompModel::reportErrors() {
                            filename, netcdf_report); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-append", "Append the NetCDF error report",
                           append); CHKERRQ(ierr);
+
+  PISM_IO_Mode mode = PISM_READWRITE;
+  if (append == false) {
+    mode = PISM_READWRITE_MOVE;
+  }
+
   if (netcdf_report) {
     ierr = verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", filename.c_str());
     CHKERRQ(ierr);
 
     // Find the number of records in this file:
-    ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
+    ierr = nc.open(filename, mode); CHKERRQ(ierr);
     ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
 
     ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);

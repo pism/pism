@@ -132,7 +132,7 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
     std::string tmp;
 
-    ierr = nc.open(time_file_name, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(time_file_name, PISM_READONLY); CHKERRQ(ierr);
     {
       bool time_exists;
       std::string time_name = config.get_string("time_dimension_name");

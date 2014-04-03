@@ -193,7 +193,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
   if (! (regrid_file_set && boot_file_set) ) return 0;
 
-  ierr = nc.open(regrid_filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(regrid_filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = nc.inq_var("topg_initial", topg_initial_exists); CHKERRQ(ierr);
   ierr = nc.inq_var("topg", topg_exists); CHKERRQ(ierr);

@@ -151,7 +151,7 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
     if (i) {
       bool bwat_exists = false;
       PIO nc(grid, "guess_mode");
-      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+      ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
       ierr = nc.inq_var("bwat", bwat_exists); CHKERRQ(ierr);
       if (bwat_exists == true) {
         ierr = W.read(filename, start); CHKERRQ(ierr);

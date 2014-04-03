@@ -132,7 +132,7 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
   PIO nc(*grid, "guess_mode");
   std::string name_found;
   bool exists, found_by_standard_name;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (exists == false) {
@@ -336,7 +336,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
   }
 
   PIO nc(*grid, "guess_mode");
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < missing; ++j) {
     ierr = m_metadata[0].regrid(nc, start + j,

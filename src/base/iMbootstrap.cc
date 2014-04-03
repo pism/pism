@@ -70,7 +70,7 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   PetscErrorCode ierr;
 
   PIO nc(grid, "guess_mode");
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
                     "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);

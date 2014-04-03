@@ -138,7 +138,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   // it is really there; and regrid the target thickness
   PIO nc(grid, "guess_mode");
   bool mask_exists = false;
-  ierr = nc.open(fttfile, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(fttfile, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var("ftt_mask", mask_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 

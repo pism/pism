@@ -180,7 +180,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
   ierr = MPI_Comm_rank(m_com, &rank); CHKERRQ(ierr);
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var(time_name, exists); CHKERRQ(ierr);
   if (exists == false) {
     ierr = nc.close(); CHKERRQ(ierr);

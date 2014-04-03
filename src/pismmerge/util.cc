@@ -77,7 +77,7 @@ int check_input_files(std::string filename) {
   PISMNC4_Serial nc(MPI_COMM_SELF, 0);
   int stat;
 
-  stat = nc.open(patch_filename(filename, 0), PISM_NOWRITE);
+  stat = nc.open(patch_filename(filename, 0), PISM_READONLY);
   if (stat != 0) {
     printf("ERROR: Cannot open %s!\n", patch_filename(filename, 0).c_str());
     PISMEnd();
@@ -89,7 +89,7 @@ int check_input_files(std::string filename) {
   nc.close();
 
   for (int j = 1; j < mpi_size; ++j) {
-    stat = nc.open(patch_filename(filename, j), PISM_NOWRITE);
+    stat = nc.open(patch_filename(filename, j), PISM_READONLY);
 
     if (stat != 0) {
       printf("ERROR: Cannot open %s!\n", patch_filename(filename, j).c_str());

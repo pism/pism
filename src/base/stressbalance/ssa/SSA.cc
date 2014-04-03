@@ -111,7 +111,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
     ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_var("u_ssa", u_ssa_found); CHKERRQ(ierr); 
     ierr = nc.inq_var("v_ssa", v_ssa_found); CHKERRQ(ierr); 
     ierr = nc.inq_nrecords(start); CHKERRQ(ierr);
