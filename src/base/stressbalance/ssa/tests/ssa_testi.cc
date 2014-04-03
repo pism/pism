@@ -61,8 +61,6 @@ const double H0_schoof = aspect_schoof * L_schoof;
                                        // = 2000 m THICKNESS
 const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
                                      // given on p. 239 of Schoof; why so big?
-const double p_schoof = 4.0/3.0; // = 1 + 1/n
-
 
 PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
