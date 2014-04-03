@@ -49,6 +49,9 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   mbscheme              = NULL;
   faustogreve           = NULL;
+  sd_period             = 0;
+  sd_ref_year           = 0;
+  sd_ref_time           = 0.0;
   base_ddf.snow         = config.get("pdd_factor_snow");
   base_ddf.ice          = config.get("pdd_factor_ice");
   base_ddf.refreezeFrac = config.get("pdd_refreeze");
@@ -68,6 +71,15 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
     ierr = PISMOptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
                             fausto_params); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-pdd_sd_file",
+                             "Read standard deviation from file",
+                             filename, sd_file_set); CHKERRQ(ierr);
+    ierr = PISMOptionsInt("-pdd_sd_period",
+                          "Length of the standard deviation data period in years",
+                          sd_period, sd_period_set); CHKERRQ(ierr);
+    ierr = PISMOptionsInt("-pdd_sd_reference_year",
+                          "Standard deviation data reference year",
+                          sd_ref_year, sd_ref_year_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -82,6 +94,15 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   if (fausto_params) {
     faustogreve = new FaustoGrevePDDObject(grid, config);
   }
+
+  if (sd_ref_year_set) {
+    sd_ref_time = grid.convert(sd_ref_year, "years", "seconds");
+  }
+
+  ierr = air_temp_sd.create(grid, "air_temp_sd", false); CHKERRQ(ierr);
+  ierr = air_temp_sd.set_attrs("climate_forcing",
+                                "standard deviation of near-surface air temperature",
+                                "Kelvin", ""); CHKERRQ(ierr);
 
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs("diagnostic",
@@ -188,10 +209,21 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     usurf = NULL;
   }
 
+  if (sd_file_set == true) {
+    ierr = verbPrintf(2, grid.com,
+                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
+                      filename.c_str()); CHKERRQ(ierr);
+    ierr = air_temp_sd.init(filename, sd_period, sd_ref_time); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com,
+                      "  Option -pdd_sd_file is not set. Using a constant value.\n"
+                      ); CHKERRQ(ierr);
+  }
+
   std::string input_file;
   bool do_regrid = false;
   int start = -1;
-  
+
   // find PISM input file to read data from:
   ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
 
@@ -239,9 +271,14 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   m_t  = my_t;
   m_dt = my_dt;
 
-  // upate to ensure that temperature and precipitation time series
+  // update to ensure that temperature and precipitation time series
   // are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
+
+  // update standard deviation time series if available
+  if (sd_file_set == true) {
+    ierr = air_temp_sd.average(my_t, my_dt); CHKERRQ(ierr);
+  }
 
   // set up air temperature and precipitation time series
   int Nseries = mbscheme->get_timeseries_length(my_dt);
@@ -372,7 +409,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   }
 
   m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
-  
+
   return 0;
 }
 
@@ -398,13 +435,14 @@ void PSTemperatureIndex::add_vars_to_output(std::string keyword, std::set<std::s
   PISMSurfaceModel::add_vars_to_output(keyword, result);
 
   result.insert("snow_depth");
-  
+
   if (keyword == "medium" || keyword == "big") {
     result.insert("climatic_mass_balance");
     result.insert("ice_surface_temp");
   }
 
   if (keyword == "big") {
+    result.insert("air_temp_sd");
     result.insert("saccum");
     result.insert("smelt");
     result.insert("srunoff");
@@ -420,6 +458,10 @@ PetscErrorCode PSTemperatureIndex::define_variables(std::set<std::string> vars, 
 
   if (set_contains(vars, "climatic_mass_balance")) {
     ierr = climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "air_temp_sd")) {
+    ierr = air_temp_sd.define(nc, nctype); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "saccum")) {
@@ -461,6 +503,11 @@ PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, c
   if (set_contains(vars, "climatic_mass_balance")) {
     ierr = climatic_mass_balance.write(nc); CHKERRQ(ierr);
     vars.erase("climatic_mass_balance");
+  }
+
+  if (set_contains(vars, "air_temp_sd")) {
+    ierr = air_temp_sd.write(nc); CHKERRQ(ierr);
+    vars.erase("air_temp_sd");
   }
 
   if (set_contains(vars, "saccum")) {
