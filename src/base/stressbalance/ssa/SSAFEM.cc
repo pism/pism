@@ -383,11 +383,10 @@ The function returns the values and the derivatives with respect
 to the solution in the output variables \a nuH, \a dNuH, \a beta, and \a dbeta.
 Use NULL pointers if no derivatives are desired.
 */
-inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
-                                                  const PISMVector2 *u,const double Du[],
-                                                  double *nuH, double *dNuH,
-                                                  double *beta, double *dbeta)
-{
+PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
+                                           const PISMVector2 *u,const double Du[],
+                                           double *nuH, double *dNuH,
+                                           double *beta, double *dbeta) {
 
   Mask M;
 
@@ -402,18 +401,22 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
     if (dNuH) *dNuH *= feS->H;
   }
   *nuH  *=  2;
-  if (dNuH) *dNuH *= 2;
+  if (dNuH) {
+    *dNuH *= 2;
+  }
 
-  if( M.grounded_ice(feS->mask) )
-  {
+  if(M.grounded_ice(feS->mask)) {
     basal_sliding_law->drag_with_derivative(feS->tauc,u->u,u->v,beta,dbeta);
   } else {  
     *beta = 0;
-    if( M.ice_free_land(feS->mask) )
-    {
+
+    if (M.ice_free_land(feS->mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
-    if(dbeta) *dbeta = 0;
+
+    if (dbeta) {
+      *dbeta = 0;
+    }
   }
   return 0;
 }
