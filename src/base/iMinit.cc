@@ -117,6 +117,12 @@ PetscErrorCode IceModel::set_grid_defaults() {
     PISMEnd();
   }
 
+  std::string proj4_string;
+  ierr = nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string); CHKERRQ(ierr);
+  if (proj4_string.empty() == false) {
+    global_attributes.set_string("proj4", proj4_string);
+  }
+
   bool mapping_exists;
   ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
   if (mapping_exists) {
@@ -310,6 +316,12 @@ PetscErrorCode IceModel::grid_setup() {
     // file:
     ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
     ierr = nc.get_att_text("PISM_GLOBAL", "source", source); CHKERRQ(ierr);
+
+    std::string proj4_string;
+    ierr = nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string); CHKERRQ(ierr);
+    if (proj4_string.empty() == false) {
+      global_attributes.set_string("proj4", proj4_string);
+    }
 
     bool mapping_exists;
     ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);

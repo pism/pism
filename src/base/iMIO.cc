@@ -336,11 +336,11 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   std::string o_size = get_output_size("-o_size");
 
 #if (PISM_USE_PROJ4==1)
-  if (mapping.has_attribute("proj4")) {
-    output_vars.insert("lon_bounds");
-    output_vars.insert("lat_bounds");
-    vLatitude.metadata().set_string("bounds", "lat_bound");
-    vLongitude.metadata().set_string("bounds", "lon_bound");
+  if (global_attributes.has_attribute("proj4")) {
+    output_vars.insert("lon_bnds");
+    output_vars.insert("lat_bnds");
+    vLatitude.metadata().set_string("bounds", "lat_bnds");
+    vLongitude.metadata().set_string("bounds", "lon_bnds");
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing

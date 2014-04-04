@@ -41,14 +41,14 @@ PetscErrorCode IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
   if (config.get_flag("correct_cell_areas") == false ||
-      mapping.has_attribute("proj4") == false) {
+      global_attributes.has_attribute("proj4") == false) {
 
     ierr = cell_area.set(grid.dx * grid.dy); CHKERRQ(ierr);
 
     return 0;
   }
 
-  std::string proj_string = mapping.get_string("proj4");
+  std::string proj_string = global_attributes.get_string("proj4");
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {
