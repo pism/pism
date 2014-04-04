@@ -285,7 +285,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   int Nseries = mbscheme->get_timeseries_length(my_dt);
 
   const double dtseries = my_dt / Nseries;
-  std::vector<double> ts(Nseries), T(Nseries), P(Nseries), PDDs(Nseries);
+  std::vector<double> ts(Nseries), T(Nseries), S(Nseries), P(Nseries), PDDs(Nseries);
   for (int k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
 
@@ -312,6 +312,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   DegreeDayFactors  ddf = base_ddf;
 
   ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
+  ierr = air_temp_sd.begin_access(); CHKERRQ(ierr);
   ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
 
   ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
@@ -332,6 +333,9 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
       // the precipitation time series from PISMAtmosphereModel and its modifiers
       ierr = atmosphere->precip_time_series(i, j, &P[0]); CHKERRQ(ierr);
 
+      // interpolate temperature standard deviation time series
+      ierr = air_temp_sd.interp(i, j, &S[0]); CHKERRQ(ierr);
+
       if (faustogreve != NULL) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
@@ -340,14 +344,17 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
         CHKERRQ(ierr);
       }
 
+      // apply standard deviation lapse rate on top of prescribed values
+      if (sigmalapserate != 0.0) {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
+        }
+      }
+
       // Use temperature time series, the "positive" threshhold, and
       // the standard deviation of the daily variability to get the
       // number of positive degree days (PDDs)
-      double sigma = base_pddStdDev;
-      if (sigmalapserate != 0.0) {
-        sigma += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
-      }
-      mbscheme->get_PDDs(sigma, dtseries, &T[0], Nseries, &PDDs[0]);
+      mbscheme->get_PDDs(&S[0], dtseries, &T[0], Nseries, &PDDs[0]);
 
       // Use temperature time series to remove rainfall from precipitation
       mbscheme->get_snow_accumulation(&P[0], // precipitation rate (input-output)
@@ -396,6 +403,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   ierr = snow_depth.end_access(); CHKERRQ(ierr);
 
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
+  ierr = air_temp_sd.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
 
   ierr = mask->end_access(); CHKERRQ(ierr);

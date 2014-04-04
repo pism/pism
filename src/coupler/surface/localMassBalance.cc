@@ -90,12 +90,12 @@ double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
  * @param N length of the T array
  * @param[out] PDDs pointer to a pre-allocated array with N-1 elements
  */
-void PDDMassBalance::get_PDDs(double pddStdDev, double dt_series,
+void PDDMassBalance::get_PDDs(double *S, double dt_series,
                               double *T, unsigned int N, double *PDDs) {
   const double h_days = dt_series / seconds_per_day;
 
   for (unsigned int k = 0; k < N; ++k) {
-    PDDs[k] = h_days * CalovGreveIntegrand(pddStdDev, T[k] - pdd_threshold_temp);
+    PDDs[k] = h_days * CalovGreveIntegrand(S[k], T[k] - pdd_threshold_temp);
   }
 }
 
@@ -259,13 +259,13 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  * @param N number of points in the temperature time-series, each corresponds to a sub-interval
  * @param PDDs pointer to a pre-allocated array of length N
  */
-void PDDrandMassBalance::get_PDDs(double pddStdDev, double dt_series,
+void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
                                   double *T, unsigned int N, double *PDDs) {
   const double h_days = dt_series / seconds_per_day;
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
-    double T_k = T[k] + gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
+    double T_k = T[k] + gsl_ran_gaussian(pddRandGen, S[k]); // add random: N(0,sigma)
 
     if (T_k > pdd_threshold_temp)
       PDDs[k] = h_days * (T_k - pdd_threshold_temp);
