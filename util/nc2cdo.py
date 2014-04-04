@@ -55,36 +55,36 @@ else:
 ## Get projection information from netCDF file
 def get_projection_from_file(nc):
 
-    ## First, check if we have a global attribute 'proj4' or 'projection'
+    ## First, check if we have a global attribute 'proj4'
     ## which contains a Proj4 string:
     try:
-        try:
-            p = Proj(str(nc.proj4))
-            print('Found projection information in global attribute proj4, using it')
-        except:
-            p = Proj(str(nc.projection))
-            print('Found projection information in global attribute projection, using it')
+        p = Proj(str(nc.proj4))
+        print('Found projection information in global attribute proj4, using it')
     except:
         try:
-            ## go through variables and look for 'grid_mapping' attribute
-            for var in nc.variables.keys():
-                if hasattr(nc.variables[var], 'grid_mapping'):
-                    mappingvarname = nc.variables[var].grid_mapping
-                    exit
-            print('Found projection information in variable "%s", using it' % mappingvarname)
-            var_mapping = nc.variables[mappingvarname]
-            p = Proj(proj   = "stere",
-                     ellps  = var_mapping.ellipsoid,
-                     datum  = var_mapping.ellipsoid,
-                     units = "m",
-                     lat_ts = var_mapping.standard_parallel,
-                     lat_0  = var_mapping.latitude_of_projection_origin,
-                     lon_0  = var_mapping.straight_vertical_longitude_from_pole,
-                     x_0    = var_mapping.false_easting,
-                     y_0    = var_mapping.false_northing)
+            p = Proj(str(nc.projection))
+            print('Found projection information in global attribute projection, using it')
         except:
-            print('No mapping information found, exiting.')
-            exit(1)
+            try:
+                ## go through variables and look for 'grid_mapping' attribute
+                for var in nc.variables.keys():
+                    if hasattr(nc.variables[var], 'grid_mapping'):
+                        mappingvarname = nc.variables[var].grid_mapping
+                        print('Found projection information in variable "%s", using it' % mappingvarname)
+                        break
+                var_mapping = nc.variables[mappingvarname]
+                p = Proj(proj   = "stere",
+                         ellps  = var_mapping.ellipsoid,
+                         datum  = var_mapping.ellipsoid,
+                         units = "m",
+                         lat_ts = var_mapping.standard_parallel,
+                         lat_0  = var_mapping.latitude_of_projection_origin,
+                         lon_0  = var_mapping.straight_vertical_longitude_from_pole,
+                         x_0    = var_mapping.false_easting,
+                         y_0    = var_mapping.false_northing)
+            except:
+                print('No mapping information found, exiting.')
+                sys.exit(1)
 
     return p
 
@@ -172,20 +172,20 @@ if __name__ == "__main__":
 
         nc.createDimension(grid_corner_dim_name,size=grid_corners)
     
-        var = 'lon_bounds'
-        ## Create variable 'lon_bounds'
+        var = 'lon_bnds'
+        ## Create variable 'lon_bnds'
         var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
-        ## Assign units to variable 'lon_bounds'
+        ## Assign units to variable 'lon_bnds'
         var_out.units = "degreesE";
-        ## Assign values to variable 'lon_bounds'
+        ## Assign values to variable 'lon_nds'
         var_out[:] = gc_lon
 
-        var = 'lat_bounds'
-        ## Create variable 'lat_bounds'
+        var = 'lat_bnds'
+        ## Create variable 'lat_bnds'
         var_out = nc.createVariable(var, 'f', dimensions=(ydim, xdim, grid_corner_dim_name))
-        ## Assign units to variable 'lat_bounds'
+        ## Assign units to variable 'lat_bnds'
         var_out.units = "degreesN";
-        ## Assign values to variable 'lat_bounds'
+        ## Assign values to variable 'lat_bnds'
         var_out[:] = gc_lat
 
 
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     ## Assign standard name to variable 'lon'
     var_out.standard_name = "longitude"
     ## Assign bounds to variable 'lon'
-    var_out.bounds = "lon_bounds"
+    var_out.bounds = "lon_bnds"
     
     var = 'lat'
     ## If it does not yet exist, create variable 'lat'
@@ -225,7 +225,7 @@ if __name__ == "__main__":
     ## Assign standard name to variable 'lat'
     var_out.standard_name = "latitude"
     ## Assign bounds to variable 'lat'
-    var_out.bounds = "lat_bounds"
+    var_out.bounds = "lat_bnds"
     ## Assign values to variable 'lat'
 
     ## Make sure variables have 'coordinates' attribute
