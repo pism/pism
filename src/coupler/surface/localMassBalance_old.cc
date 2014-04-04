@@ -20,13 +20,12 @@
 #include <ctime>  // for time(), used to initialize random number gen
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <gsl/gsl_sf.h>       // for erfc() in CalovGreveIntegrand()
+#include <cmath>                // for M_PI and erfc() in CalovGreveIntegrand()
 #include "pism_const.hh"
 #include "NCVariable.hh"
 #include "localMassBalance_old.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
-#include <cmath>
 
 PDDMassBalance_Old::PDDMassBalance_Old(const PISMConfig& myconfig) : LocalMassBalance_Old(myconfig) {
   precip_as_snow = config.get_flag("interpret_precip_as_snow");
@@ -73,7 +72,7 @@ user selects a random PDD implementation with <tt>-pdd_rand</tt> or
  */
 PetscScalar PDDMassBalance_Old::CalovGreveIntegrand(PetscScalar sigma, PetscScalar TacC) {
   const PetscScalar Z    = TacC / (sqrt(2.0) * sigma);
-  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * gsl_sf_erfc(-Z);
+  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
 }
 
 
