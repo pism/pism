@@ -65,11 +65,11 @@ protected:
   PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
                base_pddThresholdTemp; //!< K; temps are positive above this
   IceModelVec2S
-    acab,		//!< cached surface mass balance rate
-    accumulation_rate,  //!< diagnostic output accumulation rate (snow - rain)
-    melt_rate,          //!< diagnostic output melt rate (rate at which snow
-                        //! and ice is melted, but some snow melt refreezes)
-    runoff_rate;        //!< diagnostic output meltwater runoff rate
+    climatic_mass_balance,      //!< cached surface mass balance rate
+    accumulation_rate, //!< diagnostic output accumulation rate (snow - rain)
+    melt_rate,    //!< diagnostic output melt rate (rate at which snow
+                                //! and ice is melted, but some snow melt refreezes)
+    runoff_rate;          //!< diagnostic output meltwater runoff rate
 
   IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex_Old must hold these
                                      //!pointers in order to use object which
@@ -78,7 +78,10 @@ protected:
   bool pdd_annualize;
   PetscReal next_pdd_update;
 
-  NCSpatialVariable artm;
+  NCSpatialVariable ice_surface_temp;
+private:
+  PetscErrorCode allocate_PSTemperatureIndex_Old();
+  std::string temperature_name, mass_balance_name;
 };
 
 #endif /* _PSTEMPERATUREINDEX_OLD_H_ */

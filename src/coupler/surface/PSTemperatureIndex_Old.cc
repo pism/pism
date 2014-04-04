@@ -28,7 +28,7 @@
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const PISMConfig &conf)
-  : PISMSurfaceModel(g, conf), artm(g.get_unit_system()) {
+  : PISMSurfaceModel(g, conf), ice_surface_temp(g.get_unit_system()) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = config.get("pdd_factor_snow");
@@ -38,7 +38,55 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const PISMConfig &con
   base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
 
   pdd_annualize = false;
+
+  temperature_name = "ice_surface_temp";
+  mass_balance_name = "climatic_mass_balance";
+
+  PetscErrorCode ierr = allocate_PSTemperatureIndex_Old(); CHKERRABORT(grid.com, ierr);
 }
+
+PetscErrorCode PSTemperatureIndex_Old::allocate_PSTemperatureIndex_Old() {
+  PetscErrorCode ierr;
+
+  ierr = climatic_mass_balance.create(grid, mass_balance_name, WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_attrs("diagnostic",
+			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+			"kg m-2 s-1",
+			"land_ice_surface_specific_mass_balance");  // CF standard_name
+                        CHKERRQ(ierr);
+  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.write_in_glaciological_units = true;
+  climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
+
+  // diagnostic fields:
+
+  ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = accumulation_rate.set_attrs("diagnostic",
+                                     "instantaneous ice-equivalent surface accumulation rate (precip minus rain)",
+                                     "m s-1",
+                                     ""); CHKERRQ(ierr);
+  ierr = accumulation_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  accumulation_rate.write_in_glaciological_units = true;
+
+  ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = melt_rate.set_attrs("diagnostic",
+                             "instantaneous ice-equivalent surface melt rate",
+                             "m s-1",
+                             ""); CHKERRQ(ierr);
+  ierr = melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  melt_rate.write_in_glaciological_units = true;
+
+  ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = runoff_rate.set_attrs("diagnostic",
+                               "instantaneous ice-equivalent surface meltwater runoff rate",
+                               "m s-1",
+                               ""); CHKERRQ(ierr);
+  ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  runoff_rate.write_in_glaciological_units = true;
+
+  return 0;
+}
+
 
 PSTemperatureIndex_Old::~PSTemperatureIndex_Old() {
   delete mbscheme;
@@ -53,7 +101,7 @@ PetscErrorCode PSTemperatureIndex_Old::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
-                           CHKERRQ(ierr);
+  CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-pdd_rand",
                             "Use a PDD implementation based on simulating a random process",
@@ -85,61 +133,29 @@ PetscErrorCode PSTemperatureIndex_Old::init(PISMVars &vars) {
 
 
   ierr = verbPrintf(2, grid.com,
-    "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
-    "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
-    "  Surface mass balance and ice upper surface temperature are outputs.\n"
-    "  See PISM User's Manual for control of degree-day factors.\n");
-    CHKERRQ(ierr);
+                    "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
+                    "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
+                    "  Surface mass balance and ice upper surface temperature are outputs.\n"
+                    "  See PISM User's Manual for control of degree-day factors.\n");
+  CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
-    "  Computing number of positive degree-days by: "); CHKERRQ(ierr);
-  if (pdd_rand_repeatable) {
-    ierr = verbPrintf(2, grid.com, "simulation of a random process.\n"); CHKERRQ(ierr);
-    mbscheme = new PDDrandMassBalance_Old(config, true);
-  } else if (pdd_rand) {
-    ierr = verbPrintf(2, grid.com, "repeatable simulation of a random process.\n");
-      CHKERRQ(ierr);
-    mbscheme = new PDDrandMassBalance_Old(config, false);
-  } else {
-    ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
-    mbscheme = new PDDMassBalance_Old(config);
+  std::string method = "the method reported above.";
+  if (mbscheme == NULL) {
+    if (pdd_rand_repeatable) {
+      method = "simulation of a random process.";
+      mbscheme = new PDDrandMassBalance_Old(config, true);
+    } else if (pdd_rand) {
+      method = "repeatable simulation of a random process.";
+      mbscheme = new PDDrandMassBalance_Old(config, false);
+    } else {
+      method = "an expectation integral.";
+      mbscheme = new PDDMassBalance_Old(config);
+    }
   }
+  ierr = verbPrintf(2, grid.com,
+                    "  Computing number of positive degree-days by: %s\n",
+                    method.c_str()); CHKERRQ(ierr);
 
-  ierr = acab.create(grid, "acab", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = acab.set_attrs("diagnostic",
-			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
-			"m s-1",  // m *ice-equivalent* per second
-			"land_ice_surface_specific_mass_balance");  // CF standard_name
-                        CHKERRQ(ierr);
-  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  acab.write_in_glaciological_units = true;
-  acab.metadata().set_string("comment", "positive values correspond to ice gain"); CHKERRQ(ierr);
-
-  // diagnostic fields:
-
-  ierr = accumulation_rate.create(grid, "saccum", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_attrs("diagnostic",
-                                     "instantaneous ice-equivalent surface accumulation rate (precip minus rain)",
-                                     "m s-1",
-                                     ""); CHKERRQ(ierr);
-  ierr = accumulation_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  accumulation_rate.write_in_glaciological_units = true;
-
-  ierr = melt_rate.create(grid, "smelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = melt_rate.set_attrs("diagnostic",
-                             "instantaneous ice-equivalent surface melt rate",
-                             "m s-1",
-                             ""); CHKERRQ(ierr);
-  ierr = melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  melt_rate.write_in_glaciological_units = true;
-
-  ierr = runoff_rate.create(grid, "srunoff", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = runoff_rate.set_attrs("diagnostic",
-                               "instantaneous ice-equivalent surface meltwater runoff rate",
-                               "m s-1",
-                               ""); CHKERRQ(ierr);
-  ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  runoff_rate.write_in_glaciological_units = true;
 
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
@@ -151,8 +167,8 @@ PetscErrorCode PSTemperatureIndex_Old::init(PISMVars &vars) {
 
   if (fausto_params) {
     ierr = verbPrintf(2, grid.com,
-       "  Setting PDD parameters from [Faustoetal2009] ...\n");
-       CHKERRQ(ierr);
+                      "  Setting PDD parameters from [Faustoetal2009] ...\n");
+    CHKERRQ(ierr);
 
     //FIXME: this seems not to work because config is "const"?:  config.set("pdd_std_dev",2.53);
     base_pddStdDev = 2.53;
@@ -164,7 +180,10 @@ PetscErrorCode PSTemperatureIndex_Old::init(PISMVars &vars) {
     if (!usurf)
       SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
+  if (faustogreve == NULL) {
     faustogreve = new FaustoGrevePDDObject_Old(grid, config);
+  }
+
   } else {
     // generally, this is the case in which degree day factors do not depend
     //   on location; we use base_ddf
@@ -176,11 +195,11 @@ PetscErrorCode PSTemperatureIndex_Old::init(PISMVars &vars) {
   // beginning of the run)
   next_pdd_update = grid.time->current();
 
-  artm.init_2d("artm", grid);
-  artm.set_string("pism_intent", "diagnostic");
-  artm.set_string("long_name",
+  ice_surface_temp.init_2d(temperature_name, grid);
+  ice_surface_temp.set_string("pism_intent", "diagnostic");
+  ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
-  ierr = artm.set_units("K"); CHKERRQ(ierr);
+  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -250,9 +269,9 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   // to ensure that temperature time series are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
-  // This is a point-wise (local) computation, so we can use "acab" to store
+  // This is a point-wise (local) computation, so we can use "climatic_mass_balance" to store
   // precipitation:
-  ierr = atmosphere->mean_precipitation(acab); CHKERRQ(ierr);
+  ierr = atmosphere->mean_precipitation(climatic_mass_balance); CHKERRQ(ierr);
 
   // set up air temperature time series
   PetscInt Nseries = 0;
@@ -291,7 +310,7 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   DegreeDayFactors_Old  ddf = base_ddf;
 
   ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
-  ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
 
   ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
   ierr = melt_rate.begin_access(); CHKERRQ(ierr);
@@ -325,7 +344,7 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
 
       // use the temperature time series to remove the rainfall from the precipitation
       PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
-                                  acab(i,j), // precipitation rate (input)
+                                  climatic_mass_balance(i,j), // precipitation rate (input)
                                   tseries, dtseries, &T[0], Nseries);
 
       // use degree-day factors, and number of PDDs, and the snow precipitation, to
@@ -334,11 +353,11 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
                                              accumulation_rate(i,j), // output
                                              melt_rate(i,j), // output
                                              runoff_rate(i,j), // output
-                                             acab(i,j)); // acab = smb (output)
+                                             climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
       CHKERRQ(ierr);
 
       // convert from m/s to m/s * kg/m3 = (kg m-2)/s
-      acab(i,j) *= ice_density;
+      climatic_mass_balance(i,j) *= ice_density;
     }
   }
 
@@ -346,7 +365,7 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   ierr = melt_rate.end_access(); CHKERRQ(ierr);
   ierr = runoff_rate.end_access(); CHKERRQ(ierr);
 
-  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
 
   if (lat != NULL) {
@@ -365,7 +384,7 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
 PetscErrorCode PSTemperatureIndex_Old::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = acab.copy_to(result); CHKERRQ(ierr);
+  ierr = climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
 
   return 0;
 }
@@ -380,8 +399,8 @@ PetscErrorCode PSTemperatureIndex_Old::ice_surface_temperature(IceModelVec2S &re
 
 void PSTemperatureIndex_Old::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
-    result.insert("acab");
-    result.insert("artm");
+    result.insert(mass_balance_name);
+    result.insert(temperature_name);
   }
 
   if (keyword == "big") {
@@ -398,12 +417,12 @@ PetscErrorCode PSTemperatureIndex_Old::define_variables(std::set<std::string> va
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
-  if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, nctype, true); CHKERRQ(ierr);
+  if (set_contains(vars, temperature_name)) {
+    ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
-  if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, nctype); CHKERRQ(ierr);
+  if (set_contains(vars, mass_balance_name)) {
+    ierr = climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "saccum")) {
@@ -424,20 +443,20 @@ PetscErrorCode PSTemperatureIndex_Old::define_variables(std::set<std::string> va
 PetscErrorCode PSTemperatureIndex_Old::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
-  if (set_contains(vars, "artm")) {
+  if (set_contains(vars, temperature_name)) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "artm", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    tmp.metadata(0) = artm;
+    ierr = tmp.create(grid, temperature_name, WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.metadata(0) = ice_surface_temp;
 
     ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
     ierr = tmp.write(nc); CHKERRQ(ierr);
-    vars.erase("artm");
+    vars.erase(temperature_name);
   }
 
-  if (set_contains(vars, "acab")) {
-    ierr = acab.write(nc); CHKERRQ(ierr);
-    vars.erase("acab");
+  if (set_contains(vars, mass_balance_name)) {
+    ierr = climatic_mass_balance.write(nc); CHKERRQ(ierr);
+    vars.erase(mass_balance_name);
   }
 
   if (set_contains(vars, "saccum")) {
