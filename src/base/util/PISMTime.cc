@@ -521,7 +521,9 @@ PetscErrorCode PISMTime::compute_times_simple(double time_start, double delta, d
 
   result.clear();
   do {
-    result.push_back(t);
+    if (t >= this->start() && t <= this->end()) {
+      result.push_back(t);
+    }
     k += 1;
     t = time_start + k * delta;
   } while (t < time_end);
