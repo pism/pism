@@ -89,7 +89,7 @@ PetscErrorCode IceModel::init_diagnostics() {
 
 #if (PISM_USE_PROJ4==1)
   if (global_attributes.has_attribute("proj4")) {
-    std::string proj4 = mapping.get_string("proj4");
+    std::string proj4 = global_attributes.get_string("proj4");
     diagnostics["lat_bnds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lat", proj4);
     diagnostics["lon_bnds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lon", proj4);
   }
