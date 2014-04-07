@@ -355,6 +355,15 @@ netcdf pism_config {
     pism_config:pdd_std_dev_lapse_lat_rate = 0.0;
     pism_config:pdd_std_dev_lapse_lat_rate_doc = "K degrees_north-1; std_dev is a function of latitude, with rate of change with respect to latitude given by this constant ";
 
+    pism_config:pdd_std_dev_use_param = "no";
+    pism_config:pdd_std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by mask_icefree_thickness_standard.";
+
+    pism_config:pdd_std_dev_param_a = -0.15;
+    pism_config:pdd_std_dev_param_doc = "Parameter a in Sigma = a*T + b, with T in degrees C. Used only if pdd_std_dev_use_param is set to yes.";
+
+    pism_config:pdd_std_dev_param_b = 0.66;
+    pism_config:pdd_std_dev_param_doc = "Parameter b in Sigma = a*T + b, with T in degrees C. Used only if pdd_std_dev_use_param is set to yes.";
+
     pism_config:pdd_fausto_latitude_beta_w = 72.0;
     pism_config:pdd_fausto_latitude_beta_w_doc = "degrees N; latitude below which to use warm case, in formula (6) in [@ref Faustoetal2009] ";
 

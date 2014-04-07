@@ -55,8 +55,11 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   base_ddf.snow         = config.get("pdd_factor_snow");
   base_ddf.ice          = config.get("pdd_factor_ice");
   base_ddf.refreezeFrac = config.get("pdd_refreeze");
-  base_pddStdDev        = config.get("pdd_std_dev");
   base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
+  base_pddStdDev        = config.get("pdd_std_dev");
+  sd_use_param          = config.get_flag("pdd_std_dev_use_param");
+  sd_param_a            = config.get("pdd_std_dev_param_a");
+  sd_param_b            = config.get("pdd_std_dev_param_b");
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
@@ -349,6 +352,18 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
         for (int k = 0; k < Nseries; ++k) {
           S[k] += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
         }
+        air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
+      }
+
+      // apply standard deviation param over ice if in use
+      if (sd_use_param && m.icy(i,j)) {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] = sd_param_a * (T[k] - 273.15) + sd_param_b;
+          if (S[k] < 0.001) {
+            S[k] = 0.001 ; // avoid division by zero
+          }
+        }
+        air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
       }
 
       // Use temperature time series, the "positive" threshhold, and
