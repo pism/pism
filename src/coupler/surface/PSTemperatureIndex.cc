@@ -223,6 +223,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
                       ); CHKERRQ(ierr);
     ierr = air_temp_sd.set(base_pddStdDev); CHKERRQ(ierr);
   }
+  air_temp_sd.set_n_evaluations_per_year(config.get("climate_forcing_evaluations_per_year"));
 
   std::string input_file;
   bool do_regrid = false;
