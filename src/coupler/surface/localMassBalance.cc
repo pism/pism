@@ -71,12 +71,16 @@ This integral is used for the expected number of positive degree days, unless th
 user selects a random PDD implementation with `-pdd_rand` or
 `-pdd_rand_repeatable`.  The user can choose \f$\sigma\f$ by option
 `-pdd_std_dev`.  Note that the integral is over a time interval of length
-`dt` instead of a whole year as stated in \ref CalovGreve05 .
+`dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero, return the positive part of `TacC`.
  */
 double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 
-  const double Z = TacC / (sqrt(2.0) * sigma);
-  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
+  if (sigma == 0) {
+    return std::max(TacC, 0.0);
+  } else {
+    const double Z = TacC / (sqrt(2.0) * sigma);
+    return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
+  }
 }
 
 

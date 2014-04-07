@@ -359,8 +359,8 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
       if (sd_use_param && m.icy(i,j)) {
         for (int k = 0; k < Nseries; ++k) {
           S[k] = sd_param_a * (T[k] - 273.15) + sd_param_b;
-          if (S[k] < 0.001) {
-            S[k] = 0.001 ; // avoid division by zero
+          if (S[k] < 0.0) {
+            S[k] = 0.0 ;
           }
         }
         air_temp_sd(i, j) = S[0]; // ensure correct SD reporting
