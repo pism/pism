@@ -19,17 +19,17 @@ A historical note on modeling basal sliding is in order.  Sliding can be added d
 
 \subsubsection*{Choosing the sliding law}  In PISM the sliding law can be chosen to be a purely-plastic (Coulomb) model, namely,
 \begin{equation}
-   |\tau_b| \le \tau_c \quad \text{and} \quad \tau_b = \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0,
+   |\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b = - \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0,
 \label{eq:plastic}
 \end{equation}
-which says that the (vector) basal shear stress $\tau_b$ is at most the yield stress $\tau_c$, and only when the shear stress reaches the yield value can there be sliding.  Alternatively, the sliding law can be chosen to be a power law,
+which says that the (vector) basal shear stress $\boldsymbol{\tau}_b$ is at most the yield stress $\tau_c$, and only when the shear stress reaches the yield value can there be sliding.  Alternatively, the sliding law can be chosen to be a power law,
 \begin{equation}
-\tau_b = \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}}.
+\boldsymbol{\tau}_b =  - \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}}.
 \label{eq:pseudoplastic}
 \end{equation}
 Condition \eqref{eq:plastic} is studied in \cite{SchoofStream} and \cite{SchoofTill} in particular.  Power laws for sliding are common across the glaciological literature (e.g.~see \cite{CuffeyPaterson,GreveBlatter2009}), but we explain here the specific form of equation \eqref{eq:pseudoplastic}, which allows the coefficient $\tau_c$ to have units of stress regardless of the power $q$.
 
-In both of the above equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic} we call $\tau_c$ the \emph{yield stress}.  We call the power law \eqref{eq:pseudoplastic} a ``pseudo-plastic'' law with power $q$ and threshold velocity $u_{\text{threshold}}$.  Note that at the threshold velocity the basal shear stress $\tau_b$ has exact magnitude $\tau_c$.  In equation \eqref{eq:pseudoplastic}, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The plastic model \eqref{eq:plastic} is the $q=0$ case of \eqref{eq:pseudoplastic}.
+In both of the above equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic} we call $\tau_c$ the \emph{yield stress}.  We call the power law \eqref{eq:pseudoplastic} a ``pseudo-plastic'' law with power $q$ and threshold velocity $u_{\text{threshold}}$.  Note that at the threshold velocity the basal shear stress $\boldsymbol{\tau}_b$ has exact magnitude $\tau_c$.  In equation \eqref{eq:pseudoplastic}, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The plastic model \eqref{eq:plastic} is the $q=0$ case of \eqref{eq:pseudoplastic}.
 
 See Table \ref{tab:sliding-power-law} for options controlling the choice of sliding law. The purely plastic case is the default; just use \texttt{-stress_balance ssa} \texttt{-stress_balance ssa+sia} to turn it on.
 
@@ -46,7 +46,7 @@ In both equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic}, $\tau_c$ corr
     \textbf{Option} & \textbf{Description}
     \\\midrule
     \intextoption{pseudo_plastic} & Enables the pseudo-plastic power law model.  If this is not set the sliding law is purely-plastic, so \texttt{pseudo_plastic_q} and \texttt{pseudo_plastic_uthreshold} are inactive. \\
-    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of the plastic law, in the formula $\tau_b = \tau_c \mathbf{u}/\sqrt{|\mathbf{u}|^2 + \eps^2}$.  The default is $0.01$ m/a.  This parameter is inactive if \texttt{-pseudo_plastic} is set. \\
+    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of the plastic law, in the formula $\boldsymbol{\tau}_b = - \tau_c \mathbf{u}/\sqrt{|\mathbf{u}|^2 + \eps^2}$.  The default is $0.01$ m/a.  This parameter is inactive if \texttt{-pseudo_plastic} is set. \\
     \intextoption{pseudo_plastic_q} & Set the exponent $q$ in \eqref{eq:pseudoplastic}.  The default is $0.25$. \\
     \txtopt{pseudo_plastic_uthreshold}{(m/a)} & Set $u_{\text{threshold}}$ in \eqref{eq:pseudoplastic}.  The default is $100$ m/a.\\ \bottomrule
   \end{tabular}
@@ -56,7 +56,7 @@ In both equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic}, $\tau_c$ corr
 
 Equation \eqref{eq:pseudoplastic} is a very flexible power law form.  For example, the linear case is $q=1$, in which case if $\beta=\tau_c/u_{\text{threshold}}$ then the law is of the form
 \begin{equation*}
-  \tau_b = \beta \mathbf{u}  
+  \boldsymbol{\tau}_b = - \beta \mathbf{u}  
 \end{equation*}
 (The ``$\beta$'' coefficient is also called $\beta^2$ in some sources \cite[for example]{MacAyeal}.)  If you want such a linear sliding law, and you have a value $\beta=$\texttt{beta} in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then use this option combination:
 \begin{verbatim}
@@ -67,7 +67,7 @@ Equation \eqref{eq:pseudoplastic} is a very flexible power law form.  For exampl
 
 More generally, it is common in the literature to see power-law sliding relations in the form
 \begin{equation*}
-  \tau_b = C |\mathbf{u}|^{m-1} \mathbf{u},
+  \boldsymbol{\tau}_b = - C |\mathbf{u}|^{m-1} \mathbf{u},
 \end{equation*}
 where $C$ is a constant, as for example in sections \ref{subsect:MISMIP} and \ref{subsect:MISMIP3d}.  In that case, use this option combination:
 \begin{verbatim}
