@@ -375,14 +375,24 @@ PetscErrorCode SSAFEM::cacheQuadPtValues()
   return 0;
 }
 
-//!\brief Compute the "2 x (effective viscosity) x height' and effective viscous bed strength from
-//! the current solution, at a single quadrature point.
-/*! The coefficient data at the quadrature point comes from \a feS.
-The value of the solution and its symmetric gradient comes \a u and \a Du.
-The function returns the values and the derivatives with respect
-to the solution in the output variables \a nuH, \a dNuH, \a beta, and \a dbeta.
-Use NULL pointers if no derivatives are desired.
-*/
+/** @brief Compute the "2 x (effective viscosity) x (ice thickness)"
+ *  and effective viscous bed strength from the current solution, at a
+ *  single quadrature point.
+ *
+ * @param[in] feS SSA coefficients at the current quadrature point
+ * @param[in] u the value of the solution
+ * @param[in] Du the value of the symmetric gradient of the solution
+ * @param[out] nuH product of the ice viscosity and thickness @f$ \nu H @f$
+ * @param[out] dNuH derivative of @f$ \nu H @f$ with respect to the
+ *                  second invariant @f$ \gamma @f$. Set to NULL if
+ *                  not desired.
+ * @param[out] beta basal drag coefficient @f$ \beta @f$
+ * @param[out] dbeta derivative of @f$ \beta @f$ with respect to the
+ *                   second invariant @f$ \gamma @f$. Set to NULL if
+ *                   not desired.
+ *
+ * @return 0 on success
+ */
 PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
                                            const PISMVector2 *u,const double Du[],
                                            double *nuH, double *dNuH,
