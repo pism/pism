@@ -30,26 +30,24 @@ PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
 
   double value = 0;
 
-  double **w_a;
-  double w = 1.;
+  double w = 1.0;
 
-  PISMVector2 **u_obs_a;
-  ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
+  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
 
   if(m_weights){
-    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       if( m_weights ) {
-        w = w_a[i][j];
+        w = (*m_weights)(i, j);
       }
 
-      PISMVector2 &u_obs_ij = u_obs_a[i][j];
+      PISMVector2 &u_obs_ij = m_u_observed(i, j);
       double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
       double modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
-      
+
       double v = log( modelMagSq/obsMagSq);
       value += w*v*v;
     }
@@ -70,24 +68,21 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
   // The value of the objective
   double value = 0;
 
-  double **w_a;
   double w = 1.;
 
-  PISMVector2 **x_a;
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 **u_obs_a;
-  ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
+  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
   if(m_weights){
-    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       if( m_weights ) {
-        w = w_a[i][j];
+        w = (*m_weights)(i, j);
       }
-      PISMVector2 &x_ij = x_a[i][j];
-      PISMVector2 &u_obs_ij = u_obs_a[i][j];
+      PISMVector2 &x_ij = x(i, j);
+      PISMVector2 &u_obs_ij = m_u_observed(i, j);
       PISMVector2 u_model_ij = x_ij+u_obs_ij;
       double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
@@ -102,7 +97,7 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
   ierr = m_u_observed.end_access(); CHKERRQ(ierr);
 
   value /= m_normalization;
-  
+
   ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = x.end_access(); CHKERRQ(ierr);
@@ -115,27 +110,23 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
 
   gradient.set(0);
 
-  double **w_a;
   double w = 1.;
 
-  PISMVector2 **x_a;
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 **gradient_a;
-  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+  ierr = gradient.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 **u_obs_a;
-  ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
+  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
   if(m_weights){
-    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       if( m_weights ) {
-        w = w_a[i][j];
+        w = (*m_weights)(i, j);
       }
-      PISMVector2 &x_ij = x_a[i][j];
-      PISMVector2 &u_obs_ij = u_obs_a[i][j];
+      PISMVector2 &x_ij = x(i, j);
+      PISMVector2 &u_obs_ij = m_u_observed(i, j);
       PISMVector2 u_model_ij = x_ij+u_obs_ij;
 
       double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
@@ -143,8 +134,8 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
       double v = log( modelMagSq/obsMagSq);
       double dJdw =  2*w*v/modelMagSq;
 
-      gradient_a[i][j].u = dJdw*2*u_model_ij.u/m_normalization;
-      gradient_a[i][j].v = dJdw*2*u_model_ij.v/m_normalization;
+      gradient(i, j).u = dJdw*2*u_model_ij.u/m_normalization;
+      gradient(i, j).v = dJdw*2*u_model_ij.v/m_normalization;
     }
   }
   ierr = m_u_observed.end_access(); CHKERRQ(ierr);
