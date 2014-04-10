@@ -136,7 +136,7 @@ std::string PISMTime::CF_units_to_PISM_units(std::string input) {
     input.resize(n);
 
   // strip trailing spaces
-  while (ends_with(input, " ") and !input.empty())
+  while (ends_with(input, " ") && input.empty() == false)
     input.resize(input.size() - 1); // this would fail on empty strings
 
   return input;
