@@ -152,6 +152,9 @@ void endPrintRank() {
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(std::string str, std::string suffix) {
+  if (str.empty() == true && suffix.empty() == false)
+    return false;
+
   if (str.rfind(suffix) + suffix.size() == str.size())
     return true;
 
