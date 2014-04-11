@@ -753,6 +753,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
                                    "till_effective_fraction_overburden");      CHKERRQ(ierr);
   ierr = config.flag_from_option("tauc_slippery_grounding_lines",
                                  "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("tauc_add_transportable_water",
+                                 "tauc_add_transportable_water"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("yield_stress", "yield_stress_model",
                                     "constant,mohr_coulomb"); CHKERRQ(ierr);

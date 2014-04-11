@@ -58,6 +58,7 @@ public:
 
 protected:
   IceModelVec2S till_phi, tauc, tillwat, Po;
+  IceModelVec2S bwat;  // only allocated and used if tauc_add_transportable_water = true
   IceModelVec2S *bed_topography;
   IceModelVec2Int *mask;
   PISMVars *variables;

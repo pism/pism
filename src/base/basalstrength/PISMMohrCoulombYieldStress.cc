@@ -66,6 +66,14 @@ PetscErrorCode PISMMohrCoulombYieldStress::allocate() {
   ierr = tillwat.set_attrs("internal",
                            "copy of till water thickness held by PISMMohrCoulombYieldStress",
                            "m", ""); CHKERRQ(ierr);
+  bool addtransportable = config.get_flag("tauc_add_transportable_water");
+  if (addtransportable) {
+      ierr = bwat.create(grid, "bwat_for_MohrCoulomb",
+                         WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
+      ierr = bwat.set_attrs("internal",
+                            "copy of transportable water thickness held by PISMMohrCoulombYieldStress",
+                            "m", ""); CHKERRQ(ierr);
+  }
   ierr = Po.create(grid, "overburden_pressure_for_MohrCoulomb",
                    WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
   ierr = Po.set_attrs("internal",
@@ -129,6 +137,21 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
                   hydrology_tillwat_max.c_str());
       PISMEnd();
     }
+  }
+
+  {
+    std::string addtransportable = "tauc_add_transportable_water";
+    if ((config.get_flag(addtransportable)) and (dynamic_cast<PISMRoutingHydrology*>(hydrology)==NULL)) {
+      PetscPrintf(grid.com,
+                  "PISM ERROR: Flag %s is set.\n"
+                  "            Thus the Mohr-Coulomb yield stress model needs a PISMRoutingHydrology\n"
+                  "            (or derived like PISMDistributedHydrology) object with transportable water.\n"
+                  "            The current PISMHydrology instance is not suitable.  Set flag\n"
+                  "            %s to 'no' or choose a different yield stress model.\n",
+                  addtransportable.c_str(),addtransportable.c_str());
+      PISMEnd();
+  }
+
   }
 
   ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
@@ -310,6 +333,12 @@ at the effective pressure minimum, and  @f$ C_c @f$ ==`till_compressibility_coef
 is the coefficient of compressibility of the till.  Constants  @f$ e_0,C_c @f$  are
 derived by [@ref Tulaczyketal2000] from laboratory experiments on samples of
 till.  Also  @f$ W_{til}^{max} @f$ =`hydrology_tillwat_max`.
+
+If `tauc_add_transportable_water` is yes then the above formula becomes
+    @f[   N_til = \delta P_o 10^{(e_0/C_c) (1 - (W+W_{til})/W_{til}^{max})},  @f]
+that is, where the water amount is the sum @f$ W+W_{til} @f$.  This only works
+if @f$ W @f$ is present, that is, if `hydrology` points to a
+PISMRoutingHydrology (or derived class thereof).
  */
 PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
@@ -321,22 +350,31 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
   m_t = my_t; m_dt = my_dt;
   // this model does no internal time-stepping
 
-  bool slipperygl = config.get_flag("tauc_slippery_grounding_lines");
+  bool slipperygl       = config.get_flag("tauc_slippery_grounding_lines"),
+       addtransportable = config.get_flag("tauc_add_transportable_water");
 
   const double high_tauc   = config.get("high_tauc"),
-                  tillwat_max = config.get("hydrology_tillwat_max"),
-                  c0          = config.get("till_c_0"),
-                  e0overCc    = config.get("till_reference_void_ratio")
+               tillwat_max = config.get("hydrology_tillwat_max"),
+               c0          = config.get("till_c_0"),
+               e0overCc    = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
-                  delta       = config.get("till_effective_fraction_overburden");
+               delta       = config.get("till_effective_fraction_overburden");
 
   assert(hydrology != NULL);
-
+  PISMRoutingHydrology* hydrowithtransport;
   if (hydrology) {
     ierr = hydrology->till_water_thickness(tillwat); CHKERRQ(ierr);
     ierr = hydrology->overburden_pressure(Po); CHKERRQ(ierr);
+    if (addtransportable) {
+        hydrowithtransport = dynamic_cast<PISMRoutingHydrology*>(hydrology);
+        assert(hydrowithtransport != NULL);
+        ierr = hydrowithtransport->subglacial_water_thickness(bwat); CHKERRQ(ierr);
+    }
   }
 
+  if (addtransportable) {
+    ierr = bwat.begin_access(); CHKERRQ(ierr);
+  }
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = tauc.begin_access(); CHKERRQ(ierr);
   ierr = tillwat.begin_access(); CHKERRQ(ierr);
@@ -360,6 +398,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
           water = tillwat_max;
         } else {
           water = tillwat(i,j); // usual case
+          if (addtransportable)  water += bwat(i,j);
         }
         Ntil = delta * Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / tillwat_max)));
         Ntil = PetscMin(Po(i,j), Ntil);
@@ -373,6 +412,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
   ierr = tillwat.end_access(); CHKERRQ(ierr);
   ierr = Po.end_access(); CHKERRQ(ierr);
   ierr = bed_topography->end_access(); CHKERRQ(ierr);
+  if (addtransportable) {
+    ierr = bwat.end_access(); CHKERRQ(ierr);
+  }
 
   ierr = tauc.update_ghosts(); CHKERRQ(ierr);
 

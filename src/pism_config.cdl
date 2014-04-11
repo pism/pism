@@ -122,7 +122,10 @@ netcdf pism_config {
     pism_config:sub_groundingline_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
 
     pism_config:tauc_slippery_grounding_lines = "no";
-    pism_config:tauc_slippery_grounding_lines_doc = "If yes, replace normally-computed tauc from Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the reported amount of till water, nor does this mechanism affect water conservation.";
+    pism_config:tauc_slippery_grounding_lines_doc = "If yes, at icy grounded locations with bed elevations below sea level, within one cell of floating ice or ice-free ocean, make tauc as low as possible from the Mohr-Coulomb relation.  Specifically, at such locations replace the normally-computed tauc from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
+
+    pism_config:tauc_add_transportable_water = "no";
+    pism_config:tauc_add_transportable_water_doc = "If yes, when computing tauc from Mohr-Coulomb relation, use the sum of water amount in the till plus water amount in the transport system.  Normally only the water in the till is used.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
 
 
     // parameters:
