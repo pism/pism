@@ -93,6 +93,9 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   ierr = init_bwp(vars); CHKERRQ(ierr);
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
+    ierr = verbPrintf(2, grid.com,
+            "  option -init_P_from_steady seen ...\n"
+            "  initializing P from P(W) formula which applies in steady state\n"); CHKERRQ(ierr);
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
@@ -117,6 +120,7 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
+  const PetscReal bwpdefault = config.get("bootstrapping_bwp_value_no_var");
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
   if (P_input != NULL) { // a variable called "bwp" is already in context
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
@@ -125,13 +129,25 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
     int start;
     ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
     if (i) {
-      ierr = P.read(filename, start); CHKERRQ(ierr);
+      bool bwp_exists = false;
+      PIO nc(grid, "guess_mode");
+      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+      ierr = nc.inq_var("bwp", bwp_exists); CHKERRQ(ierr);
+      if (bwp_exists == true) {
+        ierr = P.read(filename, start); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2, grid.com,
+            "PISM WARNING: bwp for hydrology model not found in '%s'."
+            "  Setting it to %.2f ...\n",
+            filename.c_str(),bwpdefault); CHKERRQ(ierr);
+        ierr = P.set(bwpdefault); CHKERRQ(ierr);
+      }
+      ierr = nc.close(); CHKERRQ(ierr);
     } else {
-      ierr = P.regrid(filename, OPTIONAL,
-                          config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
+      ierr = P.regrid(filename, OPTIONAL, bwpdefault); CHKERRQ(ierr);
     }
   } else {
-    ierr = P.set(config.get("bootstrapping_bwp_value_no_var")); CHKERRQ(ierr);
+    ierr = P.set(bwpdefault); CHKERRQ(ierr);
   }
 
   ierr = regrid("PISMDistributedHydrology", &P); CHKERRQ(ierr); //  we could be asked to regrid from file
