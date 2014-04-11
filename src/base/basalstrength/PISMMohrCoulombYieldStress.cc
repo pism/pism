@@ -150,8 +150,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::init(PISMVars &vars)
                   "            %s to 'no' or choose a different yield stress model.\n",
                   addtransportable.c_str(),addtransportable.c_str());
       PISMEnd();
-  }
-
+    }
   }
 
   ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
