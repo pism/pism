@@ -154,6 +154,7 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
             filename.c_str(),bwatdefault); CHKERRQ(ierr);
         ierr = W.set(bwatdefault); CHKERRQ(ierr);
       }
+      ierr = nc.close(); CHKERRQ(ierr);
     } else {
       ierr = W.regrid(filename, OPTIONAL, bwatdefault); CHKERRQ(ierr);
     }
