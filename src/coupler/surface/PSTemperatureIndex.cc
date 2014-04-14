@@ -151,9 +151,9 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com,
     "  Computing number of positive degree-days by: "); CHKERRQ(ierr);
-  if (randomized_repeatable) {
+  if (randomized) {
     ierr = verbPrintf(2, grid.com, "simulation of a random process.\n"); CHKERRQ(ierr);
-  } else if (randomized) {
+  } else if (randomized_repeatable) {
     ierr = verbPrintf(2, grid.com, "repeatable simulation of a random process.\n"); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
@@ -328,7 +328,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
         for (int k = 0; k < Nseries; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
             snow_depth(i,j)       = 0.0;
-            while (next_snow_depth_reset < ts[k])
+            while (next_snow_depth_reset <= ts[k])
               next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1);
           }
 

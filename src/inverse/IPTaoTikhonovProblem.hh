@@ -20,7 +20,11 @@
 #ifndef IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 #define IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 
+#ifdef PISM_USE_TR1
 #include <tr1/memory>
+#else
+#include <memory>
+#endif
 
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
@@ -38,7 +42,11 @@ template<class ForwardProblem> class IPTaoTikhonovProblem;
     IPTaoTikhonovProblem, but SWIG has a hard time with nested classes, so it's outer instead.*/
 template<class ForwardProblem> class IPTaoTikhonovProblemListener {
 public:
+#ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
+#else
+  typedef std::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
+#endif
 
   typedef typename ForwardProblem::DesignVec DesignVec;
   typedef typename ForwardProblem::StateVec StateVec;

@@ -25,8 +25,7 @@
 
 #include <assert.h>
 
-SSA *SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
-{
+SSA *SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
   return new SSAFD(g,ec,c);
 }
 

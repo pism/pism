@@ -11,7 +11,7 @@ When using option \intextoption{stress_balance ssa+sia}, the SIA+SSA hybrid stre
 \end{itemize}
 This subsection explains the relevant options.
 
-The primary example of \texttt{-stress_balance ssa+sia} usage is in section \ref{sec:start} of this Manual, but the option is also used in sections \ref{subsect:MISMIP}, \ref{subsect:MISMIP3d}, \ref{sec:storglaciaren}, and \ref{sec:jako}.
+The primary example of \texttt{-stress_balance ssa+sia} usage is in section \ref{sec:start} of this Manual, but the option is also used in sections \ref{subsect:MISMIP}, \ref{subsect:MISMIP3d}, and \ref{sec:jako}.
 
 In PISM the key coefficient in the sliding is always denoted as yield stress $\tau_c$, which is \texttt{tauc} in PISM output files.  This parameter represents the strength of the aggregate material at the base of an ice sheet, a poorly-observed mixture of pressurized liquid water, ice, granular till, and bedrock bumps.  The yield stress concept also extends to the power law form, and thus most standard sliding laws can be chosen by user options (below).  One reason that the yield stress is a useful parameter is that it can be compared, when looking at PISM output files, to the driving stress (\texttt{taud_mag} in PISM output files).  Specifically, where $\text{\tt tauc} < \text{\tt taud_mag}$ you are likely to see sliding if option \texttt{-stress_balance ssa+sia} is used.
 
@@ -19,17 +19,17 @@ A historical note on modeling basal sliding is in order.  Sliding can be added d
 
 \subsubsection*{Choosing the sliding law}  In PISM the sliding law can be chosen to be a purely-plastic (Coulomb) model, namely,
 \begin{equation}
-   |\tau_b| \le \tau_c \quad \text{and} \quad \tau_b = \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0,
+   |\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b = - \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| > 0,
 \label{eq:plastic}
 \end{equation}
-which says that the (vector) basal shear stress $\tau_b$ is at most the yield stress $\tau_c$, and only when the shear stress reaches the yield value can there be sliding.  Alternatively, the sliding law can be chosen to be a power law,
+which says that the (vector) basal shear stress $\boldsymbol{\tau}_b$ is at most the yield stress $\tau_c$, and only when the shear stress reaches the yield value can there be sliding.  Alternatively, the sliding law can be chosen to be a power law,
 \begin{equation}
-\tau_b = \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}}.
+\boldsymbol{\tau}_b =  - \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}}.
 \label{eq:pseudoplastic}
 \end{equation}
 Condition \eqref{eq:plastic} is studied in \cite{SchoofStream} and \cite{SchoofTill} in particular.  Power laws for sliding are common across the glaciological literature (e.g.~see \cite{CuffeyPaterson,GreveBlatter2009}), but we explain here the specific form of equation \eqref{eq:pseudoplastic}, which allows the coefficient $\tau_c$ to have units of stress regardless of the power $q$.
 
-In both of the above equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic} we call $\tau_c$ the \emph{yield stress}.  We call the power law \eqref{eq:pseudoplastic} a ``pseudo-plastic'' law with power $q$ and threshold velocity $u_{\text{threshold}}$.  Note that at the threshold velocity the basal shear stress $\tau_b$ has exact magnitude $\tau_c$.  In equation \eqref{eq:pseudoplastic}, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The plastic model \eqref{eq:plastic} is the $q=0$ case of \eqref{eq:pseudoplastic}.
+In both of the above equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic} we call $\tau_c$ the \emph{yield stress}.  We call the power law \eqref{eq:pseudoplastic} a ``pseudo-plastic'' law with power $q$ and threshold velocity $u_{\text{threshold}}$.  Note that at the threshold velocity the basal shear stress $\boldsymbol{\tau}_b$ has exact magnitude $\tau_c$.  In equation \eqref{eq:pseudoplastic}, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The plastic model \eqref{eq:plastic} is the $q=0$ case of \eqref{eq:pseudoplastic}.
 
 See Table \ref{tab:sliding-power-law} for options controlling the choice of sliding law. The purely plastic case is the default; just use \texttt{-stress_balance ssa} \texttt{-stress_balance ssa+sia} to turn it on.
 
@@ -46,7 +46,7 @@ In both equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic}, $\tau_c$ corr
     \textbf{Option} & \textbf{Description}
     \\\midrule
     \intextoption{pseudo_plastic} & Enables the pseudo-plastic power law model.  If this is not set the sliding law is purely-plastic, so \texttt{pseudo_plastic_q} and \texttt{pseudo_plastic_uthreshold} are inactive. \\
-    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of the plastic law, in the formula $\tau_b = \tau_c \mathbf{u}/\sqrt{|\mathbf{u}|^2 + \eps^2}$.  The default is $0.01$ m/a.  This parameter is inactive if \texttt{-pseudo_plastic} is set. \\
+    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of the plastic law, in the formula $\boldsymbol{\tau}_b = - \tau_c \mathbf{u}/\sqrt{|\mathbf{u}|^2 + \eps^2}$.  The default is $0.01$ m/a.  This parameter is inactive if \texttt{-pseudo_plastic} is set. \\
     \intextoption{pseudo_plastic_q} & Set the exponent $q$ in \eqref{eq:pseudoplastic}.  The default is $0.25$. \\
     \txtopt{pseudo_plastic_uthreshold}{(m/a)} & Set $u_{\text{threshold}}$ in \eqref{eq:pseudoplastic}.  The default is $100$ m/a.\\ \bottomrule
   \end{tabular}
@@ -56,7 +56,7 @@ In both equations \eqref{eq:plastic} and \eqref{eq:pseudoplastic}, $\tau_c$ corr
 
 Equation \eqref{eq:pseudoplastic} is a very flexible power law form.  For example, the linear case is $q=1$, in which case if $\beta=\tau_c/u_{\text{threshold}}$ then the law is of the form
 \begin{equation*}
-  \tau_b = \beta \mathbf{u}  
+  \boldsymbol{\tau}_b = - \beta \mathbf{u}  
 \end{equation*}
 (The ``$\beta$'' coefficient is also called $\beta^2$ in some sources \cite[for example]{MacAyeal}.)  If you want such a linear sliding law, and you have a value $\beta=$\texttt{beta} in $\text{Pa}\,\text{s}\,\text{m}^{-1}$, then use this option combination:
 \begin{verbatim}
@@ -67,7 +67,7 @@ Equation \eqref{eq:pseudoplastic} is a very flexible power law form.  For exampl
 
 More generally, it is common in the literature to see power-law sliding relations in the form
 \begin{equation*}
-  \tau_b = C |\mathbf{u}|^{m-1} \mathbf{u},
+  \boldsymbol{\tau}_b = - C |\mathbf{u}|^{m-1} \mathbf{u},
 \end{equation*}
 where $C$ is a constant, as for example in sections \ref{subsect:MISMIP} and \ref{subsect:MISMIP3d}.  In that case, use this option combination:
 \begin{verbatim}
@@ -146,9 +146,17 @@ Omitting the \texttt{-topg_to_phi} option in the second run would make PISM cont
 
 Following \cite{Tulaczyketal2000}, based on laboratory experiments with till extracted from an ice stream in Antarctica, we use the following parameterization:
 \begin{equation}
-N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right)}  \label{eq:computeNtil}
+N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right).}  \label{eq:computeNtil}
 \end{equation}
 Here $P_o$ is the ice overburden pressure which is determined entirely by the ice thickness and density, $W_{til}=$ \texttt{tillwat} is the effective thickness of water in the till, $W_{til}^{max}$ is the maximum amount of water in the till (see subsection \ref{subsect:subhydro}), and the remaining parameters are set by options in Table \ref{tab:effective-pressure}.
+
+If the \texttt{tauc_add_transportable_water} configuration flag is set (either in the configuration file or using the \intextoption{tauc_add_transportable_water} option), then the above formula becomes
+\begin{equation}
+N_til = \delta P_o 10^{(e_0/C_c) (1 - (W+W_{til})/W_{til}^{max})},\label{eq:computeNtiltransportable}
+\end{equation}
+that is, here the water amount is the sum $W + W_{til}$. This only
+works if $W$ is present, that is, if the the \texttt{routing} model is
+selected; see section \ref{subsect:subhydro}).
 
 \begin{table}
   \centering

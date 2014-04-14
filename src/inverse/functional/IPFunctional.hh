@@ -37,9 +37,10 @@ and permit computation of their gradients.
 template<class IMVecType>
 class IPFunctional {
 
-public:  
-  IPFunctional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) { 
+public:
+  IPFunctional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) {
     m_quadrature.init(m_grid);
+    m_quadrature_vector.init(m_grid);
   }
 
   virtual ~IPFunctional() {};
@@ -50,7 +51,7 @@ public:
   //! Computes the gradient of the functional at the vector x.
   /*! On an \f$m\times n\f$ IceGrid, an IceModelVec \f$x\f$ with \f$d\f$
   degrees of freedom will be \f$d m n\f$-dimensional with components \f$x_i\f$.
-  The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional 
+  The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional
   \f$J\f$ with respect to \f$x\f$. Concretely, the \f$i^{\rm th}\f$ component of \f$\nabla J\f$
   is
   \f[
@@ -64,9 +65,10 @@ protected:
   IceGrid &m_grid;
 
   FEElementMap m_element_index;
-  FEQuadrature m_quadrature;
+  FEQuadrature_Scalar m_quadrature;
+  FEQuadrature_Vector m_quadrature_vector;
   FEDOFMap     m_dofmap;
-  
+
 private:
   // Hide copy/assignment operations
   IPFunctional(IPFunctional const &);
@@ -78,26 +80,26 @@ private:
 /*!
 Frequently functionals have the structure
 \f[
-J(u) = Q(u,u)
+J(u) = Q(u, u)
 \f]
 where \f$Q\f$ is a symmetric, non-negative definite, bilinear form. Certain
 minimization algorithms only apply to such functionals, which should subclass
-from IPInnerProductFunctional. 
+from IPInnerProductFunctional.
 */
 template<class IMVecType>
-class IPInnerProductFunctional : public IPFunctional<IMVecType>{
+class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
   IPInnerProductFunctional(IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
 
-  //! Computes the inner product \f$Q(a,b)\f$.
+  //! Computes the inner product \f$Q(a, b)\f$.
   virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;
 
   //! Computes the interior product of a vector with the IPInnerProductFunctional's underlying bilinear form.
-  /*! If \f$Q(x,y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the 
-  interior product of \f$a\f$ with \f$Q\f$ is the functional 
+  /*! If \f$Q(x, y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the
+  interior product of \f$a\f$ with \f$Q\f$ is the functional
   \f[
-  I(z) = Q(a,z).
+  I(z) = Q(a, z).
   \f]
   Such a functional is always linear and hence can be represented by taking
   the standard dot product with some vector \f$y\f$:
@@ -105,17 +107,17 @@ public:
   I(z) = y^T z.
   \f]
   This method returns the vector \f$y\f$.
-  */  
+  */
   virtual PetscErrorCode interior_product(IMVecType &x, IMVecType &y) {
     PetscErrorCode ierr;
-    ierr = this->gradientAt(x,y); CHKERRQ(ierr);
+    ierr = this->gradientAt(x, y); CHKERRQ(ierr);
     ierr = y.scale(0.5); CHKERRQ(ierr);
     return 0;
   }
 
   //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
-  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType, 
-      \f$Q_{ij}= Q(x_i,x_j)\f$. */
+  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
+      \f$Q_{ij}= Q(x_i, x_j)\f$. */
   // virtual PetscErrorCode assemble_form(Mat Q) = 0;
 
 };

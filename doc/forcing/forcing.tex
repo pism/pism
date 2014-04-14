@@ -814,7 +814,7 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
 
 The default PDD model used by PISM, turned on by option
 \texttt{-surface pdd}, is based on~\cite{CalovGreve05} and
-EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+EISMINT-Greenland intercomparison (see~\cite{RitzEISMINT}).
 
 Our model computes the solid (snow) precipitation rate using the air
 temperature threshold with a linear transition. All precipitation
@@ -879,6 +879,12 @@ factors using formulas (6) and (7) in~\cite{Faustoetal2009}; set
 daily variability (\intextoption{pdd_std_dev} option) is 2.53 degrees under the
 \intextoption{pdd_fausto} option~\cite{Faustoetal2009}. See also configuration
 parameters with the \texttt{pdd_fausto} prefix.
+
+Note that when used with periodic climate data (air temperature and
+precipitation) that is read from a file (see section
+\ref{sec:atmosphere-given}), use of \texttt{-timestep_hit_multiplies
+  X} is recommended. (Here \texttt{X} is the length of the climate
+data period in years.)
 
 \subsection{PIK}
 \label{sec:surface-pik}
@@ -1458,15 +1464,24 @@ It takes one command-line option:
 \end{center}
 
 This ocean model~component derives basal melt rate and basal temperature from thermodynamics in a boundary layer at the base of the ice shelf.
-It uses a set of three equations describing (1) the energy balance, (2) the salinity balance, and (3) the pressure and salinity dependent freezing point in the boundary layer \cite{Hellmeretal1998}. Temperature and salinity in the boundary layer are equilibrated by fluxes from the adjacent mixed ocean waters and the ice and by the melting or refreezing of ice.
+It uses a set of three equations describing
+\begin{enumerate}
+\item the energy flux balance,
+\item the salt flux balance,
+\item the pressure and salinity dependent freezing point in the boundary layer.
+\end{enumerate}
+This model is described in \cite{HollandJenkins1999} and \cite{Hellmeretal1998}.
 
-Inputs are potential temperature and salinity fields, for example from an ocean model.
+Inputs are potential temperature (variable \variable{theta_ocean}) and salinity (variable \variable{salinity_ocean}) read from a file.
 
 No ocean circulation is modeled, so melt water computed by this model is not fed back into the surrounding ocean.
 
-It takes one command-line option:
+This implementation uses different approximations of the temperature gradient at the base of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on, or neither (see \cite{HollandJenkins1999} for details).
+
+It takes two command-line option:
 \begin{itemize}
-\item \fileopt{ocean_th_file}: specifies the netcdf file providing potential temperature and salinity fields.
+\item \fileopt{ocean_th_file}: specifies the NetCDF file providing potential temperature and salinity fields.
+\item \intextoption{clip_shelf_base_salinity}: if this is set (which is the default), the sub-shelf salinity is clipped so that it stays in the $[4, 40]$ psu range. This is done to ensure that we stay in the range of applicability of the melting point temperature parameterization; see \cite{HollandJenkins1999}. To disable salinity clipping, use the \intextoption{no_clip_shelf_base_salinity} option or set the \config{ocean_three_equation_model_clip_salinity} configuration parameter to ``no''.
 \end{itemize}
 
 

@@ -126,10 +126,13 @@ protected:
                              //!    This IceModelVec is only created if Mbz > 1.
 
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
-  double    bed_rho, bed_c, bed_k, bed_D;
+  double bed_rho, //!< bedrock density
+    bed_c,        //!< bedrock heat capacity
+    bed_k,        //!< bedrock thermal conductivity
+    bed_D;        //!< diffusivity of the heat flow within the bedrock layer
   
-  unsigned int Mbz;
-  double Lbz;
+  unsigned int Mbz;             //!< number of vertical levels within the bedrock
+  double Lbz;                   //!< thickness of the bedrock layer, in meters
   std::string m_input_file;             //!< non-empty if "-i" was set
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached

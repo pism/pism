@@ -37,6 +37,7 @@ public:
     : PISMBedThermalUnit(g, conf) {}
   virtual ~BTU_Test() {}
 protected:
+  /** Initialize the bedrock temperature field at the beginning of the run. */
   virtual PetscErrorCode bootstrap();
 };
 

@@ -166,6 +166,7 @@ public:
     //! modeling choices or using formulas). Calls IceModel::regrid()
     virtual PetscErrorCode model_state_setup();
       virtual PetscErrorCode init_couplers();
+      virtual PetscErrorCode init_step_couplers();
       virtual PetscErrorCode set_vars_from_options();
 
     //! 7) Report grid parameters:
@@ -315,7 +316,6 @@ protected:
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
               dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
-              gDmax,            // global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
     nonneg_rule_flux_cumulative,
@@ -327,10 +327,10 @@ protected:
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  int skipCountDown;
+  unsigned int skipCountDown;
 
   // flags
-  char adaptReasonFlag;
+  std::string adaptReasonFlag;
 
   std::string stdout_flags;
 
@@ -345,11 +345,12 @@ protected:
   virtual PetscErrorCode massContPostHook() { return 0; }
 
   // see iMadaptive.cc
-  virtual PetscErrorCode computeMax3DVelocities();
-  virtual PetscErrorCode computeMax2DSlidingSpeed();
-  virtual PetscErrorCode adaptTimeStepDiffusivity();
-  virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
+  virtual PetscErrorCode max_timestep_cfl_3d(double &dt_result);
+  virtual PetscErrorCode max_timestep_cfl_2d(double &dt_result);
+  virtual PetscErrorCode max_timestep_diffusivity(double &dt_result);
+  virtual PetscErrorCode max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual PetscErrorCode countCFLViolations(double* CFLviol);
+  virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
@@ -514,6 +515,10 @@ protected:
   PetscErrorCode init_backups();
   PetscErrorCode write_backup();
 
+  // last time at which PISM hit a multiple of X years, see the
+  // timestep_hit_multiples configuration parameter
+  double timestep_hit_multiples_last_time;
+
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
@@ -523,18 +528,6 @@ protected:
 
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
-
-  int event_step,               //!< total time spent doing time-stepping
-    event_velocity,             //!< total velocity computation
-    event_energy,               //!< energy balance computation
-    event_hydrology,            //!< subglacial hydrology computation
-    event_mass,                 //!< mass continuity computation
-    event_age,                  //!< age computation
-    event_beddef,               //!< bed deformation step
-    event_output,               //!< time spent writing the output file
-    event_output_define,        //!< time spent defining variables
-    event_snapshots,            //!< time spent writing snapshots
-    event_backups;              //!< time spent writing backups files
 };
 
 #endif /* __iceModel_hh */

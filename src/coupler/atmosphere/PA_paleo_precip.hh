@@ -22,6 +22,31 @@
 #include "PScalarForcing.hh"
 #include "PAModifier.hh"
 
+/** "Paleo-precipitation correction"
+ *
+ * This class implements the temperature-offset based precipitation
+ * correction for use in paleo simulations.
+ *
+ * @f[
+ * P_{G}(x,y,t) = P_{G}(x,y,0)exp\left[\frac{0.169}{d}\left({\Delta}T(t)+ {\Delta}T_{SC}(t)\right)\right]
+ * @f]
+
+ * where @f$P_G(x,y,0)@f$ is the precipitation for the present
+ * Greenland ice sheet, obtained from the atmosphere model used as an
+ * input of this class. The time dependent precipitation is
+ * @f$P_G(x,y,t)@f$, @f$d@f$ is the @f${\delta}_{18}@f$ conversion factor
+ * of @f$2.4^{\circ}C/\frac{0}{00}@f$, and @f${\Delta}T_{SC}@f$ is a
+ * correction term for the change of altitude of the central dome
+ * during the Greenland ice sheet's evolution. The coefficient
+ * " @f$ 0.169/d @f$ " corresponds to a 7.3% change of precipitation rate
+ * for every @f$1^{\circ}C@f$ of temperature change (Huybrechts et al.
+ * 2002).
+ *
+ * One possible scheme for @f${\Delta}T_{SC}(t)@f$ (used in PISM) is
+ * to take it to be zero, which regards the height correction as
+ * belonging to the set of uncertainties related to the conversion
+ * between isotopic and temperature signals.
+ */
 class PA_paleo_precip : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:

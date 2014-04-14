@@ -29,7 +29,7 @@
 class PIO;
 class LocalInterpCtx;
 
-//! Named constants for IceModelVec*::create.
+//! What "kind" of a vector to create: with or without ghosts.
 enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a

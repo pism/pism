@@ -74,7 +74,7 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \renewcommand{\arraystretch}{1.3}
 \begin{tabular}{ll}
 \textbf{Torsten Albrecht (PIK)} & ice shelf physics and numerics \\
-\textbf{\underline{Andy Aschwanden} (UAF)} & \begin{minipage}[t]{4in} scripts, visualization, thermodynamics, SeaRISE-Greenland, Storglaci\"aren  \end{minipage}  \\
+\textbf{\underline{Andy Aschwanden} (UAF)} & \begin{minipage}[t]{4in} scripts, visualization, thermodynamics, SeaRISE-Greenland  \end{minipage}  \\
 \textbf{Jed Brown (ANL)} & source code original author, SSA numerics, PETSc underpinnings \\
 \textbf{\underline{Ed Bueler} (UAF)} & \begin{minipage}[t]{4in} principal investigator, verification, earth deformation, SIA numerics, thermodynamics, documentation  \end{minipage} \\
 \textbf{Dani DellaGiustina (UAF)} & regional tools and modeling \\
@@ -90,7 +90,7 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 \textbf{Mattias Mengel (PIK)} & marine ice sheet processes \\
 \textbf{David Maxwell (UAF)} & inversion, SSA finite elements, python bindings \\
 \textbf{Ward van Pelt (IMAU)} & hydrology analysis and design \\
-\textbf{Julien Seguinot (INK)} & bug fixes \\
+\textbf{Julien Seguinot (INK)} & bug fixes, temperature index model \\
 \textbf{Ricarda Winkelmann (PIK)} & Antarctica processes, coupling, and modeling  \\
 \textbf{Florian Ziemen (UAF)} & bug fixes, sliding \\
 \end{tabular}
@@ -124,7 +124,7 @@ The Snow, Ice, and Permafrost group\index{Organizations!Geophysical Institute!Sn
 Thanks for comments/questions from many PISM users around the world, including these not already listed as PISM authors:
 
 \begin{quote}
-Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Moritz H\"utten, Thomas Kleiner, Marianne Madsen, Malou Maris, Tim Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
+Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Tore Hattermann, Moritz H\"utten, Thomas Kleiner, Leo van Kampenhout, Marianne Madsen, Malou Maris, Tim Morey, Mirena Olaizola, Christian Rodehacke, Nathan Shemonski, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Synne H\o{}yer Svendsen, Martin Truffer, Shuting Yang, Ryan Woodard
 \end{quote}
 
 \noindent for helpful comments and questions on PISM and this \emph{Manual}.  Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and computations.  Bob Bindshadler, Sophie Nowicki, Jesse Johnson, and others in the SeaRISE\index{SeaRISE!group} group have motivated and assisted PISM development in many ways.  
@@ -208,8 +208,8 @@ Users who want to understand more deeply how PISM is designed, or who want to ex
 \clearpage\newpage
 \input{validation.tex}
 
-\clearpage\newpage
-\input{storglaciaren.tex}
+%\clearpage\newpage
+%\input{storglaciaren.tex}
 
 \clearpage\newpage
 \input{jako.tex}

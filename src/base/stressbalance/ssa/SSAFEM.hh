@@ -82,7 +82,7 @@ protected:
                                              const PISMVector2 *,const double[],
                                              double *,double *,double *,double *);
 
-  void FixDirichletValues(double local_bc_mask[],PISMVector2 **BC_vel,
+  void FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
                           PISMVector2 x[], FEDOFMap &my_dofmap);
 
   virtual PetscErrorCode allocate_fem();
@@ -114,7 +114,8 @@ protected:
   double    m_epsilon_ssa;
 
   FEElementMap element_index;
-  FEQuadrature quadrature;
+  FEQuadrature_Scalar m_quadrature;
+  FEQuadrature_Vector m_quadrature_vector;
   FEDOFMap dofmap;
 };
 

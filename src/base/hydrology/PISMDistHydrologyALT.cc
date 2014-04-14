@@ -22,6 +22,17 @@
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 
+PISMDistHydrologyALT::PISMDistHydrologyALT(IceGrid &g,
+                                           const PISMConfig &conf,
+                                           PISMStressBalance *sb)
+  : PISMDistributedHydrology(g,conf,sb) {
+  // empty
+}
+
+PISMDistHydrologyALT::~PISMDistHydrologyALT() {
+  // empty
+}
+
 
 //! Update the model state variables W,P by running the subglacial hydrology model, but use a different update method for pressure than is in PISMDistributedHydrology::update().
 /*!
@@ -144,23 +155,23 @@ PetscErrorCode PISMDistHydrologyALT::update(double icet, double icedt) {
 
 // ALT start
           // divergence of flux
-          const bool knowne = (M.ice_free_land(i+1,j) || M.ocean(i+1,j)),
-                     knownw = (M.ice_free_land(i-1,j) || M.ocean(i-1,j)),
-                     knownn = (M.ice_free_land(i,j+1) || M.ocean(i,j+1)),
-                     knowns = (M.ice_free_land(i,j-1) || M.ocean(i,j-1));
-          dpsie = psi(i+1,j) - psi(i,j);
-          dpsiw = psi(i,j)   - psi(i-1,j);
-          dpsin = psi(i,j+1) - psi(i,j);
-          dpsis = psi(i,j)   - psi(i,j-1);
+          const bool knowne = (M.ice_free_land(i+1, j) || M.ocean(i+1, j)),
+                     knownw = (M.ice_free_land(i-1, j) || M.ocean(i-1, j)),
+                     knownn = (M.ice_free_land(i, j+1) || M.ocean(i, j+1)),
+                     knowns = (M.ice_free_land(i, j-1) || M.ocean(i, j-1));
+          dpsie = psi(i+1, j) - psi(i, j);
+          dpsiw = psi(i, j)   - psi(i-1, j);
+          dpsin = psi(i, j+1) - psi(i, j);
+          dpsis = psi(i, j)   - psi(i, j-1);
           if (stripwidth > 0.0) {
-            const bool nullij = (in_null_strip(i,j));
-            if (nullij || in_null_strip(i+1,j))
+            const bool nullij = (grid.in_null_strip(i, j, stripwidth));
+            if (nullij || grid.in_null_strip(i+1, j, stripwidth))
               dpsie = 0.0;
-            if (nullij || in_null_strip(i-1,j))
+            if (nullij || grid.in_null_strip(i-1, j, stripwidth))
               dpsiw = 0.0;
-            if (nullij || in_null_strip(i,j+1))
+            if (nullij || grid.in_null_strip(i, j+1, stripwidth))
               dpsin = 0.0;
-            if (nullij || in_null_strip(i,j-1))
+            if (nullij || grid.in_null_strip(i, j-1, stripwidth))
               dpsis = 0.0;
           }
           divflux = 0.0;

@@ -26,6 +26,7 @@
 #include "PISMConfig.hh"
 #include "localMassBalance.hh"
 #include "IceGrid.hh"
+#include <algorithm>
 
 LocalMassBalance::LocalMassBalance(const PISMConfig &myconfig)
   : config(myconfig), m_unit_system(config.get_unit_system()),
@@ -46,11 +47,11 @@ PDDMassBalance::PDDMassBalance(const PISMConfig& myconfig)
 /*! \brief Compute the number of points for temperature and
     precipitation time-series.
  */
-int PDDMassBalance::get_timeseries_length(double dt) {
-  const int    NperYear = static_cast<int>(config.get("pdd_max_evals_per_year"));
+unsigned int PDDMassBalance::get_timeseries_length(double dt) {
+  const unsigned int    NperYear = static_cast<unsigned int>(config.get("pdd_max_evals_per_year"));
   const double dt_years = m_unit_system.convert(dt, "seconds", "years");
 
-  return (int)PetscMax(ceil((NperYear - 1) * (dt_years) + 1), 2);
+  return std::max(1U, static_cast<unsigned int>(ceil(NperYear * dt_years)));
 }
 
 
@@ -167,7 +168,7 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
 
   double
     max_snow_melted = PDDs * ddf.snow,
-    snow_melted, excess_pdds;
+    snow_melted = 0.0, excess_pdds = 0.0;
 
   snow_depth += accumulation;
 
@@ -191,7 +192,7 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
   double
     ice_melted              = excess_pdds * ddf.ice,
     melt                    = snow_melted + ice_melted,
-    ice_created_by_refreeze, runoff;
+    ice_created_by_refreeze = 0.0, runoff = 0.0;
 
   if (refreeze_ice_melt)
     ice_created_by_refreeze = melt * ddf.refreezeFrac;
@@ -242,8 +243,8 @@ PDDrandMassBalance::~PDDrandMassBalance() {
   Implementation of get_PDDs() requires returned N >= 2, so we
   guarantee that.
  */
-int PDDrandMassBalance::get_timeseries_length(double dt) {
-  return PetscMax(static_cast<int>(ceil(dt / seconds_per_day)), 2);
+unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
+  return PetscMax(static_cast<unsigned int>(ceil(dt / seconds_per_day)), 2);
 }
 
 /** 

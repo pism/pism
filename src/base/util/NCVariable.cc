@@ -485,15 +485,15 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 
 //! Check if the range of a \b global Vec `v` is in the range specified by valid_min and valid_max attributes.
 PetscErrorCode NCSpatialVariable::check_range(std::string filename, Vec v) {
-  double min, max;
+  PetscReal min = 0.0, max = 0.0;
   PetscErrorCode ierr;
   bool failed = false;
 
   assert(m_grid != NULL);
 
   // Vec v is always global here (so VecMin and VecMax work as expected)
-  ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
-  ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
+  ierr = VecMin(v, NULL, &min); CHKERRQ(ierr);
+  ierr = VecMax(v, NULL, &max); CHKERRQ(ierr);
 
   const std::string &units_string = get_string("units");
 

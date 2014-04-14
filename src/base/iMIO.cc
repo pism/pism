@@ -336,11 +336,11 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   std::string o_size = get_output_size("-o_size");
 
 #if (PISM_USE_PROJ4==1)
-  if (mapping.has_attribute("proj4")) {
-    output_vars.insert("lon_bounds");
-    output_vars.insert("lat_bounds");
-    vLatitude.metadata().set_string("bounds", "lat_bound");
-    vLongitude.metadata().set_string("bounds", "lon_bound");
+  if (global_attributes.has_attribute("proj4")) {
+    output_vars.insert("lon_bnds");
+    output_vars.insert("lat_bnds");
+    vLatitude.metadata().set_string("bounds", "lat_bnds");
+    vLongitude.metadata().set_string("bounds", "lon_bnds");
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -546,6 +546,23 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
     }
 
     ierr = v->regrid(filename, CRITICAL); CHKERRQ(ierr);
+
+    // Check if the current variable is the same as
+    // IceModel::ice_thickess, then check the range of the ice
+    // thickness
+    if (v == &this->ice_thickness) {
+      double thk_min = 0.0, thk_max = 0.0;
+      ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
+
+      if (thk_max >= grid.Lz + 1e-6) {
+        PetscPrintf(grid.com,
+                    "PISM ERROR: Maximum ice thickness (%f meters)\n"
+                    "            exceeds the height of the computational domain (%f meters).\n"
+                    "            Stopping...\n", thk_max, grid.Lz);
+        PISMEnd();
+      }
+    }
+
   }
 
   return 0;

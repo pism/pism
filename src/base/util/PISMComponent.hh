@@ -89,6 +89,7 @@ class IceModelVec;
  */
 class PISMComponent {
 public:
+  /** Create a PISMComponent instance given a grid and a configuration database. */
   PISMComponent(IceGrid &g, const PISMConfig &conf)
     : grid(g), config(conf) {}
   virtual ~PISMComponent() {}
@@ -124,6 +125,10 @@ protected:
   IceGrid &grid;
   const PISMConfig &config;
 
+  /** @brief This flag determines whether a variable is read from the
+      `-regrid_file` file even if it is not listed among variables in
+      `-regrid_vars`.
+   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
   virtual PetscErrorCode regrid(std::string module_name, IceModelVec *variable,
                                 RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
@@ -135,6 +140,7 @@ protected:
 class PISMComponent_TS : public PISMComponent
 {
 public:
+  /** Create an instance of PISMComponent_TS given a grid and a configuration database. */
   PISMComponent_TS(IceGrid &g, const PISMConfig &conf)
     : PISMComponent(g, conf)
   { m_t = m_dt = GSL_NAN; }

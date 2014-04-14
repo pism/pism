@@ -23,6 +23,11 @@
 #include "bedrockThermalUnit.hh"
 #include "PISMTime.hh"
 #include "PISMEigenCalving.hh"
+#include "PISMOcean.hh"
+#include "PISMSurface.hh"
+#include "PISMHydrology.hh"
+#include <sstream>
+#include <algorithm>
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
@@ -35,15 +40,11 @@ Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect
 `CFLmaxdt`.
  */
-PetscErrorCode IceModel::computeMax3DVelocities() {
-  PetscErrorCode ierr;
-  double *u, *v, *w;
-  double locCFLmaxdt = config.get("maximum_time_step_years", "years", "seconds");
+PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
+  PetscErrorCode ierr = 0;
+  double max_timestep = config.get("maximum_time_step_years", "years", "seconds");
 
-  IceModelVec3 *u3, *v3, *w3;
-
-  MaskQuery mask(vMask);
-
+  IceModelVec3 *u3 = NULL, *v3 = NULL, *w3 = NULL;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
@@ -52,8 +53,11 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = w3->begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
+  MaskQuery mask(vMask);
+  double *u = NULL, *v = NULL, *w = NULL;
+
   // update global max of abs of velocities for CFL; only velocities under surface
-  double   maxu=0.0, maxv=0.0, maxw=0.0;
+  double maxu = 0.0, maxv = 0.0, maxw = 0.0;
   for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
       if (mask.icy(i, j)) {
@@ -62,14 +66,16 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
         ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
         ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
         for (int k = 0; k <= ks; ++k) {
-          const double absu = PetscAbs(u[k]),
-                          absv = PetscAbs(v[k]);
+          const double
+            absu = PetscAbs(u[k]),
+            absv = PetscAbs(v[k]);
           maxu = PetscMax(maxu, absu);
           maxv = PetscMax(maxv, absv);
           maxw = PetscMax(maxw, PetscAbs(w[k]));
           const double denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
-          if (denom > 0.0)
-            locCFLmaxdt = PetscMin(locCFLmaxdt, 1.0 / denom);
+          if (denom > 0.0) {
+            max_timestep = PetscMin(max_timestep, 1.0 / denom);
+          }
         }
       }
     }
@@ -84,7 +90,9 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   ierr = PISMGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMin(&locCFLmaxdt, &CFLmaxdt, grid.com); CHKERRQ(ierr);
+
+  ierr = PISMGlobalMin(&max_timestep, &dt_result, grid.com); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -99,9 +107,9 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
  */
-PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
+PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
   PetscErrorCode ierr;
-  double locCFLmaxdt2D = config.get("maximum_time_step_years", "years", "seconds");
+  double max_timestep = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
@@ -116,21 +124,21 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
       if (mask.icy(i, j)) {
         const double denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
         if (denom > 0.0)
-          locCFLmaxdt2D = PetscMin(locCFLmaxdt2D, 1.0/denom);
+          max_timestep = PetscMin(max_timestep, 1.0/denom);
       }
     }
   }
   ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMin(&max_timestep, &dt_result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Compute the maximum time step allowed by the diffusive SIA.
 /*!
-Updates gDmax.  If gDmax is positive (i.e. if there is diffusion going on) then
+If maximum diffusivity is positive (i.e. if there is diffusion going on) then
 updates dt.  Updates skipCountDown if it is zero.
 
 Note adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio *
@@ -138,40 +146,53 @@ dx^2/maxD (if dx=dy).
 
 Reference: [\ref MortonMayers] pp 62--63.
  */
-PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
-  PetscErrorCode ierr;
+PetscErrorCode IceModel::max_timestep_diffusivity(double &dt_result) {
+  double D_max = 0.0;
+  PetscErrorCode ierr = stress_balance->get_max_diffusivity(D_max); CHKERRQ(ierr);
 
-  ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr);
-
-  double dt_from_diffus = -1.0;
-  if (gDmax > 0.0) {
-    const double adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
+  if (D_max > 0.0) {
     const double
-          gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
-    dt_from_diffus = adaptTimeStepRatio * 2 / (gDmax * gridfactor);
-  }
+      adaptive_timestepping_ratio = config.get("adaptive_timestepping_ratio"),
+      grid_factor                 = 1.0 / (grid.dx*grid.dx) + 1.0 / (grid.dy*grid.dy);
 
-  if (config.get_flag("do_skip") && skipCountDown == 0) {
-    const int skip_max = static_cast<int>(config.get("skip_max"));
-    if (dt_from_diffus > 0.0) {
-      const double  conservativeFactor = 0.95;
-      // typically "dt" in next line is from CFL for advection in temperature equation,
-      //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
-      //   in basal sliding case, or max_dt
-      skipCountDown = (int) floor(conservativeFactor * (dt / dt_from_diffus));
-      skipCountDown = ( skipCountDown >  skip_max) ?  skip_max :  skipCountDown;
-    } else
-      skipCountDown = skip_max;
-  }
-
-  if (dt_from_diffus > 0.0 && dt_from_diffus < dt) {
-    dt = dt_from_diffus;
-    adaptReasonFlag = 'd';
+    dt_result = adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor);
+  } else {
+    dt_result = config.get("maximum_time_step_years", "years", "seconds");
   }
 
   return 0;
 }
 
+/** @brief Compute the skip counter using "long" (usually determined
+ * using the CFL stability criterion) and "short" (typically
+ * determined using the diffusivity-based stability criterion) time
+ * step lengths.
+ *
+ *
+ * @param[in] input_dt long time-step
+ * @param[in] input_dt_diffusivity short time-step
+ *
+ * @return new skip counter
+ */
+unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
+
+  if (config.get_flag("do_skip") == false) {
+    return 0;
+  }
+
+  const unsigned int skip_max = static_cast<int>(config.get("skip_max"));
+
+  if (input_dt_diffusivity > 0.0) {
+    const double conservativeFactor = 0.95;
+    const double counter = floor(conservativeFactor * (input_dt / input_dt_diffusivity));
+    const unsigned int result = static_cast<unsigned int>(counter);
+    return std::min(result, skip_max);
+  } else {
+    return skip_max;
+  }
+
+  return 0;
+}
 
 //! Use various stability criteria to determine the time step for an evolution run.
 /*!
@@ -179,80 +200,170 @@ The main loop in run() approximates many physical processes.  Several of these a
 including the mass continuity and temperature equations in particular, involve stability
 criteria.  This procedure builds the length of the next time step by using these criteria and
 by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived classes.
+
+@param[out] dt_result computed maximum time step
+@param[in,out] skip_counter_result time-step skipping counter
  */
-PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
+PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
   PetscErrorCode ierr;
 
-  bool do_mass_conserve = config.get_flag("do_mass_conserve"),
-    do_energy = config.get_flag("do_energy");
+  const bool updateAtDepth = (skipCountDown == 0);
+  const double time_to_end = grid.time->end() - grid.time->current();
 
-  const double timeToEnd = grid.time->end() - grid.time->current();
+  // FIXME: we should probably create a std::vector<const PISMComponent_TS*>
+  // (or similar) and iterate over that instead.
+  bool restrict_dt = false;
+  const double current_time = grid.time->current();
+  std::map<std::string, double> dt_restrictions;
+
+  // Always consider the maximum allowed time-step length.
+  if (config.get("maximum_time_step_years") > 0.0) {
+    dt_restrictions["max"] = config.get("maximum_time_step_years", "years", "seconds");
+  }
+
+  // Always consider maxdt_temporary.
+  //
+  // FIXME: maxdt_temporary is used by iceCompModel (and only there).
+  // It should probably be removed.
+  if (maxdt_temporary > 0.0) {
+    dt_restrictions["internal (derived class)"] = maxdt_temporary;
+  }
+
+  // Never go past the end of a run.
+  if (time_to_end > 0.0) {
+    dt_restrictions["end of the run"] = time_to_end;
+  }
+
+  //! Always apply the time-step restriction from the
+  //! -ts_{times,file,vars} mechanism (the user asked for it).
+  double ts_dt = 0.0;
+  ierr = ts_max_timestep(current_time, ts_dt, restrict_dt); CHKERRQ(ierr);
+  if (restrict_dt) {
+    dt_restrictions["-ts_... reporting"] = ts_dt;
+  }
+
+  //! Always apply the time-step restriction from the
+  //! -extra_{times,file,vars} mechanism (the user asked for it).
+  double extras_dt = 0.0;
+  ierr = extras_max_timestep(current_time, extras_dt, restrict_dt); CHKERRQ(ierr);
+  if (restrict_dt) {
+    dt_restrictions["-extra_... reporting"] = extras_dt;
+  }
+
   if (dt_force > 0.0) {
-    dt = dt_force; // override usual dt mechanism
-    adaptReasonFlag = 'f';
-    if (timeToEnd < dt) {
-      dt = timeToEnd;
-      adaptReasonFlag = 'e';
-    }
+    dt_restrictions["fixed"] = dt_force;
+    // If the user asked for fixed time-steps, we're done; proceed to
+    // comparing time-step restrictions.
   } else {
-    dt = config.get("maximum_time_step_years", "years", "seconds");
 
-    adaptReasonFlag = 'm';
+    // ... else query sub-models, which might add more time-step
+    // restrictions.
 
-    if ((do_energy == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
-      // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
-      dt_from_cfl = CFLmaxdt;
-      if (dt_from_cfl < dt) {
-        dt = dt_from_cfl;
-        adaptReasonFlag = 'c';
-      }
+    double surface_dt = 0.0;
+    ierr = surface->max_timestep(current_time, surface_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt)  {
+      dt_restrictions["surface"] = surface_dt;
     }
-    if (btu) {
-      double btu_dt;
-      bool restrict;
-      ierr = btu->max_timestep(grid.time->current(),
-                               btu_dt, restrict); CHKERRQ(ierr);
-      if (restrict && btu_dt < dt) {
-        dt = btu_dt;
-        adaptReasonFlag = 'b';
-      }
+
+    double ocean_dt = 0.0;
+    ierr = ocean->max_timestep(current_time, ocean_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt) {
+      dt_restrictions["ocean"] = ocean_dt;
     }
-    if (do_mass_conserve) {
-      // CFLmaxdt2D is set by IceModel::computeMax2DSlidingSpeed()
-      if (CFLmaxdt2D < dt) {
-        dt = CFLmaxdt2D;
-        adaptReasonFlag = 'u';
-      }
+
+    double hydrology_dt = 0.0;
+    ierr = subglacial_hydrology->max_timestep(current_time, hydrology_dt, restrict_dt); CHKERRQ(ierr);
+    if (restrict_dt) {
+      dt_restrictions["hydrology"] = hydrology_dt;
     }
-    if (do_mass_conserve) {
-      // note: also sets skipCountDown;  if skipCountDown > 0 then it will get
-      // decremented at the mass balance step
-      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+
+    if (btu != NULL) {
+      double btu_dt = 0.0;
+      ierr = btu->max_timestep(current_time, btu_dt, restrict_dt); CHKERRQ(ierr);
+      if (restrict_dt) {
+        dt_restrictions["BTU"] = btu_dt;
+      }
     }
 
     if (eigen_calving != NULL) {
-      bool restrict;
-      double dt_from_eigencalving;
-      ierr = eigen_calving->max_timestep(grid.time->current(),
-                                         dt_from_eigencalving, restrict); CHKERRQ(ierr);
-      if (restrict == true && dt_from_eigencalving < dt) {
-        dt = dt_from_eigencalving;
-        adaptReasonFlag = 'k';
+      double eigencalving_dt = 0.0;
+      ierr = eigen_calving->max_timestep(current_time, eigencalving_dt, restrict_dt); CHKERRQ(ierr);
+      if (restrict_dt) {
+        dt_restrictions["eigencalving"] = eigencalving_dt;
       }
     }
 
-    if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
-      dt = maxdt_temporary;
-      adaptReasonFlag = 't';
+    if (config.get_flag("do_energy") == true) {
+      if (updateAtDepth == true) {
+        // this call sets CFLmaxdt
+        ierr = max_timestep_cfl_3d(CFLmaxdt); CHKERRQ(ierr);
+      }
+      dt_restrictions["3D CFL"] = CFLmaxdt;
     }
-    if (timeToEnd < dt) {
-      dt = timeToEnd;
-      adaptReasonFlag = 'e';
-    }
-    if ((adaptReasonFlag == 'm') || (adaptReasonFlag == 't') || (adaptReasonFlag == 'e')) {
-      if (skipCountDown > 1) skipCountDown = 1;
+
+    if (config.get_flag("do_mass_conserve")) {
+      // this call sets CFLmaxdt2D
+      ierr = max_timestep_cfl_2d(CFLmaxdt2D); CHKERRQ(ierr);
+
+      dt_restrictions["2D CFL"] = CFLmaxdt2D;
+
+      double max_dt_diffusivity = 0.0;
+      ierr = max_timestep_diffusivity(max_dt_diffusivity); CHKERRQ(ierr);
+      dt_restrictions["diffusivity"] = max_dt_diffusivity;
     }
   }
+
+  // find the smallest of the max. time-steps reported by boundary models:
+  std::map<std::string, double>::const_iterator j = dt_restrictions.begin();
+  if (dt_restrictions["max"] > 0.0) {
+    adaptReasonFlag = "max";
+  } else {
+    adaptReasonFlag = j->first;
+  }
+  dt_result = dt_restrictions[adaptReasonFlag];
+  while (j != dt_restrictions.end()) {
+    if (j->second < dt_result) {
+      dt_result = j->second;
+      adaptReasonFlag = j->first;
+    }
+    ++j;
+  }
+
+  // Hit multiples of X years, if requested (this has to go last):
+  {
+    const int timestep_hit_multiples = static_cast<int>(config.get("timestep_hit_multiples"));
+    if (timestep_hit_multiples > 0) {
+      const double epsilon = 1.0; // 1 second tolerance
+      double
+        next_time = timestep_hit_multiples_last_time;
+
+      while (grid.time->increment_date(next_time, timestep_hit_multiples) <= current_time + dt_result + epsilon) {
+        next_time = grid.time->increment_date(next_time, timestep_hit_multiples);
+      }
+
+      if (next_time > current_time && next_time <= current_time + dt_result + epsilon) {
+        dt_result = next_time - current_time;
+        timestep_hit_multiples_last_time = next_time;
+
+        std::stringstream str;
+        str << "(hit multiples of " << timestep_hit_multiples << " years; overrides " << adaptReasonFlag << ")";
+        adaptReasonFlag = str.str();
+      }
+    }
+  }
+
+  skip_counter_result = skip_counter(dt_result, dt_restrictions["diffusivity"]);
+
+  // "max", "internal (derived class)", and "end of the run" limit the "big" time-step (in
+  // the context of the "skipping" mechanism), so we might need to
+  // reset the skip_counter_result to 1.
+  if ((adaptReasonFlag == "max" ||
+       adaptReasonFlag == "internal (derived class)" ||
+       adaptReasonFlag == "end of the run") &&
+      skip_counter_result > 1) {
+    skip_counter_result = 1;
+  }
+
   return 0;
 }
 
@@ -302,4 +413,3 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
 
   return 0;
 }
-

@@ -25,10 +25,9 @@ PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   // The value of the objective
   double value = 0;
 
-  double **x_a;
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq];
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   double JxW[FEQuadrature::Nq];
@@ -41,8 +40,8 @@ PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
     for (int j=ys; j<ys+ym; j++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i,j,x_a,x_e);
-      m_quadrature.computeTrialFunctionValues(x_e,x_q);
+      m_dofmap.extractLocalDOFs(i, j, x, x_e);
+      m_quadrature.computeTrialFunctionValues(x_e, x_q);
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
         const double x_qq = x_q[q];
@@ -64,14 +63,12 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   // The value of the objective
   double value = 0;
 
-  double **a_a;
   double a_q[FEQuadrature::Nq];
 
-  double **b_a;
   double b_q[FEQuadrature::Nq];
 
-  ierr = a.get_array(a_a); CHKERRQ(ierr);
-  ierr = b.get_array(b_a); CHKERRQ(ierr);
+  ierr = a.begin_access(); CHKERRQ(ierr);
+  ierr = b.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   double JxW[FEQuadrature::Nq];
@@ -84,8 +81,8 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
     for (int j=ys; j<ys+ym; j++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i,j,m_dofmap,a_a,a_q);
-      m_quadrature.computeTrialFunctionValues(i,j,m_dofmap,b_a,b_q);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, a, a_q);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, b, b_q);
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
         value += JxW[q]*a_q[q]*b_q[q];
@@ -107,13 +104,11 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   // Clear the gradient before doing anything with it!
   ierr = gradient.set(0); CHKERRQ(ierr);
 
-  double **x_a;
   double x_q[FEQuadrature::Nq];
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
-  double **gradient_a;
   double gradient_e[FEQuadrature::Nk];
-  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+  ierr = gradient.begin_access(); CHKERRQ(ierr);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -129,10 +124,10 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
     for (int j=ys; j<ys+ym; j++) {
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i,j,m_grid);
+      m_dofmap.reset(i, j, m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i,j,m_dofmap,x_a,x_q);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, x, x_q);
 
       // Zero out the element-local residual in prep for updating it.
       for(int k=0;k<FEQuadrature::Nk;k++){
@@ -145,7 +140,7 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
           gradient_e[k] += 2*JxW[q]*x_qq*test[q][k].val;
         } // k
       } // q
-      m_dofmap.addLocalResidualBlock(gradient_e,gradient_a);
+      m_dofmap.addLocalResidualBlock(gradient_e, gradient);
     } // j
   } // i
 
@@ -161,11 +156,10 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
   // The value of the objective
   double value = 0;
 
-  PISMVector2 **x_a;
   PISMVector2 x_e[FEQuadrature::Nk];
   PISMVector2 x_q[FEQuadrature::Nq];
 
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   double JxW[FEQuadrature::Nq];
@@ -178,8 +172,8 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
     for (int j=ys; j<ys+ym; j++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_dofmap.extractLocalDOFs(i,j,x_a,x_e);
-      m_quadrature.computeTrialFunctionValues(x_e,x_q);
+      m_dofmap.extractLocalDOFs(i, j, x, x_e);
+      m_quadrature_vector.computeTrialFunctionValues(x_e, x_q);
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
         const PISMVector2 &x_qq = x_q[q];
@@ -201,14 +195,12 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
   // The value of the objective
   double value = 0;
 
-  PISMVector2 **a_a;
   PISMVector2 a_q[FEQuadrature::Nq];
 
-  PISMVector2 **b_a;
   PISMVector2 b_q[FEQuadrature::Nq];
 
-  ierr = a.get_array(a_a); CHKERRQ(ierr);
-  ierr = b.get_array(b_a); CHKERRQ(ierr);
+  ierr = a.begin_access(); CHKERRQ(ierr);
+  ierr = b.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   double JxW[FEQuadrature::Nq];
@@ -221,8 +213,8 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
     for (int j=ys; j<ys+ym; j++) {
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i,j,m_dofmap,a_a,a_q);
-      m_quadrature.computeTrialFunctionValues(i,j,m_dofmap,b_a,b_q);
+      m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, a, a_q);
+      m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, b, b_q);
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
         value += JxW[q]*(a_q[q].u*b_q[q].u+a_q[q].v*b_q[q].v);
@@ -244,13 +236,11 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
   // Clear the gradient before doing anything with it!
   ierr = gradient.set(0); CHKERRQ(ierr);
 
-  PISMVector2 **x_a;
   PISMVector2 x_q[FEQuadrature::Nq];
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 **gradient_a;
   PISMVector2 gradient_e[FEQuadrature::Nk];
-  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+  ierr = gradient.begin_access(); CHKERRQ(ierr);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -266,10 +256,10 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
     for (int j=ys; j<ys+ym; j++) {
 
       // Reset the DOF map for this element.
-      m_dofmap.reset(i,j,m_grid);
+      m_dofmap.reset(i, j, m_grid);
 
       // Obtain values of x at the quadrature points for the element.
-      m_quadrature.computeTrialFunctionValues(i,j,m_dofmap,x_a,x_q);
+      m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, x, x_q);
 
       // Zero out the element-local residual in prep for updating it.
       for(int k=0;k<FEQuadrature::Nk;k++){
@@ -285,7 +275,7 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
           gradient_e[k].v += gcommon*x_qq.v;
         } // k
       } // q
-      m_dofmap.addLocalResidualBlock(gradient_e,gradient_a);
+      m_dofmap.addLocalResidualBlock(gradient_e, gradient);
     } // j
   } // i
 

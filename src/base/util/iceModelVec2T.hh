@@ -37,8 +37,8 @@
 
   IceModelVec2T is always global (%i.e. has no ghosts).
 
-  Both versions of interp() use linear interpolation and extrapolate (by a
-  constant) outside the available range.
+  Both versions of interp() use piecewise-constant interpolation and
+  extrapolate (by a constant) outside the available range.
 
   Usage example:
   \code
