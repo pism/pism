@@ -58,6 +58,9 @@ PISMHydrology::PISMHydrology(IceGrid &g, const PISMConfig &conf)
   }
 }
 
+PISMHydrology::~PISMHydrology() {
+  // empty
+}
 
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;

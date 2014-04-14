@@ -184,6 +184,16 @@ public:
   //!< maximum stencil width supported by the DA in this IceGrid object
 
   PISMTime *time;               //!< The time management object (hides calendar computations)
+
+  //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
+  //! meters around the edge of the computational domain.
+  inline bool in_null_strip(int i, int j, double strip_width) {
+    if (strip_width < 0.0) {
+      return false;
+    }
+    return (x[i] <= x[0] + strip_width || x[i] >= x[Mx-1] - strip_width ||
+            y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
+  }
 protected:
   std::map<int,DM> dms;
   double lambda;         //!< quadratic vertical spacing parameter
