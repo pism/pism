@@ -51,7 +51,7 @@ POGivenTH::POGivenTHConstants::POGivenTHConstants(const PISMConfig &config) {
   ice_density                      = config.get("ice_density");
   ice_specific_heat_capacity       = config.get("ice_specific_heat_capacity");
   ice_thermal_diffusivity          = config.get("ice_thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
-  limit_salinity_range             = true;
+  limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
 }
 
 POGivenTH::POGivenTH(IceGrid &g, const PISMConfig &conf)

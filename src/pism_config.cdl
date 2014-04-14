@@ -616,6 +616,9 @@ netcdf pism_config {
     pism_config:sea_water_specific_heat_capacity = 3985.0;
     pism_config:sea_water_specific_heat_capacity_doc = "J kg-1 Kelvin-1; at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html";
 
+    pism_config:ocean_three_equation_model_clip_salinity = "yes";
+    pism_config:ocean_three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See [@ref HollandJenkins1999].";
+
     pism_config:bedrock_thermal_density = 3300.0;
     pism_config:bedrock_thermal_density_doc = "kg m-3; for bedrock used in thermal model";
 
