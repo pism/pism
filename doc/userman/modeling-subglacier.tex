@@ -146,9 +146,17 @@ Omitting the \texttt{-topg_to_phi} option in the second run would make PISM cont
 
 Following \cite{Tulaczyketal2000}, based on laboratory experiments with till extracted from an ice stream in Antarctica, we use the following parameterization:
 \begin{equation}
-N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right)}  \label{eq:computeNtil}
+N_{til} = \delta P_o \, 10^{(e_0/C_c) \left(1 - (W_{til}/W_{til}^{max})\right).}  \label{eq:computeNtil}
 \end{equation}
 Here $P_o$ is the ice overburden pressure which is determined entirely by the ice thickness and density, $W_{til}=$ \texttt{tillwat} is the effective thickness of water in the till, $W_{til}^{max}$ is the maximum amount of water in the till (see subsection \ref{subsect:subhydro}), and the remaining parameters are set by options in Table \ref{tab:effective-pressure}.
+
+If the \texttt{tauc_add_transportable_water} configuration flag is set (either in the configuration file or using the \intextoption{tauc_add_transportable_water} option), then the above formula becomes
+\begin{equation}
+N_til = \delta P_o 10^{(e_0/C_c) (1 - (W+W_{til})/W_{til}^{max})},\label{eq:computeNtiltransportable}
+\end{equation}
+that is, here the water amount is the sum $W + W_{til}$. This only
+works if $W$ is present, that is, if the the \texttt{routing} model is
+selected; see section \ref{subsect:subhydro}).
 
 \begin{table}
   \centering
