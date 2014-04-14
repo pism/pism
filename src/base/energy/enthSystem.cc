@@ -259,7 +259,7 @@ PetscErrorCode enthSystemCtx::setDirichletBC(WhichBoundary bix, double Y) {
   PetscErrorCode ierr;
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if (gsl_isnan(a0[bix]) == 0 || gsl_isnan(a1[bix]) == 0 || gsl_isnan(b[bix]) == 0) {
-    SETERRQ(PETSC_COMM_SELF, 1, "setting boundary conditions #%d twice in enthSystemCtx", bix);
+    SETERRQ1(PETSC_COMM_SELF, 1, "setting boundary conditions #%d twice in enthSystemCtx", bix);
   }
 #endif
   a0[bix] = 1.0;
@@ -291,8 +291,8 @@ PetscErrorCode enthSystemCtx::setHeatFluxBC(WhichBoundary bix, double hf) {
  PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
-  if (gsl_isnan(a0[bix]) == 0 || gsl_isnan(a1[bix]) == 0 || gsl_isnan(b) == 0) {
-    SETERRQ(PETSC_COMM_SELF, 1, "setting basal boundary conditions twice in enthSystemCtx");
+  if (gsl_isnan(a0[bix]) == 0 || gsl_isnan(a1[bix]) == 0 || gsl_isnan(b[bix]) == 0) {
+    SETERRQ(PETSC_COMM_SELF, 1, "setting boundary conditions twice in enthSystemCtx");
   }
 #endif
 
@@ -397,10 +397,13 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
-  if (gsl_isnan(a0) || gsl_isnan(a1) || gsl_isnan(b)) {
-    SETERRQ(PETSC_COMM_SELF, 1,
-            "solveThisColumn() should only be called after\n"
-            "  setting basal boundary condition in enthSystemCtx"); }
+  for (unsigned int ii = 0; ii < 2; ++ii) {
+    if (gsl_isnan(a0[ii]) || gsl_isnan(a1[ii]) || gsl_isnan(b[ii])) {
+      SETERRQ(PETSC_COMM_SELF, 1,
+              "solveThisColumn() should only be called after\n"
+              "  setting boundary condition in enthSystemCtx");
+    }
+  }
 #endif
 
   // Basal Boundary Condition
@@ -476,9 +479,11 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
   if (pivoterr == 0) {
     // if success, mark column as done by making scheme params and b.c. coeffs invalid
     m_lambda  = -1.0;
-    a0 = GSL_NAN;
-    a1 = GSL_NAN;
-    b  = GSL_NAN;
+    for (unsigned int i = 0; i < 2; ++i) {
+      a0[i] = GSL_NAN;
+      a1[i] = GSL_NAN;
+      b[i]  = GSL_NAN;
+    }
   }
 #endif
   return 0;

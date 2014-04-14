@@ -101,6 +101,12 @@ PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S
   return 0;
 }
 
+// FIXME! What does this do?
+PetscErrorCode PISMSurfaceModel::ice_surface_hflux(IceModelVec2S &result) {
+  (void) result;
+  return 1;                     // why does this return 1?
+}
+
 PetscErrorCode PISMSurfaceModel::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 

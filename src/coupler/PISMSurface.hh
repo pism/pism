@@ -44,7 +44,7 @@ public:
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_hflux(IceModelVec2S &result) { return 1; }
+  virtual PetscErrorCode ice_surface_hflux(IceModelVec2S &result);
   virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 
