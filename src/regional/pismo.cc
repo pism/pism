@@ -94,9 +94,7 @@ PetscErrorCode IceRegionalModel::set_no_model_strip(double strip) {
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
     for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
       for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if (grid.x[i] <= grid.x[0]+strip || grid.x[i] >= grid.x[grid.Mx-1]-strip) {
-          no_model_mask(i, j) = 1;
-        } else if (grid.y[j] <= grid.y[0]+strip || grid.y[j] >= grid.y[grid.My-1]-strip) {
+        if (grid.in_null_strip(i, j, strip) == true) {
           no_model_mask(i, j) = 1;
         } else {
           no_model_mask(i, j) = 0;

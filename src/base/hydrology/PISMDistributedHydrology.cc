@@ -36,6 +36,9 @@ PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const PISMConfig 
     }
 }
 
+PISMDistributedHydrology::~PISMDistributedHydrology() {
+  // empty
+}
 
 PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
   PetscErrorCode ierr;
@@ -70,16 +73,22 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
     "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
     CHKERRQ(ierr);
 
-  bool init_P_from_steady, stripset;
+  bool init_P_from_steady = false, strip_set = false;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-report_mass_accounting",
-      "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
+      "Report to stdout on mass accounting in hydrology models",
+                            report_mass_accounting); CHKERRQ(ierr);
+
+    stripwidth = grid.convert(stripwidth, "m", "km");
     ierr = PISMOptionsReal("-hydrology_null_strip",
-                           "set the width, in km, of the strip around the edge of the computational domain in which hydrology is inactivated",
-                           stripwidth,stripset); CHKERRQ(ierr);
-    if (stripset) stripwidth *= 1.0e3;
+                           "set the width, in km, of the strip around the edge "
+                           "of the computational domain in which hydrology is inactivated",
+                           stripwidth, strip_set); CHKERRQ(ierr);
+    if (strip_set == true) {
+      stripwidth = grid.convert(stripwidth, "km", "m");
+    }
     ierr = PISMOptionsIsSet("-init_P_from_steady",
                             "initialize P from formula P(W) which applies in steady state",
                             init_P_from_steady); CHKERRQ(ierr);
@@ -108,46 +117,47 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  bool i, bootstrap;
+  bool i_set = false, bootstrap_set = false;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options for initializing bwp in the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
-                            bootstrap); CHKERRQ(ierr);
+                            bootstrap_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
-  const PetscReal bwpdefault = config.get("bootstrapping_bwp_value_no_var");
+  const double bwp_default = config.get("bootstrapping_bwp_value_no_var");
   IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
+
   if (P_input != NULL) { // a variable called "bwp" is already in context
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
-  } else if (i || bootstrap) {
+  } else if (i_set || bootstrap_set) {
     std::string filename;
     int start;
-    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
-    if (i) {
+    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
+    if (i_set) {
       bool bwp_exists = false;
       PIO nc(grid, "guess_mode");
       ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
       ierr = nc.inq_var("bwp", bwp_exists); CHKERRQ(ierr);
+      ierr = nc.close(); CHKERRQ(ierr);
       if (bwp_exists == true) {
         ierr = P.read(filename, start); CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(2, grid.com,
-            "PISM WARNING: bwp for hydrology model not found in '%s'."
-            "  Setting it to %.2f ...\n",
-            filename.c_str(),bwpdefault); CHKERRQ(ierr);
-        ierr = P.set(bwpdefault); CHKERRQ(ierr);
+                          "PISM WARNING: bwp for hydrology model not found in '%s'."
+                          "  Setting it to %.2f ...\n",
+                          filename.c_str(), bwp_default); CHKERRQ(ierr);
+        ierr = P.set(bwp_default); CHKERRQ(ierr);
       }
-      ierr = nc.close(); CHKERRQ(ierr);
     } else {
-      ierr = P.regrid(filename, OPTIONAL, bwpdefault); CHKERRQ(ierr);
+      ierr = P.regrid(filename, OPTIONAL, bwp_default); CHKERRQ(ierr);
     }
   } else {
-    ierr = P.set(bwpdefault); CHKERRQ(ierr);
+    ierr = P.set(bwp_default); CHKERRQ(ierr);
   }
 
   ierr = regrid("PISMDistributedHydrology", &P); CHKERRQ(ierr); //  we could be asked to regrid from file
@@ -252,36 +262,37 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
   PetscErrorCode ierr;
   double CC = config.get("hydrology_cavitation_opening_coefficient") /
                     (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
-            powglen = 1.0 / config.get("Glen_exponent"),
-            Wr = config.get("hydrology_roughness_scale"),
-            sb, Wratio;
+    powglen = 1.0 / config.get("Glen_exponent"),
+    Wr = config.get("hydrology_roughness_scale");
+
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = Pover.begin_access(); CHKERRQ(ierr);
-  ierr = cbase.begin_access(); CHKERRQ(ierr);
+
+  ierr = W.begin_access();      CHKERRQ(ierr);
+  ierr = Pover.begin_access();  CHKERRQ(ierr);
+  ierr = cbase.begin_access();  CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      sb     = pow(CC * cbase(i,j),powglen);
-      if (W(i,j) == 0.0) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      double sb = pow(CC * cbase(i, j), powglen);
+      if (W(i, j) == 0.0) {
         // see P(W) formula in steady state; note P(W) is continuous (in steady
         // state); these facts imply:
         if (sb > 0.0)
-          result(i,j) = 0.0;        // no water + cavitation = underpressure
+          result(i, j) = 0.0;        // no water + cavitation = underpressure
         else
-          result(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
+          result(i, j) = Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
       } else {
-        Wratio = PetscMax(0.0,Wr - W(i,j)) / W(i,j);
+        double Wratio = PetscMax(0.0, Wr - W(i, j)) / W(i, j);
         // in cases where steady state is actually possible this will
         //   come out positive, but otherwise we should get underpressure P=0,
         //   and that is what it yields
-        result(i,j) = PetscMax( 0.0,Pover(i,j) - sb * pow(Wratio,powglen) );
+        result(i, j) = PetscMax(0.0, Pover(i, j) - sb * pow(Wratio, powglen));
       }
     }
   }
-  ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = Pover.end_access(); CHKERRQ(ierr);
-  ierr = cbase.end_access(); CHKERRQ(ierr);
+  ierr = W.end_access();      CHKERRQ(ierr);
+  ierr = Pover.end_access();  CHKERRQ(ierr);
+  ierr = cbase.end_access();  CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -526,4 +537,3 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
   }
   return 0;
 }
-
