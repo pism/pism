@@ -883,6 +883,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("clip_shelf_base_salinity",
+                                 "ocean_three_equation_model_clip_salinity"); CHKERRQ(ierr);
+
   // old options
   ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",
                                    "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
