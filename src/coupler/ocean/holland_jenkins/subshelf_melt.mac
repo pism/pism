@@ -1,0 +1,22 @@
+/* This is the model described in
+@book{Hellmeretal1998,
+  title={{O}ceanic erosion of a floating {A}ntarctic glacier in the {A}mundsen {S}ea},
+  author={Hellmer, Hartmut H. and Jacobs, Stanley S. and Jenkins, Adrian},
+  year={1998},
+  pages={83--99},
+  publisher={American Geophysical Union}
+}
+*/
+
+/* define all necessary variables */
+load("common_definitions.mac")$
+
+/* Temperature gradient at the base of the ice; assume that there is
+melt at the shelf base */
+grad_T : - delta_T * h_dot / ice_thermal_diffusivity$
+
+tex('grad_T = grad_T)$
+
+/* solve salinity and heat flux balance equations and find
+coefficients of the quadratic equation for the shelf base salinity */
+load("flux_balance.mac")$
