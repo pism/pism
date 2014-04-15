@@ -25,7 +25,8 @@
 #include "PISMAtmosphere.hh"
 #include "Mask.hh"
 
-#include <assert.h>
+#include <algorithm>            // std::min
+#include <cassert>
 
 ///// PISM surface model implementing a PDD scheme.
 
@@ -100,6 +101,38 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   if (sd_ref_year_set) {
     sd_ref_time = grid.convert(sd_ref_year, "years", "seconds");
+  }
+
+  if (sd_file_set == true) {
+    // find out how many records there are in the file and set the
+    // air_temp_sd buffer size
+
+    unsigned int n_records = 0;
+    std::string short_name = "air_temp_sd";
+    unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size");
+
+    PIO nc(grid.com, "netcdf3", grid.get_unit_system());
+    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.inq_nrecords(short_name, "", n_records); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    // If -..._period is not set, make ..._n_records the minimum of the
+    // buffer size and the number of available records. Otherwise try
+    // to keep all available records in memory.
+    if (sd_period == 0)
+      n_records = std::min(n_records, buffer_size);
+
+    if (n_records < 1) {
+      PetscPrintf(grid.com, "PISM ERROR: Can't find '%s' in %s.\n",
+                  short_name.c_str(), filename.c_str());
+      PISMEnd();
+    }
+
+    air_temp_sd.set_n_records(n_records);
+
+  } else {
+    // using constant standard deviation, so set buffer size to 1
+    air_temp_sd.set_n_records(1);
   }
 
   ierr = air_temp_sd.create(grid, "air_temp_sd", false); CHKERRQ(ierr);
@@ -223,7 +256,6 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
                       ); CHKERRQ(ierr);
     ierr = air_temp_sd.set(base_pddStdDev); CHKERRQ(ierr);
   }
-  air_temp_sd.set_n_evaluations_per_year(config.get("climate_forcing_evaluations_per_year"));
 
   std::string input_file;
   bool do_regrid = false;
@@ -280,11 +312,6 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   // are correct:
   ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
 
-  // update standard deviation time series if available
-  if (sd_file_set == true) {
-    ierr = air_temp_sd.average(my_t, my_dt); CHKERRQ(ierr);
-  }
-
   // set up air temperature and precipitation time series
   int Nseries = mbscheme->get_timeseries_length(my_dt);
 
@@ -292,6 +319,12 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   std::vector<double> ts(Nseries), T(Nseries), S(Nseries), P(Nseries), PDDs(Nseries);
   for (int k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
+
+  // update standard deviation time series
+  if (sd_file_set == true) {
+    ierr = air_temp_sd.update(my_t, my_dt); CHKERRQ(ierr);
+    ierr = air_temp_sd.init_interpolation(&ts[0], Nseries); CHKERRQ(ierr);
+  }
 
   MaskQuery m(*mask);
   ierr = mask->begin_access(); CHKERRQ(ierr);
@@ -338,7 +371,13 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
       ierr = atmosphere->precip_time_series(i, j, &P[0]); CHKERRQ(ierr);
 
       // interpolate temperature standard deviation time series
-      ierr = air_temp_sd.interp(i, j, &S[0]); CHKERRQ(ierr);
+      if (sd_file_set == true) {
+        ierr = air_temp_sd.interp(i, j, &S[0]); CHKERRQ(ierr);
+      } else {
+        for (int k = 0; k < Nseries; ++k) {
+          S[k] = air_temp_sd(i, j);
+        }
+      }
 
       if (faustogreve != NULL) {
         // we have been asked to set mass balance parameters according to
@@ -531,6 +570,7 @@ PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, c
   }
 
   if (set_contains(vars, "air_temp_sd")) {
+    ierr = air_temp_sd.average(m_t, m_dt); CHKERRQ(ierr);
     ierr = air_temp_sd.write(nc); CHKERRQ(ierr);
     vars.erase("air_temp_sd");
   }
