@@ -21,6 +21,7 @@
 #include "PISMVars.hh"
 #include "pism_options.hh"
 #include "Mask.hh"
+#include <cmath>
 
 //! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 /*! \file PISMMohrCoulombYieldStress.cc
@@ -421,7 +422,10 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
             (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
           water = tillwat_max;
         } else if (addtransportable == true) {
-          water = m_tillwat(i,j) + m_bwat(i,j);
+          // FIXME the units of the next line are correct if we say
+          //   "water = m_tillwat(i,j) + BB * log(1.0 + m_bwat(i,j) / BB);"
+          //   where BB = 1 meter; clearly BB could be an adjustable constant
+          water = m_tillwat(i,j) + log(1.0 + m_bwat(i,j));
         }
 
         double Ntil = delta * m_Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / tillwat_max)));
