@@ -383,7 +383,9 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
                c0          = config.get("till_c_0"),
                e0overCc    = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
-               delta       = config.get("till_effective_fraction_overburden");
+               delta       = config.get("till_effective_fraction_overburden"),
+               tlftw       = config.get("till_log_factor_transportable_water");
+
 
   PISMRoutingHydrology* hydrowithtransport = dynamic_cast<PISMRoutingHydrology*>(m_hydrology);
   if (m_hydrology) {
@@ -422,10 +424,7 @@ PetscErrorCode PISMMohrCoulombYieldStress::update(double my_t, double my_dt) {
             (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
           water = tillwat_max;
         } else if (addtransportable == true) {
-          // FIXME the units of the next line are correct if we say
-          //   "water = m_tillwat(i,j) + BB * log(1.0 + m_bwat(i,j) / BB);"
-          //   where BB = 1 meter; clearly BB could be an adjustable constant
-          water = m_tillwat(i,j) + log(1.0 + m_bwat(i,j));
+          water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
         }
 
         double Ntil = delta * m_Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / tillwat_max)));

@@ -125,7 +125,7 @@ netcdf pism_config {
     pism_config:tauc_slippery_grounding_lines_doc = "If yes, at icy grounded locations with bed elevations below sea level, within one cell of floating ice or ice-free ocean, make tauc as low as possible from the Mohr-Coulomb relation.  Specifically, at such locations replace the normally-computed tauc from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
 
     pism_config:tauc_add_transportable_water = "no";
-    pism_config:tauc_add_transportable_water_doc = "If yes, when computing tauc from Mohr-Coulomb relation, use the sum of water amount in the till plus water amount in the transport system.  Normally only the water in the till is used.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
+    pism_config:tauc_add_transportable_water_doc = "If 'yes' then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
 
 
     // parameters:
@@ -291,6 +291,9 @@ netcdf pism_config {
 
     pism_config:till_effective_fraction_overburden = 0.02;
     pism_config:till_effective_fraction_overburden_doc = "[pure]; = delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [@ref Tulaczyketal2000]; default value from Greenland and Antarctic model runs";
+
+    pism_config:till_log_factor_transportable_water = 0.1;
+    pism_config:till_log_factor_transportable_water_doc = "m; If tauc_add_transportable_water = yes then the water amount in the transport system is added to tillwat in determining tauc.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
 
     pism_config:mu_sliding = 0.0;
     pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. *This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.*  See Appendix B of [@ref BBssasliding] for the dangers in this mechanism.";
