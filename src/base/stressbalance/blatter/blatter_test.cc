@@ -37,7 +37,7 @@ static PetscErrorCode get_grid_from_file(std::string filename, IceGrid &grid) {
 
   PIO nc(grid, "guess_mode");
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_grid("bedrock_altitude", &grid, NOT_PERIODIC); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     PIO pio(grid, grid.config.get_string("output_format"));
 
-    ierr = pio.open(output_file, PISM_WRITE); CHKERRQ(ierr);
+    ierr = pio.open(output_file, PISM_READWRITE_MOVE); CHKERRQ(ierr);
     ierr = pio.def_time(config.get_string("time_dimension_name"),
                         grid.time->calendar(),
                         grid.time->CF_units_string()); CHKERRQ(ierr);

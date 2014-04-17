@@ -266,7 +266,7 @@ PetscErrorCode BlatterStressBalance::setup() {
 PetscErrorCode BlatterStressBalance::initialize_ice_hardness() {
   PetscErrorCode ierr;
   PetscScalar ***hardness, *E;
-  int Mz_fem = static_cast<int>(config.get("blatter_Mz"));
+  unsigned int Mz_fem = static_cast<unsigned int>(config.get("blatter_Mz"));
   DM da;
 
 
@@ -364,7 +364,7 @@ PetscErrorCode BlatterStressBalance::transfer_velocity() {
       m_velocity(i,j).v = vbar * (0.5*dz_fem) / thk;
       
       // compute 3D horizontal velocity
-      int current_level = 0;
+      unsigned int current_level = 0;
       for (unsigned int k = 0; k < grid.Mz; ++k) {
 
 	// find the FEM grid level just below the current PISM grid level
@@ -413,7 +413,7 @@ PetscErrorCode BlatterStressBalance::save_velocity() {
   PetscScalar *u_ij, *v_ij;
   DM da;
   Vec X;
-  int Mz_fem = static_cast<int>(config.get("blatter_Mz"));
+  unsigned int Mz_fem = static_cast<unsigned int>(config.get("blatter_Mz"));
 
   ierr = SNESGetDM(this->snes, &da); CHKERRQ(ierr);
   ierr = SNESGetSolution(this->snes, &X); CHKERRQ(ierr);
