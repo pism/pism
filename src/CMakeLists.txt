@@ -144,7 +144,6 @@ add_library (pismbase
   base/hydrology/PISMNullTransportHydrology.cc
   base/hydrology/PISMRoutingHydrology.cc
   base/hydrology/PISMDistributedHydrology.cc
-  base/hydrology/PISMDistHydrologyALT.cc
   base/hydrology/hydrology_diagnostics.cc
   base/calving/connected_components.cc
   base/calving/PISMIcebergRemover.cc
