@@ -71,12 +71,16 @@ This integral is used for the expected number of positive degree days, unless th
 user selects a random PDD implementation with `-pdd_rand` or
 `-pdd_rand_repeatable`.  The user can choose \f$\sigma\f$ by option
 `-pdd_std_dev`.  Note that the integral is over a time interval of length
-`dt` instead of a whole year as stated in \ref CalovGreve05 .
+`dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero, return the positive part of `TacC`.
  */
 double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 
-  const double Z = TacC / (sqrt(2.0) * sigma);
-  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
+  if (sigma == 0) {
+    return std::max(TacC, 0.0);
+  } else {
+    const double Z = TacC / (sqrt(2.0) * sigma);
+    return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
+  }
 }
 
 
@@ -90,12 +94,12 @@ double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
  * @param N length of the T array
  * @param[out] PDDs pointer to a pre-allocated array with N-1 elements
  */
-void PDDMassBalance::get_PDDs(double pddStdDev, double dt_series,
+void PDDMassBalance::get_PDDs(double *S, double dt_series,
                               double *T, unsigned int N, double *PDDs) {
   const double h_days = dt_series / seconds_per_day;
 
   for (unsigned int k = 0; k < N; ++k) {
-    PDDs[k] = h_days * CalovGreveIntegrand(pddStdDev, T[k] - pdd_threshold_temp);
+    PDDs[k] = h_days * CalovGreveIntegrand(S[k], T[k] - pdd_threshold_temp);
   }
 }
 
@@ -259,13 +263,13 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  * @param N number of points in the temperature time-series, each corresponds to a sub-interval
  * @param PDDs pointer to a pre-allocated array of length N
  */
-void PDDrandMassBalance::get_PDDs(double pddStdDev, double dt_series,
+void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
                                   double *T, unsigned int N, double *PDDs) {
   const double h_days = dt_series / seconds_per_day;
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
-    double T_k = T[k] + gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
+    double T_k = T[k] + gsl_ran_gaussian(pddRandGen, S[k]); // add random: N(0,sigma)
 
     if (T_k > pdd_threshold_temp)
       PDDs[k] = h_days * (T_k - pdd_threshold_temp);
