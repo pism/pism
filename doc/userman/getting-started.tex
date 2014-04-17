@@ -69,7 +69,7 @@ mpiexec -n 4 pismr -boot_file pism_Greenland_5km_v1.1.nc -Mx 76 -My 141 \
   -calving ocean_kill pism_Greenland_5km_v1.1.nc -sia_e 3.0 \
   -ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0 \
   -extra_file ex_g20km_10ka.nc -extra_times -10000:100:0 \
-  -extra_vars diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf \
+  -extra_vars diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf \
   -o g20km_10ka.nc
 \end{verbatim}
 \normalsize
@@ -130,7 +130,7 @@ The whole first run took about 21 minutes (0.3435 wall clock hours) on a 2012-er
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-mask}}
-\caption{Fields from output file \texttt{g20km_10ka.nc}.  Left: \texttt{usurf}, the ice sheet surface elevation in meters.  Middle: \texttt{csurf}, the surface speed in meters/year ($=$ m/a), including the 100 m/a contour (solid black).  Right: \texttt{mask}, with 0 = ice-free land, 2 = ice, 4 = ice-free ocean.}
+\caption{Fields from output file \texttt{g20km_10ka.nc}.  Left: \texttt{usurf}, the ice sheet surface elevation in meters.  Middle: \texttt{velsurf_mag}, the surface speed in meters/year ($=$ m/a), including the 100 m/a contour (solid black).  Right: \texttt{mask}, with 0 = ice-free land, 2 = ice, 4 = ice-free ocean.}
 \label{fig:firstoutput}
 \end{figure}
 
@@ -158,21 +158,21 @@ $ ncdump -h g20km_10ka_hy.nc |grep history
 \end{verbatim}
 to see the measurement on your machine.  Note that the number reported as ``\texttt{PETSc MFlops}'' from this run is about $2.6 \times 10^5$, many orders of magnitude larger than the previous run.  This is because calls to the PETSc library are used when solving the non-linear and non-local SSA stress balance in parallel.
 
-The results of this run are shown in Figure \ref{fig:secondoutputcoarse}.  We show the basal sliding speed field \texttt{cbase} in this Figure, where Figure \ref{fig:firstoutput} had the \texttt{mask}, but the reader can check that \texttt{cbase}=0 in the nonsliding SIA-only result \texttt{g20km_10ka.nc}.
+The results of this run are shown in Figure \ref{fig:secondoutputcoarse}.  We show the basal sliding speed field \texttt{velbase_mag} in this Figure, where Figure \ref{fig:firstoutput} had the \texttt{mask}, but the reader can check that \texttt{velbase_mag}=0 in the nonsliding SIA-only result \texttt{g20km_10ka.nc}.
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-cbase}}
-\caption{Fields from output file \texttt{g20km_10ka_hy.nc}.  Left: \texttt{usurf}, the ice sheet surface elevation in meters.  Middle: \texttt{csurf}, the surface speed in m/a, including the 100 m/a contour (solid black).  Right: the sliding speed \texttt{cbase}, shown the same way as \texttt{csurf}.}
+\caption{Fields from output file \texttt{g20km_10ka_hy.nc}.  Left: \texttt{usurf}, the ice sheet surface elevation in meters.  Middle: \texttt{velsurf_mag}, the surface speed in m/a, including the 100 m/a contour (solid black).  Right: the sliding speed \texttt{velbase_mag}, shown the same way as \texttt{velsurf_mag}.}
 \label{fig:secondoutputcoarse}
 \end{figure}
 
-The basal sliding velocity, though critical to the response of the ice to changes in climate, is essentially unobservable.  On the other hand, because of relatively-recent advances in radar and image technology and processing \cite{Joughin2002}, the surface velocity of an ice sheet is an observable.  So, how good is our model result for \texttt{csurf}?  Figure \ref{fig:csurfvsobserved} compares the radar-observed \texttt{surfvelmag} field in the downloaded SeaRISE-Greenland data file \texttt{Greenland_5km_v1.1.nc} with the just-computed PISM result.
+The basal sliding velocity, though critical to the response of the ice to changes in climate, is essentially unobservable.  On the other hand, because of relatively-recent advances in radar and image technology and processing \cite{Joughin2002}, the surface velocity of an ice sheet is an observable.  So, how good is our model result for \texttt{velsurf_mag}?  Figure \ref{fig:csurfvsobserved} compares the radar-observed \texttt{surfvelmag} field in the downloaded SeaRISE-Greenland data file \texttt{Greenland_5km_v1.1.nc} with the just-computed PISM result.
 
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[height=2.75in,keepaspectratio=true]{Greenland-5km-v1p1-surfvelmag} \includegraphics[height=2.75in,keepaspectratio=true]{g20km-10ka-hy-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-csurf}}
-\caption{Comparing observed and modeled surface speed.  All figures have a common scale (m/a), with 100 m/a contour shown (solid black).  Left: \texttt{surfvelmag}, the observed values from SeaRISE data file \texttt{Greenland_5km_v1.1.nc}.  Middle: \texttt{csurf} from \texttt{g20km_10ka_hy.nc}.  Right: \texttt{csurf} from \texttt{g10km_10ka_hy.nc}.}
+\caption{Comparing observed and modeled surface speed.  All figures have a common scale (m/a), with 100 m/a contour shown (solid black).  Left: \texttt{surfvelmag}, the observed values from SeaRISE data file \texttt{Greenland_5km_v1.1.nc}.  Middle: \texttt{velsurf_mag} from \texttt{g20km_10ka_hy.nc}.  Right: \texttt{velsurf_mag} from \texttt{g10km_10ka_hy.nc}.}
 \label{fig:csurfvsobserved}
 \end{figure}
 
@@ -201,7 +201,7 @@ Some fields from the result \verb|g10km_10ka_hy.nc| are shown in Figure \ref{fig
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-usurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-csurf} \includegraphics[height=2.75in,keepaspectratio=true]{g10km-10ka-hy-cbase}}
-\caption{Fields from output file \texttt{g10km_10ka_hy.nc}.  Compare Figure \ref{fig:secondoutputcoarse}, which only differs by resolution.  Left: \texttt{usurf} in meters.  Middle: \texttt{csurf} in m/a.  Right: \texttt{cbase} in m/a.}
+\caption{Fields from output file \texttt{g10km_10ka_hy.nc}.  Compare Figure \ref{fig:secondoutputcoarse}, which only differs by resolution.  Left: \texttt{usurf} in meters.  Middle: \texttt{velsurf_mag} in m/a.  Right: \texttt{velbase_mag} in m/a.}
 \label{fig:secondoutputfiner}
 \end{figure}
 
@@ -258,7 +258,7 @@ $ PARAM_PPQ=0.5 REGRIDFILE=g20km_10ka_hy.nc \
 \end{verbatim}
 This run takes about forty minutes on a 2012-era 4 core laptop.
 
-The fields \texttt{usurf}, \texttt{csurf}, and \texttt{cbase} from file \texttt{g20km_25ka_paleo.nc} are sufficiently similar to those shown in Figure \ref{fig:secondoutputcoarse} that they are not shown here.  Close inspection reveals differences, but of course these runs only differ in the applied climate and run duration and not in resolution or ice dynamics parameters.
+The fields \texttt{usurf}, \texttt{velsurf_mag}, and \texttt{velbase_mag} from file \texttt{g20km_25ka_paleo.nc} are sufficiently similar to those shown in Figure \ref{fig:secondoutputcoarse} that they are not shown here.  Close inspection reveals differences, but of course these runs only differ in the applied climate and run duration and not in resolution or ice dynamics parameters.
 
 \begin{figure}[ht]
 \centering
@@ -323,11 +323,11 @@ The 10 km run takes under one hour, and the 5 km run takes under 3 hours, on the
 \begin{figure}[ht]
 \centering
 \mbox{\includegraphics[width=1.65in,keepaspectratio=true]{g40km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g20km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g10km-detail} \includegraphics[width=1.65in,keepaspectratio=true]{g5km-detail} }
-\caption{Detail of field \texttt{csurf} showing the central western coast of Greenland, including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5 km (left-to-right).  Color scheme and scale, including 100 m/a contour (solid black), are all identical to \texttt{csurf} Figures \ref{fig:secondoutputcoarse}, \ref{fig:csurfvsobserved}, and \ref{fig:secondoutputfiner}.}
+\caption{Detail of field \texttt{velsurf_mag} showing the central western coast of Greenland, including Jakobshavn Isbrae (lowest major flow), from runs of resolution 40, 20, 10, 5 km (left-to-right).  Color scheme and scale, including 100 m/a contour (solid black), are all identical to \texttt{velsurf_mag} Figures \ref{fig:secondoutputcoarse}, \ref{fig:csurfvsobserved}, and \ref{fig:secondoutputfiner}.}
 \label{fig:gridseqdetail}
 \end{figure}
 
-Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed \texttt{csurf} from files \texttt{g10km_gridseq.nc} and \texttt{g5km_gridseq.nc} is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files \texttt{g40km_10ka_hy.nc} and \texttt{g20km_10ka_hy.nc}; the former is an added 40 km result using an obvious modification of the run in section \ref{subsect:ssarun}.
+Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Greenland, with several outlet glaciers visible, suggests what is accomplished: the high resolution runs have separated outlet glacier flows, as they are in fact.  Note that all of these results were generated in a few wall clock hours on a laptop!  The surface speed \texttt{velsurf_mag} from files \texttt{g10km_gridseq.nc} and \texttt{g5km_gridseq.nc} is shown (two right-most subfigures).  In the two left-hand subfigures we show the same field from NetCDF files \texttt{g40km_10ka_hy.nc} and \texttt{g20km_10ka_hy.nc}; the former is an added 40 km result using an obvious modification of the run in section \ref{subsect:ssarun}.
 
 \begin{figure}[ht]
 \centering
@@ -438,7 +438,7 @@ On the same old 2012-era 4 core laptop, \texttt{runsequential.sh} took a total o
 
 \mbox{\includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-1-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-3-csurf.png} \includegraphics[height=2.5in,keepaspectratio=true]{p10km-1-6-csurf.png} \qquad \hspace{1.87in}}
 
-\caption{Surface speed \texttt{csurf} from a 10 km grid parameter study.  Right-most subfigure is observed data from \texttt{Greenland_5km_v1.1.nc}.  Top row: $q=0.1$ and $e=1,3,6$ (left-to-right).  Middle row: $q=0.5$.  Bottom row: $q=1.0$.  All subfigures have common color scale (velocity m/a), as shown in the right-most figure, with 100 m/a contour shown in all cases (solid black).}
+\caption{Surface speed \texttt{velsurf_mag} from a 10 km grid parameter study.  Right-most subfigure is observed data from \texttt{Greenland_5km_v1.1.nc}.  Top row: $q=0.1$ and $e=1,3,6$ (left-to-right).  Middle row: $q=0.5$.  Bottom row: $q=1.0$.  All subfigures have common color scale (velocity m/a), as shown in the right-most figure, with 100 m/a contour shown in all cases (solid black).}
 \label{fig:paramstudy}
 \end{figure}
 

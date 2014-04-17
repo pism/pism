@@ -18,7 +18,7 @@ stressbalance="-ssa_method fd -stress_balance ssa -ssa_dirichlet_bc $pc"
 
 calving="-calving thickness_calving -thickness_calving_threshold 300"
 
-diagnostics="thk,mask,cbar,Href,velbar,discharge_flux_cumulative"
+diagnostics="thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative"
 
 viewers="-view_map $diagnostics"
 

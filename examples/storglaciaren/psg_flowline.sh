@@ -119,7 +119,7 @@ NOMASSRUNLENGTH=500
 
 STEP=1
 
-EXVARS="enthalpybase,temppabase,tempicethk,bmelt,tillwat,usurf,csurf,mask,hardav,thk" # add mask, so that check_stationarity.py ignores ice-free areas.
+EXVARS="enthalpybase,temppabase,tempicethk,bmelt,tillwat,usurf,velsurf_mag,mask,hardav,thk" # add mask, so that check_stationarity.py ignores ice-free areas.
 
 PREFIX=psg_flowline_
 

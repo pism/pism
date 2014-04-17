@@ -875,7 +875,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   //     (1) the numerical computation *has* already occurred, in run(),
   //           and we just overwrite it with the exact solution here
   //     (2) certain diagnostic quantities like dHdt are computed numerically,
-  //           and not overwritten here; while cbar,csurf,cflx,wsurf are diagnostic
+  //           and not overwritten here; while velbar_mag,velsurf_mag,flux_mag,wsurf are diagnostic
   //           quantities recomputed at the end of the run for writing into
   //           NetCDF, in particular dHdt is not recomputed before being written
   //           into the output file, so it is actually numerical

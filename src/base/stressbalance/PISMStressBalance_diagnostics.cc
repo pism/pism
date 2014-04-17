@@ -28,10 +28,10 @@ void PISMStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*> &
 
   dict["bfrict"]   = new PSB_bfrict(this, grid, *m_variables);
 
-  dict["cbar"]     = new PSB_cbar(this,     grid, *m_variables);
-  dict["cflx"]     = new PSB_cflx(this,     grid, *m_variables);
-  dict["cbase"]    = new PSB_cbase(this,    grid, *m_variables);
-  dict["csurf"]    = new PSB_csurf(this,    grid, *m_variables);
+  dict["velbar_mag"]     = new PSB_velbar_mag(this,     grid, *m_variables);
+  dict["flux_mag"]     = new PSB_flux_mag(this,     grid, *m_variables);
+  dict["velbase_mag"]    = new PSB_velbase_mag(this,    grid, *m_variables);
+  dict["velsurf_mag"]    = new PSB_velsurf_mag(this,    grid, *m_variables);
 
   dict["uvel"]     = new PSB_uvel(this, grid, *m_variables);
   dict["vvel"]     = new PSB_vvel(this, grid, *m_variables);
@@ -141,11 +141,11 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_cbar::PSB_cbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+PSB_velbar_mag::PSB_velbar_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("cbar", grid);
+  vars[0].init_2d("velbar_mag", grid);
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m s-1", "m year-1", 0);
@@ -154,7 +154,7 @@ PSB_cbar::PSB_cbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   vars[0].set_double("valid_min", 0.0);
 }
 
-PetscErrorCode PSB_cbar::compute(IceModelVec* &output) {
+PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec *tmp;
   IceModelVec2V *velbar_vec;
@@ -165,7 +165,7 @@ PetscErrorCode PSB_cbar::compute(IceModelVec* &output) {
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "cbar", WITHOUT_GHOSTS);
+  ierr = result->create(grid, "velbar_mag", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   // compute vertically-averaged horizontal velocity:
@@ -186,11 +186,11 @@ PetscErrorCode PSB_cbar::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_cflx::PSB_cflx(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+PSB_flux_mag::PSB_flux_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("cflx", grid);
+  vars[0].init_2d("flux_mag", grid);
 
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
@@ -198,7 +198,7 @@ PSB_cflx::PSB_cflx(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   vars[0].set_double("valid_min", 0.0);
 }
 
-PetscErrorCode PSB_cflx::compute(IceModelVec* &output) {
+PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *thickness, *result;
   IceModelVec *tmp;
@@ -208,8 +208,8 @@ PetscErrorCode PSB_cflx::compute(IceModelVec* &output) {
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   // Compute the vertically-average horizontal ice velocity:
-  PSB_cbar cbar(model, grid, variables);
-  ierr = cbar.compute(tmp); CHKERRQ(ierr);
+  PSB_velbar_mag velbar_mag(model, grid, variables);
+  ierr = velbar_mag.compute(tmp); CHKERRQ(ierr);
   // NB: the call above allocates memory
 
   result = dynamic_cast<IceModelVec2S*>(tmp);
@@ -233,11 +233,11 @@ PetscErrorCode PSB_cflx::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_cbase::PSB_cbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+PSB_velbase_mag::PSB_velbase_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("cbase", grid);
+  vars[0].init_2d("velbase_mag", grid);
 
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
@@ -245,7 +245,7 @@ PSB_cbase::PSB_cbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   vars[0].set_double("valid_min", 0.0);
 }
 
-PetscErrorCode PSB_cbase::compute(IceModelVec* &output) {
+PetscErrorCode PSB_velbase_mag::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S tmp, *result, *thickness;
@@ -253,7 +253,7 @@ PetscErrorCode PSB_cbase::compute(IceModelVec* &output) {
   ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "cbase", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = result->create(grid, "velbase_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
@@ -273,10 +273,10 @@ PetscErrorCode PSB_cbase::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_csurf::PSB_csurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+PSB_velsurf_mag::PSB_velsurf_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   // set metadata:
-  vars[0].init_2d("csurf", grid);
+  vars[0].init_2d("velsurf_mag", grid);
 
   set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
@@ -284,7 +284,7 @@ PSB_csurf::PSB_csurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   vars[0].set_double("valid_min",  0.0);
 }
 
-PetscErrorCode PSB_csurf::compute(IceModelVec* &output) {
+PetscErrorCode PSB_velsurf_mag::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec3 *u3, *v3, *w3;
@@ -293,7 +293,7 @@ PetscErrorCode PSB_csurf::compute(IceModelVec* &output) {
   ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "csurf", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = result->create(grid, "velsurf_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
@@ -956,7 +956,7 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
   PSB_velbar diag(model, grid, variables);
 
   result = new IceModelVec2;
-  ierr = result->create(grid, "strain_rates", WITHOUT_GHOSTS, 1, 3); CHKERRQ(ierr);
+  ierr = result->create(grid, "deviatoric_stresses", WITHOUT_GHOSTS, 1, 3); CHKERRQ(ierr);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
   result->metadata(2) = vars[2];

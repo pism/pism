@@ -756,11 +756,11 @@ netcdf pism_config {
    pism_config:output_variable_order = "xyz";
    pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
-   pism_config:output_medium = "IcebergMask bwat bwatvel cbar cbase cflx climatic_mass_balance csurf diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taud_mag temp_pa tillwat topgsmooth usurf wvelsurf";
+   pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux_mag climatic_mass_balance velsurf_mag diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taud_mag temp_pa tillwat topgsmooth usurf wvelsurf";
 
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by boundary models.";
 
-   pism_config:output_big = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel cbar cbase cell_area cflx climatic_mass_balance csurf cts dbdt diffusivity edot_1 edot_2 effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat liqfrac litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taud_mag temp temp_pa tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf uvel velbar velbase velsurf vvel wallmelt wvel wvel_rel wvelbase wvelsurf";
+   pism_config:output_big = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag cts dbdt diffusivity edot_1 edot_2 effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat liqfrac litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taud_mag temp temp_pa tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf uvel velbar velbase velsurf vvel wallmelt wvel wvel_rel wvelbase wvelsurf";
 
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 

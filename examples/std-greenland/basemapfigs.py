@@ -6,20 +6,20 @@
 #   $ python basemapfigs.py FILEROOT [FIELD] [DPI]
 # where
 #   FILEROOT   root of NetCDF filename and output .png figures
-#   FIELD      optional: one of {cbase, [csurf], mask, usurf}  (edit script to add more)
+#   FIELD      optional: one of {velbase_mag, [velsurf_mag], mask, usurf}  (edit script to add more)
 #   DPI        optional: resolution in dots per inch [200]
 #
 # equivalent usages:
-#   $ python basemapfigs.py g20km_10ka_hy csurf 200
-#   $ python basemapfigs.py g20km_10ka_hy csurf
+#   $ python basemapfigs.py g20km_10ka_hy velsurf_mag 200
+#   $ python basemapfigs.py g20km_10ka_hy velsurf_mag
 #   $ python basemapfigs.py g20km_10ka_hy
 #
 # generate figs like those in Getting Started section of User's Manual:
-#   $ for FLD in csurf usurf cbase mask; do ./basemapfigs.py g20km_10ka_hy ${FLD}; done
+#   $ for FLD in velsurf_mag usurf velbase_mag mask; do ./basemapfigs.py g20km_10ka_hy ${FLD}; done
 #
 # crop out western Greenland with command like this (uses ImageMagick):
-#   $ ./basemapfigs.py g20km_10ka_hy csurf 500
-#   $ convert -crop 600x800+400+800 +repage g20km_10ka_hy-csurf.png g20km-detail.png
+#   $ ./basemapfigs.py g20km_10ka_hy velsurf_mag 500
+#   $ convert -crop 600x800+400+800 +repage g20km_10ka_hy-velsurf_mag.png g20km-detail.png
 
 from mpl_toolkits.basemap import Basemap
 
@@ -47,7 +47,7 @@ except:
 if len(sys.argv) >= 3:
   field = sys.argv[2]
 else:
-  field = 'csurf'
+  field = 'velsurf_mag'
 
 if len(sys.argv) >= 4:
   mydpi = float(sys.argv[3])
@@ -56,7 +56,7 @@ else:
 
 bluemarble = False  # FIXME: m.basemap() inverts earth!
 
-if (field == 'csurf') | (field == 'cbase'):
+if (field == 'velsurf_mag') | (field == 'velbase_mag'):
   fill       = nc.variables[field]._FillValue
   logscale   = True
   contour100 = True

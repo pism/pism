@@ -46,7 +46,7 @@ ssa="-stress_balance ssa -yield_stress constant -tauc 1e6 -ssa_dirichlet_bc -ssa
 
 calving="-calving ocean_kill "
 
-extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,csurf,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
+extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,velsurf_mag,IcebergMask,fracture_density,fracture_flow_enhancement,fracture_growth_rate,fracture_healing_rate,fracture_toughness"
 
 timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 

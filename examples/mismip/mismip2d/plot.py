@@ -196,16 +196,16 @@ def plot_flux(in_file, out_file):
         out_file = os.path.splitext(in_file)[0] + "-flux.pdf"
 
     x    = read(in_file, 'x')
-    cflx = read(in_file, 'cflx')
+    flux_mag = read(in_file, 'flux_mag')
 
     # plot positive xs only
-    cflx = cflx[x >= 0]
+    flux_mag = flux_mag[x >= 0]
     x    = x[x >= 0]
 
     figure(2)
     hold(True)
 
-    plot(x/1e3, cflx, 'k.-', markersize=10, linewidth=2)
+    plot(x/1e3, flux_mag, 'k.-', markersize=10, linewidth=2)
     plot(x/1e3, x * MISMIP.a() * MISMIP.secpera(), 'r:', linewidth=1.5)
 
     title("MISMIP experiment %s, step %d" % (experiment, step))

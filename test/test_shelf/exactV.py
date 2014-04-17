@@ -56,7 +56,7 @@ def plot_pism_results(filename, figure_title, color, same_figure=False):
     time = nc.variables['time'][0]/secpera # convert to years
 
     thk = nc.variables['thk'][0,1,2:]
-    ubar_ssa = nc.variables['cbar'][0,1,2:]
+    ubar_ssa = nc.variables['velbar_mag'][0,1,2:]
     x = nc.variables['x'][:]
     dx = x[1] - x[0]
     Lx = (x[-1] - x[0]) / 2.0
@@ -120,7 +120,7 @@ x = linspace(0, 400e3, Mx)
 run_length = options.y
 
 opt = "-ssa_method fd -Lx 250 -o_order zyx"
-extras = " -extra_file ex.nc -extra_vars cflx,thk,nuH,flux_divergence,velbar -extra_times 1"
+extras = " -extra_file ex.nc -extra_vars flux_mag,thk,nuH,flux_divergence,velbar -extra_times 1"
 
 if options.step_plot:
     plotter = step

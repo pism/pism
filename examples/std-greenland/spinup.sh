@@ -39,8 +39,8 @@ if [ $# -lt 5 ] ; then
   echo "consider setting optional environment variables (see script for meaning):"
   echo "    EXSTEP       spacing in years between -extra_files outputs; defaults to 100"
   echo "    EXVARS       desired -extra_vars; defaults to 'diffusivity,temppabase,"
-  echo "                   tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf'"
-  echo "                   plus ',hardav,cbase,tauc' if DYNAMICS=hybrid"
+  echo "                   tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'"
+  echo "                   plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid"
   echo "    NODIAGS      if set, DON'T use -ts_file or -extra_file"
   echo "    PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ"
   echo "                   [default=0.25]"
@@ -263,9 +263,9 @@ fi
 if [ -n "${EXVARS:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME          EXVARS = $EXVARS  (already set)"
 else
-  EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,csurf,mask,thk,topg,usurf"
+  EXVARS="diffusivity,temppabase,tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf"
   if [ "$5" = "hybrid" ]; then
-    EXVARS="${EXVARS},hardav,cbase,tauc"
+    EXVARS="${EXVARS},hardav,velbase_mag,tauc"
   fi
   echo "$SCRIPTNAME          EXVARS = $EXVARS"
 fi

@@ -20,7 +20,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \fileopt{boot_file} & Chooses a NetCDF file to bootstrap from, using heuristics to ``fill in'' missing fields.  See section \ref{sec:initboot}. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa} and \texttt{vbar_ssa} velocities saved by a previous run using the \texttt{ssa} or \texttt{ssa+sia} stress balance (see section \ref{subsect:stressbalance}). \\ \midrule
     \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc}.\\
-    \txtopt{o_size}{$\left<\text{size}\right>$} & Chooses the ``size'' of the output file to produce.  Possible sizes are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart PISM), \texttt{medium} (the default, includes a few diagnostic quantities) and \texttt{big} (writes all the variables mentioned in Tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
+    \txtopt{o_size}{$\left<\text{size}\right>$} & Chooses the ``size'' of the output file to produce.  Possible sizes are \texttt{none} (\emph{no} output file at all), \texttt{small} (only variables necessary to restart PISM), \texttt{medium} (the default, includes a few diagnostic quantities) and \texttt{big} (writes all the variables mentioned in Tables~\ref{tab:three-d-diagnostics},~\ref{tab:three-d-diagnostics-vector},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~\ref{tab:two-d-diagnostics-3},~and~\ref{tab:two-d-diagnostics-vector}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
     \bottomrule
  \end{tabular}
 \caption{Basic NetCDF input and output options}
@@ -215,10 +215,10 @@ Sometimes it is useful to have PISM save a handful of diagnostic \emph{maps} at 
 Use options \texttt{-extra_file}, \texttt{-extra_times}, and \texttt{-extra_vars} for this.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
-        -extra_times 0:10:1e4 -extra_vars csurf,cbase
+        -extra_times 0:10:1e4 -extra_vars velsurf_mag,velbase_mag
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
-will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years.  Times are specified using a comma-separated list or a MATLAB-style range.  See Table \ref{tab:extras} for all the options controlling this feature.  Tables~\ref{tab:three-d-diagnostics},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~and~\ref{tab:two-d-diagnostics-3} list all the variable choices.
+will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years.  Times are specified using a comma-separated list or a MATLAB-style range.  See Table \ref{tab:extras} for all the options controlling this feature.  Tables~\ref{tab:three-d-diagnostics},~\ref{tab:three-d-diagnostics-vector},~\ref{tab:two-d-diagnostics-1},~\ref{tab:two-d-diagnostics-2},~\ref{tab:two-d-diagnostics-3},~and~\ref{tab:two-d-diagnostics-vector} list all the variable choices.
 
 Note that options \intextoption{extra_times},
 \intextoption{save_times}, \intextoption{ts_times} take \emph{dates}
@@ -304,13 +304,9 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \texttt{litho_temp} & \textsl{K} & lithosphere (bedrock) temperature, in \texttt{PISMBedThermalUnit} \\
     \texttt{temp} & \textsl{K} &  ice temperature \\
     \texttt{temp_pa} & \textsl{degrees Celsius} &  pressure-adjusted ice temperature (degrees above pressure-melting point) \\
-    \texttt{uvel} & \textsl{m / year} &  horizontal velocity of ice in the X direction \\
-    \texttt{vvel} & \textsl{m / year} &  horizontal velocity of ice in the Y direction \\
-    \texttt{wvel} & \textsl{m / year} &  vertical velocity of ice, relative to geoid \\
-    \texttt{wvel_rel} & \textsl{m / year} &  vertical velocity of ice, relative to base of ice directly below \\
     \bottomrule
   \end{tabular}
-\caption{3D diagnostic quantities}
+\caption{Scalar 3D diagnostic quantities}
 \label{tab:three-d-diagnostics}
 \end{table}
 
@@ -320,34 +316,49 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \toprule
     \textbf{Name} & \textbf{Units} & \textbf{Description} \\
     \midrule
-    \texttt{climatic_mass_balance} & \textsl{m / year} & ice-equivalent surface mass balance (accumulation/ablation) rate \\
-    \texttt{ice_surface_temp} & \textsl{K} & annual average ice surface temperature, below firn processes \\
+    \texttt{uvel} & \textsl{m / year} &  horizontal velocity of ice in the X direction \\
+    \texttt{vvel} & \textsl{m / year} &  horizontal velocity of ice in the Y direction \\
+    \texttt{wvel} & \textsl{m / year} &  vertical velocity of ice, relative to geoid \\
+    \texttt{wvel_rel} & \textsl{m / year} &  vertical velocity of ice, relative to base of ice directly below \\
+    \bottomrule
+  \end{tabular}
+\caption{Vector 3D diagnostic quantities}
+\label{tab:three-d-diagnostics-vector}
+\end{table}
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
+    \midrule
     \texttt{bedtoptemp} & \textsl{K} & temperature of top of bedrock thermal layer \\
     \texttt{bfrict} & \textsl{W  / $m^2$} &  basal frictional heating \\
     \texttt{bheatflx} & \textsl{W  / $m^2$} & upward geothermal flux at bedrock surface \\
     \texttt{bmelt} & \textsl{m / year} & ice basal melt rate in ice thickness per time \\
     \texttt{bwat} & \textsl{m} & effective thickness of subglacial melt water \\
     \texttt{bwp} & \textsl{Pa} & subglacial (pore) water pressure \\
-    \texttt{cbar} & \textsl{m / year} &  magnitude of vertically-integrated horizontal velocity of ice \\
-    \texttt{cbase} & \textsl{m / year} &  magnitude of horizontal velocity of ice at base of ice \\
     \texttt{cell_area} & \textsl{$m^{2}$} & cell areas \\
-    \texttt{cflx} & \textsl{$m^{2}$ / year} &  magnitude of vertically-integrated horizontal flux of ice \\
-    \texttt{csurf} & \textsl{m / year} &  magnitude of horizontal velocity of ice at ice surface \\
-    \texttt{flux_divergence} & \textsl{m / year} &  flux divergence \\
+    \texttt{climatic_mass_balance} & \textsl{m / year} & ice-equivalent surface mass balance (accumulation/ablation) rate \\
     \texttt{dHdt} & \textsl{m / year} &  ice thickness rate of change \\
     \texttt{dbdt} & \textsl{m / year} & bedrock uplift rate \\
+    \texttt{deviatoric_stresses} & \textsl{Pa} & 2D deviatoric stresses (this saves 3 fields: in the $X$ direction, in the $Y$ direction, and the shear stress) \\
     \texttt{diffusivity} & \textsl{$m^{2}$  / s} &  diffusivity of SIA mass continuity equation \\
     \texttt{enthalpybase} & \textsl{J  / kg} &  ice enthalpy at the base of ice \\
     \texttt{enthalpysurf} & \textsl{J  / kg} &  ice enthalpy at 1m below the ice surface \\
-    \texttt{h_x} & \textsl{none} &  the x-component of the surface gradient, on the staggered grid\\
-    \texttt{h_y} & \textsl{none} &  the y-component of the surface gradient, on the staggered grid\\
+    \texttt{flux_divergence} & \textsl{m / year} &  flux divergence \\
+    \texttt{flux_mag} & \textsl{$m^{2}$ / year} &  magnitude of vertically-integrated horizontal flux of ice \\
     \texttt{hardav} & $Pa\, s^{1/n}$ &  vertical average of ice hardness \\
+    \texttt{ice_surface_temp} & \textsl{K} & annual average ice surface temperature, below firn processes \\
     \texttt{lat} & \textsl{degrees north} & latitude \\
     \texttt{lon} & \textsl{degrees east} & longitude \\
+    \texttt{velbar_mag} & \textsl{m / year} &  magnitude of vertically-integrated horizontal velocity of ice \\
+    \texttt{velbase_mag} & \textsl{m / year} &  magnitude of horizontal velocity of ice at base of ice \\
+    \texttt{velsurf_mag} & \textsl{m / year} &  magnitude of horizontal velocity of ice at ice surface \\
    \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-2}}\\
   \bottomrule
   \end{tabular}
-  \caption{2D diagnostic quantities, part 1}
+  \caption{Scalar 2D diagnostic quantities, part 1}
   \label{tab:two-d-diagnostics-1}
 \end{table}
 
@@ -365,10 +376,8 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \texttt{shelfbmassflux} & \textsl{m / year} & ice mass flux from ice shelf base (positive flux is loss from ice shelf) \\
     \texttt{shelfbtemp} & \textsl{Kelvin} & absolute temperature at ice shelf base \\
     \texttt{strain_rates} & \textsl{1/s} & eigenvalues of the horizontal, vertically-integrated strain rate tensor \\
-    \texttt{taub} & \textsl{Pa} & basal shear stress, X and Y components \\
     \texttt{taub_mag} & \textsl{Pa} & magnitude of the basal shear stress \\
     \texttt{tauc} & \textsl{Pa} & yield stress for basal till (plastic or pseudo-plastic model) \\
-    \texttt{taud} & \textsl{Pa} & driving stress at the base of ice, X and Y components \\
     \texttt{taud_mag} & \textsl{Pa} &  magnitude of the driving stress at the base of ice \\
     \texttt{tempbase} & \textsl{K} &  ice temperature at the base of ice \\
     \texttt{tempicethk_basal} & \textsl{m} &  thickness of the basal layer of temperate ice \\
@@ -384,7 +393,7 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
    \multicolumn{3}{c}{Continued in Table \ref{tab:two-d-diagnostics-3}}\\
   \bottomrule
   \end{tabular}
-  \caption{2D diagnostic quantities, part 2}
+  \caption{Scalar 2D diagnostic quantities, part 2}
   \label{tab:two-d-diagnostics-2}
 \end{table}
 
@@ -395,22 +404,37 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \textbf{Name} & \textbf{Units} & \textbf{Description} \\
     \midrule
     \multicolumn{3}{c}{Continued from Table \ref{tab:two-d-diagnostics-2}}\\
-    \texttt{velbar} & \textsl{m / year} &  vertical mean of horizontal ice velocity in the X and Y directions \\
-    \texttt{velbase} & \textsl{m / year} &  horizontal velocity of ice at the base of ice in the X and Y directions\\
-    \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions\\
-    \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
-    \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
-    \texttt{ocean_kill_flux} & \textsl{kg / s} & calving flux due to the ``\texttt{-calving ocean_kill}'' mechanism \\
-    \texttt{ocean_kill_flux_cumulative} & \textsl{Gt} & cumulative version of \texttt{ocean_kill_flux} \\
-    \texttt{nonneg_flux_cumulative} & \textsl{Gt} & cumulative numerical flux created by enforcing non-negativity of ice thickness \\
-    \texttt{grounded_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in grounded areas \\
     \texttt{floating_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in floating areas \\
-  \bottomrule
+    \texttt{grounded_basal_flux_cumulative} & \textsl{Gt} & cumulative basal flux into the ice in grounded areas \\
+    \texttt{nonneg_flux_cumulative} & \textsl{Gt} & cumulative numerical flux created by enforcing non-negativity of ice thickness \\
+    \texttt{ocean_kill_flux_cumulative} & \textsl{Gt} & cumulative version of \texttt{ocean_kill_flux} \\
+    \texttt{ocean_kill_flux} & \textsl{kg / s} & calving flux due to the ``\texttt{-calving ocean_kill}'' mechanism \\
+    \bottomrule
   \end{tabular}
-  \caption{2D diagnostic quantities, part 3}
+  \caption{Scalar 2D diagnostic quantities, part 3}
   \label{tab:two-d-diagnostics-3}
 \end{table}
 
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
+    \toprule
+    \textbf{Name} & \textbf{Units} & \textbf{Description} \\
+    \midrule
+    \texttt{h_x} & \textsl{none} &  the x-component of the surface gradient, on the staggered grid\\
+    \texttt{h_y} & \textsl{none} &  the y-component of the surface gradient, on the staggered grid\\
+    \texttt{taub} & \textsl{Pa} & basal shear stress, X and Y components. See also \texttt{taub_mag}. \\
+    \texttt{taud} & \textsl{Pa} & driving stress at the base of ice, X and Y components. See also \texttt{taud_mag}. \\
+    \texttt{velbar} & \textsl{m / year} &  vertical mean of horizontal ice velocity in the X and Y directions. See also \texttt{velbar_mag}. \\
+    \texttt{velbase} & \textsl{m / year} &  horizontal velocity of ice at the base of ice in the X and Y directions. See also \texttt{velbase_mag}. \\
+    \texttt{velsurf} & \textsl{m / year} &  horizontal velocity of ice at ice surface in the X and Y directions. See also \texttt{velsurf_mag}.\\
+    \texttt{wvelbase} & \textsl{m / year} &  vertical velocity of ice at the base of ice, relative to the geoid \\
+    \texttt{wvelsurf} & \textsl{m / year} &  vertical velocity of ice at ice surface, relative to the geoid \\
+    \bottomrule
+  \end{tabular}
+  \caption{Vector 2D diagnostic quantities (vector)}
+  \label{tab:two-d-diagnostics-vector}
+\end{table}
 
 \clearpage
 

@@ -49,7 +49,7 @@ cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -i $STARTNAME \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_order zyx -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:1:${YEARS} \
-  -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,csurf,strain_rates \
+  -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars thk,mask,velsurf_mag,strain_rates \
   -options_left"
 echo "running command:"
 echo

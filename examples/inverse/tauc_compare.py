@@ -48,7 +48,7 @@ tauc_diff[not_ice] = 0.
 
 u_computed = ds.variables['u_computed'][...].squeeze()*secpera
 v_computed = ds.variables['v_computed'][...].squeeze()*secpera
-cbase_computed = np.sqrt(u_computed * u_computed + v_computed * v_computed)
+velbase_mag_computed = np.sqrt(u_computed * u_computed + v_computed * v_computed)
 
 not_sliding = np.logical_and( (abs(u_computed) < 10.) , (abs(v_computed) < 10.) )
 tauc[not_ice]  = 0
@@ -75,7 +75,7 @@ pp.colorbar()
 
 # show computed sliding speed
 pp.figure()
-im = pp.imshow(cbase_computed.transpose(),origin='lower',
+im = pp.imshow(velbase_mag_computed.transpose(),origin='lower',
                norm=mc.LogNorm(vmin=0.1, vmax=1000.0))
 pp.title('computed sliding speed')
 t = [0.1, 1.0, 10.0, 100.0, 1000.0]

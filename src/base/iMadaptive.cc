@@ -381,8 +381,9 @@ It is handled by temperatureAgeStep(), not here.
 PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
   PetscErrorCode  ierr;
 
-  const double cflx = grid.dx / dt_TempAge,
-                    cfly = grid.dy / dt_TempAge;
+  const double
+    CFL_x = grid.dx / dt_TempAge,
+    CFL_y = grid.dy / dt_TempAge;
 
   double *u, *v;
   IceModelVec3 *u3, *v3, *dummy;
@@ -401,8 +402,8 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
 
       // check horizontal CFL conditions at each point
       for (int k=0; k<=fks; k++) {
-        if (PetscAbs(u[k]) > cflx)  *CFLviol += 1.0;
-        if (PetscAbs(v[k]) > cfly)  *CFLviol += 1.0;
+        if (PetscAbs(u[k]) > CFL_x)  *CFLviol += 1.0;
+        if (PetscAbs(v[k]) > CFL_y)  *CFLviol += 1.0;
       }
     }
   }

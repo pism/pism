@@ -630,7 +630,7 @@ $ mpiexec -n 4 pismv -test G -y 200
 \item Try an EISMINT II run using the PETSc viewers (under the X window system):
 
 \begin{verbatim}
-$ pisms -y 5000 -view_map thk,temppabase,csurf
+$ pisms -y 5000 -view_map thk,temppabase,velsurf_mag
 \end{verbatim}
 
   \noindent When using such viewers and \texttt{mpiexec} the additional final
@@ -638,7 +638,7 @@ $ pisms -y 5000 -view_map thk,temppabase,csurf
   like this:
 
 \begin{verbatim}
-$ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0
+$ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,velsurf_mag -display :0
 \end{verbatim}
 
 \noindent Also \texttt{-draw_pause 0.1} or similar may be needed if the figures

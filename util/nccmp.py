@@ -13,9 +13,9 @@ from getopt import getopt, GetoptError
 ## 
 ## Option \c -v allows selecting varibles to compare:
 ## \code
-## nccmp.py -v thk,cbar foo.nc bar.nc
+## nccmp.py -v thk,velbar_mag foo.nc bar.nc
 ## \endcode
-## only compares \c thk and \c cbar.
+## only compares \c thk and \c velbar_mag.
 ## 
 ## Option \c -t sets the tolerance:
 ## \code

@@ -49,11 +49,11 @@ PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
                      "pressure of transportable water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
   P.metadata().set_double("valid_min", 0.0);
-  ierr = cbase.create(grid, "ice_sliding_speed", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = cbase.set_attrs("internal",
+  ierr = velbase_mag.create(grid, "ice_sliding_speed", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = velbase_mag.set_attrs("internal",
                          "ice sliding speed seen by subglacial hydrology",
                          "m s-1", ""); CHKERRQ(ierr);
-  cbase.metadata().set_double("valid_min", 0.0);
+  velbase_mag.metadata().set_double("valid_min", 0.0);
   ierr = Pnew.create(grid, "Pnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = Pnew.set_attrs("internal",
                      "new transportable subglacial water pressure during update",
@@ -269,11 +269,11 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
 
   ierr = W.begin_access();      CHKERRQ(ierr);
   ierr = Pover.begin_access();  CHKERRQ(ierr);
-  ierr = cbase.begin_access();  CHKERRQ(ierr);
+  ierr = velbase_mag.begin_access();  CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      double sb = pow(CC * cbase(i, j), powglen);
+      double sb = pow(CC * velbase_mag(i, j), powglen);
       if (W(i, j) == 0.0) {
         // see P(W) formula in steady state; note P(W) is continuous (in steady
         // state); these facts imply:
@@ -292,7 +292,7 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
   }
   ierr = W.end_access();      CHKERRQ(ierr);
   ierr = Pover.end_access();  CHKERRQ(ierr);
-  ierr = cbase.end_access();  CHKERRQ(ierr);
+  ierr = velbase_mag.end_access();  CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -303,12 +303,12 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
 Calls a PISMStressBalance method to get the vector basal velocity of the ice,
 and then computes the magnitude of that.
  */
-PetscErrorCode PISMDistributedHydrology::update_cbase(IceModelVec2S &result_cbase) {
+PetscErrorCode PISMDistributedHydrology::update_velbase_mag(IceModelVec2S &result_velbase_mag) {
   PetscErrorCode ierr;
   IceModelVec2V* Ubase; // ice sliding velocity
-  // cbase = |v_b|
+  // velbase_mag = |v_b|
   ierr = stressbalance->get_2D_advective_velocity(Ubase); CHKERRQ(ierr);
-  ierr = Ubase->magnitude(result_cbase); CHKERRQ(ierr);
+  ierr = Ubase->magnitude(result_velbase_mag); CHKERRQ(ierr);
   return 0;
 }
 
@@ -370,8 +370,8 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
   ierr = W.update_ghosts(); CHKERRQ(ierr);
   ierr = P.update_ghosts(); CHKERRQ(ierr);
 
-  // from current ice geometry/velocity variables, initialize Po and cbase
-  ierr = update_cbase(cbase); CHKERRQ(ierr);
+  // from current ice geometry/velocity variables, initialize Po and velbase_mag
+  ierr = update_velbase_mag(velbase_mag); CHKERRQ(ierr);
 
   const double
             rg    = config.get("fresh_water_density") * config.get("standard_gravity"),
@@ -446,7 +446,7 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
     ierr = W.begin_access(); CHKERRQ(ierr);
     ierr = Wtil.begin_access(); CHKERRQ(ierr);
     ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
-    ierr = cbase.begin_access(); CHKERRQ(ierr);
+    ierr = velbase_mag.begin_access(); CHKERRQ(ierr);
     ierr = Wstag.begin_access(); CHKERRQ(ierr);
     ierr = Kstag.begin_access(); CHKERRQ(ierr);
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
@@ -463,13 +463,13 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
         else if (W(i,j) <= 0.0) {
           // see P(W) formula *in steady state*; note P(W) is continuous (in steady
           // state); these facts imply:
-          if (cbase(i,j) > 0.0)
+          if (velbase_mag(i,j) > 0.0)
             Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
           else
             Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
         } else {
           // opening and closure terms in pressure equation
-          Open = PetscMax(0.0,c1 * cbase(i,j) * (Wr - W(i,j)));
+          Open = PetscMax(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
           Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
 
           // compute the flux divergence the same way as in raw_update_W()
@@ -495,7 +495,7 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = Wtil.end_access(); CHKERRQ(ierr);
     ierr = Wtilnew.end_access(); CHKERRQ(ierr);
-    ierr = cbase.end_access(); CHKERRQ(ierr);
+    ierr = velbase_mag.end_access(); CHKERRQ(ierr);
     ierr = Pnew.end_access(); CHKERRQ(ierr);
     ierr = Pover.end_access(); CHKERRQ(ierr);
     ierr = total_input.end_access(); CHKERRQ(ierr);
