@@ -79,7 +79,7 @@ public:
   virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
   virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
-  virtual double c_from_T(double /*T*/)
+  virtual double c_from_T(double /*T*/) const
   { return c_i; }
 
 protected:

@@ -63,7 +63,7 @@ public:
   IceFlowLaw(MPI_Comm c, const char pre[],
              const PISMConfig &config,
              EnthalpyConverter *EC);
- virtual ~IceFlowLaw() {}
+  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
   //! \brief Computes effective viscosity and its derivative with respect to the

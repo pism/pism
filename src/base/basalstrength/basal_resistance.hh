@@ -34,8 +34,8 @@ class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com);
-  virtual double drag(double tauc, double vx, double vy);
+  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual double drag(double tauc, double vx, double vy) const;
   //! The derivative of drag with respect to \f$ alpha=\frac 1 2 |u|^2 \f$.
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
@@ -48,8 +48,8 @@ class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistancePseudoPlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com);
-  virtual double drag(double tauc, double vx, double vy);
+  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
