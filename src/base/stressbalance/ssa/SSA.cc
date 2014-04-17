@@ -412,11 +412,19 @@ PetscErrorCode SSA::write_variables(std::set<std::string> vars, const PIO &nc) {
 }
 
 void SSA::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                          std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
-    dict["taud"] = new SSA_taud(this, grid, *variables);
-    dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
-    dict["taub"] = new SSA_taub(this, grid, *variables);
-    dict["beta"] = new SSA_beta(this, grid, *variables);
+                          std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
+
+  ShallowStressBalance::get_diagnostics(dict, ts_dict);
+
+  if (dict["taud"] != NULL) {
+    delete dict["taud"];
+  }
+  dict["taud"] = new SSA_taud(this, grid, *variables);
+
+  if (dict["taud_mag"] != NULL) {
+    delete dict["taud_mag"];
+  }
+  dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
 }
 
 SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
@@ -490,101 +498,3 @@ PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
   return 0;
 }
 
-SSA_taub::SSA_taub(SSA *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SSA>(m, g, my_vars) {
-  dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
-  // set metadata:
-  vars[0].init_2d("taub_x", grid);
-  vars[1].init_2d("taub_y", grid);
-
-  set_attrs("X-component of the shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  set_attrs("Y-component of the shear stress at the base of ice", "",
-            "Pa", "Pa", 1);
-
-  for (int k = 0; k < dof; ++k)
-    vars[k].set_string("comment",
-                       "this field is purely diagnostic (not used by the model)");
-}
-
-PetscErrorCode SSA_taub::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-
-  IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
-  result->metadata(1) = vars[1];
-
-  IceModelVec2V *velocity;
-  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
-
-  IceModelVec2V &vel = *velocity;
-  IceModelVec2S &tauc = *model->tauc;
-  IceModelVec2Int &mask = *model->mask;
-
-  MaskQuery m(mask);
-
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = tauc.begin_access(); CHKERRQ(ierr);
-  ierr = vel.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (m.grounded_ice(i,j)) {
-        double beta = model->basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
-        (*result)(i,j).u = - beta * vel(i,j).u;
-        (*result)(i,j).v = - beta * vel(i,j).v;
-      } else {
-        (*result)(i,j).u = 0.0;
-        (*result)(i,j).v = 0.0;
-      }
-    }
-  }
-  ierr = mask.end_access(); CHKERRQ(ierr);
-  ierr = vel.end_access(); CHKERRQ(ierr);
-  ierr = tauc.end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-
-  output = result;
-
-  return 0;
-}
-
-SSA_beta::SSA_beta(SSA *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SSA>(m, g, my_vars) {
-  // set metadata:
-  vars[0].init_2d("beta", grid);
-
-  set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
-}
-
-PetscErrorCode SSA_beta::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-
-  // Allocate memory:
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "beta", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
-  result->write_in_glaciological_units = true;
-
-  IceModelVec2S *tauc = model->tauc;
-  IceModelVec2V *velocity;
-  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
-
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = velocity->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      (*result)(i,j) = model->basal_sliding_law->drag((*tauc)(i,j),
-                                                      (*velocity)(i,j).u, (*velocity)(i,j).v);
-    }
-  }
-  ierr = velocity->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-
-  output = result;
-  return 0;
-}

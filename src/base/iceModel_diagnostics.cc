@@ -313,7 +313,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   const double fillval = grid.config.get("fill_value");
   double *Eij; // columns of enthalpy values
 
-  IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
+  const IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
   if (flow_law == NULL) {
     flow_law = model->stress_balance->get_ssb_modifier()->get_flow_law();
     if (flow_law == NULL) {

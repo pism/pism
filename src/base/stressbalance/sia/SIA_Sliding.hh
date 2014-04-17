@@ -52,12 +52,6 @@ public:
   virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
-    dict["taud"] = new SSB_taud(this, grid, *variables);
-    dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
-  }
-
 protected:
   virtual PetscErrorCode allocate();
 

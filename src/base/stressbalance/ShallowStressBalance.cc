@@ -22,6 +22,7 @@
 #include "flowlaws.hh"
 #include "basal_resistance.hh"
 #include "pism_options.hh"
+#include <cassert>
 
 ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
   : PISMComponent(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
@@ -68,6 +69,16 @@ PetscErrorCode ShallowStressBalance::allocate() {
   return 0;
 }
 
+void ShallowStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                                           std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
+  dict["beta"]     = new SSB_beta(this, grid, *variables);
+  dict["taub"]     = new SSB_taub(this, grid, *variables);
+  dict["taub_mag"] = new SSB_taub_mag(this, grid, *variables);
+  dict["taud"]     = new SSB_taud(this, grid, *variables);
+  dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
+}
+
+
 ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
   : ShallowStressBalance(g, e, conf) {
 
@@ -81,12 +92,6 @@ ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &con
 
 ZeroSliding::~ZeroSliding() {
   delete flow_law;
-}
-
-void ZeroSliding::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                                  std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
-  dict["taud"] = new SSB_taud(this, grid, *variables);
-  dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
 }
 
 void ZeroSliding::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
@@ -451,10 +456,118 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
   ierr = diag.compute(tmp);
 
   IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
-  if (taud == NULL)
+  if (taud == NULL) {
+    delete tmp;
     SETERRQ(grid.com, 1, "expected an IceModelVec2V, but dynamic_cast failed");
+  }
 
   ierr = taud->magnitude(*result); CHKERRQ(ierr);
+
+  delete tmp;
+
+  output = result;
+  return 0;
+}
+
+SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+  dof = 2;
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
+  // set metadata:
+  vars[0].init_2d("taub_x", grid);
+  vars[1].init_2d("taub_y", grid);
+
+  set_attrs("X-component of the shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+  set_attrs("Y-component of the shear stress at the base of ice", "",
+            "Pa", "Pa", 1);
+
+  for (int k = 0; k < dof; ++k)
+    vars[k].set_string("comment",
+                       "this field is purely diagnostic (not used by the model)");
+}
+
+
+PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec2V *result = new IceModelVec2V;
+  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->metadata(1) = vars[1];
+
+  IceModelVec2V *velocity;
+  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
+
+  IceModelVec2V &vel = *velocity;
+  IceModelVec2S *tauc = dynamic_cast<IceModelVec2S*>(variables.get("tauc"));
+  assert(tauc != NULL);
+  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
+  assert(mask != NULL);
+
+  const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
+
+  MaskQuery m(*mask);
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  ierr = vel.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (m.grounded_ice(i,j)) {
+        double beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+        (*result)(i,j).u = - beta * vel(i,j).u;
+        (*result)(i,j).v = - beta * vel(i,j).v;
+      } else {
+        (*result)(i,j).u = 0.0;
+        (*result)(i,j).v = 0.0;
+      }
+    }
+  }
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = vel.end_access(); CHKERRQ(ierr);
+  ierr = tauc->end_access(); CHKERRQ(ierr);
+  ierr = result->end_access(); CHKERRQ(ierr);
+
+  output = result;
+
+  return 0;
+}
+
+SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_2d("taub_mag", grid);
+
+  set_attrs("magnitude of the basal shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+  vars[0].set_string("comment",
+                     "this field is purely diagnostic (not used by the model)");
+}
+
+PetscErrorCode SSB_taub_mag::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  // Allocate memory:
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "taub_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->write_in_glaciological_units = true;
+
+  IceModelVec* tmp;
+  SSB_taub diag(model, grid, variables);
+
+  ierr = diag.compute(tmp);
+
+  IceModelVec2V *taub = dynamic_cast<IceModelVec2V*>(tmp);
+  if (taub == NULL) {
+    delete tmp;
+    SETERRQ(grid.com, 1, "expected an IceModelVec2V, but dynamic_cast failed");
+  }
+
+  ierr = taub->magnitude(*result); CHKERRQ(ierr);
 
   delete tmp;
 
@@ -506,3 +619,44 @@ PetscErrorCode PrescribedSliding::init(PISMVars &vars) {
   return 0;
 }
 
+SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+  // set metadata:
+  vars[0].init_2d("beta", grid);
+
+  set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
+}
+
+PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  // Allocate memory:
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "beta", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->write_in_glaciological_units = true;
+
+  IceModelVec2S *tauc = dynamic_cast<IceModelVec2S*>(variables.get("tauc"));
+  assert(tauc != NULL);
+
+  const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
+
+  IceModelVec2V *velocity;
+  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
+  IceModelVec2V &vel = *velocity;
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  ierr = velocity->begin_access(); CHKERRQ(ierr);
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+    }
+  }
+  ierr = velocity->end_access(); CHKERRQ(ierr);
+  ierr = tauc->end_access(); CHKERRQ(ierr);
+  ierr = result->end_access(); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
