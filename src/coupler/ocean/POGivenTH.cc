@@ -170,17 +170,17 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
       double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
 
       double
-        shelf_base_temperature = 0.0,
-        shelf_base_mass_flux   = 0.0;
+        shelf_base_temp        = 0.0,
+        shelf_base_massflux   = 0.0;
       ierr = pointwise_update(c,
                               (*salinity_ocean)(i,j),
                               potential_temperature_celsius,
                               (*ice_thickness)(i,j),
-                              &shelf_base_temperature,
-                              &shelf_base_mass_flux); CHKERRQ(ierr);
+                              &shelf_base_temp,
+                              &shelf_base_massflux); CHKERRQ(ierr);
 
-      shelfbtemp(i,j)     = shelf_base_temperature;
-      shelfbmassflux(i,j) = shelf_base_mass_flux;
+      shelfbtemp(i,j)     = shelf_base_temp;
+      shelfbmassflux(i,j) = shelf_base_massflux;
     }
   }
 

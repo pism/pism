@@ -42,7 +42,7 @@ The maximum vertical velocity is computed but it does not affect
  */
 PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   PetscErrorCode ierr = 0;
-  double max_timestep = config.get("maximum_time_step_years", "years", "seconds");
+  double maxtimestep = config.get("maximum_time_step_years", "years", "seconds");
 
   IceModelVec3 *u3 = NULL, *v3 = NULL, *w3 = NULL;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
@@ -74,7 +74,7 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
           maxw = PetscMax(maxw, PetscAbs(w[k]));
           const double denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
           if (denom > 0.0) {
-            max_timestep = PetscMin(max_timestep, 1.0 / denom);
+            maxtimestep = PetscMin(maxtimestep, 1.0 / denom);
           }
         }
       }
@@ -91,7 +91,7 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   ierr = PISMGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
   ierr = PISMGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMin(&max_timestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
 
   return 0;
 }
@@ -109,7 +109,7 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
  */
 PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
   PetscErrorCode ierr;
-  double max_timestep = config.get("maximum_time_step_years", "years", "seconds");
+  double maxtimestep = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
@@ -124,14 +124,14 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
       if (mask.icy(i, j)) {
         const double denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
         if (denom > 0.0)
-          max_timestep = PetscMin(max_timestep, 1.0/denom);
+          maxtimestep = PetscMin(maxtimestep, 1.0/denom);
       }
     }
   }
   ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMin(&max_timestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = PISMGlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
