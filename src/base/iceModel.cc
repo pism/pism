@@ -541,78 +541,79 @@ PetscErrorCode IceModel::createVecs() {
   // take care of 2D cumulative fluxes: we need to allocate special storage if
   // the user asked for climatic_mass_balance_cumulative or some others (below).
 
-  std::string vars;
-  bool extra_vars_set;
-  ierr = PISMOptionsString("-extra_vars", "", vars, extra_vars_set); CHKERRQ(ierr);
-  if (extra_vars_set) {
-    std::istringstream arg(vars);
+  std::string extra_vars_argument;
+  bool extra_vars_set = false;
+  ierr = PISMOptionsString("-extra_vars", "", extra_vars_argument, extra_vars_set); CHKERRQ(ierr);
+  std::set<std::string> ex_vars;
+  if (extra_vars_set == true) {
+    std::istringstream arg(extra_vars_argument);
     std::string var_name;
-    std::set<std::string> ex_vars;
 
-    while (getline(arg, var_name, ','))
+    while (getline(arg, var_name, ',')) {
       ex_vars.insert(var_name);
-
-    if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
-      ierr = climatic_mass_balance_cumulative.create(grid,
-                                                     "climatic_mass_balance_cumulative",
-                                                     WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                                        "cumulative surface mass balance",
-                                                        "kg m-2", ""); CHKERRQ(ierr);
     }
+  }
 
-    std::string o_size = get_output_size("-o_size");
+  if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
+    ierr = climatic_mass_balance_cumulative.create(grid,
+                                                   "climatic_mass_balance_cumulative",
+                                                   WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
+                                                      "cumulative surface mass balance",
+                                                      "kg m-2", ""); CHKERRQ(ierr);
+  }
 
-    if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
-      ierr = flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = flux_divergence.set_attrs("diagnostic",
-                                       "flux divergence",
-                                       "m s-1", ""); CHKERRQ(ierr);
-      ierr = flux_divergence.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-      flux_divergence.write_in_glaciological_units = true;
-    }
+  std::string o_size = get_output_size("-o_size");
 
-    if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
-      ierr = grounded_basal_flux_2D_cumulative.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                         "cumulative basal flux into the ice "
-                                                         "in grounded areas (positive means ice gain)",
-                                                         "kg m-2", ""); CHKERRQ(ierr);
-      grounded_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
+    ierr = flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = flux_divergence.set_attrs("diagnostic",
+                                     "flux divergence",
+                                     "m s-1", ""); CHKERRQ(ierr);
+    ierr = flux_divergence.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    flux_divergence.write_in_glaciological_units = true;
+  }
 
-    if (set_contains(ex_vars, "floating_basal_flux_cumulative")) {
-      ierr = floating_basal_flux_2D_cumulative.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                         "cumulative basal flux into the ice "
-                                                         "in floating areas (positive means ice gain)",
-                                                         "kg m-2", ""); CHKERRQ(ierr);
-      floating_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
+    ierr = grounded_basal_flux_2D_cumulative.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                       "cumulative basal flux into the ice "
+                                                       "in grounded areas (positive means ice gain)",
+                                                       "kg m-2", ""); CHKERRQ(ierr);
+    grounded_basal_flux_2D_cumulative.set_time_independent(false);
+    ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+  }
 
-    if (set_contains(ex_vars, "nonneg_flux_cumulative")) {
-      ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
-                                                 "cumulative nonnegative rule flux (positive means ice gain)",
-                                                 "kg m-2", ""); CHKERRQ(ierr);
-      nonneg_flux_2D_cumulative.set_time_independent(false);
-      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "floating_basal_flux_cumulative")) {
+    ierr = floating_basal_flux_2D_cumulative.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                       "cumulative basal flux into the ice "
+                                                       "in floating areas (positive means ice gain)",
+                                                       "kg m-2", ""); CHKERRQ(ierr);
+    floating_basal_flux_2D_cumulative.set_time_independent(false);
+    ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+  }
 
-    if (set_contains(ex_vars, "discharge_flux_cumulative")) {
-      ierr = discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = discharge_flux_2D_cumulative.set_attrs("diagnostic",
-                                                    "cumulative discharge (calving) flux (positive means ice loss)",
-                                                    "kg m-2", ""); CHKERRQ(ierr);
-      discharge_flux_2D_cumulative.set_time_independent(false);
-      ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      discharge_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "nonneg_flux_cumulative")) {
+    ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
+                                               "cumulative nonnegative rule flux (positive means ice gain)",
+                                               "kg m-2", ""); CHKERRQ(ierr);
+    nonneg_flux_2D_cumulative.set_time_independent(false);
+    ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
+  }
+
+  if (set_contains(ex_vars, "discharge_flux_cumulative")) {
+    ierr = discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = discharge_flux_2D_cumulative.set_attrs("diagnostic",
+                                                  "cumulative discharge (calving) flux (positive means ice loss)",
+                                                  "kg m-2", ""); CHKERRQ(ierr);
+    discharge_flux_2D_cumulative.set_time_independent(false);
+    ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    discharge_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
   return 0;
