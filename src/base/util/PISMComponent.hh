@@ -49,9 +49,9 @@ class IceModelVec;
 
   \subsection pismcomponent_init Initialization
 
-  PISMComponent::init() should contain all the initialization
-  code, excluding memory-allocation. This is to be able to
-  re-initialize the a sub-model after the "preliminary" time step.
+  PISMComponent::init() should contain all the initialization code,
+  excluding memory-allocation. (We might need to "re-initialize" a
+  component.)
 
   Many PISM sub-models read data from the same file the rest of PISM reads
   from. PISMComponent::find_pism_input() checks -i and -boot_file command-line
@@ -89,6 +89,7 @@ class IceModelVec;
  */
 class PISMComponent {
 public:
+  /** Create a PISMComponent instance given a grid and a configuration database. */
   PISMComponent(IceGrid &g, const PISMConfig &conf)
     : grid(g), config(conf) {}
   virtual ~PISMComponent() {}
@@ -124,6 +125,10 @@ protected:
   IceGrid &grid;
   const PISMConfig &config;
 
+  /** @brief This flag determines whether a variable is read from the
+      `-regrid_file` file even if it is not listed among variables in
+      `-regrid_vars`.
+   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
   virtual PetscErrorCode regrid(std::string module_name, IceModelVec *variable,
                                 RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
@@ -135,6 +140,7 @@ protected:
 class PISMComponent_TS : public PISMComponent
 {
 public:
+  /** Create an instance of PISMComponent_TS given a grid and a configuration database. */
   PISMComponent_TS(IceGrid &g, const PISMConfig &conf)
     : PISMComponent(g, conf)
   { m_t = m_dt = GSL_NAN; }
@@ -166,11 +172,10 @@ public:
    *
    * One unfortunate exception is the initialization stage:
    * IceModel::bootstrapFromFile() and IceModel::model_state_setup()
-   * might need to "know" the state of the model at the beginning of
+   * may need to "know" the state of the model at the beginning of
    * the run, which might require a non-trivial computation and so
-   * requires an update() call. Because of this and the "preliminary"
-   * step, *currently* update() gets called more than once at the
-   * beginning of the run.
+   * requires an update() call. Because of this *currently* update()
+   * may get called twice at the beginning of the run.
    *
    * Other interface methods
    * (PISMSurfaceModel::ice_surface_temperature() is an example)

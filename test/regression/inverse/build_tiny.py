@@ -105,7 +105,7 @@ if __name__ == '__main__':
         no_model_mask[i,j] = 1
 
   pio = PISM.PIO(grid.com, "netcdf3", grid.get_unit_system())
-  pio.open(output_filename, PISM.NC_WRITE)
+  pio.open(output_filename, PISM.PISM_READWRITE_MOVE)
   pio.def_time(grid.config.get_string("time_dimension_name"),
                "365_day", "seconds since 1-1-1")
   pio.append_time(grid.config.get_string("time_dimension_name"),0.0)

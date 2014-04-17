@@ -34,9 +34,7 @@ else ()
     api/invert/sipletools.rst
     )
 
-  if (Pism_USE_TAO)
-    list(APPEND RST_FILES api/invert/ssa_tao.rst)
-  endif()
+  list(APPEND RST_FILES api/invert/ssa_tao.rst)
 
   set (sphinx_helpers
     _static/pymunk.js
@@ -58,14 +56,13 @@ else ()
   configure_file(conf.py conf.py @ONLY)
   configure_file(pism-sphinx-macros.tex pism-sphinx-macros.tex COPYONLY)
 
-
   add_custom_target (pismpython_docs
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/pismpython/_static ${CMAKE_BINARY_DIR}/doc/pismpython/_static
-
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/site-packages ${CMAKE_BINARY_DIR}/doc/site-packages
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/_static ${CMAKE_CURRENT_BINARY_DIR}/_static
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/site-packages ${CMAKE_BINARY_DIR}/site-packages
 
     COMMAND ${SPHINX_EXECUTABLE} -b html . html
-    DEPENDS ${RST_FILES} ${sphinx_helpers} install_site_packages_in_the_build_directory   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
+    DEPENDS ${RST_FILES} ${sphinx_helpers} install_site_packages_in_the_build_directory
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )
 
 
 endif()

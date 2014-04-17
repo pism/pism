@@ -93,7 +93,7 @@ one-way during the update() call.
 class PISMHydrology : public PISMComponent_TS {
 public:
   PISMHydrology(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMHydrology() {}
+  virtual ~PISMHydrology();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -103,7 +103,8 @@ public:
 
   // in the base class these only add/define/write tillwat
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   // all PISMHydrology models have a Wtil state variable, which this returns
@@ -145,7 +146,8 @@ protected:
 };
 
 
-//! The PISM minimal model has till in a "can".  Water that overflows the can is not conserved.  There is no model for lateral transport.
+//! The PISM minimal model has till in a "can". Water that overflows
+//! the can is not conserved. There is no model for lateral transport.
 /*!
 This is the minimum functional derived class.  It updates till water thickness.
 
@@ -158,24 +160,24 @@ Here is a talk which illustrates the "till-can" metaphor:
  */
 class PISMNullTransportHydrology : public PISMHydrology {
 public:
-  PISMNullTransportHydrology(IceGrid &g, const PISMConfig &conf)
-    : PISMHydrology(g, conf) {}
-  virtual ~PISMNullTransportHydrology() {}
+  PISMNullTransportHydrology(IceGrid &g, const PISMConfig &conf);
+  virtual ~PISMNullTransportHydrology();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  // sets result = 0
+  //! Sets result to 0.
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
 
-  // returns the overburden pressure in hope it is harmless
+  //! Returns the overburden pressure in hope it is harmless.
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
-  // solves an implicit step of a highly-simplified ODE
+  //! Solves an implicit step of a highly-simplified ODE.
   virtual PetscErrorCode update(double icet, double icedt);
 };
 
 
-//! \brief A subglacial hydrology model which assumes water pressure equals overburden pressure.
+//! \brief A subglacial hydrology model which assumes water pressure
+//! equals overburden pressure.
 /*!
 This is the minimal PISM hydrology model that has lateral motion of
 subglacial water and which conserves the water mass.  It was promised
@@ -235,12 +237,13 @@ not add to the water amount W; such an addition is generally unstable.
 class PISMRoutingHydrology : public PISMHydrology {
 public:
   PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMRoutingHydrology() {}
+  virtual ~PISMRoutingHydrology();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
@@ -270,7 +273,7 @@ protected:
   double stripwidth; // width in m of strip around margin where V and W are set to zero;
                         // if negative then the strip mechanism is inactive inactive
 
-  virtual PetscErrorCode allocate();
+  PetscErrorCode allocate();
   virtual PetscErrorCode init_bwat(PISMVars &vars);
 
   // when we update the water amounts, careful mass accounting at the
@@ -299,12 +302,6 @@ protected:
 
   PetscErrorCode raw_update_W(double hdt);
   PetscErrorCode raw_update_Wtil(double hdt);
-
-  inline bool in_null_strip(int i, int j) {
-    if (stripwidth < 0.0) return false;
-    return ((grid.x[i] <= grid.x[0] + stripwidth) || (grid.x[i] >= grid.x[grid.Mx-1] - stripwidth)
-            || (grid.y[j] <= grid.y[0] + stripwidth) || (grid.y[j] >= grid.y[grid.My-1] - stripwidth));
-  }
 };
 
 
@@ -325,14 +322,15 @@ potential to zero if either regular grid neighbor is in the null strip.
 class PISMDistributedHydrology : public PISMRoutingHydrology {
 public:
   PISMDistributedHydrology(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb);
-  virtual ~PISMDistributedHydrology() {}
+  virtual ~PISMDistributedHydrology();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                                std::map<std::string, PISMTSDiagnostic*> &ts_dict);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode update(double icet, double icedt);
@@ -341,21 +339,21 @@ public:
 
 protected:
   // this model's state, in addition to what is in PISMRoutingHydrology
-  IceModelVec2S P;      // water pressure
+  IceModelVec2S P;      //!< water pressure
   // this model's auxiliary variables, in addition ...
-  IceModelVec2S psi,    // hydraulic potential
-                cbase,  // sliding speed of overlying ice
-                Pnew;   // pressure during update
+  IceModelVec2S psi,    //!< hydraulic potential
+                velbase_mag,  //!< sliding speed of overlying ice
+                Pnew;   //!< pressure during update
 
   // need to get basal sliding velocity (thus speed):
   PISMStressBalance* stressbalance;
 
-  virtual PetscErrorCode allocate_pressure();
+  PetscErrorCode allocate_pressure();
   virtual PetscErrorCode init_bwp(PISMVars &vars);
 
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
 
-  virtual PetscErrorCode update_cbase(IceModelVec2S &result);
+  virtual PetscErrorCode update_velbase_mag(IceModelVec2S &result);
   virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
 
   virtual PetscErrorCode adaptive_for_WandP_evolution(
@@ -363,16 +361,6 @@ protected:
                            double &dt_result,
                            double &maxV_result, double &maxD_result,
                            double &PtoCFLratio);
-};
-
-
-//! \brief A form of the PISM subglacial hydrology model for a distributed linked-cavity system with an alternate (more "elliptic") way of updating pressure.
-class PISMDistHydrologyALT : public PISMDistributedHydrology {
-public:
-  PISMDistHydrologyALT(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb)
-    : PISMDistributedHydrology(g,conf,sb) {}
-  virtual ~PISMDistHydrologyALT() {}
-  virtual PetscErrorCode update(double icet, double icedt);
 };
 
 #endif /* _PISMHYDROLOGY_H_ */

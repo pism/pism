@@ -33,6 +33,8 @@ PISMRoutingHydrology::PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf)
   }
 }
 
+PISMRoutingHydrology::~PISMRoutingHydrology() {
+}
 
 PetscErrorCode PISMRoutingHydrology::allocate() {
   PetscErrorCode ierr;
@@ -102,11 +104,17 @@ PetscErrorCode PISMRoutingHydrology::init(PISMVars &vars) {
             "Options controlling the 'routing' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-report_mass_accounting",
-      "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
+      "Report to stdout on mass accounting in hydrology models",
+                            report_mass_accounting); CHKERRQ(ierr);
+
+    stripwidth = grid.convert(stripwidth, "m", "km");
     ierr = PISMOptionsReal("-hydrology_null_strip",
-                           "set the width, in km, of the strip around the edge of the computational domain in which hydrology is inactivated",
-                           stripwidth,stripset); CHKERRQ(ierr);
-    if (stripset) stripwidth *= 1.0e3;
+                           "set the width, in km, of the strip around the edge"
+                           " of the computational domain in which hydrology is inactivated",
+                           stripwidth, stripset); CHKERRQ(ierr);
+    if (stripset) {
+      stripwidth = grid.convert(stripwidth, "km", "m");
+    }
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -143,7 +151,7 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
     if (i) {
       bool bwat_exists = false;
       PIO nc(grid, "guess_mode");
-      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+      ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
       ierr = nc.inq_var("bwat", bwat_exists); CHKERRQ(ierr);
       if (bwat_exists == true) {
         ierr = W.read(filename, start); CHKERRQ(ierr);
@@ -154,6 +162,7 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
             filename.c_str(),bwatdefault); CHKERRQ(ierr);
         ierr = W.set(bwatdefault); CHKERRQ(ierr);
       }
+      ierr = nc.close(); CHKERRQ(ierr);
     } else {
       ierr = W.regrid(filename, OPTIONAL, bwatdefault); CHKERRQ(ierr);
     }
@@ -289,7 +298,7 @@ PetscErrorCode PISMRoutingHydrology::boundary_mass_changes(
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (in_null_strip(i,j)) {
+      if (grid.in_null_strip(i, j, stripwidth)) {
         my_nullstriplost += newthk(i,j) * dmassdz;
         newthk(i,j) = 0.0;
       }
@@ -594,9 +603,9 @@ PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result
         result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
       } else
         result(i,j,1) = 0.0;
-      if (in_null_strip(i,j) || in_null_strip(i+1,j))
+      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth))
         result(i,j,0) = 0.0;
-      if (in_null_strip(i,j) || in_null_strip(i,j+1))
+      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth))
         result(i,j,1) = 0.0;
     }
   }

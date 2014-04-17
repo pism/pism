@@ -405,7 +405,7 @@ PetscErrorCode PISMStressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
   IceModelVec3 *u, *v, *enthalpy;
   IceModelVec2S *thickness;
-  IceFlowLaw *flow_law = m_stress_balance->get_flow_law();
+  const IceFlowLaw *flow_law = m_stress_balance->get_flow_law();
   EnthalpyConverter &EC = m_stress_balance->get_enthalpy_converter();
 
   ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);

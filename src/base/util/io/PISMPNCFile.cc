@@ -40,15 +40,23 @@ void PISMPNCFile::check(int return_code) const {
   }
 }
 
+int PISMPNCFile::integer_open_mode(PISM_IO_Mode input) const {
+  if (input == PISM_READONLY) {
+    return NC_NOWRITE;
+  } else {
+    return NC_WRITE;
+  }
+}
 
-int PISMPNCFile::open(std::string fname, int mode) {
+int PISMPNCFile::open(std::string fname, PISM_IO_Mode mode) {
   int stat;
 
   init_hints();
 
   m_filename = fname;
 
-  stat = ncmpi_open(com, m_filename.c_str(), mode, mpi_info, &ncid); check(stat);
+  int nc_mode = integer_open_mode(mode);
+  stat = ncmpi_open(com, m_filename.c_str(), nc_mode, mpi_info, &ncid); check(stat);
 
   define_mode = false;
 

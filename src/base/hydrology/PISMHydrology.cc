@@ -58,6 +58,9 @@ PISMHydrology::PISMHydrology(IceGrid &g, const PISMConfig &conf)
   }
 }
 
+PISMHydrology::~PISMHydrology() {
+  // empty
+}
 
 PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
@@ -117,7 +120,7 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
                  n_records = 1;
 
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
-    ierr = nc.open(itbfilename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(itbfilename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 

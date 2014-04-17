@@ -47,7 +47,7 @@ def floating(a):
 seconds_per_year = 3.1556926e7
 x     = get('x')
 y     = get('y')
-csurf = get('csurf')
+velsurf_mag = get('velsurf_mag')
 mask  = get('mask')
 u     = floating(get('u_ssa'))
 v     = floating(get('v_ssa'))
@@ -62,8 +62,8 @@ plt.subplot(111, axisbg='0.5')
 # mark the grounding line
 plt.contour(x, y, mask, [2.5], colors="black", lw=2)
 
-# plot csurf using log color scale
-plt.pcolormesh(x, y, csurf, norm=colors.LogNorm(vmin=1, vmax=1.5e3))
+# plot velsurf_mag using log color scale
+plt.pcolormesh(x, y, velsurf_mag, norm=colors.LogNorm(vmin=1, vmax=1.5e3))
 # add a colorbar:
 plt.colorbar(extend='both', ticks=[1, 10, 100, 250, 500, 1000], format="%d")
 

@@ -382,7 +382,7 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
   result = (int) strtol(str, &endptr, 10);
   if (*endptr != '\0') {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "PISM ERROR: Can't parse \"%s %s\": (%s is not a number).\n",
+                       "PISM ERROR: Can't parse \"%s %s\": (%s is not an integer).\n",
                        option.c_str(), str, str); CHKERRQ(ierr);
     PISMEnd();
   }
@@ -674,6 +674,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.scalar_from_option("adapt_ratio",
                                    "adaptive_timestepping_ratio"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("timestep_hit_multiples",
+                                   "timestep_hit_multiples"); CHKERRQ(ierr);
+
   ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
 
@@ -750,6 +753,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
                                    "till_effective_fraction_overburden");      CHKERRQ(ierr);
   ierr = config.flag_from_option("tauc_slippery_grounding_lines",
                                  "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("tauc_add_transportable_water",
+                                 "tauc_add_transportable_water"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("yield_stress", "yield_stress_model",
                                     "constant,mohr_coulomb"); CHKERRQ(ierr);
@@ -879,6 +884,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.scalar_from_option("blatter_Mz", "blatter_Mz"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("clip_shelf_base_salinity",
+                                 "ocean_three_equation_model_clip_salinity"); CHKERRQ(ierr);
 
   // old options
   ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",

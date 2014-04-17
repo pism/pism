@@ -53,10 +53,10 @@ public:
     \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
     \f$T_r = 256.82\f$ K.
   */
-  virtual double c_from_T(double T)
+  virtual double c_from_T(double T) const
   { return c_i + c_gradient * (T - T_r); }
 
-  virtual double c_from_enth(double E, double p)
+  virtual double c_from_enth(double E, double p) const
   {
     double T;
     getAbsTemp(E, p, T);

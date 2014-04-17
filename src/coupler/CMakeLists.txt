@@ -36,6 +36,8 @@ add_library (pismboundary
   ./surface/PSForceThickness.cc
   ./surface/PSAnomaly.cc
   ./util/PCFactory.cc
+  ./surface/PSTemperatureIndex_Old.cc
+  ./surface/localMassBalance_old.cc
   )
 target_link_libraries (pismboundary pismutil)
 

@@ -29,7 +29,7 @@ public:
   virtual ~PISMPNCFile();
 
   // open/create/close
-  int open(std::string filename, int mode);
+  int open(std::string filename, PISM_IO_Mode mode);
 
   int create(std::string filename);
 
@@ -111,6 +111,7 @@ public:
 
   std::vector<std::string> mpi_io_hints;
 protected:
+  virtual int integer_open_mode(PISM_IO_Mode input) const;
   void check(int return_code) const;
 
 private:

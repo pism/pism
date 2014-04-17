@@ -29,7 +29,7 @@
 class PIO;
 class LocalInterpCtx;
 
-//! Named constants for IceModelVec*::create.
+//! What "kind" of a vector to create: with or without ghosts.
 enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a
@@ -108,7 +108,7 @@ enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
   PIO nc(grid.com, grid.config.get_string("output_format"));
 
   std::string time_name = config.get_string("time_dimension_name");
-  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
+  ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr); // append == false
   ierr = nc.def_time(time_name, grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);

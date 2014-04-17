@@ -195,7 +195,7 @@ All of these are recommended as they satisfy requirements for building or runnin
     \texttt{libproj-dev} & used to compute ice area and volume \\
     \texttt{python-dev} & (helps with scripts\dots perhaps not essential) \\
     \texttt{python-pyproj} & used in some pre-processing scripts \\
-    \texttt{x11-dev} & X windows is useful to get graphics through PETSC \\
+    \texttt{libx11-dev} & X windows is useful to get graphics through PETSC \\
     \midrule
     \texttt{libblas-dev} & BLAS is required by PETSc \\
     \texttt{liblapack-dev} & LAPACK is required by PETSc \\
@@ -345,19 +345,19 @@ You are ready to build PISM itself, which is a much quicker procedure, as follow
 \item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest version of PISM.
 \item Do
 \begin{verbatim}
-$  git clone git://github.com/pism/pism.git pism0.5
+$  git clone git://github.com/pism/pism.git pism0.6
 \end{verbatim}
-\item A directory called ``\texttt{pism0.5/}'' will be created.  Note that in the future when you enter that directory,
+\item A directory called ``\texttt{pism0.6/}'' will be created.  Note that in the future when you enter that directory,
   \texttt{git pull} will update to the latest revision of PISM.\footnote{Of course, after \texttt{git pull} you will \texttt{make -C build install} to recompile and re-install PISM.}
 \end{enumerate}
 \item Build PISM:\footnote{Please report any problems you meet at these build stages by sending us the output: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.}
 \begin{verbatim}
-$  mkdir pism0.5/build
-$  cd pism0.5/build
+$  mkdir pism0.6/build
+$  cd pism0.6/build
 $  PISM_INSTALL_PREFIX=~/pism cmake ..
 $  make install
 \end{verbatim}
-Here \texttt{pism0.5} is the directory containing PISM source code while \texttt{\textasciitilde/pism} is the directory PISM will be installed into. All the temporary files created during the build process will be in \texttt{pism0.5/build} created above.
+Here \texttt{pism0.6} is the directory containing PISM source code while \texttt{\textasciitilde/pism} is the directory PISM will be installed into. All the temporary files created during the build process will be in \texttt{pism0.6/build} created above.
 
 You might need to add \texttt{CC} and \texttt{CXX} to the \texttt{cmake}
 command:
@@ -630,7 +630,7 @@ $ mpiexec -n 4 pismv -test G -y 200
 \item Try an EISMINT II run using the PETSc viewers (under the X window system):
 
 \begin{verbatim}
-$ pisms -y 5000 -view_map thk,temppabase,csurf
+$ pisms -y 5000 -view_map thk,temppabase,velsurf_mag
 \end{verbatim}
 
   \noindent When using such viewers and \texttt{mpiexec} the additional final
@@ -638,7 +638,7 @@ $ pisms -y 5000 -view_map thk,temppabase,csurf
   like this:
 
 \begin{verbatim}
-$ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0
+$ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,velsurf_mag -display :0
 \end{verbatim}
 
 \noindent Also \texttt{-draw_pause 0.1} or similar may be needed if the figures
@@ -736,6 +736,18 @@ documentation evolve together. These tools are required: \bigskip
   \end{tabular}
 \end{center}
 \bigskip
+
+To build documentation on a system without PISM's prerequisite
+libraries (such as MPI and PETSc), assuming that PISM sources are in \texttt{~/pism0.6}, do the following:
+\begin{verbatim}
+$ cd ~/pism0.6
+$ mkdir doc-build # create a build directory
+$ cd doc-build
+$ cmake ../doc
+\end{verbatim}
+%$
+then ``\texttt{make manual}'', ``\texttt{make installation}'' and
+others (see above) will work as expected.
 
 \subsection{Building documentation for PISM's Python bindings and inversion tools}
 The documentation for PISM's Python bindings uses the documentation-generation tool Sphinx; see \href{http://sphinx-doc.org/}{sphinx-doc.org}.  The bindings make scripting and interactive PISM possible, but many PISM users will not need them.  Installing them is required to use PISM for inversion of surface velocities for basal shear stress and ice hardness.  Building their documentation is strongly-recommended before use.

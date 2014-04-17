@@ -46,14 +46,24 @@ PISMNC3File::~PISMNC3File() {
   }
 }
 
+
+int PISMNC3File::integer_open_mode(PISM_IO_Mode input) const {
+  if (input == PISM_READONLY) {
+    return NC_NOWRITE;
+  } else {
+    return NC_WRITE;
+  }
+}
+
 // open/create/close
-int PISMNC3File::open(std::string fname, int mode) {
+int PISMNC3File::open(std::string fname, PISM_IO_Mode mode) {
   int stat;
 
   m_filename = fname;
 
   if (m_rank == 0) {
-    stat = nc_open(m_filename.c_str(), mode, &ncid);
+    int nc_mode = integer_open_mode(mode);
+    stat = nc_open(m_filename.c_str(), nc_mode, &ncid);
   }
 
   MPI_Barrier(com);

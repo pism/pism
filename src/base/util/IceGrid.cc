@@ -132,7 +132,7 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
     std::string tmp;
 
-    ierr = nc.open(time_file_name, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(time_file_name, PISM_READONLY); CHKERRQ(ierr);
     {
       bool time_exists;
       std::string time_name = config.get_string("time_dimension_name");
@@ -264,16 +264,14 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 unsigned int IceGrid::kBelowHeight(double height) {
   if (height < 0.0 - 1.0e-6) {
-    PetscPrintf(com,
-       "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be non-negative)\n",
-       height);
-    PISMEnd();
+    PetscPrintf(PETSC_COMM_SELF,
+                "IceGrid kBelowHeight(), rank %d, height = %5.4f is below base of ice (height must be non-negative)\n", rank, height);
+    MPI_Abort(PETSC_COMM_WORLD, 1);
   }
   if (height > Lz + 1.0e-6) {
-    PetscPrintf(com,
-       "IceGrid kBelowHeight(): height = %5.4f is above top of computational grid Lz = %5.4f\n",
-       height,Lz);
-    PISMEnd();
+    PetscPrintf(PETSC_COMM_SELF,
+                "IceGrid kBelowHeight(): rank %d, height = %5.4f is above top of computational grid Lz = %5.4f\n", rank, height, Lz);
+    MPI_Abort(PETSC_COMM_WORLD, 1);
   }
 
   unsigned int mcurr = 0;

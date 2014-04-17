@@ -67,12 +67,12 @@ public:
   LocalMassBalance(const PISMConfig &myconfig);
   virtual ~LocalMassBalance() {}
 
-  virtual int get_timeseries_length(double dt) = 0;
+  virtual unsigned int get_timeseries_length(double dt) = 0;
 
   //! Count positive degree days (PDDs).  Returned value in units of K day.
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
     Inputs `t`, `dt_series` are in seconds.  */
-  virtual void get_PDDs(double pddStdDev, double dt_series,
+  virtual void get_PDDs(double *S, double dt_series,
                         double *T, unsigned int N, double *PDDs) = 0;
 
   /*! Remove rain from precipitation. */
@@ -117,8 +117,8 @@ public:
   PDDMassBalance(const PISMConfig& myconfig);
   virtual ~PDDMassBalance() {}
 
-  virtual int get_timeseries_length(double dt);
-  virtual void get_PDDs(double pddStdDev, double dt_series,
+  virtual unsigned int get_timeseries_length(double dt);
+  virtual void get_PDDs(double *S, double dt_series,
                         double *T, unsigned int N, double *PDDs);
 
   virtual void get_snow_accumulation(double *precip_rate, double *T,
@@ -162,9 +162,9 @@ public:
                      bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
-  virtual int get_timeseries_length(double dt);
+  virtual unsigned int get_timeseries_length(double dt);
 
-  virtual void get_PDDs(double pddStdDev, double dt_series,
+  virtual void get_PDDs(double *S, double dt_series,
                         double *T, unsigned int N, double *PDDs);
 protected:
   gsl_rng *pddRandGen;

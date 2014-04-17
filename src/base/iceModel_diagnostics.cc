@@ -88,10 +88,10 @@ PetscErrorCode IceModel::init_diagnostics() {
   }
 
 #if (PISM_USE_PROJ4==1)
-  if (mapping.has_attribute("proj4")) {
-    std::string proj4 = mapping.get_string("proj4");
-    diagnostics["lat_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lat", proj4);
-    diagnostics["lon_bounds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lon", proj4);
+  if (global_attributes.has_attribute("proj4")) {
+    std::string proj4 = global_attributes.get_string("proj4");
+    diagnostics["lat_bnds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lat", proj4);
+    diagnostics["lon_bnds"] = new IceModel_lat_lon_bounds(this, grid, variables, "lon", proj4);
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -313,7 +313,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   const double fillval = grid.config.get("fill_value");
   double *Eij; // columns of enthalpy values
 
-  IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
+  const IceFlowLaw *flow_law = model->stress_balance->get_stressbalance()->get_flow_law();
   if (flow_law == NULL) {
     flow_law = model->stress_balance->get_ssb_modifier()->get_flow_law();
     if (flow_law == NULL) {
@@ -2015,8 +2015,8 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVa
   for (int k = 0; k < 4; ++k)
     levels[k] = k;
 
-  vars[0].init_3d(m_var_name + "_bounds", grid, levels);
-  vars[0].get_z().set_name("grid_corners");
+  vars[0].init_3d(m_var_name + "_bnds", grid, levels);
+  vars[0].get_z().set_name("nv4");
   vars[0].get_z().clear_all_strings();
   vars[0].get_z().clear_all_doubles();
   vars[0].set_time_independent(true);
@@ -2059,7 +2059,7 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);
 
-  ierr = result->create(grid, m_var_name + "_bounds", "grid_corners",
+  ierr = result->create(grid, m_var_name + "_bnds", "nv4",
                         indices, attrs); CHKERRQ(ierr);
   result->metadata() = vars[0];
 

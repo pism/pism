@@ -5,32 +5,69 @@
 # This script sets up the bootstrap file.
 # See also preprocess.sh.
 
-import sys
-import time
-import subprocess
+import sys, time, subprocess, argparse, shlex
 import numpy as np
 
-# try different netCDF modules
 try:
     from netCDF4 import Dataset as CDF
 except:
     print "netCDF4 is not installed!"
     sys.exit(1)
 
-import argparse
-
-parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and converts gumparams.cdl.',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and a configuration overrides file.',formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-Mx', default=53,
                    help='number of points in each direction on a square grid; note MX -> cell width cases: 53 -> 10mm,  105 -> 5mm, 209 -> 2.5mm, 521 -> 1mm')
 parser.add_argument('-o', metavar='FILENAME', default='initlab53.nc',
                    help='output file name to create (NetCDF)')
 args = parser.parse_args()
 
-print "  creating PISM-readable config override file gumparams.nc ..."
-# do "rm -f gumparams.nc"
-subprocess.call(["rm", "-f", "gumparams.nc"])
-# do "ncgen -o gumparams.nc gumparams.cdl"
-subprocess.call(["ncgen", "-o", "gumparams.nc", "gumparams.cdl"])
+def create_config():
+    print "  creating PISM-readable config override file gumparams.nc ..."
+    nc = CDF("gumparams.nc", 'w')
+    config = nc.createVariable("pism_overrides", 'i4')
+
+    config.standard_gravity = 9.81;
+    config.standard_gravity_doc = "m s-2; = g";
+
+    config.ice_density = 1000.0;
+    config.ice_density_doc = "kg m-3; 1% Xanthan gum in water has same density as water";
+
+    config.bed_smoother_range = -1.0;
+    config.bed_smoother_range_doc = "m; negative value de-activates bed smoother";
+
+    config.bootstrapping_geothermal_flux_value_no_var = 0.0;
+    config.bootstrapping_geothermal_flux_value_no_var_doc = "W m-2; no geothermal";
+
+    config.summary_time_unit_name = "second";
+    config.summary_time_unit_name_doc = "stdout uses seconds (not years) to show model time";
+
+    config.summary_time_use_calendar = "no";
+    config.summary_time_use_calendar_doc = "stdout does not use a calendar to show model time";
+
+    config.summary_vol_scale_factor_log10 = -15;
+    config.summary_vol_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume in summary line to stdout; -15 gives volume in cm^3";
+
+    config.summary_area_scale_factor_log10 = -10;
+    config.summary_area_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for area in summary line to stdout; -10 gives area in cm^2";
+
+    config.mask_icefree_thickness_standard = 1e-8;
+    config.mask_icefree_thickness_standard_doc = "m; only if the fluid is less than this is a cell marked as ice free";
+
+    config.mask_is_floating_thickness_standard = 1e-8;
+    config.mask_is_floating_thickness_standard_doc = "m; should not matter since all grounded";
+
+    config.adaptive_timestepping_ratio = 0.08;
+    config.adaptive_timestepping_ratio_doc = "; compare default 0.12; needs to be smaller because gum suspension is more shear-thinning than ice?";
+
+    config.Glen_exponent = 5.9;
+    config.Glen_exponent_doc = "; = n;  Sayag & Worster (2013) give n = 5.9 +- 0.2";
+
+    config.ice_softness = 9.7316e-09;  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
+    config.ice_softness_doc = "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)";
+
+    nc.close()
+
+create_config()
 
 # lab setup is table with hole in the middle into which is piped the
 # shear-thinning fluid, which is Xanthan gum 1% solution

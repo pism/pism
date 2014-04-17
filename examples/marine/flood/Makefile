@@ -2,7 +2,7 @@ input=-boot_file flood.nc -Mx 101 -My 101 -Mz 21 -Lz 1500
 ssa=-stress_balance ssa+sia -plastic_phi 15
 ocean=-ocean constant,delta_SL -ocean_delta_SL_file flood.nc
 misc=-energy none
-extra=-extra_vars thk,mask,cbar -extra_times 10
+extra=-extra_vars thk,mask,velbar_mag -extra_times 10
 
 options=${input} ${ssa} ${ocean} ${misc} ${extra}
 

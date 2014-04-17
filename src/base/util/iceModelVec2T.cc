@@ -132,7 +132,7 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
   PIO nc(*grid, "guess_mode");
   std::string name_found;
   bool exists, found_by_standard_name;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
   if (exists == false) {
@@ -234,6 +234,11 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
   std::vector<double>::iterator i, j;
   unsigned int m, n, last;
 
+  if (time_bounds.size() == 0) {
+    ierr = update(0); CHKERRQ(ierr);
+    return 0;
+  }
+
   if (m_period != 0) {
     // we read all data in IceModelVec2T::init() (see above)
     return 0;
@@ -331,7 +336,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
   }
 
   PIO nc(*grid, "guess_mode");
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   for (unsigned int j = 0; j < missing; ++j) {
     ierr = m_metadata[0].regrid(nc, start + j,
@@ -427,9 +432,8 @@ double IceModelVec2T::max_timestep(double my_t) {
 }
 
 /*
- * \brief Use linear interpolation to initialize IceModelVec2T with
- * the value at time `my_t`, assuming that data is periodic with
- * period `m_period` seconds.
+ * \brief Use piecewise-constant interpolation to initialize
+ * IceModelVec2T with the value at time `my_t`.
  *
  * \note This method does not check if an update() call is necessary!
  *
@@ -485,8 +489,8 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
 }
 
 /**
- * \brief Compute weights for the piecewise-linear interpolation. This is used *both*
- * for time-series and "snapshots".
+ * \brief Compute weights for the piecewise-constant interpolation.
+ * This is used *both* for time-series and "snapshots".
  *
  * @param ts requested times, in seconds
  * @param ts_length number of requested times (length of the `ts` array)
@@ -508,6 +512,12 @@ PetscErrorCode IceModelVec2T::init_interpolation(const double *ts, unsigned int 
   }
 
   m_interp_indices.resize(ts_length);
+
+  if (time_bounds.size() == 0) {
+    for (unsigned int k = 0; k < ts_length; ++k) {
+      m_interp_indices[k] = 0;
+    }
+  }
 
   for (unsigned int k = 0; k < ts_length; ++k) {
 
@@ -542,7 +552,7 @@ PetscErrorCode IceModelVec2T::init_interpolation(const double *ts, unsigned int 
 
 /** 
  * \brief Compute values of the time-series using precomputed indices
- * and interpolation weights (linear interpolation).
+ * (and piecewise-constant interpolation).
  *
  * @param i,j map-plane grid point
  * @param result pointer to an allocated array of `weights.size()` `double`
@@ -561,7 +571,7 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, double *result) {
 }
 
 //! \brief Finds the average value at i,j over the interval (my_t, my_t +
-//! my_dt) using trapezoidal rule.
+//! my_dt) using the rectangle rule.
 /*!
   Can (and should) be optimized. Later, though.
  */

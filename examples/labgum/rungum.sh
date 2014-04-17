@@ -29,7 +29,7 @@ ts_dt=3.1689e-09     # = 0.1 / 31556926 = 0.1 s
 timediag="-ts_file ts_$oname -ts_times $ts_dt:$ts_dt:$endtime"
 
 ex_dt=3.1689e-07     # = 10 / 31556926 = 10 s
-exvars="diffusivity,cflx,cbar,csurf,mask,thk,wvelsurf"
+exvars="diffusivity,flux_mag,velbar_mag,velsurf_mag,mask,thk,wvelsurf"
 exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times 0:$ex_dt:$endtime"
 
 mpiexec -n $NN $pismexec -boot_file $initfile $grid $physics \

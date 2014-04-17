@@ -130,7 +130,7 @@ PetscErrorCode IceModel::dumpToFile(std::string filename) {
 
   // Prepare the file
   std::string time_name = config.get_string("time_dimension_name");
-  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr); // append == false
+  ierr = nc.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
   ierr = nc.def_time(time_name, grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);
   ierr = nc.append_time(time_name, grid.time->current()); CHKERRQ(ierr);
@@ -336,11 +336,11 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
   std::string o_size = get_output_size("-o_size");
 
 #if (PISM_USE_PROJ4==1)
-  if (mapping.has_attribute("proj4")) {
-    output_vars.insert("lon_bounds");
-    output_vars.insert("lat_bounds");
-    vLatitude.metadata().set_string("bounds", "lat_bound");
-    vLongitude.metadata().set_string("bounds", "lon_bound");
+  if (global_attributes.has_attribute("proj4")) {
+    output_vars.insert("lon_bnds");
+    output_vars.insert("lat_bnds");
+    vLatitude.metadata().set_string("bounds", "lat_bnds");
+    vLongitude.metadata().set_string("bounds", "lon_bnds");
   }
 #elif (PISM_USE_PROJ4==0)
   // do nothing
@@ -368,7 +368,7 @@ PetscErrorCode IceModel::initFromFile(std::string filename) {
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
                     filename.c_str()); CHKERRQ(ierr);
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   // Find the index of the last record in the file:
   unsigned int last_record;
@@ -546,6 +546,23 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
     }
 
     ierr = v->regrid(filename, CRITICAL); CHKERRQ(ierr);
+
+    // Check if the current variable is the same as
+    // IceModel::ice_thickess, then check the range of the ice
+    // thickness
+    if (v == &this->ice_thickness) {
+      double thk_min = 0.0, thk_max = 0.0;
+      ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
+
+      if (thk_max >= grid.Lz + 1e-6) {
+        PetscPrintf(grid.com,
+                    "PISM ERROR: Maximum ice thickness (%f meters)\n"
+                    "            exceeds the height of the computational domain (%f meters).\n"
+                    "            Stopping...\n", thk_max, grid.Lz);
+        PISMEnd();
+      }
+    }
+
   }
 
   return 0;
@@ -570,7 +587,7 @@ PetscErrorCode IceModel::init_enthalpy(std::string filename,
     enthalpy_exists = false;
 
   PIO nc(grid, "guess_mode");
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var("enthalpy", enthalpy_exists); CHKERRQ(ierr);
   ierr = nc.inq_var("temp", temp_exists); CHKERRQ(ierr);
   ierr = nc.inq_var("liqfrac", liqfrac_exists); CHKERRQ(ierr);
@@ -745,9 +762,9 @@ PetscErrorCode IceModel::write_snapshot() {
 
   PIO nc(grid, grid.config.get_string("output_format"));
 
-  if (!snapshots_file_is_ready) {
+  if (snapshots_file_is_ready == false) {
     // Prepare the snapshots file:
-    ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        grid.time->calendar(),
                        grid.time->CF_units_string()); CHKERRQ(ierr);
@@ -756,7 +773,8 @@ PetscErrorCode IceModel::write_snapshot() {
 
     snapshots_file_is_ready = true;
   } else {
-    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr); // append==true
+    // In this case the snapshot file is should be present.
+    ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
   }
 
   unsigned int time_length = 0;
@@ -848,7 +866,7 @@ PetscErrorCode IceModel::write_backup() {
   PIO nc(grid, grid.config.get_string("output_format"));
 
   // write metadata:
-  ierr = nc.open(backup_filename, PISM_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(backup_filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
   ierr = nc.def_time(config.get_string("time_dimension_name"),
                      grid.time->calendar(),
                      grid.time->CF_units_string()); CHKERRQ(ierr);

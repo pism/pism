@@ -22,7 +22,7 @@ output_basename="test_eigencalving"
 
 calving="-calving eigen_calving -eigen_calving_K 1e15"
 
-diagnostics="thk,mask,cbar,Href,velbar,discharge_flux_cumulative"
+diagnostics="thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative"
 
 viewers="-view_map $diagnostics"
 

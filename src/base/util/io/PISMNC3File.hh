@@ -28,7 +28,7 @@ public:
   virtual ~PISMNC3File();
 
   // open/create/close
-  int open(std::string filename, int mode);
+  int open(std::string filename, PISM_IO_Mode mode);
 
   int create(std::string filename);
 
@@ -106,6 +106,8 @@ public:
   int set_fill(int fillmode, int &old_modep) const;
 
   virtual std::string get_format() const;
+protected:
+  virtual int integer_open_mode(PISM_IO_Mode input) const;
 private:
   int m_rank;
   int get_var_double(std::string variable_name,

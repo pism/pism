@@ -51,7 +51,7 @@ PetscErrorCode PISMConfig::read(std::string filename) {
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = this->read(nc); CHKERRQ(ierr);
 
@@ -65,7 +65,12 @@ PetscErrorCode PISMConfig::write(std::string filename, bool append) const {
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
-  ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
+  PISM_IO_Mode mode = PISM_READWRITE;
+  if (append == false) {
+    mode = PISM_READWRITE_MOVE;
+  }
+
+  ierr = nc.open(filename, mode); CHKERRQ(ierr);
 
   ierr = this->write(nc); CHKERRQ(ierr);
 

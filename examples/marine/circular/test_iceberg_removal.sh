@@ -22,7 +22,7 @@ pismopts="-boot_file $infile $grid -stress_balance ssa+sia -ssa_dirichlet_bc -ss
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 0.05 -extra_vars thk,mask,cbar,Href,velbar,discharge_flux_cumulative -extra_file iceberg_ex.nc"
+extra="-extra_times 0.05 -extra_vars thk,mask,velbar_mag,Href,velbar,discharge_flux_cumulative -extra_file iceberg_ex.nc"
 
 # run with CFBC and part_grid
 $doit -y $length -ssa_method fd -cfbc -part_grid -part_redist -o iceberg_o.nc $extra

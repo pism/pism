@@ -193,27 +193,15 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes the driving shear stress at the base of ice
+//! @brief Computes the driving shear stress at the base of ice
 //! (diagnostically).
+/*! This is *not* a duplicate of SSB_taud: SSA_taud::compute() uses
+  SSA::compute_driving_stress(), which tries to be smarter near ice margins.
+ */
 class SSA_taud : public PISMDiag<SSA>
 {
 public:
   SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! @brief Computes the basal shear stress @f$ \tau_b @f$.
-class SSA_taub : public PISMDiag<SSA>
-{
-public:
-  SSA_taub(SSA *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-class SSA_beta : public PISMDiag<SSA>
-{
-public:
-  SSA_beta(SSA *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

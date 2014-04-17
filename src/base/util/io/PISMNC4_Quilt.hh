@@ -31,7 +31,7 @@ public:
   virtual ~PISMNC4_Quilt() {}
 
   // open/create/close
-  virtual int open(std::string filename, int mode);
+  virtual int open(std::string filename, PISM_IO_Mode mode);
 
   virtual int create(std::string filename);
 
@@ -49,6 +49,8 @@ public:
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
   virtual int move_if_exists(std::string filename, int rank_to_use = 0);
+protected:
+  virtual int integer_open_mode(PISM_IO_Mode input) const;
 private:
   virtual int get_put_var_double(std::string variable_name,
                                  std::vector<unsigned int> start,

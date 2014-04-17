@@ -29,11 +29,12 @@ public:
   virtual ~PISMNC4_Par() {}
 
   // open/create/close
-  virtual int open(std::string filename, int mode);
+  virtual int open(std::string filename, PISM_IO_Mode mode);
 
   virtual int create(std::string filename);
 
 protected:
+  virtual int integer_open_mode(PISM_IO_Mode input) const;
   virtual int set_access_mode(int varid, bool mapped) const;
 };
 

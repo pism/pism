@@ -19,16 +19,40 @@
 #include "POGivenTH.hh"
 #include "IceGrid.hh"
 #include "PISMVars.hh"
+#include "PISMConfig.hh"
 
 #include <gsl/gsl_poly.h>
 #include <cassert>
 
-/* TO DO:
- *
- * Add detailed references ("this implements equations (3)-(7) in Smith and
- * Jones, 2001" and similar).
- *
- */
+POGivenTH::POGivenTHConstants::POGivenTHConstants(const PISMConfig &config) {
+  // coefficients of the in situ melting point temperature
+  // parameterization:
+  a[0] = -0.0575;
+  a[1] =  0.0901;
+  a[2] = -7.61e-4;
+  // coefficients of the in situ melting point potential temperature
+  // parameterization:
+  b[0] = -0.0575;
+  b[1] =  0.0921;
+  b[2] = -7.85e-4;
+
+  // turbulent heat transfer coefficient
+  gamma_T = 1.00e-4;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
+  // turbulent salt transfer coefficient
+  gamma_S = 5.05e-7;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
+
+  // FIXME: this should not be hard-wired. Eventually we should be able
+  // to use the spatially-variable top-of-the-ice temperature.
+  shelf_top_surface_temperature    = -20.0; // degrees Celsius
+
+  water_latent_heat_fusion         = config.get("water_latent_heat_fusion");
+  sea_water_density                = config.get("sea_water_density");
+  sea_water_specific_heat_capacity = config.get("sea_water_specific_heat_capacity");
+  ice_density                      = config.get("ice_density");
+  ice_specific_heat_capacity       = config.get("ice_specific_heat_capacity");
+  ice_thermal_diffusivity          = config.get("ice_thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
+  limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
+}
 
 POGivenTH::POGivenTH(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
@@ -91,7 +115,7 @@ PetscErrorCode POGivenTH::init(PISMVars &vars) {
                     "  reading ocean temperature and salinity from a file...\n"); CHKERRQ(ierr);
 
   ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!ice_thickness) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
+  if (ice_thickness == NULL) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
 
   ierr = theta_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
   ierr = salinity_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
@@ -100,21 +124,6 @@ PetscErrorCode POGivenTH::init(PISMVars &vars) {
   if (theta_ocean->get_n_records() == 1 && salinity_ocean->get_n_records() == 1) {
     ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
   }
-
-  return 0;
-}
-
-PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
-
-  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
-
-  ierr = theta_ocean->average(m_t, m_dt); CHKERRQ(ierr);
-  ierr = salinity_ocean->average(m_t, m_dt); CHKERRQ(ierr);
-
-  ierr = calc_shelfbtemp_shelfbmassflux(); CHKERRQ(ierr);
-
-  // convert from [m s-1] to [kg m-2 s-1]:
-  ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);
 
   return 0;
 }
@@ -129,160 +138,91 @@ PetscErrorCode POGivenTH::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode POGivenTH::calc_shelfbtemp_shelfbmassflux() {
+PetscErrorCode POGivenTH::sea_level_elevation(double &result) {
+  result = sea_level;
+  return 0;
+}
 
-  PetscErrorCode ierr;
+PetscErrorCode POGivenTH::melange_back_pressure_fraction(IceModelVec2S &result) {
+  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+  return 0;
+}
 
-  const double rhoi = config.get("ice_density");
-  const double rhow = config.get("sea_water_density");
+PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
 
-  double bmeltrate, thetao, temp_base;
+  // Make sure that sea water salinity and sea water potential
+  // temperature fields are up to date:
+  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
 
-  ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
-  ierr = theta_ocean->begin_access(); CHKERRQ(ierr);
+  ierr = theta_ocean->average(m_t, m_dt); CHKERRQ(ierr);
+  ierr = salinity_ocean->average(m_t, m_dt); CHKERRQ(ierr);
+
+  POGivenTHConstants c(config);
+
+  ierr = ice_thickness->begin_access();  CHKERRQ(ierr);
+  ierr = theta_ocean->begin_access();    CHKERRQ(ierr);
   ierr = salinity_ocean->begin_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.begin_access();      CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access();  CHKERRQ(ierr);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
 
-      thetao = (*theta_ocean)(i,j) - 273.15; // convert from Kelvin to Celsius
+      double
+        shelf_base_temp        = 0.0,
+        shelf_base_massflux   = 0.0;
+      ierr = pointwise_update(c,
+                              (*salinity_ocean)(i,j),
+                              potential_temperature_celsius,
+                              (*ice_thickness)(i,j),
+                              &shelf_base_temp,
+                              &shelf_base_massflux); CHKERRQ(ierr);
 
-      btemp_bmelt_3eqn(rhow, rhoi,(*salinity_ocean)(i,j), thetao, (*ice_thickness)(i,j), temp_base, bmeltrate);
-
-      // the ice/ocean boundary layer temperature is seen by PISM as shelfbtemp.
-      shelfbtemp(i,j) = temp_base + 273.15; // convert from Celsius to Kelvin
-
-      // FIXME: do we need this "-1"? (note the definition of the sub-shelf mass flux above).
-      shelfbmassflux(i,j) = bmeltrate;
+      shelfbtemp(i,j)     = shelf_base_temp;
+      shelfbmassflux(i,j) = shelf_base_massflux;
     }
   }
 
-  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
-  ierr = theta_ocean->end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access();  CHKERRQ(ierr);
+  ierr = shelfbtemp.end_access();      CHKERRQ(ierr);
   ierr = salinity_ocean->end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
+  ierr = theta_ocean->end_access();    CHKERRQ(ierr);
+  ierr = ice_thickness->end_access();  CHKERRQ(ierr);
+
+  // convert mass flux from [m s-1] to [kg m-2 s-1]:
+  ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
-                                           double sal_ocean, double potential_temperature, double zice,
-                                           double &temp_base, double &meltrate) {
 
-  // This function solves the three equation model of ice-shelf ocean interaction (Hellmer and Olbers, 1989).
-  // Equations are
-  // (1) freezing point dependence on salinity and pressure
-  // (2) heat conservation in brine layer
-  // (3) salinity conservation in brine layer
-
-  // Code derived from BRIOS subroutine iceshelf (which goes back to H.Hellmer's 2D ice shelf model code)
-  // and adjusted for use in FESOM by Ralph Timmermann, 16.02.2011
-  // adapted for PISM by matthias.mengel@pik-potsdam.de
-
-  // The model is described in section 3 of
-  // Hellmer, Hartmut, S. S. Jacobs, and A. Jenkins.
-  // "Oceanic erosion of a floating Antarctic glacier in the Amundsen Sea."
-  // Ocean, Ice, and Atmosphere: Interactions at the Antarctic continental margin (S Jacobs, R Weiss, eds)
-  // Antarctic Research Series, AGU, Washington DC, USA 75 (1998): 319-339.
-
-  // FIXME: uses fixed temperature at ice surface tob=-20 degC to calculate
-  //        heat flux from ice/ocean brine boundary layer into ice.
-  //        We could do this better by usings PISMs ice temperature or heat flux
-  //        calculus at the bottom layers of the ice shelf.
-
-  double sal_base;
-  double ep1,ep2,ep3,ep4,ep4b;
-  double ex1,ex2,ex3,ex4,ex5;
-  double sr1,sr2,sf1,sf2,tf1,tf2,tf,sf;
-
-  // coefficients for linearized freezing point equation
-  // for in situ temperature
-  double ai   = -0.0575;                // [°C/psu] Foldvik&Kvinge (1974)
-  double bi   =  0.0901;                // [°C]
-  double ci   =  7.61e-4;               // [°C/m]
-
-  // coefficients for linearized freezing point equation
-  // for potential temperature
-
-  double ap  =  -0.0575;   // [°C/psu]
-  double bp  =   0.0921;   // [°C]
-  double cp  =   7.85e-4; // [°C/m]
-
-  double tob=  -20.;                   //temperature at the ice surface
-  double cpw =  4180.0;                //Barnier et al. (1995)
-  double lhf =  3.33e+5;               //latent heat of fusion
-  double atk =  273.15;                //0 deg C in Kelvin
-  //FIXME: can use PISMs surface temp for tob?
-  double cpi =  152.5+7.122*(atk+tob); //Paterson:"The Physics of Glaciers"
-
-  // Prescribe the turbulent heat and salt transfer coeff. GAT and GAS
-  double gat  = 1.00e-4;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
-  double gas  = 5.05e-7;   //[m/s] RG3417 Default value from Hellmer and Olbers 89
-
-  // calculate salinity and in situ temperature of ice/ocean boundary layer,
-  // by solving a quadratic equation in salinity (sf).
-  ep1  = cpw*gat;
-  ep2  = cpi*gas;
-  ep3  = lhf*gas;
-  ep4  = bi-ci*zice;
-  ep4b = bp-cp*zice;
-  // negative heat flux term in the ice (due to -kappa/D)
-  //ex1 = ai*(ep1-ep2);
-  ex1 = ai*ep1-ap*ep2;
-  ex2 = ep1*(ep4b-potential_temperature)+ep2*(tob+ai*sal_ocean-ep4)-ep3;
-  ex3 = sal_ocean*(ep2*(ep4-tob)+ep3);
-  ex4 = ex2/ex1;
-  ex5 = ex3/ex1;
-
-  sr1 = 0.25*ex4*ex4-ex5;
-  sr2 = -0.5*ex4;
-  sf1 = sr2+sqrt(sr1);
-  tf1 = ai*sf1+ep4;
-  sf2 = sr2-sqrt(sr1);
-  tf2 = ai*sf2+ep4;
-
-  // sf is solution of quadratic equation in salinity.
-  // salinities < 0 psu are not defined, therefore pick the positive of the two solutions.
-  if(sf1 > 0.) {
-    tf = tf1;
-    sf = sf1;
-  }else{
-    tf = tf2;
-    sf = sf2;
-  }
-
-  temp_base = tf;
-  sal_base  = sf;
-
-  // Calculate
-  // density in the boundary layer: rhow
-  // and interface pressure pg [dbar]
-  // to determine the melting/freezing rate.
-
-  // FIXME: need to calculate water density instead of const value.
-  //  call fcn_density(thetao,sal,zice,rho)
-  // matthias.mengel: meltrate scales linear with rhow, so
-  //                  the error should be not more than 1e-2.
-
-  // Calculate the melting/freezing rate [m/s]
-  meltrate = -1*gas*rhow/rhoi*(1.0-sal_ocean/sal_base);
-
-  return 0;
+//* Evaluate the parameterization of the melting point temperature.
+static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
+                                        double salinity, double ice_thickness) {
+  return c.a[0] * salinity + c.a[1] + c.a[2] * ice_thickness;
 }
 
-/** @brief Compute temperature and melt rate at the base of the shelf. Based on the paper by Hellmer and Olbers, 1989.
+/** Melt rate, obtained by solving the salt flux balance equation.
  *
- * Use equations for the heat and salt flux balance at the base of the
- * shelf to compute the temperature at the base of the shelf and the
- * sub-shelf melt rate.
+ * @param c model constants
+ * @param sea_water_salinity sea water salinity
+ * @param basal_salinity shelf base salinity
  *
- * @note This model is not applicable in the case of basal freeze-on.
- * We use an approximation of the temperature gradient at the base of
- * the shelf that is invalid for negative melt rates. Negative melt
- * rates are set to zero.
+ * @return shelf base melt rate, in [m/s]
+ */
+static double shelf_base_melt_rate(POGivenTH::POGivenTHConstants c,
+                                   double sea_water_salinity, double basal_salinity) {
+
+  return c.gamma_S * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
+}
+
+/** @brief Compute temperature and melt rate at the base of the shelf.
+ * Based on [@ref HellmerOlbers1989] and [@ref HollandJenkins1999].
+ *
+ * We use equations for the heat and salt flux balance at the base of
+ * the shelf to compute the temperature at the base of the shelf and
+ * the sub-shelf melt rate.
  *
  * @note The linearized equation for the freezing point of seawater as
  * a function of salinity and pressure (ice thickness) is only valid
@@ -317,8 +257,8 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * heat of fusion, and @f$ \frac{\partial h}{\partial t} @f$ is the ice thickening rate
  * (equal to minus the melt rate).
  *
- * The conductive flux into the ice column is parameterized by ([@ref
- * Hellmeretal1998], equation 7):
+ * The conductive flux into the ice column is ([@ref Hellmeretal1998],
+ * equation 7):
  *
  * @f[ Q_T^I = \rho_I\, c_{pI}\, \kappa\, T_{\text{grad}}, @f]
  *
@@ -326,17 +266,6 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * capacity of ice, @f$ \kappa @f$ is the ice thermal diffusivity, and
  * @f$ T_{\text{grad}} @f$ is the vertical temperature gradient at the
  * base of a column of ice.
- *
- * We use the parameterization of the temperature gradient from [@ref
- * Hellmeretal1998], equation 13:
- *
- * @f[ T_{\text{grad}} = -\Delta T\, \frac{\frac{\partial h}{\partial t}}{\kappa}, @f]
- *
- * where @f$ \Delta T @f$ is the difference between the ice
- * temperature at the top of the ice column and its bottom:
- * @f$ \Delta T = T^S - T^B. @f$ With this parameterization, we have
- *
- * @f[ Q_T^I = \rho_I\, c_{pI}\, {\frac{\partial h}{\partial t}}\, (T^S - T^B). @f]
  *
  * Now, the heat flux balance implies
  *
@@ -356,7 +285,7 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * @f[ Q_S = \rho_W\, \gamma_S\, (S^B - S^W), @f]
  *
  * where @f$ \gamma_S @f$ is a turbulent salt exchange coefficient,
- * @f$ S_B @f$ is salinity at the shelf base, and @f$ S^W @f$ is the
+ * @f$ S^B @f$ is salinity at the shelf base, and @f$ S^W @f$ is the
  * salinity of adjacent ocean.
  *
  * The basal salt flux @f$ Q_S^B @f$ is ([@ref
@@ -387,7 +316,11 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * [@ref Wangetal2013]).
  *
  * Treating ice thickness, sea water salinity, and sea water potential
- * temperature as "known" we can write down a system of equations
+ * temperature as "known" and choosing an approximation of the
+ * temperature gradient at the base @f$ T_{\text{grad}} @f$ (see
+ * subshelf_salinity_melt(), subshelf_salinity_freeze_on(),
+ * subshelf_salinity_diffusion_only()) we can write down a system of
+ * equations
  *
  * @f{align*}{
  * Q_T &= Q_T^B + Q_T^I,\\
@@ -400,13 +333,17 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  *
  * @f[ A\cdot (S^B)^2 + B\cdot S^B + C = 0 @f]
  *
- * with
- * @f{align*}{
- * A &= a_{0}\,\gamma_S\,c_{pI}-b_{0}\,\gamma_T\,c_{pW}\\
- * B &= \gamma_S\,\left(L-c_{pI}\,\left(T^S+a_{0}\,S^W-a_{2}\,h-a_{1}\right)\right)+
- *      \gamma_T\,c_{pW}\,\left(\Theta^W-b_{2}\,h-b_{1}\right)\\
- * C &= -\gamma_S\,S^W\,\left(L-c_{pI}\,\left(T^S-a_{2}\,h-a_{1}\right)\right)
- * @f}
+ * The coefficients @f$ A, @f$ @f$ B, @f$ and @f$ C @f$ depend on the
+ * basal temperature gradient approximation for the sub-shelf melt,
+ * sub-shelf freeze-on, and diffusion-only cases.
+ *
+ * One remaining problem is that we cannot compute the basal melt rate
+ * without making an assumption about whether there is basal melt or
+ * not, and cannot pick one of the three cases without computing the
+ * basal melt rate first.
+ *
+ * This method tries to compute basal salinity that is consistent with
+ * the corresponding basal melt rate. See the code for details.
  *
  * Once @f$ S_B @f$ is found by solving this quadratic equation, we can
  * compute the basal temperature using the parameterization for @f$
@@ -418,22 +355,24 @@ PetscErrorCode POGivenTH::btemp_bmelt_3eqn(double rhow, double rhoi,
  * @f[ w_b = -\frac{\partial h}{\partial t} = \frac{\gamma_S\, \rho_W\, (S^W - S^B)}{\rho_I\, S^B}. @f]
  *
  *
- * @param[in] c physical constants, stored here to avoid looking them up in a double for loop
- * @param[in] sea_water_salinity salinity of the ocean immediately adjacent to the shelf, [g/kg]
- * @param[in] sea_water_potential_temperature potential temperature of the sea water, [degrees Celsius]
- * @param[in] thickness thickness of the ice shelf, [meters]
- * @param[out] shelf_base_temperature_out computed basal temperature, [degrees Celsius]
- * @param[out] shelf_base_melt_rate_out computed basal melt rate, [m/second]
+ * @param[in] constants model constants
+ * @param[in] sea_water_salinity sea water salinity
+ * @param[in] sea_water_potential_temperature sea water potential temperature
+ * @param[in] thickness ice shelf thickness
+ * @param[out] shelf_base_temperature_out resulting basal temperature
+ * @param[out] shelf_base_melt_rate_out resulting basal melt rate
  *
  * @return 0 on success
  */
-PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
-                                                double sea_water_salinity,
-                                                double sea_water_potential_temperature,
-                                                double thickness,
-                                                double *shelf_base_temperature_out,
-                                                double *shelf_base_melt_rate_out) {
-  assert(thickness >= 0.0);
+PetscErrorCode POGivenTH::pointwise_update(const POGivenTHConstants &constants,
+                                           double sea_water_salinity,
+                                           double sea_water_potential_temperature,
+                                           double thickness,
+                                           double *shelf_base_temperature_out,
+                                           double *shelf_base_melt_rate_out) {
+  PetscErrorCode ierr = 0;
+
+  assert(thickness > 0.0);
 
   // This model works for sea water salinity in the range of [4, 40]
   // psu. Ensure that input salinity is in this range.
@@ -441,27 +380,136 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
     min_salinity = 4.0,
     max_salinity = 40.0;
 
-  if (sea_water_salinity < min_salinity) {
-    sea_water_salinity = min_salinity;
-  } else if (sea_water_salinity > max_salinity) {
-    sea_water_salinity = max_salinity;
+  if (constants.limit_salinity_range == true) {
+    if (sea_water_salinity < min_salinity) {
+      sea_water_salinity = min_salinity;
+    } else if (sea_water_salinity > max_salinity) {
+      sea_water_salinity = max_salinity;
+    }
   }
 
-  // Coefficients for linearized freezing point equation for in situ
-  // temperature:
-  //
-  // Tb(salinity, thickness) = a[0] * salinity + a[1] + a[2] * thickness
-  const double a[3] = {-0.0575, 0.0901, -7.61e-4};
+  double basal_salinity = sea_water_salinity;
+  ierr = subshelf_salinity(constants, sea_water_salinity, sea_water_potential_temperature,
+                           thickness, &basal_salinity); CHKERRQ(ierr);
 
-  // Coefficients for linearized freezing point equation for potential
-  // temperature
-  //
-  // Theta_b(salinity, thickness) = b[0] * salinity + b[1] + b[2] * thickness
-  const double b[3] = {-0.0575, 0.0921, -7.85e-4};
+  // Clip basal salinity so that we can use the freezing point
+  // temperature parameterization to recover shelf base temperature.
+  if (constants.limit_salinity_range == true) {
+    if (basal_salinity <= min_salinity) {
+      basal_salinity = min_salinity;
+    } else if (basal_salinity >= max_salinity) {
+      basal_salinity = max_salinity;
+    }
+  }
 
-  // Turbulent heat and salt transfer coefficients:
-  const double gamma_t = 1.00e-4;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
-  const double gamma_s = 5.05e-7;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
+  *shelf_base_temperature_out = melting_point_temperature(constants, basal_salinity, thickness);
+
+  *shelf_base_melt_rate_out = shelf_base_melt_rate(constants, sea_water_salinity, basal_salinity);
+
+  return 0;
+}
+
+
+/** @brief Compute the basal salinity and make sure that it is
+ * consistent with the basal melt rate.
+ *
+ * @param[in] c constants
+ * @param[in] sea_water_salinity sea water salinity
+ * @param[in] sea_water_potential_temperature sea water potential temperature
+ * @param[in] thickness ice shelf thickness
+ * @param[out] shelf_base_salinity resulting shelf base salinity
+ *
+ * @return 0 on success
+ */
+PetscErrorCode POGivenTH::subshelf_salinity(const POGivenTHConstants &c,
+                                            double sea_water_salinity,
+                                            double sea_water_potential_temperature,
+                                            double thickness,
+                                            double *shelf_base_salinity) {
+  PetscErrorCode ierr;
+
+  double basal_salinity = sea_water_salinity;
+
+  // first, assume that there is melt at the shelf base:
+  {
+    ierr = subshelf_salinity_melt(c, sea_water_salinity, sea_water_potential_temperature,
+                                  thickness, &basal_salinity); CHKERRQ(ierr);
+
+    double basal_melt_rate = shelf_base_melt_rate(c, sea_water_salinity, basal_salinity);
+
+    if (basal_melt_rate > 0.0) {
+      // computed basal melt rate is consistent with the assumption used
+      // to compute basal salinity
+      *shelf_base_salinity = basal_salinity;
+      return 0;
+    }
+  }
+
+  // Assuming that there is melt resulted in an inconsistent
+  // (salinity, melt_rate) pair. Assume that there is freeze-on at the base.
+  {
+    ierr = subshelf_salinity_freeze_on(c, sea_water_salinity, sea_water_potential_temperature,
+                                       thickness, &basal_salinity); CHKERRQ(ierr);
+
+    double basal_melt_rate = shelf_base_melt_rate(c, sea_water_salinity, basal_salinity);
+
+    if (basal_melt_rate < 0.0) {
+      // computed basal melt rate is consistent with the assumption
+      // used to compute basal salinity
+      *shelf_base_salinity = basal_salinity;
+      return 0;
+    }
+  }
+
+  // Both assumptions (above) resulted in inconsistencies. Revert to
+  // the "diffusion-only" case, which may be less accurate, but is
+  // generic and is always consistent.
+  {
+    ierr = subshelf_salinity_diffusion_only(c, sea_water_salinity, sea_water_potential_temperature,
+                                            thickness, &basal_salinity); CHKERRQ(ierr);
+
+    *shelf_base_salinity = basal_salinity;
+  }
+
+  return 0;
+}
+
+/** Compute basal salinity in the basal melt case.
+ *
+ * We use the parameterization of the temperature gradient from [@ref
+ * Hellmeretal1998], equation 13:
+ *
+ * @f[ T_{\text{grad}} = -\Delta T\, \frac{\frac{\partial h}{\partial t}}{\kappa}, @f]
+ *
+ * where @f$ \Delta T @f$ is the difference between the ice
+ * temperature at the top of the ice column and its bottom:
+ * @f$ \Delta T = T^S - T^B. @f$ With this parameterization, we have
+ *
+ * @f[ Q_T^I = \rho_I\, c_{pI}\, {\frac{\partial h}{\partial t}}\, (T^S - T^B). @f]
+ *
+ * Then the coefficients of the quadratic equation for basal salinity
+ * (see pointwise_update()) are
+ *
+ * @f{align*}{
+ * A &= a_{0}\,\gamma_S\,c_{pI}-b_{0}\,\gamma_T\,c_{pW}\\
+ * B &= \gamma_S\,\left(L-c_{pI}\,\left(T^S+a_{0}\,S^W-a_{2}\,h-a_{1}\right)\right)+
+ *      \gamma_T\,c_{pW}\,\left(\Theta^W-b_{2}\,h-b_{1}\right)\\
+ * C &= -\gamma_S\,S^W\,\left(L-c_{pI}\,\left(T^S-a_{2}\,h-a_{1}\right)\right)
+ * @f}
+ *
+ * @param[in] c physical constants, stored here to avoid looking them up in a double for loop
+ * @param[in] sea_water_salinity salinity of the ocean immediately adjacent to the shelf, [g/kg]
+ * @param[in] sea_water_potential_temperature potential temperature of the sea water, [degrees Celsius]
+ * @param[in] thickness thickness of the ice shelf, [meters]
+ * @param[out] shelf_base_salinity resulting shelf base salinity
+ *
+ * @return 0 on success
+ */
+PetscErrorCode POGivenTH::subshelf_salinity_melt(const POGivenTHConstants &c,
+                                                 double sea_water_salinity,
+                                                 double sea_water_potential_temperature,
+                                                 double thickness,
+                                                 double *shelf_base_salinity) {
 
   const double
     c_pI    = c.ice_specific_heat_capacity,
@@ -475,10 +523,10 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
   // base.
   //
   // A*Sb^2 + B*Sb + C = 0
-  const double A = a[0] * gamma_s * c_pI - b[0] * gamma_t * c_pW;
-  const double B = (gamma_s * (L - c_pI * (T_S + a[0] * S_W - a[2] * thickness - a[1])) +
-                    gamma_t * c_pW * (Theta_W - b[2] * thickness - b[1]));
-  const double C = -gamma_s * S_W * (L - c_pI * (T_S - a[2] * thickness - a[1]));
+  const double A = c.a[0] * c.gamma_S * c_pI - c.b[0] * c.gamma_T * c_pW;
+  const double B = (c.gamma_S * (L - c_pI * (T_S + c.a[0] * S_W - c.a[2] * thickness - c.a[1])) +
+                    c.gamma_T * c_pW * (Theta_W - c.b[2] * thickness - c.b[1]));
+  const double C = -c.gamma_S * S_W * (L - c_pI * (T_S - c.a[2] * thickness - c.a[1]));
 
   double S1 = 0.0, S2 = 0.0;
   const int n_roots = gsl_poly_solve_quadratic(A, B, C, &S1, &S2);
@@ -486,35 +534,131 @@ PetscErrorCode POGivenTH::pointwise_calculation(const POGivenTHConstants &c,
   assert(n_roots > 0);
   assert(S2 > 0.0);             // The bigger root should be positive.
 
-  double basal_salinity = S2;   // Pick the bigger of the two roots.
-
-  // Clip basal salinity so that we can use the freezing point
-  // temperature parameterization to recover shelf base temperature.
-  if (basal_salinity <= min_salinity) {
-    basal_salinity = min_salinity;
-  } else if (basal_salinity >= max_salinity) {
-    basal_salinity = max_salinity;
-  }
-
-  *shelf_base_temperature_out = a[0] * basal_salinity + a[1] + a[2] * thickness;
-
-  *shelf_base_melt_rate_out = gamma_s * c.sea_water_density * (sea_water_salinity - basal_salinity) / (c.ice_density * basal_salinity);
-
-  // This should never happen (see docs above), but to ensure
-  // reasonable outputs from this model we reset negative melt
-  // rates. (FIXME)
-  if (*shelf_base_melt_rate_out < 0.0)
-    *shelf_base_melt_rate_out = 0.0;
+  *shelf_base_salinity = S2;
 
   return 0;
 }
 
-PetscErrorCode POGivenTH::sea_level_elevation(double &result) {
-  result = sea_level;
+/** Compute basal salinity in the basal freeze-on case.
+ *
+ * In this case we assume that the temperature gradient at the shelf base is zero:
+ *
+ * @f[ T_{\text{grad}} = 0. @f]
+ *
+ * Please see pointwise_update() for details.
+ *
+ * In this case the coefficients of the quadratic equation for the
+ * basal salinity are:
+ *
+ * @f{align*}{
+ * A &= -b_{0}\,\gamma_T\,c_{pW} \\
+ * B &= \gamma_S\,L+\gamma_T\,c_{pW}\,\left(\Theta^W-b_{2}\,h-b_{1}\right) \\
+ * C &= -\gamma_S\,S^W\,L\\
+ * @f}
+ *
+ * @param[in] c model constants
+ * @param[in] sea_water_salinity sea water salinity
+ * @param[in] sea_water_potential_temperature sea water temperature
+ * @param[in] thickness ice shelf thickness
+ * @param[out] shelf_base_salinity resulting basal salinity
+ *
+ * @return 0 on success
+ */
+PetscErrorCode POGivenTH::subshelf_salinity_freeze_on(const POGivenTHConstants &c,
+                                                      double sea_water_salinity,
+                                                      double sea_water_potential_temperature,
+                                                      double thickness,
+                                                      double *shelf_base_salinity) {
+
+  const double
+    c_pW    = c.sea_water_specific_heat_capacity,
+    L       = c.water_latent_heat_fusion,
+    S_W     = sea_water_salinity,
+    Theta_W = sea_water_potential_temperature,
+    h       = thickness;
+
+  // We solve a quadratic equation for Sb, the salinity at the shelf
+  // base.
+  //
+  // A*Sb^2 + B*Sb + C = 0
+  const double A = -c.b[0] * c.gamma_T * c_pW;
+  const double B = c.gamma_S * L + c.gamma_T * c_pW * (Theta_W - c.b[2] * h - c.b[1]);
+  const double C = -c.gamma_S * S_W * L;
+
+  double S1 = 0.0, S2 = 0.0;
+  const int n_roots = gsl_poly_solve_quadratic(A, B, C, &S1, &S2);
+
+  assert(n_roots > 0);
+  assert(S2 > 0.0);             // The bigger root should be positive.
+
+  *shelf_base_salinity = S2;
+
   return 0;
 }
 
-PetscErrorCode POGivenTH::melange_back_pressure_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
+/** @brief Compute basal salinity in the case of no basal melt and no
+ * freeze-on, with the diffusion-only temperature distribution in the
+ * ice column.
+ *
+ * In this case the temperature gradient at the base ([@ref
+ * HollandJenkins1999], equation 21) is
+ *
+ * @f[ T_{\text{grad}} = \frac{\Delta T}{h}, @f]
+ *
+ * where @f$ h @f$ is the ice shelf thickness and @f$ \Delta T = T^S -
+ * T^B @f$ is the difference between the temperature at the top and
+ * the bottom of the shelf.
+ *
+ * In this case the coefficients of the quadratic equation for the basal salinity are:
+ *
+ * @f{align*}{
+ * A &= - \frac{b_{0}\,\gamma_T\,h\,\rho_W\,c_{pW}-a_{0}\,\rho_I\,c_{pI}\,\kappa}{h\,\rho_W}\\
+ * B &= \frac{\rho_I\,c_{pI}\,\kappa\,\left(T^S-a_{2}\,h-a_{1}\right)}{h\,\rho_W}
+ +\gamma_S\,L+\gamma_T\,c_{pW}\,\left(\Theta^W-b_{2}\,h-b_{1}\right)\\
+ * C &= -\gamma_S\,S^W\,L\\
+ * @f}
+ *
+ * @param[in] c model constants
+ * @param[in] sea_water_salinity sea water salinity
+ * @param[in] sea_water_potential_temperature sea water potential temperature
+ * @param[in] thickness ice shelf thickness
+ * @param[out] shelf_base_salinity resulting basal salinity
+ *
+ * @return 0 on success
+ */
+PetscErrorCode POGivenTH::subshelf_salinity_diffusion_only(const POGivenTHConstants &c,
+                                                           double sea_water_salinity,
+                                                           double sea_water_potential_temperature,
+                                                           double thickness,
+                                                           double *shelf_base_salinity) {
+  const double
+    c_pI    = c.ice_specific_heat_capacity,
+    c_pW    = c.sea_water_specific_heat_capacity,
+    L       = c.water_latent_heat_fusion,
+    T_S     = c.shelf_top_surface_temperature,
+    S_W     = sea_water_salinity,
+    Theta_W = sea_water_potential_temperature,
+    h       = thickness,
+    rho_W   = c.sea_water_density,
+    rho_I   = c.ice_density,
+    kappa   = c.ice_thermal_diffusivity;
+
+  // We solve a quadratic equation for Sb, the salinity at the shelf
+  // base.
+  //
+  // A*Sb^2 + B*Sb + C = 0
+  const double A = -(c.b[0] * c.gamma_T * h * rho_W * c_pW - c.a[0] * rho_I * c_pI * kappa) / (h * rho_W);
+  const double B = ((rho_I * c_pI * kappa * (T_S - c.a[2] * h - c.a[1])) / (h * rho_W) +
+                    c.gamma_S * L + c.gamma_T * c_pW * (Theta_W - c.b[2] * h - c.b[1]));
+  const double C = -c.gamma_S * S_W * L;
+
+  double S1 = 0.0, S2 = 0.0;
+  const int n_roots = gsl_poly_solve_quadratic(A, B, C, &S1, &S2);
+
+  assert(n_roots > 0);
+  assert(S2 > 0.0);             // The bigger root should be positive.
+
+  *shelf_base_salinity = S2;
+
   return 0;
 }

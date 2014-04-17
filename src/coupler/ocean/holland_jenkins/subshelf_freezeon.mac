@@ -1,0 +1,23 @@
+/* This corresponds to the three-equation model for the shelf-base freeze-on,
+case (equations 26 and 31) in
+@article{HollandJenkins1999,
+  title={Modeling thermodynamic ice-ocean interactions at the base of an ice shelf},
+  author={Holland, David M and Jenkins, Adrian},
+  journal={Journal of Physical Oceanography},
+  volume={29},
+  number={8},
+  pages={1787--1800},
+  year={1999}
+}
+*/
+
+/* define all necessary variables */
+load("common_definitions.mac")$
+
+/* Temperature gradient at the base of the ice; zero in the freeze-on
+case. */
+grad_T : 0 $
+
+/* solve salinity and heat flux balance equations and find
+coefficients of the quadratic equation for the shelf base salinity */
+load("flux_balance.mac")$

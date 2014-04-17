@@ -37,32 +37,70 @@ public:
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
   virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
-private:
-  IceModelVec2S shelfbtemp, shelfbmassflux;
-  IceModelVec2S *ice_thickness;
-  IceModelVec2T *theta_ocean, *salinity_ocean;
 
-  PetscErrorCode calc_shelfbtemp_shelfbmassflux();
+  class POGivenTHConstants {
+  public:
+    POGivenTHConstants(const PISMConfig &config);
+    //! Coefficients for linearized freezing point equation for in situ
+    //! temperature:
+    //!
+    //! Tb(salinity, thickness) = a[0] * salinity + a[1] + a[2] * thickness
+    double a[3];
+    //! Coefficients for linearized freezing point equation for potential
+    //! temperature
+    //!
+    //! Theta_b(salinity, thickness) = b[0] * salinity + b[1] + b[2] * thickness
+    double b[3];
 
-  struct POGivenTHConstants {
+    //! Turbulent heat transfer coefficient:
+    double gamma_T;
+    //! Turbulent salt transfer coefficient:
+    double gamma_S;
+
     double shelf_top_surface_temperature;
     double water_latent_heat_fusion;
     double sea_water_density;
     double sea_water_specific_heat_capacity;
     double ice_density;
     double ice_specific_heat_capacity;
+    double ice_thermal_diffusivity;
+    bool limit_salinity_range;
   };
+private:
+  IceModelVec2S shelfbtemp, shelfbmassflux;
+  IceModelVec2S *ice_thickness;
+  IceModelVec2T *theta_ocean, *salinity_ocean;
 
-  PetscErrorCode pointwise_calculation(const POGivenTHConstants &constants,
-                                       double sea_water_salinity,
-                                       double sea_water_potential_temperature,
-                                       double ice_thickness,
-                                       double *shelf_base_temperature_out,
-                                       double *shelf_base_melt_rate_out);
+  PetscErrorCode pointwise_update(const POGivenTHConstants &constants,
+                                  double sea_water_salinity,
+                                  double sea_water_potential_temperature,
+                                  double ice_thickness,
+                                  double *shelf_base_temperature_out,
+                                  double *shelf_base_melt_rate_out);
 
-  PetscErrorCode btemp_bmelt_3eqn(double rhow, double rhoi,
-                                  double sal_ocean, double thetao, double zice,
-                                  double &temp_base, double &meltrate);
+  PetscErrorCode subshelf_salinity(const POGivenTHConstants &constants,
+                                   double sea_water_salinity,
+                                   double sea_water_potential_temperature,
+                                   double ice_thickness,
+                                   double *shelf_base_salinity);
+
+  PetscErrorCode subshelf_salinity_melt(const POGivenTHConstants &constants,
+                                        double sea_water_salinity,
+                                        double sea_water_potential_temperature,
+                                        double ice_thickness,
+                                        double *shelf_base_salinity);
+
+  PetscErrorCode subshelf_salinity_freeze_on(const POGivenTHConstants &constants,
+                                             double sea_water_salinity,
+                                             double sea_water_potential_temperature,
+                                             double ice_thickness,
+                                             double *shelf_base_salinity);
+
+  PetscErrorCode subshelf_salinity_diffusion_only(const POGivenTHConstants &constants,
+                                                  double sea_water_salinity,
+                                                  double sea_water_potential_temperature,
+                                                  double ice_thickness,
+                                                  double *shelf_base_salinity);
 
   PetscErrorCode allocate_POGivenTH();
 

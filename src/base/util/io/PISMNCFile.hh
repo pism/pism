@@ -25,20 +25,23 @@
 
 // This is a subset of NetCDF data-types.
 enum PISM_IO_Type {
-  PISM_NAT =    0,      /* NAT = 'Not A Type' (c.f. NaN) */
-  PISM_BYTE =   1,      /* signed 1 byte integer */
-  PISM_CHAR =   2,      /* ISO/ASCII character */
-  PISM_SHORT =  3,      /* signed 2 byte integer */
-  PISM_INT =    4,      /* signed 4 byte integer */
-  PISM_FLOAT =  5,      /* single precision floating point number */
-  PISM_DOUBLE = 6       /* double precision floating point number */
+  PISM_NAT    = 0,              /* NAT = 'Not A Type' (c.f. NaN) */
+  PISM_BYTE   = 1,              /* signed 1 byte integer */
+  PISM_CHAR   = 2,              /* ISO/ASCII character */
+  PISM_SHORT  = 3,              /* signed 2 byte integer */
+  PISM_INT    = 4,              /* signed 4 byte integer */
+  PISM_FLOAT  = 5,              /* single precision floating point number */
+  PISM_DOUBLE = 6               /* double precision floating point number */
 };
 
-// This is a subset of NetCDF file modes. Gets cast to "int", so it should
-// match values used by NetCDF.
+// This is a subset of NetCDF file modes. Use values that don't match
+// NetCDF flags so that we can detect errors caused by passing these
+// straight to NetCDF.
 enum PISM_IO_Mode {
-  PISM_NOWRITE = 0,
-  PISM_WRITE   = 0x0001
+  PISM_READONLY          = 7,
+  PISM_READWRITE         = 8,
+  PISM_READWRITE_CLOBBER = 9,
+  PISM_READWRITE_MOVE    = 10
 };
 
 // This is the special value corresponding to the "unlimited" dimension length.
@@ -49,7 +52,7 @@ enum PISM_Dim_Length {
 
 // "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
 enum PISM_Fill_Mode {
-  PISM_FILL = 0,
+  PISM_FILL   = 0,
   PISM_NOFILL = 0x100
 };
 
@@ -79,7 +82,7 @@ public:
   virtual ~PISMNCFile();
 
   // open/create/close
-  virtual int open(std::string filename, int mode) = 0;
+  virtual int open(std::string filename, PISM_IO_Mode mode) = 0;
 
   virtual int create(std::string filename) = 0;
 
@@ -166,9 +169,10 @@ public:
                         unsigned int ys, unsigned int ym) const;
 
   virtual int move_if_exists(std::string filename, int rank_to_use = 0);
+  virtual int remove_if_exists(std::string filename, int rank_to_use = 0);
 
 protected:
-
+  virtual int integer_open_mode(PISM_IO_Mode input) const = 0;
   virtual void check(int return_code) const;
 
   MPI_Comm com;

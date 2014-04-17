@@ -82,7 +82,7 @@ pacman](http://www.arsc.edu/arsc/support/howtos/usingpacman/)). Run
 Results can be visualized using, e.g. `im-plot.py` from
 [pypismtools](https://github.com/pism/pypismtools):
 
-    im-plot.py -v csurf --colorbar_label --inner_titles "q=0.1 f=0.01,q=0.25 f=0.01,q=0.8 f=0.01,q=0.1 f=0.02,q=0.25 f=0.02,q=0.1 f=0.02,q=0.8 f=0.0,q=0.1 f=0.05,q=0.25 f=0.05,q=0.8 f=0.05" -o nosgl.pdf g20km_*0.01_*.nc g20km_*0.02_*.nc g20km_*0.05_*.nc
+    im-plot.py -v velsurf_mag --colorbar_label --inner_titles "q=0.1 f=0.01,q=0.25 f=0.01,q=0.8 f=0.01,q=0.1 f=0.02,q=0.25 f=0.02,q=0.1 f=0.02,q=0.8 f=0.0,q=0.1 f=0.05,q=0.25 f=0.05,q=0.8 f=0.05" -o nosgl.pdf g20km_*0.01_*.nc g20km_*0.02_*.nc g20km_*0.05_*.nc
 
-    im-plot.py -v csurf --colorbar_label --inner_titles "q=0.1 f=0.01,q=0.25 f=0.01,q=0.8 f=0.01,q=0.1 f=0.02,q=0.25 f=0.02,q=0.1 f=0.02,q=0.8 f=0.0,q=0.1 f=0.05,q=0.25 f=0.05,q=0.8 f=0.05" -o sgl.pdf g20km_*0.01.nc g20km_*0.02.nc g20km_*0.05.nc
+    im-plot.py -v velsurf_mag --colorbar_label --inner_titles "q=0.1 f=0.01,q=0.25 f=0.01,q=0.8 f=0.01,q=0.1 f=0.02,q=0.25 f=0.02,q=0.1 f=0.02,q=0.8 f=0.0,q=0.1 f=0.05,q=0.25 f=0.05,q=0.8 f=0.05" -o sgl.pdf g20km_*0.01.nc g20km_*0.02.nc g20km_*0.05.nc
 

@@ -24,6 +24,24 @@
 
 class PISMBedSmoother;
 
+/** Implements the shallow ice approximation stress balance.
+ *
+ * Inputs:
+ *
+ * - ice geometry (thickness, bed elevation, surface elevation, cell
+ *   type mask)
+ * - ice enthalpy
+ * - ice age (could be used to compute the grain size)
+ * - sliding velocity
+ *
+ * Outputs:
+ *
+ * - horizontal velocity (3D fields)
+ * - diffusive ice flux (for use in the geometry update)
+ * - maximum diffusivity (used to determine the maximum allowed time
+ *   step length)
+ * - volumetric strain heating
+ */
 class SIAFD : public SSB_Modifier
 {
   friend class SIAFD_schoofs_theta;

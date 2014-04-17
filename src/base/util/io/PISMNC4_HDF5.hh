@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ public:
   virtual ~PISMNC4_HDF5();
 
   // open/create/close
-  virtual int open(std::string filename, int mode);
+  virtual int open(std::string filename, PISM_IO_Mode mode);
 
   virtual int create(std::string filename);
 
@@ -108,6 +108,7 @@ public:
 
   virtual std::string get_format() const;
 protected:
+  virtual int integer_open_mode(PISM_IO_Mode input) const;
   virtual void check(int return_code) const;
 
   hid_t file_id;
