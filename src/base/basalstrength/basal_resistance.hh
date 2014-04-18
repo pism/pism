@@ -23,13 +23,15 @@
 
 #include "PISMUnits.hh"
 
+namespace pism {
+
 class PISMConfig;
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
-This \e pseudo -plastic type can actually describe anything from linearly 
-viscous till to purely plastic till.
- */
+  This \e pseudo -plastic type can actually describe anything from linearly 
+  viscous till to purely plastic till.
+*/
 class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const PISMConfig &config);
@@ -55,6 +57,8 @@ public:
 protected:
   double pseudo_q, pseudo_u_threshold, sliding_scale_factor_reduces_tauc;
 };
+
+} // end of namespace pism
 
 #endif /* __basal_resistance_hh */
 

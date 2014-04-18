@@ -5,6 +5,8 @@
 #include "petsc.h"
 #include "pism_const.hh"
 
+using namespace pism;
+
 SigInstaller::SigInstaller(int sig, void (*new_handler)(int) )
 {
   m_old_handler = signal( sig, new_handler);

@@ -21,6 +21,8 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 ///// Constant-in-time surface model for accumulation,
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
@@ -180,3 +182,5 @@ PetscErrorCode PSConstantPIK::write_variables(std::set<std::string> vars, const 
 
   return 0;
 }
+
+} // end of namespace pism

@@ -24,6 +24,8 @@
 
 #include "pism_const.hh"
 
+namespace pism {
+
 class ut_system_deleter {
 public:
   void operator()(ut_system* p) const {
@@ -158,12 +160,12 @@ PISMUnitSystem PISMUnit::get_system() const {
   return m_system;
 }
 
-bool units_are_convertible(PISMUnit from, PISMUnit to) {
+bool pism::units_are_convertible(PISMUnit from, PISMUnit to) {
   return ut_are_convertible(from.get(), to.get()) != 0;
 }
 
 //! Check if provided units are convertible and terminate PISM if they are not.
-PetscErrorCode units_check(std::string name, PISMUnit from, PISMUnit to) {
+PetscErrorCode pism::units_check(std::string name, PISMUnit from, PISMUnit to) {
 
   if (units_are_convertible(from, to) == false) {              // can't convert
     PetscPrintf(PETSC_COMM_SELF,
@@ -178,7 +180,7 @@ bool PISMUnit::is_valid() const {
   return m_unit != NULL;
 }
 
-PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to) {
+PetscErrorCode pism::convert_vec(Vec v, PISMUnit from, PISMUnit to) {
   PetscErrorCode ierr;
 
   int data_size = 0;
@@ -192,7 +194,7 @@ PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to) {
   return 0;
 }
 
-PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMUnit to) {
+PetscErrorCode pism::convert_doubles(double *data, size_t length, PISMUnit from, PISMUnit to) {
   std::string from_name, to_name;
 
   // Get string representations of units:
@@ -211,3 +213,5 @@ PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMU
 
   return 0;
 }
+
+} // end of namespace pism

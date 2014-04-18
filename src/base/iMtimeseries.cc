@@ -26,6 +26,8 @@
 #include "PISMTime.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {
   PetscErrorCode ierr;
@@ -615,3 +617,5 @@ PetscErrorCode IceModel::flush_timeseries() {
 
   return 0;
 }
+
+} // end of namespace pism

@@ -22,6 +22,8 @@
 #include "iceModelVec.hh"
 #include "PISMComponent.hh"
 
+namespace pism {
+
 class PISMVars;
 class IceFlowLaw;
 class EnthalpyConverter;
@@ -98,5 +100,9 @@ public:
   //! model to do so.
   virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
+
 };
+
+} // end of namespace pism
+
 #endif /* _SSB_MODIFIER_H_ */

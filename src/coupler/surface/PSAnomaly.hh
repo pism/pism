@@ -22,6 +22,8 @@
 #include "PGivenClimate.hh"
 #include "PSModifier.hh"
 
+namespace pism {
+
 //! \brief Reads and uses climatic_mass_balance and ice_surface_temp \b anomalies from a file.
 class PSAnomaly : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {
@@ -44,5 +46,7 @@ protected:
 private:
   PetscErrorCode allocate_PSAnomaly();
 };
+
+} // end of namespace pism
 
 #endif /* _PSANOMALY_H_ */

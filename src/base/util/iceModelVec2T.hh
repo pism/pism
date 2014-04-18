@@ -21,6 +21,8 @@
 
 #include "iceModelVec.hh"
 
+namespace pism {
+
 //! A class for storing and accessing 2D time-series (for climate forcing)
 /*! This class was created to read time-dependent and spatially-varying climate
   forcing data, in particular snow temperatures and precipitation.
@@ -70,7 +72,7 @@
   double dt = max_dt / (N - 1);
 
   for (int j = 0; j < N; ++j) {
-    ts[j] = t + dt * j;
+  ts[j] = t + dt * j;
   }
 
   // is is OK to call update() again, it will not re-read data if at all possible
@@ -78,10 +80,10 @@
 
   ierr = v.begin_access(); CHKERRQ(ierr);
   for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
-      // do more
-    }
+  for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
+  ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
+  // do more
+  }
   ierr = v.end_access(); CHKERRQ(ierr);
 
   // compute an average value over a time interval at a certain grid location:
@@ -92,7 +94,7 @@
   ierr = v.end_access(); CHKERRQ(ierr);
 
   \endcode
- */
+*/
 class IceModelVec2T : public IceModelVec2S {
 public:
   IceModelVec2T();
@@ -131,9 +133,9 @@ protected:
   unsigned int n_records, //!< maximum number of records to store in memory
     N,                    //!< number of records kept in memory
     n_evaluations_per_year;     //!< number of evaluations per year
-                                //!< used to compute temporal averages
+  //!< used to compute temporal averages
   int first; //!< in-file index of the first record stored in memory
-             //!< ("int" to allow first==-1 as an "invalid" first value)
+  //!< ("int" to allow first==-1 as an "invalid" first value)
 
   std::vector<unsigned int> m_interp_indices;
   unsigned int m_period;        // in years
@@ -145,5 +147,7 @@ protected:
   virtual PetscErrorCode discard(int N);
 };
 
+
+} // end of namespace pism
 
 #endif // __IceModelVec2T_hh

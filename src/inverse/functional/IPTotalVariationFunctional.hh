@@ -21,12 +21,14 @@
 
 #include "IPFunctional.hh"
 
+namespace pism {
+
 //! Pseduo total variation functional
 /*! \f[
-J(u) = c\int_\Omega (\epsilon^2+|\nabla u|^2)^{q/2} 
-\f]
-The parameters \f$c\f$, \f$q\f$ and \f$\epsilon\f$ are provided at construction.  Taking \f$q\f$=1 would
-yield a total variation functional, save for the regularizing parameter \f$\epsilon\f$.
+  J(u) = c\int_\Omega (\epsilon^2+|\nabla u|^2)^{q/2} 
+  \f]
+  The parameters \f$c\f$, \f$q\f$ and \f$\epsilon\f$ are provided at construction.  Taking \f$q\f$=1 would
+  yield a total variation functional, save for the regularizing parameter \f$\epsilon\f$.
 */
 class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
@@ -47,5 +49,7 @@ private:
   IPTotalVariationFunctional2S(IPTotalVariationFunctional2S const &);
   IPTotalVariationFunctional2S & operator=(IPTotalVariationFunctional2S const &);
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: TOTALVARIATIONFUNCTIONAL_HH_HKBL1T7I */

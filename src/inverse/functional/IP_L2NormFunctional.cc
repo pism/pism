@@ -18,6 +18,8 @@
 
 #include "IP_L2NormFunctional.hh"
 
+namespace pism {
+
 PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   PetscErrorCode   ierr;
@@ -283,3 +285,5 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
   ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

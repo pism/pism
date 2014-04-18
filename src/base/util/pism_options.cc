@@ -25,6 +25,21 @@
 #include "NCVariable.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
+//! \brief Stop if -version is set.
+PetscErrorCode pism::stop_on_version_option() {
+  PetscErrorCode ierr;
+
+  bool vSet = false;
+  ierr = PISMOptionsIsSet("-version", vSet); CHKERRQ(ierr);
+  if (vSet == false)
+    return 0;
+
+  PISMEndQuiet();
+  return 0;
+}
+
 //! Determine verbosity level from user options.
 /*!
 \verbatim
@@ -40,7 +55,7 @@
 \endverbatim
 See verbPrintf().
  */
-PetscErrorCode verbosityLevelFromOptions() {
+PetscErrorCode pism::verbosityLevelFromOptions() {
   PetscErrorCode ierr;
   int       myLevel;
   PetscBool     verbose, levelSet;
@@ -57,7 +72,7 @@ PetscErrorCode verbosityLevelFromOptions() {
 }
 
 //! Print a warning telling the user that an option was ignored.
-PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
+PetscErrorCode pism::ignore_option(MPI_Comm com, std::string name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
@@ -73,7 +88,7 @@ PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
 }
 
 //! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
-PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std::string new_name) {
+PetscErrorCode pism::check_old_option_and_stop(MPI_Comm com, std::string old_name, std::string new_name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
@@ -91,7 +106,7 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std
 }
 
 //!Stop if an option `name` is set.
-PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
+PetscErrorCode pism::stop_if_set(MPI_Comm com, std::string name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
@@ -104,19 +119,6 @@ PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
     PISMEnd();
   }
 
-  return 0;
-}
-
-//! \brief Stop if -version is set.
-PetscErrorCode stop_on_version_option() {
-  PetscErrorCode ierr;
-
-  bool vSet = false;
-  ierr = PISMOptionsIsSet("-version", vSet); CHKERRQ(ierr);
-  if (vSet == false)
-    return 0;
-
-  PISMEndQuiet();
   return 0;
 }
 
@@ -144,7 +146,7 @@ PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string u
 
 //! @brief Show provided usage message and quit. (Consider using
 //! show_usage_check_req_opts() in preference to this one.)
-PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage) {
+PetscErrorCode pism::show_usage_and_quit(MPI_Comm com, std::string execname, std::string usage) {
   PetscErrorCode ierr;
 
   ierr = stop_on_version_option(); CHKERRQ(ierr);
@@ -158,9 +160,9 @@ PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::stri
 
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
-PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
-                                         std::vector<std::string> required_options,
-                                         std::string usage) {
+PetscErrorCode pism::show_usage_check_req_opts(MPI_Comm com, std::string execname,
+                                               std::vector<std::string> required_options,
+                                               std::string usage) {
   PetscErrorCode ierr;
 
   ierr = stop_on_version_option(); CHKERRQ(ierr);
@@ -221,9 +223,9 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   This is to make it possible to pass a parameter to a module selected using a
   command-line option without adding one mode option.
  */
-PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string description,
-                               std::set<std::string> choices, std::string default_value,
-                               std::string &result, bool &flag) {
+PetscErrorCode pism::PISMOptionsList(MPI_Comm com, std::string opt, std::string description,
+                                     std::set<std::string> choices, std::string default_value,
+                                     std::string &result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   std::string list, descr;
@@ -272,8 +274,8 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string descri
 }
 
 //! \brief Process a command-line option taking a string as an argument.
-PetscErrorCode PISMOptionsString(std::string option, std::string text,
-                                 std::string &result, bool &is_set, bool allow_empty_arg) {
+PetscErrorCode pism::PISMOptionsString(std::string option, std::string text,
+                                       std::string &result, bool &is_set, bool allow_empty_arg) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -302,8 +304,8 @@ PetscErrorCode PISMOptionsString(std::string option, std::string text,
 }
 
 //! PISM wrapper replacing PetscOptionsStringArray.
-PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
-                                      std::vector<std::string>& result, bool &flag) {
+PetscErrorCode pism::PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
+                                            std::vector<std::string>& result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool opt_set = PETSC_FALSE;
@@ -339,8 +341,8 @@ PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::st
 }
 
 //! Process a command-line option and return a set of strings.
-PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::string default_value,
-                                    std::set<std::string>& result, bool &flag) {
+PetscErrorCode pism::PISMOptionsStringSet(std::string opt, std::string text, std::string default_value,
+                                          std::set<std::string>& result, bool &flag) {
   std::vector<std::string> tmp;
   PetscErrorCode ierr;
 
@@ -357,8 +359,8 @@ PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::stri
 }
 
 //! \brief Process a command-line option taking an integer as an argument.
-PetscErrorCode PISMOptionsInt(std::string option, std::string text,
-                              int &result, bool &is_set) {
+PetscErrorCode pism::PISMOptionsInt(std::string option, std::string text,
+                                    int &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -391,8 +393,8 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
 }
 
 //! \brief Process a command-line option taking a real number as an argument.
-PetscErrorCode PISMOptionsReal(std::string option, std::string text,
-                               double &result, bool &is_set) {
+PetscErrorCode pism::PISMOptionsReal(std::string option, std::string text,
+                                     double &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -428,8 +430,8 @@ PetscErrorCode PISMOptionsReal(std::string option, std::string text,
 }
 //! \brief Process a command-line option taking a comma-separated list of reals
 //! as an argument.
-PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
-                                    std::vector<double> &result, bool &is_set) {
+PetscErrorCode pism::PISMOptionsRealArray(std::string option, std::string text,
+                                          std::vector<double> &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -466,8 +468,8 @@ PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
 
 //! \brief Process a command-line option taking a comma-separated list of
 //! integers as an argument.
-PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
-                                    std::vector<int> &result, bool &is_set) {
+PetscErrorCode pism::PISMOptionsIntArray(std::string option, std::string text,
+                                         std::vector<int> &result, bool &is_set) {
   PetscErrorCode ierr;
   std::vector<double> tmp;
 
@@ -493,7 +495,7 @@ PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
   This unpredictability is bad. We want a function that does not depend on the
   argument given with an option.
  */
-PetscErrorCode PISMOptionsIsSet(std::string option, bool &result) {
+PetscErrorCode pism::PISMOptionsIsSet(std::string option, bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
   PetscBool flag;
@@ -506,8 +508,8 @@ PetscErrorCode PISMOptionsIsSet(std::string option, bool &result) {
 }
 
 //! A version of PISMOptionsIsSet that prints a -help message.
-PetscErrorCode PISMOptionsIsSet(std::string option, std::string text,
-                                bool &result) {
+PetscErrorCode pism::PISMOptionsIsSet(std::string option, std::string text,
+                                      bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
   PetscBool flag;
@@ -529,7 +531,7 @@ PetscErrorCode PISMOptionsIsSet(std::string option, std::string text,
  *
  * @return 0 on success
  */
-PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result) {
+PetscErrorCode pism::PISMOptionsHasArgument(std::string option, bool &result) {
   PetscErrorCode ierr;
   std::string tmp;
 
@@ -545,9 +547,9 @@ PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result) {
 /*!
   Processes -config and -config_override command line options.
  */
-PetscErrorCode init_config(MPI_Comm com,
-                           PISMConfig &config, PISMConfig &overrides,
-                           bool process_options) {
+PetscErrorCode pism::init_config(MPI_Comm com,
+                                 PISMConfig &config, PISMConfig &overrides,
+                                 bool process_options) {
   PetscErrorCode ierr;
 
   std::string alt_config = PISM_DefaultConfigFile,
@@ -581,7 +583,7 @@ PetscErrorCode init_config(MPI_Comm com,
   return 0;
 }
 
-PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
+PetscErrorCode pism::set_config_from_options(MPI_Comm com, PISMConfig &config) {
   PetscErrorCode ierr;
   bool flag;
 
@@ -904,3 +906,5 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   return 0;
 }
+
+} // end of namespace pism

@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _POCACHE_H_
 #define _POCACHE_H_
 
 #include "POModifier.hh"
 #include "iceModelVec.hh"
+
+namespace pism {
 
 class POCache : public POModifier {
 public:
@@ -48,5 +50,7 @@ protected:
   unsigned int m_update_interval_years;
   PetscErrorCode allocate_POCache();
 };
+
+} // end of namespace pism
 
 #endif /* _POCACHE_H_ */

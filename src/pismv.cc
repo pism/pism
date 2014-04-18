@@ -32,6 +32,8 @@ static char help[] =
 #include "POConstant.hh"
 #include "pism_options.hh"
 
+using namespace pism;
+
 // a wrapper that seems to be necessary to make std::transform below work
 static inline char pism_toupper(char c)
 {

@@ -25,6 +25,8 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PAYearlyCycle::PAYearlyCycle(IceGrid &g, const PISMConfig &conf)
   : PISMAtmosphereModel(g, conf), m_air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
@@ -260,3 +262,5 @@ PetscErrorCode PAYearlyCycle::end_pointwise_access() {
   return 0;
 }
 
+
+} // end of namespace pism

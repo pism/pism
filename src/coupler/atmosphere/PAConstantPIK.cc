@@ -20,6 +20,8 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 PAConstantPIK::PAConstantPIK(IceGrid &g, const PISMConfig &conf)
   : PISMAtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
@@ -222,3 +224,5 @@ PetscErrorCode PAConstantPIK::init_timeseries(double *ts, unsigned int N) {
   return 0;
 }
 
+
+} // end of namespace pism

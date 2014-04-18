@@ -26,6 +26,8 @@
 #include "PISMStressBalance.hh"
 #include "PISMOcean.hh"
 
+namespace pism {
+
 
 //! \file iMpartgrid.cc Methods implementing PIK option -part_grid [\ref Albrechtetal2011].
 
@@ -261,3 +263,5 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
 
   return 0;
 }
+
+} // end of namespace pism

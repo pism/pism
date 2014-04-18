@@ -22,6 +22,8 @@
 #include "PISMOcean.hh"
 #include "NCVariable.hh"
 
+namespace pism {
+
 //! \brief A class implementing a constant (in terms of the ocean inputs) ocean
 //! model. Uses configuration parameters for the sea level elevation and
 //! sub-shelf heat flux.
@@ -51,5 +53,7 @@ protected:
 private:
   PetscErrorCode allocate_POConstant();
 };
+
+} // end of namespace pism
 
 #endif /* _POCONSTANT_H_ */

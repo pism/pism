@@ -40,6 +40,8 @@
 #include "POConstant.hh"
 #include "PSVerification.hh"
 
+namespace pism {
+
 const double IceCompModel::secpera = 3.15569259747e7;
 
 IceCompModel::IceCompModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides, int mytest)
@@ -1307,3 +1309,5 @@ PetscErrorCode IceCompModel::test_V_init() {
 
   return 0;
 }
+
+} // end of namespace pism

@@ -25,6 +25,8 @@
 #include "iceModel.hh"
 #include "PISMDiagnostic.hh"
 
+namespace pism {
+
 //! Update the runtime graphical viewers.
 /*!
 Most viewers are updated by this routine, but some other are updated elsewhere.
@@ -143,3 +145,5 @@ PetscErrorCode IceModel::init_viewers() {
 }
 
 
+
+} // end of namespace pism

@@ -22,6 +22,7 @@
 #include "PISMStressBalance.hh"
 #include "PISMDiagnostic.hh"
 
+namespace pism {
 
 //! \brief Computes the vertically-averaged ice velocity.
 class PSB_velbar : public PISMDiag<PISMStressBalance>
@@ -86,7 +87,7 @@ public:
   \f]
 
   This ensures that \f$\tilde w(z_{\text{sea level}}) = 0\f$.
- */
+*/
 class PSB_wvel : public PISMDiag<PISMStressBalance>
 {
 public:
@@ -174,5 +175,7 @@ public:
   PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
+} // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */

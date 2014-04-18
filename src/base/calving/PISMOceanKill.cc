@@ -23,6 +23,8 @@
 #include "Mask.hh"
 #include <assert.h>
 
+namespace pism {
+
 PISMOceanKill::PISMOceanKill(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
   PetscErrorCode ierr;
@@ -153,3 +155,5 @@ PetscErrorCode PISMOceanKill::write_variables(std::set<std::string> vars, const 
 
   return 0;
 }
+
+} // end of namespace pism

@@ -22,6 +22,7 @@
 #include "pism_options.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
 
 PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const PISMConfig &conf)
   : PAYearlyCycle(g, conf), A(NULL) {
@@ -151,3 +152,5 @@ PetscErrorCode PACosineYearlyCycle::init_timeseries(double *ts, unsigned int N) 
 
   return 0;
 }
+
+} // end of namespace pism

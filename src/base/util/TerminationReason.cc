@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "TerminationReason.hh"
+
+namespace pism {
 
 const char *TerminationReason::sm_indent = "  ";
 
@@ -46,3 +48,5 @@ void GenericTerminationReason::get_description( std::ostream &desc,int indent_le
   }
   desc << m_description;
 }
+
+} // end of namespace pism

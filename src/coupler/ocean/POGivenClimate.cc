@@ -19,6 +19,8 @@
 #include "POGivenClimate.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 POGiven::POGiven(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
 {
@@ -112,3 +114,5 @@ PetscErrorCode POGiven::melange_back_pressure_fraction(IceModelVec2S &result) {
   PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

@@ -29,6 +29,8 @@
 #include "IceGrid.hh"           // Needed for Periodicity enum declaration.
 #include "PISMNCFile.hh"
 
+namespace pism {
+
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 class grid_info;
@@ -229,5 +231,7 @@ public:
     z_max;                      //!< maximal value of the z dimension
   std::vector<double> x, y, z;       //!< coordinates
 };
+
+} // end of namespace pism
 
 #endif /* _PIO_H_ */

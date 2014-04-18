@@ -21,6 +21,8 @@
 
 #include "PISMOcean.hh"
 
+namespace pism {
+
 class POModifier : public Modifier<PISMOceanModel>
 {
 public:
@@ -52,5 +54,7 @@ public:
     return 0;
   }
 };
+
+} // end of namespace pism
 
 #endif /* _POMODIFIER_H_ */

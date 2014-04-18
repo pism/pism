@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PS_EISMINTII_H_
 #define _PS_EISMINTII_H_
 
 #include "PISMSurface.hh"
 #include "iceModelVec.hh"
+
+namespace pism {
 
 /** EISMINT II climate inputs.
  *
@@ -51,5 +53,7 @@ private:
   double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;
 };
 
+
+} // end of namespace pism
 
 #endif /* _PS_EISMINTII_H_ */

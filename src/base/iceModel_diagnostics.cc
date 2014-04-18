@@ -33,6 +33,8 @@
 #include "bedrockThermalUnit.hh"
 #include "IceModelVec3Custom.hh"
 
+namespace pism {
+
 PetscErrorCode IceModel::init_diagnostics() {
   bool print_list_and_stop = false;
 
@@ -2107,3 +2109,5 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
 #else  // PISM_USE_PROJ4 is not set
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
+
+} // end of namespace pism

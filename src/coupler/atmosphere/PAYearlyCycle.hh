@@ -22,6 +22,8 @@
 #include "PISMAtmosphere.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 //! A class containing an incomplete implementation of an atmosphere model
 //! based on a temperature parameterization using mean annual and mean July
 //! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
@@ -58,5 +60,7 @@ protected:
 private:
   PetscErrorCode allocate_PAYearlyCycle();
 };
+
+} // end of namespace pism
 
 #endif /* _PAYEARLYCYCLE_H_ */

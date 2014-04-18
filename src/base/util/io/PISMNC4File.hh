@@ -21,6 +21,8 @@
 
 #include "PISMNCFile.hh"
 
+namespace pism {
+
 class PISMNC4File : public PISMNCFile
 {
 public:
@@ -111,5 +113,7 @@ protected:
                                  bool mapped) const;
   unsigned int m_compression_level;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMNC4FILE_H_ */

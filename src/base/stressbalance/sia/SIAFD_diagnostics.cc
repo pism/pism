@@ -20,6 +20,8 @@
 #include "PISMBedSmoother.hh"
 #include "PISMVars.hh"
 
+namespace pism {
+
 void SIAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                             std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
   dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);
@@ -243,3 +245,5 @@ PetscErrorCode SIAFD_h_y::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+
+} // end of namespace pism

@@ -24,6 +24,8 @@
 #include "pism_options.hh"
 #include <cassert>
 
+namespace pism {
+
 ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
   : PISMComponent(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
 
@@ -660,3 +662,5 @@ PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+
+} // end of namespace pism

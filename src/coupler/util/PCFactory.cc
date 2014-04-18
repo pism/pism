@@ -64,6 +64,8 @@
 #include "PSForceThickness.hh"
 #include "PSCache.hh"
 
+namespace pism {
+
 // Atmosphere
 static void create_pa_constant_pik(IceGrid& g, const PISMConfig& conf, PISMAtmosphereModel* &result) {
   result = new PAConstantPIK(g, conf);
@@ -244,3 +246,5 @@ void PSFactory::add_standard_types() {
   add_modifier("lapse_rate",        &create_ps_lapse_rates);      
   add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly); 
 }
+
+} // end of namespace pism

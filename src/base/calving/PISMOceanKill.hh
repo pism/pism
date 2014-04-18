@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PISMOCEANKILL_H_
 #define _PISMOCEANKILL_H_
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
+
+namespace pism {
 
 /**
  * This class implements the "ocean_kill" mechanism: calving at a
@@ -46,5 +48,7 @@ public:
 protected:
   IceModelVec2Int m_ocean_kill_mask;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMOCEANKILL_H_ */

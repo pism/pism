@@ -52,6 +52,8 @@
 #include "PISMEigenCalving.hh"
 #include "PISMFloatKill.hh"
 
+namespace pism {
+
 //! Set default values of grid parameters.
 /*!
   Derived classes (IceCompModel, for example) reimplement this to change the
@@ -1135,3 +1137,5 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
 
   return 0;
 }
+
+} // end of namespace pism

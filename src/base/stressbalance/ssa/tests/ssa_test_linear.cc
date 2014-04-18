@@ -44,6 +44,8 @@ static char help[] =
 #include <math.h>
 #include "pism_options.hh"
 
+using namespace pism;
+
 class SSATestCaseExp: public SSATestCase
 {
 public:

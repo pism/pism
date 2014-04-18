@@ -23,6 +23,8 @@
 #include "PAYearlyCycle.hh"
 #include "Timeseries.hh"
 
+namespace pism {
+
 //! \brief A modification of PAYearlyCycle tailored for the
 //! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
 //! present-day temperature parameterization and stored precipitation data.
@@ -38,5 +40,7 @@ protected:
   IceModelVec2S *m_lat, *m_lon, *m_surfelev;
 };
 
+
+} // end of namespace pism
 
 #endif  // __PASeariseGreenland_hh

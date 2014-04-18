@@ -46,11 +46,13 @@ static char help[] =
 #include "deformation.hh"
 #include "pism_options.hh"
 
+using namespace pism;
+
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;  // won't be used except for rank,size
-  PetscMPIInt rank, size;
+  int rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 

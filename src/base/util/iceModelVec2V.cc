@@ -21,6 +21,8 @@
 #include "IceGrid.hh"
 #include "iceModelVec_helpers.hh"
 
+namespace pism {
+
 IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   m_dof = 2;
   begin_end_access_use_dof = false;
@@ -149,6 +151,4 @@ PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) {
   return copy_2d<IceModelVec2V>(this, &destination);
 }
 
-PetscErrorCode IceModelVec2V::copy_from(IceModelVec &source) {
-  return copy_2d<IceModelVec2V>(&source, this);
-}
+} // end of namespace pism

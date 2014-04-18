@@ -25,6 +25,8 @@
 #include "LocalInterpCtx.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   m_has_ghosts           = false;
   da3                    = NULL;
@@ -598,3 +600,5 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
 }
 
 
+
+} // end of namespace pism

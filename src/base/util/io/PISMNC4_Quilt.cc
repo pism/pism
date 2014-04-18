@@ -27,6 +27,8 @@
 #endif
 #include <netcdf.h>
 
+namespace pism {
+
 static std::string patch_filename(std::string input, int mpi_rank) {
   char tmp[TEMPORARY_STRING_LENGTH];
 
@@ -253,3 +255,5 @@ int PISMNC4_Quilt::move_if_exists(std::string file, int /*rank_to_use*/) {
 
   return global_stat(stat);
 }
+
+} // end of namespace pism

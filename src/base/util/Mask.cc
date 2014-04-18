@@ -18,6 +18,8 @@
 
 #include "Mask.hh"
 
+namespace pism {
+
 void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
                     IceModelVec2Int &out_mask, IceModelVec2S &out_surface  )
 {
@@ -41,3 +43,5 @@ void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
   out_mask.end_access();
   out_surface.end_access();
 }
+
+} // end of namespace pism

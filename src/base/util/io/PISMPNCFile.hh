@@ -21,6 +21,8 @@
 
 #include "PISMNCFile.hh"
 
+namespace pism {
+
 //! \brief PISM's PnetCDF I/O wrapper.
 class PISMPNCFile : public PISMNCFile
 {
@@ -131,5 +133,7 @@ private:
 
   MPI_Info mpi_info;            // MPI hints
 };
+
+} // end of namespace pism
 
 #endif /* _PISMPNCFILE_H_ */

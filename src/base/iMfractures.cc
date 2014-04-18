@@ -23,6 +23,8 @@
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 
+namespace pism {
+
 // FIXME: remove unused commented-out code.
 
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
@@ -375,3 +377,5 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
   return 0;
 }
+
+} // end of namespace pism

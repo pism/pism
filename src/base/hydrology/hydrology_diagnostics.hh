@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2013 PISM Authors
+// Copyright (C) 2012-2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,21 +23,21 @@
 #include "PISMDiagnostic.hh"
 #include "PISMHydrology.hh"
 
-
+namespace pism {
 /*! \file
-Interfaces for the following diagnostics which are handled by PISMHydrology
-instances; some of these may be replaced by state variables; listed by short
-name:
+  Interfaces for the following diagnostics which are handled by PISMHydrology
+  instances; some of these may be replaced by state variables; listed by short
+  name:
   * bwat [replace by state var in PISMRoutingHydrology and PISMDistributedHydrology]
   * bwp [replace by state var in PISMDistributedHydrology]
   * bwprel
   * effbwp
   * hydroinput
   * wallmelt
-Interfaces for the following diagnostics which are handled by
-PISMRoutingHydrology instances:
+  Interfaces for the following diagnostics which are handled by
+  PISMRoutingHydrology instances:
   * bwatvel
-*/
+  */
 
 
 //! \brief Reports the thickness of the transportable water in the subglacial layer.
@@ -102,6 +102,8 @@ public:
   PISMRoutingHydrology_bwatvel(PISMRoutingHydrology *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
+} // end of namespace pism
 
 #endif /* _HYDROLOGY_DIAGNOSTICS_H_ */
 

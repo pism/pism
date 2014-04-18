@@ -38,7 +38,7 @@
 static int verbosityLevel;
 
 //! \brief Set the PISM verbosity level.
-PetscErrorCode setVerbosityLevel(int level) {
+PetscErrorCode pism::setVerbosityLevel(int level) {
   if ((level < 0) || (level > 5)) {
     SETERRQ(PETSC_COMM_SELF, 1,"verbosity level invalid");
   }
@@ -47,9 +47,11 @@ PetscErrorCode setVerbosityLevel(int level) {
 }
 
 //! \brief Get the verbosity level.
-int getVerbosityLevel() {
+int pism::getVerbosityLevel() {
   return verbosityLevel;
 }
+
+extern FILE *petsc_history;
 
 //! Print messages to standard out according to verbosity threshhold.
 /*!
@@ -67,18 +69,15 @@ Use this method for messages and warnings which should
 
 Should not be used for reporting fatal errors.
  */
-PetscErrorCode verbPrintf(const int thresh, 
-                          MPI_Comm comm,const char format[],...)
+PetscErrorCode pism::verbPrintf(const int thresh, 
+                                MPI_Comm comm,const char format[],...)
 {
-  PetscErrorCode ierr;
-  PetscMPIInt    rank;
-  size_t         len;
+  PetscErrorCode  ierr;
+  int             rank;
+  size_t          len;
   char           *buffer,*sub1,*sub2;
   const char     *nformat;
-  double      value;
-
-  extern FILE *petsc_history;
-
+  double          value;
 
   PetscFunctionBegin;
   if (!comm) comm = PETSC_COMM_WORLD;
@@ -137,8 +136,8 @@ Calls "MPI_Abort(PETSC_COMM_WORLD,3155)" to attempt to end all processes.
 If this works main() will return value 3155.  The problem with PetscEnd() for
 this purpose is that it is collective (presumably over PETSC_COMM_WORLD).
  */
-void endPrintRank() {
-  PetscMPIInt rank;
+void pism::endPrintRank() {
+  int rank;
   if (!MPI_Comm_rank(PETSC_COMM_WORLD, &rank)) {
     PetscErrorPrintf("\n\n    rank %d process called endPrintRank()\n"
                          "    ending ...  \n\n",rank);
@@ -151,7 +150,7 @@ void endPrintRank() {
 
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
-bool ends_with(std::string str, std::string suffix) {
+bool pism::ends_with(std::string str, std::string suffix) {
   if (str.empty() == true && suffix.empty() == false)
     return false;
 
@@ -163,7 +162,7 @@ bool ends_with(std::string str, std::string suffix) {
 
 
 //! Checks if a vector of doubles is strictly increasing.
-bool is_increasing(const std::vector<double> &a) {
+bool pism::is_increasing(const std::vector<double> &a) {
   int len = (int)a.size();
   for (int k = 0; k < len-1; k++) {
     if (a[k] >= a[k+1])  return false;
@@ -172,7 +171,7 @@ bool is_increasing(const std::vector<double> &a) {
 }
 
 //! Creates a time-stamp used for the history NetCDF attribute.
-std::string pism_timestamp() {
+std::string pism::pism_timestamp() {
   time_t now;
   tm tm_now;
   char date_str[50];
@@ -186,7 +185,7 @@ std::string pism_timestamp() {
 }
 
 //! Creates a string with the user name, hostname and the time-stamp (for history strings).
-std::string pism_username_prefix(MPI_Comm com) {
+std::string pism::pism_username_prefix(MPI_Comm com) {
   PetscErrorCode ierr;
 
   char username[50];
@@ -213,7 +212,7 @@ std::string pism_username_prefix(MPI_Comm com) {
 
 //! \brief Uses argc and argv to create the string with current PISM
 //! command-line arguments.
-std::string pism_args_string() {
+std::string pism::pism_args_string() {
   int argc;
   char **argv;
   PetscGetArgs(&argc, &argv);
@@ -239,7 +238,7 @@ std::string pism_args_string() {
  * "name + separator + more stuff + .nc", then removes the string after the
  * separator.
  */
-std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix) {
+std::string pism::pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix) {
   std::string basename = filename, result;
 
   // find where the separator begins:
@@ -271,7 +270,7 @@ std::string pism_filename_add_suffix(std::string filename, std::string separator
  * running PETSc hanging waiting for a MPI_Finalize() call. (PetscFinalize()
  * only calls MPI_Finalize() if PetscInitialize() called MPI_Init().)
  */
-void PISMEnd() {
+void pism::PISMEnd() {
   int flag;
   PetscFinalize();
 
@@ -282,12 +281,12 @@ void PISMEnd() {
   exit(0);
 }
 
-void PISMEndQuiet() {
+void pism::PISMEndQuiet() {
   PetscOptionsSetValue("-options_left","no");
   PISMEnd();
 }
 
-PetscErrorCode PISMGetTime(PetscLogDouble *result) {
+PetscErrorCode pism::PISMGetTime(PetscLogDouble *result) {
 #if PETSC_VERSION_LT(3,4,0)
   PetscErrorCode ierr = PetscGetTime(result); CHKERRQ(ierr);
 #else

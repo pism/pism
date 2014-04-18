@@ -31,15 +31,17 @@
 #include <assert.h>
 #include "PISMConfig.hh"
 
+namespace pism {
+
 template<class ForwardProblem> class IPTaoTikhonovProblem;
 
 //! Iteration callback class for IPTaoTikhonovProblem
 /*! A class for objects receiving iteration callbacks from a IPTaoTikhonovProblem.  These 
-    callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
-    IPTaoTikhonovProblemListeners are ususally used via a reference counted pointer 
-    IPTaoTikhonovProblemListener::Ptr to allow for good memory management when Listeners are 
-    created as subclasses of python classes. It would have been better to nest this inside of 
-    IPTaoTikhonovProblem, but SWIG has a hard time with nested classes, so it's outer instead.*/
+  callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
+  IPTaoTikhonovProblemListeners are ususally used via a reference counted pointer 
+  IPTaoTikhonovProblemListener::Ptr to allow for good memory management when Listeners are 
+  created as subclasses of python classes. It would have been better to nest this inside of 
+  IPTaoTikhonovProblem, but SWIG has a hard time with nested classes, so it's outer instead.*/
 template<class ForwardProblem> class IPTaoTikhonovProblemListener {
 public:
 #ifdef PISM_USE_TR1
@@ -67,95 +69,95 @@ public:
 
 //! \brief Defines a Tikhonov minimization problem to be solved with a TaoBasicSolver.
 /*! Suppose \f$F\f$ is a map from a space \f$D\f$ of design variables to a space \f$S\f$ of
-state variables and we wish to solve a possibly ill-posed problem of the form
-\f[ F(d) = u \f]
-where \f$u\f$ is know and \f$d\f$ is unknown.  Approximate solutions can be obtained by 
-finding minimizers of an associated Tikhonov functional
-\f[
-J(d) = J_{S}(F(d)-u) + \frac{1}{\eta}J_{D}(d-d_0)
-\f]
-where \$J_{D}\$ and \$J_{S}\$ are functionals on the spaces \f$D\f$ and \f$S\f$ respectively,
-\f$\eta\f$ is a penalty parameter, and \f$d_0\f$ is a best a-priori guess for the the solution.
-The IPTaoTikhonovProblem class encapuslates all of the data required to formulate the minimization
-problem as a Problem tha can be solved using a TaoBasicSolver. It is templated on the
-the class ForwardProblem which defines the class of the forward map \f$F\f$ as well as the
-spaces \f$D\f$ and \f$S\f$. An instance of ForwardProblem, along with 
-specific functionals \f$J_D\f$ and \f$J_S\f$, the parameter \f$\eta\f$, and the data 
-\f$y\f$ and \f$x_0\f$ are provided on constructing a IPTaoTikhonovProblem.
+  state variables and we wish to solve a possibly ill-posed problem of the form
+  \f[ F(d) = u \f]
+  where \f$u\f$ is know and \f$d\f$ is unknown.  Approximate solutions can be obtained by 
+  finding minimizers of an associated Tikhonov functional
+  \f[
+  J(d) = J_{S}(F(d)-u) + \frac{1}{\eta}J_{D}(d-d_0)
+  \f]
+  where \$J_{D}\$ and \$J_{S}\$ are functionals on the spaces \f$D\f$ and \f$S\f$ respectively,
+  \f$\eta\f$ is a penalty parameter, and \f$d_0\f$ is a best a-priori guess for the the solution.
+  The IPTaoTikhonovProblem class encapuslates all of the data required to formulate the minimization
+  problem as a Problem tha can be solved using a TaoBasicSolver. It is templated on the
+  the class ForwardProblem which defines the class of the forward map \f$F\f$ as well as the
+  spaces \f$D\f$ and \f$S\f$. An instance of ForwardProblem, along with 
+  specific functionals \f$J_D\f$ and \f$J_S\f$, the parameter \f$\eta\f$, and the data 
+  \f$y\f$ and \f$x_0\f$ are provided on constructing a IPTaoTikhonovProblem.
 
-For example, if the SSATaucForwardProblem class defines the map taking yield stresses \f$\tau_c\f$
-to the corresponding surface velocity field solving the SSA, a schematic setup of solving
-the associated Tikhonov problem goes as follows.
+  For example, if the SSATaucForwardProblem class defines the map taking yield stresses \f$\tau_c\f$
+  to the corresponding surface velocity field solving the SSA, a schematic setup of solving
+  the associated Tikhonov problem goes as follows.
 
-\code
-SSATaucForwardProblem forwardProblem(grid);
-L2NormFunctional2S designFunctional(grid); //J_X
-L2NormFunctional2V stateFunctional(grid);  //J_Y
-IceModelVec2V u_obs;     // Set this to the surface velocity observations.
-IceModelVec2S tauc_0;    // Set this to the initial guess for tauc.
-double eta;           // Set this to the desired penalty parameter.
+  \code
+  SSATaucForwardProblem forwardProblem(grid);
+  L2NormFunctional2S designFunctional(grid); //J_X
+  L2NormFunctional2V stateFunctional(grid);  //J_Y
+  IceModelVec2V u_obs;     // Set this to the surface velocity observations.
+  IceModelVec2S tauc_0;    // Set this to the initial guess for tauc.
+  double eta;           // Set this to the desired penalty parameter.
 
-typedef InvSSATauc IPTaoTikhonovProblem<SSATaucForwardProblem>;
-InvSSATauc tikhonovProblem(forwardProblem,tauc_0,u_obs,eta,designFunctional,stateFunctional);
+  typedef InvSSATauc IPTaoTikhonovProblem<SSATaucForwardProblem>;
+  InvSSATauc tikhonovProblem(forwardProblem,tauc_0,u_obs,eta,designFunctional,stateFunctional);
 
-TaoBasicSolver<InvSSATauc> solver(com,"tao_cg",tikhonovProblem);
+  TaoBasicSolver<InvSSATauc> solver(com,"tao_cg",tikhonovProblem);
 
-TerminationReason::Ptr reason;
-solver.solve(reason);
+  TerminationReason::Ptr reason;
+  solver.solve(reason);
 
-if(reason->succeeded()) {
+  if(reason->succeeded()) {
   printf("Success: %s\n",reason->description().c_str());
-} else {
+  } else {
   printf("Failure: %s\n",reason->description().c_str());
-}
-\endcode
+  }
+  \endcode
 
-The class ForwardProblem that defines the forward problem
-must have the following characteristics:
+  The class ForwardProblem that defines the forward problem
+  must have the following characteristics:
 
-<ol>
-<li> Contains typedefs for DesignVec and StateVec that effectively
-   define the function spaces \f$D\f$ and \f$S\f$.  E.g. 
+  <ol>
+  <li> Contains typedefs for DesignVec and StateVec that effectively
+  define the function spaces \f$D\f$ and \f$S\f$.  E.g. 
 
-\code
-   typedef IceModelVec2S DesignVec;
-   typedef IceModelVec2V StateVec;
-\endcode
-   would be appropriate for a map from basal yeild stress to surface velocities.
+  \code
+  typedef IceModelVec2S DesignVec;
+  typedef IceModelVec2V StateVec;
+  \endcode
+  would be appropriate for a map from basal yeild stress to surface velocities.
 
-<li> A method
-\code
+  <li> A method
+  \code
   PetscErrorCode linearize_at( DesignVec &d, TerminationReason::Ptr &reason);
-\endcode
-that instructs the class to compute the value of F and 
-anything needed to compute its linearization at \a d.   This is the first method
-called when working with a new iterate of \a d.
+  \endcode
+  that instructs the class to compute the value of F and 
+  anything needed to compute its linearization at \a d.   This is the first method
+  called when working with a new iterate of \a d.
 
-<li> A method
-\code
+  <li> A method
+  \code
   StateVec &solution()
-\endcode
-that returns the most recently computed value of \f$F(d)\f$ 
-as computed by a call to linearize_at.
+  \endcode
+  that returns the most recently computed value of \f$F(d)\f$ 
+  as computed by a call to linearize_at.
 
-<li> A method
-\code
-PetscErrorCode apply_linearization_transpose(StateVec &du, DesignVec &dzeta);
-\endcode
-that computes the action of \f$(F')^t\f$,
-where \f$F'\f$ is the linearization of \f$F\f$ at the current iterate, and the transpose
-is computed in the standard sense (i.e. thinking of \f$F'\f$ as a matrix with respect
-to the bases implied by the DesignVec and StateVec spaces).  The need for a transpose arises
-because
-\f[
-\frac{d}{dt} J_{S}(F(d+t\delta d)-u) = [DJ_S]_{k}\; F'_{kj} \; \delta d
-\f]
-and hence the gradient of the term \f$J_{S}(F(d)-u)\f$ with respect to \f$d\f$ is given
-by
-\f[
-(F')^t (\nabla J_S)^t.
-\f]
-</ol>
+  <li> A method
+  \code
+  PetscErrorCode apply_linearization_transpose(StateVec &du, DesignVec &dzeta);
+  \endcode
+  that computes the action of \f$(F')^t\f$,
+  where \f$F'\f$ is the linearization of \f$F\f$ at the current iterate, and the transpose
+  is computed in the standard sense (i.e. thinking of \f$F'\f$ as a matrix with respect
+  to the bases implied by the DesignVec and StateVec spaces).  The need for a transpose arises
+  because
+  \f[
+  \frac{d}{dt} J_{S}(F(d+t\delta d)-u) = [DJ_S]_{k}\; F'_{kj} \; \delta d
+  \f]
+  and hence the gradient of the term \f$J_{S}(F(d)-u)\f$ with respect to \f$d\f$ is given
+  by
+  \f[
+  (F')^t (\nabla J_S)^t.
+  \f]
+  </ol>
 
 */
 template<class ForwardProblem> class IPTaoTikhonovProblem
@@ -167,20 +169,20 @@ public:
 
   /*! Constructs a Tikhonov problem:
   
-           Minimize \f$J(d) = J_S(F(d)-u_obs) + \frac{1}{\eta} J_D(d-d0)  \f$
+    Minimize \f$J(d) = J_S(F(d)-u_obs) + \frac{1}{\eta} J_D(d-d0)  \f$
 
-      that can be solved with a TaoBasicSolver.
+    that can be solved with a TaoBasicSolver.
       
-      @param forward Class defining the map F.  See class-level documentation for requirements of F.
-      @param      d0 Best a-priori guess for the design parameter.
-      @param   u_obs State parameter to match (i.e. approximately solve F(d)=u_obs)
-      @param     eta Penalty parameter/Lagrange multiplier.  Take eta to zero to impose more regularization to an ill posed problem.
-      @param   designFunctional The functional \f$J_D\f$
-      @param    stateFunctional The functional \f$J_S\f$
+    @param forward Class defining the map F.  See class-level documentation for requirements of F.
+    @param      d0 Best a-priori guess for the design parameter.
+    @param   u_obs State parameter to match (i.e. approximately solve F(d)=u_obs)
+    @param     eta Penalty parameter/Lagrange multiplier.  Take eta to zero to impose more regularization to an ill posed problem.
+    @param   designFunctional The functional \f$J_D\f$
+    @param    stateFunctional The functional \f$J_S\f$
   */
 
-  IPTaoTikhonovProblem( ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, double eta, 
-                  IPFunctional<DesignVec>&designFunctional, IPFunctional<StateVec>&stateFunctional);
+  IPTaoTikhonovProblem(ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, double eta, 
+                       IPFunctional<DesignVec>&designFunctional, IPFunctional<StateVec>&stateFunctional);
 
   virtual ~IPTaoTikhonovProblem();
 
@@ -250,7 +252,7 @@ protected:
   DesignVec m_grad_design; ///< Gradient of \f$J_D\f$ at the current iterate.
   DesignVec m_grad_state;  ///< Gradient of \f$J_S\f$ at the current iterate.
   DesignVec m_grad;        /**< Weighted sum of the design and state gradients
-                                corresponding to the gradient of the Tikhonov functional \f$J\f$. */
+                              corresponding to the gradient of the Tikhonov functional \f$J\f$. */
 
   double m_eta;         ///<  Penalty parameter/Lagrange multiplier.
 
@@ -264,17 +266,17 @@ protected:
 
   double m_tikhonov_atol;  ///< Convergence parameter: convergence stops when \f$||J_D||_2 <\f$ m_tikhonov_rtol.
   double m_tikhonov_rtol;  /**< Convergence parameter: convergence stops when \f$||J_D||_2 \f$ is 
-                                  less than m_tikhonov_rtol times the maximum of the gradient of \f$J_S\f$ and
-                                  \f$(1/\eta)J_D\f$.  This occurs when the two terms forming the sum of the gradient
-                                  of \f$J\f$ point in roughly opposite directions with the same magnitude. */
+                              less than m_tikhonov_rtol times the maximum of the gradient of \f$J_S\f$ and
+                              \f$(1/\eta)J_D\f$.  This occurs when the two terms forming the sum of the gradient
+                              of \f$J\f$ point in roughly opposite directions with the same magnitude. */
 
 };
 
 template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem( ForwardProblem &forward,
-                 DesignVec &d0, StateVec &u_obs, double eta,
-                 IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional ):
-                  m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
-                  m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
+                                                                                           DesignVec &d0, StateVec &u_obs, double eta,
+                                                                                           IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional ):
+  m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
+  m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
@@ -332,12 +334,12 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   
   int nListeners = m_listeners.size();
   for(int k=0; k<nListeners; k++) {
-   ierr = m_listeners[k]->iteration(*this,m_eta,
-                 its,m_val_design,m_val_state,
-                 m_d, m_d_diff, m_grad_design,
-                 m_forward.solution(), m_u_diff, m_grad_state,
-                 m_grad );
-   CHKERRQ(ierr);
+    ierr = m_listeners[k]->iteration(*this,m_eta,
+                                     its,m_val_design,m_val_state,
+                                     m_d, m_d_diff, m_grad_design,
+                                     m_forward.solution(), m_u_diff, m_grad_state,
+                                     m_grad );
+    CHKERRQ(ierr);
   }
   return 0;
 }
@@ -369,7 +371,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   PetscErrorCode ierr;
 
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
-  ierr = m_d.copy_from(x); CHKERRQ(ierr);
+  ierr = m_d.copy_from_vec(x); CHKERRQ(ierr);
 
   TerminationReason::Ptr reason;
   ierr = m_forward.linearize_at(m_d, reason); CHKERRQ(ierr);
@@ -394,7 +396,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   ierr = m_grad.scale(1./m_eta); CHKERRQ(ierr);    
   ierr = m_grad.add(1,m_grad_state); CHKERRQ(ierr);
 
-  ierr = m_grad.copy_to(gradient); CHKERRQ(ierr);      
+  ierr = m_grad.copy_to_vec(gradient); CHKERRQ(ierr);      
 
   double valDesign, valState;
   ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);
@@ -408,6 +410,6 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   return 0;
 }
 
-
+} // end of namespace pism
 
 #endif /* end of include guard: IPTAOTIKHONOVPROBLEM_HH_4NMM724B */

@@ -22,10 +22,12 @@
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
 
+namespace pism {
+
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
 
-SSA *SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
+SSA* pism::SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
   return new SSAFEM(g, ec, c);
 }
 
@@ -109,7 +111,7 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears SSAX.
 
-  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to_vec(SSAX); CHKERRQ(ierr);
 
   // Store coefficient data at the quadrature points.
   ierr = cacheQuadPtValues(); CHKERRQ(ierr);
@@ -219,7 +221,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   }
 
   // Extract the solution back from SSAX to velocity and communicate.
-  ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_from_vec(SSAX); CHKERRQ(ierr);
   ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL, "-ssa_view_solution", &flg); CHKERRQ(ierr);
@@ -765,14 +767,14 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 }
 
 //!
-PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
-                             const PISMVector2 **velocity, PISMVector2 **residual,
-                             SSAFEM_SNESCallbackData *fe) {
+PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *info,
+                                   const PISMVector2 **velocity, PISMVector2 **residual,
+                                   SSAFEM_SNESCallbackData *fe) {
   return fe->ssa->compute_local_function(info, velocity, residual);
 }
 
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
-                             Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
+PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
+                                   Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
 
   (void) A;
 
@@ -782,3 +784,5 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
 
   return 0;
 }
+
+} // end of namespace pism

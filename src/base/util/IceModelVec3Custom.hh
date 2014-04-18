@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 PISM Authors
+/* Copyright (C) 2013, 2014 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -15,12 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _ICEMODELVEC3CUSTOM_H_
 #define _ICEMODELVEC3CUSTOM_H_
 
 #include "iceModelVec.hh"
+
+namespace pism {
 
 /**
  * This class allows storing and saving 3D (or 2D with dof>1) data
@@ -43,5 +45,7 @@ public:
                                 std::vector<double> my_zlevels,
                                 std::map<std::string, std::string> z_attrs);
 };
+
+} // end of namespace pism
 
 #endif /* _ICEMODELVEC3CUSTOM_H_ */

@@ -25,6 +25,8 @@
 #include "PIO.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 template <class Model, class Input>
 class PGivenClimate : public Model
 {
@@ -224,5 +226,7 @@ protected:
     return 0;
   }
 };
+
+} // end of namespace pism
 
 #endif /* _PGIVENCLIMATE_H_ */

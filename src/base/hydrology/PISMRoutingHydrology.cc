@@ -22,6 +22,7 @@
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
 
+namespace pism {
 
 PISMRoutingHydrology::PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf)
     : PISMHydrology(g, conf)
@@ -883,3 +884,5 @@ PetscErrorCode PISMRoutingHydrology_bwatvel::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+
+} // end of namespace pism

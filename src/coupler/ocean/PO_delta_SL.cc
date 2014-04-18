@@ -19,6 +19,8 @@
 #include "PO_delta_SL.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 /// -ocean_delta_SL_file, ...
 
 PO_delta_SL::PO_delta_SL(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
@@ -143,3 +145,5 @@ PetscErrorCode PO_delta_SL::write_variables(std::set<std::string> vars, const PI
 
   return 0;
 }
+
+} // end of namespace pism

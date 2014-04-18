@@ -21,16 +21,18 @@
 
 #include "PISMSurface.hh"
 
+namespace pism {
+
 //! \brief A base class for mechanisms which modify the results of a surface
 //! processes model (an instance of PISMSurfaceModel) before they reach the ice.
 /*! 
-Frequently ice sheet models are driven by a "basic" surface model plus "forcings".
-This modifier class allows the implementations of forcings which alter the 
-results of the surface processes model.  That is, if the atmospheric inputs 
-are already dealt-with, and a basic surface processes model is in use which 
-generates surface mass balance and ice upper surface temperature, then instances
-of this PSModifier class can be used to modify the surface mass balance and ice
-upper surface temperature "just before" it gets to the ice itself.
+  Frequently ice sheet models are driven by a "basic" surface model plus "forcings".
+  This modifier class allows the implementations of forcings which alter the 
+  results of the surface processes model.  That is, if the atmospheric inputs 
+  are already dealt-with, and a basic surface processes model is in use which 
+  generates surface mass balance and ice upper surface temperature, then instances
+  of this PSModifier class can be used to modify the surface mass balance and ice
+  upper surface temperature "just before" it gets to the ice itself.
 */
 class PSModifier : public Modifier<PISMSurfaceModel>
 {
@@ -85,5 +87,7 @@ public:
     return 0;
   }
 };
+
+} // end of namespace pism
 
 #endif /* _PSMODIFIER_H_ */

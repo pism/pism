@@ -23,25 +23,27 @@
 #include "localMassBalance_old.hh"
 #include "NCVariable.hh"
 
+namespace pism {
+
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
 //! precipitation and air temperature.
 /*! 
-Temperature-index schemes are far from perfect as a way of modeling surface mass
-balance on ice sheets which experience surface melt, but they are known to have
-reasonable data requirements and to do a good job when tuned appropriately
-[\ref Hock05].
+  Temperature-index schemes are far from perfect as a way of modeling surface mass
+  balance on ice sheets which experience surface melt, but they are known to have
+  reasonable data requirements and to do a good job when tuned appropriately
+  [\ref Hock05].
 
-This base class already accesses a fair amount of functionality.  It holds a
-pointer to an instance of the LocalMassBalance class.  This class has method
-LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
-precipitation during the ice sheet model time step, plus a variable temperature
-over that time step, to compute melt, refreeze, and surface balance.
+  This base class already accesses a fair amount of functionality.  It holds a
+  pointer to an instance of the LocalMassBalance class.  This class has method
+  LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
+  precipitation during the ice sheet model time step, plus a variable temperature
+  over that time step, to compute melt, refreeze, and surface balance.
 
-This base class reads options <tt>-pdd_factor_snow</tt>, <tt>-pdd_factor_ice</tt>,
-and <tt>-pdd_refreeze</tt> and sets these factors accordingly, in the case where
-the factors are independent of location.  If option <tt>-pdd_fausto</tt> is used
-then an object is called which updates these values based on the location.
+  This base class reads options <tt>-pdd_factor_snow</tt>, <tt>-pdd_factor_ice</tt>,
+  and <tt>-pdd_refreeze</tt> and sets these factors accordingly, in the case where
+  the factors are independent of location.  If option <tt>-pdd_fausto</tt> is used
+  then an object is called which updates these values based on the location.
 */
 class PSTemperatureIndex_Old : public PISMSurfaceModel {
 public:
@@ -63,18 +65,18 @@ protected:
 
   DegreeDayFactors_Old base_ddf;          //!< holds degree-day factors in location-independent case
   PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
-               base_pddThresholdTemp; //!< K; temps are positive above this
+    base_pddThresholdTemp; //!< K; temps are positive above this
   IceModelVec2S
-    climatic_mass_balance,      //!< cached surface mass balance rate
+  climatic_mass_balance,      //!< cached surface mass balance rate
     accumulation_rate, //!< diagnostic output accumulation rate (snow - rain)
     melt_rate,    //!< diagnostic output melt rate (rate at which snow
-                                //! and ice is melted, but some snow melt refreezes)
+  //! and ice is melted, but some snow melt refreezes)
     runoff_rate;          //!< diagnostic output meltwater runoff rate
 
   IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex_Old must hold these
-                                     //!pointers in order to use object which
-                                     //!needs 3D location to determine degree
-                                     //!day factors.
+  //!pointers in order to use object which
+  //!needs 3D location to determine degree
+  //!day factors.
   bool pdd_annualize;
   PetscReal next_pdd_update;
 
@@ -83,5 +85,7 @@ private:
   PetscErrorCode allocate_PSTemperatureIndex_Old();
   std::string temperature_name, mass_balance_name;
 };
+
+} // end of namespace pism
 
 #endif /* _PSTEMPERATUREINDEX_OLD_H_ */

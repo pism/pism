@@ -22,6 +22,8 @@
 #include "PScalarForcing.hh"
 #include "POModifier.hh"
 
+namespace pism {
+
 class PO_delta_SL : public PScalarForcing<PISMOceanModel,POModifier>
 {
 public:
@@ -40,5 +42,7 @@ protected:
 private:
   PetscErrorCode allocate_PO_delta_SL();
 };
+
+} // end of namespace pism
 
 #endif /* _PODSLFORCING_H_ */

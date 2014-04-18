@@ -22,6 +22,8 @@
 #include "iceModel.hh"
 #include "bedrockThermalUnit.hh"
 
+namespace pism {
+
 class BTU_Verification : public PISMBedThermalUnit
 {
 public:
@@ -61,10 +63,10 @@ protected:
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
   PetscErrorCode computeGeometryErrors(    // all tests except K
-        double &gvolexact, double &gareaexact, double &gdomeHexact,
-        double &volerr, double &areaerr,
-        double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
-        double &centerHerr);
+                                       double &gvolexact, double &gareaexact, double &gdomeHexact,
+                                       double &volerr, double &areaerr,
+                                       double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
+                                       double &centerHerr);
   virtual PetscErrorCode summary(bool tempAndAge);
 
   // related to tests A B C D E H
@@ -74,9 +76,9 @@ protected:
   // related to test E
   PetscErrorCode fillSolnTestE();  // only used with exactOnly == PETSC_TRUE
   PetscErrorCode computeBasalVelocityErrors(    // test E only
-        double &exactmaxspeed,
-        double &gmaxvecerr, double &gavvecerr,
-        double &gmaxuberr, double &gmaxvberr);
+                                            double &exactmaxspeed,
+                                            double &gmaxvecerr, double &gavvecerr,
+                                            double &gmaxuberr, double &gmaxvberr);
 
   PetscErrorCode reset_thickness_tests_AE();
 
@@ -91,27 +93,27 @@ protected:
   PetscErrorCode getCompSourcesTestFG();
   PetscErrorCode fillSolnTestFG();  // only used with exactOnly == PETSC_TRUE
   PetscErrorCode computeTemperatureErrors(      // tests F and G
-                   double &gmaxTerr, double &gavTerr);
+                                          double &gmaxTerr, double &gavTerr);
   PetscErrorCode computeBasalTemperatureErrors( // tests F and G
-                   double &gmaxTerr, double &gavTerr, double &centerTerr);
+                                               double &gmaxTerr, double &gavTerr, double &centerTerr);
   PetscErrorCode compute_strain_heating_errors(            // tests F and G
-                   double &gmax_strain_heating_err, double &gav_strain_heating_err);
+                                               double &gmax_strain_heating_err, double &gav_strain_heating_err);
   PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
-                   double &gmaxUerr, double &gavUerr,  // 2D vector errors
-                   double &gmaxWerr, double &gavWerr); // scalar errors
+                                              double &gmaxUerr, double &gavUerr,  // 2D vector errors
+                                              double &gmaxWerr, double &gavWerr); // scalar errors
   
   IceModelVec3   strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   PetscErrorCode initTestsKO();
   PetscErrorCode fillTemperatureSolnTestsKO();  // used in initialzation
-                                                //   and with exactOnly == PETSC_TRUE
+  //   and with exactOnly == PETSC_TRUE
   PetscErrorCode fillBasalMeltRateSolnTestO();  // used only with exactOnly == PETSC_TRUE
   PetscErrorCode computeIceBedrockTemperatureErrors( // tests K and O only
-                   double &gmaxTerr, double &gavTerr,
-                   double &gmaxTberr, double &gavTberr);
+                                                    double &gmaxTerr, double &gavTerr,
+                                                    double &gmaxTberr, double &gavTberr);
   PetscErrorCode computeBasalMeltRateErrors( // test O only
-                   double &gmaxbmelterr, double &gminbmelterr);
+                                            double &gmaxbmelterr, double &gminbmelterr);
 
   // using Van der Veen's exact solution to test CFBC and the part-grid code
   PetscErrorCode test_V_init();
@@ -130,5 +132,7 @@ private:
   static const double ApforG;  // m;  magnitude A_p of annular perturbation for test G;
   // period t_p is set internally to 2000 years
 };
+
+} // end of namespace pism
 
 #endif /* __iceCompModel_hh */

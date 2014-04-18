@@ -23,6 +23,8 @@
 #include "PISMSurface.hh"
 #include "PSModifier.hh"
 
+namespace pism {
+
 /** @brief Implements the scalar temperature offsets for the ice
  * surface temperature.
  *
@@ -49,5 +51,7 @@ private:
   //! Allocate internal objects. Called from the constructor.
   PetscErrorCode allocate_PS_delta_T();
 };
+
+} // end of namespace pism
 
 #endif /* _PS_DELTA_T_H_ */

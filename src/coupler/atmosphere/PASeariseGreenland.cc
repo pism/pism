@@ -30,6 +30,8 @@
 #include <assert.h>
 #include "PISMConfig.hh"
 
+namespace pism {
+
 ///// PA_SeaRISE_Greenland
 
 PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const PISMConfig &conf)
@@ -160,3 +162,5 @@ PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
 
   return 0;
 }
+
+} // end of namespace pism

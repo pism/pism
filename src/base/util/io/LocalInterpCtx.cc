@@ -22,6 +22,8 @@
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 
+namespace pism {
+
 //! Construct a local interpolation context from arrays of parameters.
 /*!
   This method constructs a class from existing information already read from a NetCDF file and stored
@@ -241,3 +243,5 @@ void LocalInterpCtx::print_grid_info(grid_info g, PISMUnitSystem s, int threshol
              "  t:  %5d points, last time = %.3f years\n\n",
              g.t_len, s.convert(g.time, "seconds", "years"));
 }
+
+} // end of namespace pism

@@ -28,6 +28,8 @@
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 //! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
 
 
@@ -569,3 +571,5 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     \path [line] (Mbforqtemperate) -- node {} (getMbtemp);
 \end{tikzpicture}
  */
+
+} // end of namespace pism

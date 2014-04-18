@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013 The PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014 The PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,8 @@
 
 #include "pism_const.hh"
 #include "varcEnthalpyConverter.hh"
+
+namespace pism {
 
 /*!
 A calculation only used in the cold case.
@@ -152,3 +154,5 @@ PetscErrorCode varcEnthalpyConverter::getEnth(
   return 0;
 }
 
+
+} // end of namespace pism

@@ -28,6 +28,8 @@
 #include "IceGrid.hh"
 #include <algorithm>
 
+namespace pism {
+
 LocalMassBalance::LocalMassBalance(const PISMConfig &myconfig)
   : config(myconfig), m_unit_system(config.get_unit_system()),
     seconds_per_day(86400) {
@@ -371,3 +373,5 @@ PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
 
   return 0;
 }
+
+} // end of namespace pism

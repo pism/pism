@@ -20,6 +20,8 @@
 #include "pism_options.hh"
 #include "pismmerge.hh"
 
+using namespace pism;
+
 static char help[] =
   "Tool for merging PISM output files produced using '-o_format quilt'.\n";
 
@@ -142,7 +144,7 @@ int main(int argc, char *argv[])
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  PetscMPIInt rank, size;
+  int rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 

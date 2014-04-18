@@ -25,6 +25,8 @@
 #include "PISMAtmosphere.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const PISMConfig &conf)
@@ -478,3 +480,5 @@ PetscErrorCode PSTemperatureIndex_Old::write_variables(std::set<std::string> var
 
   return 0;
 }
+
+} // end of namespace pism

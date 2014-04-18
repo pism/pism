@@ -24,11 +24,12 @@
 #define MPI_INCLUDED 1
 #endif
 #include <netcdf.h>
-
-#include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
-
 #include <cstring>              // memset
 #include <cstdio>               // stderr, fprintf
+
+namespace pism {
+
+#include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
 PISMNC3File::PISMNC3File(MPI_Comm c)
   : PISMNCFile(c) {
@@ -981,3 +982,5 @@ std::string PISMNC3File::get_format() const {
     return "netcdf4";
   }
 }
+
+} // end of namespace pism

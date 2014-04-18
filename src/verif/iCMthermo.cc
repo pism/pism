@@ -27,6 +27,8 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 // boundary conditions for tests F, G (same as EISMINT II Experiment F)
 const double IceCompModel::Ggeo = 0.042;
 const double IceCompModel::ST = 1.67e-5;
@@ -764,3 +766,5 @@ PetscErrorCode BTU_Verification::bootstrap() {
 
   return 0;
 }
+
+} // end of namespace pism

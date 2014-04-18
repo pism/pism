@@ -24,7 +24,7 @@
 #include "NCVariable.hh"
 #include "iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
-
+namespace pism {
 //! A struct which holds degree day factors.
 /*!
   Degree day factors convert positive degree days (=PDDs) into amount of melt.
@@ -207,5 +207,6 @@ protected:
   IceModelVec2S temp_mj;
 };
 
+} // end of namespace pism
 
 #endif

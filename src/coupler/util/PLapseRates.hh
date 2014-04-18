@@ -28,6 +28,8 @@
 #include "PISMConfig.hh"
 #include <assert.h>
 
+namespace pism {
+
 template <class Model, class Mod>
 class PLapseRates : public Mod
 {
@@ -224,5 +226,7 @@ protected:
   }
 };
 
+
+} // end of namespace pism
 
 #endif /* _PLAPSERATES_H_ */

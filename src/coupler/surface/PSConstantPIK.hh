@@ -23,6 +23,8 @@
 #include "iceModelVec.hh"
 #include "PISMAtmosphere.hh"
 
+namespace pism {
+
 //! \brief A class implementing a constant-in-time surface model for the surface mass balance.
 //!
 //! Reads data from a PISM input file.
@@ -53,5 +55,7 @@ protected:
 private:
   PetscErrorCode allocate_PSConstantPIK();
 };
+
+} // end of namespace pism
 
 #endif /* _PSCONSTANTPIK_H_ */

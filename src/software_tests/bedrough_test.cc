@@ -30,6 +30,8 @@ static char help[] = "\nBEDROUGH_TEST\n"
 #include "iceModelVec.hh"
 #include "PISMBedSmoother.hh"
 
+using namespace pism;
+
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 

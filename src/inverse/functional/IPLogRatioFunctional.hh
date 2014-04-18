@@ -21,26 +21,28 @@
 
 #include "IPFunctional.hh"
 
+namespace pism {
+
 //! Implements a functional for log-ratio errors.
 /*!  This type of functional appears in [\ref Morlighemetal2010].
-Specifically, given a reference function \f$u_{obs}=[U_i]\f$, and an
-IceModelVec2V \f$x=[X_i]\f$,
-\f[
-J(x) = c_N \sum_i W_i\left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
-\f]
-where \f$\epsilon\f$ is a regularizing constant and \f$[W_i]\f$ is a vector of weights.  
-The term \f$X_i+U_i\f$ appears because the argument is expected to already be in the form 
-\f$V_i-U_i\f$, where \f$v=[V_i]\f$ is some approximation of \f$[U_i]\f$ and hence the 
-integrand has the form \f$\log(|V_i|/|U_i|)\f$.
+  Specifically, given a reference function \f$u_{obs}=[U_i]\f$, and an
+  IceModelVec2V \f$x=[X_i]\f$,
+  \f[
+  J(x) = c_N \sum_i W_i\left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
+  \f]
+  where \f$\epsilon\f$ is a regularizing constant and \f$[W_i]\f$ is a vector of weights.  
+  The term \f$X_i+U_i\f$ appears because the argument is expected to already be in the form 
+  \f$V_i-U_i\f$, where \f$v=[V_i]\f$ is some approximation of \f$[U_i]\f$ and hence the 
+  integrand has the form \f$\log(|V_i|/|U_i|)\f$.
 
-The normalization constant \f$c_N\f$ is determined implicitly by normalize().
+  The normalization constant \f$c_N\f$ is determined implicitly by normalize().
 */
 class IPLogRatioFunctional : public IPFunctional<IceModelVec2V> {
 public:
   IPLogRatioFunctional(IceGrid &grid, IceModelVec2V &u_observed, double eps,
                        IceModelVec2S *weights=NULL) :
-  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), 
-  m_normalization(1.), m_eps(eps) {};
+    IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), 
+    m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRatioFunctional() {};
 
   virtual PetscErrorCode normalize(double scale);
@@ -55,5 +57,7 @@ protected:
   double m_eps;
 
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: IPLOGRATIOFUNCTIONAL_HH_HSEWI0Q8 */

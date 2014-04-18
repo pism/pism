@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PISMUNITS_H_
 #define _PISMUNITS_H_
@@ -30,6 +30,7 @@
 #include <memory>
 #endif
 
+namespace pism {
 
 /** @file PISMUnits.hh This file contains thin wrappers around
  * UDUNITS-2 objects. Nothing fancy. The only purpose is to simplify
@@ -122,5 +123,7 @@ PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to);
  * @return 0 on success
  */
 PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMUnit to);
+
+} // end of namespace pism
 
 #endif /* _PISMUNITS_H_ */

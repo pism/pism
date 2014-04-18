@@ -22,6 +22,8 @@
 #include "pism_const.hh"
 #include "NCVariable.hh"
 
+namespace pism {
+
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
@@ -186,5 +188,7 @@ protected:
     m_run_end;                    //!< run end tim, in seconds since the reference time
   std::string m_calendar_string;       //!< CF calendar string
 };
+
+} // end of namespace pism
 
 #endif /* _PISMTIME_H_ */

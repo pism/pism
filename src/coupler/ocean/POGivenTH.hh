@@ -22,6 +22,8 @@
 #include "PGivenClimate.hh"
 #include "POModifier.hh"
 
+namespace pism {
+
 class POGivenTH : public PGivenClimate<POModifier,PISMOceanModel>
 {
 public:
@@ -105,5 +107,7 @@ private:
   PetscErrorCode allocate_POGivenTH();
 
 };
+
+} // end of namespace pism
 
 #endif /* _POGIVENTH_H_ */

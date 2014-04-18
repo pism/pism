@@ -22,6 +22,8 @@
 #include "Mask.hh"
 #include "PISMVars.hh"
 
+namespace pism {
+
 PISMIcebergRemover::PISMIcebergRemover(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
 
@@ -230,3 +232,5 @@ PetscErrorCode PISMIcebergRemover::write_variables(std::set<std::string>, const 
   // empty
   return 0;
 }
+
+} // end of namespace pism

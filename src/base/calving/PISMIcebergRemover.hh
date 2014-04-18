@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PISMICEBERGREMOVER_H_
 #define _PISMICEBERGREMOVER_H_
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
+
+namespace pism {
 
 /*! \brief PISM iceberg remover */
 /*!
@@ -67,5 +69,7 @@ protected:
 
   IceModelVec2Int *m_bcflag;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMICEBERGREMOVER_H_ */

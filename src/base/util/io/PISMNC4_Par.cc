@@ -24,6 +24,8 @@ extern "C" {
 #include <netcdf.h>
 }
 
+namespace pism {
+
 int PISMNC4_Par::integer_open_mode(PISM_IO_Mode input) const {
   if (input == PISM_READONLY) {
     return NC_NOWRITE;
@@ -81,3 +83,5 @@ int PISMNC4_Par::set_access_mode(int varid, bool mapped) const {
 }
 
 
+
+} // end of namespace pism

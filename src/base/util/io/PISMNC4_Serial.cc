@@ -25,6 +25,8 @@
 #endif
 #include <netcdf.h>
 
+namespace pism {
+
 int PISMNC4_Serial::integer_open_mode(PISM_IO_Mode input) const {
   if (input == PISM_READONLY) {
     return NC_NOWRITE;
@@ -57,3 +59,5 @@ int PISMNC4_Serial::create(std::string fname) {
 
   return stat;
 }
+
+} // end of namespace pism

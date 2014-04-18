@@ -21,6 +21,8 @@
 #define __PISMAtmosphere_hh
 
 #include "PISMComponent.hh"
+
+namespace pism {
 class IceModelVec2S;
 
 ///// PISMAtmosphereModel: models which provide precipitation and temperature
@@ -59,5 +61,7 @@ protected:
 
   std::vector<double> m_ts_times;
 };
+
+} // end of namespace pism
 
 #endif  // __PISMAtmosphere_hh

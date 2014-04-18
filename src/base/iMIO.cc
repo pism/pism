@@ -41,6 +41,8 @@
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 
+namespace pism {
+
 //! Save model state in NetCDF format.
 /*!
 Optionally allows saving of full velocity field.
@@ -885,3 +887,5 @@ PetscErrorCode IceModel::write_backup() {
   return 0;
 }
 
+
+} // end of namespace pism

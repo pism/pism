@@ -24,7 +24,9 @@
 
 #include "PISMConfig.hh"
 
-PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
+namespace pism {
+
+PetscBool pism::IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
   static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
   double ref = flow_law->flow(s, E, p, gs[0]);
   for (int i=1; i<4; i++) {
@@ -34,7 +36,7 @@ PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
 }
 
 // Rather than make this part of the base class, we just check at some reference values.
-PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const PISMConfig &config,
+PetscBool pism::IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const PISMConfig &config,
                                        EnthalpyConverter *EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
@@ -494,3 +496,5 @@ double GoldsbyKohlstedtIceStripped::flow_from_temp(double stress, double temp, d
 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
+
+} // end of namespace pism

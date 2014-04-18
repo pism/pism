@@ -21,6 +21,8 @@
 
 #include "pism_const.hh"
 
+namespace pism {
+
 class PISMConfig;
 
 PetscErrorCode verbosityLevelFromOptions();
@@ -72,5 +74,7 @@ PetscErrorCode init_config(MPI_Comm com,
 PetscErrorCode set_config_from_options(MPI_Comm com,
                                        PISMConfig &config);
 
+
+} // end of namespace pism
 
 #endif /* _PISM_OPTIONS_H_ */

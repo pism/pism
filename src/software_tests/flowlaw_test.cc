@@ -23,6 +23,8 @@
 #include "enthalpyConverter.hh"
 #include "pism_options.hh"
 
+using namespace pism;
+
 static char help[] =
   "Calls IceFlowLaw with various values of arguments and prints results.\n"
   "Used for software tests.  Tests the flow() method but prints\n"

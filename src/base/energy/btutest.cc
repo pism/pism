@@ -30,6 +30,8 @@ static char help[] =
 
 #include "../../verif/tests/exactTestK.h"
 
+using namespace pism;
+
 class BTU_Test : public PISMBedThermalUnit
 {
 public:

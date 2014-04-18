@@ -22,6 +22,8 @@
 #include "PGivenClimate.hh"
 #include "PAModifier.hh"
 
+namespace pism {
+
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
 class PAAnomaly : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
@@ -57,5 +59,7 @@ protected:
 private:
   PetscErrorCode allocate_PAAnomaly();
 };
+
+} // end of namespace pism
 
 #endif /* _PAANOMALY_H_ */

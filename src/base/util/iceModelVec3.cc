@@ -28,6 +28,8 @@
 
 #include <assert.h>
 
+namespace pism {
+
 // this file contains method for derived class IceModelVec3
 
 // methods for base class IceModelVec and derived class IceModelVec2S
@@ -650,3 +652,5 @@ PetscErrorCode  IceModelVec3D::has_nan() {
 
   return retval;
 }
+
+} // end of namespace pism

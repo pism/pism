@@ -22,6 +22,7 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
+namespace pism {
 
 IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
                                                    IPDesignVariableParameterization &tp,
@@ -638,3 +639,5 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
 
   return 0;
 }
+
+} // end of namespace pism

@@ -25,6 +25,8 @@
 #include "pism_options.hh"
 #include "PISMTime.hh"
 
+namespace pism {
+
 template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
@@ -115,5 +117,7 @@ protected:
   double bc_reference_time;  // in seconds
 };
 
+
+} // end of namespace pism
 
 #endif /* _PSCALARFORCING_H_ */

@@ -18,6 +18,7 @@
 
 #include "IPMeanSquareFunctional.hh"
 
+namespace pism {
 
 //! Implicitly set the normalization constant for the functional.
 /*! The normalization constant is selected so that if an input
@@ -291,3 +292,5 @@ PetscErrorCode IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVe
 
   return 0;
 }
+
+} // end of namespace pism

@@ -22,6 +22,8 @@
 #include "PISMComponent.hh"     // derives from PISMComponent
 #include "iceModelVec.hh"
 
+namespace pism {
+
 class ShallowStressBalance;
 class SSB_Modifier;
 class PISMDiagnostic;
@@ -29,15 +31,15 @@ class PISMOceanModel;
 
 //! The class defining PISM's interface to the shallow stress balance code.
 /*!
-Generally all the nontrivial fields are updated by a call to update().  The rest
-of the methods generally provide access to precomputed results.  The following
-diagram shows where these results are generally used in the rest of PISM.  (It 
-does not show the call graph, as would doxygen.)
+  Generally all the nontrivial fields are updated by a call to update().  The rest
+  of the methods generally provide access to precomputed results.  The following
+  diagram shows where these results are generally used in the rest of PISM.  (It 
+  does not show the call graph, as would doxygen.)
 
-\image html stressbalance-out.png "\b Methods of PISMStressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the PISMStressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
+  \image html stressbalance-out.png "\b Methods of PISMStressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the PISMStressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
 
-this command fails: \dotfile stressbalance-out.dot
- */
+  this command fails: \dotfile stressbalance-out.dot
+*/
 class PISMStressBalance : public PISMComponent
 {
 public:
@@ -52,7 +54,7 @@ public:
   //! -save_size).
   /*!
     Keyword can be one of "small", "medium" or "big".
-   */
+  */
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
   //! Defines requested fields to file and/or asks an attached
@@ -136,6 +138,8 @@ protected:
   ShallowStressBalance *m_stress_balance;
   SSB_Modifier *m_modifier;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_H_ */
 

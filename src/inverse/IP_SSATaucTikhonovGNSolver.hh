@@ -24,6 +24,8 @@
 #include "functional/IPFunctional.hh"
 #include "TerminationReason.hh"
 
+namespace pism {
+
 template<class C,PetscErrorCode (C::*MultiplyCallback)(Vec,Vec) >
 class MatrixMultiplyCallback {
 public:
@@ -49,7 +51,7 @@ public:
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
   IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
-                    IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
+                              IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
 
   ~IP_SSATaucTikhonovGNSolver();
   
@@ -156,6 +158,6 @@ protected:
 
 };
 
-
+} // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVGN_HH_SIU7F33G */

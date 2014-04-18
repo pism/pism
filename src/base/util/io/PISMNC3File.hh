@@ -21,6 +21,8 @@
 
 #include "PISMNCFile.hh"
 
+namespace pism {
+
 class PISMNC3File : public PISMNCFile
 {
 public:
@@ -122,5 +124,7 @@ private:
                      std::vector<unsigned int> imap, const double *op,
                      bool mapped) const;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMNC3FILE_H_ */

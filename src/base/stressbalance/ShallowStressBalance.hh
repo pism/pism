@@ -27,6 +27,8 @@
 #include <PISMDiagnostic.hh>
 #include "PISMConfig.hh"
 
+namespace pism {
+
 class PISMVars;
 class IceFlowLaw;
 class EnthalpyConverter;
@@ -160,7 +162,7 @@ public:
   This derived class is used in the non-sliding SIA approximation. This
   implementation ignores any basal resistance fields (e.g. yield stress from
   the IceModel or other user of this class).
- */
+*/
 class ZeroSliding : public ShallowStressBalance
 {
 public:
@@ -188,5 +190,7 @@ public:
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(PISMVars &vars);
 };
+
+} // end of namespace pism
 
 #endif /* _SHALLOWSTRESSBALANCE_H_ */

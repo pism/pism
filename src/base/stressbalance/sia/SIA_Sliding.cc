@@ -22,6 +22,8 @@
 #include "PISMVars.hh"
 #include "flowlaw_factory.hh"
 
+namespace pism {
+
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
   int WIDE_STENCIL = grid.max_stencil_width;
@@ -496,3 +498,5 @@ PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceM
 
   return 0;
 }
+
+} // end of namespace pism

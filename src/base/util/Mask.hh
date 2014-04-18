@@ -23,6 +23,8 @@
 #include "iceModelVec.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 class Mask
 {
 public:
@@ -63,7 +65,7 @@ public:
     const double  hfloating = sea_level + alpha*thickness;
 
     const bool is_floating = (hfloating > hgrounded + is_floating_thickness),
-               ice_free    = (thickness < icefree_thickness);
+      ice_free    = (thickness < icefree_thickness);
 
     int mask_result;
     double surface_result;
@@ -165,5 +167,7 @@ public:
 protected:
   IceModelVec2Int &mask;
 };
+
+} // end of namespace pism
 
 #endif /* _MASK_H_ */

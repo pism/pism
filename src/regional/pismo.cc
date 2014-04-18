@@ -35,6 +35,8 @@ static char help[] =
 #include "PIO.hh"
 #include "pism_options.hh"
 
+using namespace pism;
+
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
 /*! \file pismo.cc 
 The classes in this file modify basic PISM whole ice sheet modeling assumptions.

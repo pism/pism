@@ -37,6 +37,8 @@ static char help[] =
 #include "ShallowStressBalance.hh"
 #include "PISMVars.hh"
 
+using namespace pism;
+
 PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
                                   IceModelVec3 &strain_heating,
                                   IceModelVec2S &thickness,

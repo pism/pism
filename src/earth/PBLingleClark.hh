@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PBLINGLECLARK_H_
 #define _PBLINGLECLARK_H_
@@ -23,6 +23,8 @@
 #include "PISMBedDef.hh"
 #include <fftw3.h>
 #include "deformation.hh"
+
+namespace pism {
 
 //! A wrapper class around BedDeformLC.
 class PBLingleClark : public PISMBedDef {
@@ -48,5 +50,7 @@ protected:
     upliftp0;                   //!< bed uplift
   BedDeformLC bdLC;
 };
+
+} // end of namespace pism
 
 #endif /* _PBLINGLECLARK_H_ */

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2013 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,8 @@
 #include <string>
 #include "iceModelVec.hh"
 
+namespace pism {
+
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
@@ -39,11 +41,13 @@ public:
 protected:
   mutable std::map<std::string, IceModelVec*> variables,
     standard_names;             //!< stores standard names of variables that
-                                //! have standard names, allowing looking them
-                                //! up using either short or standard names and
-                                //! preserving the one-to-one map from keys
-                                //! (strings) to pointers (represented by
-                                //! "variables").
+  //! have standard names, allowing looking them
+  //! up using either short or standard names and
+  //! preserving the one-to-one map from keys
+  //! (strings) to pointers (represented by
+  //! "variables").
 };
+
+} // end of namespace pism
 
 #endif // __PISMVars_hh

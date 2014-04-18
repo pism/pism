@@ -22,6 +22,7 @@
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
 
+namespace pism {
 
 PISMHydrology::PISMHydrology(IceGrid &g, const PISMConfig &conf)
   : PISMComponent_TS(g, conf)
@@ -320,3 +321,5 @@ PetscErrorCode PISMHydrology::get_input_rate(
   return 0;
 }
 
+
+} // end of namespace pism

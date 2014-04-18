@@ -32,6 +32,8 @@
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
 
+namespace pism {
+
 PetscErrorCode IceModel::do_calving() {
   PetscErrorCode ierr;
   bool compute_cumulative_discharge = discharge_flux_2D_cumulative.was_created();
@@ -199,3 +201,5 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
 
   return 0;
 }
+
+} // end of namespace pism

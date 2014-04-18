@@ -29,28 +29,29 @@
 #include "IPTaoTikhonovProblem.hh"
 #include "IP_SSAHardavForwardProblem.hh"
 
-
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 
+namespace pism {
+
 //! Defines an IPTaoTikhonovProblem for inversion of basal yeild stresses \f$\tau_c\f$ from %SSA velocities.
 /*! The forward problem for the inversion is defined by an IP_SSAHardavForwardProblem.  The problem itself
-is solved with a TaoBasicSolver as described by the class-level documentation for IPTaoTikhonovProblem.  It
-is a reduced space method, inasmuch as we are performing unconstrained minimization on a Tikhonov functional
-that depends on a design variable (the value of \f$\tau_c\f$). It is compatible with any of the elementary
-TAO minimization algorithms, e.g. tao_cg, tao_lmvm.  If the minimization algorithm tao_blmvm is selected,
-the values of \f$\tau_c\f$ will be constrained by the config variables \a inv_ssa_hardav_min
-and \a inv_ssa_hardav_max.  
+  is solved with a TaoBasicSolver as described by the class-level documentation for IPTaoTikhonovProblem.  It
+  is a reduced space method, inasmuch as we are performing unconstrained minimization on a Tikhonov functional
+  that depends on a design variable (the value of \f$\tau_c\f$). It is compatible with any of the elementary
+  TAO minimization algorithms, e.g. tao_cg, tao_lmvm.  If the minimization algorithm tao_blmvm is selected,
+  the values of \f$\tau_c\f$ will be constrained by the config variables \a inv_ssa_hardav_min
+  and \a inv_ssa_hardav_max.  
 */
 class IP_SSAHardavTaoTikhonovProblem: public IPTaoTikhonovProblem<IP_SSAHardavForwardProblem> {
 public:
 
   IP_SSAHardavTaoTikhonovProblem( IP_SSAHardavForwardProblem &forward, 
-                          IP_SSAHardavTaoTikhonovProblem::DesignVec &d0, 
-                          IP_SSAHardavTaoTikhonovProblem::StateVec &u_obs, double eta, 
-                          IPFunctional<IP_SSAHardavTaoTikhonovProblem::DesignVec>&designFunctional, 
-                          IPFunctional<IP_SSAHardavTaoTikhonovProblem::StateVec>&stateFunctional) :
-        IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
+                                  IP_SSAHardavTaoTikhonovProblem::DesignVec &d0, 
+                                  IP_SSAHardavTaoTikhonovProblem::StateVec &u_obs, double eta, 
+                                  IPFunctional<IP_SSAHardavTaoTikhonovProblem::DesignVec>&designFunctional, 
+                                  IPFunctional<IP_SSAHardavTaoTikhonovProblem::StateVec>&stateFunctional) :
+    IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
 
   virtual ~IP_SSAHardavTaoTikhonovProblem() {};
 
@@ -61,5 +62,6 @@ public:
 
 };
 
-#endif /* end of include guard: IP_SSAHARDAVTIKHONOVPROBLEM_HH_HB8UWICX */
+} // end of namespace pism
 
+#endif /* end of include guard: IP_SSAHARDAVTIKHONOVPROBLEM_HH_HB8UWICX */

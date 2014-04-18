@@ -24,6 +24,8 @@
 #include "PISMConfig.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
   : config(conf), com(c), m_unit_system(config.get_unit_system()) {
 
@@ -861,3 +863,5 @@ PetscErrorCode IceGrid::create_dm(int da_dof, int stencil_width, DM &result) {
 int IceGrid::dm_key(int da_dof, int stencil_width) {
   return 10000 * da_dof + stencil_width;
 }
+
+} // end of namespace pism

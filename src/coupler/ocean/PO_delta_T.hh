@@ -23,6 +23,8 @@
 #include "PISMOcean.hh"
 #include "POModifier.hh"
 
+namespace pism {
+
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
 class PO_delta_T : public PScalarForcing<PISMOceanModel,POModifier>
 {
@@ -43,5 +45,7 @@ protected:
 private:
   PetscErrorCode allocate_PO_delta_T();
 };
+
+} // end of namespace pism
 
 #endif /* _PODTFORCING_H_ */

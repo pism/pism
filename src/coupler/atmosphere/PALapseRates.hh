@@ -22,6 +22,8 @@
 #include "PLapseRates.hh"
 #include "PAModifier.hh"
 
+namespace pism {
+
 class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
 {
 public:
@@ -52,6 +54,8 @@ protected:
 private:
   PetscErrorCode allocate_PALapseRates();
 };
+
+} // end of namespace pism
 
 #endif /* _PALAPSERATES_H_ */
 

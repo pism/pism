@@ -23,6 +23,8 @@
 #include "Mask.hh"
 #include <cmath>
 
+namespace pism {
+
 //! \file PISMMohrCoulombYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 /*! \file PISMMohrCoulombYieldStress.cc
 The output variable of this submodel is `tauc`, the pseudo-plastic yield stress
@@ -597,3 +599,5 @@ PetscErrorCode PISMMohrCoulombYieldStress::tauc_to_phi() {
 
   return 0;
 }
+
+} // end of namespace pism

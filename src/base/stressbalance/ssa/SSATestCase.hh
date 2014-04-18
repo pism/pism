@@ -24,6 +24,8 @@
 #include "basal_resistance.hh"
 #include "PISMVars.hh"
 
+namespace pism {
+
 //! Helper function for initializing a grid with the given dimensions and periodicity.
 //! The grid is shallow (3 z-layers).
 PetscErrorCode init_shallow_grid(IceGrid &grid, 
@@ -33,26 +35,26 @@ PetscErrorCode init_shallow_grid(IceGrid &grid,
 
 
 /*! An SSATestCase manages running an SSA instance against a particular
-test.  Subclasses must implement the following abstract methods to define
-the input to an SSA for a test case:
+  test.  Subclasses must implement the following abstract methods to define
+  the input to an SSA for a test case:
 
-1) initializeGrid (to build a grid of the specified size appropriate for the test)
-2) initializeSSAModel (to specify the laws used by the model, e.g. ice flow and basal sliding laws)
-3) initializeSSACoefficients (to initialize the ssa coefficients, e.g. ice thickness)
+  1) initializeGrid (to build a grid of the specified size appropriate for the test)
+  2) initializeSSAModel (to specify the laws used by the model, e.g. ice flow and basal sliding laws)
+  3) initializeSSACoefficients (to initialize the ssa coefficients, e.g. ice thickness)
 
-The SSA itself is constructed between steps 2) and 3).
+  The SSA itself is constructed between steps 2) and 3).
 
-Additionally, a subclass can implement `report` to handle
-printing statistics after a run.  The default report method relies
-on subclasses implementing the exactSolution method for comparision.
+  Additionally, a subclass can implement `report` to handle
+  printing statistics after a run.  The default report method relies
+  on subclasses implementing the exactSolution method for comparision.
 
-A driver uses an SSATestCase by calling 1-3 below and 4,5 as desired:
+  A driver uses an SSATestCase by calling 1-3 below and 4,5 as desired:
 
-1) its constructor
-2) init (to specify the grid size and choice of SSA algorithm)
-3) run (to actually solve the ssa)
-4) report
-5) write (to save the results of the computation to a file)
+  1) its constructor
+  2) init (to specify the grid size and choice of SSA algorithm)
+  3) run (to actually solve the ssa)
+  4) report
+  5) write (to save the results of the computation to a file)
 */
 class SSATestCase
 {
@@ -86,7 +88,7 @@ protected:
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
   virtual PetscErrorCode exactSolution(int i, int j,
-    double x, double y, double *u, double *v );
+                                       double x, double y, double *u, double *v );
 
   PetscErrorCode report_netcdf(std::string testname,
                                double max_vector,
@@ -110,5 +112,7 @@ protected:
 
   SSA *ssa;
 };
+
+} // end of namespace pism
 
 #endif /* _SSATESTCASE_H_ */

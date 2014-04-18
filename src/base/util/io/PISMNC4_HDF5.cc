@@ -41,6 +41,8 @@
 
 #include "PISMNC4_HDF5.hh"
 
+namespace pism {
+
 // Convert from a PISM I/O data type to a HDF5 type.
 static hid_t pism_type_to_hdf5_type(PISM_IO_Type xtype) {
   switch(xtype) {
@@ -1158,3 +1160,5 @@ void PISMNC4_HDF5::check(int return_code) const {
 std::string PISMNC4_HDF5::get_format() const {
   return "netcdf4";
 }
+
+} // end of namespace pism

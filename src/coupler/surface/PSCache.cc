@@ -23,6 +23,8 @@
 #include <cassert>
 #include <algorithm>            // for std::min
 
+namespace pism {
+
 PSCache::PSCache(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
   : PSModifier(g, conf, in) {
 
@@ -255,3 +257,5 @@ PetscErrorCode PSCache::write_variables(std::set<std::string> vars, const PIO &n
 
   return 0;
 }
+
+} // end of namespace pism

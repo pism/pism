@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,8 @@
 
 #include <petscsnes.h>
 #include <petscdmda.h>
+
+namespace pism {
 
 template<class Problem, class VecArrayType>
 class SNESDMCallbacks {
@@ -52,25 +54,25 @@ public:
 protected:
   //! Adaptor for gluing SNESDAFormFunction callbacks to a C++ class
   /* The callbacks from SNES are mediated via SNESDAFormFunction, which has the
-   convention that its context argument is a pointer to a struct 
-   having a DA as its first entry.  The SNESDMCallbackData fulfills 
-   this requirement, and allows for passing the callback on to a
-   class. */
+     convention that its context argument is a pointer to a struct 
+     having a DA as its first entry.  The SNESDMCallbackData fulfills 
+     this requirement, and allows for passing the callback on to a
+     class. */
   struct SNESDMCallbackData {
     DM           dm;
     Problem  *p;
   };
   static PetscErrorCode formFunctionCallback(DMDALocalInfo *info,
-                                 VecArrayType xg, VecArrayType yg,
-                                 SNESDMCallbackData *data) {
+                                             VecArrayType xg, VecArrayType yg,
+                                             SNESDMCallbackData *data) {
     PetscErrorCode ierr;
     ierr = data->p->assembleFunction(info,xg,yg); CHKERRQ(ierr);
     return 0;
   }
 
   static PetscErrorCode formJacobianCallback(DMDALocalInfo *info,
-                                VecArrayType xg, Mat J,
-                                SNESDMCallbackData *data) {
+                                             VecArrayType xg, Mat J,
+                                             SNESDMCallbackData *data) {
     PetscErrorCode ierr;
     ierr = data->p->assembleJacobian(info,xg,J); CHKERRQ(ierr);
     return 0;
@@ -101,13 +103,15 @@ protected:
   }
 
   static PetscErrorCode formJacobianCallback(SNES snes,
-                                Vec x, Mat *J, Mat*Jpc, MatStructure* structure,
-                                void *ctx) {
+                                             Vec x, Mat *J, Mat*Jpc, MatStructure* structure,
+                                             void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->assembleJacobian(x,J); CHKERRQ(ierr);
     return 0;
   }
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: SNESPROBLEM_HH_2EZQQ4UH */

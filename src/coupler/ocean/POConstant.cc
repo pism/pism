@@ -22,11 +22,12 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 POConstant::POConstant(IceGrid &g, const PISMConfig &conf)
   : PISMOceanModel(g, conf),
     shelfbmassflux(g.get_unit_system()),
-    shelfbtemp(g.get_unit_system())
-{
+    shelfbtemp(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -187,3 +188,5 @@ PetscErrorCode POConstant::write_variables(std::set<std::string> vars, const PIO
 
   return 0;
 }
+
+} // end of namespace pism
