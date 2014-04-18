@@ -77,25 +77,31 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
 
 //! Allocates memory and reads in the precipitaion data.
 PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
-  PetscErrorCode ierr;
-  bool do_regrid = false;
-  int start = -1;
-
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   variables = &vars;
 
-  ierr = find_pism_input(precip_filename, do_regrid, start); CHKERRQ(ierr);
+  bool do_regrid = false;
+  int start = -1;
+  PetscErrorCode ierr = find_pism_input(precip_filename, do_regrid, start); CHKERRQ(ierr);
 
+  ierr = init_internal(precip_filename, do_regrid, start); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Read precipitation data from a given file.
+PetscErrorCode PAYearlyCycle::init_internal(std::string input_filename, bool regrid,
+                                            unsigned int start) {
   // read precipitation rate from file
-  ierr = verbPrintf(2, grid.com, 
+  PetscErrorCode ierr = verbPrintf(2, grid.com,
                     "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
                     "      from %s ... \n",
-                    precip_filename.c_str()); CHKERRQ(ierr); 
-  if (do_regrid) {
-    ierr = precipitation.regrid(precip_filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
+                    input_filename.c_str()); CHKERRQ(ierr);
+  if (regrid) {
+    ierr = precipitation.regrid(input_filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = precipitation.read(precip_filename, start); CHKERRQ(ierr); // fails if not found!
+    ierr = precipitation.read(input_filename, start); CHKERRQ(ierr); // fails if not found!
   }
 
   return 0;

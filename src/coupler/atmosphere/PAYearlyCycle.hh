@@ -47,6 +47,8 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, double *values);
   virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 protected:
+  PetscErrorCode init_internal(std::string input_filename, bool regrid,
+                               unsigned int start);
   PISMVars *variables;
   double snow_temp_july_day;
   std::string reference, precip_filename;

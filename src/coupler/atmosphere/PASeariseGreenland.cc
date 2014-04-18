@@ -33,8 +33,8 @@
 ///// PA_SeaRISE_Greenland
 
 PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const PISMConfig &conf)
-  : PAYearlyCycle(g, conf)
-{
+  : PAYearlyCycle(g, conf) {
+  // empty
 }
 
 PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
@@ -54,7 +54,32 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     "R. S. Fausto, A. P. Ahlstrom, D. V. As, C. E. Boggild, and S. J. Johnsen, 2009. "
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
 
-  ierr = PAYearlyCycle::init(vars); CHKERRQ(ierr);
+  bool precip_file_set = false;
+  std::string precip_filename;
+  ierr = PetscOptionsBegin(grid.com, "",
+                           "-atmosphere searise_greenland options", ""); CHKERRQ(ierr);
+  {
+    std::string option_prefix = "-atmosphere_searise_greenland";
+    ierr = PISMOptionsString(option_prefix + "_file",
+                             "Specifies a file with boundary conditions",
+                             precip_filename, precip_file_set); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (precip_file_set == true) {
+    variables = &vars;
+
+    ierr = verbPrintf(2, grid.com,
+                      "  * Option '-atmosphere_searise_greenland %s' is set...\n",
+                      precip_filename.c_str());
+    CHKERRQ(ierr);
+
+    ierr = PAYearlyCycle::init_internal(precip_filename,
+                                        true, /* do regrid */
+                                        0 /* start (irrelevant) */); CHKERRQ(ierr);
+  } else {
+    ierr = PAYearlyCycle::init(vars); CHKERRQ(ierr);
+  }
 
   // initialize pointers to fields the parameterization depends on:
   surfelev = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
