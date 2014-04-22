@@ -49,11 +49,11 @@ public:
 protected:
   PetscErrorCode init_internal(std::string input_filename, bool regrid,
                                unsigned int start);
-  PISMVars *variables;
-  double snow_temp_july_day;
-  std::string reference, precip_filename;
-  IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
-  NCSpatialVariable air_temp_snapshot;
+  PISMVars *m_variables;
+  double m_snow_temp_july_day;
+  std::string m_reference, m_precip_filename;
+  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
+  NCSpatialVariable m_air_temp_snapshot;
   std::vector<double> m_ts_times, m_cosine_cycle;
 private:
   PetscErrorCode allocate_PAYearlyCycle();

@@ -50,31 +50,30 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
                     "  air temperature parameterization and using stored time-independent precipitation...\n");
   CHKERRQ(ierr);
 
-  reference =
+  m_reference =
     "R. S. Fausto, A. P. Ahlstrom, D. V. As, C. E. Boggild, and S. J. Johnsen, 2009. "
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
 
   bool precip_file_set = false;
-  std::string precip_filename;
   ierr = PetscOptionsBegin(grid.com, "",
                            "-atmosphere searise_greenland options", ""); CHKERRQ(ierr);
   {
     std::string option_prefix = "-atmosphere_searise_greenland";
     ierr = PISMOptionsString(option_prefix + "_file",
                              "Specifies a file with boundary conditions",
-                             precip_filename, precip_file_set); CHKERRQ(ierr);
+                             m_precip_filename, precip_file_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (precip_file_set == true) {
-    variables = &vars;
+    m_variables = &vars;
 
     ierr = verbPrintf(2, grid.com,
                       "  * Option '-atmosphere_searise_greenland %s' is set...\n",
-                      precip_filename.c_str());
+                      m_precip_filename.c_str());
     CHKERRQ(ierr);
 
-    ierr = PAYearlyCycle::init_internal(precip_filename,
+    ierr = PAYearlyCycle::init_internal(m_precip_filename,
                                         true, /* do regrid */
                                         0 /* start (irrelevant) */); CHKERRQ(ierr);
   } else {
@@ -82,14 +81,14 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   }
 
   // initialize pointers to fields the parameterization depends on:
-  surfelev = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (!surfelev) SETERRQ(grid.com, 1, "ERROR: surface_altitude is not available");
+  m_surfelev = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
+  if (!m_surfelev) SETERRQ(grid.com, 1, "ERROR: surface_altitude is not available");
 
-  lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
+  m_lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
+  if (!m_lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
 
-  lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-  if (!lon) SETERRQ(grid.com, 1, "ERROR: longitude is not available");
+  m_lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
+  if (!m_lon) SETERRQ(grid.com, 1, "ERROR: longitude is not available");
 
   return 0;
 }
@@ -97,7 +96,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
 PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, double *values) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    values[k] = precipitation(i,j);
+    values[k] = m_precipitation(i,j);
 
   return 0;
 }
@@ -108,13 +107,13 @@ PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, double *va
 PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
-  if (lat->metadata().has_attribute("missing_at_bootstrap")) {
+  if (m_lat->metadata().has_attribute("missing_at_bootstrap")) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: latitude variable was missing at bootstrap;\n"
                        "  SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!!\n");
     CHKERRQ(ierr);
     PISMEnd();
   }
-  if (lon->metadata().has_attribute("missing_at_bootstrap")) {
+  if (m_lon->metadata().has_attribute("missing_at_bootstrap")) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: longitude variable was missing at bootstrap;\n"
                        "  SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!!\n");
     CHKERRQ(ierr);
@@ -138,26 +137,26 @@ PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
     c_mj     = config.get("snow_temp_fausto_c_mj"),
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");
 
-  IceModelVec2S &h = *surfelev, &lat_degN = *lat, &lon_degE = *lon;
+  IceModelVec2S &h = *m_surfelev, &lat_degN = *m_lat, &lon_degE = *m_lon;
 
   ierr = h.begin_access();   CHKERRQ(ierr);
   ierr = lat_degN.begin_access(); CHKERRQ(ierr);
   ierr = lon_degE.begin_access(); CHKERRQ(ierr);
-  ierr = air_temp_mean_annual.begin_access();  CHKERRQ(ierr);
-  ierr = air_temp_mean_july.begin_access();  CHKERRQ(ierr);
+  ierr = m_air_temp_mean_annual.begin_access();  CHKERRQ(ierr);
+  ierr = m_air_temp_mean_july.begin_access();  CHKERRQ(ierr);
 
   for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
-      air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
+      m_air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
+      m_air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
     }
   }
 
   ierr = h.end_access();   CHKERRQ(ierr);
   ierr = lat_degN.end_access(); CHKERRQ(ierr);
   ierr = lon_degE.end_access(); CHKERRQ(ierr);
-  ierr = air_temp_mean_annual.end_access();  CHKERRQ(ierr);
-  ierr = air_temp_mean_july.end_access();  CHKERRQ(ierr);
+  ierr = m_air_temp_mean_annual.end_access();  CHKERRQ(ierr);
+  ierr = m_air_temp_mean_july.end_access();  CHKERRQ(ierr);
 
   return 0;
 }
