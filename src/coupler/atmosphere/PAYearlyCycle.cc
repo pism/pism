@@ -91,14 +91,14 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 }
 
 //! Read precipitation data from a given file.
-PetscErrorCode PAYearlyCycle::init_internal(std::string input_filename, bool regrid,
+PetscErrorCode PAYearlyCycle::init_internal(std::string input_filename, bool do_regrid,
                                             unsigned int start) {
   // read precipitation rate from file
   PetscErrorCode ierr = verbPrintf(2, grid.com,
                     "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
                     "      from %s ... \n",
                     input_filename.c_str()); CHKERRQ(ierr);
-  if (regrid) {
+  if (do_regrid == true) {
     ierr = m_precipitation.regrid(input_filename, CRITICAL); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = m_precipitation.read(input_filename, start); CHKERRQ(ierr); // fails if not found!
