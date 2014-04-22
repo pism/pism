@@ -273,7 +273,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTr
   return 0;
 }
 
-PetscErrorCode pism::IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, Vec x, Vec y) {
   PetscErrorCode ierr;
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
   ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);
@@ -282,7 +282,7 @@ PetscErrorCode pism::IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesign(Mat A, 
   return 0;
 }
 
-PetscErrorCode pism::IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat A, Vec x, Vec y) {
   PetscErrorCode ierr;
   IP_SSATaucTaoTikhonovProblemLCL *ctx;
   ierr = MatShellGetContext(A,&ctx); CHKERRQ(ierr);

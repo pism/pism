@@ -20,7 +20,7 @@
 
 namespace pism {
 
-PetscErrorCode pism::gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
+PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
   IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
@@ -48,7 +48,7 @@ PetscErrorCode pism::gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x
   return 0;
 }
 
-PetscErrorCode pism::gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
+PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
   PetscErrorCode ierr;
   IceGrid &grid = *x.get_grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;

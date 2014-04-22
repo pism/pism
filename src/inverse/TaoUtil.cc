@@ -78,7 +78,7 @@ const char *TaoConvergedReasonsShifted[] = {
   "TAO_CONVERGED_STEPTOL",
   "TAO_CONVERGED_MINF",
   "TAO_CONVERGED_USER" };
-const char *const* pism::TaoConvergedReasons = TaoConvergedReasonsShifted + 10;
+const char *const* TaoConvergedReasons = TaoConvergedReasonsShifted + 10;
 
 TAOTerminationReason::TAOTerminationReason( TaoSolverTerminationReason r)  {
   m_reason = r;

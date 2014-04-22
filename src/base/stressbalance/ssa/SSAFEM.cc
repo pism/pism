@@ -27,7 +27,7 @@ namespace pism {
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
 
-SSA* pism::SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
+SSA* SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
   return new SSAFEM(g, ec, c);
 }
 
@@ -767,14 +767,14 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 }
 
 //!
-PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *info,
-                                   const PISMVector2 **velocity, PISMVector2 **residual,
-                                   SSAFEM_SNESCallbackData *fe) {
+PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
+			     const PISMVector2 **velocity, PISMVector2 **residual,
+			     SSAFEM_SNESCallbackData *fe) {
   return fe->ssa->compute_local_function(info, velocity, residual);
 }
 
-PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
-                                   Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
+			     Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
 
   (void) A;
 

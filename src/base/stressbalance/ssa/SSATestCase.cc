@@ -423,8 +423,8 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
 
 /*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
 half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
-PetscErrorCode pism::init_shallow_grid(IceGrid &grid, double Lx, 
-                                       double Ly, int Mx, int My, Periodicity p)
+PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx, 
+				 double Ly, int Mx, int My, Periodicity p)
 {
   PetscErrorCode ierr;
   

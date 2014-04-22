@@ -717,8 +717,8 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
  * "ghosts" is the width of the stencil that can be updated locally.
  * "scatter" is false if all ghosts can be updated locally.
  */
-void pism::compute_params(IceModelVec* const x, IceModelVec* const y,
-                          IceModelVec* const z, int &ghosts, bool &scatter) {
+void compute_params(IceModelVec* const x, IceModelVec* const y,
+		    IceModelVec* const z, int &ghosts, bool &scatter) {
 
   // We have 2^3=8 cases here (x,y,z having or not having ghosts).
   if (z->has_ghosts() == false) {
