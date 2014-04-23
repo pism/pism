@@ -30,6 +30,8 @@
 #include <memory>
 #endif
 
+namespace pism {
+
 class TerminationReason {
 public:
   TerminationReason() :m_reason(0) {};
@@ -114,12 +116,12 @@ public:
 class GenericTerminationReason: public TerminationReason {
 public:
   GenericTerminationReason(int code, std::string &desc) :
-  m_description(desc) {
+    m_description(desc) {
     m_reason = code;
   };
 
   GenericTerminationReason(int code, const char*desc) :
-  m_description(desc) {
+    m_description(desc) {
     m_reason = code;
   };
   
@@ -147,5 +149,7 @@ public:
 protected:
   std::string m_description;
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: TERMINATIONREASON_HH_JW17MC8V */

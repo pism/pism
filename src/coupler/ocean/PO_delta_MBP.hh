@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PO_DELTA_MBP_H_
 #define _PO_DELTA_MBP_H_
 
 #include "PScalarForcing.hh"
 #include "POModifier.hh"
+
+namespace pism {
 
 /**
  * Scalar melange back-pressure fraction forcing.
@@ -45,5 +47,7 @@ protected:
 private:
   PetscErrorCode allocate_PO_delta_MBP();
 };
+
+} // end of namespace pism
 
 #endif /* _PO_DELTA_MBP_H_ */

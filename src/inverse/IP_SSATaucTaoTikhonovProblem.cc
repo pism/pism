@@ -19,6 +19,8 @@
 
 #include "IP_SSATaucTaoTikhonovProblem.hh"
 
+namespace pism {
+
 PetscErrorCode IP_SSATaucTaoTikhonovProblem::connect(TaoSolver tao) {
   PetscErrorCode ierr;
 
@@ -49,3 +51,5 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblem::getVariableBounds(TaoSolver /*tao*/
   return 0;
 }
 
+
+} // end of namespace pism

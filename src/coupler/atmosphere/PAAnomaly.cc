@@ -21,6 +21,8 @@
 #include "IceGrid.hh"
 #include <assert.h>
 
+namespace pism {
+
 PAAnomaly::PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in),
     air_temp(g.get_unit_system()),
@@ -250,3 +252,5 @@ PetscErrorCode PAAnomaly::write_variables(std::set<std::string> vars, const PIO 
   return 0;
 }
 
+
+} // end of namespace pism

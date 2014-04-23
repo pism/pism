@@ -23,6 +23,8 @@
 #include <petscvec.h>
 #include <fftw3.h>
 
+namespace pism {
+
 //! Class implementing the bed deformation model described in [\ref BLKfastearth].
 /*!
   This class implements the [\ref LingleClark] bed deformation model by a Fourier 
@@ -43,7 +45,7 @@
   include the scatter structures necessary to make this work in parallel.
 
   A test program for this class is pism/src/verif/tryLCbd.cc.
- */
+*/
 class BedDeformLC {
 public:
   BedDeformLC();
@@ -54,7 +56,7 @@ public:
                           int myZ,
                           Vec* myHstart, Vec* mybedstart, Vec* myuplift,  // initial state
                           Vec* myH,     // generally gets changed by calling program
-                                        // before each call to step
+                          // before each call to step
                           Vec* mybed);  // mybed gets modified by step()
   PetscErrorCode alloc();
   PetscErrorCode init();
@@ -66,7 +68,7 @@ protected:
   int         Mx, My;
   double   dx, dy;
   int         Z;                // factor by which fat FFT domain is larger than
-                                // region of physical interest
+  // region of physical interest
   double icerho,           // ice density (for computing load from volume)
     rho,                        // earth density
     eta,                        // mantle viscosity
@@ -76,16 +78,16 @@ private:
   double   standard_gravity;
   bool          settingsDone, allocDone;
   int      Nx, Ny,         // fat sizes
-                Nxge, Nyge;     // fat with boundary sizes
+    Nxge, Nyge;     // fat with boundary sizes
   int      i0_plate,  j0_plate; // indices into fat array for corner of thin
   double   Lx, Ly;         // half-lengths of the physical domain
   double   Lx_fat, Ly_fat; // half-lengths of the FFT (spectral) computational domain
   double  *cx, *cy;        // coeffs of derivatives in Fourier space
   Vec          *H, *bed, *H_start, *bed_start, *uplift; // pointers to sequential
   Vec           Hdiff, dbedElastic, // sequential; working space
-                U, U_start,     // sequential and fat
-                vleft, vright,  // coefficients; sequential and fat
-                lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
+    U, U_start,     // sequential and fat
+    vleft, vright,  // coefficients; sequential and fat
+    lrmE;           // load response matrix (elastic); sequential and fat *with* boundary
   fftw_complex *fftw_input, *fftw_output, *loadhat; // 2D sequential
   fftw_plan     dft_forward, dft_inverse;
 
@@ -134,6 +136,8 @@ private:
   int Mx, My, i_offset, j_offset;
   T* array;
 };
+
+} // end of namespace pism
 
 #endif  /* __deformation_hh */
 

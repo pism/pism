@@ -23,6 +23,8 @@
 #include "SSAFEM.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 //! Initialize the storage for the various coefficients used as input to the SSA
 //! (ice elevation, thickness, etc.)  
 PetscErrorCode SSATestCase::buildSSACoefficients()
@@ -422,7 +424,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
 /*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
 half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
 PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx, 
-                                 double Ly, int Mx, int My, Periodicity p)
+				 double Ly, int Mx, int My, Periodicity p)
 {
   PetscErrorCode ierr;
   
@@ -440,3 +442,5 @@ PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx,
   return 0;
 }
 
+
+} // end of namespace pism

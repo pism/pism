@@ -20,6 +20,8 @@
 #include "pism_options.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   bool i_set, bootstrap, tauc_set;
@@ -105,3 +107,5 @@ PetscErrorCode PISMConstantYieldStress::allocate() {
   return 0;
 }
 
+
+} // end of namespace pism

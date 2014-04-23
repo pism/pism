@@ -27,6 +27,7 @@
 #include "PISMMohrCoulombYieldStress.hh"
 #include "PISMHydrology.hh"
 
+namespace pism {
 
 //! \brief A version of the SIA stress balance with tweaks for outlet glacier
 //! simulations.
@@ -68,5 +69,7 @@ public:
 protected:
   IceModelVec2Int *no_model_mask;
 };
+
+} // end of namespace pism
 
 #endif /* _REGIONAL_H_ */

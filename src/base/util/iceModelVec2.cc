@@ -29,6 +29,8 @@
 
 #include <assert.h>
 
+namespace pism {
+
 // this file contains methods for derived classes IceModelVec2S and IceModelVec2Int
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
@@ -65,7 +67,7 @@ PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec
     ierr = DMLocalToGlobalBegin(m_da, v, INSERT_VALUES, g2); CHKERRQ(ierr);
     ierr =   DMLocalToGlobalEnd(m_da, v, INSERT_VALUES, g2); CHKERRQ(ierr);
   } else {
-    ierr = this->copy_to(g2); CHKERRQ(ierr);
+    ierr = this->copy_to_vec(g2); CHKERRQ(ierr);
   }
 
   ierr = DMDAGlobalToNaturalBegin(da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
@@ -102,7 +104,7 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, V
     ierr =   DMGlobalToLocalBegin(m_da, g2, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr =     DMGlobalToLocalEnd(m_da, g2, INSERT_VALUES, v); CHKERRQ(ierr);
   } else {
-    ierr = this->copy_from(g2); CHKERRQ(ierr);
+    ierr = this->copy_from_vec(g2); CHKERRQ(ierr);
   }
 
   return 0;
@@ -150,7 +152,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::write(const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec2::write_impl(const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
   assert(v != NULL);
@@ -160,7 +162,7 @@ PetscErrorCode IceModelVec2::write(const PIO &nc, PISM_IO_Type nctype) {
 
   // The simplest case:
   if ((m_dof == 1) && (m_has_ghosts == false)) {
-    ierr = IceModelVec::write(nc, nctype); CHKERRQ(ierr);
+    ierr = IceModelVec::write_impl(nc, nctype); CHKERRQ(ierr);
     return 0;
   }
 
@@ -184,11 +186,11 @@ PetscErrorCode IceModelVec2::write(const PIO &nc, PISM_IO_Type nctype) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::read(const PIO &nc, const unsigned int time) {
+PetscErrorCode IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   PetscErrorCode ierr;
 
   if ((m_dof == 1) && (m_has_ghosts == false)) {
-    ierr = IceModelVec::read(nc, time); CHKERRQ(ierr);
+    ierr = IceModelVec::read_impl(nc, time); CHKERRQ(ierr);
     return 0;
   }
 
@@ -221,13 +223,13 @@ PetscErrorCode IceModelVec2::read(const PIO &nc, const unsigned int time) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::regrid(const PIO &nc, RegriddingFlag flag,
-                                    double default_value) {
+PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
+                                         double default_value) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
 
   if ((m_dof == 1) && (m_has_ghosts == false)) {
-    ierr = IceModelVec::regrid(nc, flag, default_value); CHKERRQ(ierr);
+    ierr = IceModelVec::regrid_impl(nc, flag, default_value); CHKERRQ(ierr);
     return 0;
   }
 
@@ -332,7 +334,7 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   ierr = DMGetGlobalVector(da2, &tmp); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
-    ierr = copy_to(tmp); CHKERRQ(ierr);
+    ierr = copy_to_vec(tmp); CHKERRQ(ierr);
   } else {
     ierr = VecCopy(v, tmp); CHKERRQ(ierr);
   }
@@ -670,10 +672,6 @@ PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) {
   return copy_2d<IceModelVec2S>(this, &destination);
 }
 
-PetscErrorCode IceModelVec2S::copy_from(IceModelVec &source) {
-  return copy_2d<IceModelVec2S>(&source, this);
-}
-
 // IceModelVec2Stag
 PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
                                         unsigned int stencil_width) {
@@ -747,3 +745,5 @@ PetscErrorCode IceModelVec2Stag::absmaxcomponents(double* z) {
   ierr = PISMGlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

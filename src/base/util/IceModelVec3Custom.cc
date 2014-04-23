@@ -20,6 +20,8 @@
 #include "IceModelVec3Custom.hh"
 #include <assert.h>
 
+namespace pism {
+
 IceModelVec3Custom::IceModelVec3Custom()
 {
   // empty
@@ -82,3 +84,5 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
 
   return 0;
 }
+
+} // end of namespace pism

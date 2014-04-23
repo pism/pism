@@ -22,6 +22,8 @@
 #include "PISMStressBalance.hh"
 #include "Mask.hh"
 
+namespace pism {
+
 PISMEigenCalving::PISMEigenCalving(IceGrid &g, const PISMConfig &conf,
                                    PISMStressBalance *stress_balance)
   : PISMComponent(g, conf), m_stencil_width(2), m_mask(NULL),
@@ -512,3 +514,5 @@ PetscErrorCode PISMEigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mas
 
   return 0;
 }
+
+} // end of namespace pism

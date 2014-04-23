@@ -21,6 +21,8 @@
 #include "pism_python_signal.hh"
 #include "pism_const.hh"
 
+using namespace pism;
+
 PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm)
 {
   return PISMGlobalMax(&local_max,result,comm);

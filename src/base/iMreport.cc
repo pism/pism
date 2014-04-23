@@ -28,6 +28,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 
+namespace pism {
+
 //!  Computes volume and area of ice sheet, for reporting purposes.
 /*!
   Communication done for global max and global sum.
@@ -653,3 +655,5 @@ PetscErrorCode IceModel::compute_ice_enthalpy(double &result) {
   ierr = PISMGlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

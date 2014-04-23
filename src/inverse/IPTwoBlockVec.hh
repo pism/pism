@@ -21,6 +21,8 @@
 
 #include <petsc.h>
 
+namespace pism {
+
 class IPTwoBlockVec {
 public:
   IPTwoBlockVec(Vec a, Vec b);
@@ -63,5 +65,7 @@ protected:
   VecScatter m_scatter_a;
   VecScatter m_scatter_b;
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: IPTWOBLOCKVEC_HH_51CJ6YY0 */

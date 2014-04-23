@@ -28,6 +28,8 @@
 #endif
 #include <netcdf.h>
 
+namespace pism {
+
 PISMNCFile::PISMNCFile(MPI_Comm c)
   : com(c) {
   ncid = -1;
@@ -141,3 +143,5 @@ int PISMNCFile::remove_if_exists(std::string file_to_remove, int rank_to_use) {
 
   return 0;
 }
+
+} // end of namespace pism

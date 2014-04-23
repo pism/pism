@@ -20,8 +20,12 @@
 #include "IceGrid.hh"
 
 #if (PISM_USE_PROJ4==1)
-
 #include <proj_api.h>
+#endif
+
+namespace pism {
+
+#if (PISM_USE_PROJ4==1)
 
 //! Computes the area of a triangle using vector cross product.
 static double triangle_area(double *A, double *B, double *C) {
@@ -150,3 +154,5 @@ PetscErrorCode IceModel::compute_cell_areas() {
 #else  // PISM_USE_PROJ4 is not set
 #error "PISM build system error: PISM_USE_PROJ4 is not set."
 #endif
+
+} // end of namespace pism

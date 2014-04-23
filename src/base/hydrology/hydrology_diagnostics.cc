@@ -19,13 +19,13 @@
 
 #include "hydrology_diagnostics.hh"
 
+namespace pism {
 
 PISMHydrology_bwat::PISMHydrology_bwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
     : PISMDiag<PISMHydrology>(m, g, my_vars) {
   vars[0].init_2d("bwat", grid);
   set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
 }
-
 
 PetscErrorCode PISMHydrology_bwat::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
@@ -161,3 +161,5 @@ PetscErrorCode PISMHydrology_wallmelt::compute(IceModelVec* &output) {
   return 0;
 }
 
+
+} // end of namespace pism

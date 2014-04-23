@@ -26,6 +26,8 @@
 #include "deformation.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 BedDeformLC::BedDeformLC() {
   settingsDone = false;
   allocDone    = false;
@@ -422,3 +424,5 @@ void BedDeformLC::get_fftw_output(Vec output, double normalization, int M, int N
     }
   }
 }
+
+} // end of namespace pism

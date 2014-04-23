@@ -21,6 +21,8 @@
 
 #include "PSModifier.hh"
 
+namespace pism {
+
 class PSFactory : public PCFactory<PISMSurfaceModel,PSModifier> {
 public:
   PSFactory(IceGrid& g, const PISMConfig& conf)
@@ -33,5 +35,7 @@ public:
   virtual ~PSFactory() {}
   virtual void add_standard_types();
 };
+
+} // end of namespace pism
 
 #endif /* _PSFACTORY_H_ */

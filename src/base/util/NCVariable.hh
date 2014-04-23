@@ -27,29 +27,31 @@
 #include "PISMUnits.hh"
 #include "PIO.hh"
 
+namespace pism {
+
 class PISMTime;
 
 //! @brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
 /*! A NetCDF variable can have any number of attributes, but some of them get
-    special treatment:
+  special treatment:
 
   - units: specifies internal units. When read, a variable is
-    converted to these units. When written, it is converted from these
-    to glaciological_units if write_in_glaciological_units is true.
+  converted to these units. When written, it is converted from these
+  to glaciological_units if write_in_glaciological_units is true.
 
   - glaciological_units: is never written to a file; replaces 'units'
-    in the output if write_in_glaciological_units is true.
+  in the output if write_in_glaciological_units is true.
 
   - valid_min, valid_max: specify the valid range of a variable. Are
-    read from an input file *only* if not specified previously. If
-    both are set, then valid_range is used in the output instead.
+  read from an input file *only* if not specified previously. If
+  both are set, then valid_range is used in the output instead.
 
   Also:
 
   - empty string attributes are ignored (they are not written to the
-    output; file and has_attribute("foo") returns false if "foo" is
-    absent or equal to an empty string).
+  output; file and has_attribute("foo") returns false if "foo" is
+  absent or equal to an empty string).
 
   Typical attributes stored here:
 
@@ -186,5 +188,7 @@ public:
 private:
   std::string m_bounds_name;
 };
+
+} // end of namespace pism
 
 #endif  // __NCVariable_hh

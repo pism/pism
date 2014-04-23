@@ -21,13 +21,15 @@
 
 #include "IPFunctional.hh"
 
+namespace pism {
+
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a scalar valued function.
 /*! The functional is, in continuous terms 
-\f[
-J(f) = \int_{\Omega} f^2 \; dA
-\f]
-where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
-Q1 finite elements.
+  \f[
+  J(f) = \int_{\Omega} f^2 \; dA
+  \f]
+  where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+  Q1 finite elements.
 */
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
@@ -45,11 +47,11 @@ private:
 
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a vector valued function.
 /*! The functional is, in continuous terms 
-\f[
-J(f) = \int_{\Omega} f^2 \; dA
-\f]
-where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
-Q1 finite elements.
+  \f[
+  J(f) = \int_{\Omega} f^2 \; dA
+  \f]
+  where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+  Q1 finite elements.
 */
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
@@ -64,5 +66,7 @@ private:
   IP_L2NormFunctional2V(IP_L2NormFunctional2V const &);
   IP_L2NormFunctional2V & operator=(IP_L2NormFunctional2V const &);  
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ */

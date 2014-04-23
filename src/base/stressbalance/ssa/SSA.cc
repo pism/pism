@@ -25,6 +25,8 @@
 #include "PIO.hh"
 #include "enthalpyConverter.hh"
 
+namespace pism {
+
 SSA::SSA(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
   : ShallowStressBalance(g, e, c)
 {
@@ -498,3 +500,5 @@ PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
   return 0;
 }
 
+
+} // end of namespace pism

@@ -18,6 +18,8 @@
 
 #include "PSLapseRates.hh"
 
+namespace pism {
+
 PSLapseRates::PSLapseRates(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
   : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in),
     climatic_mass_balance(g.get_unit_system()),
@@ -163,3 +165,5 @@ PetscErrorCode PSLapseRates::write_variables(std::set<std::string> vars, const P
   return 0;
 }
 
+
+} // end of namespace pism

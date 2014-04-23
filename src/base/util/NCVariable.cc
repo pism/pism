@@ -30,6 +30,8 @@
 
 #include "PISMConfig.hh"
 
+namespace pism {
+
 NCVariable::NCVariable(std::string name, PISMUnitSystem system, unsigned int ndims)
   : m_n_spatial_dims(ndims), m_units(system), m_glaciological_units(system), m_short_name(name) {
 
@@ -873,3 +875,5 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) co
 
   return 0;
 }
+
+} // end of namespace pism

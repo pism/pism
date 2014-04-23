@@ -19,6 +19,8 @@
 #include "PA_delta_T.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 /// delta_T forcing of near-surface air temperatures
 
 PA_delta_T::PA_delta_T(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
@@ -167,3 +169,5 @@ PetscErrorCode PA_delta_T::write_variables(std::set<std::string> vars, const PIO
 
   return 0;
 }
+
+} // end of namespace pism

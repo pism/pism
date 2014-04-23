@@ -18,6 +18,8 @@
 
 #include "IPLogRatioFunctional.hh"
 
+namespace pism {
+
 //! Determine the normalization constant for the functional.
 /*! Sets the normalization constant \f$c_N\f$ so that
 \f[
@@ -148,3 +150,5 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
 
   return 0;
 }
+
+} // end of namespace pism

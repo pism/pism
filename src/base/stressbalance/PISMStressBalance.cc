@@ -26,6 +26,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      ShallowStressBalance *sb,
                                      SSB_Modifier *ssb_mod,
@@ -533,3 +535,5 @@ void PISMStressBalance::add_vars_to_output(std::string keyword, std::set<std::st
   m_modifier->add_vars_to_output(keyword, result);
 
 }
+
+} // end of namespace pism

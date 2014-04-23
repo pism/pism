@@ -20,6 +20,8 @@
 #include "PO_delta_MBP.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PO_delta_MBP::PO_delta_MBP(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in),
     shelfbmassflux(g.get_unit_system()),
@@ -143,3 +145,5 @@ PetscErrorCode PO_delta_MBP::write_variables(std::set<std::string> vars, const P
   return 0;
 }
 
+
+} // end of namespace pism

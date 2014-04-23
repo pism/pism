@@ -22,6 +22,8 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 
+namespace pism {
+
 
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
                                                        IPDesignVariableParameterization &tp,
@@ -656,3 +658,5 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
 
   return 0;
 }
+
+} // end of namespace pism

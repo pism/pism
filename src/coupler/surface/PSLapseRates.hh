@@ -23,6 +23,8 @@
 #include "PISMSurface.hh"
 #include "PSModifier.hh"
 
+namespace pism {
+
 class PSLapseRates : public PLapseRates<PISMSurfaceModel,PSModifier>
 {
 public:
@@ -42,5 +44,7 @@ protected:
 private:
   PetscErrorCode allocate_PSLapseRates();
 };
+
+} // end of namespace pism
 
 #endif /* _PSLAPSERATES_H_ */

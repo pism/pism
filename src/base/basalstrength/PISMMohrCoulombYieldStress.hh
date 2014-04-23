@@ -24,6 +24,8 @@
 #include "PISMHydrology.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 
 //! \brief PISM's default basal yield stress model which applies the Mohr-Coulomb model of deformable, pressurized till.
 class PISMMohrCoulombYieldStress : public PISMYieldStress
@@ -58,5 +60,7 @@ protected:
   PetscErrorCode topg_to_phi();
   PetscErrorCode tauc_to_phi();
 };
+
+} // end of namespace pism
 
 #endif /* _PISMMOHRCOULOMBYIELDSTRESS_H_ */

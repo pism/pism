@@ -21,6 +21,8 @@
 #include "TerminationReason.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward,
 DesignVec &d0, StateVec &u_obs, double eta,
 IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional):
@@ -138,7 +140,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   DesignVec  &GNx      = m_tmp_D2Global;
   
   // FIXME: Needless copies for now.
-  ierr = m_x.copy_from(x); CHKERRQ(ierr);
+  ierr = m_x.copy_from_vec(x); CHKERRQ(ierr);
 
   ierr = m_ssaforward.apply_linearization(m_x,Tx); CHKERRQ(ierr);
   ierr = Tx.update_ghosts(); CHKERRQ(ierr);
@@ -150,7 +152,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   ierr = m_designFunctional.interior_product(m_x,tmp_gD); CHKERRQ(ierr);
   ierr = GNx.add(m_alpha,tmp_gD); CHKERRQ(ierr);
 
-  ierr = GNx.copy_to(y); CHKERRQ(ierr);
+  ierr = GNx.copy_to_vec(y); CHKERRQ(ierr);
 
   return 0;
 }
@@ -493,3 +495,5 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
 
   return 0;
 }
+
+} // end of namespace pism

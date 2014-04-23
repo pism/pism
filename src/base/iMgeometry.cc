@@ -29,6 +29,8 @@
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
 
+namespace pism {
+
 
 //! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
 
@@ -1093,3 +1095,5 @@ PetscErrorCode IceModel::update_floatation_mask() {
 
   return 0;
 }
+
+} // end of namespace pism

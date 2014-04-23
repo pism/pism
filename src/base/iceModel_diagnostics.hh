@@ -22,6 +22,8 @@
 #include "iceModel.hh"
 #include "PISMDiagnostic.hh"
 
+namespace pism {
+
 //! \brief Computes vertically-averaged ice hardness.
 class IceModel_hardav : public PISMDiag<IceModel>
 {
@@ -448,23 +450,30 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+} // end of namespace pism
+
 #if (PISM_USE_PROJ4==1)
 
 #include <proj_api.h>
 
-//! \brief Computes latitude and longitude bounds.
-class IceModel_lat_lon_bounds : public PISMDiag<IceModel>
-{
-public:
-  IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
-                          std::string var_name,
-                          std::string proj_string);
-  ~IceModel_lat_lon_bounds();
-  virtual PetscErrorCode compute(IceModelVec* &result);
-protected:
-  std::string m_var_name;
-  projPJ pism, lonlat;
-};
+namespace pism {
+
+  //! \brief Computes latitude and longitude bounds.
+  class IceModel_lat_lon_bounds : public PISMDiag<IceModel>
+  {
+  public:
+    IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
+                            std::string var_name,
+                            std::string proj_string);
+    ~IceModel_lat_lon_bounds();
+    virtual PetscErrorCode compute(IceModelVec* &result);
+  protected:
+    std::string m_var_name;
+    projPJ pism, lonlat;
+  };
+
+} // end of namespace pism
+
 #elif (PISM_USE_PROJ4==0)
 // do nothing
 #else  // PISM_USE_PROJ4 is not set

@@ -23,6 +23,8 @@
 #include "tempSystem.hh"
 #include "Mask.hh"
 
+namespace pism {
+
 tempSystemCtx::tempSystemCtx(int my_Mz, std::string my_prefix)
   : columnSystemCtx(my_Mz, my_prefix), Mz(my_Mz) {
 
@@ -224,3 +226,5 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
   return 0;
 }
 
+
+} // end of namespace pism

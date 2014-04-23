@@ -25,6 +25,8 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 class IceModelVec;
 class PISMVars;
 
@@ -196,5 +198,7 @@ protected:
   Model *model;
   std::string time_units, time_dimension_name;
 };
+
+} // end of namespace pism
 
 #endif /* __PISMDiagnostic_hh */

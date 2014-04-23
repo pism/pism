@@ -19,6 +19,8 @@
 #include "IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include <assert.h>
 
+namespace pism {
+
 typedef IceModelVec2S  DesignVec;
 typedef IceModelVec2V  StateVec;
 
@@ -246,7 +248,7 @@ PetscErrorCode  IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesi
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
   PetscErrorCode ierr;
-  ierr = m_dzeta.copy_from(x); CHKERRQ(ierr);
+  ierr = m_dzeta.copy_from_vec(x); CHKERRQ(ierr);
   
   ierr = m_ssaforward.set_design(m_d_Jdesign); CHKERRQ(ierr);
   
@@ -260,7 +262,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(V
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
   PetscErrorCode ierr;
 
-  ierr = m_du.copy_from(x); CHKERRQ(ierr);
+  ierr = m_du.copy_from_vec(x); CHKERRQ(ierr);
 
   ierr = m_ssaforward.set_design(m_d_Jdesign); CHKERRQ(ierr);
 
@@ -288,3 +290,5 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL_applyJacobianDesignTranspose(Mat 
 
   return 0;
 }
+
+} // end of namespace pism

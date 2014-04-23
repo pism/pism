@@ -23,6 +23,8 @@
 
 #include "columnSystem.hh"
 
+namespace pism {
+
 class PISMConfig;
 class IceModelVec3;
 class EnthalpyConverter;
@@ -94,5 +96,7 @@ protected:
   virtual PetscErrorCode assemble_R();
   PetscErrorCode checkReadyToSolve();
 };
+
+} // end of namespace pism
 
 #endif   //  ifndef __enthSystem_hh

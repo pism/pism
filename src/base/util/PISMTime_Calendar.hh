@@ -22,6 +22,8 @@
 #include "PISMTime.hh"
 #include "PISMUnits.hh"
 
+namespace pism {
+
 class PISMTime_Calendar : public PISMTime
 {
 public:
@@ -87,5 +89,7 @@ private:
   PISMTime_Calendar & operator=(PISMTime_Calendar const &);
 };
 
+
+} // end of namespace pism
 
 #endif /* _PISMGREGORIANTIME_H_ */

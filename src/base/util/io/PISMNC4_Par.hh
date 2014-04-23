@@ -21,6 +21,8 @@
 
 #include "PISMNC4File.hh"
 
+namespace pism {
+
 class PISMNC4_Par : public PISMNC4File
 {
 public:
@@ -38,5 +40,7 @@ protected:
   virtual int set_access_mode(int varid, bool mapped) const;
 };
 
+
+} // end of namespace pism
 
 #endif /* _PISMNC4_PAR_H_ */

@@ -18,6 +18,8 @@
 
 #include "IPTotalVariationFunctional.hh"
 
+namespace pism {
+
 IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid &grid,
   double c, double exponent, double eps,
   IceModelVec2Int *dirichletLocations) :
@@ -132,3 +134,5 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

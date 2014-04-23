@@ -23,6 +23,8 @@
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
 
+namespace pism {
+
 //! A class implementing a modified surface mass balance which forces
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
@@ -47,5 +49,7 @@ protected:
 private:
   PetscErrorCode allocate_PSForceThickness();
 };
+
+} // end of namespace pism
 
 #endif /* _PSFORCETHICKNESS_H_ */

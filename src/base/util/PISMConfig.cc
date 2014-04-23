@@ -21,6 +21,8 @@
 #include "pism_options.hh"
 #include <sstream>
 
+namespace pism {
+
 PISMConfig::PISMConfig(MPI_Comm com, std::string name, PISMUnitSystem unit_system)
   : m_com(com),
     m_unit_system(unit_system),
@@ -466,3 +468,5 @@ PetscErrorCode PISMConfig::warn_about_unused_parameters() const {
 
   return 0;
 }
+
+} // end of namespace pism

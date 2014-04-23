@@ -22,6 +22,8 @@
 #include "PCFactory.hh"
 #include "POModifier.hh"
 
+namespace pism {
+
 class POFactory : public PCFactory<PISMOceanModel,POModifier> {
 public:
   POFactory(IceGrid& g, const PISMConfig& conf)
@@ -33,5 +35,7 @@ public:
   virtual ~POFactory() {}
   virtual void add_standard_types();
 };
+
+} // end of namespace pism
 
 #endif /* _POFACTORY_H_ */

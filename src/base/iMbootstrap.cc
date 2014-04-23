@@ -28,6 +28,8 @@
 #include <cmath>                // for erf() in method 1 in putTempAtDepth()
 #include <assert.h>
 
+namespace pism {
+
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
 This procedure is called by the base class when option `-boot_file` is used.
@@ -386,3 +388,5 @@ PetscErrorCode IceModel::putTempAtDepth() {
   return 0;
 }
 
+
+} // end of namespace pism

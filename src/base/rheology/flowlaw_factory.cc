@@ -21,6 +21,8 @@
 #include "pism_options.hh"
 #include "PISMUnits.hh"
 
+namespace pism {
+
 IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
                                      const char pre[],
                                      const PISMConfig &conf,
@@ -182,3 +184,5 @@ PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
 
   PetscFunctionReturn(0);
 }
+
+} // end of namespace pism

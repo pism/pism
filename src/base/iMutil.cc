@@ -28,6 +28,8 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
 PetscErrorCode IceModel::additionalAtStartTimestep() {
@@ -322,3 +324,5 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   return 0;
 }
+
+} // end of namespace pism

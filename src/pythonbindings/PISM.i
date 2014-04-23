@@ -62,6 +62,8 @@
 #include "pism_options.hh"
 #include "SIAFD.hh"
 #include "regional/regional.hh"
+
+using namespace pism;
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -87,19 +89,6 @@
 #define SWIG_SHARED_PTR_SUBNAMESPACE tr1
 #endif
 %include <std_shared_ptr.i>
-
-// SWIG seems convinced that it might need to convert a PetscScalar into a 
-// complex number at some point, even though it never will.  It issues undesired
-// warnings as a consequence of this and some conversion code in petsc4py.i.  
-// The following dummy fragments address these warning messages.  We provide
-// stubs for doing the conversion, but not the code to do so (since it is not needed).
-%fragment(SWIG_AsVal_frag(std::complex<long double>),"header" )
-{
-}
-%fragment(SWIG_From_frag(std::complex<long double>),"header" )
-{
-}
-
 
 %template(IntVector) std::vector<int>;
 %template(DoubleVector) std::vector<double>;
@@ -166,8 +155,6 @@
 %apply TYPE & OUTPUT { TYPE &}
 %enddef
 
-
-
 %typemap(in, numinputs=0,noblock=1) bool & OUTPUT (bool temp = false) {
     $1 = &temp;
 }
@@ -176,10 +163,10 @@
     %append_output(SWIG_From(bool)(*$1));
 };
 
-
 %typemap(in, numinputs=0,noblock=1) PETScInt & OUTPUT (PETScInt temp) {
     $1 = &temp;
 }
+
 %typemap(argout,noblock=1) PETScInt & OUTPUT
 {
     %append_output(SWIG_From(int)(*$1));
@@ -192,15 +179,18 @@
 %typemap(in, numinputs=0,noblock=1) std::string& OUTPUT (std::string temp) {
     $1 = &temp;
 }
+
 %typemap(argout,noblock=1) std::string & OUTPUT
 {
     %append_output(SWIG_FromCharPtr((*$1).c_str()));
 }
+
 %apply std::string &OUTPUT { std::string &result}
 
 %typemap(in, numinputs=0,noblock=1) std::vector<int> & OUTPUT (std::vector<int> temp) {
     $1 = &temp;
 }
+
 %typemap(argout,noblock=1) std::vector<int> & OUTPUT
 {
     int len;
@@ -216,6 +206,7 @@
 %typemap(in, numinputs=0,noblock=1) std::vector<double> & OUTPUT (std::vector<double> temp) {
     $1 = &temp;
 }
+
 %typemap(argout,noblock=1) std::vector<double> & OUTPUT
 {
     int len;
@@ -228,24 +219,25 @@
      }
 }
 
-%typemap(in, numinputs=0, noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT(TerminationReason::Ptr temp) {
+%typemap(in, numinputs=0, noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> & OUTPUT(pism::TerminationReason::Ptr temp) {
   $1 = &temp;
 }
-%typemap(argout,noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT
+
+%typemap(argout,noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> & OUTPUT
 {
   {
-    SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  TerminationReason > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  TerminationReason >(*$1);
+    SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  pism::TerminationReason > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  pism::TerminationReason >(*$1);
     %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
   }
 };
-%apply SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> & OUTPUT { SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<TerminationReason> &reason };
 
-%shared_ptr(TerminationReason)
-%shared_ptr(KSPTerminationReason)
-%shared_ptr(SNESTerminationReason)
-%shared_ptr(GenericTerminationReason)
+%apply SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> & OUTPUT { SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> &reason };
+
+%shared_ptr(pism::TerminationReason)
+%shared_ptr(pism::KSPTerminationReason)
+%shared_ptr(pism::SNESTerminationReason)
+%shared_ptr(pism::GenericTerminationReason)
 %include "TerminationReason.hh"
-
 
 %apply std::vector<int> & OUTPUT {std::vector<int> &result};
 %apply std::vector<double> & OUTPUT {std::vector<double> &result};
@@ -259,29 +251,28 @@
 %apply double * OUTPUT {double * result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag, bool & success};
 
-%Pism_pointer_reference_is_always_output(IceModelVec2S)
-%Pism_pointer_reference_is_always_output(IceModelVec2V)
-%Pism_pointer_reference_is_always_output(IceModelVec3)
+%Pism_pointer_reference_is_always_output(pism::IceModelVec2S)
+%Pism_pointer_reference_is_always_output(pism::IceModelVec2V)
+%Pism_pointer_reference_is_always_output(pism::IceModelVec3)
 
-%Pism_pointer_pointer_is_always_output(IceFlowLaw)
-
+%Pism_pointer_pointer_is_always_output(pism::IceFlowLaw)
 
 // These methods are called from PISM.options.
-%rename PISMOptionsInt _optionsInt;
-%rename PISMOptionsReal _optionsReal;
-%rename PISMOptionsString _optionsString;
-%rename PISMOptionsIntArray _optionsIntArray;
-%rename PISMOptionsRealArray _optionsRealArray;
-%rename PISMOptionsStringArray _optionsStringArray;
-%rename PISMOptionsList _optionsList;
-%rename PISMOptionsIsSet optionsIsSet;
+%rename pism::PISMOptionsInt _optionsInt;
+%rename pism::PISMOptionsReal _optionsReal;
+%rename pism::PISMOptionsString _optionsString;
+%rename pism::PISMOptionsIntArray _optionsIntArray;
+%rename pism::PISMOptionsRealArray _optionsRealArray;
+%rename pism::PISMOptionsStringArray _optionsStringArray;
+%rename pism::PISMOptionsList _optionsList;
+%rename pism::PISMOptionsIsSet optionsIsSet;
 
 // The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
 // to extend the printf features of verbPrintf to include python's formatting for objects.
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
 %rename verbPrintf _verbPrintf;
 
-%extend PISMVars
+%extend pism::PISMVars
 {
   %pythoncode
   {
@@ -301,8 +292,8 @@
   }
 }
 
-%rename(_regrid) IceModelVec::regrid;
-%extend IceModelVec
+%rename(_regrid) pism::IceModelVec::regrid;
+%extend pism::IceModelVec
 {
   %pythoncode {
     def regrid(self,filename,critical=False,default_value=0.0):
@@ -315,8 +306,8 @@
 }
 
 // We also make the same fix for IceModelVec2's.
-%rename(_regrid) IceModelVec2::regrid;
-%extend IceModelVec2
+%rename(_regrid) pism::IceModelVec2::regrid;
+%extend pism::IceModelVec2
 {
   %pythoncode {
     def regrid(self,filename,critical=False,default_value=0.0):
@@ -332,7 +323,7 @@
 
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
-%extend IceModelVec2S
+%extend pism::IceModelVec2S
 {
     double getitem(int i, int j)
     {
@@ -355,11 +346,11 @@
     }
 };
 
-%rename(__mult__) PISMVector2::operator*;
-%rename(__add__) PISMVector2::operator+;
-%ignore PISMVector2::operator=;
-%ignore operator*(const double &a, const PISMVector2 &v1);
-%extend PISMVector2
+%rename(__mult__) pism::PISMVector2::operator*;
+%rename(__add__) pism::PISMVector2::operator+;
+%ignore pism::PISMVector2::operator=;
+%ignore operator*(const double &a, const pism::PISMVector2 &v1);
+%extend pism::PISMVector2
 {
   %pythoncode
   {
@@ -368,7 +359,7 @@
   }
 }
 
-%extend IceModelVec2V
+%extend pism::IceModelVec2V
 {
     PISMVector2 &getitem(int i, int j)
     {
@@ -402,8 +393,8 @@
     }
 };
 
-%ignore IceModelVec3D::operator();
-%extend IceModelVec3D
+%ignore pism::IceModelVec3D::operator();
+%extend pism::IceModelVec3D
 {
 
   double getitem(int i, int j, int k)
@@ -429,19 +420,7 @@
     }
 };
 
-
-// FIXME
-// IceModelVec2 imports IceModelVec::write with a 'using' declaration,
-// and implements a write method with the same signature as one of the
-// two IceModelVec::write methods.  This confuses SWIG, which gives a
-// warning that the reimplemented IceModelVec2::write is shadowed by the
-// IceModelVec::write.  The SWIG generated code actually does the right
-// thing, and the warning is wrong.  Trying to reproduce the warning
-// in a simple test setting failed.  This should get cleaned up, and
-// a bug reported to SWIG if needed.  For now, we do the following hack.
-%rename(write_as_type) IceModelVec2::write(std::string,PISM_IO_Type);
-
-%extend Timeseries
+%extend pism::Timeseries
 {
     %ignore operator[];
     double getitem(unsigned int i)
@@ -455,8 +434,7 @@
     }
 };
 
-
-%extend IceGrid
+%extend pism::IceGrid
 {
     %pythoncode {
     def points(self):
@@ -497,8 +475,6 @@ in fact be equal to PETSC_NULL, and this is OK. */
  int res = SWIG_AsCharPtrAndSize($input, 0, NULL, 0);
  $1 = SWIG_CheckState(res);
 }
-// Apparently petsc4py doesn't make any typemaps for MPIInts, which PISM uses repeatedly.
-%apply int {PetscMPIInt};
 
 
 // Support for nc_types (e.g. NC_BYTE, etc).  In NetCDF3, an nc_type is an enum, and in 
@@ -517,39 +493,52 @@ in fact be equal to PETSC_NULL, and this is OK. */
 // A constraint check to the minimal set of NetCDF3 types would be the right thing to do. (FIXME)
 %typemap(in) PISM_IO_Type (int tmp){
     SWIG_AsVal(int)($input,&tmp);
-    $1 = static_cast<PISM_IO_Type>(tmp);
+    $1 = static_cast<pism::PISM_IO_Type>(tmp);
 }
 %typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) PISM_IO_Type {
     $1 = PyInt_Check($input);
 }
 
+// same for PISM_IO_Mode
+%typemap(in) PISM_IO_Mode (int tmp){
+    SWIG_AsVal(int)($input,&tmp);
+    $1 = static_cast<pism::PISM_IO_Mode>(tmp);
+}
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) PISM_IO_Mode {
+    $1 = PyInt_Check($input);
+}
+
 // Tell SWIG that the following variables are truly constant
-%immutable PISM_Revision;
-%immutable PISM_DefaultConfigFile;
+%immutable pism::PISM_Revision;
+%immutable pism::PISM_DefaultConfigFile;
 
 %include "stressbalance/ssa/SNESProblem.hh"
-%template(SNESScalarProblem) SNESProblem<1,double>;
-%template(SNESVectorProblem) SNESProblem<2,PISMVector2>;
+%template(SNESScalarProblem) pism::SNESProblem<1,double>;
+%template(SNESVectorProblem) pism::SNESProblem<2,pism::PISMVector2>;
 
 // Now the header files for the PISM source code we want to wrap.
 // By default, SWIG does not wrap stuff included from an include file,
 // (which is good!) so we need to list every file containing a class
 // we want to wrap, including base classes if we want access to base class
 // methods
+%feature("valuewrapper") pism::NCVariable;
+%feature("valuewrapper") pism::NCSpatialVariable;
+
+%ignore pism::PISMUnit::operator=;
+%feature("valuewrapper") pism::PISMUnitSystem;
+%feature("valuewrapper") pism::PISMUnit;
+
+%include "PISMUnits.hh"
 %include "IceGrid.hh"
-%feature("valuewrapper") NCVariable;
-%feature("valuewrapper") NCSpatialVariable;
+%include "PIO.hh"               // include before NCVariable
 %include "NCVariable.hh"
 %include "PISMConfig.hh"
 %include "pism_const.hh"
 %include "pism_options.hh"
 %include "Timeseries.hh"
-%ignore planeStar::operator[];
+%ignore pism::planeStar::operator[];
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
-%include "PIO.hh"
-%ignore PISMUnit::operator=;
-%include "PISMUnits.hh"
 %include "PISMNCFile.hh"
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"
@@ -557,10 +546,10 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "LocalInterpCtx.hh"
 %include "rheology/flowlaws.hh"
 %include "enthalpyConverter.hh"
-%template(PISMDiag_ShallowStressBalance) PISMDiag<ShallowStressBalance>;
+%template(PISMDiag_ShallowStressBalance) pism::PISMDiag<pism::ShallowStressBalance>;
 %include "stressbalance/ShallowStressBalance.hh"
 %include "SSB_Modifier.hh"
-%template(PISMDiag_SIAFD) PISMDiag<SIAFD>;
+%template(PISMDiag_SIAFD) pism::PISMDiag<pism::SIAFD>;
 %include "stressbalance/sia/SIAFD.hh"
 %include "flowlaw_factory.hh"
 
@@ -568,14 +557,16 @@ in fact be equal to PETSC_NULL, and this is OK. */
 
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
-%template(PISMDiag_SSA) PISMDiag<SSA>;
+%template(PISMDiag_SSA) pism::PISMDiag<pism::SSA>;
 %include "stressbalance/ssa/SSA.hh"
+%ignore pism::SSAFEFunction;
+%ignore pism::SSAFEJacobian;
 %include "stressbalance/ssa/SSAFEM.hh"
-%template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
+%template(PISMDiag_SSAFD) pism::PISMDiag<pism::SSAFD>;
 %include "stressbalance/ssa/SSAFD.hh"
 %include "Mask.hh"
 %include "pism_python.hh"
-%template(PISMDiag_PISMMohrCoulombYieldStress) PISMDiag<PISMMohrCoulombYieldStress>;
+%template(PISMDiag_PISMMohrCoulombYieldStress) pism::PISMDiag<pism::PISMMohrCoulombYieldStress>;
 %include "PISMYieldStress.hh"
 %include "PISMMohrCoulombYieldStress.hh"
 %include "PISMTime.hh"
@@ -583,10 +574,10 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "regional/regional.hh"
 
 %include "inverse/functional/IPFunctional.hh"
-%template(IPFunctional2S) IPFunctional< IceModelVec2S >;
-%template(IPFunctional2V) IPFunctional< IceModelVec2V >;
-%template(IPInnerProductFunctional2S) IPInnerProductFunctional< IceModelVec2S >;
-%template(IPInnerProductFunctional2V) IPInnerProductFunctional< IceModelVec2V >;
+%template(IPFunctional2S) pism::IPFunctional< pism::IceModelVec2S >;
+%template(IPFunctional2V) pism::IPFunctional< pism::IceModelVec2V >;
+%template(IPInnerProductFunctional2S) pism::IPInnerProductFunctional< pism::IceModelVec2S >;
+%template(IPInnerProductFunctional2V) pism::IPInnerProductFunctional< pism::IceModelVec2V >;
 %include "inverse/functional/IP_L2NormFunctional.hh"
 %include "inverse/functional/IP_H1NormFunctional.hh"
 %include "inverse/functional/IPGroundedIceH1NormFunctional.hh"
@@ -601,51 +592,47 @@ in fact be equal to PETSC_NULL, and this is OK. */
 
 #ifdef PISM_USE_TAO
 %ignore TaoConvergedReasons;
-%shared_ptr(TAOTerminationReason)
+%shared_ptr(pism::TAOTerminationReason)
 %include "inverse/TaoUtil.hh"
 
 %include "inverse/IPTaoTikhonovProblem.hh"
 
-#################### IP_SSATauc... #############################
+//################### IP_SSATauc... #############################
 
-# Instantiate the base class for IP_SSATaucTaoTikhonovProblem
-# so that SWIG will implement the base class methods.
-%template(IP_SSATaucTaoTikhonovProblemBaseClass)  
-          IPTaoTikhonovProblem<IP_SSATaucForwardProblem>;
+// Instantiate the base class for IP_SSATaucTaoTikhonovProblem
+// so that SWIG will implement the base class methods.
+%template(IP_SSATaucTaoTikhonovProblemBaseClass) pism::IPTaoTikhonovProblem<pism::IP_SSATaucForwardProblem>;
 
-%shared_ptr(IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>)
+%shared_ptr(pism::IPTaoTikhonovProblemListener<pism::IP_SSATaucForwardProblem>)
 
-%feature("director") IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+%feature("director") pism::IPTaoTikhonovProblemListener<pism::IP_SSATaucForwardProblem>;
 
-%template(IP_SSATaucTaoTikhonovProblemListener)  IPTaoTikhonovProblemListener<IP_SSATaucForwardProblem>;
+%template(IP_SSATaucTaoTikhonovProblemListener)  pism::IPTaoTikhonovProblemListener<pism::IP_SSATaucForwardProblem>;
 
 %include "inverse/IP_SSATaucTaoTikhonovProblem.hh"
 
-%template(IP_SSATaucTaoTikhonovSolver) TaoBasicSolver<IP_SSATaucTaoTikhonovProblem>;
+%template(IP_SSATaucTaoTikhonovSolver) pism::TaoBasicSolver<pism::IP_SSATaucTaoTikhonovProblem>;
 
 
-%shared_ptr(IP_SSATaucTaoTikhonovProblemLCLListener)
-%feature("director") IP_SSATaucTaoTikhonovProblemLCLListener;
+%shared_ptr(pism::IP_SSATaucTaoTikhonovProblemLCLListener)
+%feature("director") pism::IP_SSATaucTaoTikhonovProblemLCLListener;
 %include "inverse/IP_SSATaucTaoTikhonovProblemLCL.hh"
-%template(IP_SSATaucTaoTikhonovProblemLCLSolver) TaoBasicSolver< IP_SSATaucTaoTikhonovProblemLCL >;
+%template(IP_SSATaucTaoTikhonovProblemLCLSolver) pism::TaoBasicSolver< pism::IP_SSATaucTaoTikhonovProblemLCL >;
 
 
-#################### IP_SSAHardav... #############################
+//################### IP_SSAHardav... #############################
 
-%template(IP_SSAHardavTaoTikhonovProblemBaseClass)
-          IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>;
+%template(IP_SSAHardavTaoTikhonovProblemBaseClass) pism::IPTaoTikhonovProblem<pism::IP_SSAHardavForwardProblem>;
 
-%shared_ptr(IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>)
+%shared_ptr(pism::IPTaoTikhonovProblemListener<pism::IP_SSAHardavForwardProblem>)
 
-%feature("director") IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>;
+%feature("director") pism::IPTaoTikhonovProblemListener<pism::IP_SSAHardavForwardProblem>;
 
-%template(IP_SSAHardavTaoTikhonovProblemListener)
-          IPTaoTikhonovProblemListener<IP_SSAHardavForwardProblem>;
+%template(IP_SSAHardavTaoTikhonovProblemListener) pism::IPTaoTikhonovProblemListener<pism::IP_SSAHardavForwardProblem>;
 
 %include "inverse/IP_SSAHardavTaoTikhonovProblem.hh"
 
-%template(IP_SSAHardavTaoTikhonovSolver)
-          TaoBasicSolver<IP_SSAHardavTaoTikhonovProblem>;
+%template(IP_SSAHardavTaoTikhonovSolver) pism::TaoBasicSolver<pism::IP_SSAHardavTaoTikhonovProblem>;
 
 #endif  /* end of ifdef PISM_USE_TAO */
 

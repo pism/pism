@@ -23,6 +23,8 @@
 #include "PISMVars.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 void PISMStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
                                         std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
 
@@ -981,3 +983,5 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
   return 0;
 }
 
+
+} // end of namespace pism

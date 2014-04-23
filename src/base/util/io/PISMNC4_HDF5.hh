@@ -23,6 +23,8 @@
 
 #include "PISMNCFile.hh"
 
+namespace pism {
+
 class PISMNC4_HDF5 : public PISMNCFile {
 public:
   PISMNC4_HDF5(MPI_Comm com);
@@ -95,7 +97,7 @@ public:
 
   using PISMNCFile::put_att_double;
   virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype,
-			     const std::vector<double> &data) const;
+                             const std::vector<double> &data) const;
 
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
@@ -113,5 +115,7 @@ protected:
 
   hid_t file_id;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMNC4_HDF5_H_ */

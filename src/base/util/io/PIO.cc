@@ -41,6 +41,8 @@
 #include "PISMNC4_HDF5.hh"
 #endif
 
+namespace pism {
+
 static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
   if (mode == "netcdf3") {
     return new PISMNC3File(com);
@@ -1872,3 +1874,5 @@ grid_info::grid_info() {
   z_min = 0;
   z_max = 0;
 }
+
+} // end of namespace pism

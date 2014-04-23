@@ -23,6 +23,8 @@
 #include "PISMVars.hh"
 #include "flowlaw_factory.hh"
 
+namespace pism {
+
 SIAFD::~SIAFD() {
   delete bed_smoother;
   if (flow_law != NULL) {
@@ -1014,3 +1016,5 @@ double SIAFD::grainSizeVostok(double age_seconds) const {
   // Linear interpolation on the interval
   return gsAt[l] + (a - ageAt[l]) * (gsAt[r] - gsAt[l]) / (ageAt[r] - ageAt[l]);
 }
+
+} // end of namespace pism

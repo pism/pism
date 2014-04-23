@@ -22,6 +22,8 @@
 #include "SSA.hh"
 #include <petscksp.h>
 
+namespace pism {
+
 //! PISM's SSA solver: the finite difference implementation.
 class SSAFD : public SSA
 {
@@ -114,5 +116,7 @@ public:
   SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
+} // end of namespace pism
 
 #endif /* _SSAFD_H_ */

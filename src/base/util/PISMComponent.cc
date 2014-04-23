@@ -26,6 +26,8 @@
 #include "pism_options.hh"
 #include <assert.h>
 
+namespace pism {
+
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
@@ -121,3 +123,5 @@ PetscErrorCode PISMComponent::regrid(std::string module_name, IceModelVec *varia
 
   return 0;
 }
+
+} // end of namespace pism

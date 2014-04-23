@@ -22,6 +22,8 @@
 #include "PIO.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 ///// "Force-to-thickness" mechanism
 PSForceThickness::PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input)
   : PSModifier(g, conf, input),
@@ -457,3 +459,5 @@ PetscErrorCode PSForceThickness::write_variables(std::set<std::string> vars, con
 
   return 0;
 }
+
+} // end of namespace pism

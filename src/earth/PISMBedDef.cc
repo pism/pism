@@ -21,6 +21,8 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 PISMBedDef::PISMBedDef(IceGrid &g, const PISMConfig &conf)
   : PISMComponent_TS(g, conf) {
 
@@ -107,3 +109,5 @@ PetscErrorCode PISMBedDef::compute_uplift(double dt_beddef) {
 
   return 0;
 }
+
+} // end of namespace pism

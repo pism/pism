@@ -33,27 +33,29 @@
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 
+namespace pism {
+
 //! Defines an IPTaoTikhonovProblem for inversion of basal yeild stresses \f$\tau_c\f$ from %SSA velocities.
 /*! The forward problem for the inversion is defined by an IP_SSATaucForwardProblem.  The problem itself
-is solved with a TaoBasicSolver as described by the class-level documentation for IPTaoTikhonovProblem.  It
-is a reduced space method, inasmuch as we are performing unconstrained minimization on a Tikhonov functional
-that depends on a design variable (the value of \f$\tau_c\f$). It is compatible with any of the elementary
-TAO minimization algorithms, e.g. tao_cg, tao_lmvm.  If the minimization algorithm tao_blmvm is selected,
-the values of \f$\tau_c\f$ will be constrained by the config variables \a inv_ssa_tauc_min
-and \a inv_ssa_tauc_max.  
+  is solved with a TaoBasicSolver as described by the class-level documentation for IPTaoTikhonovProblem.  It
+  is a reduced space method, inasmuch as we are performing unconstrained minimization on a Tikhonov functional
+  that depends on a design variable (the value of \f$\tau_c\f$). It is compatible with any of the elementary
+  TAO minimization algorithms, e.g. tao_cg, tao_lmvm.  If the minimization algorithm tao_blmvm is selected,
+  the values of \f$\tau_c\f$ will be constrained by the config variables \a inv_ssa_tauc_min
+  and \a inv_ssa_tauc_max.  
 
-The TAO algorithm tao_lcl is not compatible with IP_SSATaucTaoTikhonovProblem.  Use IP_SSATaucTaoTikhonovProblemLCL
-instead.
+  The TAO algorithm tao_lcl is not compatible with IP_SSATaucTaoTikhonovProblem.  Use IP_SSATaucTaoTikhonovProblemLCL
+  instead.
 */
 class IP_SSATaucTaoTikhonovProblem: public IPTaoTikhonovProblem<IP_SSATaucForwardProblem> {
 public:
 
   IP_SSATaucTaoTikhonovProblem( IP_SSATaucForwardProblem &forward, 
-                          IP_SSATaucTaoTikhonovProblem::DesignVec &d0, 
-                          IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, double eta, 
-                          IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec>&designFunctional, 
-                          IPFunctional<IP_SSATaucTaoTikhonovProblem::StateVec>&stateFunctional) :
-        IPTaoTikhonovProblem<IP_SSATaucForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
+                                IP_SSATaucTaoTikhonovProblem::DesignVec &d0, 
+                                IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, double eta, 
+                                IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec>&designFunctional, 
+                                IPFunctional<IP_SSATaucTaoTikhonovProblem::StateVec>&stateFunctional) :
+    IPTaoTikhonovProblem<IP_SSATaucForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
 
   virtual ~IP_SSATaucTaoTikhonovProblem() {};
 
@@ -63,6 +65,8 @@ public:
   virtual PetscErrorCode getVariableBounds(TaoSolver tao, Vec lo, Vec hi); 
 
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX */
 

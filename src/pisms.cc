@@ -29,6 +29,8 @@ static char help[] =
 
 #include "POConstant.hh"
 
+using namespace pism;
+
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 

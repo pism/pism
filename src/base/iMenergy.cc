@@ -24,6 +24,8 @@
 #include "enthalpyConverter.hh"
 #include <assert.h>
 
+namespace pism {
+
 //! \file iMenergy.cc Methods of IceModel which address conservation of energy.
 //! Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
@@ -188,3 +190,5 @@ bool IceModel::checkThinNeigh(IceModelVec2S &thickness, int i, int j, const doub
   return ((E < threshold) || (NE < threshold) || (N < threshold) || (NW < threshold) ||
           (W < threshold) || (SW < threshold) || (S < threshold) || (SE < threshold));
 }
+
+} // end of namespace pism

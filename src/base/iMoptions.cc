@@ -33,6 +33,8 @@
 #include "pism_options.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
@@ -220,3 +222,5 @@ std::string IceModel::get_output_size(std::string option) {
   return keyword;
 }
 
+
+} // end of namespace pism

@@ -19,6 +19,8 @@
 #include "PA_paleo_precip.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PA_paleo_precip::PA_paleo_precip(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
@@ -166,3 +168,5 @@ PetscErrorCode PA_paleo_precip::write_variables(std::set<std::string> vars, cons
 
   return 0;
 }
+
+} // end of namespace pism

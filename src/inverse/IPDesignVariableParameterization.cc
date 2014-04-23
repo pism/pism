@@ -21,6 +21,8 @@
 #include <cmath>
 #include "PISMConfig.hh"
 
+namespace pism {
+
 //! Initializes the scale parameters of the parameterization.
 /*! Every IPDesignVariableParameterization has an associated scale for the design variable
 \f$d_{\rm scale}\f$ that equals 1 in internal units.  The scale for a design variable named \a foo
@@ -194,3 +196,5 @@ PetscErrorCode IPDesignVariableParamTruncatedIdent::fromDesignVariable(double d,
   *OUTPUT = d_dimensionless - m_d0_sq / d_dimensionless;
   return 0;
 }
+
+} // end of namespace pism

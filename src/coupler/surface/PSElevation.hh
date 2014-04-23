@@ -23,6 +23,8 @@
 #include "iceModelVec2T.hh"
 #include "PISMAtmosphere.hh"
 
+namespace pism {
+
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
 class PSElevation : public PISMSurfaceModel {
 public:
@@ -47,5 +49,7 @@ protected:
     m_min, m_max, m_limit_min, m_limit_max,
     z_m_min, z_ELA, z_m_max;
 };
+
+} // end of namespace pism
 
 #endif /* _PSELEVATION_H_ */

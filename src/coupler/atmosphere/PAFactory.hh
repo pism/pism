@@ -23,6 +23,8 @@
 #include "PAModifier.hh"
 #include "PCFactory.hh"
 
+namespace pism {
+
 class PAFactory : public PCFactory<PISMAtmosphereModel,PAModifier> {
 public:
   PAFactory(IceGrid& g, const PISMConfig& conf)
@@ -34,5 +36,7 @@ public:
   virtual ~PAFactory() {}
   virtual void add_standard_types();
 };
+
+} // end of namespace pism
 
 #endif /* _PAFACTORY_H_ */

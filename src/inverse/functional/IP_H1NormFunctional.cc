@@ -18,6 +18,8 @@
 
 #include "IP_H1NormFunctional.hh"
 
+namespace pism {
+
 PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   PetscErrorCode   ierr;
@@ -244,3 +246,5 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
 
   return 0;
 }
+
+} // end of namespace pism

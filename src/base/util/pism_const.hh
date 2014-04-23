@@ -24,6 +24,8 @@
 #include <vector>
 #include <set>
 
+namespace pism {
+
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
@@ -78,5 +80,7 @@ inline PetscErrorCode PISMGlobalSum(double *local, double *result, MPI_Comm comm
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_SUM,comm);
 }
+
+} // end of namespace pism
 
 #endif

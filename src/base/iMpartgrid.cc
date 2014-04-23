@@ -26,6 +26,8 @@
 #include "PISMStressBalance.hh"
 #include "PISMOcean.hh"
 
+namespace pism {
+
 
 //! \file iMpartgrid.cc Methods implementing PIK option -part_grid [\ref Albrechtetal2011].
 
@@ -95,7 +97,8 @@ double IceModel::get_threshold_thickness(planeStar<int> M,
     }
   }
 
-  return H_threshold;
+  // make sure that the returned threshold thickness is non-negative:
+  return std::max(H_threshold, 0.0);
 }
 
 
@@ -237,6 +240,16 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
         ice_thickness(i, j) += H_threshold;
         vHref(i, j) = 0.0;
       }
+      if (ice_thickness(i, j)<0) {
+        ierr = verbPrintf(1, grid.com,
+                          "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
+                          "  H_threshold: %f\n"
+                          "  coverage_ratio: %f\n"
+                          "  vHref: %f\n"
+                          "  H_residual: %f\n"
+                          "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
+                          vHref(i, j), H_residual(i, j), ice_thickness(i, j)); CHKERRQ(ierr);
+      }
 
     }
   }
@@ -261,3 +274,5 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
 
   return 0;
 }
+
+} // end of namespace pism

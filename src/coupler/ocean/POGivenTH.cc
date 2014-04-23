@@ -24,6 +24,8 @@
 #include <gsl/gsl_poly.h>
 #include <cassert>
 
+namespace pism {
+
 POGivenTH::POGivenTHConstants::POGivenTHConstants(const PISMConfig &config) {
   // coefficients of the in situ melting point temperature
   // parameterization:
@@ -662,3 +664,5 @@ PetscErrorCode POGivenTH::subshelf_salinity_diffusion_only(const POGivenTHConsta
 
   return 0;
 }
+
+} // end of namespace pism

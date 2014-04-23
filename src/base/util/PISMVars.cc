@@ -18,6 +18,8 @@
 
 #include "PISMVars.hh"
 
+namespace pism {
+
 //! \brief Add an IceModelVec v using the name `name`.
 PetscErrorCode PISMVars::add(IceModelVec &v, std::string name) {
 
@@ -131,3 +133,5 @@ PetscErrorCode PISMVars::check_for_nan() const {
 
   return 0;
 }
+
+} // end of namespace pism

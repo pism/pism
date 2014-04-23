@@ -18,6 +18,8 @@
 
 #include "IPLogRelativeFunctional.hh"
 
+namespace pism {
+
 //! Determine the normalization constant for the functional.
 /*! Sets the normalization constant \f$c_N\f$ so that
 \f[
@@ -138,3 +140,5 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
 
   return 0;
 }
+
+} // end of namespace pism

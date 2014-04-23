@@ -23,25 +23,27 @@
 #include "IPFunctional.hh"
 #include "Mask.hh"
 
+namespace pism {
+
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function over a region with only grounded ice.
 /*! The functional is, in continuous terms 
-\f[
-J(f) = \int_{\Omega_g} c_{H^1} \left|\nabla f\right|^2 + c_{L^2}f^2 \; dA
-\f]
-where \f$\Omega_g\f$ is a subset of the square domain consisting of grounded ice. 
-Numerically it is implemented using  Q1 finite elements.  Only those elements where all nodes
-have grounded ice are included in the integration, which alleviates edge effects due to steep
-derivatives in parameters that can occur at the transition between icy/non-icy regions.
-Integration can be 'restricted', in a sense, to a subset of the domain
-using a projection that forces \f$f\f$ to equal zero at nodes specified
-by the constructor argument \a dirichletLocations.
+  \f[
+  J(f) = \int_{\Omega_g} c_{H^1} \left|\nabla f\right|^2 + c_{L^2}f^2 \; dA
+  \f]
+  where \f$\Omega_g\f$ is a subset of the square domain consisting of grounded ice. 
+  Numerically it is implemented using  Q1 finite elements.  Only those elements where all nodes
+  have grounded ice are included in the integration, which alleviates edge effects due to steep
+  derivatives in parameters that can occur at the transition between icy/non-icy regions.
+  Integration can be 'restricted', in a sense, to a subset of the domain
+  using a projection that forces \f$f\f$ to equal zero at nodes specified
+  by the constructor argument \a dirichletLocations.
 */
 class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
   IPGroundedIceH1NormFunctional2S(IceGrid &grid, double cL2, 
-      double cH1, IceModelVec2Int &ice_mask, IceModelVec2Int *dirichletLocations=NULL) :
-      IPInnerProductFunctional<IceModelVec2S>(grid),
-      m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations),  m_ice_mask(ice_mask) {};
+                                  double cH1, IceModelVec2Int &ice_mask, IceModelVec2Int *dirichletLocations=NULL) :
+    IPInnerProductFunctional<IceModelVec2S>(grid),
+    m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations),  m_ice_mask(ice_mask) {};
   virtual ~IPGroundedIceH1NormFunctional2S() {};
   
   virtual PetscErrorCode valueAt(IceModelVec2S &x, double *OUTPUT);
@@ -60,5 +62,7 @@ private:
   IPGroundedIceH1NormFunctional2S(IPGroundedIceH1NormFunctional2S const &);
   IPGroundedIceH1NormFunctional2S & operator=(IPGroundedIceH1NormFunctional2S const &);  
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: IPGROUNDEDICEH1NORMFUNCTIONAL_HH_Q4IZKJOR */

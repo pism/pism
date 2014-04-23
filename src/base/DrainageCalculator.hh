@@ -21,6 +21,8 @@
 
 #include "NCVariable.hh"
 
+namespace pism {
+
 //! Compute the rate of drainage D(omega) for temperate ice.
 class DrainageCalculator {
 
@@ -53,6 +55,8 @@ private:
   double OM1, OM2, OM3, DR2, DR3;
 };
 
+
+} // end of namespace pism
 
 #endif // __DrainageCalculator_hh
 

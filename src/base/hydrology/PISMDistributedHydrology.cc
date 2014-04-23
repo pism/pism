@@ -23,6 +23,7 @@
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
 
+namespace pism {
 
 PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const PISMConfig &conf,
                                                    PISMStressBalance *sb)
@@ -537,3 +538,5 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
   }
   return 0;
 }
+
+} // end of namespace pism

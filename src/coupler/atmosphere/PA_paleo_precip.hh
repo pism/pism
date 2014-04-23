@@ -22,6 +22,8 @@
 #include "PScalarForcing.hh"
 #include "PAModifier.hh"
 
+namespace pism {
+
 /** "Paleo-precipitation correction"
  *
  * This class implements the temperature-offset based precipitation
@@ -74,5 +76,7 @@ protected:
 private:
   PetscErrorCode allocate_PA_paleo_precip();
 };
+
+} // end of namespace pism
 
 #endif /* _PA_PALEO_PRECIP_H_ */

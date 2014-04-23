@@ -22,6 +22,8 @@
 #include "iceModelVec.hh"
 #include "PISMAtmosphere.hh"
 
+namespace pism {
+
 class PAConstantPIK : public PISMAtmosphereModel {
 public:
   PAConstantPIK(IceGrid &g, const PISMConfig &conf);
@@ -46,5 +48,7 @@ protected:
 private:
   PetscErrorCode allocate_PAConstantPIK();
 };
+
+} // end of namespace pism
 
 #endif /* _PACONSTANTPIK_H_ */

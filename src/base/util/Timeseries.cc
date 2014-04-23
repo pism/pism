@@ -27,6 +27,8 @@
 #include "PISMTime.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 Timeseries::Timeseries(IceGrid *g, std::string name, std::string dimension_name)
   : m_unit_system(g->get_unit_system()),
     dimension(dimension_name, dimension_name, m_unit_system),
@@ -519,3 +521,5 @@ void DiagnosticTimeseries::reset() {
   v.clear();
 }
 
+
+} // end of namespace pism

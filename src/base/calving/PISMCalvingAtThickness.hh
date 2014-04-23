@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PISMCALVINGATTHICKNESS_H_
 #define _PISMCALVINGATTHICKNESS_H_
@@ -23,8 +23,10 @@
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 /*! \brief Calving mechanism removing the ice at the shelf front that
-    has thickness below a given threshold. */
+  has thickness below a given threshold. */
 class PISMCalvingAtThickness : public PISMComponent
 {
 public:
@@ -43,5 +45,7 @@ protected:
   double m_calving_threshold;
   IceModelVec2Int m_old_mask;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMCALVINGATTHICKNESS_H_ */

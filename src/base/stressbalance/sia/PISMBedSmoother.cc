@@ -19,6 +19,7 @@
 #include "PISMBedSmoother.hh"
 #include "Mask.hh"
 
+namespace pism {
 
 PISMBedSmoother::PISMBedSmoother(IceGrid &g, const PISMConfig &conf, int MAX_GHOSTS)
     : grid(g), config(conf) {
@@ -457,3 +458,5 @@ PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *t
   return 0;
 }
 
+
+} // end of namespace pism

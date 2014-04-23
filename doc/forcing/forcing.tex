@@ -1201,7 +1201,7 @@ Optionally a time-dependent scalar amplitude scaling $A(t)$ can be used. Specify
   \end{tabular}
 \end{center}
 
-This atmosphere model~component implements a longitude, latitude, and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in~\cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \variable{precipitation}) that is read from an input (\texttt{-i} or \texttt{-boot_file}) file.
+This atmosphere model~component implements a longitude, latitude, and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in~\cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \variable{precipitation}) that is read from an input (\texttt{-i} or \texttt{-boot_file}) file. To read time-independent precipitation from a different file, use the option \intextoption{atmosphere_searise_greenland_file}.
 
 The air temperature parameterization is controlled by configuration parameters with the \texttt{snow_temp_fausto} prefix.
 

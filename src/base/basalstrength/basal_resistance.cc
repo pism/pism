@@ -21,6 +21,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 /* Purely plastic */
 
 IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const PISMConfig &config)
@@ -168,3 +170,5 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
     *dd = (pseudo_q - 1) * (*d) / magreg2;
 
 }
+
+} // end of namespace pism

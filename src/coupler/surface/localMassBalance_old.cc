@@ -27,6 +27,8 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PDDMassBalance_Old::PDDMassBalance_Old(const PISMConfig& myconfig) : LocalMassBalance_Old(myconfig) {
   precip_as_snow = config.get_flag("interpret_precip_as_snow");
   Tmin = config.get("air_temp_all_precip_as_snow");
@@ -399,3 +401,5 @@ PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(
   return 0;
 }
 
+
+} // end of namespace pism

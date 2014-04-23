@@ -22,9 +22,11 @@
 #include "flowlaws.hh"
 #include "IceGrid.hh"
 #include <assert.h>
+
+namespace pism {
+
 const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] =
   {FEShapeQ1::shape0, FEShapeQ1::shape1, FEShapeQ1::shape2, FEShapeQ1::shape3};
-
 
 FEElementMap::FEElementMap(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.
@@ -741,3 +743,5 @@ PetscErrorCode DirichletData_Vector::finish() {
   m_values = NULL;
   return 0;
 }
+
+} // end of namespace pism

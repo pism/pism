@@ -42,6 +42,8 @@
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 
+namespace pism {
+
 IceModel::IceModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   : grid(g),
     config(conf),
@@ -986,3 +988,5 @@ IceModelVec2S* IceModel::get_geothermal_flux() {
 PISMStressBalance* IceModel::get_stress_balance() {
   return this->stress_balance;
 }
+
+} // end of namespace pism

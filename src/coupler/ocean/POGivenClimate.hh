@@ -22,6 +22,8 @@
 #include "PGivenClimate.hh"
 #include "POModifier.hh"
 
+namespace pism {
+
 class POGiven : public PGivenClimate<POModifier,PISMOceanModel>
 {
 public:
@@ -42,5 +44,7 @@ private:
   PetscErrorCode allocate_POGiven();
 };
 
+
+} // end of namespace pism
 
 #endif /* _PODIRECTFORCING_H_ */

@@ -21,6 +21,9 @@
 #include <string.h>
 
 #include "PISMPNCFile.hh"
+
+namespace pism {
+
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
 
 PISMPNCFile::PISMPNCFile(MPI_Comm c)
@@ -673,3 +676,5 @@ void PISMPNCFile::init_hints() {
 std::string PISMPNCFile::get_format() const {
   return "netcdf3";
 }
+
+} // end of namespace pism

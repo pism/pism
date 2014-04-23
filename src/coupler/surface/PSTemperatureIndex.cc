@@ -28,6 +28,8 @@
 #include <algorithm>            // std::min
 #include <cassert>
 
+namespace pism {
+
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const PISMConfig &conf)
@@ -599,3 +601,5 @@ PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, c
 
   return 0;
 }
+
+} // end of namespace pism

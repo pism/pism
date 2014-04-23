@@ -23,6 +23,8 @@
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 class PISMConstantYieldStress : public PISMYieldStress
 {
 public:
@@ -52,5 +54,7 @@ protected:
   IceModelVec2S tauc;
   virtual PetscErrorCode allocate();
 };
+
+} // end of namespace pism
 
 #endif /* _PISMCONSTANTYIELDSTRESS_H_ */

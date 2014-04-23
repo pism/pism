@@ -22,6 +22,8 @@
 #include <sstream>
 #include <assert.h>
 
+namespace pism {
+
 //! Convert model years into seconds using the year length
 //! corresponding to the current calendar.
 /*! Do not use this to convert quantities other than time intervals!
@@ -553,3 +555,5 @@ double PISMTime::convert_time_interval(double T, std::string units) {
   }
   return m_unit_system.convert(T, "seconds", units);
 }
+
+} // end of namespace pism

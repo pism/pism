@@ -21,17 +21,17 @@
 
 //! \file iceModel.hh Definition of class IceModel.
 /*! \file iceModel.hh
-IceModel is a big class which is an ice flow model.  It contains all parts that
-are not well-defined, separated components.  Such components are better places
-to put sub-models that have a clear, general interface to the rest of an ice
-sheet model.
+  IceModel is a big class which is an ice flow model.  It contains all parts that
+  are not well-defined, separated components.  Such components are better places
+  to put sub-models that have a clear, general interface to the rest of an ice
+  sheet model.
 
-IceModel has pointers to well-defined components, when they exist.
+  IceModel has pointers to well-defined components, when they exist.
 
-IceModel generally interprets user options, and initializes components based on
-such options.  It manages the initialization sequences (%e.g. a restart from a
-file containing a complete model state, versus bootstrapping).
- */
+  IceModel generally interprets user options, and initializes components based on
+  such options.  It manages the initialization sequences (%e.g. a restart from a
+  file containing a complete model state, versus bootstrapping).
+*/
 
 #include <signal.h>
 #include <gsl/gsl_rng.h>
@@ -45,6 +45,8 @@ file containing a complete model state, versus bootstrapping).
 #include "iceModelVec.hh"
 #include "PISMConfig.hh"
 #include "PISMVars.hh"
+
+namespace pism {
 
 // forward declarations
 class IceGrid;
@@ -264,7 +266,7 @@ protected:
   IceModelVec2 deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
-                         //!< grounded_ice, floating_ice, ice_free_ocean
+  //!< grounded_ice, floating_ice, ice_free_ocean
     vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
@@ -274,18 +276,18 @@ protected:
     gl_mask_y; //!< mask to determine grounding line position in y-direction
 
   IceModelVec3
-        T3,             //!< absolute temperature of ice; K (ghosted)
-        Enth3,          //!< enthalpy; J / kg (ghosted)
-        tau3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
+  T3,             //!< absolute temperature of ice; K (ghosted)
+    Enth3,          //!< enthalpy; J / kg (ghosted)
+    tau3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
   double   dt,     //!< mass continuity time step, s
-              t_TempAge,  //!< time of last update for enthalpy/temperature
-              dt_TempAge,  //!< enthalpy/temperature and age time-steps
-              maxdt_temporary, dt_force,
-              CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
-              gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
+    t_TempAge,  //!< time of last update for enthalpy/temperature
+    dt_TempAge,  //!< enthalpy/temperature and age time-steps
+    maxdt_temporary, dt_force,
+    CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
+    dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+    gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
     nonneg_rule_flux_cumulative,
     sub_shelf_ice_flux_cumulative,
@@ -374,18 +376,18 @@ protected:
 
   // see iMpartgrid.cc
   double get_threshold_thickness(planeStar<int> Mask,
-                                    planeStar<double> thickness,
-                                    planeStar<double> surface_elevation,
-                                    double bed_elevation,
-                                    bool reduce_frontal_thickness);
+                                 planeStar<double> thickness,
+                                 planeStar<double> surface_elevation,
+                                 double bed_elevation,
+                                 bool reduce_frontal_thickness);
   virtual PetscErrorCode residual_redistribution(IceModelVec2S &residual);
   virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(
-                       double& gvolume,double& garea);
+                                    double& gvolume,double& garea);
   virtual PetscErrorCode energyStats(
-                       double iarea,double &gmeltfrac);
+                                     double iarea,double &gmeltfrac);
   virtual PetscErrorCode ageStats(double ivol, double &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
@@ -408,9 +410,9 @@ protected:
 
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
-                      const double rho, const double c, const double L,
-                      const double z, const double dz,
-                      double *Texcess, double *bwat);
+                                                    const double rho, const double c, const double L,
+                                                    const double z, const double dz,
+                                                    double *Texcess, double *bwat);
   virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
 
   // see iMutil.cc
@@ -498,6 +500,8 @@ protected:
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
 };
+
+} // end of namespace pism
 
 #endif /* __iceModel_hh */
 

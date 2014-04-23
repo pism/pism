@@ -20,6 +20,8 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PAGivenClimate::PAGivenClimate(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, NULL)
 {
@@ -157,3 +159,5 @@ PetscErrorCode PAGivenClimate::init_timeseries(double *ts, unsigned int N) {
   return 0;
 }
 
+
+} // end of namespace pism

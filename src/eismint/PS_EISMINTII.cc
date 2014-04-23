@@ -22,6 +22,8 @@
 #include "PISMConfig.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 PS_EISMINTII::PS_EISMINTII(IceGrid &g, const PISMConfig &conf, int experiment)
   : PISMSurfaceModel(g, conf), m_experiment(experiment) {
   PetscErrorCode ierr = allocate();
@@ -224,3 +226,5 @@ PetscErrorCode PS_EISMINTII::write_variables(std::set<std::string> vars, const P
 
   return 0;
 }
+
+} // end of namespace pism

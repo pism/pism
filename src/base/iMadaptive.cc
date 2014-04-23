@@ -29,6 +29,8 @@
 #include <sstream>
 #include <algorithm>
 
+namespace pism {
+
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
 Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
@@ -414,3 +416,5 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
 
   return 0;
 }
+
+} // end of namespace pism

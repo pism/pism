@@ -22,6 +22,8 @@
 #include "iceModelVec.hh"
 #include "enthalpyConverter.hh"
 
+namespace pism {
+
 enthSystemCtx::enthSystemCtx(const PISMConfig &config,
                              IceModelVec3 &my_Enth3,
                              double my_dx,  double my_dy,
@@ -483,3 +485,5 @@ PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer) const {
   ierr = viewVectorValues(viewer,&R[0],Mz,info.c_str()); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

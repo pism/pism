@@ -27,6 +27,8 @@
 
 #include "PIO.hh"
 
+namespace pism {
+
 class IceGrid;
 class PISMConfig;
 class NCSpatialVariable;
@@ -62,7 +64,7 @@ class IceModelVec;
   A PISM component needs to implement the following I/O methods:
 
   - add_vars_to_output(), which adds variable names to the list of fields that need
-    to be written.
+  to be written.
   - define_variables(), which defines variables to be written and writes variable metadata.
   - write_variables(), which writes data itself.
   
@@ -80,13 +82,13 @@ class IceModelVec;
   IceModel::set_output_size()); calls add_vars_to_output()
   - Create a NetCDF file
   - Define all the variables in the file (see IceModel::write_variables());
-    calls define_variables()
+  calls define_variables()
   - Write all the variables to the file (same method); calls write_variables().
 
   \subsection pismcomponent_timestep Restricting time-steps
 
   Implement PISMComponent_TS::max_timestep() to affect PISM's adaptive time-stepping mechanism.
- */
+*/
 class PISMComponent {
 public:
   /** Create a PISMComponent instance given a grid and a configuration database. */
@@ -100,7 +102,7 @@ public:
   //! -o_size or -save_size).
   /*!
     Keyword can be one of "small", "medium" or "big".
-   */
+  */
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
@@ -128,7 +130,7 @@ protected:
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in
       `-regrid_vars`.
-   */
+  */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
   virtual PetscErrorCode regrid(std::string module_name, IceModelVec *variable,
                                 RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
@@ -282,5 +284,7 @@ public:
 protected:
   Model *input_model;
 };
+
+} // end of namespace pism
 
 #endif // __PISMComponent_hh

@@ -23,6 +23,8 @@
 #include "pism_options.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PBLingleClark::PBLingleClark(IceGrid &g, const PISMConfig &conf)
   : PISMBedDef(g, conf) {
 
@@ -65,7 +67,7 @@ VecScatterBegin/End() to scatter the natural vector onto process 0.
 PetscErrorCode PBLingleClark::transfer_to_proc0(IceModelVec2S *source, Vec result) {
   PetscErrorCode ierr;
 
-  ierr = source->copy_to(g2);
+  ierr = source->copy_to_vec(g2);
 
   DM da2;
   ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
@@ -91,7 +93,7 @@ PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2S *res
   ierr = DMDANaturalToGlobalBegin(da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr =   DMDANaturalToGlobalEnd(da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
 
-  ierr = result->copy_from(g2); CHKERRQ(ierr);
+  ierr = result->copy_from_vec(g2); CHKERRQ(ierr);
 
   return 0;
 }
@@ -291,3 +293,5 @@ PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
 
   return 0;
 }
+
+} // end of namespace pism

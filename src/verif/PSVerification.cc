@@ -32,6 +32,8 @@
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
 
+namespace pism {
+
 const double PSVerification::ablationRateOutside = 0.02; // m/year
 const double PSVerification::secpera = 3.15569259747e7;
 
@@ -330,3 +332,5 @@ PetscErrorCode PSVerification::update_FG(double time) {
 
   return 0;
 }
+
+} // end of namespace pism

@@ -22,6 +22,8 @@
 #include "PAModifier.hh"
 #include "PGivenClimate.hh"
 
+namespace pism {
+
 class PAGivenClimate : public PGivenClimate<PAModifier,PISMAtmosphereModel>
 {
 public:
@@ -46,5 +48,7 @@ protected:
 private:
   virtual PetscErrorCode allocate_PAGivenClimate();
 };
+
+} // end of namespace pism
 
 #endif /* _PAGIVEN_H_ */

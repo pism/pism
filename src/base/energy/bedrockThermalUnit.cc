@@ -24,6 +24,8 @@
 #include <assert.h>
 #include "PISMConfig.hh"
 
+namespace pism {
+
 bool IceModelVec3BTU::good_init() {
   return ((m_n_levels >= 2) && (Lbz > 0.0) && (v != NULL));
 }
@@ -481,3 +483,5 @@ PetscErrorCode PISMBedThermalUnit::bootstrap() {
   return 0;
 }
 
+
+} // end of namespace pism

@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+namespace pism {
+
 // This is a subset of NetCDF data-types.
 enum PISM_IO_Type {
   PISM_NAT    = 0,              /* NAT = 'Not A Type' (c.f. NaN) */
@@ -182,5 +184,7 @@ protected:
   mutable bool define_mode;
   mutable unsigned int m_xs, m_xm, m_ys, m_ym;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMNCWRAPPER_H_ */

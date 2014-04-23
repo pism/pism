@@ -21,6 +21,8 @@
 #include "PISMTime.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const PISMConfig &conf)
   : PISMBedDef(g, conf) {
   PetscErrorCode ierr;
@@ -99,3 +101,5 @@ PetscErrorCode PBPointwiseIsostasy::update(double my_t, double my_dt) {
 
   return 0;
 }
+
+} // end of namespace pism

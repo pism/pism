@@ -22,6 +22,8 @@
 #include "PISMAtmosphere.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 //! A class containing an incomplete implementation of an atmosphere model
 //! based on a temperature parameterization using mean annual and mean July
 //! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
@@ -47,14 +49,18 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, double *values);
   virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 protected:
-  PISMVars *variables;
-  double snow_temp_july_day;
-  std::string reference, precip_filename;
-  IceModelVec2S air_temp_mean_annual, air_temp_mean_july, precipitation;
-  NCSpatialVariable air_temp_snapshot;
+  PetscErrorCode init_internal(std::string input_filename, bool regrid,
+                               unsigned int start);
+  PISMVars *m_variables;
+  double m_snow_temp_july_day;
+  std::string m_reference, m_precip_filename;
+  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;
+  NCSpatialVariable m_air_temp_snapshot;
   std::vector<double> m_ts_times, m_cosine_cycle;
 private:
   PetscErrorCode allocate_PAYearlyCycle();
 };
+
+} // end of namespace pism
 
 #endif /* _PAYEARLYCYCLE_H_ */

@@ -25,6 +25,8 @@
 #include <map>
 #include "PISMUnits.hh"
 
+namespace pism {
+
 class PISMTime;
 class PISMProf;
 class PISMConfig;
@@ -55,7 +57,7 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
   - rectangular,
   - equally spaced in the horizintal (X and Y) directions,
   - distributed across processors in horizontal dimensions only (every column
-    is stored on one processor only),
+  is stored on one processor only),
   - are periodic in both X and Y directions (in the topological sence).
 
   Each processor "owns" a rectangular patch of xm times ym grid points with
@@ -65,9 +67,9 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
 
   \code
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-    // compute something at i,j
-    }
+  for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  // compute something at i,j
+  }
   }
   \endcode
 
@@ -91,13 +93,13 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
   \code
   int GHOSTS = 1;
   for (int i=grid.xs - GHOSTS; i<grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j=grid.ys - GHOSTS; j<grid.ys+grid.ym + GHOSTS; ++j) {
-    // compute something at i,j
-    }
+  for (int j=grid.ys - GHOSTS; j<grid.ys+grid.ym + GHOSTS; ++j) {
+  // compute something at i,j
+  }
   }
   \endcode
 
- */
+*/
 class IceGrid {
 public:
   IceGrid(MPI_Comm c, const PISMConfig &config);
@@ -129,7 +131,7 @@ public:
 
   const PISMConfig &config;
   MPI_Comm    com;
-  PetscMPIInt rank, size;
+  int rank, size;
   int    xs,               //!< starting x-index of a processor sub-domain
     xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
     ys,                         //!< starting y-index of a processor sub-domain
@@ -214,6 +216,8 @@ private:
   IceGrid(IceGrid const &);
   IceGrid & operator=(IceGrid const &);
 };
+
+} // end of namespace pism
 
 #endif  /* __grid_hh */
 
