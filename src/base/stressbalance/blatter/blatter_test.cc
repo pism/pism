@@ -30,6 +30,8 @@ static char help[] =
 #include "PISMTime.hh"
 #include "POConstant.hh"
 
+using namespace pism;
+
 static PetscErrorCode get_grid_from_file(std::string filename, IceGrid &grid) {
   PetscErrorCode ierr;
   int grid_Mz = grid.Mz;

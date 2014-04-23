@@ -24,6 +24,8 @@
 #include "FE3DTools.h"
 #include "enthalpyConverter.hh"
 
+namespace pism {
+
 /*!
  * FIXMEs:
  *
@@ -499,3 +501,5 @@ PetscErrorCode BlatterStressBalance::write_variables(std::set<std::string> vars,
 
   return 0;
 }
+
+} // end of namespace pism

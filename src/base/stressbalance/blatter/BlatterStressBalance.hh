@@ -24,6 +24,8 @@
 #include "IceGrid.hh"
 #include "IceModelVec3Custom.hh"
 
+namespace pism {
+
 // Tell the linker that these are called from the C code:
 extern "C" {
   void viscosity(void *ctx, double hardness, double gamma,
@@ -143,6 +145,8 @@ protected:
   double min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
   std::string stdout_blatter;
 };
+
+} // end of namespace pism
 
 #endif /* _BLATTERSTRESSBALANCE_H_ */
 
