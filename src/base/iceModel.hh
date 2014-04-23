@@ -384,10 +384,7 @@ protected:
   virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
-  virtual PetscErrorCode volumeArea(
-                                    double& gvolume,double& garea);
-  virtual PetscErrorCode energyStats(
-                                     double iarea,double &gmeltfrac);
+  virtual PetscErrorCode energyStats(double iarea,double &gmeltfrac);
   virtual PetscErrorCode ageStats(double ivol, double &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
@@ -409,8 +406,7 @@ protected:
   virtual PetscErrorCode compute_ice_enthalpy(double &result);
 
   // see iMtemp.cc
-  virtual PetscErrorCode excessToFromBasalMeltLayer(
-                                                    const double rho, const double c, const double L,
+  virtual PetscErrorCode excessToFromBasalMeltLayer(const double rho, const double c, const double L,
                                                     const double z, const double dz,
                                                     double *Texcess, double *bwat);
   virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
