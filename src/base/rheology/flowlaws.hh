@@ -22,6 +22,8 @@
 #include <petscsys.h>
 #include "PISMUnits.hh"
 
+namespace pism {
+
 class IceModelVec2S;
 class IceModelVec3;
 
@@ -31,7 +33,7 @@ class PISMConfig;
 // This uses the definition of squared second invariant from Hutter and several others, namely the output is
 // \f$ D^2 = \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
 static inline double secondInvariant_2D(double u_x, double u_y,
-                                           double v_x, double v_y)
+                                        double v_x, double v_y)
 { return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
 
 // The squared second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
@@ -57,13 +59,13 @@ static inline double secondInvariantDu_2D(const double Du[])
   \note IceFlowLaw derived classes should implement hardness_parameter... in
   terms of softness_parameter... That way in many cases we only need to
   re-implement softness_parameter... to turn one flow law into another.
- */
+*/
 class IceFlowLaw {
 public:
   IceFlowLaw(MPI_Comm c, const char pre[],
              const PISMConfig &config,
              EnthalpyConverter *EC);
- virtual ~IceFlowLaw() {}
+  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
   //! \brief Computes effective viscosity and its derivative with respect to the
@@ -89,9 +91,9 @@ public:
   }
 
   virtual double averaged_hardness(double thickness,
-                                      int kbelowH,
-                                      const double *zlevels,
-                                      const double *enthalpy) const;
+                                   int kbelowH,
+                                   const double *zlevels,
+                                   const double *enthalpy) const;
 
   virtual PetscErrorCode averaged_hardness_vec(IceModelVec2S &thickness,
                                                IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
@@ -103,7 +105,7 @@ public:
   virtual double hardness_parameter(double E, double p) const;
   virtual double softness_parameter(double E, double p) const = 0;
   virtual double flow(double stress, double E,
-                         double pressure, double grainsize) const;
+                      double pressure, double grainsize) const;
 
 protected:
   double rho,          //!< ice density
@@ -136,7 +138,7 @@ PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *);
 /*!
   See [\ref AschwandenBlatter]. The basic references are [\ref Glen] and [\ref
   PatersonBudd] and [\ref LliboutryDuval1985].
- */
+*/
 class GPBLDIce : public IceFlowLaw {
 public:
   GPBLDIce(MPI_Comm c, const char pre[],
@@ -145,7 +147,7 @@ public:
   virtual ~GPBLDIce() {}
 
   virtual double softness_parameter(double enthalpy,
-                                       double pressure) const;
+                                    double pressure) const;
   virtual std::string name() const
   { return "Glen-Paterson-Budd-Lliboutry-Duval"; }
 protected:
@@ -166,7 +168,7 @@ public:
   virtual double softness_parameter(double enthalpy, double pressure) const;
 
   virtual double flow(double stress, double E,
-                         double pressure, double gs) const;
+                      double pressure, double gs) const;
   virtual std::string name() const
   { return "Paterson-Budd"; }
 
@@ -179,7 +181,7 @@ protected:
 
   // special temperature-dependent method
   virtual double flow_from_temp(double stress, double temp,
-                                   double pressure, double gs) const;
+                                double pressure, double gs) const;
 };
 
 //! Isothermal Glen ice allowing extra customization.
@@ -191,11 +193,11 @@ public:
   virtual ~IsothermalGlenIce() {}
 
   virtual double averaged_hardness(double, int,
-                                      const double*, const double*) const
+                                   const double*, const double*) const
   { return hardness_B; }
 
   virtual double flow(double stress, double,
-                         double, double ) const
+                      double, double ) const
   { return softness_A * pow(stress, n-1); }
 
   virtual double softness_parameter(double, double) const
@@ -209,7 +211,7 @@ public:
 
 protected:
   virtual double flow_from_temp(double stress, double,
-                                   double, double ) const
+                                double, double ) const
   { return softness_A * pow(stress,n-1); }
 
 protected:
@@ -259,7 +261,7 @@ protected:
 
   // ignores pressure and uses non-pressure-adjusted temperature
   virtual double flow_from_temp(double stress, double temp,
-                                   double , double ) const
+                                double , double ) const
   { return softness_parameter_from_temp(temp) * pow(stress,n-1); }
 };
 
@@ -288,12 +290,12 @@ struct GKparts {
 
 //! A hybrid of Goldsby-Kohlstedt (2001) ice (constitutive form) and Paterson-Budd (1982)-Glen (viscosity form).
 /*!
-Each IceFlowLaw has both a forward flow law in "constitutive law" form ("flow_from_temp()") and an
-inverted-and-vertically-integrated flow law ("effective_viscosity()").  Only the
-former form of the flow law is known for Goldsby-Kohlstedt.  If one can
-invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
-derived class.
- */
+  Each IceFlowLaw has both a forward flow law in "constitutive law" form ("flow_from_temp()") and an
+  inverted-and-vertically-integrated flow law ("effective_viscosity()").  Only the
+  former form of the flow law is known for Goldsby-Kohlstedt.  If one can
+  invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
+  derived class.
+*/
 class GoldsbyKohlstedtIce : public IceFlowLaw {
 public:
   GoldsbyKohlstedtIce(MPI_Comm c, const char pre[],
@@ -301,15 +303,15 @@ public:
                       EnthalpyConverter *my_EC);
 
   virtual double flow(double stress, double E,
-                         double pressure, double grainsize) const;
+                      double pressure, double grainsize) const;
 
   virtual void effective_viscosity(double hardness, double gamma,
                                    double *nu, double *dnu) const;
 
   virtual double averaged_hardness(double thickness,
-                                      int kbelowH,
-                                      const double *zlevels,
-                                      const double *enthalpy) const;
+                                   int kbelowH,
+                                   const double *zlevels,
+                                   const double *enthalpy) const;
 
   virtual double hardness_parameter(double E, double p) const;
 
@@ -320,26 +322,26 @@ public:
 
 protected:
   virtual double flow_from_temp(double stress, double temp,
-                                   double pressure, double gs) const;
+                                double pressure, double gs) const;
   GKparts flowParts(double stress, double temp, double pressure) const;
 
   double  V_act_vol,  d_grain_size,
-             //--- diffusional flow ---
-             diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta,
-             //--- dislocation creep ---
-             disl_crit_temp, disl_A_cold, disl_A_warm, disl_n, disl_Q_cold, disl_Q_warm,
-             //--- easy slip (basal) ---
-             basal_A, basal_n, basal_Q,
-             //--- grain boundary sliding ---
-             gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold,
-             p_grain_sz_exp, gbs_Q_warm;
+  //--- diffusional flow ---
+    diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta,
+  //--- dislocation creep ---
+    disl_crit_temp, disl_A_cold, disl_A_warm, disl_n, disl_Q_cold, disl_Q_warm,
+  //--- easy slip (basal) ---
+    basal_A, basal_n, basal_Q,
+  //--- grain boundary sliding ---
+    gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold,
+    p_grain_sz_exp, gbs_Q_warm;
 };
 
 //! Derived class of GoldsbyKohlstedtIce for testing purposes only.
 /*!
   GoldsbyKohlstedtIceStripped is a simplification of Goldsby-Kohlstedt. Compare to that
   used in Peltier et al 2000, which is even simpler.
- */
+*/
 class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
 public:
   GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[],
@@ -349,9 +351,11 @@ public:
 
 protected:
   virtual double flow_from_temp(double stress, double temp,
-                                   double pressure, double gs) const;
+                                double pressure, double gs) const;
 
   double d_grain_size_stripped;
 };
+
+} // end of namespace pism
 
 #endif // __flowlaws_hh

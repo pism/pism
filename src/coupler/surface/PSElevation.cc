@@ -22,6 +22,8 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 ///// Elevation-dependent temperature and surface mass balance.
 PSElevation::PSElevation(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf),
@@ -295,3 +297,5 @@ PetscErrorCode PSElevation::write_variables(std::set<std::string> vars, const PI
 
   return 0;
 }
+
+} // end of namespace pism

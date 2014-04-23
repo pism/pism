@@ -25,6 +25,8 @@
 #include "PIO.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 template <class Model, class Input>
 class PGivenClimate : public Model
 {
@@ -99,7 +101,7 @@ protected:
   std::map<std::string, IceModelVec2T*> m_fields;
   std::string filename, option_prefix;
 
-  unsigned int bc_period;       // in years
+  unsigned int bc_period;       // in (integer) years
   double bc_reference_time;  // in seconds
 
   PetscErrorCode process_options()
@@ -107,7 +109,7 @@ protected:
     PetscErrorCode ierr;
     bool bc_file_set, bc_period_set, bc_ref_year_set;
 
-    double bc_period_years = 0,
+    int bc_period_years = 0,
       bc_reference_year = 0;
 
     bc_period = 0;
@@ -118,12 +120,12 @@ protected:
       ierr = PISMOptionsString(option_prefix + "_file",
                                "Specifies a file with boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option_prefix + "_period",
-                             "Specifies the length of the climate data period (in years)",
-                             bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option_prefix + "_reference_year",
-                             "Boundary condition reference year",
-                             bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
+      ierr = PISMOptionsInt(option_prefix + "_period",
+                            "Specifies the length of the climate data period (in years)",
+                            bc_period_years, bc_period_set); CHKERRQ(ierr);
+      ierr = PISMOptionsInt(option_prefix + "_reference_year",
+                            "Boundary condition reference year",
+                            bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -162,7 +164,7 @@ protected:
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
 
     PIO nc(Model::grid.com, "netcdf3", Model::grid.get_unit_system());
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
@@ -224,5 +226,7 @@ protected:
     return 0;
   }
 };
+
+} // end of namespace pism
 
 #endif /* _PGIVENCLIMATE_H_ */

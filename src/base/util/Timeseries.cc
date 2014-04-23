@@ -27,6 +27,8 @@
 #include "PISMTime.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 Timeseries::Timeseries(IceGrid *g, std::string name, std::string dimension_name)
   : m_unit_system(g->get_unit_system()),
     dimension(dimension_name, dimension_name, m_unit_system),
@@ -442,7 +444,7 @@ PetscErrorCode DiagnosticTimeseries::init(std::string filename) {
   ierr = nc.check_if_exists(filename, file_exists); CHKERRQ(ierr);
 
   if (file_exists == true) {
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_dimlen(dimension.get_name(), len); CHKERRQ(ierr);
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
@@ -481,7 +483,7 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   if (time.empty())
     return 0;
 
-  ierr = nc.open(output_filename, PISM_WRITE, true); CHKERRQ(ierr);
+  ierr = nc.open(output_filename, PISM_READWRITE); CHKERRQ(ierr);
   ierr = nc.inq_dimlen(dimension.get_name(), len); CHKERRQ(ierr);
 
   if (len > 0) {
@@ -519,3 +521,5 @@ void DiagnosticTimeseries::reset() {
   v.clear();
 }
 
+
+} // end of namespace pism

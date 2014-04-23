@@ -22,6 +22,8 @@
 #include <string>
 #include <petsc.h>
 
+namespace pism {
+
 //! Virtual base class.  Abstracts a tridiagonal system to solve in a column of ice and/or bedrock.
 /*!
 Because both the age evolution and conservation of energy equations require us to set up
@@ -105,6 +107,8 @@ private:
   bool        indicesValid;
   PetscErrorCode resetColumn();
 };
+
+} // end of namespace pism
 
 #endif  /* __columnSystem_hh */
 

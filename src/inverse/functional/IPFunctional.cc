@@ -18,6 +18,8 @@
 
 #include "IPFunctional.hh"
 
+namespace pism {
+
 PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
   PetscErrorCode ierr;
   IceGrid &grid = *x.get_grid();
@@ -86,3 +88,5 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceM
 }
 
 // PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+
+} // end of namespace pism

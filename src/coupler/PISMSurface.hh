@@ -27,6 +27,8 @@
 
 #include "PISMComponent.hh"
 
+namespace pism {
+
 class PISMAtmosphereModel;
 class IceModelVec2S;
 
@@ -59,6 +61,8 @@ public:
 protected:
   PISMAtmosphereModel *atmosphere;
 };
+
+} // end of namespace pism
 
 #endif  // __PISMSurfaceModel_hh
 

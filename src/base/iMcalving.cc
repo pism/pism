@@ -32,6 +32,8 @@
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
 
+namespace pism {
+
 PetscErrorCode IceModel::do_calving() {
   PetscErrorCode ierr;
   bool compute_cumulative_discharge = discharge_flux_2D_cumulative.was_created();
@@ -163,10 +165,11 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
           delta_Href = 0.0,
           discharge  = 0.0;
 
-        if (use_Href)
+        if (use_Href && mask.next_to_ice(i, j) == false) {
           delta_Href = Href(i,j) - Href_old(i,j);
-        else
+        } else {
           delta_Href = 0.0;
+        }
 
         discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
 
@@ -198,3 +201,5 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
 
   return 0;
 }
+
+} // end of namespace pism

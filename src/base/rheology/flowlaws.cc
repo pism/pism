@@ -24,6 +24,8 @@
 
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
   static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
   double ref = flow_law->flow(s, E, p, gs[0]);
@@ -494,3 +496,5 @@ double GoldsbyKohlstedtIceStripped::flow_from_temp(double stress, double temp, d
 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
+
+} // end of namespace pism

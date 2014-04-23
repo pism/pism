@@ -22,6 +22,8 @@
 #include "PScalarForcing.hh"
 #include "PAModifier.hh"
 
+namespace pism {
+
 class PA_delta_P : public PScalarForcing<PISMAtmosphereModel,PAModifier>
 {
 public:
@@ -48,5 +50,7 @@ protected:
 private:
   PetscErrorCode allocate_PA_delta_P();
 };
+
+} // end of namespace pism
 
 #endif /* _PADPFORCING_H_ */

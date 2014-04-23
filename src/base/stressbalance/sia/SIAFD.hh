@@ -22,8 +22,28 @@
 #include "SSB_Modifier.hh"      // derivesfrom SSB_Modifier
 #include "PISMDiagnostic.hh"    // derives from PISMDiag
 
+namespace pism {
+
 class PISMBedSmoother;
 
+/** Implements the shallow ice approximation stress balance.
+ *
+ * Inputs:
+ *
+ * - ice geometry (thickness, bed elevation, surface elevation, cell
+ *   type mask)
+ * - ice enthalpy
+ * - ice age (could be used to compute the grain size)
+ * - sliding velocity
+ *
+ * Outputs:
+ *
+ * - horizontal velocity (3D fields)
+ * - diffusive ice flux (for use in the geometry update)
+ * - maximum diffusivity (used to determine the maximum allowed time
+ *   step length)
+ * - volumetric strain heating
+ */
 class SIAFD : public SSB_Modifier
 {
   friend class SIAFD_schoofs_theta;
@@ -97,7 +117,7 @@ protected:
   IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
   IceModelVec3 delta[2];            // store delta on the staggered grid
   IceModelVec3 work_3d[2];      // used to store I and strain_heating
-                                // on the staggered grid
+  // on the staggered grid
 
   PISMBedSmoother *bed_smoother;
   const int WIDE_STENCIL;
@@ -114,7 +134,7 @@ protected:
 //! effect of bed roughness on the diffusivity of the SIA.
 /*!
   See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
- */
+*/
 class SIAFD_schoofs_theta : public PISMDiag<SIAFD>
 {
 public:
@@ -125,8 +145,8 @@ public:
 //! \brief Computes the smoothed bed elevation from Schoof's (2003) theory of the
 //! effect of bed roughness on the SIA.
 /*!
-See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
- */
+  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+*/
 class SIAFD_topgsmooth : public PISMDiag<SIAFD>
 {
 public:
@@ -137,8 +157,8 @@ public:
 //! \brief Computes the thickness relative to the smoothed bed elevation in
 //! Schoof's (2003) theory of the effect of bed roughness on the SIA.
 /*!
-See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
- */
+  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+*/
 class SIAFD_thksmooth : public PISMDiag<SIAFD>
 {
 public:
@@ -179,5 +199,7 @@ public:
   SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
+} // end of namespace pism
 
 #endif /* _SIAFD_H_ */

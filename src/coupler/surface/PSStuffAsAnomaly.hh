@@ -23,6 +23,8 @@
 #include "PSModifier.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 //! \brief A surface modifier class applying its input as anomalies.
 class PSStuffAsAnomaly : public PSModifier
 {
@@ -45,5 +47,7 @@ protected:
 private:
   PetscErrorCode allocate_PSStuffAsAnomaly();
 };
+
+} // end of namespace pism
 
 #endif /* _PSSTUFFASANOMALY_H_ */

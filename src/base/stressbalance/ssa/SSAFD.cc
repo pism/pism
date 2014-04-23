@@ -25,8 +25,9 @@
 
 #include <assert.h>
 
-SSA *SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
-{
+namespace pism {
+
+SSA* SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
   return new SSAFD(g,ec,c);
 }
 
@@ -927,7 +928,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     very_verbose = getVerbosityLevel() > 2;
 
   // set the initial guess:
-  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to_vec(SSAX); CHKERRQ(ierr);
 
   stdout_ssa.clear();
 
@@ -989,7 +990,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     // Communicate so that we have stencil width for evaluation of effective
     // viscosity on next "outer" iteration (and geometry etc. if done):
     // Note that copy_from() updates ghosts of m_velocity.
-    ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+    ierr = m_velocity.copy_from_vec(SSAX); CHKERRQ(ierr);
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc == true) {
@@ -1796,3 +1797,5 @@ void SSAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
 
   dict["nuH"] = new SSAFD_nuH(this, grid, *variables);
 }
+
+} // end of namespace pism

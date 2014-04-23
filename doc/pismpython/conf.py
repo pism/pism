@@ -35,7 +35,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.pngmath', 'sphinxcontrib.bibtex'
 # -- Math output --------------------------------------------------------------
 
 # Tell sphinx where to find our preamble file.
-pngmath_latex_preamble = r"""\input @CMAKE_BINARY_DIR@/doc/pismpython/pism-sphinx-macros.tex"""
+pngmath_latex_preamble = r"""\input @CMAKE_CURRENT_BINARY_DIR@/pism-sphinx-macros.tex"""
 
 # Small tweak to clear up png output.
 pngmath_dvipng_args = ['-gamma', '1', '-D', '110', '-bg', 'Transparent']

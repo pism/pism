@@ -30,6 +30,8 @@ static char help[] =
 
 #include "../../verif/tests/exactTestK.h"
 
+using namespace pism;
+
 class BTU_Test : public PISMBedThermalUnit
 {
 public:
@@ -37,6 +39,7 @@ public:
     : PISMBedThermalUnit(g, conf) {}
   virtual ~BTU_Test() {}
 protected:
+  /** Initialize the bedrock temperature field at the beginning of the run. */
   virtual PetscErrorCode bootstrap();
 };
 
@@ -294,7 +297,7 @@ int main(int argc, char *argv[]) {
     PIO pio(grid, grid.config.get_string("output_format"));
 
     std::string time_name = config.get_string("time_dimension_name");
-    ierr = pio.open(outname, PISM_WRITE); CHKERRQ(ierr);
+    ierr = pio.open(outname, PISM_READWRITE_MOVE); CHKERRQ(ierr);
     ierr = pio.def_time(time_name, grid.time->calendar(),
                         grid.time->CF_units_string()); CHKERRQ(ierr);
     ierr = pio.append_time(time_name, grid.time->end()); CHKERRQ(ierr);

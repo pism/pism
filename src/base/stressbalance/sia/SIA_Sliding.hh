@@ -21,6 +21,8 @@
 
 #include "ShallowStressBalance.hh"
 
+namespace pism {
+
 /*!
  * This class implements an SIA sliding law.
  *
@@ -52,12 +54,6 @@ public:
   virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
   { return 0; }
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
-    dict["taud"] = new SSB_taud(this, grid, *variables);
-    dict["taud_mag"] = new SSB_taud_mag(this, grid, *variables);
-  }
-
 protected:
   virtual PetscErrorCode allocate();
 
@@ -68,9 +64,9 @@ protected:
   virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual double basalVelocitySIA(double /*x*/, double /*y*/,
-                                       double H, double T,
-                                       double /*alpha*/, double mu,
-                                       double min_T) const;
+                                  double H, double T,
+                                  double /*alpha*/, double mu,
+                                  double min_T) const;
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *surface, *bed, work_2d;
   IceModelVec3 *enthalpy;
@@ -80,5 +76,7 @@ protected:
   bool verification_mode;
   std::string eisII_experiment;
 };
+
+} // end of namespace pism
 
 #endif /* _SIA_SLIDING_H_ */

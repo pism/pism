@@ -22,10 +22,12 @@
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 //! PISM bed deformation model (base class).
 /*! Unlike other PISMComponent_TS derived classes, the update() method of
   PISMBedDef has side-effects (modifies IceModel data members).
- */
+*/
 class PISMBedDef : public PISMComponent_TS {
 public:
   PISMBedDef(IceGrid &g, const PISMConfig &conf);
@@ -59,5 +61,7 @@ protected:
   PetscErrorCode allocate();
   IceModelVec2S thk_last;       //!< last ice thickness
 };
+
+} // end of namespace pism
 
 #endif  // __PISMBedDef_hh

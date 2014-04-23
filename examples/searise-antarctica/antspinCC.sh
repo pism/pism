@@ -125,7 +125,7 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=200000 
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
-expackage="-extra_times 0:1000:$RUNTIME -extra_vars bmelt,tillwat,csurf,temppabase,diffusivity,hardav"
+expackage="-extra_times 0:1000:$RUNTIME -extra_vars bmelt,tillwat,velsurf_mag,temppabase,diffusivity,hardav"
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -i $INNAME $PIKPHYS_COUPLING  \
@@ -146,7 +146,7 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=100000 
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
-exvars="thk,usurf,cbase,cbar,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav"
+exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav"
 expackage="-extra_times 0:1000:$RUNTIME -extra_vars $exvars"
 
 echo

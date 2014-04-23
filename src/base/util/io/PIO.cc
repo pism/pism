@@ -41,6 +41,8 @@
 #include "PISMNC4_HDF5.hh"
 #endif
 
+namespace pism {
+
 static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
   if (mode == "netcdf3") {
     return new PISMNC3File(com);
@@ -134,7 +136,7 @@ PetscErrorCode PIO::detect_mode(std::string filename) {
 
   PISMNC3File nc3(m_com);
 
-  stat = nc3.open(filename, PISM_NOWRITE);
+  stat = nc3.open(filename, PISM_READONLY);
   if (stat != 0) {
     PetscPrintf(m_com, "PISM ERROR: Can't open '%s'. Exiting...\n", filename.c_str());
     PISMEnd();
@@ -201,12 +203,12 @@ PetscErrorCode PIO::check_if_exists(std::string filename, bool &result) {
 }
 
 
-PetscErrorCode PIO::open(std::string filename, int mode, bool append) {
+PetscErrorCode PIO::open(std::string filename, PISM_IO_Mode mode) {
   PetscErrorCode stat;
 
   // opening for reading
 
-  if (!(mode & PISM_WRITE)) {
+  if (mode == PISM_READONLY) {
     if (nc == NULL && m_mode == "guess_mode") {
       stat = detect_mode(filename); CHKERRQ(stat);
     }
@@ -223,10 +225,15 @@ PetscErrorCode PIO::open(std::string filename, int mode, bool append) {
 
   // opening for writing
 
-  if (append == false) {
+  if (mode == PISM_READWRITE_CLOBBER || mode == PISM_READWRITE_MOVE) {
+
     assert(nc != NULL);
 
-    stat = nc->move_if_exists(filename); CHKERRQ(stat);
+    if (mode == PISM_READWRITE_MOVE) {
+      stat = nc->move_if_exists(filename); CHKERRQ(stat);
+    } else {
+      stat = nc->remove_if_exists(filename); CHKERRQ(stat);
+    }
 
     stat = nc->create(filename);
     if (stat != 0) {
@@ -236,7 +243,7 @@ PetscErrorCode PIO::open(std::string filename, int mode, bool append) {
 
     int old_fill;
     stat = nc->set_fill(PISM_NOFILL, old_fill); CHKERRQ(stat);
-  } else {
+  } else {                      // mode == PISM_READWRITE
     if (nc == NULL && m_mode == "guess_mode") {
       stat = detect_mode(filename); CHKERRQ(stat);
     }
@@ -377,7 +384,6 @@ PetscErrorCode PIO::inq_var(std::string short_name, std::string std_name, bool &
 
   if (exists == false) {
     ierr = nc->inq_varid(short_name, exists); CHKERRQ(ierr);
-
     if (exists == true)
       result = short_name;
     else
@@ -1579,7 +1585,7 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
 
   bool found_by_standard_name;
   ierr = this->inq_var(name, standard_name,
-                    variable_exists, name_found, found_by_standard_name); CHKERRQ(ierr);
+                       variable_exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (!variable_exists) {
     ierr = PetscPrintf(m_com,
@@ -1623,11 +1629,12 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
     input_units(internal_units.get_system());
 
   ierr = this->get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
-  input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
   if (input_units_string.empty() == true) {
     input_has_units = false;
   } else {
+    input_units_string = time->CF_units_to_PISM_units(input_units_string);
+
     if (input_units.parse(input_units_string) != 0) {
       ierr = PetscPrintf(m_com,
                          "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
@@ -1867,3 +1874,5 @@ grid_info::grid_info() {
   z_min = 0;
   z_max = 0;
 }
+
+} // end of namespace pism

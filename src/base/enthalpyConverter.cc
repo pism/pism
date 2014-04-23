@@ -21,6 +21,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 EnthalpyConverter::EnthalpyConverter(const PISMConfig &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
@@ -337,3 +339,5 @@ PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
   return 0;
 }
 
+
+} // end of namespace pism

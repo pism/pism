@@ -35,6 +35,8 @@ static char help[] =
 #include "PIO.hh"
 #include "pism_options.hh"
 
+using namespace pism;
+
 //! \file pismo.cc A regional (outlet glacier) model form of PISM.
 /*! \file pismo.cc 
 The classes in this file modify basic PISM whole ice sheet modeling assumptions.
@@ -94,9 +96,7 @@ PetscErrorCode IceRegionalModel::set_no_model_strip(double strip) {
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
     for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
       for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if (grid.x[i] <= grid.x[0]+strip || grid.x[i] >= grid.x[grid.Mx-1]-strip) {
-          no_model_mask(i, j) = 1;
-        } else if (grid.y[j] <= grid.y[0]+strip || grid.y[j] >= grid.y[grid.My-1]-strip) {
+        if (grid.in_null_strip(i, j, strip) == true) {
           no_model_mask(i, j) = 1;
         } else {
           no_model_mask(i, j) = 0;
@@ -306,7 +306,7 @@ PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
   if (config.get_flag("ssa_dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_var("u_ssa_bc", u_ssa_exists); CHKERRQ(ierr);
     ierr = nc.inq_var("v_ssa_bc", v_ssa_exists); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);

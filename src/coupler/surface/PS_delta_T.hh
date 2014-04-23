@@ -16,13 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSDTFORCING_H_
-#define _PSDTFORCING_H_
+#ifndef _PS_DELTA_T_H_
+#define _PS_DELTA_T_H_
 
 #include "PScalarForcing.hh"
 #include "PISMSurface.hh"
 #include "PSModifier.hh"
 
+namespace pism {
+
+/** @brief Implements the scalar temperature offsets for the ice
+ * surface temperature.
+ *
+ * Other fields are passed through without change.
+ */
 class PS_delta_T : public PScalarForcing<PISMSurfaceModel,PSModifier>
 {
 public:
@@ -33,13 +40,18 @@ public:
 
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+                                          PISM_IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:
-  NCSpatialVariable climatic_mass_balance, ice_surface_temp;
+  NCSpatialVariable climatic_mass_balance, //!< climatic mass balance attributes
+    ice_surface_temp;                      //!< ice surface temperature attributes
 private:
+  //! Allocate internal objects. Called from the constructor.
   PetscErrorCode allocate_PS_delta_T();
 };
 
-#endif /* _PSDTFORCING_H_ */
+} // end of namespace pism
+
+#endif /* _PS_DELTA_T_H_ */

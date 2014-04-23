@@ -24,6 +24,8 @@
 #include <petscsnes.h>
 #include "TerminationReason.hh"
 
+namespace pism {
+
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
   double H,tauc,b,B;
@@ -36,10 +38,10 @@ class SSAFEM;
 
 //! Adaptor for gluing SNESDAFormFunction callbacks to an SSAFEM.
 /* The callbacks from SNES are mediated via SNESDAFormFunction, which has the
- convention that its context argument is a pointer to a struct 
- having a DA as its first entry.  The SSAFEM_SNESCallbackData fulfills 
- this requirement, and allows for passing the callback on to an honest 
- SSAFEM object. */
+   convention that its context argument is a pointer to a struct 
+   having a DA as its first entry.  The SSAFEM_SNESCallbackData fulfills 
+   this requirement, and allows for passing the callback on to an honest 
+   SSAFEM object. */
 struct SSAFEM_SNESCallbackData {
   DM           da;
   SSAFEM      *ssa;
@@ -58,15 +60,15 @@ SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
-Jed's original code is in rev 831: src/base/ssaJed/...
-The SSAFEM duplicates most of the functionality of SSAFD, using the finite element method.
+  Jed's original code is in rev 831: src/base/ssaJed/...
+  The SSAFEM duplicates most of the functionality of SSAFD, using the finite element method.
 */
 class SSAFEM : public SSA
 {
-  friend PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
-  friend PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
-                                      Mat A, Mat J,
-                                      MatStructure *str, SSAFEM_SNESCallbackData *fe);
+  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+                                            Mat A, Mat J,
+                                            MatStructure *str, SSAFEM_SNESCallbackData *fe);
 public:
   SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
 
@@ -82,7 +84,7 @@ protected:
                                              const PISMVector2 *,const double[],
                                              double *,double *,double *,double *);
 
-  void FixDirichletValues(double local_bc_mask[],PISMVector2 **BC_vel,
+  void FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
                           PISMVector2 x[], FEDOFMap &my_dofmap);
 
   virtual PetscErrorCode allocate_fem();
@@ -114,10 +116,13 @@ protected:
   double    m_epsilon_ssa;
 
   FEElementMap element_index;
-  FEQuadrature quadrature;
+  FEQuadrature_Scalar m_quadrature;
+  FEQuadrature_Vector m_quadrature_vector;
   FEDOFMap dofmap;
 };
 
+
+} // end of namespace pism
 
 #endif /* _SSAFEM_H_ */
 

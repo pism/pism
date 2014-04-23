@@ -35,6 +35,8 @@ static char help[] =
 #include "exactTestsIJ.h"
 #include "SSATestCase.hh"
 
+using namespace pism;
+
 class SSATestCaseJ: public SSATestCase
 {
 public:

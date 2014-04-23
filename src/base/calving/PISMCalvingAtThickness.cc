@@ -20,6 +20,8 @@
 #include "PISMCalvingAtThickness.hh"
 #include "Mask.hh"
 
+namespace pism {
+
 PISMCalvingAtThickness::PISMCalvingAtThickness(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
   m_calving_threshold = config.get("thickness_calving_threshold");
@@ -108,3 +110,5 @@ PetscErrorCode PISMCalvingAtThickness::write_variables(std::set<std::string> /*v
   return 0;
 }
 
+
+} // end of namespace pism

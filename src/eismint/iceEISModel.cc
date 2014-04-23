@@ -26,6 +26,8 @@
 #include "POConstant.hh"
 #include "PS_EISMINTII.hh"
 
+namespace pism {
+
 IceEISModel::IceEISModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
   m_experiment = 'A';
@@ -231,3 +233,5 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   return 0;
 }
 
+
+} // end of namespace pism

@@ -23,6 +23,8 @@
 #include "flowlaw_factory.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;
 
@@ -129,3 +131,5 @@ PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
 
   return 0;
 }
+
+} // end of namespace pism

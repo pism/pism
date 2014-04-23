@@ -18,6 +18,8 @@
 
 #include "IPLogRelativeFunctional.hh"
 
+namespace pism {
+
 //! Determine the normalization constant for the functional.
 /*! Sets the normalization constant \f$c_N\f$ so that
 \f[
@@ -33,20 +35,18 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
 
   double scale_sq = scale*scale;
 
-  double **w_a;
   double w = 1.;
 
-  PISMVector2 **u_obs_a;
-  ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
+  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
 
   if(m_weights){
-    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      PISMVector2 &u_obs_ij = u_obs_a[i][j];
+      PISMVector2 &u_obs_ij = m_u_observed(i, j);
       if( m_weights ) {
-        w = w_a[i][j];
+        w = (*m_weights)(i, j);
       }
       double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
       value += log( 1 + w*scale_sq/obsMagSq);
@@ -57,7 +57,7 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
   }
 
   ierr = m_u_observed.end_access(); CHKERRQ(ierr);
-  
+
   ierr = PISMGlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
   return 0;
 }
@@ -68,23 +68,20 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
   // The value of the objective
   double value = 0;
 
-  double **w_a;
   double w = 1;
 
-  PISMVector2 **x_a;
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 **u_obs_a;
-  ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
+  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
   if(m_weights){
-    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      PISMVector2 &x_ij = x_a[i][j];
-      PISMVector2 &u_obs_ij = u_obs_a[i][j];
+      PISMVector2 &x_ij = x(i, j);
+      PISMVector2 &u_obs_ij = m_u_observed(i, j);
       if( m_weights ) {
-        w = w_a[i][j];
+        w = (*m_weights)(i, j);
       }
       double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
       value += log( 1 + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v)/obsMagSq);
@@ -94,9 +91,9 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
   if(m_weights) {
     ierr = m_weights->end_access(); CHKERRQ(ierr);
   }
-  
+
   value /= m_normalization;
-  
+
   ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = x.end_access(); CHKERRQ(ierr);
@@ -109,32 +106,28 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
 
   gradient.set(0);
 
-  double **w_a;
   double w = 1;
 
-  PISMVector2 **x_a;
-  ierr = x.get_array(x_a); CHKERRQ(ierr);
+  ierr = x.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 **gradient_a;
-  ierr = gradient.get_array(gradient_a); CHKERRQ(ierr);
+  ierr = gradient.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 **u_obs_a;
-  ierr = m_u_observed.get_array(u_obs_a); CHKERRQ(ierr);
+  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
   if(m_weights){
-    ierr = m_weights->get_array(w_a); CHKERRQ(ierr);
+    ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      PISMVector2 &x_ij = x_a[i][j];
-      PISMVector2 &u_obs_ij = u_obs_a[i][j];
+      PISMVector2 &x_ij = x(i, j);
+      PISMVector2 &u_obs_ij = m_u_observed(i, j);
       if( m_weights ) {
-        w = w_a[i][j];
+        w = (*m_weights)(i, j);
       }
       double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
       double dJdxsq =  w/( obsMagSq + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v));
 
-      gradient_a[i][j].u = dJdxsq*2*x_ij.u/m_normalization;
-      gradient_a[i][j].v = dJdxsq*2*x_ij.v/m_normalization;
+      gradient(i, j).u = dJdxsq*2*x_ij.u/m_normalization;
+      gradient(i, j).v = dJdxsq*2*x_ij.v/m_normalization;
     }
   }
   ierr = m_u_observed.end_access(); CHKERRQ(ierr);
@@ -147,3 +140,5 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
 
   return 0;
 }
+
+} // end of namespace pism

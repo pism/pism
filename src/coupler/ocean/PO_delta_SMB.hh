@@ -23,6 +23,8 @@
 #include "PISMOcean.hh"
 #include "POModifier.hh"
 
+namespace pism {
+
 //! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
 class PO_delta_SMB : public PScalarForcing<PISMOceanModel,POModifier>
 {
@@ -43,5 +45,7 @@ protected:
 private:
   PetscErrorCode allocate_PO_delta_SMB();
 };
+
+} // end of namespace pism
 
 #endif /* _PODSBMFFORCING_H_ */

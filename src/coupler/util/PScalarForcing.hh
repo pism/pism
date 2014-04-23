@@ -25,6 +25,8 @@
 #include "pism_options.hh"
 #include "PISMTime.hh"
 
+namespace pism {
+
 template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
@@ -92,7 +94,7 @@ protected:
                       offset->short_name.c_str(), filename.c_str());
     CHKERRQ(ierr);
     PIO nc(g.com, "netcdf3", g.get_unit_system());
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     {
       ierr = offset->read(nc, g.time); CHKERRQ(ierr);
     }
@@ -115,5 +117,7 @@ protected:
   double bc_reference_time;  // in seconds
 };
 
+
+} // end of namespace pism
 
 #endif /* _PSCALARFORCING_H_ */

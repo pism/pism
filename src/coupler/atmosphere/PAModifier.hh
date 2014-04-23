@@ -21,6 +21,8 @@
 
 #include "PISMAtmosphere.hh"
 
+namespace pism {
+
 class PAModifier : public Modifier<PISMAtmosphereModel>
 {
 public:
@@ -97,5 +99,7 @@ public:
     return 0;
   }
 };
+
+} // end of namespace pism
 
 #endif /* _PAMODIFIER_H_ */

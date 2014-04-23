@@ -22,7 +22,7 @@
 /*!
  * This function processes coordinate variables and time bounds.
  */
-int copy_coordinate_variable(PISMNC4_Serial &input, std::string var_name, PISMNC4_Serial &output) {
+int copy_coordinate_variable(pism::PISMNC4_Serial &input, std::string var_name, pism::PISMNC4_Serial &output) {
   int stat;
   unsigned int dim1_len = 0, dim2_len = 0;
   std::vector<unsigned int> start, count;
@@ -82,9 +82,9 @@ int copy_coordinate_variable(PISMNC4_Serial &input, std::string var_name, PISMNC
  * maximum buffer size and allocate once, although it is also not clear if this
  * would give any performance benefit.
  */
-int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Serial &output) {
+int copy_spatial_variable(std::string filename, std::string var_name, pism::PISMNC4_Serial &output) {
   std::map<std::string, int> dim_lengths;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0);
+  pism::PISMNC4_Serial input(MPI_COMM_SELF, 0);
   int stat;
   std::vector<std::string> dims;
   std::vector<unsigned int> in_start, out_start, count;
@@ -98,7 +98,7 @@ int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Se
   }
 
   int mpi_size;
-  stat = input.open(patch_filename(filename, 0), PISM_NOWRITE); check(stat);
+  stat = input.open(patch_filename(filename, 0), pism::PISM_READONLY); check(stat);
   stat = get_quilt_size(input, mpi_size); check(stat);
   stat = input.close(); check(stat);
 
@@ -106,7 +106,7 @@ int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Se
     int xs, ys;
     unsigned int xm, ym;
 
-    stat = input.open(patch_filename(filename, r), PISM_NOWRITE); check(stat);
+    stat = input.open(patch_filename(filename, r), pism::PISM_READONLY); check(stat);
 
     stat = patch_geometry(input, xs, ys, xm, ym); check(stat);
 
@@ -155,7 +155,7 @@ int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Se
     if (data == NULL) {
       printf("ERROR: memory allocation failed while processing %s (variable %s)! Ending...\n",
              input.get_filename().c_str(), var_name.c_str());
-      PISMEnd();
+      pism::PISMEnd();
     }
 
     // for each time record...
@@ -184,12 +184,12 @@ int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Se
  * Loops over variables present in an output file. This allows us to process
  * both cases ("-v foo" and without "-v").
  */
-int copy_all_variables(std::string filename, PISMNC4_Serial &output) {
+int copy_all_variables(std::string filename, pism::PISMNC4_Serial &output) {
   int n_vars, stat;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0);
+  pism::PISMNC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dimensions, spatial_vars;
 
-  stat = input.open(patch_filename(filename, 0), PISM_NOWRITE); check(stat);
+  stat = input.open(patch_filename(filename, 0), pism::PISM_READONLY); check(stat);
 
   stat = output.inq_nvars(n_vars); check(stat);
 

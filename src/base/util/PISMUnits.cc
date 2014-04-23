@@ -24,6 +24,8 @@
 
 #include "pism_const.hh"
 
+namespace pism {
+
 class ut_system_deleter {
 public:
   void operator()(ut_system* p) const {
@@ -211,3 +213,5 @@ PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMU
 
   return 0;
 }
+
+} // end of namespace pism

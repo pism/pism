@@ -24,6 +24,8 @@
 #include "PSModifier.hh"
 #include "PISMAtmosphere.hh"
 
+namespace pism {
+
 class PSGivenClimate : public PGivenClimate<PSModifier,PISMSurfaceModel>
 {
 public:
@@ -42,5 +44,7 @@ protected:
 private:
   virtual PetscErrorCode allocate_PSGivenClimate();
 };
+
+} // end of namespace pism
 
 #endif /* _PSGIVEN_H_ */

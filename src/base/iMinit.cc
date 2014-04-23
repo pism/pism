@@ -21,6 +21,7 @@
 
 #include <petscdmda.h>
 #include <assert.h>
+#include <algorithm>
 
 #include "iceModel.hh"
 #include "PIO.hh"
@@ -51,6 +52,8 @@
 #include "PISMEigenCalving.hh"
 #include "PISMFloatKill.hh"
 
+namespace pism {
+
 //! Set default values of grid parameters.
 /*!
   Derived classes (IceCompModel, for example) reimplement this to change the
@@ -80,7 +83,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Determine the grid extent from a bootstrapping file:
   PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
   bool x_dim_exists, y_dim_exists, t_exists;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = nc.inq_dim("x", x_dim_exists); CHKERRQ(ierr);
   ierr = nc.inq_dim("y", y_dim_exists); CHKERRQ(ierr);
@@ -114,6 +117,12 @@ PetscErrorCode IceModel::set_grid_defaults() {
     PetscPrintf(grid.com, "ERROR: no geometry information found in '%s'.\n",
                 filename.c_str());
     PISMEnd();
+  }
+
+  std::string proj4_string;
+  ierr = nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string); CHKERRQ(ierr);
+  if (proj4_string.empty() == false) {
+    global_attributes.set_string("proj4", proj4_string);
   }
 
   bool mapping_exists;
@@ -307,8 +316,14 @@ PetscErrorCode IceModel::grid_setup() {
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.get_att_text("PISM_GLOBAL", "source", source); CHKERRQ(ierr);
+
+    std::string proj4_string;
+    ierr = nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string); CHKERRQ(ierr);
+    if (proj4_string.empty() == false) {
+      global_attributes.set_string("proj4", proj4_string);
+    }
 
     bool mapping_exists;
     ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
@@ -339,7 +354,7 @@ PetscErrorCode IceModel::grid_setup() {
     names.push_back("enthalpy");
     names.push_back("temp");
 
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
     bool var_exists = false;
     for (unsigned int i = 0; i < names.size(); ++i) {
@@ -523,25 +538,10 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    double max_dt = 0;
-    bool restrict = false;
-    ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
+    // update surface and ocean models so that we can get the
+    // temperature at the top of the bedrock
+    ierr = init_step_couplers(); CHKERRQ(ierr);
 
-    if (restrict == false)
-      max_dt = 1.0;
-    else
-      max_dt = PetscMin(1.0, max_dt);
-
-    ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-
-    ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
-
-    if (restrict == false)
-      max_dt = 1.0;
-    else
-      max_dt = PetscMin(1.0, max_dt);
-
-    ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
     ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
     ierr = btu->init(variables); CHKERRQ(ierr);
   }
@@ -603,7 +603,7 @@ PetscErrorCode IceModel::model_state_setup() {
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
     bool run_stats_exists;
 
-    ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_var("run_stats", run_stats_exists); CHKERRQ(ierr);
     if (run_stats_exists) {
       ierr = nc.read_attributes(run_stats.get_name(), run_stats); CHKERRQ(ierr);
@@ -929,6 +929,49 @@ PetscErrorCode IceModel::init_couplers() {
 }
 
 
+//! Some sub-models need fields provided by surface and ocean models
+//! for initialization, so here we call update() to make sure that
+//! surface and ocean models report a decent state
+PetscErrorCode IceModel::init_step_couplers() {
+  PetscErrorCode ierr;
+
+  assert(surface != NULL);
+  assert(ocean != NULL);
+
+  double max_dt = 0.0;
+  bool restrict_dt = false;
+  const double current_time = grid.time->current();
+  std::vector<double> dt_restrictions;
+
+  // Take a one year long step if we can:
+  double one_year_from_now = grid.time->increment_date(current_time, 1.0);
+  dt_restrictions.push_back(one_year_from_now - current_time);
+
+  double apcc_dt = 0.0;
+  ierr = surface->max_timestep(current_time, apcc_dt, restrict_dt); CHKERRQ(ierr);
+  if (restrict_dt)
+    dt_restrictions.push_back(apcc_dt);
+
+  double opcc_dt = 0.0;
+  ierr = ocean->max_timestep(current_time, opcc_dt, restrict_dt); CHKERRQ(ierr);
+  if (restrict_dt)
+    dt_restrictions.push_back(opcc_dt);
+
+  // find the smallest of the max. time-steps reported by boundary models:
+  if (dt_restrictions.empty() == false)
+    max_dt = *std::min_element(dt_restrictions.begin(), dt_restrictions.end());
+
+  // Do not take time-steps shorter than 1 second
+  if (max_dt < 1.0)
+    max_dt = 1.0;
+
+  ierr = surface->update(current_time, max_dt); CHKERRQ(ierr);
+  ierr = ocean->update(current_time, max_dt); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 //! Allocates work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
@@ -961,6 +1004,15 @@ PetscErrorCode IceModel::misc_setup() {
 
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
                          "medium", output_vars); CHKERRQ(ierr);
+
+  // Quietly re-initialize couplers (they might have done one
+  // time-step during initialization)
+  {
+    int user_verbosity = getVerbosityLevel();
+    ierr = setVerbosityLevel(1); CHKERRQ(ierr);
+    ierr = init_couplers(); CHKERRQ(ierr);
+    ierr = setVerbosityLevel(user_verbosity); CHKERRQ(ierr);
+  }
 
   ierr = init_calving(); CHKERRQ(ierr);
   ierr = init_diagnostics(); CHKERRQ(ierr);
@@ -1085,3 +1137,5 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
 
   return 0;
 }
+
+} // end of namespace pism

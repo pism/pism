@@ -23,6 +23,8 @@
 #include "SSAFEM.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 //! Initialize the storage for the various coefficients used as input to the SSA
 //! (ice elevation, thickness, etc.)  
 PetscErrorCode SSATestCase::buildSSACoefficients()
@@ -290,11 +292,16 @@ PetscErrorCode SSATestCase::report_netcdf(std::string testname,
   ierr = PISMOptionsIsSet("-append", "Append the NetCDF error report",
                           append); CHKERRQ(ierr);
 
+  PISM_IO_Mode mode = PISM_READWRITE;
+  if (append == false) {
+    mode = PISM_READWRITE_MOVE;
+  }
+
   global_attributes.set_string("source", std::string("PISM ") + PISM_Revision);
 
   // Find the number of records in this file:
   PIO nc(grid, "netcdf3");      // OK to use NetCDF3.
-  ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
+  ierr = nc.open(filename, mode); CHKERRQ(ierr);
   ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
 
   ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);
@@ -370,7 +377,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
 
   // Write results to an output file:
   PIO pio(grid, grid.config.get_string("output_format"));
-  ierr = pio.open(filename, PISM_WRITE); CHKERRQ(ierr);
+  ierr = pio.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
   ierr = pio.def_time(config.get_string("time_dimension_name"),
                       grid.time->calendar(),
                       grid.time->CF_units_string()); CHKERRQ(ierr);
@@ -417,7 +424,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
 /*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
 half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
 PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx, 
-                                 double Ly, int Mx, int My, Periodicity p)
+				 double Ly, int Mx, int My, Periodicity p)
 {
   PetscErrorCode ierr;
   
@@ -435,3 +442,5 @@ PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx,
   return 0;
 }
 
+
+} // end of namespace pism

@@ -23,19 +23,21 @@
 
 #include "PISMUnits.hh"
 
+namespace pism {
+
 class PISMConfig;
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
-This \e pseudo -plastic type can actually describe anything from linearly 
-viscous till to purely plastic till.
- */
+  This \e pseudo -plastic type can actually describe anything from linearly 
+  viscous till to purely plastic till.
+*/
 class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com);
-  virtual double drag(double tauc, double vx, double vy);
+  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual double drag(double tauc, double vx, double vy) const;
   //! The derivative of drag with respect to \f$ alpha=\frac 1 2 |u|^2 \f$.
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
@@ -48,13 +50,15 @@ class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistancePseudoPlasticLaw(const PISMConfig &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() {}
-  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com);
-  virtual double drag(double tauc, double vx, double vy);
+  virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
+  virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
                                     double *drag, double *ddrag) const;
 protected:
   double pseudo_q, pseudo_u_threshold, sliding_scale_factor_reduces_tauc;
 };
+
+} // end of namespace pism
 
 #endif /* __basal_resistance_hh */
 

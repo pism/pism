@@ -22,6 +22,8 @@
 #include "NCVariable.hh"
 #include <deque>
 
+namespace pism {
+
 class IceGrid;
 
 
@@ -51,8 +53,8 @@ class IceGrid;
   CHKERRQ(ierr);
   
   ierr = verbPrintf(2, grid.com, 
-                    "  reading delta T data from forcing file %s...\n", dT_file);
-                    CHKERRQ(ierr);
+  "  reading delta T data from forcing file %s...\n", dT_file);
+  CHKERRQ(ierr);
          
   ierr = delta_T->read(dT_file); CHKERRQ(ierr);
   \endcode
@@ -68,7 +70,7 @@ class IceGrid;
   \code
   double offset = (*delta_T)[10];
   \endcode
- */
+*/
 class Timeseries {
 public:
   Timeseries(IceGrid * g, std::string name, std::string dimension_name);
@@ -158,7 +160,7 @@ private:
   Note that every time you exceed the `buffer_size` limit, all the entries are
   written to a file by flush() <b> and removed from memory</b>.  One may also
   explicitly call flush().
- */
+*/
 class DiagnosticTimeseries : public Timeseries {
 public:
   DiagnosticTimeseries(IceGrid * g, std::string name, std::string dimension_name);
@@ -179,5 +181,7 @@ protected:
   std::deque<double> t, v;
   double v_previous;
 };
+
+} // end of namespace pism
 
 #endif // __Timeseries_hh

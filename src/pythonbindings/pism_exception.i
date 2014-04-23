@@ -23,10 +23,10 @@
       } 
    }
    catch(Swig::DirectorException &e) {
-     PyErr_SetString( PyExc_RuntimeError,e.getMessage());
+     PyErr_SetString(PyExc_RuntimeError,e.getMessage());
    }
    catch (...) {
-     verbPrintf(1,PETSC_COMM_WORLD,"Caught a C++ exception; PISM memory may be corrupt. Aborting.");
-     PISMEnd();
+     pism::verbPrintf(1,PETSC_COMM_WORLD,"Caught a C++ exception; PISM memory may be corrupt. Aborting.");
+     pism::PISMEnd();
    }
 }

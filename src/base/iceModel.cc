@@ -42,6 +42,8 @@
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 
+namespace pism {
+
 IceModel::IceModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
   : grid(g),
     config(conf),
@@ -113,16 +115,16 @@ void IceModel::reset_counters() {
   dt_TempAge   = 0.0;
   dt_from_cfl  = 0.0;
 
-  // Do not reset the following: they are always re-computed before use (i.e.
-  // aren't a part of the model state). Moreover, keeping these values allows
-  // us to report the max. velocity at the beginning of the run (after the
-  // preliminary step).
-  // gmaxu = gmaxv = gmaxw = 0;
+  gmaxu = 0.0;
+  gmaxv = 0.0;
+  gmaxw = 0.0;
 
   maxdt_temporary = 0.0;
   dt              = 0.0;
   dt_force        = 0.0;
   skipCountDown   = 0;
+
+  timestep_hit_multiples_last_time = grid.time->current();
 
   grounded_basal_ice_flux_cumulative = 0;
   nonneg_rule_flux_cumulative        = 0;
@@ -552,78 +554,79 @@ PetscErrorCode IceModel::createVecs() {
   // take care of 2D cumulative fluxes: we need to allocate special storage if
   // the user asked for climatic_mass_balance_cumulative or some others (below).
 
-  std::string vars;
-  bool extra_vars_set;
-  ierr = PISMOptionsString("-extra_vars", "", vars, extra_vars_set); CHKERRQ(ierr);
+  std::string extra_vars_argument;
+  bool extra_vars_set = false;
+  ierr = PISMOptionsString("-extra_vars", "", extra_vars_argument, extra_vars_set); CHKERRQ(ierr);
+  std::set<std::string> ex_vars;
   if (extra_vars_set) {
-    std::istringstream arg(vars);
+    std::istringstream arg(extra_vars_argument);
     std::string var_name;
-    std::set<std::string> ex_vars;
 
-    while (getline(arg, var_name, ','))
+    while (getline(arg, var_name, ',')) {
       ex_vars.insert(var_name);
-
-    if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
-      ierr = climatic_mass_balance_cumulative.create(grid,
-                                                     "climatic_mass_balance_cumulative",
-                                                     WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
-                                                        "cumulative surface mass balance",
-                                                        "kg m-2", ""); CHKERRQ(ierr);
     }
+  }
 
-    std::string o_size = get_output_size("-o_size");
+  if (set_contains(ex_vars, "climatic_mass_balance_cumulative")) {
+    ierr = climatic_mass_balance_cumulative.create(grid,
+                                                   "climatic_mass_balance_cumulative",
+                                                   WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = climatic_mass_balance_cumulative.set_attrs("diagnostic",
+                                                      "cumulative surface mass balance",
+                                                      "kg m-2", ""); CHKERRQ(ierr);
+  }
 
-    if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
-      ierr = flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = flux_divergence.set_attrs("diagnostic",
-                                       "flux divergence",
-                                       "m s-1", ""); CHKERRQ(ierr);
-      ierr = flux_divergence.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-      flux_divergence.write_in_glaciological_units = true;
-    }
+  std::string o_size = get_output_size("-o_size");
 
-    if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
-      ierr = grounded_basal_flux_2D_cumulative.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                         "cumulative basal flux into the ice "
-                                                         "in grounded areas (positive means ice gain)",
-                                                         "kg m-2", ""); CHKERRQ(ierr);
-      grounded_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "flux_divergence") || o_size == "big") {
+    ierr = flux_divergence.create(grid, "flux_divergence", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = flux_divergence.set_attrs("diagnostic",
+                                     "flux divergence",
+                                     "m s-1", ""); CHKERRQ(ierr);
+    ierr = flux_divergence.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    flux_divergence.write_in_glaciological_units = true;
+  }
 
-    if (set_contains(ex_vars, "floating_basal_flux_cumulative")) {
-      ierr = floating_basal_flux_2D_cumulative.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
-                                                         "cumulative basal flux into the ice "
-                                                         "in floating areas (positive means ice gain)",
-                                                         "kg m-2", ""); CHKERRQ(ierr);
-      floating_basal_flux_2D_cumulative.set_time_independent(false);
-      ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "grounded_basal_flux_cumulative")) {
+    ierr = grounded_basal_flux_2D_cumulative.create(grid, "grounded_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = grounded_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                       "cumulative basal flux into the ice "
+                                                       "in grounded areas (positive means ice gain)",
+                                                       "kg m-2", ""); CHKERRQ(ierr);
+    grounded_basal_flux_2D_cumulative.set_time_independent(false);
+    ierr = grounded_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    grounded_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+  }
 
-    if (set_contains(ex_vars, "nonneg_flux_cumulative")) {
-      ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
-                                                 "cumulative nonnegative rule flux (positive means ice gain)",
-                                                 "kg m-2", ""); CHKERRQ(ierr);
-      nonneg_flux_2D_cumulative.set_time_independent(false);
-      ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "floating_basal_flux_cumulative")) {
+    ierr = floating_basal_flux_2D_cumulative.create(grid, "floating_basal_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = floating_basal_flux_2D_cumulative.set_attrs("diagnostic",
+                                                       "cumulative basal flux into the ice "
+                                                       "in floating areas (positive means ice gain)",
+                                                       "kg m-2", ""); CHKERRQ(ierr);
+    floating_basal_flux_2D_cumulative.set_time_independent(false);
+    ierr = floating_basal_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    floating_basal_flux_2D_cumulative.write_in_glaciological_units = true;
+  }
 
-    if (set_contains(ex_vars, "discharge_flux_cumulative")) {
-      ierr = discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
-      ierr = discharge_flux_2D_cumulative.set_attrs("diagnostic",
-                                                    "cumulative discharge (calving) flux (positive means ice loss)",
-                                                    "kg m-2", ""); CHKERRQ(ierr);
-      discharge_flux_2D_cumulative.set_time_independent(false);
-      ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
-      discharge_flux_2D_cumulative.write_in_glaciological_units = true;
-    }
+  if (set_contains(ex_vars, "nonneg_flux_cumulative")) {
+    ierr = nonneg_flux_2D_cumulative.create(grid, "nonneg_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = nonneg_flux_2D_cumulative.set_attrs("diagnostic",
+                                               "cumulative nonnegative rule flux (positive means ice gain)",
+                                               "kg m-2", ""); CHKERRQ(ierr);
+    nonneg_flux_2D_cumulative.set_time_independent(false);
+    ierr = nonneg_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    nonneg_flux_2D_cumulative.write_in_glaciological_units = true;
+  }
+
+  if (set_contains(ex_vars, "discharge_flux_cumulative")) {
+    ierr = discharge_flux_2D_cumulative.create(grid, "discharge_flux_cumulative", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    ierr = discharge_flux_2D_cumulative.set_attrs("diagnostic",
+                                                  "cumulative discharge (calving) flux (positive means ice loss)",
+                                                  "kg m-2", ""); CHKERRQ(ierr);
+    discharge_flux_2D_cumulative.set_time_independent(false);
+    ierr = discharge_flux_2D_cumulative.set_glaciological_units("Gt m-2"); CHKERRQ(ierr);
+    discharge_flux_2D_cumulative.write_in_glaciological_units = true;
   }
 
   return 0;
@@ -646,50 +649,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li call additionalAtStartTimestep() to let derived classes do more
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
-
-  //! \li determine the maximum time-step boundary models can take
-
-  // FIXME: we should probably create a std::vector<PISMComponent_TS*>
-  // (or similar) and iterate over that instead.
-  {
-    bool restrict_dt = false;
-    double current_time = grid.time->current();
-    std::vector<double> dt_restrictions;
-    if (maxdt_temporary > 0)
-      dt_restrictions.push_back(maxdt_temporary);
-
-    double apcc_dt = 0.0;
-    ierr = surface->max_timestep(current_time, apcc_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(apcc_dt);
-
-    double opcc_dt = 0.0;
-    ierr = ocean->max_timestep(current_time, opcc_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(opcc_dt);
-
-    double hydro_dt = 0.0;
-    ierr = subglacial_hydrology->max_timestep(current_time, hydro_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(hydro_dt);
-
-    //! \li apply the time-step restriction from the -ts_{times,file,vars} mechanism
-    double ts_dt = 0.0;
-    ierr = ts_max_timestep(current_time, ts_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(ts_dt);
-
-    //! \li apply the time-step restriction from the -extra_{times,file,vars}
-    //! mechanism
-    double extras_dt = 0.0;
-    ierr = extras_max_timestep(current_time, extras_dt, restrict_dt); CHKERRQ(ierr);
-    if (restrict_dt)
-      dt_restrictions.push_back(extras_dt);
-
-    // find the smallest of the max. time-steps reported by boundary models:
-    if (dt_restrictions.empty() == false)
-      maxdt_temporary = *std::min_element(dt_restrictions.begin(), dt_restrictions.end());
-  }
 
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
@@ -751,17 +710,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   stdout_flags += (updateAtDepth ? "v" : "V");
 
-  // communication here for global max; sets CFLmaxdt2D
-  ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);
-
-  if (updateAtDepth) {
-    // communication here for global max; sets CFLmaxdt
-    ierr = computeMax3DVelocities(); CHKERRQ(ierr);
-  }
-
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
-  ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
+  ierr = max_timestep(dt, skipCountDown); CHKERRQ(ierr);
 
   //! \li Update surface and ocean models.
   ierr = surface->update(grid.time->current(), dt); CHKERRQ(ierr);
@@ -858,8 +809,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   // end the flag line
-  char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);
-  stdout_flags += tempstr;
+  stdout_flags += " " + adaptReasonFlag;
 
 #if (PISM_DEBUG==1)
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
@@ -939,7 +889,7 @@ PetscErrorCode IceModel::run() {
     bool updateAtDepth = skipCountDown == 0;
     bool tempAgeStep = updateAtDepth && (do_energy || do_age);
 
-    const bool show_step = tempAgeStep || adaptReasonFlag == 'e';
+    const bool show_step = tempAgeStep || adaptReasonFlag == "end of the run";
     ierr = summary(show_step); CHKERRQ(ierr);
 
     // writing these fields here ensures that we do it after the last time-step

@@ -20,6 +20,14 @@
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
 
+namespace pism {
+
+PISMNullTransportHydrology::PISMNullTransportHydrology(IceGrid &g, const PISMConfig &conf)
+  : PISMHydrology(g, conf) {
+}
+
+PISMNullTransportHydrology::~PISMNullTransportHydrology() {
+}
 
 PetscErrorCode PISMNullTransportHydrology::init(PISMVars &vars) {
   PetscErrorCode ierr;
@@ -98,3 +106,5 @@ PetscErrorCode PISMNullTransportHydrology::update(double icet, double icedt) {
   return 0;
 }
 
+
+} // end of namespace pism

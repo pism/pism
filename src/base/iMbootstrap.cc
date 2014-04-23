@@ -28,6 +28,8 @@
 #include <cmath>                // for erf() in method 1 in putTempAtDepth()
 #include <assert.h>
 
+namespace pism {
+
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
 This procedure is called by the base class when option `-boot_file` is used.
@@ -51,35 +53,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
 
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
-  assert(surface != NULL);
-
-  {
-    double max_dt = 0;
-    bool restrict = false;
-    ierr = surface->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
-
-    if (restrict == true) {
-      max_dt = PetscMin(1.0, max_dt);
-    } else {
-      max_dt = grid.convert(1.0, "year", "seconds");
-    }
-    
-    ierr = surface->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  }
-
-  assert(ocean != NULL);
-
-  {
-    double max_dt = 0;
-    bool restrict = false;
-    // FIXME: this will break if an ocean model requires contiguous update intervals
-    ierr = ocean->max_timestep(grid.time->start(), max_dt, restrict); CHKERRQ(ierr);
-
-    if (restrict == false)
-      max_dt = grid.convert(1, "year", "seconds");
-
-    ierr = ocean->update(grid.time->start(), max_dt); CHKERRQ(ierr);
-  }
+  ierr = init_step_couplers(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
@@ -98,7 +72,7 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   PetscErrorCode ierr;
 
   PIO nc(grid, "guess_mode");
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
                     "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
@@ -155,11 +129,25 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
     vLatitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  ierr = ice_thickness.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
   ierr = bed_topography.regrid(filename, OPTIONAL, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
   ierr = basal_melt_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
   ierr = geothermal_flux.regrid(filename, OPTIONAL, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
   ierr = bed_uplift_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+
+  ierr = ice_thickness.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  // check the range of the ice thickness
+  {
+    double thk_min = 0.0, thk_max = 0.0;
+    ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
+
+    if (thk_max >= grid.Lz + 1e-6) {
+      PetscPrintf(grid.com,
+                  "PISM ERROR: Maximum ice thickness (%f meters)\n"
+                  "            exceeds the height of the computational domain (%f meters).\n"
+                  "            Stopping...\n", thk_max, grid.Lz);
+      PISMEnd();
+    }
+  }
 
   if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled
@@ -400,3 +388,5 @@ PetscErrorCode IceModel::putTempAtDepth() {
   return 0;
 }
 
+
+} // end of namespace pism

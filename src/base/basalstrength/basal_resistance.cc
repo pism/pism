@@ -21,6 +21,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 /* Purely plastic */
 
 IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const PISMConfig &config)
@@ -28,7 +30,7 @@ IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const PISMConfig &con
   plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
 }
 
-PetscErrorCode IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) {
+PetscErrorCode IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbthresh, com, 
                     "Using purely plastic till with eps = %10.5e m/year.\n",
@@ -39,7 +41,7 @@ PetscErrorCode IceBasalResistancePlasticLaw::print_info(int verbthresh, MPI_Comm
 
 
 //! Compute the drag coefficient for the basal shear stress.
-double IceBasalResistancePlasticLaw::drag(double tauc, double vx, double vy) {
+double IceBasalResistancePlasticLaw::drag(double tauc, double vx, double vy) const {
   const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
   return tauc / sqrt(magreg2);
@@ -66,7 +68,7 @@ IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const PIS
   sliding_scale_factor_reduces_tauc = config.get("sliding_scale_factor_reduces_tauc");
 }
 
-PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) {
+PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MPI_Comm com) const {
   PetscErrorCode ierr;
 
   if (pseudo_q == 1.0) {
@@ -139,7 +141,7 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MP
   entirely held by the membrane stresses. (There is also no singular
   mathematical operation as  @f$ A^q = A^0 = 1 @f$ .)
 */
-double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double vy) {
+double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double vy) const {
   const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
   if (sliding_scale_factor_reduces_tauc > 0.0) {
@@ -168,3 +170,5 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
     *dd = (pseudo_q - 1) * (*d) / magreg2;
 
 }
+
+} // end of namespace pism

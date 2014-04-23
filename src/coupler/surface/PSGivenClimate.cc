@@ -19,6 +19,8 @@
 #include "PSGivenClimate.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 PSGivenClimate::PSGivenClimate(IceGrid &g, const PISMConfig &conf)
   : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, NULL)
 {
@@ -107,3 +109,5 @@ PetscErrorCode PSGivenClimate::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr = ice_surface_temp->copy_to(result); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

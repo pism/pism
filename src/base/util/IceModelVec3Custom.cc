@@ -20,6 +20,8 @@
 #include "IceModelVec3Custom.hh"
 #include <assert.h>
 
+namespace pism {
+
 IceModelVec3Custom::IceModelVec3Custom()
 {
   // empty
@@ -70,9 +72,17 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
 
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();
   while (j != z_attrs.end()) {
-    m_metadata[0].get_z().set_string(j->first, j->second);
+    if (j->first == "units") {
+      m_metadata[0].get_z().set_units(j->second);
+    } else if (j->first == "glaciological_units") {
+      m_metadata[0].get_z().set_glaciological_units(j->second);
+    } else {
+      m_metadata[0].get_z().set_string(j->first, j->second);
+    }
     ++j;
   }
 
   return 0;
 }
+
+} // end of namespace pism

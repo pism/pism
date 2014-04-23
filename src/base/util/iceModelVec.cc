@@ -25,7 +25,11 @@
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
 #include "PISMConfig.hh"
+#include "iceModelVec_helpers.hh"
+
 #include <assert.h>
+
+namespace pism {
 
 IceModelVec::IceModelVec() {
   access_counter = 0;
@@ -267,7 +271,7 @@ PetscErrorCode IceModelVec::scale(double alpha) {
 /*! This is potentially dangerous: make sure that `destination` has the same
     dimensions as the current IceModelVec.
  */
-PetscErrorCode  IceModelVec::copy_to(Vec destination) {
+PetscErrorCode  IceModelVec::copy_to_vec(Vec destination) {
   PetscErrorCode ierr;
   assert(v != NULL);
 
@@ -282,7 +286,7 @@ PetscErrorCode  IceModelVec::copy_to(Vec destination) {
 
 //! \brief Copies data from a Vec `source` to this IceModelVec. Updates ghost
 //! points if necessary.
-PetscErrorCode IceModelVec::copy_from(Vec source) {
+PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
   PetscErrorCode ierr;
   assert(v != NULL);
 
@@ -309,11 +313,7 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
 //! Result: v <- source.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   PetscErrorCode ierr;
-  assert(v != NULL && source.v != NULL);
-
-  ierr = checkCompatibility("copy_from", source); CHKERRQ(ierr);
-
-  ierr = VecCopy(source.v, v); CHKERRQ(ierr);
+  ierr = source.copy_to(*this); CHKERRQ(ierr);
   return 0;
 }
 
@@ -418,8 +418,8 @@ PetscErrorCode IceModelVec::set_attrs(std::string my_pism_intent,
 //! Gets an IceModelVec from a file `nc`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
-PetscErrorCode IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
-                                   double default_value) {
+PetscErrorCode IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
+                                        double default_value) {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -447,7 +447,7 @@ PetscErrorCode IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
 }
 
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
-PetscErrorCode IceModelVec::read(const PIO &nc, const unsigned int time) {
+PetscErrorCode IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -493,7 +493,7 @@ PetscErrorCode IceModelVec::read_attributes(std::string filename, int N) {
   PIO nc(*grid, "netcdf3");     // OK to use netcdf3
   PetscErrorCode ierr;
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = nc.read_attributes(metadata(N).get_name(),
                             metadata(N)); CHKERRQ(ierr);
@@ -511,7 +511,7 @@ NCSpatialVariable& IceModelVec::metadata(unsigned int N) {
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-PetscErrorCode IceModelVec::write(const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec::write_impl(const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -542,8 +542,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
   PetscErrorCode ierr;
   PIO nc(*grid, grid->config.get_string("output_format"));
 
-  // append = false, check_dimensions = true
-  ierr = nc.open(filename, PISM_WRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READWRITE_CLOBBER); CHKERRQ(ierr);
   ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
                      grid->time->calendar(),
                      grid->time->units_string()); CHKERRQ(ierr);
@@ -719,7 +718,7 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
  * "scatter" is false if all ghosts can be updated locally.
  */
 void compute_params(IceModelVec* const x, IceModelVec* const y,
-                    IceModelVec* const z, int &ghosts, bool &scatter) {
+		    IceModelVec* const z, int &ghosts, bool &scatter) {
 
   // We have 2^3=8 cases here (x,y,z having or not having ghosts).
   if (z->has_ghosts() == false) {
@@ -812,7 +811,8 @@ PetscErrorCode IceModelVec::write(std::string filename, PISM_IO_Type nctype) {
 
   PIO nc(*grid, grid->config.get_string("output_format"));
 
-  ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
+  // We expect the file to be present and ready to write into.
+  ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
 
   ierr = this->write(nc, nctype); CHKERRQ(ierr);
 
@@ -826,7 +826,7 @@ PetscErrorCode IceModelVec::read(std::string filename, unsigned int time) {
 
   PIO nc(*grid, "guess_mode");
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = this->read(nc, time); CHKERRQ(ierr);
 
@@ -841,7 +841,7 @@ PetscErrorCode IceModelVec::regrid(std::string filename, RegriddingFlag flag,
 
   PIO nc(*grid, "guess_mode");
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
 
   ierr = this->regrid(nc, flag, default_value); CHKERRQ(ierr);
 
@@ -849,3 +849,24 @@ PetscErrorCode IceModelVec::regrid(std::string filename, RegriddingFlag flag,
 
   return 0;
 }
+
+PetscErrorCode IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
+                                   double default_value) {
+  PetscErrorCode ierr;
+  ierr = this->regrid_impl(nc, flag, default_value); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec::read(const PIO &nc, const unsigned int time) {
+  PetscErrorCode ierr;
+  ierr = this->read_impl(nc, time); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec::write(const PIO &nc, PISM_IO_Type nctype) {
+  PetscErrorCode ierr;
+  ierr = write_impl(nc, nctype); CHKERRQ(ierr);
+  return 0;
+}
+
+} // end of namespace pism

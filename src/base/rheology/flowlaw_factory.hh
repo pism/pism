@@ -23,6 +23,8 @@
 #include <map>
 #include <string>
 
+namespace pism {
+
 #define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
 #define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
@@ -56,5 +58,7 @@ private:
   EnthalpyConverter *EC;
 };
 
+
+} // end of namespace pism
 
 #endif  // __flowlaw_factory

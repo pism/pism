@@ -21,6 +21,8 @@
 #include "Mask.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 PISMFloatKill::PISMFloatKill(IceGrid &g, const PISMConfig &conf)
   : PISMComponent(g, conf) {
   // empty
@@ -84,3 +86,5 @@ PetscErrorCode PISMFloatKill::write_variables(std::set<std::string> /*vars*/, co
   // empty
   return 0;
 }
+
+} // end of namespace pism

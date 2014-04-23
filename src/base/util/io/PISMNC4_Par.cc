@@ -24,14 +24,25 @@ extern "C" {
 #include <netcdf.h>
 }
 
-int PISMNC4_Par::open(std::string fname, int mode) {
+namespace pism {
+
+int PISMNC4_Par::integer_open_mode(PISM_IO_Mode input) const {
+  if (input == PISM_READONLY) {
+    return NC_NOWRITE;
+  } else {
+    return NC_WRITE;
+  }
+}
+
+int PISMNC4_Par::open(std::string fname, PISM_IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
   m_filename = fname;
 
+  int nc_mode = integer_open_mode(mode);
   stat = nc_open_par(m_filename.c_str(),
-                     mode | NC_MPIIO,
+                     nc_mode | NC_MPIIO,
                      com, info, &ncid);
 
   define_mode = false;
@@ -72,3 +83,5 @@ int PISMNC4_Par::set_access_mode(int varid, bool mapped) const {
 }
 
 
+
+} // end of namespace pism

@@ -149,10 +149,6 @@ else()
   add_subdirectory (doc EXCLUDE_FROM_ALL)
 endif()
 
-add_subdirectory (doc/browser EXCLUDE_FROM_ALL)
-
-add_subdirectory (doc/pismpython EXCLUDE_FROM_ALL)
-
 # PISM regression testing
 ENABLE_TESTING()
 include(CTest)

@@ -23,18 +23,20 @@
 #include "PISMAtmosphere.hh"
 #include "NCVariable.hh"
 
+namespace pism {
+
 //! \brief A class implementing a primitive surface model.
 /*! 
-This is an "invisible" surface processes model which "passes through"
-information from the atmosphere above directly to the ice below the surface
-layers.  It implements two modeling choices:
+  This is an "invisible" surface processes model which "passes through"
+  information from the atmosphere above directly to the ice below the surface
+  layers.  It implements two modeling choices:
   \li accumulation which is obtained from an atmosphere model is interpreted
-      as surface mass flux;
+  as surface mass flux;
   \li mean-annual near-surface air temperature is interpreted as instantaneous
-      temperature of the ice at the ice surface.
+  temperature of the ice at the ice surface.
 
-The second choice means that the upper boundary condition of the conservation of
-energy scheme for the ice fluid is exactly the 2m air temperature.
+  The second choice means that the upper boundary condition of the conservation of
+  energy scheme for the ice fluid is exactly the 2m air temperature.
 */
 class PSSimple : public PISMSurfaceModel {
 public:
@@ -53,5 +55,7 @@ protected:
 private:
   PetscErrorCode allocate_PSSimple();
 };
+
+} // end of namespace pism
 
 #endif /* _PSSIMPLE_H_ */

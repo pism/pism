@@ -28,17 +28,17 @@ void check(int return_code) {
 
 //! \brief Computes the file name corresponding to a patch written by mpi_rank.
 std::string patch_filename(std::string input, int mpi_rank) {
-  char tmp[TEMPORARY_STRING_LENGTH];
+  char tmp[pism::TEMPORARY_STRING_LENGTH];
 
-  snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
+  snprintf(tmp, pism::TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
 
   std::string::size_type n = input.find("RANK");
   if (n != std::string::npos) {
-    snprintf(tmp, TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
+    snprintf(tmp, pism::TEMPORARY_STRING_LENGTH, "%04d", mpi_rank);
     input.replace(n, 4, tmp);
   } else {
-    snprintf(tmp, TEMPORARY_STRING_LENGTH, "-rank%04d", mpi_rank);
-    input = pism_filename_add_suffix(input, tmp, "");
+    snprintf(tmp, pism::TEMPORARY_STRING_LENGTH, "-rank%04d", mpi_rank);
+    input = pism::pism_filename_add_suffix(input, tmp, "");
   }
 
   return input;
@@ -50,21 +50,21 @@ std::string output_filename(std::string input, std::string var_name) {
   if (n != std::string::npos) {
     input.replace(n, 4, var_name);
   } else {
-    input = pism_filename_add_suffix(input, std::string("-") + var_name, "");
+    input = pism::pism_filename_add_suffix(input, std::string("-") + var_name, "");
   }
 
   return input;
 }
 
 //! \brief Gets the total number of patches.
-int get_quilt_size(PISMNC4_Serial &input, int &mpi_size) {
+int get_quilt_size(pism::PISMNC4_Serial &input, int &mpi_size) {
   int stat;
 
   std::vector<double> tmp;
   stat = input.get_att_double("x_patch", "mpi_size", tmp);
   if (stat != 0 || tmp.size() != 1) {
     printf("ERROR: x_patch:mpi_size does not exist or has the wrong length.\n");
-    PISMEnd();
+    pism::PISMEnd();
   }
   mpi_size = static_cast<int>(tmp[0]);
 
@@ -74,13 +74,13 @@ int get_quilt_size(PISMNC4_Serial &input, int &mpi_size) {
 //! \brief Checks if all input files are present. (We do this before creating
 //! the output file to make sure we don't end up bailing in the middle of it.)
 int check_input_files(std::string filename) {
-  PISMNC4_Serial nc(MPI_COMM_SELF, 0);
+  pism::PISMNC4_Serial nc(MPI_COMM_SELF, 0);
   int stat;
 
-  stat = nc.open(patch_filename(filename, 0), PISM_NOWRITE);
+  stat = nc.open(patch_filename(filename, 0), pism::PISM_READONLY);
   if (stat != 0) {
     printf("ERROR: Cannot open %s!\n", patch_filename(filename, 0).c_str());
-    PISMEnd();
+    pism::PISMEnd();
   }
 
   int mpi_size;
@@ -89,11 +89,11 @@ int check_input_files(std::string filename) {
   nc.close();
 
   for (int j = 1; j < mpi_size; ++j) {
-    stat = nc.open(patch_filename(filename, j), PISM_NOWRITE);
+    stat = nc.open(patch_filename(filename, j), pism::PISM_READONLY);
 
     if (stat != 0) {
       printf("ERROR: Cannot open %s!\n", patch_filename(filename, j).c_str());
-      PISMEnd();
+      pism::PISMEnd();
     }
 
     nc.close();
@@ -104,7 +104,7 @@ int check_input_files(std::string filename) {
 
 //! \brief Reads the size of the local patch and its location within the
 //! dataset from an input file.
-int patch_geometry(PISMNC4_Serial &input, int &xs, int &ys,
+int patch_geometry(pism::PISMNC4_Serial &input, int &xs, int &ys,
                    unsigned int &xm, unsigned int &ym) {
   int stat;
   std::vector<double> tmp;
@@ -112,14 +112,14 @@ int patch_geometry(PISMNC4_Serial &input, int &xs, int &ys,
   stat = input.get_att_double("x_patch", "patch_offset", tmp);
   if (stat != 0 || tmp.size() != 1) {
     printf("ERROR: x_patch:patch_offset does not exist or has the wrong length.\n");
-    PISMEnd();
+    pism::PISMEnd();
   }
   xs = (int)tmp[0];
 
   stat = input.get_att_double("y_patch", "patch_offset", tmp);
   if (stat != 0 || tmp.size() != 1) {
     printf("ERROR: y_patch:patch_offset does not exist or has the wrong length.\n");
-    PISMEnd();
+    pism::PISMEnd();
   }
   ys = (int)tmp[0];
 

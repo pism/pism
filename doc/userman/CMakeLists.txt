@@ -32,4 +32,4 @@ foreach (format jpg png pdf)
 endforeach()
 set (figures ${jpg} ${png} ${pdf})
 
-pism_latex_document(manual "${latex_sources}" "${figures}")
+pism_latex_document(manual "${latex_sources}" "${figures}" "YES")

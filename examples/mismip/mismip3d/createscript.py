@@ -97,7 +97,7 @@ else:
     print 'duration=%s' % args.duration
 
 print ''
-print 'listexvar="thk,topg,cbar,cflx,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,tauc,deviatoric_stresses,climatic_mass_balance$gl_mask"'
+print 'listexvar="thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase,velsurf,velbar,wvelbase,wvelsurf,tauc,deviatoric_stresses,climatic_mass_balance$gl_mask"'
 if args.e == 'Stnd':
     print 'extrastuff="-extra_times 0:50:$duration -extra_vars $listexvar"'
 else:

@@ -19,6 +19,8 @@
 #include "PSAnomaly.hh"
 #include "IceGrid.hh"
 
+namespace pism {
+
 PSAnomaly::PSAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
   : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in),
     climatic_mass_balance(g.get_unit_system()),
@@ -184,3 +186,5 @@ PetscErrorCode PSAnomaly::write_variables(std::set<std::string> vars, const PIO 
 
   return 0;
 }
+
+} // end of namespace pism

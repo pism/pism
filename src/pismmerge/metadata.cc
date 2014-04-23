@@ -1,4 +1,4 @@
-// Copyright (C) 2013 PISM Authors
+// Copyright (C) 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
  * Ignores dimensions that already exist in the output file or don't exist in
  * the input file.
  */
-int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string dim_name) {
+int define_dimension(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string dim_name) {
   int stat;
   bool exists;
 
@@ -39,7 +39,7 @@ int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string 
     return 0;
 
   if (dim_name == "time") {
-    stat = output.def_dim("time", PISM_UNLIMITED); check(stat);
+    stat = output.def_dim("time", pism::PISM_UNLIMITED); check(stat);
   } else {
     unsigned int dim_len;
     stat = input.inq_dimlen(dim_name, dim_len); check(stat);
@@ -56,7 +56,7 @@ int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string 
  * The `extra_vars` output argument will contain names of coordinate variables
  * corresponding to dimensions used by this variable.
  */
-int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string variable_name) {
+int define_variable(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string variable_name) {
   int stat;
   bool exists;
   std::vector<std::string> dimensions;
@@ -90,7 +90,7 @@ int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string v
     dimensions[k] = dim_name;
   }
 
-  PISM_IO_Type var_type;
+  pism::PISM_IO_Type var_type;
   stat = input.inq_vartype(variable_name, var_type); check(stat);
 
   stat = output.def_var(variable_name, var_type, dimensions); check(stat);
@@ -101,7 +101,7 @@ int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string v
 }
 
 //! \brief Copies variable attributes.
-int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string var_name) {
+int copy_attributes(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string var_name) {
   int stat;
   int n_attrs;
 
@@ -109,13 +109,13 @@ int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string v
 
   for (int j = 0; j < n_attrs; ++j) {
     std::string att_name;
-    PISM_IO_Type att_type;
+    pism::PISM_IO_Type att_type;
 
     stat = input.inq_attname(var_name, j, att_name); check(stat);
 
     stat = input.inq_atttype(var_name, att_name, att_type); check(stat);
 
-    if (att_type == PISM_CHAR) {
+    if (att_type == pism::PISM_CHAR) {
       std::string tmp;
 
       stat = input.get_att_text(var_name, att_name, tmp); check(stat);

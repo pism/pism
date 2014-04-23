@@ -19,6 +19,8 @@
 #ifndef _ICEMODELVEC_HELPERS_H_
 #define _ICEMODELVEC_HELPERS_H_
 
+namespace pism {
+
 void compute_params(IceModelVec* const x, IceModelVec* const y,
                     IceModelVec* const z, int &ghosts, bool &scatter);
 
@@ -109,5 +111,7 @@ PetscErrorCode copy_2d(IceModelVec* const source,
 
   return 0;
 }
+
+} // end of namespace pism
 
 #endif /* _ICEMODELVEC_HELPERS_H_ */

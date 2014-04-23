@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <cassert>
 
+namespace pism {
+
 POCache::POCache(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
   : POModifier(g, conf, in) {
 
@@ -223,3 +225,5 @@ PetscErrorCode POCache::max_timestep(double t, double &dt, bool &restrict) {
 
   return 0;
 }
+
+} // end of namespace pism

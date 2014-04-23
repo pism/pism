@@ -27,6 +27,8 @@
 #endif
 #include <netcdf.h>
 
+namespace pism {
+
 static std::string patch_filename(std::string input, int mpi_rank) {
   char tmp[TEMPORARY_STRING_LENGTH];
 
@@ -44,13 +46,22 @@ static std::string patch_filename(std::string input, int mpi_rank) {
   return input;
 }
 
-int PISMNC4_Quilt::open(std::string fname, int mode) {
+int PISMNC4_Quilt::integer_open_mode(PISM_IO_Mode input) const {
+  if (input == PISM_READONLY) {
+    return NC_NOWRITE;
+  } else {
+    return NC_WRITE;
+  }
+}
+
+int PISMNC4_Quilt::open(std::string fname, PISM_IO_Mode mode) {
   int stat, rank = 0;
   MPI_Comm_rank(com, &rank);
 
   m_filename = patch_filename(fname, rank);
 
-  stat = nc_open(m_filename.c_str(), mode, &ncid); check(stat);
+  int nc_mode = integer_open_mode(mode);
+  stat = nc_open(m_filename.c_str(), nc_mode, &ncid); check(stat);
 
   define_mode = false;
 
@@ -244,3 +255,5 @@ int PISMNC4_Quilt::move_if_exists(std::string file, int /*rank_to_use*/) {
 
   return global_stat(stat);
 }
+
+} // end of namespace pism

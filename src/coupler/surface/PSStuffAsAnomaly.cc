@@ -20,6 +20,8 @@
 #include "IceGrid.hh"
 #include "PISMTime.hh"
 
+namespace pism {
+
 PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input)
     : PSModifier(g, conf, input) {
   PetscErrorCode ierr = allocate_PSStuffAsAnomaly(); CHKERRCONTINUE(ierr);
@@ -208,3 +210,5 @@ PetscErrorCode PSStuffAsAnomaly::write_variables(std::set<std::string> vars, con
   return 0;
 }
 
+
+} // end of namespace pism

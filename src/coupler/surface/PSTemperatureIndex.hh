@@ -19,24 +19,27 @@
 #ifndef _PSTEMPERATUREINDEX_H_
 #define _PSTEMPERATUREINDEX_H_
 
+#include "iceModelVec2T.hh"
 #include "PISMSurface.hh"
 #include "localMassBalance.hh"
 #include "NCVariable.hh"
+
+namespace pism {
 
 //! \brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
 //! precipitation and air temperature.
 /*! 
-Temperature-index schemes are far from perfect as a way of modeling surface mass
-balance on ice sheets which experience surface melt, but they are known to have
-reasonable data requirements and to do a good job when tuned appropriately
-[\ref Hock05].
+  Temperature-index schemes are far from perfect as a way of modeling surface mass
+  balance on ice sheets which experience surface melt, but they are known to have
+  reasonable data requirements and to do a good job when tuned appropriately
+  [\ref Hock05].
 
-This base class already accesses a fair amount of functionality.  It holds a
-pointer to an instance of the LocalMassBalance class.  This class has method
-LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
-precipitation during the ice sheet model time step, plus a variable temperature
-over that time step, to compute melt, refreeze, and surface balance.
+  This base class already accesses a fair amount of functionality.  It holds a
+  pointer to an instance of the LocalMassBalance class.  This class has method
+  LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
+  precipitation during the ice sheet model time step, plus a variable temperature
+  over that time step, to compute melt, refreeze, and surface balance.
 */
 class PSTemperatureIndex : public PISMSurfaceModel {
 public:
@@ -60,12 +63,13 @@ protected:
     base_pddThresholdTemp, //!< K; temps are positive above this
     m_next_balance_year_start;
   IceModelVec2S
-    climatic_mass_balance, //!< cached surface mass balance rate
+  climatic_mass_balance, //!< cached surface mass balance rate
     accumulation_rate,     //!< diagnostic output accumulation rate (snow - rain)
     melt_rate,             //!< diagnostic output melt rate (rate at which snow
-                           //!< and ice is melted, but some snow melt refreezes)
+  //!< and ice is melted, but some snow melt refreezes)
     runoff_rate,           //!< diagnostic output meltwater runoff rate
     snow_depth;            //!< snow depth (reset once a year)
+  IceModelVec2T air_temp_sd;
 
   IceModelVec2S *lat, *lon, *usurf;
   //!< PSTemperatureIndex must hold these pointers in order to use
@@ -75,9 +79,15 @@ protected:
   NCSpatialVariable ice_surface_temp;
 
   bool randomized, randomized_repeatable, fausto_params;
+  bool sd_file_set, sd_period_set, sd_ref_year_set, sd_use_param;
+  int sd_period, sd_period_years, sd_ref_year;
+  double sd_ref_time, sd_param_a, sd_param_b;
+  std::string filename;
   double compute_next_balance_year_start(double time);
 private:
   PetscErrorCode allocate_PSTemperatureIndex();
 };
+
+} // end of namespace pism
 
 #endif /* _PSTEMPERATUREINDEX_H_ */

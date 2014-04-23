@@ -1,0 +1,62 @@
+display2d : true $
+linel : 100 $
+leftjust : true $
+
+unorder()$
+orderless(A, B, C)$
+
+set_tex_environment_default("@f[", "@f]~%")$
+
+texput_list(l) := map(lambda([x], apply(texput, x)), l)$
+
+texput_list([
+  [ice_heat_capacity, "c_{pI}"],
+  [ocean_heat_capacity, "c_{pW}"],
+  [S_B, "S^B"],
+  [S_W, "S^W"],
+  [gamma_s, "\\gamma_S"],
+  [gamma_t, "\\gamma_T"],
+  [T_S, "T^S"],
+  [Theta_W, "\\Theta^W"],
+  [nounify(T_B), "T^B"],
+  [nounify(Theta_B), "\\Theta^B"],
+  [grad_T, "\\nabla T"],
+  [melt_rate, "w_b"],
+  [ocean_density, "\\rho_W"],
+  [ice_density, "\\rho_I"],
+  [ice_thickness, "h"],
+  [ice_thermal_diffusivity, "\\kappa"]
+  ])$
+
+/* $\dot h$ is defined to me minus the melt rate */
+h_dot : - melt_rate$
+
+delta_T : T_S - T_B$
+
+/* heat flux at the ice-brine interface */
+Qti(grad_T) := ice_density * ice_heat_capacity * ice_thermal_diffusivity * grad_T$
+
+/* heat flux into the ocean (due to melting) */
+Qtb : ice_density * h_dot * L$
+
+/* heat flux into the ocean mixed layer */
+Qtm : ocean_density * ocean_heat_capacity * gamma_t * (Theta_B - Theta_W)$
+
+/* salinity in the ice */
+S_I : 0$
+
+/* salinity flux into the ice */
+Qsi : 0$
+
+/* salt flux at the base (10) */
+Qsb : ice_density * h_dot * (S_B - S_I)$
+
+/* salinity flux into the mixed ocean layer */
+Qsm : ocean_density * gamma_s * (S_B - S_W)$
+
+/* parameterization of the melting point temperature */
+T_B(S_B, ice_thickness) := a[1] + a[0] * S_B + a[2] * ice_thickness$
+
+/* parameterization of the potential temperature corresponding to the
+melting point */
+Theta_B(S_B, ice_thickness) := b[1] + b[0] * S_B + b[2] * ice_thickness$

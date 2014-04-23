@@ -19,26 +19,39 @@
 #ifndef IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 #define IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
 
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
 #include <petsc.h>
-#include <tr1/memory>
 #include "iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
+
+namespace pism {
 
 class IP_SSATaucTaoTikhonovProblemLCL;
 
 //! Iteration callback class for IP_SSATaucTaoTikhonovProblemLCL
 /*! A class for objects receiving iteration callbacks from a IP_SSATaucTaoTikhonovProblemLCL.  These 
-    callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
-    IP_SSATaucTaoTikhonovProblemLCLListeners are ususally used via a reference counted pointer 
-    IP_SSATaucTaoTikhonovProblemLCLListeners::Ptr to allow for good memory management when Listeners are 
-    created as subclasses of python classes.*/
+  callbacks can be used to monitor the solution, plot iterations, print diagnostic messages, etc. 
+  IP_SSATaucTaoTikhonovProblemLCLListeners are ususally used via a reference counted pointer 
+  IP_SSATaucTaoTikhonovProblemLCLListeners::Ptr to allow for good memory management when Listeners are 
+  created as subclasses of python classes.*/
 class IP_SSATaucTaoTikhonovProblemLCLListener {
 public:
+
+#ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
+#else
+  typedef std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
+#endif
+
+
   typedef IceModelVec2S DesignVec;
   typedef IceModelVec2V StateVec;
   
@@ -76,7 +89,7 @@ public:
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
   IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta,
-                      IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
+                                   IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
   virtual ~IP_SSATaucTaoTikhonovProblemLCL();
 
@@ -151,5 +164,6 @@ protected:
   std::vector<Listener::Ptr> m_listeners;
 };
 
+} // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2 */

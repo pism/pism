@@ -33,6 +33,8 @@ static char help[] =
 #include "SSATestCase.hh"
 #include "pism_options.hh"
 
+using namespace pism;
+
 // thickness profile in the van der Veen solution
 static double H_exact(double V0, double H0, double C, double x)
 {

@@ -1,0 +1,37 @@
+/* This corresponds to the three-equation model for the diffusion-only
+case (equation 21) in
+@article{HollandJenkins1999,
+  title={Modeling thermodynamic ice-ocean interactions at the base of an ice shelf},
+  author={Holland, David M and Jenkins, Adrian},
+  journal={Journal of Physical Oceanography},
+  volume={29},
+  number={8},
+  pages={1787--1800},
+  year={1999}
+}
+*/
+
+/* define all necessary variables */
+load("common_definitions.mac")$
+
+/* add some shortcuts */
+h : ice_thickness $
+c_pW : ocean_heat_capacity $
+c_pI : ice_heat_capacity $
+rho_I : ice_density $
+rho_W : ocean_density $
+kappa : ice_thermal_diffusivity $
+
+/* Temperature gradient at the base of the ice; assume linear
+temperature profile through the thickness of the shelf */
+grad_T : delta_T / h $
+
+B_simplified : gamma_s*L + gamma_t*c_pW*(Theta_W - b[2]*h - b[1]) + rho_I*c_pI*kappa*(T_S - a[2]*h - a[1]) / (h * rho_W) $
+
+/* solve salinity and heat flux balance equations and find
+coefficients of the quadratic equation for the shelf base salinity */
+load("flux_balance.mac")$
+
+print("Checking the simplified form of B; this should print 0:", expand(B - B_simplified))$
+
+tex('B = B_simplified)$

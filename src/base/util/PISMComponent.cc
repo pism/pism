@@ -26,6 +26,8 @@
 #include "pism_options.hh"
 #include <assert.h>
 
+namespace pism {
+
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
@@ -57,7 +59,7 @@ PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name o
 
   PIO nc(grid, "netcdf3");      // OK to use netcdf3
   unsigned int last_record;
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
   last_record -= 1;
   ierr = nc.close(); CHKERRQ(ierr);
@@ -121,3 +123,5 @@ PetscErrorCode PISMComponent::regrid(std::string module_name, IceModelVec *varia
 
   return 0;
 }
+
+} // end of namespace pism

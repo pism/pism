@@ -20,6 +20,8 @@
 #define _PISMYIELDSTRESS_H_
 
 #include "PISMComponent.hh"
+
+namespace pism {
 class IceModelVec2S;
 
 //! \brief The PISM basal yield stress model interface (virtual base class)
@@ -32,5 +34,7 @@ public:
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result) = 0;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMYIELDSTRESS_H_ */

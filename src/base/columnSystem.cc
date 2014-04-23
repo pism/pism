@@ -22,6 +22,8 @@
 #include "columnSystem.hh"
 #include <assert.h>
 
+namespace pism {
+
 //! Allocate a tridiagonal system of maximum size my_nmax.
 /*!
 Let N = `nmax`.  Then allocated locations are like this:
@@ -397,3 +399,5 @@ PetscErrorCode columnSystemCtx::viewColumnInfoMFile(char *filename, double *x, u
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

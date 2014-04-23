@@ -20,6 +20,8 @@
 #include "PISMOcean.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 /** Set `result` to the melange back pressure fraction.
  *
  * This default implementation sets `result` to 0.0.
@@ -33,3 +35,5 @@ PetscErrorCode PISMOceanModel::melange_back_pressure_fraction(IceModelVec2S &res
   ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

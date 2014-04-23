@@ -21,17 +21,17 @@
 
 //! \file iceModel.hh Definition of class IceModel.
 /*! \file iceModel.hh
-IceModel is a big class which is an ice flow model.  It contains all parts that
-are not well-defined, separated components.  Such components are better places
-to put sub-models that have a clear, general interface to the rest of an ice
-sheet model.
+  IceModel is a big class which is an ice flow model.  It contains all parts that
+  are not well-defined, separated components.  Such components are better places
+  to put sub-models that have a clear, general interface to the rest of an ice
+  sheet model.
 
-IceModel has pointers to well-defined components, when they exist.
+  IceModel has pointers to well-defined components, when they exist.
 
-IceModel generally interprets user options, and initializes components based on
-such options.  It manages the initialization sequences (%e.g. a restart from a
-file containing a complete model state, versus bootstrapping).
- */
+  IceModel generally interprets user options, and initializes components based on
+  such options.  It manages the initialization sequences (%e.g. a restart from a
+  file containing a complete model state, versus bootstrapping).
+*/
 
 #include <signal.h>
 #include <gsl/gsl_rng.h>
@@ -45,6 +45,8 @@ file containing a complete model state, versus bootstrapping).
 #include "iceModelVec.hh"
 #include "PISMConfig.hh"
 #include "PISMVars.hh"
+
+namespace pism {
 
 // forward declarations
 class IceGrid;
@@ -128,6 +130,7 @@ public:
   IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
+<<<<<<< HEAD
   // -----------------------------------------------
   /** Initialization proceeds through a hierarchical set of virtual
   function calls.  The hierarchy of what calls what is shown below via
@@ -294,7 +297,7 @@ protected:
   IceModelVec2 deviatoric_stresses; //!< components of horizontal stress tensor along axes and shear stress
 
   IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
-                         //!< grounded_ice, floating_ice, ice_free_ocean
+  //!< grounded_ice, floating_ice, ice_free_ocean
     vBCMask; //!< mask to determine Dirichlet boundary locations
  
   IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
@@ -304,19 +307,18 @@ protected:
     gl_mask_y; //!< mask to determine grounding line position in y-direction
 
   IceModelVec3
-        T3,             //!< absolute temperature of ice; K (ghosted)
-        Enth3,          //!< enthalpy; J / kg (ghosted)
-        tau3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
+  T3,             //!< absolute temperature of ice; K (ghosted)
+    Enth3,          //!< enthalpy; J / kg (ghosted)
+    tau3;           //!< age of ice; s (ghosted because it is averaged onto the staggered-grid)
 
   // parameters
   double   dt,     //!< mass continuity time step, s
-              t_TempAge,  //!< time of last update for enthalpy/temperature
-              dt_TempAge,  //!< enthalpy/temperature and age time-steps
-              maxdt_temporary, dt_force,
-              CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
-              gDmax,            // global max of the diffusivity
-              gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
+    t_TempAge,  //!< time of last update for enthalpy/temperature
+    dt_TempAge,  //!< enthalpy/temperature and age time-steps
+    maxdt_temporary, dt_force,
+    CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
+    dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+    gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
     nonneg_rule_flux_cumulative,
     sub_shelf_ice_flux_cumulative,
@@ -327,10 +329,10 @@ protected:
     H_to_Href_flux_cumulative,
     discharge_flux_cumulative;      //!< cumulative discharge (calving) flux
 
-  int skipCountDown;
+  unsigned int skipCountDown;
 
   // flags
-  char adaptReasonFlag;
+  std::string adaptReasonFlag;
 
   std::string stdout_flags;
 
@@ -345,11 +347,12 @@ protected:
   virtual PetscErrorCode massContPostHook() { return 0; }
 
   // see iMadaptive.cc
-  virtual PetscErrorCode computeMax3DVelocities();
-  virtual PetscErrorCode computeMax2DSlidingSpeed();
-  virtual PetscErrorCode adaptTimeStepDiffusivity();
-  virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
+  virtual PetscErrorCode max_timestep_cfl_3d(double &dt_result);
+  virtual PetscErrorCode max_timestep_cfl_2d(double &dt_result);
+  virtual PetscErrorCode max_timestep_diffusivity(double &dt_result);
+  virtual PetscErrorCode max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual PetscErrorCode countCFLViolations(double* CFLviol);
+  virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
@@ -408,18 +411,18 @@ protected:
 
   // see iMpartgrid.cc
   double get_threshold_thickness(planeStar<int> Mask,
-                                    planeStar<double> thickness,
-                                    planeStar<double> surface_elevation,
-                                    double bed_elevation,
-                                    bool reduce_frontal_thickness);
+                                 planeStar<double> thickness,
+                                 planeStar<double> surface_elevation,
+                                 double bed_elevation,
+                                 bool reduce_frontal_thickness);
   virtual PetscErrorCode residual_redistribution(IceModelVec2S &residual);
   virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(
-                       double& gvolume,double& garea);
+                                    double& gvolume,double& garea);
   virtual PetscErrorCode energyStats(
-                       double iarea,double &gmeltfrac);
+                                     double iarea,double &gmeltfrac);
   virtual PetscErrorCode ageStats(double ivol, double &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
@@ -442,9 +445,9 @@ protected:
 
   // see iMtemp.cc
   virtual PetscErrorCode excessToFromBasalMeltLayer(
-                      const double rho, const double c, const double L,
-                      const double z, const double dz,
-                      double *Texcess, double *bwat);
+                                                    const double rho, const double c, const double L,
+                                                    const double z, const double dz,
+                                                    double *Texcess, double *bwat);
   virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
 
   // see iMutil.cc
@@ -514,6 +517,10 @@ protected:
   PetscErrorCode init_backups();
   PetscErrorCode write_backup();
 
+  // last time at which PISM hit a multiple of X years, see the
+  // timestep_hit_multiples configuration parameter
+  double timestep_hit_multiples_last_time;
+
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
@@ -523,19 +530,9 @@ protected:
 
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
-
-  int event_step,               //!< total time spent doing time-stepping
-    event_velocity,             //!< total velocity computation
-    event_energy,               //!< energy balance computation
-    event_hydrology,            //!< subglacial hydrology computation
-    event_mass,                 //!< mass continuity computation
-    event_age,                  //!< age computation
-    event_beddef,               //!< bed deformation step
-    event_output,               //!< time spent writing the output file
-    event_output_define,        //!< time spent defining variables
-    event_snapshots,            //!< time spent writing snapshots
-    event_backups;              //!< time spent writing backups files
 };
+
+} // end of namespace pism
 
 #endif /* __iceModel_hh */
 

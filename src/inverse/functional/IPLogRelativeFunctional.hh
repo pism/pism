@@ -21,20 +21,22 @@
 
 #include "IPFunctional.hh"
 
+namespace pism {
+
 //! Implements a functional for log-relative errors.
 /*!  Specifically, given a reference function \f$u_{obs}=[U_i]\f$,
-\f[
-J(x) = c_N \sum_i \log\left(1+W_i\frac{|X_i|^2}{|U_{i}|^2+\epsilon^2}\right)
-\f]
-where \f$\epsilon={\tt inv_ssa_velocity_eps}\f$ and \f$w\f$ is an optionally
-provided weight function.  The normalization constant \f$c_N\f$ is determined 
-implicitly by normalize().
+  \f[
+  J(x) = c_N \sum_i \log\left(1+W_i\frac{|X_i|^2}{|U_{i}|^2+\epsilon^2}\right)
+  \f]
+  where \f$\epsilon={\tt inv_ssa_velocity_eps}\f$ and \f$w\f$ is an optionally
+  provided weight function.  The normalization constant \f$c_N\f$ is determined 
+  implicitly by normalize().
 */
 class IPLogRelativeFunctional : public IPFunctional<IceModelVec2V> {
 public:
   IPLogRelativeFunctional(IceGrid &grid, IceModelVec2V &u_observed, double eps,
                           IceModelVec2S *weights=NULL) :
-  IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
+    IPFunctional<IceModelVec2V>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRelativeFunctional() {};
 
   virtual PetscErrorCode normalize(double scale);
@@ -49,5 +51,7 @@ protected:
   double m_eps;
 };
 
+
+} // end of namespace pism
 
 #endif /* end of include guard: IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG */

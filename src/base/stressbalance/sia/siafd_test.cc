@@ -37,6 +37,8 @@ static char help[] =
 #include "ShallowStressBalance.hh"
 #include "PISMVars.hh"
 
+using namespace pism;
+
 PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
                                   IceModelVec3 &strain_heating,
                                   IceModelVec2S &thickness,
@@ -469,7 +471,7 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     PIO pio(grid, "guess_mode");
 
-    ierr = pio.open(output_file, PISM_WRITE); CHKERRQ(ierr);
+    ierr = pio.open(output_file, PISM_READWRITE_MOVE); CHKERRQ(ierr);
     ierr = pio.def_time(config.get_string("time_dimension_name"),
                         grid.time->calendar(),
                         grid.time->CF_units_string()); CHKERRQ(ierr);

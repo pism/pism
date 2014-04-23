@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PSVERIFICATION_H_
 #define _PSVERIFICATION_H_
 
 #include "PISMSurface.hh"
 #include "iceModelVec.hh"
+
+namespace pism {
 
 class EnthalpyConverter;
 
@@ -62,5 +64,7 @@ private:
   static const PetscScalar ApforG;  // m;  magnitude A_p of annular perturbation for test G;
 
 };
+
+} // end of namespace pism
 
 #endif /* _PSVERIFICATION_H_ */

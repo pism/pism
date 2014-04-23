@@ -19,6 +19,8 @@
 #include "IPTwoBlockVec.hh"
 #include <assert.h>
 
+namespace pism {
+
 IPTwoBlockVec::IPTwoBlockVec(Vec a, Vec b) {
   PetscErrorCode ierr;
   ierr = this->construct(a,b);
@@ -158,3 +160,5 @@ PetscErrorCode IPTwoBlockVec::gatherFromB(Vec b, Vec ab) {
   ierr = VecScatterEnd(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   return 0;
 }
+
+} // end of namespace pism

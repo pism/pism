@@ -122,7 +122,10 @@ netcdf pism_config {
     pism_config:sub_groundingline_doc = "Linear interpolation scheme ('LI' in Gladstone et al. 2010) expanded to two dimensions is used if switched on in order to evaluate the position of the grounding line on a subgrid scale.";
 
     pism_config:tauc_slippery_grounding_lines = "no";
-    pism_config:tauc_slippery_grounding_lines_doc = "If yes, replace normally-computed tauc from Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the reported amount of till water, nor does this mechanism affect water conservation.";
+    pism_config:tauc_slippery_grounding_lines_doc = "If yes, at icy grounded locations with bed elevations below sea level, within one cell of floating ice or ice-free ocean, make tauc as low as possible from the Mohr-Coulomb relation.  Specifically, at such locations replace the normally-computed tauc from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of tauc from Mohr-Coulomb, i.e. by using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the modeled or reported amount of till water, nor does this mechanism affect water conservation.";
+
+    pism_config:tauc_add_transportable_water = "no";
+    pism_config:tauc_add_transportable_water_doc = "If 'yes' then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
 
 
     // parameters:
@@ -160,9 +163,6 @@ netcdf pism_config {
     pism_config:bootstrapping_temperature_heuristic = "smb";
     pism_config:bootstrapping_temperature_heuristic_doc = "The heuristic to use to initialize ice temperature during bootstrapping: 'sbm' uses the new method using the surface mass balance, surface temperature, and the geothermal flux, 'quartic_guess' uses the old method using the surface temperature and the geothermal flux.";
 
-    pism_config:preliminary_time_step_duration = 1.0;
-    pism_config:preliminary_time_step_duration_doc = "s; Duration of the time step taken before the run, so as to fill diagnostic quantities.";
-
     pism_config:sia_enhancement_factor = 1.0;
     pism_config:sia_enhancement_factor_doc = "; Flow enhancement factor for SIA";
 
@@ -198,6 +198,9 @@ netcdf pism_config {
 
     pism_config:maximum_time_step_years = 60.0;
     pism_config:maximum_time_step_years_doc = "years; Maximum allowed time step length";
+
+    pism_config:timestep_hit_multiples = 0.0;
+    pism_config:timestep_hit_multiples_doc = "Hit every X years, where X is specified using this parameter. Use 0 to disable";
 
     pism_config:epsilon_ssa = 1.0e13;
     pism_config:epsilon_ssa_doc = "Pa s m;  Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa yr, the value in [@ref Ritzetal2001], but with a tiny thickness H of about 1 cm.";
@@ -289,6 +292,9 @@ netcdf pism_config {
     pism_config:till_effective_fraction_overburden = 0.02;
     pism_config:till_effective_fraction_overburden_doc = "[pure]; = delta in notes; N_0 = delta P_o where P_o is overburden pressure; N_0 is reference (low) value of effective pressure (i.e. normal stress); N_0 scales with overburden pressure unlike [@ref Tulaczyketal2000]; default value from Greenland and Antarctic model runs";
 
+    pism_config:till_log_factor_transportable_water = 0.1;
+    pism_config:till_log_factor_transportable_water_doc = "m; If tauc_add_transportable_water = yes then the water amount in the transport system is added to tillwat in determining tauc.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
+
     pism_config:mu_sliding = 0.0;
     pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. *This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.*  See Appendix B of [@ref BBssasliding] for the dangers in this mechanism.";
 
@@ -354,6 +360,15 @@ netcdf pism_config {
 
     pism_config:pdd_std_dev_lapse_lat_rate = 0.0;
     pism_config:pdd_std_dev_lapse_lat_rate_doc = "K degrees_north-1; std_dev is a function of latitude, with rate of change with respect to latitude given by this constant ";
+
+    pism_config:pdd_std_dev_use_param = "no";
+    pism_config:pdd_std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by mask_icefree_thickness_standard.";
+
+    pism_config:pdd_std_dev_param_a = -0.15;
+    pism_config:pdd_std_dev_param_doc = "Parameter a in Sigma = a*T + b, with T in degrees C. Used only if pdd_std_dev_use_param is set to yes.";
+
+    pism_config:pdd_std_dev_param_b = 0.66;
+    pism_config:pdd_std_dev_param_doc = "Parameter b in Sigma = a*T + b, with T in degrees C. Used only if pdd_std_dev_use_param is set to yes.";
 
     pism_config:pdd_fausto_latitude_beta_w = 72.0;
     pism_config:pdd_fausto_latitude_beta_w_doc = "degrees N; latitude below which to use warm case, in formula (6) in [@ref Faustoetal2009] ";
@@ -613,6 +628,12 @@ netcdf pism_config {
     pism_config:sea_water_density = 1028.0;
     pism_config:sea_water_density_doc = "kg m-3;";
 
+    pism_config:sea_water_specific_heat_capacity = 3985.0;
+    pism_config:sea_water_specific_heat_capacity_doc = "J kg-1 Kelvin-1; at 35 psu, value taken from http://www.kayelaby.npl.co.uk/general_physics/2_7/2_7_9.html";
+
+    pism_config:ocean_three_equation_model_clip_salinity = "yes";
+    pism_config:ocean_three_equation_model_clip_salinity_doc = "Clip shelf base salinity so that it is in the range [4, 40] k/kg. See [@ref HollandJenkins1999].";
+
     pism_config:bedrock_thermal_density = 3300.0;
     pism_config:bedrock_thermal_density_doc = "kg m-3; for bedrock used in thermal model";
 
@@ -735,11 +756,11 @@ netcdf pism_config {
    pism_config:output_variable_order = "xyz";
    pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
-   pism_config:output_medium = "climatic_mass_balance tillwat tillwp cbar cbase csurf cflx climatic_mass_balance diffusivity ice_surface_temp mask schoofs_theta tauc taud_mag topgsmooth usurf wvelsurf temp_pa liqfrac enthalpy IcebergMask edot_1 edot_2";
+   pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux_mag climatic_mass_balance velsurf_mag diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taub_mag taud_mag temp_pa tillwat topgsmooth usurf wvelsurf";
 
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by boundary models.";
 
-   pism_config:output_big = "climatic_mass_balance age bfrict bheatflx bmelt tillwat tillwp cbar cbase cell_area cflx climatic_mass_balance csurf dbdt diffusivity enthalpy enthalpybase enthalpysurf flux_divergence hardav ice_surface_temp lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH";
+   pism_config:output_big = "IcebergMask age bfrict bheatflx bmelt bwat bwatvel bwp bwprel velbar_mag velbase_mag cell_area flux_mag climatic_mass_balance velsurf_mag cts dbdt diffusivity edot_1 edot_2 effbwp enthalpy enthalpybase enthalpysurf flux_divergence hardav hydroinput ice_surface_temp lat liqfrac litho_temp lon mask nuH ocean_kill_mask rank schoofs_theta tauc taub_mag taud_mag temp temp_pa tempbase tempicethk tempicethk_basal temppabase tempsurf thk thksmooth tillphi tillwat topg topgsmooth usurf uvel velbar velbase velsurf vvel wallmelt wvel wvel_rel wvelbase wvelsurf";
 
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 

@@ -58,10 +58,13 @@
 #include "PSStuffAsAnomaly.hh"
 #include "PS_delta_T.hh"
 #include "PSTemperatureIndex.hh"
+#include "PSTemperatureIndex_Old.hh"
 #include "PSSimple.hh"
 #include "PSConstantPIK.hh"
 #include "PSForceThickness.hh"
 #include "PSCache.hh"
+
+namespace pism {
 
 // Atmosphere
 static void create_pa_constant_pik(IceGrid& g, const PISMConfig& conf, PISMAtmosphereModel* &result) {
@@ -177,6 +180,10 @@ static void create_ps_temperatureindex(IceGrid& g, const PISMConfig& conf, PISMS
   result = new PSTemperatureIndex(g, conf);
 }
 
+static void create_ps_temperatureindex_old(IceGrid& g, const PISMConfig& conf, PISMSurfaceModel* &result) {
+  result = new PSTemperatureIndex_Old(g, conf);
+}
+
 static void create_ps_simple(IceGrid& g, const PISMConfig& conf, PISMSurfaceModel* &result) {
   result = new PSSimple(g, conf);
 }
@@ -226,6 +233,7 @@ static void create_ps_anomaly(IceGrid& g, const PISMConfig& conf,
 void PSFactory::add_standard_types() {
   add_model("simple",    &create_ps_simple);           
   add_model("pdd",       &create_ps_temperatureindex); 
+  add_model("pdd_old",   &create_ps_temperatureindex_old); 
   add_model("given",     &create_ps_given);            
   add_model("pik",       &create_ps_constant_pik);     
   add_model("elevation", &create_ps_elevation);        
@@ -238,3 +246,5 @@ void PSFactory::add_standard_types() {
   add_modifier("lapse_rate",        &create_ps_lapse_rates);      
   add_modifier("turn_into_anomaly", &create_ps_stuff_as_anomaly); 
 }
+
+} // end of namespace pism

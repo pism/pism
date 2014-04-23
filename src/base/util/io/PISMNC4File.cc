@@ -28,6 +28,8 @@
 #endif
 #include <netcdf.h>
 
+namespace pism {
+
 #include "pism_type_conversion.hh"
 
 PISMNC4File::PISMNC4File(MPI_Comm c, unsigned int compression_level)
@@ -592,3 +594,5 @@ std::string PISMNC4File::get_format() const {
     return "netcdf4";
   }
 }
+
+} // end of namespace pism

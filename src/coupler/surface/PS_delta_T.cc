@@ -19,6 +19,8 @@
 #include "PS_delta_T.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
 PS_delta_T::PS_delta_T(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
@@ -141,3 +143,5 @@ PetscErrorCode PS_delta_T::write_variables(std::set<std::string> vars, const PIO
 
   return 0;
 }
+
+} // end of namespace pism

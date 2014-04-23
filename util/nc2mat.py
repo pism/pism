@@ -8,11 +8,11 @@
 ## \verbatim nc2mat.py -e x,y,z ross.nc \endverbatim
 ## will read all the variables except \c x, \c y and \c z from \c ross.nc and write them to \c ross.mat.
 ## Because PISM saves all diagnostic variables using the single precision (type \c float), while most MATLAB plotting functions expect data to have double precision (type \c double), so one might need to convert them explicitly.  For example, assuming that \c ross.nc contains data produced by a PISM run, running
-## \verbatim nc2mat.py -v cbar ross.nc \endverbatim and then typing
+## \verbatim nc2mat.py -v velbar_mag ross.nc \endverbatim and then typing
 ## \code
 ## >> load ross.mat;
-## >> cbar = double(reshape(cbar, 147, 147));
-## >> pcolor(cbar); colorbar();
+## >> velbar_mag = double(reshape(velbar_mag, 147, 147));
+## >> pcolor(velbar_mag); colorbar();
 ## \endcode
 ## in the MATLAB shell will produce a picture of the Ross Ice Shelf shaded by modeled ice speed.
 

@@ -23,6 +23,8 @@
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
 #include "iceModelVec.hh"       // to get PISMVector2
 
+namespace pism {
+
 template<int DOF, class U> class SNESProblem{
 public:
   SNESProblem(IceGrid &g);
@@ -80,16 +82,16 @@ typedef SNESProblem<2,PISMVector2> SNESVectorProblem;
 
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::LocalFunction(DMDALocalInfo *info,
-                             const U **x, U **f,
-                             SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
+                                                 const U **x, U **f,
+                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
 {
   return cb->solver->compute_local_function(info,x,f);
 }
 
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::LocalJacobian(DMDALocalInfo *info,
-                             const U **x, Mat J,
-                             SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
+                                                 const U **x, Mat J,
+                                                 SNESProblem<DOF,U>::SNESProblemCallbackData *cb)
 {
   return cb->solver->compute_local_jacobian(info,x,J);
 }
@@ -97,7 +99,7 @@ PetscErrorCode SNESProblem<DOF,U>::LocalJacobian(DMDALocalInfo *info,
 
 template<int DOF, class U>
 SNESProblem<DOF,U>::SNESProblem(IceGrid &g) :
-m_grid(g)
+  m_grid(g)
 {
   PetscErrorCode ierr;
   ierr = setFromOptions(); CHKERRABORT(m_grid.com,ierr);
@@ -187,14 +189,16 @@ PetscErrorCode SNESProblem<DOF,U>::solve()
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason( m_snes, &reason); CHKERRQ(ierr);
   if(reason < 0)
-  {
-    SETERRQ2(m_grid.com, 1,
-      "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name(), SNESConvergedReasons[reason]);
-  }
+    {
+      SETERRQ2(m_grid.com, 1,
+               "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name(), SNESConvergedReasons[reason]);
+    }
 
   verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n", name(), SNESConvergedReasons[reason]);
   return 0;
 }
 
+
+} // end of namespace pism
 
 #endif

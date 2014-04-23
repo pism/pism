@@ -59,6 +59,15 @@ To generate Doxygen source code documentation:
 
     make browser             # doxygen docs; view doc/browser/html/index.html when done
 
+To generate PDF and Doxygen documentation on a system without PETSc and other prerequisites, do
+
+    cd pism0.6
+    mkdir build-doc
+    cd build-doc
+    cmake ../doc
+
+and then run `make` as described above (in this build directory).
+
 See also [the development version page](http://www.pism-docs.org/wiki/doku.php?id=development_version).
 
 For questions about PISM usage, installation, creating new models, etc.,

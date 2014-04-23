@@ -22,13 +22,15 @@
 #include <petscdmda.h>
 #include "iceModel.hh"
 
+namespace pism {
+
 
 //! Derived class for doing EISMINT II simplified geometry experiments.  
 /*!
-These experiments use the thermomechanically-coupled, non-polythermal shallow
-ice approximation.  Experiment H does \e not \e recommended SIA-sliding
-paradigm.  See \ref EISMINT00 and Appendix B of \ref BBssasliding.
- */
+  These experiments use the thermomechanically-coupled, non-polythermal shallow
+  ice approximation.  Experiment H does \e not \e recommended SIA-sliding
+  paradigm.  See \ref EISMINT00 and Appendix B of \ref BBssasliding.
+*/
 class IceEISModel : public IceModel {
 public:
   IceEISModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
@@ -43,6 +45,8 @@ protected:
   virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
   virtual PetscErrorCode generateMoundTopography();   // for experiments K,L
 };
+
+} // end of namespace pism
 
 #endif /* __iceEISModel_hh */
 

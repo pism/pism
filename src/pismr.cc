@@ -29,6 +29,8 @@ static char help[] =
 #include "POFactory.hh"
 #include "PSFactory.hh"
 
+using namespace pism;
+
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 

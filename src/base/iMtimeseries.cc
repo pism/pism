@@ -26,6 +26,8 @@
 #include "PISMTime.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {
   PetscErrorCode ierr;
@@ -49,6 +51,10 @@ PetscErrorCode IceModel::init_timeseries() {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
+  PISM_IO_Mode mode = PISM_READWRITE;
+  if (append == false) {
+    mode = PISM_READWRITE_MOVE;
+  }
 
   if (ts_file_set ^ ts_times_set) {
     ierr = PetscPrintf(grid.com,
@@ -102,7 +108,7 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
   PIO nc(grid, "netcdf3");      // Use NetCDF-3 to write time-series.
-  ierr = nc.open(ts_filename, PISM_WRITE, append); CHKERRQ(ierr);
+  ierr = nc.open(ts_filename, mode); CHKERRQ(ierr);
 
   if (append == true) {
     double time_max;
@@ -260,7 +266,7 @@ PetscErrorCode IceModel::init_extras() {
     std::string time_name = config.get_string("time_dimension_name");
     bool time_exists;
 
-    ierr = nc.open(extra_filename, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(extra_filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_var(time_name, time_exists); CHKERRQ(ierr);
 
     if (time_exists == true) {
@@ -454,12 +460,18 @@ PetscErrorCode IceModel::write_extras() {
 
   PIO nc(grid, grid.config.get_string("output_format"));
 
-  if (!extra_file_is_ready) {
+  if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
-    bool append;
+    bool append = false;
     ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
+
+    PISM_IO_Mode mode = PISM_READWRITE;
+    if (append == false) {
+      mode = PISM_READWRITE_MOVE;
+    }
+
     // Prepare the file:
-    ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
+    ierr = nc.open(filename, mode); CHKERRQ(ierr);
     ierr = nc.def_time(config.get_string("time_dimension_name"),
                        grid.time->calendar(),
                        grid.time->CF_units_string()); CHKERRQ(ierr);
@@ -470,7 +482,8 @@ PetscErrorCode IceModel::write_extras() {
 
     extra_file_is_ready = true;
   } else {
-    ierr = nc.open(filename, PISM_WRITE, true); CHKERRQ(ierr);
+    // In this case the extra file should be present.
+    ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
   }
 
   double      current_time = grid.time->current();
@@ -604,3 +617,5 @@ PetscErrorCode IceModel::flush_timeseries() {
 
   return 0;
 }
+
+} // end of namespace pism

@@ -24,6 +24,8 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 //! Tridiagonal linear system for vertical column of age (pure advection) problem.
 class ageSystemCtx : public columnSystemCtx {
 
@@ -323,3 +325,5 @@ PetscErrorCode IceModel::ageStep() {
   return 0;
 }
 
+
+} // end of namespace pism

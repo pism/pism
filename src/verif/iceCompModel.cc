@@ -40,6 +40,8 @@
 #include "POConstant.hh"
 #include "PSVerification.hh"
 
+namespace pism {
+
 const double IceCompModel::secpera = 3.15569259747e7;
 
 IceCompModel::IceCompModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides, int mytest)
@@ -875,7 +877,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   //     (1) the numerical computation *has* already occurred, in run(),
   //           and we just overwrite it with the exact solution here
   //     (2) certain diagnostic quantities like dHdt are computed numerically,
-  //           and not overwritten here; while cbar,csurf,cflx,wsurf are diagnostic
+  //           and not overwritten here; while velbar_mag,velsurf_mag,flux_mag,wsurf are diagnostic
   //           quantities recomputed at the end of the run for writing into
   //           NetCDF, in particular dHdt is not recomputed before being written
   //           into the output file, so it is actually numerical
@@ -986,12 +988,18 @@ PetscErrorCode IceCompModel::reportErrors() {
                            filename, netcdf_report); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-append", "Append the NetCDF error report",
                           append); CHKERRQ(ierr);
+
+  PISM_IO_Mode mode = PISM_READWRITE;
+  if (append == false) {
+    mode = PISM_READWRITE_MOVE;
+  }
+
   if (netcdf_report) {
     ierr = verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", filename.c_str());
     CHKERRQ(ierr);
 
     // Find the number of records in this file:
-    ierr = nc.open(filename, PISM_WRITE, append); CHKERRQ(ierr);
+    ierr = nc.open(filename, mode); CHKERRQ(ierr);
     ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
 
     ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);
@@ -1301,3 +1309,5 @@ PetscErrorCode IceCompModel::test_V_init() {
 
   return 0;
 }
+
+} // end of namespace pism

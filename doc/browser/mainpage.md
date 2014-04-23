@@ -11,49 +11,49 @@ key classes include:
 
 ### The "manager" class
 
-The IceModel class manages time-stepping, I/O, initialization, and
+The pism::IceModel class manages time-stepping, I/O, initialization, and
 contains parts of the model that were not modularized yet.
 
 Many aspects of PISM's behavior can be modified by writing a new class
-derived from IceModel and re-implementing one or more of its methods.
+derived from pism::IceModel and re-implementing one or more of its methods.
 
 ### Major sub-models
 
 See these classes, as well as *the ones derived from these*. (This is
 a summary.)
 
-- PISMStressBalance, ShallowStressBalance, SSB_Modifier (stress
+- pism::PISMStressBalance, pism::ShallowStressBalance, pism::SSB_Modifier (stress
   balance models)
-- PISMHydrology (sub-glacial hydrology models)
-- PISMBedDef (bed deformation models)
-- PISMYieldStress, IceBasalResistancePlasticLaw (basal strength)
-- PISMCalvingAtThickness, PISMEigenCalving, PISMFloatKill,
-  PISMOceanKill, PISMIcebergRemover (calving and "iceberg removal")
-- IceFlowLaw (rheology)
+- pism::PISMHydrology (sub-glacial hydrology models)
+- pism::PISMBedDef (bed deformation models)
+- pism::PISMYieldStress, pism::IceBasalResistancePlasticLaw (basal strength)
+- pism::PISMCalvingAtThickness, pism::PISMEigenCalving, pism::PISMFloatKill,
+  pism::PISMOceanKill, pism::PISMIcebergRemover (calving and "iceberg removal")
+- pism::IceFlowLaw (rheology)
 
 #### Climatic inputs
 
-- PISMSurfaceModel ("surface" models, i.e. melt and snow processes)
-- PISMAtmosphereModel ("atmosphere", provides inputs to a PISMSurfaceModel)
-- PISMOceanModel ("ocean" model, provides sub-shelf boundary
+- pism::PISMSurfaceModel ("surface" models, i.e. melt and snow processes)
+- pism::PISMAtmosphereModel ("atmosphere", provides inputs to a pism::PISMSurfaceModel)
+- pism::PISMOceanModel ("ocean" model, provides sub-shelf boundary
   conditions, melange back-pressure, and sea level elevation)
 
 ### Infrastructure (utility) classes
 
-- IceGrid (computational grid)
-- PISMComponent and PISMComponent_TS (interface shared by most sub-models)
-- IceModelVec2S, IceModelVec2Stag, IceModelVec2V, and IceModelVec3 (storage)
-- Timeseries (scalar forcing)
-- IceModelVec2T (2D time-dependent forcing)
-- NCVariable (variable metadata such as physical units)
-- PISMConfig (configuration parameter database)
-- PISMTime (time management, including calendars)
-- PIO (file I/O)
+- pism::IceGrid (computational grid)
+- pism::PISMComponent and pism::PISMComponent_TS (interface shared by most sub-models)
+- pism::IceModelVec2S, pism::IceModelVec2Stag, pism::IceModelVec2V, and pism::IceModelVec3 (storage)
+- pism::Timeseries (scalar forcing)
+- pism::IceModelVec2T (2D time-dependent forcing)
+- pism::NCVariable (variable metadata such as physical units)
+- pism::PISMConfig (configuration parameter database)
+- pism::PISMTime (time management, including calendars)
+- pism::PIO (file I/O)
 
 ### Some important infrastructure concepts and techniques:
 
 - [Organization of PISM's computational grid](@ref computational_grid)
-- [IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields](@ref icemodelvec_use)
+- [pism::IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields](@ref icemodelvec_use)
 - [PISM's model components and their interface](@ref pism_components)
 - [Reading scalar time-series (Timeseries)](@ref timeseries_overview)
 

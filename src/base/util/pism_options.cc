@@ -25,6 +25,21 @@
 #include "NCVariable.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
+//! \brief Stop if -version is set.
+PetscErrorCode stop_on_version_option() {
+  PetscErrorCode ierr;
+
+  bool vSet = false;
+  ierr = PISMOptionsIsSet("-version", vSet); CHKERRQ(ierr);
+  if (vSet == false)
+    return 0;
+
+  PISMEndQuiet();
+  return 0;
+}
+
 //! Determine verbosity level from user options.
 /*!
 \verbatim
@@ -107,19 +122,6 @@ PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
   return 0;
 }
 
-//! \brief Stop if -version is set.
-PetscErrorCode stop_on_version_option() {
-  PetscErrorCode ierr;
-
-  bool vSet = false;
-  ierr = PISMOptionsIsSet("-version", vSet); CHKERRQ(ierr);
-  if (vSet == false)
-    return 0;
-
-  PISMEndQuiet();
-  return 0;
-}
-
 //! \brief Print a usage message.
 PetscErrorCode just_show_usage(MPI_Comm com, std::string execname, std::string usage) {
   PetscErrorCode ierr;
@@ -159,8 +161,8 @@ PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::stri
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
 PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
-                                         std::vector<std::string> required_options,
-                                         std::string usage) {
+					 std::vector<std::string> required_options,
+					 std::string usage) {
   PetscErrorCode ierr;
 
   ierr = stop_on_version_option(); CHKERRQ(ierr);
@@ -222,8 +224,8 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   command-line option without adding one mode option.
  */
 PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string description,
-                               std::set<std::string> choices, std::string default_value,
-                               std::string &result, bool &flag) {
+			       std::set<std::string> choices, std::string default_value,
+			       std::string &result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   std::string list, descr;
@@ -273,7 +275,7 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string descri
 
 //! \brief Process a command-line option taking a string as an argument.
 PetscErrorCode PISMOptionsString(std::string option, std::string text,
-                                 std::string &result, bool &is_set, bool allow_empty_arg) {
+				 std::string &result, bool &is_set, bool allow_empty_arg) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -303,7 +305,7 @@ PetscErrorCode PISMOptionsString(std::string option, std::string text,
 
 //! PISM wrapper replacing PetscOptionsStringArray.
 PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
-                                      std::vector<std::string>& result, bool &flag) {
+				      std::vector<std::string>& result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool opt_set = PETSC_FALSE;
@@ -340,7 +342,7 @@ PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::st
 
 //! Process a command-line option and return a set of strings.
 PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::string default_value,
-                                    std::set<std::string>& result, bool &flag) {
+				    std::set<std::string>& result, bool &flag) {
   std::vector<std::string> tmp;
   PetscErrorCode ierr;
 
@@ -358,7 +360,7 @@ PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::stri
 
 //! \brief Process a command-line option taking an integer as an argument.
 PetscErrorCode PISMOptionsInt(std::string option, std::string text,
-                              int &result, bool &is_set) {
+			      int &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -382,7 +384,7 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
   result = (int) strtol(str, &endptr, 10);
   if (*endptr != '\0') {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "PISM ERROR: Can't parse \"%s %s\": (%s is not a number).\n",
+                       "PISM ERROR: Can't parse \"%s %s\": (%s is not an integer).\n",
                        option.c_str(), str, str); CHKERRQ(ierr);
     PISMEnd();
   }
@@ -392,7 +394,7 @@ PetscErrorCode PISMOptionsInt(std::string option, std::string text,
 
 //! \brief Process a command-line option taking a real number as an argument.
 PetscErrorCode PISMOptionsReal(std::string option, std::string text,
-                               double &result, bool &is_set) {
+			       double &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -429,7 +431,7 @@ PetscErrorCode PISMOptionsReal(std::string option, std::string text,
 //! \brief Process a command-line option taking a comma-separated list of reals
 //! as an argument.
 PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
-                                    std::vector<double> &result, bool &is_set) {
+				    std::vector<double> &result, bool &is_set) {
   PetscErrorCode ierr;
   char str[TEMPORARY_STRING_LENGTH];
   PetscBool flag;
@@ -467,7 +469,7 @@ PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
 //! \brief Process a command-line option taking a comma-separated list of
 //! integers as an argument.
 PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
-                                    std::vector<int> &result, bool &is_set) {
+				   std::vector<int> &result, bool &is_set) {
   PetscErrorCode ierr;
   std::vector<double> tmp;
 
@@ -507,7 +509,7 @@ PetscErrorCode PISMOptionsIsSet(std::string option, bool &result) {
 
 //! A version of PISMOptionsIsSet that prints a -help message.
 PetscErrorCode PISMOptionsIsSet(std::string option, std::string text,
-                                bool &result) {
+				bool &result) {
   PetscErrorCode ierr;
   char tmp[1];
   PetscBool flag;
@@ -546,8 +548,8 @@ PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result) {
   Processes -config and -config_override command line options.
  */
 PetscErrorCode init_config(MPI_Comm com,
-                           PISMConfig &config, PISMConfig &overrides,
-                           bool process_options) {
+			   PISMConfig &config, PISMConfig &overrides,
+			   bool process_options) {
   PetscErrorCode ierr;
 
   std::string alt_config = PISM_DefaultConfigFile,
@@ -674,6 +676,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
   ierr = config.scalar_from_option("adapt_ratio",
                                    "adaptive_timestepping_ratio"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("timestep_hit_multiples",
+                                   "timestep_hit_multiples"); CHKERRQ(ierr);
+
   ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
 
@@ -750,6 +755,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
                                    "till_effective_fraction_overburden");      CHKERRQ(ierr);
   ierr = config.flag_from_option("tauc_slippery_grounding_lines",
                                  "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("tauc_add_transportable_water",
+                                 "tauc_add_transportable_water"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("yield_stress", "yield_stress_model",
                                     "constant,mohr_coulomb"); CHKERRQ(ierr);
@@ -878,6 +885,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("clip_shelf_base_salinity",
+                                 "ocean_three_equation_model_clip_salinity"); CHKERRQ(ierr);
+
   // old options
   ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",
                                    "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
@@ -896,3 +906,5 @@ PetscErrorCode set_config_from_options(MPI_Comm com, PISMConfig &config) {
 
   return 0;
 }
+
+} // end of namespace pism

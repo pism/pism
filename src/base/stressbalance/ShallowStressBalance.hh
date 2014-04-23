@@ -27,6 +27,8 @@
 #include <PISMDiagnostic.hh>
 #include "PISMConfig.hh"
 
+namespace pism {
+
 class PISMVars;
 class IceFlowLaw;
 class EnthalpyConverter;
@@ -61,6 +63,8 @@ public:
                                 IceModelVec2S &melange_back_pressure) = 0;
 
   // interface to the data provided by the stress balance object:
+  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
+                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result)
@@ -90,11 +94,14 @@ public:
   virtual PetscErrorCode stdout_report(std::string &result)
   { result = ""; return 0; }
 
-  IceFlowLaw* get_flow_law()
+  const IceFlowLaw* get_flow_law()
   { return flow_law; }
 
   EnthalpyConverter& get_enthalpy_converter()
   { return EC; }
+
+  const IceBasalResistancePlasticLaw* get_sliding_law()
+  { return basal_sliding_law; }
 protected:
   virtual PetscErrorCode allocate();
 
@@ -107,6 +114,13 @@ protected:
   IceModelVec2V m_velocity, *m_vel_bc;
   IceModelVec2Int *bc_locations;
   IceModelVec2S basal_frictional_heating;
+};
+
+class SSB_beta : public PISMDiag<ShallowStressBalance>
+{
+public:
+  SSB_beta(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes the gravitational driving stress (diagnostically).
@@ -126,13 +140,29 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! @brief Computes the basal shear stress @f$ \tau_b @f$.
+class SSB_taub : public PISMDiag<ShallowStressBalance>
+{
+public:
+  SSB_taub(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the magnitude of the basal shear stress
+//! (diagnostically).
+class SSB_taub_mag : public PISMDiag<ShallowStressBalance>
+{
+public:
+  SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
 
 //! Returns zero velocity field, zero friction heating, and zero for D^2.
 /*!
   This derived class is used in the non-sliding SIA approximation. This
   implementation ignores any basal resistance fields (e.g. yield stress from
   the IceModel or other user of this class).
- */
+*/
 class ZeroSliding : public ShallowStressBalance
 {
 public:
@@ -142,9 +172,6 @@ public:
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/);
-
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/);
 
   //! Defines requested couplings fields and/or asks an attached model
   //! to do so.
@@ -163,5 +190,7 @@ public:
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(PISMVars &vars);
 };
+
+} // end of namespace pism
 
 #endif /* _SHALLOWSTRESSBALANCE_H_ */

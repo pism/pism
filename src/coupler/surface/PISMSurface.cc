@@ -26,6 +26,8 @@
 #include "pism_options.hh"
 #include <assert.h>
 
+namespace pism {
+
 ///// PISMSurfaceModel base class:
 
 PISMSurfaceModel::PISMSurfaceModel(IceGrid &g, const PISMConfig &conf)
@@ -139,3 +141,5 @@ void PISMSurfaceModel::add_vars_to_output(std::string keyword, std::set<std::str
     atmosphere->add_vars_to_output(keyword, result);
   }
 }
+
+} // end of namespace pism

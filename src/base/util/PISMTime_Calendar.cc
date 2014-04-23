@@ -27,6 +27,8 @@
 #include "calcalcs.h"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 static inline std::string string_strip(std::string input) {
   if (input.empty() == true)
     return input;
@@ -168,7 +170,7 @@ PetscErrorCode PISMTime_Calendar::init() {
  */
 PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
   PetscErrorCode ierr;
-  PetscMPIInt rank;
+  int rank = 0;
   std::vector<double> time, time_bounds;
   std::string time_units, time_bounds_name, new_calendar,
     time_name = m_config.get_string("time_dimension_name");
@@ -180,7 +182,7 @@ PetscErrorCode PISMTime_Calendar::init_from_file(std::string filename) {
   ierr = MPI_Comm_rank(m_com, &rank); CHKERRQ(ierr);
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
-  ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var(time_name, exists); CHKERRQ(ierr);
   if (exists == false) {
     ierr = nc.close(); CHKERRQ(ierr);
@@ -577,3 +579,5 @@ PetscErrorCode PISMTime_Calendar::compute_times(double time_start, double delta,
 
   return 1;
 }
+
+} // end of namespace pism

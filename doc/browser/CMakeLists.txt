@@ -4,6 +4,15 @@ find_package(Doxygen)
 
 # PISM Source Code Browsers
 if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
+
+  option(Pism_DOXYGEN_DOCUMENT_ALL "Extract all (even undocumented) entities." ON)
+
+  if (Pism_DOXYGEN_DOCUMENT_ALL)
+    set(Pism_DOXYGEN_EXTRACT_ALL "YES")
+  else()
+    set(Pism_DOXYGEN_EXTRACT_ALL "NO")
+  endif()
+
   set (browser_helpers
     initialization-sequence.dot
     config_doc.py
@@ -36,7 +45,7 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # Generate the config file
   add_custom_command (OUTPUT pism_config.nc
-    COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${PROJECT_SOURCE_DIR}/src/pism_config.cdl)
+    COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${Pism_SOURCE_DIR}/src/pism_config.cdl)
 
   # Generate the config documentation
   add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pism_config.md

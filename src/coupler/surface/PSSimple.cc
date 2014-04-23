@@ -24,6 +24,8 @@
 
 #include <assert.h>
 
+namespace pism {
+
 ///// Simple PISM surface model.
 PSSimple::PSSimple(IceGrid &g, const PISMConfig &conf)
   : PISMSurfaceModel(g, conf),
@@ -154,3 +156,5 @@ PetscErrorCode PSSimple::write_variables(std::set<std::string> vars, const PIO &
 
   return 0;
 }
+
+} // end of namespace pism

@@ -28,6 +28,8 @@
 
 #include <assert.h>
 
+namespace pism {
+
 //! \file iMtemp.cc Methods of IceModel which implement the cold-ice, temperature-based formulation of conservation of energy.
 
 
@@ -422,3 +424,5 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   return 0;
 }
 
+
+} // end of namespace pism

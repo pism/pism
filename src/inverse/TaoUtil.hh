@@ -24,11 +24,13 @@
 #include "pism_const.hh"
 #include "TerminationReason.hh"
 
+namespace pism {
+
 extern const char *const* TaoConvergedReasons;
 
 //! Class to initialize the TAO library using the Resource Allocation Is Initialization (RAII) paradigm.
 /*! Declare a TaoInitializer on the stack to initialize the library in, e.g. `main`. When its destructor is called,
-    the TAO library will be finalized.
+  the TAO library will be finalized.
 */
 class TaoInitializer {
 public:
@@ -49,53 +51,53 @@ public:
 //! \brief An interface for solving an optimization problem with TAO where the
 //! problem itself is defined by a separate Problem class.
 /*!  The primary interface to a TAO optimization problem is mediated by a PETSc-style
-`TaoSolver` object. The PISM TaoBasicSolver C++ class wraps a `TaoSolver` and some of 
-its initialization boilierplate, and allows a separate class to define the function to be minimized.
+  `TaoSolver` object. The PISM TaoBasicSolver C++ class wraps a `TaoSolver` and some of 
+  its initialization boilierplate, and allows a separate class to define the function to be minimized.
 
-To use a TaoBasicSolver you create a `Problem` class that defines the objective function and initial
-guess, as well any auxilliary callbacks desired.  The Problem class must define a
+  To use a TaoBasicSolver you create a `Problem` class that defines the objective function and initial
+  guess, as well any auxilliary callbacks desired.  The Problem class must define a
 
-\code
-PetscErrorCode Problem::connect(TaoSolver solver);
-\endcode
+  \code
+  PetscErrorCode Problem::connect(TaoSolver solver);
+  \endcode
 
-method which gives the `Problem` an opportunity to register its methods as callbacks to the solver, 
-perhaps taking advantage of the various `TaoFooCallback` classes provided in TaoUtil.hh to facilitate this.
-For example, a problem class MyProblem that did nothing more than register a combined objective/gradient
-callback could define
+  method which gives the `Problem` an opportunity to register its methods as callbacks to the solver, 
+  perhaps taking advantage of the various `TaoFooCallback` classes provided in TaoUtil.hh to facilitate this.
+  For example, a problem class MyProblem that did nothing more than register a combined objective/gradient
+  callback could define
 
-\code
-PetscErrorCode MyProblem::connect(TaoSolver tao) {
+  \code
+  PetscErrorCode MyProblem::connect(TaoSolver tao) {
   PetscErrorCode ierr;
   typedef TaoObjGradCallback<Problem,&MyProblem::evaluateObjectiveAndGradient> ObjGradCallback; 
   ierr = ObjGradCallback::connect(tao,*this); CHKERRQ(ierr);
   return 0;
-}
-\endcode
+  }
+  \endcode
 
-In addition to the `connect` method, a `Problem` must define 
-\code
-PetscErrorCode MyProblem::formInitialGuess(Vec *v, TerminationReason::Ptr &reason)
-\endcode
-which allows the problem to set the initial guess for optimization. If the minimization
-is successful, the solution will be found in the same vector that was returned by this method.
+  In addition to the `connect` method, a `Problem` must define 
+  \code
+  PetscErrorCode MyProblem::formInitialGuess(Vec *v, TerminationReason::Ptr &reason)
+  \endcode
+  which allows the problem to set the initial guess for optimization. If the minimization
+  is successful, the solution will be found in the same vector that was returned by this method.
 
-Assuming a `MyProblem` called `problem` has been constructed, solution
-of the minimization is done using, for example, the TAO algorithm
-tao_cg:
+  Assuming a `MyProblem` called `problem` has been constructed, solution
+  of the minimization is done using, for example, the TAO algorithm
+  tao_cg:
 
-\code
-TaoBasicSolver<MyProblem> solver(com,"tao_cg",problem);
+  \code
+  TaoBasicSolver<MyProblem> solver(com,"tao_cg",problem);
 
-TerminationReason::Ptr reason;
-solver.solve(reason);
+  TerminationReason::Ptr reason;
+  solver.solve(reason);
 
-if(reason->succeeded()) {
+  if(reason->succeeded()) {
   printf("Success: %s\n",reason->description().c_str());
-} else {
+  } else {
   printf("Failure: %s\n",reason->description().c_str());
-}
-\endcode
+  }
+  \endcode
 */
 template<class Problem>
 class TaoBasicSolver {
@@ -103,8 +105,8 @@ public:
     
   //! Construct a solver to solve `prob` using TAO algorithm `tao_type`.
   TaoBasicSolver(MPI_Comm comm, const char* tao_type, Problem &prob):
-  m_comm(comm), m_problem(prob)
-   {
+    m_comm(comm), m_problem(prob)
+  {
     PetscErrorCode ierr;
     ierr = this->construct(tao_type);
     if(ierr) {
@@ -186,22 +188,22 @@ protected:
 
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-This class makes it convenient to associate a TAO Objective callback
-with a C++ object method. To assign 
-\code
-PetscErrorCode MyObject::evaluateObjective(TaoSolver tao,Vec x, double *value);
-\endcode
+  This class makes it convenient to associate a TAO Objective callback
+  with a C++ object method. To assign 
+  \code
+  PetscErrorCode MyObject::evaluateObjective(TaoSolver tao,Vec x, double *value);
+  \endcode
 
-as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `TaoSolver` `tao`, 
 
-\code
-MyObject obj;
-TaoObjectiveCallback<MyObject>::connect(tao,obj);
-\endcode
+  \code
+  MyObject obj;
+  TaoObjectiveCallback<MyObject>::connect(tao,obj);
+  \endcode
 
-The method name `evaluateObjective` for the callback is hard-coded.
-See TaoObjGradCallback for a technique to allow 
-the method name to be specified (at the expense of a little more cumbersome code).
+  The method name `evaluateObjective` for the callback is hard-coded.
+  See TaoObjGradCallback for a technique to allow 
+  the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
 class TaoObjectiveCallback {
@@ -210,15 +212,15 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveRoutine(tao,
-      TaoObjectiveCallback<Problem>::evaluateObjectiveCallback,
-      &p ); CHKERRQ(ierr);
+                                  TaoObjectiveCallback<Problem>::evaluateObjectiveCallback,
+                                  &p ); CHKERRQ(ierr);
     return 0;
   }
 
 protected:
 
   static PetscErrorCode evaluateObjectiveCallback(TaoSolver tao,
-                                 Vec x, double *value, void *ctx ) {
+                                                  Vec x, double *value, void *ctx ) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateObjective(tao,x,value); CHKERRQ(ierr);
@@ -229,22 +231,22 @@ protected:
 
 //! \brief Adaptor to connect a TAO monitoring callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-This class makes it convenient to associate a TAO Monitor callback
-with a C++ object method. To assign 
-\code
-PetscErrorCode MyObject::monitorTao(TaoSolver tao)
-\endcode
+  This class makes it convenient to associate a TAO Monitor callback
+  with a C++ object method. To assign 
+  \code
+  PetscErrorCode MyObject::monitorTao(TaoSolver tao)
+  \endcode
 
-as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `TaoSolver` `tao`, 
 
-\code
-MyObject obj;
-TaoMonitorCallback<MyObject>::connect(tao,obj);
-\endcode
+  \code
+  MyObject obj;
+  TaoMonitorCallback<MyObject>::connect(tao,obj);
+  \endcode
 
-The method name `monitorTao` for the callback is hard-coded.
-See TaoObjGradCallback for a technique to allow 
-the method name to be specified (at the expense of a little more cumbersome code).
+  The method name `monitorTao` for the callback is hard-coded.
+  See TaoObjGradCallback for a technique to allow 
+  the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
 class TaoMonitorCallback {
@@ -253,8 +255,8 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetMonitor(tao,
-      TaoMonitorCallback<Problem>::monitorTao,
-      &p, NULL ); CHKERRQ(ierr);
+                         TaoMonitorCallback<Problem>::monitorTao,
+                         &p, NULL ); CHKERRQ(ierr);
     return 0;
   }
 
@@ -270,22 +272,22 @@ protected:
 
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-This class makes it convenient to associate a TAO VariableBounds callback
-with a C++ object method. To assign 
-\code
-PetscErrorCode MyObject::getVariableBounds(TaoSolver tao,Vec lo, Vec hi);
-\endcode
+  This class makes it convenient to associate a TAO VariableBounds callback
+  with a C++ object method. To assign 
+  \code
+  PetscErrorCode MyObject::getVariableBounds(TaoSolver tao,Vec lo, Vec hi);
+  \endcode
 
-as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `TaoSolver` `tao`, 
 
-\code
-MyObject obj;
-TaoGetVariableBoundsCallback<MyObject>::connect(tao,obj);
-\endcode
+  \code
+  MyObject obj;
+  TaoGetVariableBoundsCallback<MyObject>::connect(tao,obj);
+  \endcode
 
-The method name `getVariableBounds` for the callback is hard-coded.
-See TaoObjGradCallback for a technique to allow 
-the method name to be specified (at the expense of a little more cumbersome code).
+  The method name `getVariableBounds` for the callback is hard-coded.
+  See TaoObjGradCallback for a technique to allow 
+  the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
 class TaoGetVariableBoundsCallback {
@@ -294,8 +296,8 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetVariableBoundsRoutine(tao,
-      TaoGetVariableBoundsCallback<Problem>::getVariableBounds,
-      &p); CHKERRQ(ierr);
+                                       TaoGetVariableBoundsCallback<Problem>::getVariableBounds,
+                                       &p); CHKERRQ(ierr);
     return 0;
   }
 
@@ -311,22 +313,22 @@ protected:
 
 //! \brief Adaptor to connect a TAO objective gradient callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-This class makes it convenient to associate a TAO Objective Gradient callback
-with a C++ object method. To assign 
-\code
-PetscErrorCode MyObject::evaluateGradient(TaoSolver tao,Vec x, Vec gradient);
-\endcode
+  This class makes it convenient to associate a TAO Objective Gradient callback
+  with a C++ object method. To assign 
+  \code
+  PetscErrorCode MyObject::evaluateGradient(TaoSolver tao,Vec x, Vec gradient);
+  \endcode
 
-as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `TaoSolver` `tao`, 
 
-\code
-MyObject obj;
-TaoGradientCallback<MyObject>::connect(tao,obj);
-\endcode
+  \code
+  MyObject obj;
+  TaoGradientCallback<MyObject>::connect(tao,obj);
+  \endcode
 
-The method name `evaluateGradient` for the callback is hard-coded.
-See TaoObjGradCallback for a technique to allow 
-the method name to be specified (at the expense of a little more cumbersome code).
+  The method name `evaluateGradient` for the callback is hard-coded.
+  See TaoObjGradCallback for a technique to allow 
+  the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
 class TaoGradientCallback {
@@ -335,15 +337,15 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetGradientRoutine(tao,
-      TaoGradientCallback<Problem>::evaluateGradient,
-      &p ); CHKERRQ(ierr);
+                                 TaoGradientCallback<Problem>::evaluateGradient,
+                                 &p ); CHKERRQ(ierr);
     return 0;
   }
 
 protected:
 
   static PetscErrorCode evaluateGradient(TaoSolver tao,
-                                 Vec x, Vec gradient, void *ctx ) {
+                                         Vec x, Vec gradient, void *ctx ) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateGradient(tao,x,gradient); CHKERRQ(ierr);
@@ -353,22 +355,22 @@ protected:
 
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-This class makes it convenient to associate a TAO convergence monitoring callback
-with a C++ object method. To assign 
-\code
-PetscErrorCode MyObject::convergenceTest(TaoSolver tao);
-\endcode
+  This class makes it convenient to associate a TAO convergence monitoring callback
+  with a C++ object method. To assign 
+  \code
+  PetscErrorCode MyObject::convergenceTest(TaoSolver tao);
+  \endcode
 
-as the convergence test function to a `TaoSolver` `tao`, 
+  as the convergence test function to a `TaoSolver` `tao`, 
 
-\code
-MyObject obj;
-TaoConvergenceCallback<MyObject>::connect(tao,obj);
-\endcode
+  \code
+  MyObject obj;
+  TaoConvergenceCallback<MyObject>::connect(tao,obj);
+  \endcode
 
-The method name `convergenceTest` for the callback is hard-coded.
-See TaoObjGradCallback for a technique to allow 
-the method name to be specified (at the expense of a little more cumbersome code).
+  The method name `convergenceTest` for the callback is hard-coded.
+  See TaoObjGradCallback for a technique to allow 
+  the method name to be specified (at the expense of a little more cumbersome code).
 */
 template<class Problem>
 class TaoConvergenceCallback {
@@ -377,8 +379,8 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetConvergenceTest(tao,
-      TaoConvergenceCallback<Problem>::convergenceTestCallback,
-      &p ); CHKERRQ(ierr);
+                                 TaoConvergenceCallback<Problem>::convergenceTestCallback,
+                                 &p ); CHKERRQ(ierr);
     return 0;
   }
 
@@ -395,21 +397,21 @@ protected:
 
 //! \brief Adaptor to connect a TAO objective and gradient function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-This class makes it convenient to associate a TAO combined objective value and gradient 
-callback with a C++ object method. To assign 
-\code
-PetscErrorCode MyObject::someObjectiveFunction(TaoSolver tao,Vec x, double *value, Vec gradient);
-\endcode
+  This class makes it convenient to associate a TAO combined objective value and gradient 
+  callback with a C++ object method. To assign 
+  \code
+  PetscErrorCode MyObject::someObjectiveFunction(TaoSolver tao,Vec x, double *value, Vec gradient);
+  \endcode
 
-as the convergence test function to a `TaoSolver` `tao`, 
+  as the convergence test function to a `TaoSolver` `tao`, 
 
-\code
-MyObject obj;
-typedef TaoObjGradCallback<MyObject,&MyObject::someObjectiveFunction> ObjGradCallback;
-ObjGradCallback::connect(tao,obj);
-\endcode
+  \code
+  MyObject obj;
+  typedef TaoObjGradCallback<MyObject,&MyObject::someObjectiveFunction> ObjGradCallback;
+  ObjGradCallback::connect(tao,obj);
+  \endcode
 
-Note that the method name for the callback must be specified explicitly via a template argument.
+  Note that the method name for the callback must be specified explicitly via a template argument.
 */
 template<class Problem, PetscErrorCode (Problem::*Callback)(TaoSolver,Vec,double*,Vec) >
 class TaoObjGradCallback {
@@ -418,15 +420,15 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveAndGradientRoutine(tao,
-      TaoObjGradCallback<Problem,Callback>::evaluateObjectiveAndGradientCallback,
-      &p ); CHKERRQ(ierr);
+                                             TaoObjGradCallback<Problem,Callback>::evaluateObjectiveAndGradientCallback,
+                                             &p ); CHKERRQ(ierr);
     return 0;
   }
   
 protected:
 
   static PetscErrorCode evaluateObjectiveAndGradientCallback(TaoSolver tao,
-                                 Vec x, double *value, Vec gradient, void *ctx ) {
+                                                             Vec x, double *value, Vec gradient, void *ctx ) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = (p->*Callback)(tao,x,value,gradient); CHKERRQ(ierr);
@@ -436,21 +438,21 @@ protected:
 
 //! \brief Adaptor to connect a TAO objective function callback to a C++ object method.
 /*! The TAO library interfaces with user code via C-style callback functions.
-This class makes it convenient to associate a TAO Linearly Constrained Augmented Lagrangian (LCL)
-callbacks with C++ object methods. To assign 
-\code
-PetscErrorCode MyObject::evaluateConstraints(TaoSolver tao,Vec x,Vec c);
-PetscErrorCode MyObject::evaluateConstraintsJacobianState(TaoSolver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure);
-PetscErrorCode MyObject::evaluateConstraintsJacobianDesign(TaoSolver tao, Vec x, Mat *J);
-\endcode
-as the LCL callbacks to a `TaoSolver` `tao`, 
+  This class makes it convenient to associate a TAO Linearly Constrained Augmented Lagrangian (LCL)
+  callbacks with C++ object methods. To assign 
+  \code
+  PetscErrorCode MyObject::evaluateConstraints(TaoSolver tao,Vec x,Vec c);
+  PetscErrorCode MyObject::evaluateConstraintsJacobianState(TaoSolver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure);
+  PetscErrorCode MyObject::evaluateConstraintsJacobianDesign(TaoSolver tao, Vec x, Mat *J);
+  \endcode
+  as the LCL callbacks to a `TaoSolver` `tao`, 
 
-\code
-MyObject obj;
-TaoLCLCallback<MyObject>::connect(tao,obj);
-\endcode
+  \code
+  MyObject obj;
+  TaoLCLCallback<MyObject>::connect(tao,obj);
+  \endcode
 
-The method names for the callback (`evaluateConstraints`, etc.) are hard-coded.
+  The method names for the callback (`evaluateConstraints`, etc.) are hard-coded.
 */
 template<class Problem>
 class TaoLCLCallbacks {
@@ -475,7 +477,7 @@ protected:
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateConstraintsJacobianState(tao,x,J,Jpc,Jinv,structure);
-      CHKERRQ(ierr);
+    CHKERRQ(ierr);
     return 0;
   }
 
@@ -486,5 +488,7 @@ protected:
     return 0;
   }
 };
+
+} // end of namespace pism
 
 #endif /* end of include guard: TAOUTIL_HH_W42GJNRO */

@@ -22,19 +22,20 @@
 #include "flowlaws.hh"
 #include "IceGrid.hh"
 #include <assert.h>
-const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] = 
-{FEShapeQ1::shape0, FEShapeQ1::shape1, FEShapeQ1::shape2, FEShapeQ1::shape3};
 
+namespace pism {
 
-FEElementMap::FEElementMap(const IceGrid &g)
-{
+const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] =
+  {FEShapeQ1::shape0, FEShapeQ1::shape1, FEShapeQ1::shape2, FEShapeQ1::shape3};
+
+FEElementMap::FEElementMap(const IceGrid &g) {
   // Start by assuming ghost elements exist in all directions.
   // Elements are indexed by their lower left vertex.  If there is a ghost
   // element on the right, its i-index will be the same as the maximum
   // i-index of a non-ghost vertex in the local grid.
-  xs= g.xs-1;                    // Start at ghost to the left. 
+  xs = g.xs - 1;                    // Start at ghost to the left.
   int xf = g.xs + g.xm - 1; // End at ghost to the right.
-  ys= g.ys-1;                    // Start at ghost at the bottom.
+  ys = g.ys - 1;                    // Start at ghost at the bottom.
   int yf = g.ys + g.ym - 1; // End at ghost at the top.
 
   lxs = g.xs;
@@ -42,196 +43,242 @@ FEElementMap::FEElementMap(const IceGrid &g)
   lys = g.ys;
   int lyf = lys + g.ym - 1;
 
-  // Now correct if needed. The only way there will not be ghosts is if the 
+  // Now correct if needed. The only way there will not be ghosts is if the
   // grid is not periodic and we are up against the grid boundary.
-  
-  if( !(g.periodicity & X_PERIODIC) )
-  {
-    // Leftmost element has x-index 0.
-    if(xs < 0){
-      xs = 0;
-    }
-    // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
-    if(xf > g.Mx-2)
-    {
-      xf  = g.Mx-2;
-      lxf = g.Mx-2;
-    }
-  }
 
-  if( !(g.periodicity & Y_PERIODIC) )
-  {
-    // Bottom element has y-index 0.
-    if(ys < 0){
-      ys = 0;
-    }
-    // Topmost vertex has index g.My-1, so the topmost element has index g.My-2
-    if(yf > g.My-2)
+  if (!(g.periodicity & X_PERIODIC))
     {
-      yf  = g.My-2;
-      lyf = g.My-2;
+      // Leftmost element has x-index 0.
+      if (xs < 0){
+        xs = 0;
+      }
+      // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
+      if (xf > g.Mx - 2)
+        {
+          xf = g.Mx - 2;
+          lxf = g.Mx - 2;
+        }
     }
-  }
-  
+
+  if (!(g.periodicity & Y_PERIODIC))
+    {
+      // Bottom element has y-index 0.
+      if (ys < 0){
+        ys = 0;
+      }
+      // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
+      if (yf > g.My - 2)
+        {
+          yf = g.My - 2;
+          lyf = g.My - 2;
+        }
+    }
+
   // Tally up the number of elements in each direction
-  xm = xf-xs+1;
-  ym = yf-ys+1;
-  lxm = lxf-lxs+1;
-  lym = lyf-lys+1;
+  xm = xf - xs + 1;
+  ym = yf - ys + 1;
+  lxm = lxf - lxs + 1;
+  lym = lyf - lys + 1;
 
 }
 
 
-/*! \brief Extract local degrees of freedom for element (\a i,\a j) from global vector \a xg to
-  local vector \a x (scalar-valued DOF version). */
-void FEDOFMap::extractLocalDOFs(int i,int j, double const*const*xg,double *x) const
+/*! @brief Extract local degrees of freedom for element (`i`,`j`) from global vector `x_global` to
+  local vector `x_local` (scalar-valued DOF version). */
+void FEDOFMap::extractLocalDOFs(int i, int j, double const*const*x_global, double *x_local) const
 {
-  x[0] = xg[i][j]; x[1] = xg[i+1][j]; x[2] = xg[i+1][j+1]; x[3] = xg[i][j+1];  
+  x_local[0] = x_global[i][j];
+  x_local[1] = x_global[i + 1][j];
+  x_local[2] = x_global[i + 1][j + 1];
+  x_local[3] = x_global[i][j + 1];
 }
 
-/*! \brief Extract local degrees of freedom for element (\a i,\a j) from global vector \a xg to
-local vector \a x (vector-valued DOF version).
+void FEDOFMap::extractLocalDOFs(int i, int j, IceModelVec2S &x_global, double *x_local) const
+{
+  x_local[0] = x_global(i, j);
+  x_local[1] = x_global(i + 1, j);
+  x_local[2] = x_global(i + 1, j + 1);
+  x_local[3] = x_global(i, j + 1);
+}
+
+/*! @brief Extract local degrees of freedom for element (`i`,`j`) from global vector `x_global` to
+  local vector `x_local` (vector-valued DOF version).
 */
-void FEDOFMap::extractLocalDOFs(int i,int j, PISMVector2 const*const*xg,PISMVector2 *x) const
+void FEDOFMap::extractLocalDOFs(int i, int j, PISMVector2 const*const*x_global,
+                                PISMVector2 *x_local) const
 {
-  x[0] = xg[i][j]; x[1] = xg[i+1][j]; x[2] = xg[i+1][j+1]; x[3] = xg[i][j+1];    
+  x_local[0] = x_global[i][j];
+  x_local[1] = x_global[i + 1][j];
+  x_local[2] = x_global[i + 1][j + 1];
+  x_local[3] = x_global[i][j + 1];
+}
+
+void FEDOFMap::extractLocalDOFs(int i, int j, IceModelVec2V &x_global,
+                                PISMVector2 *x_local) const
+{
+  x_local[0] = x_global(i, j);
+  x_local[1] = x_global(i + 1, j);
+  x_local[2] = x_global(i + 1, j + 1);
+  x_local[3] = x_global(i, j + 1);
 }
 
 
 //! Extract scalar degrees of freedom for the element specified previously with FEDOFMap::reset
-void FEDOFMap::extractLocalDOFs(double const*const*xg,double *x) const
+void FEDOFMap::extractLocalDOFs(double const*const*x_global, double *x_local) const
 {
-  extractLocalDOFs(m_i,m_j,xg,x);
+  extractLocalDOFs(m_i, m_j, x_global, x_local);
+}
+
+void FEDOFMap::extractLocalDOFs(IceModelVec2S &x_global, double *x_local) const
+{
+  extractLocalDOFs(m_i, m_j, x_global, x_local);
+}
+
+void FEDOFMap::extractLocalDOFs(PISMVector2 const*const*x_global, PISMVector2 *x_local) const
+{
+  extractLocalDOFs(m_i, m_j, x_global, x_local);
 }
 
 //! Extract vector degrees of freedom for the element specified previously with FEDOFMap::reset
-void FEDOFMap::extractLocalDOFs(PISMVector2 const*const*xg,PISMVector2 *x) const
+void FEDOFMap::extractLocalDOFs(IceModelVec2V &x_global, PISMVector2 *x_local) const
 {
-  extractLocalDOFs(m_i,m_j,xg,x);
+  extractLocalDOFs(m_i, m_j, x_global, x_local);
 }
 
-//! Convert a local degree of freedom index \a k to a global degree of freedom index (\a i,\a j).
-void FEDOFMap::localToGlobal(int k, int *i, int *j)
-{
+//! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
+void FEDOFMap::localToGlobal(int k, int *i, int *j) {
   *i = m_i + kIOffset[k];
-  *j = m_j + kJOffset[k];  
+  *j = m_j + kJOffset[k];
 }
 
-/*!\brief Initialize the FEDOFMap to element (\a i, \a j) for the purposes of inserting into
-global residual and Jacobian arrays. */
-void FEDOFMap::reset(int i, int j, const IceGrid &grid)
-{
+/*!@brief Initialize the FEDOFMap to element (`i`, `j`) for the purposes of inserting into
+  global residual and Jacobian arrays. */
+void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
   m_i = i; m_j = j;
   // The meaning of i and j for a PISM IceGrid and for a Petsc DA are swapped (the so-called
   // fundamental transpose.  The interface between PISM and Petsc is the stencils, so all
   // interactions with the stencils involve a transpose.
   m_col[0].j = i;   m_col[0].i = j;
-  m_col[1].j = i+1; m_col[1].i = j;
-  m_col[2].j = i+1; m_col[2].i = j+1;
-  m_col[3].j = i;   m_col[3].i = j+1;
+  m_col[1].j = i + 1; m_col[1].i = j;
+  m_col[2].j = i + 1; m_col[2].i = j + 1;
+  m_col[3].j = i;   m_col[3].i = j + 1;
 
-  memcpy(m_row,m_col,Nk*sizeof(m_col[0]));
+  memcpy(m_row, m_col, Nk*sizeof(m_col[0]));
 
   // We do not ever sum into rows that are not owned by the local rank.
-  for(int k=0; k<Nk; k++) {         
+  for (int k = 0; k < Nk; k++) {
     int pism_i = m_row[k].j, pism_j = m_row[k].i;
-    if (  pism_i < grid.xs || grid.xs+grid.xm-1 < pism_i || 
-                pism_j < grid.ys || grid.ys+grid.ym-1 < pism_j ) {
-      markRowInvalid(k);      
+    if (pism_i < grid.xs || grid.xs + grid.xm - 1 < pism_i ||
+        pism_j < grid.ys || grid.ys + grid.ym - 1 < pism_j) {
+      markRowInvalid(k);
     }
   }
 }
 
-/*!\brief Mark that the row corresponding to local degree of freedom \a k should not be updated
-when inserting into the global residual or Jacobian arrays. */
-void FEDOFMap::markRowInvalid(int k)
-{
-  m_row[k].i=m_row[k].j = kDofInvalid;
+/*!@brief Mark that the row corresponding to local degree of freedom `k` should not be updated
+  when inserting into the global residual or Jacobian arrays. */
+void FEDOFMap::markRowInvalid(int k) {
+  m_row[k].i = m_row[k].j = kDofInvalid;
 }
 
-/*!\brief Mark that the column corresponding to local degree of freedom \a k should not be updated
-when inserting into the global Jacobian arrays. */
-void FEDOFMap::markColInvalid(int k)
-{
-  m_col[k].i=m_col[k].j = kDofInvalid;
+/*!@brief Mark that the column corresponding to local degree of freedom `k` should not be updated
+  when inserting into the global Jacobian arrays. */
+void FEDOFMap::markColInvalid(int k) {
+  m_col[k].i = m_col[k].j = kDofInvalid;
 }
 
-/*!\brief Add the values of element-local residual contributions \a y to the global residual
- vector \a yg. */
+/*!@brief Add the values of element-local residual contributions `y` to the global residual
+  vector `yg`. */
 /*! The element-local residual should be an array of Nk values.*/
-void FEDOFMap::addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg)
-{
-  for (int k=0; k<Nk; k++) {
+void FEDOFMap::addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg) {
+  for (int k = 0; k < Nk; k++) {
     if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
     yg[m_row[k].j][m_row[k].i].u += y[k].u;
     yg[m_row[k].j][m_row[k].i].v += y[k].v;
   }
 }
-void FEDOFMap::addLocalResidualBlock(const double *y, double **yg)
-{
-  for (int k=0; k<Nk; k++) {
+
+void FEDOFMap::addLocalResidualBlock(const double *y, double **yg) {
+  for (int k = 0; k < Nk; k++) {
     if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
     yg[m_row[k].j][m_row[k].i] += y[k];
   }
 }
 
+void FEDOFMap::addLocalResidualBlock(const PISMVector2 *y, IceModelVec2V &y_global) {
+  for (int k = 0; k < Nk; k++) {
+    if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
+    y_global(m_row[k].j, m_row[k].i).u += y[k].u;
+    y_global(m_row[k].j, m_row[k].i).v += y[k].v;
+  }
+}
+
+void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
+  for (int k = 0; k < Nk; k++) {
+    if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
+    y_global(m_row[k].j, m_row[k].i) += y[k];
+  }
+}
+
 //! Add the contributions of an element-local Jacobian to the global Jacobian vector.
 /*! The element-local Jacobian should be givnen as a row-major array of Nk*Nk values in the
-scalar case or (2Nk)*(2Nk) values in the vector valued case. */
-PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J)
-{
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J,Nk,m_row,Nk,m_col,K,ADD_VALUES);CHKERRQ(ierr);  
+  scalar case or (2Nk)*(2Nk) values in the vector valued case. */
+PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row, Nk, m_col, K, ADD_VALUES);CHKERRQ(ierr);
   return 0;
 }
 
-//! Set a diagonal entry for global degree of freedom (\a i ,\a j ) in a Jacobian matrix
+//! Set a diagonal entry for global degree of freedom (`i` ,`j`) in a Jacobian matrix
 /*! This is an unhappy hack for supporting Dirichlet constrained degrees of freedom.
-In the scalar valued case, \a K should point to a single value, and in the vector case,
-it should point to 4 (=2x2) values for the (2x2) block correspoinding to to u-u, u-v, v-u, and v-v
-interactions at grid point (\a i, \a j).  Sheesh.*/
-PetscErrorCode FEDOFMap::setJacobianDiag(int i, int j, const double*K, Mat J)
-{
+  In the scalar valued case, `K` should point to a single value, and in the vector case,
+  it should point to 4 (=2x2) values for the (2x2) block correspoinding to to u-u, u-v, v-u, and v-v
+  interactions at grid point (`i`, `j`).  Sheesh.*/
+PetscErrorCode FEDOFMap::setJacobianDiag(int i, int j, const double*K, Mat J) {
   MatStencil row;
   row.i=j; row.j=i;
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,K,INSERT_VALUES);CHKERRQ(ierr);  
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, K, INSERT_VALUES);CHKERRQ(ierr);
   return 0;
 }
 
-const int FEDOFMap::kIOffset[4] = {0,1,1,0};
-const int FEDOFMap::kJOffset[4] = {0,0,1,1};
+const int FEDOFMap::kIOffset[4] = {0, 1, 1, 0};
+const int FEDOFMap::kJOffset[4] = {0, 0, 1, 1};
 
 
-FEQuadrature::FEQuadrature()
-{
-  PetscMemzero(m_tmpScalar, Nk*sizeof(double));
+FEQuadrature_Scalar::FEQuadrature_Scalar() {
+  PetscMemzero(m_tmp, Nk*sizeof(double));
 }
 
-//! Obtain the weights \f$w_q\f$ for quadrature.
-void FEQuadrature::getWeightedJacobian(double *jxw)
-{
-  for(int q=0;q<Nq;q++)
-  {
-    jxw[q] = m_jacobianDet * quadWeights[q];
-  } 
+//! Obtain the weights @f$ w_q @f$ for quadrature.
+void FEQuadrature::getWeightedJacobian(double *jxw) {
+  for (int q=0;q<Nq;q++)
+    {
+      jxw[q] = m_jacobianDet * quadWeights[q];
+    }
 }
 
-//! Obtain the weights \f$w_q\f$ for quadrature.
-void FEQuadrature::init(const IceGrid &grid,double L)
-{
-  // Since we use uniform cartesian coordinates, the Jacobian is constant and diagonal on every element.
-  // Note that the reference element is \f$ [-1,1]^2 \f$ hence the extra factor of 1/2.
-  double jacobian_x = 0.5*grid.dx/L;///ref.Length();
-  double jacobian_y = 0.5*grid.dy/L;///ref.Length();
+//! Obtain the weights @f$ w_q @f$ for quadrature.
+void FEQuadrature::init(const IceGrid &grid, double L) {
+  // Since we use uniform cartesian coordinates, the Jacobian is
+  // constant and diagonal on every element.
+  //
+  // Note that the reference element is @f$ [-1,1]^2 @f$ hence the
+  // extra factor of 1/2.
+  double jacobian_x = 0.5*grid.dx / L;
+  double jacobian_y = 0.5*grid.dy / L;
   m_jacobianDet = jacobian_x*jacobian_y;
 
   FEShapeQ1 shape;
-  for(int q=0; q<Nq; q++){
-    for(int k=0; k<Nk; k++){
-      shape.eval(k,quadPoints[q][0],quadPoints[q][1],&m_germs[q][k]);
+  for (int q = 0; q < Nq; q++){
+    for (int k = 0; k < Nk; k++){
+      shape.eval(k, quadPoints[q][0], quadPoints[q][1], &m_germs[q][k]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
     }
   }
+}
+
+FEQuadrature_Vector::FEQuadrature_Vector() {
+  PetscMemzero(m_tmp, Nk*sizeof(PISMVector2));
 }
 
 //! Return the values at all quadrature points of all shape functions.
@@ -241,264 +288,255 @@ const FEFunctionGerm (*FEQuadrature::testFunctionValues())[FEQuadrature::Nq]
   return m_germs;
 }
 
-//! Return the values of all shape functions at quadrature point \a q
+//! Return the values of all shape functions at quadrature point `q`
 //* The return value is an array of Nk FEFunctionGerms. */
-const FEFunctionGerm *FEQuadrature::testFunctionValues(int q)
-{
+const FEFunctionGerm *FEQuadrature::testFunctionValues(int q) {
   return m_germs[q];
 }
 
-//! Return the values at quadrature point \a q of shape function \a k.
-const FEFunctionGerm *FEQuadrature::testFunctionValues(int q, int k)
-{
+//! Return the values at quadrature point `q` of shape function `k`.
+const FEFunctionGerm *FEQuadrature::testFunctionValues(int q, int k) {
   return m_germs[q] + k;
 }
 
 
-/*! \brief Compute the values at the quadrature ponits of a scalar-valued 
-finite-element function with element-local  degrees of freedom \a x.*/
-/*! There should be room for FEQuadrature::Nq values in the output vector \a vals. */
-void FEQuadrature::computeTrialFunctionValues(const double *x, double *vals)
-{
-  for (int q=0; q<Nq; q++) {
+/*! @brief Compute the values at the quadrature ponits of a scalar-valued
+  finite-element function with element-local  degrees of freedom `x_local`.*/
+/*! There should be room for FEQuadrature::Nq values in the output vector `vals`. */
+void FEQuadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals) {
+  for (int q = 0; q < Nq; q++) {
     const FEFunctionGerm *test = m_germs[q];
     vals[q] = 0;
-    for (int k=0; k<Nk; k++) {
-      vals[q] += test[k].val * x[k];
+    for (int k = 0; k < Nk; k++) {
+      vals[q] += test[k].val * x_local[k];
     }
   }
 }
 
-/*! \brief Compute the values and first derivatives at the quadrature 
-points of a scalar-valued finite-element function with element-local  
-degrees of freedom \a x.*/
-/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals, \a dx, 
-and \a dy. */
-void FEQuadrature::computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy)
-{
-  for (int q=0; q<Nq; q++) {
+/*! @brief Compute the values and first derivatives at the quadrature
+  points of a scalar-valued finite-element function with element-local
+  degrees of freedom `x_local`.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors `vals`, `dx`,
+  and `dy`. */
+void FEQuadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals, double *dx, double *dy) {
+  for (int q = 0; q < Nq; q++) {
     const FEFunctionGerm *test = m_germs[q];
     vals[q] = 0; dx[q] = 0; dy[q] = 0;
-    for (int k=0; k<Nk; k++) {
-      vals[q] += test[k].val * x[k];
-      dx[q]   += test[k].dx * x[k];
-      dy[q]   += test[k].dy * x[k];
+    for (int k = 0; k < Nk; k++) {
+      vals[q] += test[k].val * x_local[k];
+      dx[q]   += test[k].dx * x_local[k];
+      dy[q]   += test[k].dy * x_local[k];
     }
   }
 }
 
-/*! \brief Compute the values at the quadrature points on element (\a i,\a j) 
-of a scalar-valued finite-element function with global degrees of freedom \a x.*/
-/*! There should be room for FEQuadrature::Nq values in the output vector \a vals. */
-void FEQuadrature::computeTrialFunctionValues( int i, int j, const FEDOFMap &dof, 
-                                             double const*const*xg, double *vals)
-{
-  dof.extractLocalDOFs(i,j,xg,m_tmpScalar);
-  computeTrialFunctionValues(m_tmpScalar,vals);
+/*! @brief Compute the values at the quadrature points on element (`i`,`j`)
+  of a scalar-valued finite-element function with global degrees of freedom `x`.*/
+/*! There should be room for FEQuadrature::Nq values in the output vector `vals`. */
+void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
+                                                     double const*const*x_global, double *vals) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals);
 }
 
-/*! \brief Compute the values and first derivatives at the quadrature points 
-on element (\a i,\a j)  of a scalar-valued finite-element function with global degrees of freedom \a x.*/
-/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals, \a dx, and \a dy. */
-void FEQuadrature::computeTrialFunctionValues( int i, int j, const FEDOFMap &dof, double const*const*xg, 
-                                 double *vals, double *dx, double *dy)
-{
-  dof.extractLocalDOFs(i,j,xg,m_tmpScalar);
-  computeTrialFunctionValues(m_tmpScalar,vals,dx,dy);  
+
+void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
+                                                     IceModelVec2S &x_global, double *vals) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals);
 }
 
-/*! \brief Compute the values at the quadrature points of a vector-valued 
-finite-element function with element-local degrees of freedom \a x.*/
-/*! There should be room for FEQuadrature::Nq values in the output vector \a vals. */
-void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals)
-{
-  for (int q=0; q<Nq; q++) {
-    vals[q].u = 0; vals[q].v = 0;
+/*! @brief Compute the values and first derivatives at the quadrature
+  points on element (`i`,`j`) of a scalar-valued finite-element function
+  with global degrees of freedom `x`.*/
+/*! There should be room for FEQuadrature::Nq values in the output
+  vectors `vals`, `dx`, and `dy`. */
+void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j,
+                                                     const FEDOFMap &dof, double const*const*x_global,
+                                                     double *vals, double *dx, double *dy) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals, dx, dy);
+}
+
+void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j,
+                                                     const FEDOFMap &dof, IceModelVec2S &x_global,
+                                                     double *vals, double *dx, double *dy) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals, dx, dy);
+}
+
+/*! @brief Compute the values at the quadrature points of a vector-valued
+  finite-element function with element-local degrees of freedom `x_local`.*/
+/*! There should be room for FEQuadrature::Nq values in the output vector `vals`. */
+void FEQuadrature_Vector::computeTrialFunctionValues(const PISMVector2 *x_local, PISMVector2 *result) {
+  for (int q = 0; q < Nq; q++) {
+    result[q].u = 0;
+    result[q].v = 0;
     const FEFunctionGerm *test = m_germs[q];
-    for (int k=0; k<Nk; k++) {
-      vals[q].u += test[k].val * x[k].u;
-      vals[q].v += test[k].val * x[k].v;
+    for (int k = 0; k < Nk; k++) {
+      result[q].u += test[k].val * x_local[k].u;
+      result[q].v += test[k].val * x_local[k].v;
     }
-  }  
-
+  }
 }
 
-/*! \brief Compute the values and symmetric gradient at the quadrature points of a vector-valued 
-finite-element function with element-local degrees of freedom \a x.*/
-/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals and \a Dv. 
-Each entry of \a Dv is an array of three numbers: 
-\f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]\f].
-*/
-void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, double (*Dv)[3] )
-{
-  for (int q=0; q<Nq; q++) {
+/*! @brief Compute the values and symmetric gradient at the quadrature
+ *         points of a vector-valued finite-element function with
+ *         element-local degrees of freedom `x_local`.
+ *
+ * There should be room for FEQuadrature::Nq values in the output
+ * vectors `vals` and `Dv`. Each entry of `Dv` is an array of three
+ * numbers:
+ * @f[ \left[
+ * \frac{du}{dx}, \frac{dv}{dy}, \frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)
+ * \right] @f].
+ */
+void FEQuadrature_Vector::computeTrialFunctionValues(const PISMVector2 *x_local, PISMVector2 *vals, double (*Dv)[3]) {
+  for (int q = 0; q < Nq; q++) {
     vals[q].u = 0; vals[q].v = 0;
     double *Dvq = Dv[q];
-    Dvq[0]=0; Dvq[1]=0; Dvq[2]=0;
+    Dvq[0] = 0; Dvq[1] = 0; Dvq[2] = 0;
     const FEFunctionGerm *test = m_germs[q];
-    for(int k=0; k<Nk; k++) {
-      vals[q].u += test[k].val * x[k].u;
-      vals[q].v += test[k].val * x[k].v;
-      Dvq[0] += test[k].dx * x[k].u;
-      Dvq[1] += test[k].dy * x[k].v;
-      Dvq[2] += 0.5*(test[k].dy*x[k].u + test[k].dx*x[k].v);
+    for (int k = 0; k < Nk; k++) {
+      vals[q].u += test[k].val * x_local[k].u;
+      vals[q].v += test[k].val * x_local[k].v;
+      Dvq[0] += test[k].dx * x_local[k].u;
+      Dvq[1] += test[k].dy * x_local[k].v;
+      Dvq[2] += 0.5*(test[k].dy*x_local[k].u + test[k].dx*x_local[k].v);
     }
-  }  
+  }
 }
 
-/*! \brief Compute the values and symmetric gradient at the quadrature points of a vector-valued 
-finite-element function with element-local degrees of freedom \a x.*/
-/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals, \ dx, and \a dy. 
-Each element of \a dx is the derivative of the vector-valued finite-element function in the x direction,
-and similarly for \a dy.
+/*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
+  finite-element function with element-local degrees of freedom `x_local`.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors `vals`, \ dx, and `dy`.
+  Each element of `dx` is the derivative of the vector-valued finite-element function in the x direction,
+  and similarly for `dy`.
 */
-void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PISMVector2 *dx, PISMVector2 *dy)
-{
-  for (int q=0; q<Nq; q++) {
+void FEQuadrature_Vector::computeTrialFunctionValues(const PISMVector2 *x_local, PISMVector2 *vals, PISMVector2 *dx, PISMVector2 *dy) {
+  for (int q = 0; q < Nq; q++) {
     vals[q].u = 0; vals[q].v = 0;
     dx[q].u = 0; dx[q].v = 0;
     dy[q].u = 0; dy[q].v = 0;
     const FEFunctionGerm *test = m_germs[q];
-    for(int k=0; k<Nk; k++) {
-      vals[q].u += test[k].val * x[k].u;
-      vals[q].v += test[k].val * x[k].v;
-      dx[q].u += test[k].dx * x[k].u;
-      dx[q].v += test[k].dx * x[k].v;
-      dy[q].u += test[k].dy * x[k].u;
-      dy[q].v += test[k].dy * x[k].v;
+    for (int k = 0; k < Nk; k++) {
+      vals[q].u += test[k].val * x_local[k].u;
+      vals[q].v += test[k].val * x_local[k].v;
+      dx[q].u += test[k].dx * x_local[k].u;
+      dx[q].v += test[k].dx * x_local[k].v;
+      dy[q].u += test[k].dy * x_local[k].u;
+      dy[q].v += test[k].dy * x_local[k].v;
     }
-  }    
-}
-  
-
-/*! \brief Compute the values at the quadrature points of a vector-valued 
-finite-element function on element (\a i,\a j) with global degrees of freedom \a xg.*/
-/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals. */
-void FEQuadrature::computeTrialFunctionValues( int i, int j, const FEDOFMap &dof,                                              
-                                             PISMVector2 const*const*xg, PISMVector2 *vals )
-{
-  dof.extractLocalDOFs(i,j,xg,m_tmpVector);
-  computeTrialFunctionValues(m_tmpVector,vals);
+  }
 }
 
-/*! \brief Compute the values and symmetric gradient at the quadrature points of a vector-valued 
-finite-element function on element (\a i,\a j) with global degrees of freedom \a xg.*/
-/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals and \a Dv. 
-Each entry of \a Dv is an array of three numbers: 
-\f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]\f].
+
+/*! @brief Compute the values at the quadrature points of a vector-valued
+  finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors `vals`. */
+void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
+                                                     PISMVector2 const*const*x_global, PISMVector2 *vals) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals);
+}
+
+void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
+                                                     IceModelVec2V &x_global, PISMVector2 *vals) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals);
+}
+
+/*! @brief Compute the values and symmetric gradient at the quadrature points of a vector-valued
+  finite-element function on element (`i`,`j`) with global degrees of freedom `x_global`.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors `vals` and `Dv`.
+  Each entry of `Dv` is an array of three numbers:
+  @f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]@f].
 */
-void FEQuadrature::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
-                                              PISMVector2 const*const* xg, PISMVector2 *vals, double (*Dv)[3] )
-{
-  dof.extractLocalDOFs(i,j,xg,m_tmpVector);
-  computeTrialFunctionValues(m_tmpVector,vals,Dv);
+void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
+                                                     PISMVector2 const*const* x_global,
+                                                     PISMVector2 *vals, double (*Dv)[3]) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals, Dv);
 }
 
-//! The quadrature points on the reference square \f$x,y=\pm 1/\sqrt{3}\f$.
-const double FEQuadrature::quadPoints[FEQuadrature::Nq][2] = 
-                                          {{ -0.57735026918962573, -0.57735026918962573 },
-                                           {  0.57735026918962573, -0.57735026918962573 },
-                                           {  0.57735026918962573,  0.57735026918962573 },
-                                           { -0.57735026918962573,  0.57735026918962573 }};
+void FEQuadrature_Vector::computeTrialFunctionValues(int i, int j, const FEDOFMap &dof,
+                                                     IceModelVec2V &x_global,
+                                                     PISMVector2 *vals, double (*Dv)[3]) {
+  dof.extractLocalDOFs(i, j, x_global, m_tmp);
+  computeTrialFunctionValues(m_tmp, vals, Dv);
+}
+
+//! The quadrature points on the reference square @f$ x,y=\pm 1/\sqrt{3} @f$.
+const double FEQuadrature::quadPoints[FEQuadrature::Nq][2] =
+  {{-0.57735026918962573, -0.57735026918962573},
+   { 0.57735026918962573, -0.57735026918962573},
+   { 0.57735026918962573,  0.57735026918962573},
+   {-0.57735026918962573,  0.57735026918962573}};
 
 //! The weights w_i for gaussian quadrature on the reference element with these quadrature points
-const double FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1,1,1,1};
+const double FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1.0, 1.0, 1.0, 1.0};
 
-DirichletData::DirichletData() : 
-m_indices(NULL), m_values(NULL), m_weight(1) {  
+DirichletData::DirichletData()
+  : m_indices(NULL), m_weight(1.0) {
+  for (int k = 0; k < FEQuadrature::Nk; ++k) {
+    m_indices_e[k] = 0;
+  }
 }
 
 DirichletData::~DirichletData() {
-  if(m_indices != NULL) {
+  if (m_indices != NULL) {
     PetscErrorCode ierr;
-    ierr = verbPrintf(1,m_indices->get_grid()->com, "Warning: DirichletData destructing with IceModelVecs still accessed.  Looks like DirichletData::finish() was not called.");
-      CHKERRCONTINUE(ierr);
+    ierr = verbPrintf(1, m_indices->get_grid()->com,
+                      "Warning: DirichletData destructing with IceModelVecs still accessed."
+                      " Looks like DirichletData::finish() was not called.");
+    CHKERRCONTINUE(ierr);
   }
 }
 
-PetscErrorCode DirichletData::init(IceModelVec2Int *indices, IceModelVec2V *values, double weight) {
-  PetscErrorCode ierr;
-  m_indices = indices;
-  m_values  = values;
-  m_weight  = weight;
-  
-  if( m_indices != NULL) {
-    ierr = m_indices->get_array(m_pIndices); CHKERRQ(ierr);    
-  } else {
-    m_indices = NULL;
-    m_pIndices = NULL;
-  }
-
-  if( values != NULL) {
-    ierr = values->get_array(reinterpret_cast<PISMVector2 ** &>(m_pValues)); CHKERRQ(ierr);    
-  } else {
-    m_values = NULL;
-    m_pValues = NULL;
-  }
-  
-  return 0;
-}
-
-PetscErrorCode DirichletData::init(IceModelVec2Int *indices, IceModelVec2S *values, double weight) {
-  PetscErrorCode ierr;
-  m_indices = indices;
-  m_values  = values;
-  m_weight  = weight;
-  
-  if( m_indices != NULL) {
-    ierr = m_indices->get_array(m_pIndices); CHKERRQ(ierr);    
-  } else {
-    m_indices = NULL;
-    m_pIndices = NULL;
-  }
-
-  if( values != NULL) {
-    ierr = values->get_array(reinterpret_cast<double ** &>(m_pValues)); CHKERRQ(ierr);    
-  } else {
-    m_values = NULL;
-    m_pValues = NULL;
-  }
-  
-  return 0;
-}
-
-
-PetscErrorCode DirichletData::init(IceModelVec2Int *indices ) {
-  PetscErrorCode ierr;
-
-  m_values  = NULL;
-  m_pValues  = NULL;
-  m_weight  = 1;
-  
-  m_indices = indices;
-  if( m_indices != NULL) {
-    ierr = m_indices->get_array(m_pIndices); CHKERRQ(ierr);    
-  } else {
-    m_indices = NULL;
-    m_pIndices = NULL;
-  }
-
+PetscErrorCode DirichletData::init(IceModelVec2Int *indices, double weight) {
+  PetscErrorCode ierr = init_impl(indices, NULL, weight); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode DirichletData::finish() {
-  PetscErrorCode ierr;
-  if(m_indices) {
-    ierr = m_indices->end_access(); CHKERRQ(ierr);
-    m_indices = NULL;
-    m_pIndices = NULL;
-  }
- 
-  if(m_values) {
-    ierr = m_values->end_access(); CHKERRQ(ierr);
-    m_values = NULL;
-    m_pValues = NULL;
-  }
+  PetscErrorCode ierr = finish_impl(NULL); CHKERRQ(ierr);
   return 0;
 }
-void DirichletData::constrain( FEDOFMap &dofmap ) {
-  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
-  for (int k=0; k<FEQuadrature::Nk; k++) {
+
+PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *values,
+                                        double weight) {
+  PetscErrorCode ierr;
+  m_weight  = weight;
+
+  if (indices != NULL) {
+    ierr = indices->begin_access(); CHKERRQ(ierr);
+    m_indices = indices;
+  }
+
+  if (values != NULL) {
+    ierr = values->begin_access(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode DirichletData::finish_impl(IceModelVec *values) {
+  PetscErrorCode ierr;
+  if (m_indices) {
+    ierr = m_indices->end_access(); CHKERRQ(ierr);
+    m_indices = NULL;
+  }
+
+  if (values) {
+    ierr = values->end_access(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+void DirichletData::constrain(FEDOFMap &dofmap) {
+  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+  for (int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
       dofmap.markRowInvalid(k);
@@ -507,174 +545,203 @@ void DirichletData::constrain( FEDOFMap &dofmap ) {
   }
 }
 
-void DirichletData::update( FEDOFMap &dofmap, PISMVector2* x_e ) {
-#if (PISM_DEBUG==1)
+// Scalar version
+
+DirichletData_Scalar::DirichletData_Scalar()
+  : m_values(NULL) {
+}
+
+PetscErrorCode DirichletData_Scalar::init(IceModelVec2Int *indices, IceModelVec2S *values,
+                                          double weight) {
+  m_values  = values;
+  PetscErrorCode ierr = init_impl(indices, m_values, weight); CHKERRQ(ierr);
+
+  return 0;
+}
+
+void DirichletData_Scalar::update(FEDOFMap &dofmap, double* x_local) {
   assert(m_values != NULL);
-#endif
-  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
-  PISMVector2 **pValues = reinterpret_cast<PISMVector2 **>(m_pValues);
-  for (int k=0; k<FEQuadrature::Nk; k++) {
+
+  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+  for (int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
-      dofmap.localToGlobal(k,&i,&j);
-      x_e[k].u = pValues[i][j].u;
-      x_e[k].v = pValues[i][j].v;
+      dofmap.localToGlobal(k, &i, &j);
+      x_local[k] = (*m_values)(i,j);
     }
   }
 }
 
-void DirichletData::update( FEDOFMap &dofmap, double* x_e ) {
-#if (PISM_DEBUG==1)
-  assert(m_values != NULL);
-#endif
-
-  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
-  double **pValues = reinterpret_cast<double **>(m_pValues);
-  for (int k=0; k<FEQuadrature::Nk; k++) {
+void DirichletData_Scalar::update_homogeneous(FEDOFMap &dofmap, double* x_local) {
+  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+  for (int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
-      int i, j;
-      dofmap.localToGlobal(k,&i,&j);
-      x_e[k] = pValues[i][j];
+      x_local[k] = 0.;
     }
   }
 }
 
-
-void DirichletData::updateHomogeneous( FEDOFMap &dofmap, PISMVector2* x_e ) {
-  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
-  for (int k=0; k<FEQuadrature::Nk; k++) {
-    if (m_indices_e[k] > 0.5) { // Dirichlet node
-      x_e[k].u = 0;
-      x_e[k].v = 0;
-    }
-  }
-}
-
-void DirichletData::updateHomogeneous( FEDOFMap &dofmap, double* x_e ) {
-  dofmap.extractLocalDOFs(m_pIndices,m_indices_e);
-  for (int k=0; k<FEQuadrature::Nk; k++) {
-    if (m_indices_e[k] > 0.5) { // Dirichlet node
-      x_e[k] = 0.;
-    }
-  }
-}
-
-void DirichletData::fixResidual( PISMVector2 **x, PISMVector2 **r) {
-#if (PISM_DEBUG==1)
+void DirichletData_Scalar::fix_residual(double **x_global, double **r_global) {
   assert(m_values != NULL);
-#endif
 
   IceGrid &grid = *m_indices->get_grid();
-  PISMVector2 **pValues = reinterpret_cast<PISMVector2 **>(m_pValues);
-  
-  int i,j;
+
   // For each node that we own:
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (m_indices->as_int(i,j) == 1) {
-          // Enforce explicit dirichlet data.
-          r[i][j].u = m_weight * (x[i][j].u - pValues[i][j].u);
-          r[i][j].v = m_weight * (x[i][j].v - pValues[i][j].v);
+  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
+      if ((*m_indices)(i, j) > 0.5) {
+        // Enforce explicit dirichlet data.
+        r_global[i][j] = m_weight * (x_global[i][j] - (*m_values)(i,j));
       }
     }
   }
 }
 
-void DirichletData::fixResidualHomogeneous(  PISMVector2 **r) {
-  IceGrid &grid = *m_indices->get_grid();
-  
-  int i,j;
+void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
+  IceGrid *grid = m_indices->get_grid();
+
   // For each node that we own:
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (m_indices->as_int(i,j) == 1) {
-          // Enforce explicit dirichlet data.
-          r[i][j].u = 0;
-          r[i][j].v = 0;
+  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
+    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
+      if ((*m_indices)(i, j) > 0.5) {
+        // Enforce explicit dirichlet data.
+        r_global[i][j] = 0.0;
       }
     }
   }
 }
 
-void DirichletData::fixResidual( double **x, double **r) {
-#if (PISM_DEBUG==1)
-  assert(m_values != NULL);
-#endif
-
-  IceGrid &grid = *m_indices->get_grid();
-  
-  int i,j;
-  
-  double **pValues = reinterpret_cast<double **>(m_pValues);
-  // For each node that we own:
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (m_indices->as_int(i,j) == 1) {
-          // Enforce explicit dirichlet data.
-          r[i][j] = m_weight * (x[i][j] - pValues[i][j]);
-      }
-    }
-  }
-}
-
-void DirichletData::fixResidualHomogeneous(  double **r) {
-  IceGrid &grid = *m_indices->get_grid();
-  
-  int i,j;
-  // For each node that we own:
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (m_indices->as_int(i,j) == 1) {
-          // Enforce explicit dirichlet data.
-          r[i][j] = 0;
-      }
-    }
-  }
-}
-
-
-PetscErrorCode DirichletData::fixJacobian2V(Mat J) {
-  int i,j;
+PetscErrorCode DirichletData_Scalar::fix_jacobian(Mat J) {
   PetscErrorCode ierr;
-  IceGrid &grid = *m_indices->get_grid();
+  IceGrid *grid = m_indices->get_grid();
 
-  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
-  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
-  // columns previously, the symmetry of the Jacobian matrix is preserved.
+  // Until now, the rows and columns correspoinding to Dirichlet data
+  // have not been set. We now put an identity block in for these
+  // unknowns. Note that because we have takes steps to not touching
+  // these columns previously, the symmetry of the Jacobian matrix is
+  // preserved.
 
-  const double ident[4] = {m_weight,0,0,m_weight};
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (m_indices->as_int(i,j) == 1) {
+  const double identity = m_weight;
+  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
+    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
+      if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
         // Transpose shows up here!
         row.j = i; row.i = j;
-        ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,ident,ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
+                                          ADD_VALUES); CHKERRQ(ierr);
       }
     }
   }
   return 0;
 }
 
-PetscErrorCode DirichletData::fixJacobian2S(Mat J) {
-  int i,j;
+PetscErrorCode DirichletData_Scalar::finish() {
+  PetscErrorCode ierr = finish_impl(m_values); CHKERRQ(ierr);
+  m_values = NULL;
+  return 0;
+}
+
+// Vector version
+
+DirichletData_Vector::DirichletData_Vector()
+  : m_values(NULL) {
+}
+
+PetscErrorCode DirichletData_Vector::init(IceModelVec2Int *indices, IceModelVec2V *values,
+                                          double weight) {
+  m_values = values;
+  PetscErrorCode ierr = init_impl(indices, m_values, weight); CHKERRQ(ierr);
+
+  return 0;
+}
+
+void DirichletData_Vector::update(FEDOFMap &dofmap, PISMVector2* x_local) {
+  assert(m_values != NULL);
+
+  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+  for (int k = 0; k < FEQuadrature::Nk; k++) {
+    if (m_indices_e[k] > 0.5) { // Dirichlet node
+      int i, j;
+      dofmap.localToGlobal(k, &i, &j);
+      x_local[k].u = (*m_values)(i, j).u;
+      x_local[k].v = (*m_values)(i, j).v;
+    }
+  }
+}
+
+void DirichletData_Vector::update_homogeneous(FEDOFMap &dofmap, PISMVector2* x_local) {
+  dofmap.extractLocalDOFs(*m_indices, m_indices_e);
+  for (int k = 0; k < FEQuadrature::Nk; k++) {
+    if (m_indices_e[k] > 0.5) { // Dirichlet node
+      x_local[k].u = 0.0;
+      x_local[k].v = 0.0;
+    }
+  }
+}
+
+void DirichletData_Vector::fix_residual(PISMVector2 **x_global, PISMVector2 **r_global) {
+  assert(m_values != NULL);
+
+  IceGrid *grid = m_indices->get_grid();
+
+  // For each node that we own:
+  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
+    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
+      if ((*m_indices)(i, j) > 0.5) {
+        // Enforce explicit dirichlet data.
+        r_global[i][j].u = m_weight * (x_global[i][j].u - (*m_values)(i, j).u);
+        r_global[i][j].v = m_weight * (x_global[i][j].v - (*m_values)(i, j).v);
+      }
+    }
+  }
+}
+
+void DirichletData_Vector::fix_residual_homogeneous(PISMVector2 **r_global) {
+  IceGrid &grid = *m_indices->get_grid();
+
+  // For each node that we own:
+  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
+      if ((*m_indices)(i, j) > 0.5) {
+        // Enforce explicit dirichlet data.
+        r_global[i][j].u = 0.0;
+        r_global[i][j].v = 0.0;
+      }
+    }
+  }
+}
+
+PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
+  int i, j;
   PetscErrorCode ierr;
   IceGrid &grid = *m_indices->get_grid();
 
-  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
-  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
-  // columns previously, the symmetry of the Jacobian matrix is preserved.
+  // Until now, the rows and columns correspoinding to Dirichlet data
+  // have not been set. We now put an identity block in for these
+  // unknowns. Note that because we have takes steps to not touching
+  // these columns previously, the symmetry of the Jacobian matrix is
+  // preserved.
 
-  const double ident = m_weight;
+  const double identity[4] = {m_weight, 0, 0, m_weight};
   for (i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (m_indices->as_int(i,j) == 1) {
+      if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
         // Transpose shows up here!
         row.j = i; row.i = j;
-        ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,&ident,ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
+                                          ADD_VALUES); CHKERRQ(ierr);
       }
     }
   }
   return 0;
 }
+
+PetscErrorCode DirichletData_Vector::finish() {
+  PetscErrorCode ierr = finish_impl(m_values); CHKERRQ(ierr);
+  m_values = NULL;
+  return 0;
+}
+
+} // end of namespace pism

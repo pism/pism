@@ -20,6 +20,8 @@
 #include "pism_options.hh"
 #include "pismmerge.hh"
 
+using namespace pism;
+
 static char help[] =
   "Tool for merging PISM output files produced using '-o_format quilt'.\n";
 
@@ -34,7 +36,7 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
           var_name.c_str(), input_file.c_str(), output_file.c_str(), compression_level);
 
   // Fill the output file with metadata using the rank=0 "patch".
-  ierr = input.open(patch_filename(input_file, 0), PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = input.open(patch_filename(input_file, 0), PISM_READONLY); CHKERRQ(ierr);
 
   // Create the output file
   ierr = output.create(output_file); CHKERRQ(ierr);
@@ -106,7 +108,7 @@ int process_all_variables(std::string input_file, std::string output_file,
           input_file.c_str(), output_file.c_str(), compression_level);
 
   // Fill the output file with metadata using the rank=0 "patch".
-  ierr = input.open(patch_filename(input_file, 0), PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = input.open(patch_filename(input_file, 0), PISM_READONLY); CHKERRQ(ierr);
 
   // Create the output file
   ierr = output.create(output_file); CHKERRQ(ierr);
@@ -142,7 +144,7 @@ int main(int argc, char *argv[])
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  PetscMPIInt rank, size;
+  int rank, size;
 
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
 

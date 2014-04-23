@@ -22,6 +22,8 @@
 #include "PIO.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 ///// "Force-to-thickness" mechanism
 PSForceThickness::PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input)
   : PSModifier(g, conf, input),
@@ -138,7 +140,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   // it is really there; and regrid the target thickness
   PIO nc(grid, "guess_mode");
   bool mask_exists = false;
-  ierr = nc.open(fttfile, PISM_NOWRITE); CHKERRQ(ierr);
+  ierr = nc.open(fttfile, PISM_READONLY); CHKERRQ(ierr);
   ierr = nc.inq_var("ftt_mask", mask_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -457,3 +459,5 @@ PetscErrorCode PSForceThickness::write_variables(std::set<std::string> vars, con
 
   return 0;
 }
+
+} // end of namespace pism

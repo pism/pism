@@ -30,7 +30,7 @@ See [instructions for getting the latest release](http://www.pism-docs.org/wiki/
 Making Doxygen Source Code Documentation
 ----------------------------------------
 
-See the INSTALL file in this directory.
+See the [INSTALL.md](INSTALL.md) file in this directory.
 
 Contributing
 ------------

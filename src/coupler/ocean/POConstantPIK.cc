@@ -23,6 +23,8 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 
+namespace pism {
+
 POConstantPIK::POConstantPIK(IceGrid &g, const PISMConfig &conf)
   : PISMOceanModel(g, conf),
     shelfbmassflux(g.get_unit_system()),
@@ -220,3 +222,5 @@ PetscErrorCode POConstantPIK::write_variables(std::set<std::string> vars, const 
 
   return 0;
 }
+
+} // end of namespace pism

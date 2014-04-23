@@ -18,7 +18,7 @@
 
 #include "PISMNCFile.hh"
 
-#include <cstdio>               // fprintf, stderr
+#include <cstdio>               // fprintf, stderr, rename, remove
 #include "pism_const.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
@@ -27,6 +27,8 @@
 #define MPI_INCLUDED 1
 #endif
 #include <netcdf.h>
+
+namespace pism {
 
 PISMNCFile::PISMNCFile(MPI_Comm c)
   : com(c) {
@@ -103,3 +105,43 @@ int PISMNCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
 
   return 0;
 }
+
+//! \brief Check if a file is present are remove it.
+/*!
+ * Note: only processor 0 does the job.
+ */
+int PISMNCFile::remove_if_exists(std::string file_to_remove, int rank_to_use) {
+  int stat, rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  if (rank == rank_to_use) {
+    bool exists = false;
+
+    // Check if the file exists:
+    if (FILE *f = fopen(file_to_remove.c_str(), "r")) {
+      fclose(f);
+      exists = true;
+    } else {
+      exists = false;
+    }
+
+    if (exists) {
+      stat = remove(file_to_remove.c_str());
+      if (stat != 0) {
+        printf("PISM ERROR: can't remove '%s'.\n", file_to_remove.c_str());
+        return stat;
+      }
+
+      if (getVerbosityLevel() >= 2) {
+        printf("PISM WARNING: output file '%s' already exists. Deleting it...\n",
+               file_to_remove.c_str());
+      }
+
+    }
+
+  }
+
+  return 0;
+}
+
+} // end of namespace pism

@@ -20,6 +20,7 @@
 #include <cstring>
 #include <petscdmda.h>
 #include <assert.h>
+#include <algorithm>
 
 #include "iceModel.hh"
 #include "Mask.hh"
@@ -27,6 +28,8 @@
 #include "PISMSurface.hh"
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
+
+namespace pism {
 
 
 //! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
@@ -868,7 +871,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
    (IceModel::temperatureStep() and IceModel::enthalpyAndDrainageStep()).
 
    We use the 1D (flow line) parameterization of the sub-grid
-   grounding line position due to [@ref Gladstoneetal2012], (section
+   grounding line position due to [@ref Gladstoneetal2010], (section
    3.1.1) and generalize it to the case of arbitrary sea level
    elevation. Then this sub-grid grounding line position is used to
    compute the grounded area fraction for each cell.
@@ -911,7 +914,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
    \beta &= \mu\cdot H_{i+1} + b_{i+1} - z_{\text{sea level}}.
    @f}
 
-   Note that [@ref Gladstoneetal2012] describe a parameterization of
+   Note that [@ref Gladstoneetal2010] describe a parameterization of
    the grounding line position within a cell defined as the interval
    from the grid point `(i)` to the grid point `(i+1)`, with the ice
    thickness @f$ H @f$ and the bed elevation @f$ b @f$ defined *at
@@ -1092,3 +1095,5 @@ PetscErrorCode IceModel::update_floatation_mask() {
 
   return 0;
 }
+
+} // end of namespace pism

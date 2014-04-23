@@ -24,24 +24,16 @@
 #include "PISMHydrology.hh"
 #include "iceModelVec.hh"
 
+namespace pism {
+
 
 //! \brief PISM's default basal yield stress model which applies the Mohr-Coulomb model of deformable, pressurized till.
 class PISMMohrCoulombYieldStress : public PISMYieldStress
 {
 public:
-  PISMMohrCoulombYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro)
-    : PISMYieldStress(g, conf)
-  {
-    bed_topography = NULL;
-    mask = NULL;
-    hydrology = hydro;
-    if (allocate() != 0) {
-      PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMYieldStress constructor.\n");
-      PISMEnd();
-    }
-  }
+  PISMMohrCoulombYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro);
 
-  virtual ~PISMMohrCoulombYieldStress() {}
+  virtual ~PISMMohrCoulombYieldStress();
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -57,15 +49,18 @@ public:
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 
 protected:
-  IceModelVec2S till_phi, tauc, tillwat, Po;
-  IceModelVec2S *bed_topography;
-  IceModelVec2Int *mask;
-  PISMVars *variables;
-  PISMHydrology *hydrology;
+  IceModelVec2S m_till_phi, m_tauc, m_tillwat, m_Po;
+  IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
+  IceModelVec2S *m_bed_topography;
+  IceModelVec2Int *m_mask;
+  PISMVars *m_variables;
+  PISMHydrology *m_hydrology;
 
-  virtual PetscErrorCode allocate();
-  virtual PetscErrorCode topg_to_phi();
-  virtual PetscErrorCode tauc_to_phi();
+  PetscErrorCode allocate();
+  PetscErrorCode topg_to_phi();
+  PetscErrorCode tauc_to_phi();
 };
+
+} // end of namespace pism
 
 #endif /* _PISMMOHRCOULOMBYIELDSTRESS_H_ */

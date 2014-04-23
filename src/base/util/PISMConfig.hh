@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 
 #ifndef _PISMCONFIG_H_
 #define _PISMCONFIG_H_
@@ -24,6 +24,8 @@
 #include "PISMUnits.hh"
 #include <string>
 #include <set>
+
+namespace pism {
 
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class PISMConfig {
@@ -82,5 +84,7 @@ private:
   mutable std::set<std::string> m_parameters_used;
   bool m_options_left_set;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMCONFIG_H_ */

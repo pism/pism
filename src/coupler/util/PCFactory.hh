@@ -25,6 +25,8 @@
 #include "IceGrid.hh"
 #include <map>
 
+namespace pism {
+
 class PISMConfig;
 
 template <class Model, class Modifier>
@@ -164,5 +166,7 @@ protected:
   IceGrid& grid;
   const PISMConfig& config;
 };
+
+} // end of namespace pism
 
 #endif /* _PCFACTORY_H_ */

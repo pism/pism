@@ -21,15 +21,17 @@
 
 #include "enthalpyConverter.hh"
 
+namespace pism {
+
 //! Enthalpy converter based on specific heat which is linear in temperature.
 /*!
-This EnthalpyConverter object converts between enthalpy and temperature using
-linear-in-temperature specific heat capacity.  We implement only 
-Equation (4.39) in [\ref GreveBlatter2009],
-        \f[ C(T) = 146.3 + 7.253 T = c_i + 7.253 (T - T_r) \f]
-where \f$T\f$ is in Kelvin, \f$c_i = 2009\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$,
-and the reference temperature is \f$T_r = 256.81786846822\f$ K.
- */
+  This EnthalpyConverter object converts between enthalpy and temperature using
+  linear-in-temperature specific heat capacity.  We implement only 
+  Equation (4.39) in [\ref GreveBlatter2009],
+  \f[ C(T) = 146.3 + 7.253 T = c_i + 7.253 (T - T_r) \f]
+  where \f$T\f$ is in Kelvin, \f$c_i = 2009\,\, \text{J}\,\text{kg}^{-1}\,\text{K}^{-1}\f$,
+  and the reference temperature is \f$T_r = 256.81786846822\f$ K.
+*/
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
   varcEnthalpyConverter(const PISMConfig &config)
@@ -53,10 +55,10 @@ public:
     \f$C(T) = c_i + 7.253 (T - T_r)\f$, with a reference temperature
     \f$T_r = 256.82\f$ K.
   */
-  virtual double c_from_T(double T)
+  virtual double c_from_T(double T) const
   { return c_i + c_gradient * (T - T_r); }
 
-  virtual double c_from_enth(double E, double p)
+  virtual double c_from_enth(double E, double p) const
   {
     double T;
     getAbsTemp(E, p, T);
@@ -66,10 +68,12 @@ public:
 protected:
   const double T_r,  //!< reference temperature in the parameterization of C(T)
     c_gradient;      //!< \brief the rate of change of C with respect to T in
-                     //!< the parameterization of C(T)
+  //!< the parameterization of C(T)
   double EfromT(double T) const;
   double TfromE(double E) const;
 };
+
+} // end of namespace pism
 
 #endif // __varcEnthalpyConverter_hh
 

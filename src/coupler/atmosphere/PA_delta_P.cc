@@ -19,6 +19,8 @@
 #include "PA_delta_P.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PA_delta_P::PA_delta_P(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
   : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
@@ -166,3 +168,5 @@ PetscErrorCode PA_delta_P::write_variables(std::set<std::string> vars, const PIO
 
   return 0;
 }
+
+} // end of namespace pism

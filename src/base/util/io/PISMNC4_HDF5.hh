@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013 PISM Authors
+// Copyright (C) 2012, 2013, 2014 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,13 +23,15 @@
 
 #include "PISMNCFile.hh"
 
+namespace pism {
+
 class PISMNC4_HDF5 : public PISMNCFile {
 public:
   PISMNC4_HDF5(MPI_Comm com);
   virtual ~PISMNC4_HDF5();
 
   // open/create/close
-  virtual int open(std::string filename, int mode);
+  virtual int open(std::string filename, PISM_IO_Mode mode);
 
   virtual int create(std::string filename);
 
@@ -95,7 +97,7 @@ public:
 
   using PISMNCFile::put_att_double;
   virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype,
-			     const std::vector<double> &data) const;
+                             const std::vector<double> &data) const;
 
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
@@ -108,9 +110,12 @@ public:
 
   virtual std::string get_format() const;
 protected:
+  virtual int integer_open_mode(PISM_IO_Mode input) const;
   virtual void check(int return_code) const;
 
   hid_t file_id;
 };
+
+} // end of namespace pism
 
 #endif /* _PISMNC4_HDF5_H_ */

@@ -24,6 +24,8 @@
 #include <assert.h>
 #include "PISMConfig.hh"
 
+namespace pism {
+
 bool IceModelVec3BTU::good_init() {
   return ((m_n_levels >= 2) && (Lbz > 0.0) && (v != NULL));
 }
@@ -145,7 +147,7 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
     // levels and the depth of the bed thermal layer from it:
     PIO nc(grid, "guess_mode");
 
-    ierr = nc.open(m_input_file, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(m_input_file, PISM_READONLY); CHKERRQ(ierr);
 
     bool exists;
     ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
@@ -221,7 +223,7 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
     bool exists;
     unsigned int n_records;
 
-    ierr = nc.open(m_input_file, PISM_NOWRITE); CHKERRQ(ierr);
+    ierr = nc.open(m_input_file, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
 
     if (exists) {
@@ -481,3 +483,5 @@ PetscErrorCode PISMBedThermalUnit::bootstrap() {
   return 0;
 }
 
+
+} // end of namespace pism

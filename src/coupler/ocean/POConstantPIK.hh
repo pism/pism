@@ -22,6 +22,8 @@
 #include "PISMOcean.hh"
 #include "NCVariable.hh"
 
+namespace pism {
+
 //! A class defining the interface of a PISM ocean model modifier.
 
 //! \brief A class implementing an ocean model.
@@ -48,5 +50,7 @@ private:
   PetscErrorCode allocate_POConstantPIK();
   double meltfactor;
 };
+
+} // end of namespace pism
 
 #endif /* _POCONSTANTPIK_H_ */

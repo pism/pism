@@ -41,6 +41,8 @@
 
 #include "PISMNC4_HDF5.hh"
 
+namespace pism {
+
 // Convert from a PISM I/O data type to a HDF5 type.
 static hid_t pism_type_to_hdf5_type(PISM_IO_Type xtype) {
   switch(xtype) {
@@ -441,9 +443,16 @@ PISMNC4_HDF5::PISMNC4_HDF5(MPI_Comm c)
 PISMNC4_HDF5::~PISMNC4_HDF5() {
 }
 
+int PISMNC4_HDF5::integer_open_mode(PISM_IO_Mode input) const {
+  if (input == PISM_READONLY) {
+    return H5F_ACC_RDONLY;
+  } else {
+    return H5F_ACC_RDWR;
+  }
+}
 
-// Open a file. mode should be one of PISM_NOWRITE and PISM_WRITE
-int PISMNC4_HDF5::open(std::string filename, int mode) {
+// Open a file. mode should be one of PISM_READONLY and PISM_READWRITE
+int PISMNC4_HDF5::open(std::string filename, PISM_IO_Mode mode) {
 
   int rank = 0;
   MPI_Comm_rank(com, &rank);
@@ -459,8 +468,7 @@ int PISMNC4_HDF5::open(std::string filename, int mode) {
               filename.c_str());
   }
 
-  file_id = H5Fopen(filename.c_str(), mode == PISM_NOWRITE ? H5F_ACC_RDONLY : H5F_ACC_RDWR,
-                    plist_id);
+  file_id = H5Fopen(filename.c_str(), integer_open_mode(mode), plist_id);
 
   H5Pclose(plist_id);
 
@@ -1152,3 +1160,5 @@ void PISMNC4_HDF5::check(int return_code) const {
 std::string PISMNC4_HDF5::get_format() const {
   return "netcdf4";
 }
+
+} // end of namespace pism

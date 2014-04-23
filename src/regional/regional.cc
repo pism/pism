@@ -19,6 +19,8 @@
 #include "regional.hh"
 #include "enthalpyConverter.hh"
 
+namespace pism {
+
 PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
@@ -213,3 +215,5 @@ PetscErrorCode PISMRegionalDefaultYieldStress::basal_material_yield_stress(IceMo
   return 0;
 }
 
+
+} // end of namespace pism

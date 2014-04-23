@@ -19,6 +19,8 @@
 #include "PO_delta_SMB.hh"
 #include "PISMConfig.hh"
 
+namespace pism {
+
 PO_delta_SMB::PO_delta_SMB(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
   : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in),
     shelfbmassflux(g.get_unit_system()),
@@ -141,3 +143,5 @@ PetscErrorCode PO_delta_SMB::write_variables(std::set<std::string> vars, const P
 
   return 0;
 }
+
+} // end of namespace pism

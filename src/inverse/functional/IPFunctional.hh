@@ -22,24 +22,24 @@
 #include "iceModelVec.hh"
 #include "FETools.hh"
 
-
-
+namespace pism {
 //! Abstract base class for functions from ice model vectors to \f$\mathbb{R}\f$.
 /*! Inverse problems frequently involve minimizing a functional,
-such such as the misfit
-\f[
-J(u) = \int_\Omega |u-u_{\rm obs}|^2
-\f]
-between observed (\f$u_{\rm obs}\f$) and modeled (\f$u\f$)
-surface velocities. Subclasses of IPFunctional define such maps,
-and permit computation of their gradients.
+  such such as the misfit
+  \f[
+  J(u) = \int_\Omega |u-u_{\rm obs}|^2
+  \f]
+  between observed (\f$u_{\rm obs}\f$) and modeled (\f$u\f$)
+  surface velocities. Subclasses of IPFunctional define such maps,
+  and permit computation of their gradients.
 */
 template<class IMVecType>
 class IPFunctional {
 
-public:  
-  IPFunctional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) { 
+public:
+  IPFunctional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) {
     m_quadrature.init(m_grid);
+    m_quadrature_vector.init(m_grid);
   }
 
   virtual ~IPFunctional() {};
@@ -49,14 +49,14 @@ public:
 
   //! Computes the gradient of the functional at the vector x.
   /*! On an \f$m\times n\f$ IceGrid, an IceModelVec \f$x\f$ with \f$d\f$
-  degrees of freedom will be \f$d m n\f$-dimensional with components \f$x_i\f$.
-  The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional 
-  \f$J\f$ with respect to \f$x\f$. Concretely, the \f$i^{\rm th}\f$ component of \f$\nabla J\f$
-  is
-  \f[
-  \nabla J_i = \frac{\partial}{\partial x_i} J(x).
-  \f]
-  This vector is returned as `gradient`.
+    degrees of freedom will be \f$d m n\f$-dimensional with components \f$x_i\f$.
+    The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional
+    \f$J\f$ with respect to \f$x\f$. Concretely, the \f$i^{\rm th}\f$ component of \f$\nabla J\f$
+    is
+    \f[
+    \nabla J_i = \frac{\partial}{\partial x_i} J(x).
+    \f]
+    This vector is returned as `gradient`.
   */
   virtual PetscErrorCode gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 
@@ -64,9 +64,10 @@ protected:
   IceGrid &m_grid;
 
   FEElementMap m_element_index;
-  FEQuadrature m_quadrature;
+  FEQuadrature_Scalar m_quadrature;
+  FEQuadrature_Vector m_quadrature_vector;
   FEDOFMap     m_dofmap;
-  
+
 private:
   // Hide copy/assignment operations
   IPFunctional(IPFunctional const &);
@@ -76,46 +77,46 @@ private:
 
 //! Abstract base class for IPFunctionals arising from an inner product.
 /*!
-Frequently functionals have the structure
-\f[
-J(u) = Q(u,u)
-\f]
-where \f$Q\f$ is a symmetric, non-negative definite, bilinear form. Certain
-minimization algorithms only apply to such functionals, which should subclass
-from IPInnerProductFunctional. 
+  Frequently functionals have the structure
+  \f[
+  J(u) = Q(u, u)
+  \f]
+  where \f$Q\f$ is a symmetric, non-negative definite, bilinear form. Certain
+  minimization algorithms only apply to such functionals, which should subclass
+  from IPInnerProductFunctional.
 */
 template<class IMVecType>
-class IPInnerProductFunctional : public IPFunctional<IMVecType>{
+class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
   IPInnerProductFunctional(IceGrid &grid) : IPFunctional<IMVecType>(grid) {};
 
-  //! Computes the inner product \f$Q(a,b)\f$.
+  //! Computes the inner product \f$Q(a, b)\f$.
   virtual PetscErrorCode dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;
 
   //! Computes the interior product of a vector with the IPInnerProductFunctional's underlying bilinear form.
-  /*! If \f$Q(x,y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the 
-  interior product of \f$a\f$ with \f$Q\f$ is the functional 
-  \f[
-  I(z) = Q(a,z).
-  \f]
-  Such a functional is always linear and hence can be represented by taking
-  the standard dot product with some vector \f$y\f$:
-  \f[
-  I(z) = y^T z.
-  \f]
-  This method returns the vector \f$y\f$.
-  */  
+  /*! If \f$Q(x, y)\f$ is a bilinear form, and \f$a\f$ is a vector, then the
+    interior product of \f$a\f$ with \f$Q\f$ is the functional
+    \f[
+    I(z) = Q(a, z).
+    \f]
+    Such a functional is always linear and hence can be represented by taking
+    the standard dot product with some vector \f$y\f$:
+    \f[
+    I(z) = y^T z.
+    \f]
+    This method returns the vector \f$y\f$.
+  */
   virtual PetscErrorCode interior_product(IMVecType &x, IMVecType &y) {
     PetscErrorCode ierr;
-    ierr = this->gradientAt(x,y); CHKERRQ(ierr);
+    ierr = this->gradientAt(x, y); CHKERRQ(ierr);
     ierr = y.scale(0.5); CHKERRQ(ierr);
     return 0;
   }
 
   //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
-  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType, 
-      \f$Q_{ij}= Q(x_i,x_j)\f$. */
+  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
+    \f$Q_{ij}= Q(x_i, x_j)\f$. */
   // virtual PetscErrorCode assemble_form(Mat Q) = 0;
 
 };
@@ -127,5 +128,7 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceM
 //! Computes finite difference approximations of a IPFunctional<IceModelVec2V> gradient.
 /*! Useful for debugging a hand coded gradient. */
 PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+
+} // end of namespace pism
 
 #endif /* end of include guard: FUNCTIONAL_HH_1E2DIXE6 */

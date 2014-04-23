@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "PISMStressBalance.hh"
 #include "PISMDiagnostic.hh"
 
+namespace pism {
 
 //! \brief Computes the vertically-averaged ice velocity.
 class PSB_velbar : public PISMDiag<PISMStressBalance>
@@ -31,39 +32,39 @@ public:
   PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes cbar, the magnitude of vertically-integrated horizontal
+//! \brief Computes velbar_mag, the magnitude of vertically-integrated horizontal
 //! velocity of ice and masks out ice-free areas.
-class PSB_cbar : public PISMDiag<PISMStressBalance>
+class PSB_velbar_mag : public PISMDiag<PISMStressBalance>
 {
 public:
-  PSB_cbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velbar_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes cflx, the magnitude of vertically-integrated horizontal
+//! \brief Computes flux_mag, the magnitude of vertically-integrated horizontal
 //! flux of ice.
-class PSB_cflx : public PISMDiag<PISMStressBalance>
+class PSB_flux_mag : public PISMDiag<PISMStressBalance>
 {
 public:
-  PSB_cflx(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_flux_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes cbase, the magnitude of horizontal velocity of ice at base
+//! \brief Computes velbase_mag, the magnitude of horizontal velocity of ice at base
 //! of ice and masks out ice-free areas.
-class PSB_cbase : public PISMDiag<PISMStressBalance>
+class PSB_velbase_mag : public PISMDiag<PISMStressBalance>
 {
 public:
-  PSB_cbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velbase_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes csurf, the magnitude of horizontal ice velocity at the
+//! \brief Computes velsurf_mag, the magnitude of horizontal ice velocity at the
 //! surface.
-class PSB_csurf : public PISMDiag<PISMStressBalance>
+class PSB_velsurf_mag : public PISMDiag<PISMStressBalance>
 {
 public:
-  PSB_csurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velsurf_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -86,7 +87,7 @@ public:
   \f]
 
   This ensures that \f$\tilde w(z_{\text{sea level}}) = 0\f$.
- */
+*/
 class PSB_wvel : public PISMDiag<PISMStressBalance>
 {
 public:
@@ -174,5 +175,7 @@ public:
   PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
+} // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */

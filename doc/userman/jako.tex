@@ -210,9 +210,9 @@ Figure \ref{fig:jako-csurf} was generated using \href{https://github.com/pism/py
 $ ncpdq -a time,z,y,x spunjako_0.nc jako5km.nc
 $ nc2cdo.py jako5km.nc
 $ cdo remapbil,jako5km.nc Greenland_5km_v1.1.nc Greenland_5km_v1.1_jako.nc  # FIXME: if fails, proceed?
-$ ncap2 -O -s "csurf=surfvelmag*1.;" Greenland_5km_v1.1_jako.nc \
+$ ncap2 -O -s "velsurf_mag=surfvelmag*1.;" Greenland_5km_v1.1_jako.nc \
     Greenland_5km_v1.1_jako.nc
-$ basemap-plot.py -v csurf --singlerow -o jako-csurf.png jakofine.nc \
+$ basemap-plot.py -v velsurf_mag --singlerow -o jako-velsurf_mag.png jakofine.nc \
     Greenland_5km_v1.1_jako.nc
 \end{verbatim}
 \normalsize\end{quote}

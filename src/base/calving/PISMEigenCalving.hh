@@ -15,12 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- */
+*/
 #ifndef _PISMEIGENCALVING_H_
 #define _PISMEIGENCALVING_H_
 
 #include "iceModelVec.hh"
 #include "PISMComponent.hh"
+
+namespace pism {
 
 class PISMStressBalance;
 
@@ -58,5 +60,7 @@ protected:
                                        IceModelVec2S &ice_thickness);
 };
 
+
+} // end of namespace pism
 
 #endif /* _PISMEIGENCALVING_H_ */

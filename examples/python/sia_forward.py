@@ -100,7 +100,7 @@ vel_sia =   PISM.sia.computeSIASurfaceVelocities(modeldata,siasolver=solver)
 
 
 pio = PISM.PIO(grid.com,"netcdf3")
-pio.open(output_file,PISM.NC_WRITE,False)
+pio.open(output_file, PISM.PISM_READWRITE_MOVE)
 pio.def_time(grid.config.get_string("time_dimension_name"),
              grid.config.get_string("calendar"), grid.time.units())
 pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())

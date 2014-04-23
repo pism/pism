@@ -21,6 +21,8 @@
 
 #include "PISMNC4File.hh"
 
+namespace pism {
+
 class PISMNC4_Serial : public PISMNC4File
 {
 public:
@@ -29,10 +31,14 @@ public:
   virtual ~PISMNC4_Serial() {}
 
   // open/create/close
-  virtual int open(std::string filename, int mode);
+  virtual int open(std::string filename, PISM_IO_Mode mode);
 
   virtual int create(std::string filename);
+protected:
+  virtual int integer_open_mode(PISM_IO_Mode input) const;
 };
 
+
+} // end of namespace pism
 
 #endif /* _PISMNC4_Serial_H_ */

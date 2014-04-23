@@ -37,21 +37,21 @@
 
 
 // metadata.cc
-int define_dimension(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string dim_name);
-int define_variable(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string variable_name);
-int copy_attributes(PISMNC4_Serial &input, PISMNC4_Serial &output, std::string var_name);
+int define_dimension(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string dim_name);
+int define_variable(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string variable_name);
+int copy_attributes(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string var_name);
 
 // variables.cc
-int copy_coordinate_variable(PISMNC4_Serial &input, std::string var_name, PISMNC4_Serial &output);
-int copy_spatial_variable(std::string filename, std::string var_name, PISMNC4_Serial &output);
-int copy_all_variables(std::string filename, PISMNC4_Serial &output);
+int copy_coordinate_variable(pism::PISMNC4_Serial &input, std::string var_name, pism::PISMNC4_Serial &output);
+int copy_spatial_variable(std::string filename, std::string var_name, pism::PISMNC4_Serial &output);
+int copy_all_variables(std::string filename, pism::PISMNC4_Serial &output);
 
 // util.cc
 void check(int return_code);
 std::string patch_filename(std::string input, int mpi_rank);
 std::string output_filename(std::string input, std::string var_name);
-int get_quilt_size(PISMNC4_Serial &input, int &mpi_size);
+int get_quilt_size(pism::PISMNC4_Serial &input, int &mpi_size);
 int check_input_files(std::string filename);
-int patch_geometry(PISMNC4_Serial &input, int &xs, int &ys, unsigned int &xm, unsigned int &ym);
+int patch_geometry(pism::PISMNC4_Serial &input, int &xs, int &ys, unsigned int &xm, unsigned int &ym);
 
 #endif /* _PISMMERGE_H_ */
