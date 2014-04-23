@@ -239,6 +239,16 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
         ice_thickness(i, j) += H_threshold;
         vHref(i, j) = 0.0;
       }
+      if (ice_thickness(i, j)<0) {
+        ierr = verbPrintf(1, grid.com,
+                          "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
+                          "  H_threshold: %f\n"
+                          "  coverage_ratio: %f\n"
+                          "  vHref: %f\n"
+                          "  H_residual: %f\n"
+                          "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
+                          vHref(i, j), H_residual(i, j), ice_thickness(i, j)); CHKERRQ(ierr);
+      }
 
     }
   }
