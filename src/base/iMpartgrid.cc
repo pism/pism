@@ -97,7 +97,8 @@ double IceModel::get_threshold_thickness(planeStar<int> M,
     }
   }
 
-  return H_threshold;
+  // make sure that the returned threshold thickness is non-negative:
+  return std::max(H_threshold, 0.0);
 }
 
 
