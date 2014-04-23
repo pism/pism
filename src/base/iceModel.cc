@@ -993,3 +993,4 @@ PetscErrorCode IceModel::init() {
   return 0;
 }
 
+}	// namespace pism
