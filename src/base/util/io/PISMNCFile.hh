@@ -40,10 +40,10 @@ enum IO_Type {
 // NetCDF flags so that we can detect errors caused by passing these
 // straight to NetCDF.
 enum IO_Mode {
-  PISM_READONLY          = 7,
-  PISM_READWRITE         = 8,
-  PISM_READWRITE_CLOBBER = 9,
-  PISM_READWRITE_MOVE    = 10
+  PISM_READONLY          = 7,   //!< open an existing file for reading only
+  PISM_READWRITE         = 8,   //!< open an existing file for reading and writing
+  PISM_READWRITE_CLOBBER = 9,   //!< create a file for writing, overwrite if present
+  PISM_READWRITE_MOVE    = 10   //!< create a file for writing, move foo.nc to foo.nc~ if present
 };
 
 // This is the special value corresponding to the "unlimited" dimension length.
