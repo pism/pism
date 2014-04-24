@@ -26,7 +26,7 @@
 
 namespace pism {
 
-IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
+IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c), m_unit_system(config.get_unit_system()) {
 
   MPI_Comm_rank(com, &rank);
@@ -100,9 +100,9 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
   }
 
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
-    time = new PISMTime(com, config, calendar, m_unit_system);
+    time = new Time(com, config, calendar, m_unit_system);
   } else {
-    time = new PISMTime_Calendar(com, config, calendar, m_unit_system);
+    time = new Time_Calendar(com, config, calendar, m_unit_system);
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
@@ -128,7 +128,7 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
   // "calendar" attribute is found.
   std::string time_file_name;
   bool time_file_set;
-  ierr = PISMOptionsString("-time_file", "name of the file specifying the run duration",
+  ierr = OptionsString("-time_file", "name of the file specifying the run duration",
                            time_file_name, time_file_set); CHKERRQ(ierr);
   if (time_file_set) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
@@ -821,7 +821,7 @@ PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, DM &result) {
   return 0;
 }
 
-PISMUnitSystem IceGrid::get_unit_system() const {
+UnitSystem IceGrid::get_unit_system() const {
   return m_unit_system;
 }
 

@@ -42,13 +42,13 @@ namespace pism {
  * This class uses a serial connected component labeling algorithm to
  * remove "icebergs".
  */
-class PISMIcebergRemover : public PISMComponent
+class IcebergRemover : public Component
 {
 public:
-  PISMIcebergRemover(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMIcebergRemover();
+  IcebergRemover(IceGrid &g, const Config &conf);
+  virtual ~IcebergRemover();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 protected:
   PetscErrorCode allocate();
@@ -59,7 +59,7 @@ protected:
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
   
   Vec m_g2, m_g2natural;  //!< global Vecs used to transfer data to/from processor 0.

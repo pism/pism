@@ -23,11 +23,11 @@
 
 namespace pism {
 
-class POModifier : public Modifier<PISMOceanModel>
+class POModifier : public Modifier<OceanModel>
 {
 public:
-  POModifier(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
-    : Modifier<PISMOceanModel>(g, conf, in) {}
+  POModifier(IceGrid &g, const Config &conf, OceanModel* in)
+    : Modifier<OceanModel>(g, conf, in) {}
   virtual ~POModifier() {}
 
   virtual PetscErrorCode sea_level_elevation(double &result)

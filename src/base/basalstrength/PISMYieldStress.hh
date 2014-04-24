@@ -25,12 +25,12 @@ namespace pism {
 class IceModelVec2S;
 
 //! \brief The PISM basal yield stress model interface (virtual base class)
-class PISMYieldStress : public PISMComponent_TS
+class YieldStress : public Component_TS
 {
 public:
-  PISMYieldStress(IceGrid &g, const PISMConfig &conf)
-    : PISMComponent_TS(g, conf) {}
-  virtual ~PISMYieldStress() {}
+  YieldStress(IceGrid &g, const Config &conf)
+    : Component_TS(g, conf) {}
+  virtual ~YieldStress() {}
 
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result) = 0;
 };

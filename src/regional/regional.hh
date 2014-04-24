@@ -34,10 +34,10 @@ namespace pism {
 class SIAFD_Regional : public SIAFD
 {
 public:
-  SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c)
     : SIAFD(g, e, c) {}
   virtual ~SIAFD_Regional() {}
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 protected:
   IceModelVec2Int *no_model_mask;
@@ -49,22 +49,22 @@ protected:
 class SSAFD_Regional : public SSAFD
 {
 public:
-  SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c);
   virtual ~SSAFD_Regional();
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 protected:
   IceModelVec2Int *no_model_mask;    
   IceModelVec2S   *usurfstore, *thkstore;
 };
 
-class PISMRegionalDefaultYieldStress : public PISMMohrCoulombYieldStress
+class RegionalDefaultYieldStress : public MohrCoulombYieldStress
 {
 public:
-  PISMRegionalDefaultYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro)
-    : PISMMohrCoulombYieldStress(g, conf, hydro) {}
-  virtual ~PISMRegionalDefaultYieldStress() {}
-  virtual PetscErrorCode init(PISMVars &vars);
+  RegionalDefaultYieldStress(IceGrid &g, const Config &conf, Hydrology *hydro)
+    : MohrCoulombYieldStress(g, conf, hydro) {}
+  virtual ~RegionalDefaultYieldStress() {}
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:
   IceModelVec2Int *no_model_mask;

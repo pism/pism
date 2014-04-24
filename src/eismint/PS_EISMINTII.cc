@@ -24,8 +24,8 @@
 
 namespace pism {
 
-PS_EISMINTII::PS_EISMINTII(IceGrid &g, const PISMConfig &conf, int experiment)
-  : PISMSurfaceModel(g, conf), m_experiment(experiment) {
+PS_EISMINTII::PS_EISMINTII(IceGrid &g, const Config &conf, int experiment)
+  : SurfaceModel(g, conf), m_experiment(experiment) {
   PetscErrorCode ierr = allocate();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: memory allocation failed");
@@ -58,7 +58,7 @@ PS_EISMINTII::~PS_EISMINTII() {
   // empty
 }
 
-PetscErrorCode PS_EISMINTII::init(PISMVars &vars) {
+PetscErrorCode PS_EISMINTII::init(Vars &vars) {
   PetscErrorCode ierr;
 
   (void) vars;
@@ -100,7 +100,7 @@ PetscErrorCode PS_EISMINTII::init(PISMVars &vars) {
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
   bool option_set = false;
-  ierr = PISMOptionsReal("-Tmin", "T min, Kelvin", m_T_min, option_set); CHKERRQ(ierr);
+  ierr = OptionsReal("-Tmin", "T min, Kelvin", m_T_min, option_set); CHKERRQ(ierr);
 
   double
     myMmax = grid.convert(m_M_max, "m/s",        "m/year"),
@@ -108,22 +108,22 @@ PetscErrorCode PS_EISMINTII::init(PISMVars &vars) {
     myST   = grid.convert(m_S_T,   "K/m",        "K/km"),
     myRel  = grid.convert(m_R_el,  "m",          "km");
 
-  ierr = PISMOptionsReal("-Mmax", "Maximum accumulation, m/year",
+  ierr = OptionsReal("-Mmax", "Maximum accumulation, m/year",
                          myMmax, option_set); CHKERRQ(ierr);
   if (option_set)
     m_M_max = grid.convert(myMmax, "m/year", "m/second");
 
-  ierr = PISMOptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
+  ierr = OptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
                          mySb, option_set); CHKERRQ(ierr);
   if (option_set)
     m_S_b = grid.convert(mySb, "m/year/km", "m/second/m");
 
-  ierr = PISMOptionsReal("-ST", "radial gradient of surface temperature, K/km",
+  ierr = OptionsReal("-ST", "radial gradient of surface temperature, K/km",
                          myST, option_set); CHKERRQ(ierr);
   if (option_set)
     m_S_T = grid.convert(myST, "K/km", "K/m");
 
-  ierr = PISMOptionsReal("-Rel", "radial distance to equilibrium line, km",
+  ierr = OptionsReal("-Rel", "radial distance to equilibrium line, km",
                          myRel, option_set); CHKERRQ(ierr);
   if (option_set)
     m_R_el = grid.convert(myRel, "km", "m");
@@ -168,7 +168,7 @@ PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
   return 0;
 }
 
-void PS_EISMINTII::attach_atmosphere_model(PISMAtmosphereModel *input) {
+void PS_EISMINTII::attach_atmosphere_model(AtmosphereModel *input) {
   delete input;
 }
 
@@ -199,7 +199,7 @@ void PS_EISMINTII::add_vars_to_output(std::string keyword, std::set<std::string>
 }
 
 PetscErrorCode PS_EISMINTII::define_variables(std::set<std::string> vars, const PIO &nc,
-                                             PISM_IO_Type nctype) {
+                                             IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {

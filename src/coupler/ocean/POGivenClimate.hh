@@ -24,13 +24,13 @@
 
 namespace pism {
 
-class POGiven : public PGivenClimate<POModifier,PISMOceanModel>
+class POGiven : public PGivenClimate<POModifier,OceanModel>
 {
 public:
-  POGiven(IceGrid &g, const PISMConfig &conf);
+  POGiven(IceGrid &g, const Config &conf);
   virtual ~POGiven();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode sea_level_elevation(double &result);

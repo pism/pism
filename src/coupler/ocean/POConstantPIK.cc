@@ -25,8 +25,8 @@
 
 namespace pism {
 
-POConstantPIK::POConstantPIK(IceGrid &g, const PISMConfig &conf)
-  : PISMOceanModel(g, conf),
+POConstantPIK::POConstantPIK(IceGrid &g, const Config &conf)
+  : OceanModel(g, conf),
     shelfbmassflux(g.get_unit_system()),
     shelfbtemp(g.get_unit_system())
 {
@@ -59,7 +59,7 @@ PetscErrorCode POConstantPIK::allocate_POConstantPIK() {
   return 0;
 }
 
-PetscErrorCode POConstantPIK::init(PISMVars &vars) {
+PetscErrorCode POConstantPIK::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -73,7 +73,7 @@ PetscErrorCode POConstantPIK::init(PISMVars &vars) {
   double meltfactor_pik = meltfactor;
   bool meltfactorSet = false;
 
-  ierr = PISMOptionsReal("-meltfactor_pik",
+  ierr = OptionsReal("-meltfactor_pik",
                          "Use as a melt factor as in sub-shelf-melting "
                          "parameterization of martin_winkelmann11",
                          meltfactor_pik, meltfactorSet); CHKERRQ(ierr);
@@ -181,7 +181,7 @@ void POConstantPIK::add_vars_to_output(std::string keyword, std::set<std::string
 }
 
 PetscErrorCode POConstantPIK::define_variables(std::set<std::string> vars, const PIO &nc,
-                                               PISM_IO_Type nctype) {
+                                               IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {

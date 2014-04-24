@@ -45,7 +45,7 @@ PetscErrorCode IceModel::update_viewers() {
     // if not found, try to compute:
     if (v == NULL) {
       de_allocate = true;
-      PISMDiagnostic *diag = diagnostics[*i];
+      Diagnostic *diag = diagnostics[*i];
 
       if (diag) {
         ierr = diag->compute(v); CHKERRQ(ierr);

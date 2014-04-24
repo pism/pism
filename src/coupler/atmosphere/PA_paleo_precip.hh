@@ -49,13 +49,13 @@ namespace pism {
  * belonging to the set of uncertainties related to the conversion
  * between isotopic and temperature signals.
  */
-class PA_paleo_precip : public PScalarForcing<PISMAtmosphereModel,PAModifier>
+class PA_paleo_precip : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_paleo_precip(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
+  PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel* in);
   virtual ~PA_paleo_precip();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
@@ -65,7 +65,7 @@ public:
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
 
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 

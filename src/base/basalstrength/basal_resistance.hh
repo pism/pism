@@ -25,7 +25,7 @@
 
 namespace pism {
 
-class PISMConfig;
+class Config;
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!
@@ -34,7 +34,7 @@ class PISMConfig;
 */
 class IceBasalResistancePlasticLaw {
 public:
-  IceBasalResistancePlasticLaw(const PISMConfig &config);
+  IceBasalResistancePlasticLaw(const Config &config);
   virtual ~IceBasalResistancePlasticLaw() {}
   virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
   virtual double drag(double tauc, double vx, double vy) const;
@@ -43,12 +43,12 @@ public:
                                     double *drag, double *ddrag) const;
 protected:
   double plastic_regularize;
-  PISMUnitSystem m_unit_system;
+  UnitSystem m_unit_system;
 };
 
 class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
-  IceBasalResistancePseudoPlasticLaw(const PISMConfig &config);
+  IceBasalResistancePseudoPlasticLaw(const Config &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() {}
   virtual PetscErrorCode print_info(int verbthresh, MPI_Comm com) const;
   virtual double drag(double tauc, double vx, double vy) const;

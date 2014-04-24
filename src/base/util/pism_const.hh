@@ -29,14 +29,6 @@ namespace pism {
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
-enum PismMask {
-  MASK_UNKNOWN          = -1,
-  MASK_ICE_FREE_BEDROCK = 0,
-  MASK_GROUNDED         = 2,
-  MASK_FLOATING         = 3,
-  MASK_ICE_FREE_OCEAN   = 4
-};
-
 const int TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 bool is_increasing(const std::vector<double> &a);
@@ -58,7 +50,7 @@ std::string pism_username_prefix(MPI_Comm com);
 std::string pism_args_string();
 std::string pism_filename_add_suffix(std::string filename, std::string separator, std::string suffix);
 
-PetscErrorCode PISMGetTime(PetscLogDouble *result);
+PetscErrorCode GetTime(PetscLogDouble *result);
 
 bool ends_with(std::string str, std::string suffix);
 
@@ -66,17 +58,17 @@ inline bool set_contains(std::set<std::string> S, std::string name) {
   return (S.find(name) != S.end());
 }
 
-inline PetscErrorCode PISMGlobalMin(double *local, double *result, MPI_Comm comm)
+inline PetscErrorCode GlobalMin(double *local, double *result, MPI_Comm comm)
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MIN,comm);
 }
 
-inline PetscErrorCode PISMGlobalMax(double *local, double *result, MPI_Comm comm)
+inline PetscErrorCode GlobalMax(double *local, double *result, MPI_Comm comm)
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MAX,comm);
 }
 
-inline PetscErrorCode PISMGlobalSum(double *local, double *result, MPI_Comm comm)
+inline PetscErrorCode GlobalSum(double *local, double *result, MPI_Comm comm)
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_SUM,comm);
 }

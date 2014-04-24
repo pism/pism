@@ -29,7 +29,7 @@
 
 namespace pism {
 
-class PISMTime;
+class Time;
 
 //! @brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
@@ -68,7 +68,7 @@ class PISMTime;
 
 class NCVariable {
 public:
-  NCVariable(std::string name, PISMUnitSystem system, unsigned int ndims = 0);
+  NCVariable(std::string name, UnitSystem system, unsigned int ndims = 0);
   virtual ~NCVariable();
 
   // setters
@@ -84,8 +84,8 @@ public:
   void clear_all_strings();
 
   // getters
-  PISMUnit get_units() const;
-  PISMUnit get_glaciological_units() const;
+  Unit get_units() const;
+  Unit get_glaciological_units() const;
 
   double get_double(std::string name) const;
   std::vector<double> get_doubles(std::string name) const;
@@ -108,7 +108,7 @@ protected:
   unsigned int m_n_spatial_dims;
 
 private:
-  PISMUnit m_units,                   //!< internal (PISM) units
+  Unit m_units,                   //!< internal (PISM) units
     m_glaciological_units; //!< \brief for diagnostic variables: units
   //!< to use when writing to a NetCDF file and for standard out reports
   std::map<std::string, std::string> m_strings;  //!< string and boolean attributes
@@ -124,7 +124,7 @@ enum RegriddingFlag {OPTIONAL, CRITICAL};
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {
 public:
-  NCSpatialVariable(PISMUnitSystem system);
+  NCSpatialVariable(UnitSystem system);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
   void init_2d(std::string name, IceGrid &g);
@@ -134,7 +134,7 @@ public:
   void set_time_independent(bool flag);
 
   PetscErrorCode read(const PIO &file, unsigned int time, Vec v);
-  PetscErrorCode write(const PIO &file, PISM_IO_Type nctype,
+  PetscErrorCode write(const PIO &file, IO_Type nctype,
                        bool write_in_glaciological_units, Vec v);
 
   PetscErrorCode regrid(const PIO &file,
@@ -147,7 +147,7 @@ public:
                         bool report_range,
                         double default_value, Vec v);
 
-  PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype,
+  PetscErrorCode define(const PIO &nc, IO_Type nctype,
                         bool write_in_glaciological_units);
 
   NCVariable& get_x();
@@ -169,12 +169,12 @@ private:
 //! An internal class for reading, writing and converting time-series.
 class NCTimeseries : public NCVariable {
 public:
-  NCTimeseries(std::string name, std::string dimension_name, PISMUnitSystem system);
+  NCTimeseries(std::string name, std::string dimension_name, UnitSystem system);
   virtual ~NCTimeseries();
 
   std::string get_dimension_name() const;
 
-  virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype, bool) const;
+  virtual PetscErrorCode define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
 };
@@ -182,9 +182,9 @@ private:
 class NCTimeBounds : public NCTimeseries
 {
 public:
-  NCTimeBounds(std::string name, std::string dimension_name, PISMUnitSystem system);
+  NCTimeBounds(std::string name, std::string dimension_name, UnitSystem system);
   virtual ~NCTimeBounds();
-  virtual PetscErrorCode define(const PIO &nc, PISM_IO_Type nctype, bool) const;
+  virtual PetscErrorCode define(const PIO &nc, IO_Type nctype, bool) const;
 private:
   std::string m_bounds_name;
 };

@@ -57,7 +57,7 @@ public:
   ~LocalInterpCtx();
   PetscErrorCode printArray();
 private:
-  void print_grid_info(grid_info g, PISMUnitSystem s, int threshold);
+  void print_grid_info(grid_info g, UnitSystem s, int threshold);
 };
 
 } // end of namespace pism

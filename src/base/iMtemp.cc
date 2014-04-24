@@ -142,7 +142,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
                       fMz, fdz); CHKERRQ(ierr);
 
     bool viewOneColumn;
-    ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
     const double
       ice_density        = config.get("ice_density"),
@@ -274,7 +274,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           //   and strain heating if isMarginal
           const double thickness_threshold = 100.0; // FIXME: make configurable
           const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
-          PismMask mask_value = static_cast<PismMask>(vMask.as_int(i,j));
+          MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
           ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
           CHKERRQ(ierr);
 
@@ -379,7 +379,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           // basalMeltRate is rate of change of bwat;  can be negative
           //   (subglacial water freezes-on); note this rate is calculated
           //   *before* limiting or other nontrivial modelling of bwat,
-          //   which is PISMHydrology's job
+          //   which is Hydrology's job
           basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
         }
 

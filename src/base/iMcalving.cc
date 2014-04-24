@@ -195,7 +195,7 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
   ierr = thickness_old.end_access(); CHKERRQ(ierr);
   ierr = thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&my_total_discharge, &total_discharge, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&my_total_discharge, &total_discharge, grid.com); CHKERRQ(ierr);
 
   this->discharge_flux_cumulative += total_discharge;
 

@@ -213,7 +213,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn = false;
-  ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   DrainageCalculator dc(config);
 

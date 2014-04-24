@@ -26,19 +26,19 @@
 namespace pism {
 
 //! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
-class PO_delta_SMB : public PScalarForcing<PISMOceanModel,POModifier>
+class PO_delta_SMB : public PScalarForcing<OceanModel,POModifier>
 {
 public:
-  PO_delta_SMB(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
+  PO_delta_SMB(IceGrid &g, const Config &conf, OceanModel* in);
   virtual ~PO_delta_SMB();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;

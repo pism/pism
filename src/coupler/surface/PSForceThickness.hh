@@ -29,16 +29,16 @@ namespace pism {
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input);
+  PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel *input);
 
   virtual ~PSForceThickness();
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
+  virtual PetscErrorCode init(Vars &vars);
+  virtual void attach_atmosphere_model(AtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   std::string input_file;

@@ -23,11 +23,11 @@
 
 namespace pism {
 
-class PISMNC4File : public PISMNCFile
+class NC4File : public NCFile
 {
 public:
-  PISMNC4File(MPI_Comm com, unsigned int compression_level);
-  virtual ~PISMNC4File();
+  NC4File(MPI_Comm com, unsigned int compression_level);
+  virtual ~NC4File();
 
   // open/create/close
   virtual int close();
@@ -51,7 +51,7 @@ public:
   virtual int inq_ndims(int &result) const;
 
   // var
-  virtual int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
+  virtual int def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const;
 
   virtual int get_vara_double(std::string variable_name,
                               std::vector<unsigned int> start,
@@ -83,21 +83,21 @@ public:
 
   virtual int inq_varname(unsigned int j, std::string &result) const;
 
-  int inq_vartype(std::string variable_name, PISM_IO_Type &result) const;
+  int inq_vartype(std::string variable_name, IO_Type &result) const;
 
   // att
   virtual int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const;
 
   virtual int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
 
-  using PISMNCFile::put_att_double;
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const;
+  using NCFile::put_att_double;
+  virtual int put_att_double(std::string variable_name, std::string att_name, IO_Type xtype, const std::vector<double> &data) const;
 
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
   virtual int inq_attname(std::string variable_name, unsigned int n, std::string &result) const;
 
-  virtual int inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const;
+  virtual int inq_atttype(std::string variable_name, std::string att_name, IO_Type &result) const;
 
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const;

@@ -28,10 +28,10 @@
 namespace pism {
 
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
-class PISMConfig {
+class Config {
 public:
-  PISMConfig(MPI_Comm com, std::string name, PISMUnitSystem unit_system);
-  ~PISMConfig();
+  Config(MPI_Comm com, std::string name, UnitSystem unit_system);
+  ~Config();
 
   void set_double(std::string name, double value);
   void set_string(std::string name, std::string value);
@@ -47,7 +47,7 @@ public:
   PetscErrorCode write(std::string filename, bool append = true) const;
 
   std::string get_config_filename() const;
-  PISMUnitSystem get_unit_system() const;
+  UnitSystem get_unit_system() const;
   double get(std::string) const;
   double get(std::string name, std::string u1, std::string u2) const;
   bool   get_flag(std::string) const;
@@ -66,12 +66,12 @@ public:
   PetscErrorCode string_from_option(std::string, std::string);
   PetscErrorCode keyword_from_option(std::string, std::string, std::string);
   // Import settings from an override file
-  void import_from(const PISMConfig &other);
-  void update_from(const PISMConfig &other);
+  void import_from(const Config &other);
+  void update_from(const Config &other);
 
 private:
   MPI_Comm m_com;
-  PISMUnitSystem m_unit_system;
+  UnitSystem m_unit_system;
   NCVariable m_data;
   std::string m_config_filename;
   //!< \brief the name of the file this config database was initialized from 

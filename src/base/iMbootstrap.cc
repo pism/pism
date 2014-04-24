@@ -277,7 +277,7 @@ pressure-melting temperature.
 We set \f$T(z)=T_s\f$ above the top of the ice.
 
 This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
-temperature is used by PISMBedThermalUnit::bootstrap() to determine a
+temperature is used by BedThermalUnit::bootstrap() to determine a
 bootstrap temperature profile in the bedrock.
 */
 PetscErrorCode IceModel::putTempAtDepth() {

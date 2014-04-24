@@ -32,7 +32,7 @@
 
 namespace pism {
 
-NCVariable::NCVariable(std::string name, PISMUnitSystem system, unsigned int ndims)
+NCVariable::NCVariable(std::string name, UnitSystem system, unsigned int ndims)
   : m_n_spatial_dims(ndims), m_units(system), m_glaciological_units(system), m_short_name(name) {
 
   m_units.reset();
@@ -110,15 +110,15 @@ PetscErrorCode NCVariable::set_glaciological_units(std::string new_units) {
   return 0;
 }
 
-PISMUnit NCVariable::get_units() const {
+Unit NCVariable::get_units() const {
   return m_units;
 }
 
-PISMUnit NCVariable::get_glaciological_units() const {
+Unit NCVariable::get_glaciological_units() const {
   return m_glaciological_units;
 }
 
-NCSpatialVariable::NCSpatialVariable(PISMUnitSystem system)
+NCSpatialVariable::NCSpatialVariable(UnitSystem system)
   : NCVariable("unnamed", system),
     m_x("x", system),
     m_y("y", system),
@@ -279,7 +279,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   ierr = nc.get_vec(m_grid, name_found, nlevels, time, v); CHKERRQ(ierr);
 
   bool input_has_units;
-  PISMUnit input_units(get_units().get_system());
+  Unit input_units(get_units().get_system());
 
   ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
@@ -305,7 +305,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
 /*!
   Defines a variable and converts the units if needed.
  */
-PetscErrorCode NCSpatialVariable::write(const PIO &nc, PISM_IO_Type nctype,
+PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
                                         bool write_in_glaciological_units, Vec v) {
   PetscErrorCode ierr;
 
@@ -376,7 +376,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     // units.
 
     bool input_has_units;
-    PISMUnit input_units(get_units().get_system());
+    Unit input_units(get_units().get_system());
 
     ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
@@ -573,7 +573,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
 }
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
-PetscErrorCode NCSpatialVariable::define(const PIO &nc, PISM_IO_Type nctype,
+PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
                                          bool write_in_glaciological_units) {
   int ierr;
   std::vector<std::string> dims;
@@ -781,7 +781,7 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
   return 0;
 }
 
-NCTimeseries::NCTimeseries(std::string name, std::string dimension_name, PISMUnitSystem system)
+NCTimeseries::NCTimeseries(std::string name, std::string dimension_name, UnitSystem system)
   : NCVariable(name, system, 0) {
   m_dimension_name = dimension_name;
 }
@@ -796,7 +796,7 @@ std::string NCTimeseries::get_dimension_name() const {
 }
 
 //! Define a NetCDF variable corresponding to a time-series.
-PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) const {
+PetscErrorCode NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
   PetscErrorCode ierr;
 
   bool exists;
@@ -828,7 +828,7 @@ PetscErrorCode NCTimeseries::define(const PIO &nc, PISM_IO_Type nctype, bool) co
 /// NCTimeBounds
 
 NCTimeBounds::NCTimeBounds(std::string var_name, std::string dim_name,
-                           PISMUnitSystem system)
+                           UnitSystem system)
   : NCTimeseries(var_name, dim_name, system) {
   m_bounds_name    = "nv";      // number of vertexes
 }
@@ -837,14 +837,14 @@ NCTimeBounds::~NCTimeBounds() {
   // empty
 }
 
-PetscErrorCode NCTimeBounds::define(const PIO &nc, PISM_IO_Type nctype, bool) const {
+PetscErrorCode NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
   PetscErrorCode ierr;
   std::vector<std::string> dims;
   bool exists = false;
   
   std::string dimension_name = get_dimension_name();
 
-  PISMUnitSystem system = get_units().get_system();
+  UnitSystem system = get_units().get_system();
 
   ierr = nc.inq_var(get_name(), exists); CHKERRQ(ierr);
   if (exists)

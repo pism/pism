@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMBedSmoother_hh
-#define __PISMBedSmoother_hh
+#ifndef __BedSmoother_hh
+#define __BedSmoother_hh
 
 #include <petsc.h>
 #include "iceModelVec.hh"
@@ -25,7 +25,7 @@
 namespace pism {
 
 class IceGrid;
-class PISMConfig;
+class Config;
 
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).
 /*!
@@ -37,7 +37,7 @@ class PISMConfig;
 
   For additional information on this class see page \ref bedrough.
 
-  The user of this class hands PISMBedSmoother an "original" topography, and it
+  The user of this class hands BedSmoother an "original" topography, and it
   is preprocessed to fill the smoothed topography `topgsmooth`, and the
   coefficients in an approximation to \f$\theta\f$.  This is done by a call to 
   `preprocess_bed()`.  The call requires the half-width of the smoothing square
@@ -48,7 +48,7 @@ class PISMConfig;
   topography changes, for instance at the start of an IceModel run, or at a bed
   deformation step in an IceModel run.
 
-  PISMBedSmoother then provides three major functionalities, all of which \e must
+  BedSmoother then provides three major functionalities, all of which \e must
   \e follow the call to `preprocess_bed()`:
   -# User accesses public IceModelVec2S `topgsmooth`, the smoothed bed itself.
   -# User asks `get_smoothed_thk()` for gridded values of the consistent smoothed
@@ -56,26 +56,26 @@ class PISMConfig;
   surface elevation and the pre-computed smoothed bed.
   -# User asks for gridded values of \f$\theta(h,x,y)\f$ using `get_theta()`.
 
-  Here is a basic example of the creation and usage of a PISMBedSmoother instance.
-  Note that PISMBedSmoother will update ghosted values in `topgsmooth`, and other
+  Here is a basic example of the creation and usage of a BedSmoother instance.
+  Note that BedSmoother will update ghosted values in `topgsmooth`, and other
   internal fields, and update them in the return fields `thksmooth`, `theta`,
   if asked.  In IceModel::velocitySIAStaggered()
   \code
-  PISMBedSmoother smoother(grid, config, 2);
+  BedSmoother smoother(grid, config, 2);
   const double n = 3.0,
   lambda = 50.0e3;
   ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
   ierr = smoother.get_smoothed_thk(usurf, thk, 1, &thksmooth); CHKERRQ(ierr);
   ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
   \endcode
-  See IceGrid and PISMConfig documentation for initializing `grid` and
+  See IceGrid and Config documentation for initializing `grid` and
   `config`.  Note we assume `topg`, `usurf`, `thk`, `thksmooth`, and `theta`
   are all created IceModelVec2S instances.
 */
-class PISMBedSmoother {
+class BedSmoother {
 public:
-  PISMBedSmoother(IceGrid &g, const PISMConfig &conf, int MAX_GHOSTS);
-  virtual ~PISMBedSmoother();
+  BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS);
+  virtual ~BedSmoother();
 
   virtual PetscErrorCode preprocess_bed(IceModelVec2S &topg);
 
@@ -91,7 +91,7 @@ public:
 
 protected:
   IceGrid &grid;
-  const PISMConfig &config;
+  const Config &config;
   IceModelVec2S maxtl, C2, C3, C4;
 
   int Nx, Ny;  //!< number of grid points to smooth over; e.g.
@@ -119,5 +119,5 @@ protected:
 
 } // end of namespace pism
 
-#endif  // __PISMBedSmoother_hh
+#endif  // __BedSmoother_hh
 

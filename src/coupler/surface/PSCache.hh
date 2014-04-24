@@ -27,10 +27,10 @@ namespace pism {
 
 class PSCache : public PSModifier {
 public:
-  PSCache(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
+  PSCache(IceGrid &g, const Config &conf, SurfaceModel* in);
   virtual ~PSCache();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
@@ -38,7 +38,7 @@ public:
   virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);

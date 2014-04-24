@@ -25,15 +25,15 @@ using namespace pism;
 
 PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm)
 {
-  return PISMGlobalMax(&local_max,result,comm);
+  return GlobalMax(&local_max,result,comm);
 }
 PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm)
 {
-  return PISMGlobalMin(&local_min,result,comm);  
+  return GlobalMin(&local_min,result,comm);  
 }
 PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
 {
-  return PISMGlobalSum(&local_sum,result,comm);  
+  return GlobalSum(&local_sum,result,comm);  
 }
 
 PetscErrorCode optionsGroupBegin(MPI_Comm comm,const char *prefix,const char *mess,const char *sec)

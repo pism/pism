@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PSAnomaly::PSAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
-  : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, in),
+PSAnomaly::PSAnomaly(IceGrid &g, const Config &conf, SurfaceModel* in)
+  : PGivenClimate<PSModifier,SurfaceModel>(g, conf, in),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
 {
@@ -82,7 +82,7 @@ PetscErrorCode PSAnomaly::allocate_PSAnomaly() {
   return 0;
 }
 
-PetscErrorCode PSAnomaly::init(PISMVars &vars) {
+PetscErrorCode PSAnomaly::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -139,7 +139,7 @@ void PSAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &r
   }
 }
 
-PetscErrorCode PSAnomaly::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSAnomaly::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

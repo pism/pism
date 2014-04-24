@@ -25,7 +25,7 @@ namespace pism {
 
 IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
                                      const char pre[],
-                                     const PISMConfig &conf,
+                                     const Config &conf,
                                      EnthalpyConverter *my_EC)
   : com(c), config(conf), EC(my_EC) {
   prefix[0] = 0;
@@ -61,37 +61,37 @@ PetscErrorCode IceFlowLawFactory::removeType(std::string name) {
 
 
 static PetscErrorCode create_isothermal_glen(MPI_Comm com,const char pre[],
-                                             const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                             const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (IsothermalGlenIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_pb(MPI_Comm com,const char pre[],
-                                const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (ThermoGlenIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_gpbld(MPI_Comm com,const char pre[],
-                                   const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                   const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (GPBLDIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_hooke(MPI_Comm com,const char pre[],
-                                   const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                   const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (HookeIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_arr(MPI_Comm com,const char pre[],
-                                 const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                 const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (ThermoGlenArrIce)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_arrwarm(MPI_Comm com,const char pre[],
-                                     const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                     const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (ThermoGlenArrIceWarm)(com, pre, config, EC);  return 0;
 }
 
 static PetscErrorCode create_goldsby_kohlstedt(MPI_Comm com,const char pre[],
-                                               const PISMConfig &config, EnthalpyConverter *EC, IceFlowLaw **i) {
+                                               const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
   *i = new (GoldsbyKohlstedtIce)(com, pre, config, EC);  return 0;
 }
 
@@ -145,7 +145,7 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
       ++j;
     }
 
-    ierr = PISMOptionsList(com, "-flow_law", "flow law type", choices,
+    ierr = OptionsList(com, "-flow_law", "flow law type", choices,
                            type_name, my_type_name, flag);CHKERRQ(ierr);
 
     if (flag) {

@@ -21,11 +21,11 @@
 
 namespace pism {
 
-PISMBedSmoother::PISMBedSmoother(IceGrid &g, const PISMConfig &conf, int MAX_GHOSTS)
+BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
     : grid(g), config(conf) {
 
   if (allocate(MAX_GHOSTS) != 0) {
-    PetscPrintf(grid.com, "PISMBedSmoother constructor: allocate() failed\n");
+    PetscPrintf(grid.com, "BedSmoother constructor: allocate() failed\n");
     PISMEnd();
   }
 
@@ -41,10 +41,10 @@ PISMBedSmoother::PISMBedSmoother(IceGrid &g, const PISMConfig &conf, int MAX_GHO
 }
 
 
-PISMBedSmoother::~PISMBedSmoother() {
+BedSmoother::~BedSmoother() {
 
   if (deallocate() != 0) {
-    PetscPrintf(grid.com, "PISMBedSmoother destructor: deallocate() failed\n");
+    PetscPrintf(grid.com, "BedSmoother destructor: deallocate() failed\n");
     PISMEnd();
   }
 }
@@ -71,7 +71,7 @@ VecScatterBegin/End() to scatter the natural vector onto process 0.
 */
 
 
-PetscErrorCode PISMBedSmoother::allocate(int maxGHOSTS) {
+PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
   PetscErrorCode ierr;
   DM da2;
   // FIXME: this relies on the fact that IceModel::bed_topography has
@@ -125,7 +125,7 @@ PetscErrorCode PISMBedSmoother::allocate(int maxGHOSTS) {
 }
 
 
-PetscErrorCode PISMBedSmoother::deallocate() {
+PetscErrorCode BedSmoother::deallocate() {
   PetscErrorCode ierr;
 
   ierr = VecDestroy(&g2); CHKERRQ(ierr);
@@ -148,7 +148,7 @@ Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
-PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg) {
+PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
   PetscErrorCode ierr;
 
   if (m_smoothing_range <= 0.0) {
@@ -166,7 +166,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg) {
   Ny = static_cast<int>(ceil(m_smoothing_range / grid.dy));
   if (Nx < 1)  Nx = 1;
   if (Ny < 1)  Ny = 1;
-  //PetscPrintf(grid.com,"PISMBedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
+  //PetscPrintf(grid.com,"BedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
 
   ierr = preprocess_bed(topg, Nx, Ny); CHKERRQ(ierr);
   return 0;
@@ -177,7 +177,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg) {
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
-PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg,
+PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg,
                                                int Nx_in, int Ny_in) {
   PetscErrorCode ierr;
 
@@ -206,7 +206,7 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(IceModelVec2S &topg,
 /*!
 Call preprocess_bed() first.
  */
-PetscErrorCode PISMBedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
+PetscErrorCode BedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
   Nx_out = Nx;
   Ny_out = Ny;
   return 0;
@@ -214,7 +214,7 @@ PetscErrorCode PISMBedSmoother::get_smoothing_domain(int &Nx_out, int &Ny_out) {
 
 
 //! Computes the smoothed bed by a simple average over a rectangle of grid points.
-PetscErrorCode PISMBedSmoother::smooth_the_bed_on_proc0() {
+PetscErrorCode BedSmoother::smooth_the_bed_on_proc0() {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
@@ -248,7 +248,7 @@ PetscErrorCode PISMBedSmoother::smooth_the_bed_on_proc0() {
 }
 
 
-PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0() {
+PetscErrorCode BedSmoother::compute_coefficients_on_proc0() {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
@@ -330,7 +330,7 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
+PetscErrorCode BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
                                                  IceModelVec2S &thk,
                                                  IceModelVec2Int &mask,
                                                  IceModelVec2S *thksmooth) { 
@@ -351,7 +351,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
     for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       if (thk(i,j) < 0.0) {
         SETERRQ2(grid.com, 2,
-          "PISM ERROR:  PISMBedSmoother detects negative original thickness\n"
+          "PISM ERROR:  BedSmoother detects negative original thickness\n"
           "  at location (i,j) = (%d,%d) ... ending\n",i,j);
       } else if (thk(i,j) == 0.0) {
         result(i,j) = 0.0;
@@ -403,7 +403,7 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
+PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta) {
   PetscErrorCode ierr;
 
   if ((Nx < 0) || (Ny < 0)) {
@@ -432,7 +432,7 @@ PetscErrorCode PISMBedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *t
         double omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
         if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
           SETERRQ2(grid.com, 1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
-                     "    in PISMBedSmoother.get_theta() ... ending\n",i,j);
+                     "    in BedSmoother.get_theta() ... ending\n",i,j);
         }
 
         if (omega < 0.001)      // this check *should not* be necessary

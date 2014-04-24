@@ -23,14 +23,14 @@
 
 namespace pism {
 
-class PISMNC3File : public PISMNCFile
+class NC3File : public NCFile
 {
 public:
-  PISMNC3File(MPI_Comm com);
-  virtual ~PISMNC3File();
+  NC3File(MPI_Comm com);
+  virtual ~NC3File();
 
   // open/create/close
-  int open(std::string filename, PISM_IO_Mode mode);
+  int open(std::string filename, IO_Mode mode);
 
   int create(std::string filename);
 
@@ -55,7 +55,7 @@ public:
   int inq_ndims(int &result) const;
 
   // var
-  int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
+  int def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const;
 
   int get_vara_double(std::string variable_name,
                       std::vector<unsigned int> start,
@@ -89,27 +89,27 @@ public:
 
   int inq_varname(unsigned int j, std::string &result) const;
 
-  int inq_vartype(std::string variable_name, PISM_IO_Type &result) const;
+  int inq_vartype(std::string variable_name, IO_Type &result) const;
   // att
   int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const;
 
   int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
 
-  using PISMNCFile::put_att_double;
-  int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const;
+  using NCFile::put_att_double;
+  int put_att_double(std::string variable_name, std::string att_name, IO_Type xtype, const std::vector<double> &data) const;
 
   int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
   int inq_attname(std::string variable_name, unsigned int n, std::string &result) const;
 
-  int inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const;
+  int inq_atttype(std::string variable_name, std::string att_name, IO_Type &result) const;
 
   // misc
   int set_fill(int fillmode, int &old_modep) const;
 
   virtual std::string get_format() const;
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const;
+  virtual int integer_open_mode(IO_Mode input) const;
 private:
   int m_rank;
   int get_var_double(std::string variable_name,

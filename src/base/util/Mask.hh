@@ -25,6 +25,14 @@
 
 namespace pism {
 
+enum MaskValue {
+  MASK_UNKNOWN          = -1,
+  MASK_ICE_FREE_BEDROCK = 0,
+  MASK_GROUNDED         = 2,
+  MASK_FLOATING         = 3,
+  MASK_ICE_FREE_OCEAN   = 4
+};
+
 class Mask
 {
 public:
@@ -47,7 +55,7 @@ public:
 class GeometryCalculator
 {
 public:
-  GeometryCalculator(double seaLevel, const PISMConfig &config)
+  GeometryCalculator(double seaLevel, const Config &config)
   {
     sea_level = seaLevel;
     alpha = 1 - config.get("ice_density") / config.get("sea_water_density");

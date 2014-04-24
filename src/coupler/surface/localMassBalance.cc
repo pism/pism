@@ -30,13 +30,13 @@
 
 namespace pism {
 
-LocalMassBalance::LocalMassBalance(const PISMConfig &myconfig)
+LocalMassBalance::LocalMassBalance(const Config &myconfig)
   : config(myconfig), m_unit_system(config.get_unit_system()),
     seconds_per_day(86400) {
   // empty
 }
 
-PDDMassBalance::PDDMassBalance(const PISMConfig& myconfig)
+PDDMassBalance::PDDMassBalance(const Config& myconfig)
   : LocalMassBalance(myconfig) {
   precip_as_snow     = config.get_flag("interpret_precip_as_snow");
   Tmin               = config.get("air_temp_all_precip_as_snow");
@@ -222,7 +222,7 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(const PISMConfig& myconfig,
+PDDrandMassBalance::PDDrandMassBalance(const Config& myconfig,
                                        bool repeatable)
   : PDDMassBalance(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
@@ -279,7 +279,7 @@ void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const PISMConfig &myconfig)
+FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid &g, const Config &myconfig)
   : grid(g), config(myconfig) {
 
   beta_ice_w  = config.get("pdd_fausto_beta_ice_w");

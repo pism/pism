@@ -51,20 +51,20 @@ namespace pism {
 // forward declarations
 class IceGrid;
 class EnthalpyConverter;
-class PISMHydrology;
-class PISMYieldStress;
-class PISMStressBalance;
-class PISMSurfaceModel;
-class PISMOceanModel;
-class PISMBedDef;
-class PISMBedThermalUnit;
-class PISMDiagnostic;
-class PISMTSDiagnostic;
-class PISMIcebergRemover;
-class PISMOceanKill;
-class PISMFloatKill;
-class PISMCalvingAtThickness;
-class PISMEigenCalving;
+class Hydrology;
+class YieldStress;
+class StressBalance;
+class SurfaceModel;
+class OceanModel;
+class BedDef;
+class BedThermalUnit;
+class Diagnostic;
+class TSDiagnostic;
+class IcebergRemover;
+class OceanKill;
+class FloatKill;
+class CalvingAtThickness;
+class EigenCalving;
 
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
@@ -127,7 +127,7 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
+  IceModel(IceGrid &g, Config &config, Config &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
@@ -193,38 +193,38 @@ public:
                                         bool write_mapping,
                                         bool write_run_stats);
   virtual PetscErrorCode write_variables(const PIO &nc, std::set<std::string> vars,
-                                         PISM_IO_Type nctype);
+                                         IO_Type nctype);
 protected:
 
   IceGrid &grid;
 
-  PISMConfig &config,           //!< configuration flags and parameters
+  Config &config,           //!< configuration flags and parameters
     &overrides;                 //!< flags and parameters overriding config, see -config_override
 
   NCVariable global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters
     run_stats;                  //!< run statistics
 
-  PISMHydrology   *subglacial_hydrology;
-  PISMYieldStress *basal_yield_stress_model;
+  Hydrology   *subglacial_hydrology;
+  YieldStress *basal_yield_stress_model;
 
   EnthalpyConverter *EC;
-  PISMBedThermalUnit *btu;
+  BedThermalUnit *btu;
 
-  PISMIcebergRemover     *iceberg_remover;
-  PISMOceanKill          *ocean_kill_calving;
-  PISMFloatKill          *float_kill_calving;
-  PISMCalvingAtThickness *thickness_threshold_calving;
-  PISMEigenCalving       *eigen_calving;
+  IcebergRemover     *iceberg_remover;
+  OceanKill          *ocean_kill_calving;
+  FloatKill          *float_kill_calving;
+  CalvingAtThickness *thickness_threshold_calving;
+  EigenCalving       *eigen_calving;
 
-  PISMSurfaceModel *surface;
-  PISMOceanModel   *ocean;
-  PISMBedDef       *beddef;
+  SurfaceModel *surface;
+  OceanModel   *ocean;
+  BedDef       *beddef;
   bool external_surface_model, external_ocean_model;
 
   //! \brief A dictionary with pointers to IceModelVecs below, for passing them
   //! from the IceModel core to other components (such as surface and ocean models)
-  PISMVars variables;
+  Vars variables;
 
   // state variables and some diagnostics/internals
   IceModelVec2S ice_surface_elevation,          //!< ice surface elevation; ghosted
@@ -285,7 +285,7 @@ protected:
     t_TempAge,  //!< time of last update for enthalpy/temperature
     dt_TempAge,  //!< enthalpy/temperature and age time-steps
     maxdt_temporary, dt_force,
-    CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
+    CFLviolcount,    //!< really is just a count, but GlobalSum requires this type
     dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
     gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
@@ -348,7 +348,7 @@ protected:
                                                   IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<PISMVector2> input_velocity,
+                                     planeStar<Vector2> input_velocity,
                                      planeStar<double> input_flux,
                                      planeStar<double> &output_velocity,
                                      planeStar<double> &output_flux);
@@ -429,14 +429,14 @@ protected:
   // 3D working space
   IceModelVec3 vWork3d;
 
-  PISMStressBalance *stress_balance;
+  StressBalance *stress_balance;
 
 public:
-  PISMStressBalance* get_stress_balance();
+  StressBalance* get_stress_balance();
 protected:
 
-  std::map<std::string,PISMDiagnostic*> diagnostics;
-  std::map<std::string,PISMTSDiagnostic*> ts_diagnostics;
+  std::map<std::string,Diagnostic*> diagnostics;
+  std::map<std::string,TSDiagnostic*> ts_diagnostics;
 
   // Set of variables to put in the output file:
   std::set<std::string> output_vars;

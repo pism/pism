@@ -24,13 +24,13 @@
 
 namespace pism {
 
-class PAGivenClimate : public PGivenClimate<PAModifier,PISMAtmosphereModel>
+class PAGivenClimate : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  PAGivenClimate(IceGrid &g, const PISMConfig &conf);
+  PAGivenClimate(IceGrid &g, const Config &conf);
   virtual ~PAGivenClimate();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);

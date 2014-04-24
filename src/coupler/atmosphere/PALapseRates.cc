@@ -20,8 +20,8 @@
 
 namespace pism {
 
-PALapseRates::PALapseRates(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-  : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in),
+PALapseRates::PALapseRates(IceGrid &g, const Config &conf, AtmosphereModel* in)
+  : PLapseRates<AtmosphereModel,PAModifier>(g, conf, in),
     precipitation(g.get_unit_system()),
     air_temp(g.get_unit_system())
 {
@@ -57,7 +57,7 @@ PetscErrorCode PALapseRates::allocate_PALapseRates() {
   return 0;
 }
 
-PetscErrorCode PALapseRates::init(PISMVars &vars) {
+PetscErrorCode PALapseRates::init(Vars &vars) {
   PetscErrorCode ierr;
   bool precip_lapse_rate_set;
 
@@ -72,7 +72,7 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsReal("-precip_lapse_rate",
+    ierr = OptionsReal("-precip_lapse_rate",
                            "Elevation lapse rate for the surface mass balance, in m/year per km",
                            precip_lapse_rate, precip_lapse_rate_set); CHKERRQ(ierr);
   }
@@ -170,7 +170,7 @@ PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PALapseRates::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

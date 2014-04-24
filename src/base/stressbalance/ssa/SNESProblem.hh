@@ -21,7 +21,7 @@
 #define _SNESPROBLEM_H_
 
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
-#include "iceModelVec.hh"       // to get PISMVector2
+#include "iceModelVec.hh"       // to get Vector2
 
 namespace pism {
 
@@ -76,7 +76,7 @@ private:
 };
 
 typedef SNESProblem<1,double> SNESScalarProblem;
-typedef SNESProblem<2,PISMVector2> SNESVectorProblem;
+typedef SNESProblem<2,Vector2> SNESVectorProblem;
 
 
 

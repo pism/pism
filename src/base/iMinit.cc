@@ -67,7 +67,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   // Get the bootstrapping file name:
 
-  ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
+  ierr = OptionsString("-boot_file", "Specifies the file to bootstrap from",
                            filename, boot_file_set); CHKERRQ(ierr);
 
   if (!boot_file_set) {
@@ -142,7 +142,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys_set;
-  ierr = PISMOptionsIsSet("-ys", ys_set); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-ys", ys_set); CHKERRQ(ierr);
   if (!ys_set) {
     if (t_exists) {
       grid.time->set_start(input.time);
@@ -156,10 +156,10 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   // Grid dimensions should not be deduced from a bootstrapping file, so we
   // check if these options are set and stop if they are not.
-  ierr = PISMOptionsIsSet("-Mx", Mx_set); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-My", My_set); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-Mz", Mz_set); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-Mx", Mx_set); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-My", My_set); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-Mz", Mz_set); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
     ierr = PetscPrintf(grid.com,
                        "PISM ERROR: All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.\n");
@@ -185,21 +185,21 @@ PetscErrorCode IceModel::set_grid_from_options() {
   // Process the options:
 
   // Read -Lx and -Ly.
-  ierr = PISMOptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
+  ierr = OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
                          y_scale,  Ly_set); CHKERRQ(ierr);
-  ierr = PISMOptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
+  ierr = OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
                          x_scale,  Lx_set); CHKERRQ(ierr);
   // Vertical extent (in the ice):
-  ierr = PISMOptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
+  ierr = OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
                          z_scale,  Lz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz.
   int tmp_Mx = grid.Mx, tmp_My = grid.My, tmp_Mz = grid.Mz;
-  ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
+  ierr = OptionsInt("-My", "Number of grid points in the X direction",
                         tmp_My, My_set); CHKERRQ(ierr);
-  ierr = PISMOptionsInt("-Mx", "Number of grid points in the Y direction",
+  ierr = OptionsInt("-Mx", "Number of grid points in the Y direction",
                         tmp_Mx, Mx_set); CHKERRQ(ierr);
-  ierr = PISMOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
+  ierr = OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
                         tmp_Mz, Mz_set); CHKERRQ(ierr);
 
 
@@ -216,9 +216,9 @@ PetscErrorCode IceModel::set_grid_from_options() {
 
   std::vector<double> x_range, y_range;
   bool x_range_set, y_range_set;
-  ierr = PISMOptionsRealArray("-x_range", "min,max x coordinate values",
+  ierr = OptionsRealArray("-x_range", "min,max x coordinate values",
                               x_range, x_range_set); CHKERRQ(ierr);
-  ierr = PISMOptionsRealArray("-y_range", "min,max y coordinate values",
+  ierr = OptionsRealArray("-y_range", "min,max y coordinate values",
                               y_range, y_range_set); CHKERRQ(ierr);
 
   std::string keyword;
@@ -226,7 +226,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   z_spacing_choices.insert("quadratic");
   z_spacing_choices.insert("equal");
   // Determine the vertical grid spacing in the ice:
-  ierr = PISMOptionsList(grid.com, "-z_spacing", "Vertical spacing in the ice.",
+  ierr = OptionsList(grid.com, "-z_spacing", "Vertical spacing in the ice.",
                          z_spacing_choices, "quadratic", keyword, z_spacing_set); CHKERRQ(ierr);
 
   if (keyword == "quadratic") {
@@ -241,7 +241,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   periodicity_choices.insert("x");
   periodicity_choices.insert("y");
   periodicity_choices.insert("xy");
-  ierr = PISMOptionsList(grid.com, "-periodicity", "Horizontal grid periodicity.",
+  ierr = OptionsList(grid.com, "-periodicity", "Horizontal grid periodicity.",
                          periodicity_choices, "none", keyword, periodicity_set); CHKERRQ(ierr);
   if (periodicity_set) {
     if (keyword == "none")
@@ -307,7 +307,7 @@ PetscErrorCode IceModel::grid_setup() {
                     "Setting up the computational grid...\n"); CHKERRQ(ierr);
 
   // Check if we are initializing from a PISM output file:
-  ierr = PISMOptionsString("-i", "Specifies a PISM input file",
+  ierr = OptionsString("-i", "Specifies a PISM input file",
                            filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
@@ -394,9 +394,9 @@ PetscErrorCode IceModel::grid_setup() {
   }
 
   bool Nx_set, Ny_set;
-  ierr = PISMOptionsInt("-Nx", "Number of processors in the x direction",
+  ierr = OptionsInt("-Nx", "Number of processors in the x direction",
                         grid.Nx, Nx_set); CHKERRQ(ierr);
-  ierr = PISMOptionsInt("-Ny", "Number of processors in the y direction",
+  ierr = OptionsInt("-Ny", "Number of processors in the y direction",
                         grid.Ny, Ny_set); CHKERRQ(ierr);
 
   if (Nx_set ^ Ny_set) {
@@ -437,9 +437,9 @@ PetscErrorCode IceModel::grid_setup() {
 
     bool procs_x_set, procs_y_set;
     std::vector<int> tmp_x, tmp_y;
-    ierr = PISMOptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
+    ierr = OptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
                                tmp_x, procs_x_set); CHKERRQ(ierr);
-    ierr = PISMOptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
+    ierr = OptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
                                tmp_y, procs_y_set); CHKERRQ(ierr);
 
     if (procs_x_set ^ procs_y_set) {
@@ -518,7 +518,7 @@ PetscErrorCode IceModel::model_state_setup() {
   ierr = init_couplers(); CHKERRQ(ierr);
 
   // Check if we are initializing from a PISM output file:
-  ierr = PISMOptionsString("-i", "Specifies the PISM input file",
+  ierr = OptionsString("-i", "Specifies the PISM input file",
                            filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
@@ -675,7 +675,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
   ierr = verbPrintf(3, grid.com,
                     "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
 
-  ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
+  ierr = OptionsString("-boot_file", "Specifies the file to bootstrap from",
                            filename, boot_file_set); CHKERRQ(ierr);
 
   if (boot_file_set) {
@@ -747,8 +747,8 @@ PetscErrorCode IceModel::allocate_stressbalance() {
     SETERRQ(grid.com, 1, "invalid stress balance model");
   }
 
-  // ~PISMStressBalance() will de-allocate sliding and modifier.
-  stress_balance = new PISMStressBalance(grid, sliding, modifier, config);
+  // ~StressBalance() will de-allocate sliding and modifier.
+  stress_balance = new StressBalance(grid, sliding, modifier, config);
 
   // PISM stress balance computations are diagnostic, i.e. do not
   // have a state that changes in time.  Therefore this call can be here
@@ -770,7 +770,7 @@ PetscErrorCode IceModel::allocate_iceberg_remover() {
     return 0;
 
   if (config.get_flag("kill_icebergs")) {
-    iceberg_remover = new PISMIcebergRemover(grid, config);
+    iceberg_remover = new IcebergRemover(grid, config);
 
     if (iceberg_remover == NULL) {
       PetscPrintf(grid.com, "PISM ERROR: failed to allocate the 'iceberg remover' object.\n");
@@ -791,7 +791,7 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
   if (btu != NULL)
     return 0;
 
-  btu = new PISMBedThermalUnit(grid, config);
+  btu = new BedThermalUnit(grid, config);
 
   return 0;
 }
@@ -803,11 +803,11 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
   if (subglacial_hydrology != NULL) // indicates it has already been allocated
     return 0;
   if      (hydrology_model == "null")
-    subglacial_hydrology = new PISMNullTransportHydrology(grid, config);
+    subglacial_hydrology = new NullTransportHydrology(grid, config);
   else if (hydrology_model == "routing")
-    subglacial_hydrology = new PISMRoutingHydrology(grid, config);
+    subglacial_hydrology = new RoutingHydrology(grid, config);
   else if (hydrology_model == "distributed")
-    subglacial_hydrology = new PISMDistributedHydrology(grid, config, stress_balance);
+    subglacial_hydrology = new DistributedHydrology(grid, config, stress_balance);
   else {
     SETERRQ1(grid.com,1,"unknown value for configuration string 'hydrology_model':\n"
              "  has value '%s'\n", hydrology_model.c_str());
@@ -829,9 +829,9 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new PISMConstantYieldStress(grid, config);
+      basal_yield_stress_model = new ConstantYieldStress(grid, config);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new PISMMohrCoulombYieldStress(grid, config, subglacial_hydrology);
+      basal_yield_stress_model = new MohrCoulombYieldStress(grid, config, subglacial_hydrology);
     } else {
       PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
                   yield_stress_model.c_str());
@@ -891,7 +891,7 @@ PetscErrorCode IceModel::allocate_couplers() {
   PAFactory pa(grid, config);
   PSFactory ps(grid, config);
   POFactory po(grid, config);
-  PISMAtmosphereModel *atmosphere;
+  AtmosphereModel *atmosphere;
 
   ierr = PetscOptionsBegin(grid.com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
 
@@ -1050,7 +1050,7 @@ PetscErrorCode IceModel::init_calving() {
   if (methods.find("ocean_kill") != methods.end()) {
 
     if (ocean_kill_calving == NULL) {
-      ocean_kill_calving = new PISMOceanKill(grid, config);
+      ocean_kill_calving = new OceanKill(grid, config);
     }
 
     ierr = ocean_kill_calving->init(variables); CHKERRQ(ierr);
@@ -1060,7 +1060,7 @@ PetscErrorCode IceModel::init_calving() {
   if (methods.find("thickness_calving") != methods.end()) {
 
     if (thickness_threshold_calving == NULL) {
-      thickness_threshold_calving = new PISMCalvingAtThickness(grid, config);
+      thickness_threshold_calving = new CalvingAtThickness(grid, config);
     }
 
     ierr = thickness_threshold_calving->init(variables); CHKERRQ(ierr);
@@ -1071,7 +1071,7 @@ PetscErrorCode IceModel::init_calving() {
   if (methods.find("eigen_calving") != methods.end()) {
 
     if (eigen_calving == NULL) {
-      eigen_calving = new PISMEigenCalving(grid, config,
+      eigen_calving = new EigenCalving(grid, config,
                                            stress_balance);
     }
 
@@ -1081,7 +1081,7 @@ PetscErrorCode IceModel::init_calving() {
 
   if (methods.find("float_kill") != methods.end()) {
     if (float_kill_calving == NULL) {
-      float_kill_calving = new PISMFloatKill(grid, config);
+      float_kill_calving = new FloatKill(grid, config);
     }
 
     ierr = float_kill_calving->init(variables); CHKERRQ(ierr);
@@ -1116,7 +1116,7 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   ierr = PetscOptionsBegin(grid.com, "", "Bed deformation model", ""); CHKERRQ(ierr);
   {
     bool dummy;
-    ierr = PISMOptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
+    ierr = OptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
                          choices, model, model, dummy); CHKERRQ(ierr);
 
   }

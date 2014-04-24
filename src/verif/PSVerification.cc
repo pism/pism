@@ -42,9 +42,9 @@ const PetscScalar PSVerification::Tmin = 223.15;  // K
 const PetscScalar PSVerification::LforFG = 750000; // m
 const PetscScalar PSVerification::ApforG = 200; // m
 
-PSVerification::PSVerification(IceGrid &g, const PISMConfig &conf,
+PSVerification::PSVerification(IceGrid &g, const Config &conf,
                                EnthalpyConverter *EC, int test)
-  : PISMSurfaceModel(g, conf), m_testname(test), m_EC(EC) {
+  : SurfaceModel(g, conf), m_testname(test), m_EC(EC) {
   PetscErrorCode ierr = allocate_PSVerification();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: failed to allocate PSVerification.\n");
@@ -78,14 +78,14 @@ PSVerification::~PSVerification() {
   // empty
 }
 
-PetscErrorCode PSVerification::init(PISMVars &vars) {
+PetscErrorCode PSVerification::init(Vars &vars) {
   (void) vars;
-  // Override the PISMSurfaceModel default, which would try to use the
+  // Override the SurfaceModel default, which would try to use the
   // atmosphere pointer.
   return 0;
 }
 
-void PSVerification::attach_atmosphere_model(PISMAtmosphereModel *input) {
+void PSVerification::attach_atmosphere_model(AtmosphereModel *input) {
   delete input;
 }
 
@@ -108,7 +108,7 @@ void PSVerification::add_vars_to_output(std::string keyword, std::set<std::strin
 }
 
 PetscErrorCode PSVerification::define_variables(std::set<std::string> vars, const PIO &nc,
-                                                PISM_IO_Type nctype) {
+                                                IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {

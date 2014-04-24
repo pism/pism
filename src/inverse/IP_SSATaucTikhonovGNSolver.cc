@@ -100,10 +100,10 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
 
-  ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   
   m_iter_max = 1000; bool flag;
-  ierr = PISMOptionsInt("-inv_gn_iter_max", "", m_iter_max, flag); CHKERRQ(ierr);  
+  ierr = OptionsInt("-inv_gn_iter_max", "", m_iter_max, flag); CHKERRQ(ierr);  
 
   m_tikhonov_atol = grid.config.get("tikhonov_atol");
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");

@@ -108,7 +108,7 @@ public:
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter &e,
                            IPDesignVariableParameterization &tp,
-                           const PISMConfig &c);
+                           const Config &c);
 
   virtual ~IP_SSATaucForwardProblem();
 
@@ -150,7 +150,7 @@ public:
 
   virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du);
   virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du);
-  virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, PISMVector2 **du_a);
+  virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vector2 **du_a);
 
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta);
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta);

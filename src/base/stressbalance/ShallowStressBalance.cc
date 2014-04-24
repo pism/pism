@@ -26,8 +26,8 @@
 
 namespace pism {
 
-ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
-  : PISMComponent(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
+ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const Config &conf)
+  : Component(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
 
   m_vel_bc = NULL;
   bc_locations = NULL;
@@ -71,8 +71,8 @@ PetscErrorCode ShallowStressBalance::allocate() {
   return 0;
 }
 
-void ShallowStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                                           std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void ShallowStressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                                           std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   dict["beta"]     = new SSB_beta(this, grid, *variables);
   dict["taub"]     = new SSB_taub(this, grid, *variables);
   dict["taub_mag"] = new SSB_taub_mag(this, grid, *variables);
@@ -81,7 +81,7 @@ void ShallowStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*
 }
 
 
-ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+ZeroSliding::ZeroSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf)
   : ShallowStressBalance(g, e, conf) {
 
   // Use the SIA flow law.
@@ -102,7 +102,7 @@ void ZeroSliding::add_vars_to_output(std::string /*keyword*/, std::set<std::stri
 }
 
 PetscErrorCode ZeroSliding::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                             PISM_IO_Type /*nctype*/) {
+                                             IO_Type /*nctype*/) {
   return 0;
 }
 
@@ -212,7 +212,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
       }
 
       planeStar<int> m = mask.int_star(i,j);
-      planeStar<PISMVector2> U = velocity.star(i,j);
+      planeStar<Vector2> U = velocity.star(i,j);
 
       // strain in units s-1
       double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
@@ -301,7 +301,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
       }
 
       planeStar<int> m = mask.int_star(i,j);
-      planeStar<PISMVector2> U = velocity.star(i,j);
+      planeStar<Vector2> U = velocity.star(i,j);
 
       // strain in units s-1
       double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
@@ -364,8 +364,8 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
   return 0;
 }
 
-SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   dof = 2;
   vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
@@ -431,8 +431,8 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   return 0;
 }
 
-SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("taud_mag", grid);
@@ -471,8 +471,8 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
   return 0;
 }
 
-SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<ShallowStressBalance>(m, g, my_vars) {
   dof = 2;
   vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   // set metadata:
@@ -537,8 +537,8 @@ PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
   return 0;
 }
 
-SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("taub_mag", grid);
@@ -583,7 +583,7 @@ PetscErrorCode SSB_taub_mag::compute(IceModelVec* &output) {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+PrescribedSliding::PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf)
   : ZeroSliding(g, e, conf) {
   // empty
 }
@@ -603,13 +603,13 @@ PetscErrorCode PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_
   return 0;
 }
 
-PetscErrorCode PrescribedSliding::init(PISMVars &vars) {
+PetscErrorCode PrescribedSliding::init(Vars &vars) {
   PetscErrorCode ierr;
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   bool flag;
   std::string input_filename;
-  ierr = PISMOptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
+  ierr = OptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
                            input_filename, flag); CHKERRQ(ierr);
   if (flag == false) {
     PetscPrintf(grid.com, "PISM ERROR: option -prescribed_sliding_file is required.\n");
@@ -621,8 +621,8 @@ PetscErrorCode PrescribedSliding::init(PISMVars &vars) {
   return 0;
 }
 
-SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<ShallowStressBalance>(m, g, my_vars) {
+SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<ShallowStressBalance>(m, g, my_vars) {
   // set metadata:
   vars[0].init_2d("beta", grid);
 

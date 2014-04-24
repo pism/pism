@@ -321,10 +321,10 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   delete [] Tex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  ierr = PISMGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
   double  gavcount;
-  ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gavTerr = gavTerr/PetscMax(gavcount, 1.0);  // avoid div by zero
   return 0;
 }
@@ -405,16 +405,16 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
 
   delete [] Tex;  delete [] Tbex;
 
-  ierr = PISMGlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
   double  gavcount;
-  ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gavTerr = gavTerr/PetscMax(gavcount,1.0);  // avoid div by zero
 
-  ierr = PISMGlobalMax(&maxTberr, &gmaxTberr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avTberr, &gavTberr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxTberr, &gmaxTberr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avTberr, &gavTberr, grid.com); CHKERRQ(ierr);
   double  gavbcount;
-  ierr = PISMGlobalSum(&avbcount, &gavbcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avbcount, &gavbcount, grid.com); CHKERRQ(ierr);
   gavTberr = gavTberr/PetscMax(gavbcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -474,11 +474,11 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 
   double gdomeT, gdomeTexact;
 
-  ierr = PISMGlobalMax(&Terr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&Terr, &gmaxTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
   gavTerr = gavTerr/(grid.Mx*grid.My);
-  ierr = PISMGlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);
   centerTerr = PetscAbsReal(gdomeT - gdomeTexact);
 
   return 0;
@@ -544,10 +544,10 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  ierr = PISMGlobalMax(&max_strain_heating_err, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&av_strain_heating_err, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&max_strain_heating_err, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&av_strain_heating_err, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
   double  gavcount;
-  ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -604,11 +604,11 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, doub
   ierr = v3->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
   gavUerr = gavUerr/(grid.Mx*grid.My);
-  ierr = PISMGlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
   gavWerr = gavWerr/(grid.Mx*grid.My);
   return 0;
 }
@@ -636,8 +636,8 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
   }
   ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -702,7 +702,7 @@ PetscErrorCode IceCompModel::initTestsKO() {
   if (testname == 'K') {
     bool Mbz_set;
     int Mbz;
-    ierr = PISMOptionsInt("-Mbz", "Number of levels in the bedrock thermal model",
+    ierr = OptionsInt("-Mbz", "Number of levels in the bedrock thermal model",
                           Mbz, Mbz_set); CHKERRQ(ierr);
     if (Mbz_set && Mbz < 2) {
       PetscPrintf(grid.com, "PISM ERROR: pismv test K requires a bedrock thermal layer 1000m deep.\n");
@@ -751,7 +751,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
       break;
     default:
       {
-        ierr = PISMBedThermalUnit::bootstrap(); CHKERRQ(ierr);
+        ierr = BedThermalUnit::bootstrap(); CHKERRQ(ierr);
       }
   }
 

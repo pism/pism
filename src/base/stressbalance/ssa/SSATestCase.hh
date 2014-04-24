@@ -59,7 +59,7 @@ PetscErrorCode init_shallow_grid(IceGrid &grid,
 class SSATestCase
 {
 public:
-  SSATestCase(MPI_Comm com, PISMConfig &c);
+  SSATestCase(MPI_Comm com, Config &c);
 
   virtual ~SSATestCase();
 
@@ -97,14 +97,14 @@ protected:
                                double max_v,
                                double avg_u,
                                double avg_v);
-  PISMConfig &config;
+  Config &config;
   IceGrid grid;
 
   // SSA model variables.
   EnthalpyConverter *enthalpyconverter;
 
   // SSA coefficient variables.
-  PISMVars vars;
+  Vars vars;
   IceModelVec2S  surface, thickness, bed, tauc, melange_back_pressure;
   IceModelVec3 enthalpy;
   IceModelVec2V vel_bc;

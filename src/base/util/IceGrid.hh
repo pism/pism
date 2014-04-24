@@ -27,9 +27,9 @@
 
 namespace pism {
 
-class PISMTime;
-class PISMProf;
-class PISMConfig;
+class Time;
+class Prof;
+class Config;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -102,7 +102,7 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
 */
 class IceGrid {
 public:
-  IceGrid(MPI_Comm c, const PISMConfig &config);
+  IceGrid(MPI_Comm c, const Config &config);
   ~IceGrid();
 
   PetscErrorCode report_parameters();
@@ -127,9 +127,9 @@ public:
   double      radius(int i, int j);
   PetscErrorCode get_dm(int dm_dof, int stencil_width, DM &result);
   double convert(double, const char*, const char*) const;
-  PISMUnitSystem get_unit_system() const;
+  UnitSystem get_unit_system() const;
 
-  const PISMConfig &config;
+  const Config &config;
   MPI_Comm    com;
   int rank, size;
   int    xs,               //!< starting x-index of a processor sub-domain
@@ -185,7 +185,7 @@ public:
   unsigned int max_stencil_width;
   //!< maximum stencil width supported by the DA in this IceGrid object
 
-  PISMTime *time;               //!< The time management object (hides calendar computations)
+  Time *time;               //!< The time management object (hides calendar computations)
 
   //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
   //! meters around the edge of the computational domain.
@@ -199,7 +199,7 @@ public:
 protected:
   std::map<int,DM> dms;
   double lambda;         //!< quadratic vertical spacing parameter
-  PISMUnitSystem m_unit_system;
+  UnitSystem m_unit_system;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_horizontal_coordinates();

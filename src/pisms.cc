@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
       "where major option chooses type of simplified experiment:\n"
       "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"); CHKERRQ(ierr);
 
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 

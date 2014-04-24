@@ -24,8 +24,8 @@
 
 namespace pism {
 
-PISMHydrology::PISMHydrology(IceGrid &g, const PISMConfig &conf)
-  : PISMComponent_TS(g, conf)
+Hydrology::Hydrology(IceGrid &g, const Config &conf)
+  : Component_TS(g, conf)
 {
   thk   = NULL;
   bed   = NULL;
@@ -42,11 +42,11 @@ PISMHydrology::PISMHydrology(IceGrid &g, const PISMConfig &conf)
                          "m s-1", "");
   if ((ierr1 != 0) || (ierr2 != 0)) {
       PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in PISMHydrology constructor (total_input).\n");
+        "PISM ERROR: memory allocation failed in Hydrology constructor (total_input).\n");
       PISMEnd();
   }
 
-  // *all* PISMHydrology classes have layer of water stored in till
+  // *all* Hydrology classes have layer of water stored in till
   ierr1 = Wtil.create(grid, "tillwat", WITHOUT_GHOSTS);
   ierr2 = Wtil.set_attrs("model_state",
                      "effective thickness of subglacial water stored in till",
@@ -54,16 +54,16 @@ PISMHydrology::PISMHydrology(IceGrid &g, const PISMConfig &conf)
   Wtil.metadata().set_double("valid_min", 0.0);
   if ((ierr1 != 0) || (ierr2 != 0)) {
       PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in PISMHydrology constructor (Wtil).\n");
+        "PISM ERROR: memory allocation failed in Hydrology constructor (Wtil).\n");
       PISMEnd();
   }
 }
 
-PISMHydrology::~PISMHydrology() {
+Hydrology::~Hydrology() {
   // empty
 }
 
-PetscErrorCode PISMHydrology::init(PISMVars &vars) {
+PetscErrorCode Hydrology::init(Vars &vars) {
   PetscErrorCode ierr;
   std::string itbfilename;  // itb = input_to_bed
   bool itbfile_set, itbperiod_set, itbreference_set;
@@ -71,22 +71,22 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   double itbperiod_years = 0.0, itbreference_year = 0.0;
 
   ierr = verbPrintf(4, grid.com,
-    "entering PISMHydrology::init() ...\n"); CHKERRQ(ierr);
+    "entering Hydrology::init() ...\n"); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "",
-            "Options controlling the base class PISMHydrology", ""); CHKERRQ(ierr);
+            "Options controlling the base class Hydrology", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-input_to_bed_file",
+    ierr = OptionsString("-input_to_bed_file",
       "A time- and space-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given location at the given time",
       itbfilename, itbfile_set); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-input_to_bed_period",
+    ierr = OptionsReal("-input_to_bed_period",
       "The period (i.e. duration before repeat), in years, of -input_to_bed_file data",
       itbperiod_years, itbperiod_set); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-input_to_bed_reference_year",
+    ierr = OptionsReal("-input_to_bed_reference_year",
       "The reference year for periodizing the -input_to_bed_file data",
       itbreference_year, itbreference_set); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+    ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -94,22 +94,22 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   variables = &vars;
 
   // the following are IceModelVec pointers into IceModel generally and are read by code in the
-  // update() method at the current PISMHydrology time
+  // update() method at the current Hydrology time
 
   thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
-  if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available to PISMHydrology");
+  if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available to Hydrology");
 
   bed = dynamic_cast<IceModelVec2S*>(vars.get("topg"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available to PISMHydrology");
+  if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available to Hydrology");
 
   bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available to PISMHydrology");
+  if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available to Hydrology");
 
   cellarea = dynamic_cast<IceModelVec2S*>(vars.get("cell_area"));
-  if (cellarea == NULL) SETERRQ(grid.com, 1, "cell_area is not available to PISMHydrology");
+  if (cellarea == NULL) SETERRQ(grid.com, 1, "cell_area is not available to Hydrology");
 
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available to PISMHydrology");
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available to Hydrology");
 
   // the following inputtobed is not related to IceModel; we must read it ourselves
 
@@ -173,29 +173,29 @@ PetscErrorCode PISMHydrology::init(PISMVars &vars) {
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file
-  ierr = regrid("PISMHydrology", &Wtil); CHKERRQ(ierr);
+  ierr = regrid("Hydrology", &Wtil); CHKERRQ(ierr);
   return 0;
 }
 
 
-void PISMHydrology::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                                    std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
-  dict["bwat"] = new PISMHydrology_bwat(this, grid, *variables);
-  dict["bwp"] = new PISMHydrology_bwp(this, grid, *variables);
-  dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
-  dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
-  dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
-  dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
+void Hydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                                    std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
+  dict["bwat"] = new Hydrology_bwat(this, grid, *variables);
+  dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
+  dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
+  dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
 }
 
 
-void PISMHydrology::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void Hydrology::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   result.insert("tillwat");
 }
 
 
-PetscErrorCode PISMHydrology::define_variables(std::set<std::string> vars, const PIO &nc,
-                                               PISM_IO_Type nctype) {
+PetscErrorCode Hydrology::define_variables(std::set<std::string> vars, const PIO &nc,
+                                               IO_Type nctype) {
   PetscErrorCode ierr;
   if (set_contains(vars, "tillwat")) {
     ierr = Wtil.define(nc, nctype); CHKERRQ(ierr);
@@ -204,7 +204,7 @@ PetscErrorCode PISMHydrology::define_variables(std::set<std::string> vars, const
 }
 
 
-PetscErrorCode PISMHydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode Hydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
   if (set_contains(vars, "tillwat")) {
     ierr = Wtil.write(nc); CHKERRQ(ierr);
@@ -217,9 +217,9 @@ PetscErrorCode PISMHydrology::write_variables(std::set<std::string> vars, const 
 /*!
 Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
-Accesses H=thk from PISMVars, which points into IceModel.
+Accesses H=thk from Vars, which points into IceModel.
  */
-PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
+PetscErrorCode Hydrology::overburden_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
   // FIXME issue #15
   ierr = result.copy_from(*thk); CHKERRQ(ierr);  // copies into ghosts if result has them
@@ -229,14 +229,14 @@ PetscErrorCode PISMHydrology::overburden_pressure(IceModelVec2S &result) {
 
 
 //! Return the effective thickness of the water stored in till.
-PetscErrorCode PISMHydrology::till_water_thickness(IceModelVec2S &result) {
+PetscErrorCode Hydrology::till_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = Wtil.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Set the wall melt rate to zero.  (The most basic subglacial hydrologies have no lateral flux or potential gradient.)
-PetscErrorCode PISMHydrology::wall_melt(IceModelVec2S &result) {
+PetscErrorCode Hydrology::wall_melt(IceModelVec2S &result) {
   PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
@@ -245,7 +245,7 @@ PetscErrorCode PISMHydrology::wall_melt(IceModelVec2S &result) {
 /*!
 Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
-PetscErrorCode PISMHydrology::check_Wtil_bounds() {
+PetscErrorCode Hydrology::check_Wtil_bounds() {
   PetscErrorCode ierr;
   double tillwat_max = config.get("hydrology_tillwat_max");
   ierr = Wtil.begin_access(); CHKERRQ(ierr);
@@ -253,14 +253,14 @@ PetscErrorCode PISMHydrology::check_Wtil_bounds() {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (Wtil(i,j) < 0.0) {
         PetscPrintf(grid.com,
-           "PISMHydrology ERROR: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
+           "Hydrology ERROR: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
            "            at (i,j)=(%d,%d)\n"
            "ENDING ... \n\n", Wtil(i,j), i, j);
         PISMEnd();
       }
       if (Wtil(i,j) > tillwat_max) {
         PetscPrintf(grid.com,
-           "PISMHydrology ERROR: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
+           "Hydrology ERROR: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
            "            hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)\n"
            "ENDING ... \n\n", Wtil(i,j), tillwat_max, i, j);
         PISMEnd();
@@ -284,9 +284,9 @@ also uses hydrology_const_bmelt if that is requested.
 
 Call this method using the current \e hydrology time step.  This method
 may be called many times per IceModel time step.  See update() method
-in derived classes of PISMHydrology.
+in derived classes of Hydrology.
  */
-PetscErrorCode PISMHydrology::get_input_rate(
+PetscErrorCode Hydrology::get_input_rate(
                   double hydro_t, double hydro_dt, IceModelVec2S &result) {
   PetscErrorCode ierr;
   bool      use_const   = config.get_flag("hydrology_use_const_bmelt");

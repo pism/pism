@@ -27,7 +27,7 @@ namespace pism {
 class DrainageCalculator {
 
 public:
-  DrainageCalculator(const PISMConfig &config) {
+  DrainageCalculator(const Config &config) {
     OM1 = config.get("drainage_target_water_frac"); // 0.01
     OM2 = 2.0 * OM1;
     OM3 = 3.0 * OM1;

@@ -24,9 +24,9 @@
 
 namespace pism {
 
-class PISMVars;
+class Vars;
 
-//! Class for a 3d DA-based Vec for PISMBedThermalUnit.
+//! Class for a 3d DA-based Vec for BedThermalUnit.
 class IceModelVec3BTU : public IceModelVec3D {
 public:
   IceModelVec3BTU() : Lbz(-1.0) {}
@@ -100,17 +100,17 @@ private:
   get_upward_geothermal_flux() method uses first-order differencing to compute the
   values of \f$G_0\f$.
 */
-class PISMBedThermalUnit : public PISMComponent_TS {
+class BedThermalUnit : public Component_TS {
 
 public:
-  PISMBedThermalUnit(IceGrid &g, const PISMConfig &conf);
+  BedThermalUnit(IceGrid &g, const Config &conf);
 
-  virtual ~PISMBedThermalUnit() { }
+  virtual ~BedThermalUnit() { }
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);  
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);  
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode max_timestep(double /*my_t*/, double &my_dt, bool &restrict);

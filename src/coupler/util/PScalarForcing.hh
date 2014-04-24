@@ -31,7 +31,7 @@ template<class Model, class Mod>
 class PScalarForcing : public Mod
 {
 public:
-  PScalarForcing(IceGrid &g, const PISMConfig &conf, Model* in)
+  PScalarForcing(IceGrid &g, const Config &conf, Model* in)
     : Mod(g, conf, in), input(in) {}
   virtual ~PScalarForcing()
   {
@@ -61,11 +61,11 @@ protected:
 
     ierr = PetscOptionsBegin(g.com, "", "Scalar forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString(option_prefix + "_file", "Specifies a file with scalar offsets",
+      ierr = OptionsString(option_prefix + "_file", "Specifies a file with scalar offsets",
                                filename, file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option_prefix + "_period", "Specifies the length of the climate data period",
+      ierr = OptionsReal(option_prefix + "_period", "Specifies the length of the climate data period",
                              bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option_prefix + "_reference_year", "Boundary condition reference year",
+      ierr = OptionsReal(option_prefix + "_reference_year", "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);

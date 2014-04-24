@@ -27,11 +27,11 @@ namespace pism {
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
 
-SSA* SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
+SSA* SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const Config &c) {
   return new SSAFEM(g, ec, c);
 }
 
-SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSA(g, e, c), element_index(g) {
   m_quadrature.init(grid);
   m_quadrature_vector.init(grid);
@@ -96,7 +96,7 @@ PetscErrorCode SSAFEM::deallocate_fem() {
 }
 
 // Initialize the solver, called once by the client before use.
-PetscErrorCode SSAFEM::init(PISMVars &vars) {
+PetscErrorCode SSAFEM::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSA::init(vars); CHKERRQ(ierr);
@@ -389,7 +389,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
  * @return 0 on success
  */
 PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
-                                           const PISMVector2 *u, const double Du[],
+                                           const Vector2 *u, const double Du[],
                                            double *nuH, double *dNuH,
                                            double *beta, double *dbeta) {
 
@@ -436,7 +436,7 @@ corresponding to a Dirichlet unknown are not set in the main loops of
 SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
 */
 void SSAFEM::FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
-                                PISMVector2 x[], FEDOFMap &my_dofmap) {
+                                Vector2 x[], FEDOFMap &my_dofmap) {
   for (int k=0; k<4; k++) {
     if (local_bc_mask[k] > 0.5) { // Dirichlet node
       int ii, jj;
@@ -454,8 +454,8 @@ void SSAFEM::FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
 /*! Compute the residual \f[r_{ij}= G(x, \psi_{ij}) \f] where \f$G\f$ is the weak form of the SSA, \f$x\f$
 is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
-                                              const PISMVector2 **velocity_global,
-                                              PISMVector2 **residual_global) {
+                                              const Vector2 **velocity_global,
+                                              Vector2 **residual_global) {
   int              i, j, k, q;
   PetscErrorCode   ierr;
 
@@ -480,7 +480,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   m_quadrature.getWeightedJacobian(JxW);
 
   // Storage for the current solution at quadrature points.
-  PISMVector2 u[FEQuadrature::Nq];
+  Vector2 u[FEQuadrature::Nq];
   double Du[FEQuadrature::Nq][3];
 
   // An Nq by Nk array of test function values.
@@ -496,7 +496,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   for (i = xs; i < xs + xm; i++) {
     for (j = ys; j < ys + ym; j++) {
       // Storage for element-local solution and residuals.
-      PISMVector2     velocity[4], residual[4];
+      Vector2     velocity[4], residual[4];
       // Index into coefficient storage in feStore
       const int ij = element_index.flatten(i, j);
 
@@ -534,7 +534,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
         ierr = PointwiseNuHAndBeta(feS, u+q, Duq, &nuH, NULL, &beta, NULL); CHKERRQ(ierr);
 
         // The next few lines compute the actual residual for the element.
-        PISMVector2 f;
+        Vector2 f;
         f.u = beta*u[q].u - feS->driving_stress.u;
         f.v = beta*u[q].v - feS->driving_stress.v;
 
@@ -593,7 +593,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
 where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate solution, and
 the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
-                                              const PISMVector2 **velocity_global, Mat Jac) {
+                                              const Vector2 **velocity_global, Mat Jac) {
   int         i, j;
   PetscErrorCode   ierr;
 
@@ -614,7 +614,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   m_quadrature.getWeightedJacobian(JxW);
 
   // Storage for the current solution at quadrature points.
-  PISMVector2 w[FEQuadrature::Nq];
+  Vector2 w[FEQuadrature::Nq];
   double Dw[FEQuadrature::Nq][3];
 
   // Values of the finite element test functions at the quadrature points.
@@ -631,7 +631,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Values of the solution at the nodes of the current element.
-      PISMVector2    velocity[FEQuadrature::Nk];
+      Vector2    velocity[FEQuadrature::Nk];
 
       // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
       // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
@@ -662,7 +662,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       for (int q=0; q<FEQuadrature::Nq; q++) {
 
         // Shorthand for values and derivatives of the solution at the single quadrature point.
-        PISMVector2 &wq = w[q];
+        Vector2 &wq = w[q];
         double *Dwq = Dw[q];
 
         // Coefficients evaluated at the single quadrature point.
@@ -768,12 +768,12 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
 //!
 PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
-			     const PISMVector2 **velocity, PISMVector2 **residual,
+			     const Vector2 **velocity, Vector2 **residual,
 			     SSAFEM_SNESCallbackData *fe) {
   return fe->ssa->compute_local_function(info, velocity, residual);
 }
 
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **velocity,
 			     Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
 
   (void) A;
