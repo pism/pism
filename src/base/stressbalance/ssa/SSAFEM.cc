@@ -77,10 +77,10 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
 
-  // Allocate feStore, which contains coefficient data at the quadrature points of all the elements.
+  // Allocate m_coefficients, which contains coefficient data at the quadrature points of all the elements.
   // There are nElement elements, and FEQuadrature::Nq quadrature points.
   int nElements = m_element_index.element_count();
-  m_feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
+  m_coefficients = new SSACoefficients[FEQuadrature::Nq*nElements];
 
   return 0;
 }
@@ -90,7 +90,7 @@ PetscErrorCode SSAFEM::deallocate_fem() {
   PetscErrorCode ierr;
 
   ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
-  delete[] m_feStore;
+  delete[] m_coefficients;
 
   return 0;
 }
@@ -297,8 +297,8 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *tauc, taucq);
 
       const int ij = m_element_index.flatten(i, j);
-      FEStoreNode *coefficients = &m_feStore[4*ij];
-      for (q=0; q<4; q++) {
+      SSACoefficients *coefficients = &m_coefficients[4*ij];
+      for (q = 0; q < FEQuadrature::Nq; q++) {
         coefficients[q].H  = Hq[q];
         coefficients[q].b  = bq[q];
         coefficients[q].tauc = taucq[q];
@@ -342,10 +342,10 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
       }
 
       // Now, for each column over a quadrature point, find the averaged_hardness.
-      for (q=0; q<FEQuadrature::Nq; q++) {
+      for (q = 0; q < FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
-                                               &grid.zlevels[0], Enth_q[q]);
+                                                        &grid.zlevels[0], Enth_q[q]);
       }
     }
   }
@@ -360,7 +360,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
   ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  for (q=0; q<4; q++)
+  for (q = 0; q < FEQuadrature::Nq; q++)
   {
     delete [] Enth_q[q];
   }
@@ -386,7 +386,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
  *
  * @return 0 on success
  */
-PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *coefficients,
+PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients *coefficients,
                                            const Vector2 &u, const double Du[],
                                            double *nuH, double *dNuH,
                                            double *beta, double *dbeta) {
@@ -435,7 +435,7 @@ SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
 */
 void SSAFEM::FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
                                 Vector2 x[], FEDOFMap &my_dofmap) {
-  for (int k=0; k<4; k++) {
+  for (int k = 0; k < FEQuadrature::Nk; k++) {
     if (local_bc_mask[k] > 0.5) { // Dirichlet node
       int ii, jj;
       my_dofmap.localToGlobal(k, &ii, &jj);
@@ -459,8 +459,8 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   (void) info; // Avoid compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
       residual_global[i][j].u = 0.0;
       residual_global[i][j].v = 0.0;
     }
@@ -489,12 +489,12 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
 
   // Iterate over the elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
-    ys   = m_element_index.ys, ym = m_element_index.ym;
+    ys = m_element_index.ys, ym = m_element_index.ym;
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
       // Storage for element-local solution and residuals.
       Vector2     velocity[4], residual[4];
-      // Index into coefficient storage in feStore
+      // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
@@ -511,7 +511,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
       }
 
       // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k=0; k<FEQuadrature::Nk; k++){
+      for (unsigned int k = 0; k < FEQuadrature::Nk; k++){
         residual[k].u = 0;
         residual[k].v = 0;
       }
@@ -519,27 +519,30 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
       // Compute the solution values and symmetric gradient at the quadrature points.
       m_quadrature_vector.computeTrialFunctionValues(velocity, u, Du);
 
-      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
+      // Coefficients and weights for this quadrature point.
+      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
 
         // Symmetric gradient at the quadrature point.
         double *Duq = Du[q];
 
         // Coefficients and weights for this quadrature point.
-        const FEStoreNode *coefficients = &m_feStore[ij*FEQuadrature::Nq+q];
-        const double    jw  = JxW[q];
-        double nuH, beta;
-        ierr = PointwiseNuHAndBeta(coefficients, u[q], Duq,
+        const double    jw = JxW[q];
+        double nuH = 0.0, beta = 0.0;
+        ierr = PointwiseNuHAndBeta(&coefficients[q], u[q], Duq,
                                    &nuH, NULL, &beta, NULL); CHKERRQ(ierr);
 
         // The next few lines compute the actual residual for the element.
-        Vector2 f;
-        f.u = beta*u[q].u - coefficients->driving_stress.u;
-        f.v = beta*u[q].v - coefficients->driving_stress.v;
+        const Vector2
+          tau_b = u[q] * (- beta), // basal shear stress
+          tau_d = coefficients[q].driving_stress, // gravitational driving stress
+          f     = tau_b + tau_d;
 
-        for (unsigned int k=0; k<4; k++) {  // loop over the test functions.
+        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
-          residual[k].u += jw*(nuH*(testqk.dx*(2*Duq[0] + Duq[1]) + testqk.dy*Duq[2]) + testqk.val*f.u);
-          residual[k].v += jw*(nuH*(testqk.dy*(2*Duq[1] + Duq[0]) + testqk.dx*Duq[2]) + testqk.val*f.v);
+          residual[k].u += jw*(nuH*(testqk.dx*(2*Duq[0] + Duq[1]) + testqk.dy*Duq[2]) - testqk.val*f.u);
+          residual[k].v += jw*(nuH*(testqk.dy*(2*Duq[1] + Duq[0]) + testqk.dx*Duq[2]) - testqk.val*f.v);
         }
       } // q
 
@@ -551,8 +554,8 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   // We fix this now.
   if (bc_locations && m_vel_bc) {
     // Enforce Dirichlet conditions strongly
-    for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+    for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
+      for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
         if ((*bc_locations)(i, j) > 0.5) {
           // Enforce explicit dirichlet data.
           residual_global[i][j].u = m_dirichletScale * (velocity_global[i][j].u - (*m_vel_bc)(i, j).u);
@@ -568,8 +571,8 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   ierr = PetscOptionsHasName(NULL, "-ssa_monitor_function", &monitorFunction); CHKERRQ(ierr);
   if (monitorFunction) {
     ierr = PetscPrintf(grid.com, "SSA Solution and Function values (pointwise residuals)\n"); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+    for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
+      for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
         ierr = PetscSynchronizedPrintf(grid.com,
                                        "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
                                        i, j,
@@ -657,21 +660,21 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
-      for (int q=0; q<FEQuadrature::Nq; q++) {
+      for (int q = 0; q < FEQuadrature::Nq; q++) {
 
         // Shorthand for values and derivatives of the solution at the single quadrature point.
         Vector2 &wq = w[q];
         double *Dwq = Dw[q];
 
         // Coefficients evaluated at the single quadrature point.
-        const FEStoreNode *coefficients = &m_feStore[ij*4+q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*4+q];
         const double    jw  = JxW[q];
         double nuH, dNuH, beta, dbeta;
         ierr = PointwiseNuHAndBeta(coefficients, wq, Dwq,
                                    &nuH, &dNuH, &beta, &dbeta); CHKERRQ(ierr);
 
-        for (int k=0; k<4; k++) {   // Test functions
-          for (int l=0; l<4; l++) { // Trial functions
+        for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
+          for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
 
             // FIXME (DAM 2/28/11) The following computations could be a little better documented.
             const FEFunctionGerm &test_qk=test[q][k];

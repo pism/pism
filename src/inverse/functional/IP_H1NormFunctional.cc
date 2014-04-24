@@ -223,8 +223,8 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K));CHKERRQ(ierr);
       for (int q=0; q<FEQuadrature::Nq; q++) {
-        for (int k=0; k<4; k++) {   // Test functions
-          for (int l=0; l<4; l++) { // Trial functions
+        for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
+          for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
             const FEFunctionGerm &test_qk=test[q][k];
             const FEFunctionGerm &test_ql=test[q][l];
             K[k][l]     += JxW[q]*(m_cL2*test_qk.val*test_ql.val

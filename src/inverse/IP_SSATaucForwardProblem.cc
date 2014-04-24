@@ -86,7 +86,6 @@ kept.
 PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
-  int i, j, q;
 
   IceModelVec2S *m_tauc = tauc;
 
@@ -95,18 +94,18 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
   // Convert zeta to tauc.
   m_tauc_param.convertToDesignVariable(*m_zeta, *m_tauc);
 
-  // Cache tauc at the quadrature points in feStore.
+  // Cache tauc at the quadrature points in m_coefficients.
   double tauc_q[FEQuadrature::Nq];
   ierr = m_tauc->begin_access(); CHKERRQ(ierr);
   int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys; j<ys+ym; j++) {
+    ys = m_element_index.ys, ym = m_element_index.ym;
+  for (int i = xs; i < xs + xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
-      FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq];
-      for (q=0; q<4; q++) {
-        feS[q].tauc = tauc_q[q];
+      SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      for (int q = 0; q < FEQuadrature::Nq; q++) {
+        coefficients[q].tauc = tauc_q[q];
       }
     }
   }
@@ -307,7 +306,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
         du_e[k].v = 0;
       }
 
-      // Index into coefficient storage in feStore
+      // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
@@ -337,11 +336,11 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
       for (int q = 0; q < FEQuadrature::Nq; q++) {
         Vector2 u_qq = u_q[q];
 
-        const FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq + q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq + q];
 
         // Determine "dbeta / dzeta" at the quadrature point
         double dbeta = 0;
-        if (M.grounded_ice(feS->mask) ) {
+        if (M.grounded_ice(coefficients->mask) ) {
           dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
         }
 
@@ -463,7 +462,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      // Index into coefficient storage in feStore
+      // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
@@ -488,11 +487,11 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
         Vector2 du_qq = du_q[q];
         Vector2 u_qq = u_q[q];
 
-        const FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq+q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
 
         // Determine "dbeta/dtauc" at the quadrature point
         double dbeta_dtauc = 0;
-        if (M.grounded_ice(feS->mask)) {
+        if (M.grounded_ice(coefficients->mask)) {
           dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
         }
 

@@ -27,7 +27,7 @@
 namespace pism {
 
 //! Storage for SSA coefficients at a quadrature point.
-struct FEStoreNode {
+struct SSACoefficients {
   double H,                     //!< ice thickness
     tauc,                       //!< basal yield stress
     b,                          //!< bed elevation
@@ -83,7 +83,7 @@ public:
 
 protected:
 
-  virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
+  virtual PetscErrorCode PointwiseNuHAndBeta(const SSACoefficients *,
                                              const Vector2 &, const double[],
                                              double *,double *,double *,double *);
 
@@ -111,7 +111,7 @@ protected:
   SSAFEM_SNESCallbackData m_callback_data;
 
   SNES         m_snes;
-  FEStoreNode *m_feStore;
+  SSACoefficients *m_coefficients;
   double    m_dirichletScale;
   double    m_ocean_rho;
   double    m_earth_grav;

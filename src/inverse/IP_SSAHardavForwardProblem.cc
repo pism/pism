@@ -87,25 +87,24 @@ kept.
 PetscErrorCode IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
-  int i, j, q;
 
   m_zeta = &new_zeta;
 
   // Convert zeta to hardav.
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
-  // Cache hardav at the quadrature points in feStore.
+  // Cache hardav at the quadrature points in m_coefficients.
   double hardav_q[FEQuadrature::Nq];
   ierr = m_hardav.begin_access(); CHKERRQ(ierr);
   int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys;j<ys+ym; j++) {
+    ys = m_element_index.ys, ym = m_element_index.ym;
+  for (int i = xs; i < xs + xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, m_hardav, hardav_q);
       const int ij = m_element_index.flatten(i, j);
-      FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq];
-      for (q=0; q<4; q++) {
-        feS[q].B = hardav_q[q];
+      SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      for (int q = 0; q < FEQuadrature::Nq; q++) {
+        coefficients[q].B = hardav_q[q];
       }
     }
   }
@@ -311,7 +310,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
         du_e[k].v = 0;
       }
 
-      // Index into coefficient storage in feStore
+      // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
@@ -342,12 +341,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
         // Symmetric gradient at the quadrature point.
         double *Duqq = Du_q[q];
 
-        const FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq+q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
 
         double d_nuH = 0;
-        if (feS->H >= strength_extension->get_min_thickness()) {
+        if (coefficients->H >= strength_extension->get_min_thickness()) {
           flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
-          d_nuH  *= (2*feS->H);
+          d_nuH  *= (2*coefficients->H);
         }
 
         for (int k=0; k<FEQuadrature::Nk; k++) {
@@ -480,7 +479,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      // Index into coefficient storage in feStore
+      // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
@@ -505,13 +504,13 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
         // Symmetric gradient at the quadrature point.
         double *Duqq = Du_q[q];
 
-        const FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq+q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
 
         // Determine "d_nuH/dB" at the quadrature point
         double d_nuH_dB = 0;
-        if (feS->H >= strength_extension->get_min_thickness()) {
+        if (coefficients->H >= strength_extension->get_min_thickness()) {
           flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
-          d_nuH_dB  *= (2*feS->H);
+          d_nuH_dB  *= (2*coefficients->H);
         }
 
         for (int k=0; k<FEQuadrature::Nk; k++) {
