@@ -28,7 +28,10 @@ namespace pism {
 
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
-  double H,tauc,b,B;
+  double H,                     //!< ice thickness
+    tauc,                       //!< basal yield stress
+    b,                          //!< bed elevation
+    B;                          //!< ice hardness
   Vector2 driving_stress;
   int mask;
 };
@@ -81,7 +84,7 @@ public:
 protected:
 
   virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
-                                             const Vector2 *,const double[],
+                                             const Vector2 &, const double[],
                                              double *,double *,double *,double *);
 
   void FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
@@ -105,20 +108,20 @@ protected:
 
 
   // objects used internally
-  SSAFEM_SNESCallbackData callback_data;
+  SSAFEM_SNESCallbackData m_callback_data;
 
-  SNES         snes;
-  FEStoreNode *feStore;
-  double    dirichletScale;
-  double    ocean_rho;
-  double    earth_grav;
+  SNES         m_snes;
+  FEStoreNode *m_feStore;
+  double    m_dirichletScale;
+  double    m_ocean_rho;
+  double    m_earth_grav;
   double    m_beta_ice_free_bedrock;
   double    m_epsilon_ssa;
 
-  FEElementMap element_index;
+  FEElementMap m_element_index;
   FEQuadrature_Scalar m_quadrature;
   FEQuadrature_Vector m_quadrature_vector;
-  FEDOFMap dofmap;
+  FEDOFMap m_dofmap;
 };
 
 

@@ -102,9 +102,9 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      m_quadrature.computeTrialFunctionValues(i, j, dofmap, *m_tauc, tauc_q);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
-      FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq];
+      FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq];
       for (q=0; q<4; q++) {
         feS[q].tauc = tauc_q[q];
       }
@@ -265,7 +265,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  double           m_dirichletWeight    = dirichletScale;
+  double           m_dirichletWeight    = m_dirichletScale;
 
   Vector2 u_e[FEQuadrature::Nk];
   Vector2 u_q[FEQuadrature::Nq];
@@ -308,7 +308,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
       }
 
       // Index into coefficient storage in feStore
-      const int ij = element_index.flatten(i, j);
+      const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -337,7 +337,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
       for (int q = 0; q < FEQuadrature::Nq; q++) {
         Vector2 u_qq = u_q[q];
 
-        const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq + q];
+        const FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq + q];
 
         // Determine "dbeta / dzeta" at the quadrature point
         double dbeta = 0;
@@ -440,7 +440,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   // Aliases to help with notation consistency.
   IceModelVec2Int      *m_dirichletLocations = bc_locations;
   IceModelVec2V        *m_dirichletValues    = m_vel_bc;
-  double                m_dirichletWeight    = dirichletScale;
+  double                m_dirichletWeight    = m_dirichletScale;
 
   ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues,
                           m_dirichletWeight); CHKERRQ(ierr);
@@ -464,7 +464,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Index into coefficient storage in feStore
-      const int ij = element_index.flatten(i, j);
+      const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -488,7 +488,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
         Vector2 du_qq = du_q[q];
         Vector2 u_qq = u_q[q];
 
-        const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
+        const FEStoreNode *feS = &m_feStore[ij*FEQuadrature::Nq+q];
 
         // Determine "dbeta/dtauc" at the quadrature point
         double dbeta_dtauc = 0;
@@ -602,7 +602,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  double           m_dirichletWeight    = dirichletScale;
+  double           m_dirichletWeight    = m_dirichletScale;
 
   ierr = m_du_global.copy_from(du); CHKERRQ(ierr);
   Vector2 **du_a;

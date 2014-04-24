@@ -32,7 +32,7 @@ SSA* SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const Config &c) {
 }
 
 SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c)
-  : SSA(g, e, c), element_index(g) {
+  : SSA(g, e, c), m_element_index(g) {
   m_quadrature.init(grid);
   m_quadrature_vector.init(grid);
   PetscErrorCode ierr = allocate_fem();
@@ -50,37 +50,37 @@ SSAFEM::~SSAFEM() {
 PetscErrorCode SSAFEM::allocate_fem() {
   PetscErrorCode ierr;
 
-  dirichletScale = 1.0;
-  ocean_rho = config.get("sea_water_density");
-  earth_grav = config.get("standard_gravity");
+  m_dirichletScale = 1.0;
+  m_ocean_rho = config.get("sea_water_density");
+  m_earth_grav = config.get("standard_gravity");
   m_beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
-  ierr = SNESCreate(grid.com, &snes); CHKERRQ(ierr);
+  ierr = SNESCreate(grid.com, &m_snes); CHKERRQ(ierr);
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  callback_data.da = SSADA;
-  callback_data.ssa = this;
-  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
+  m_callback_data.da = SSADA;
+  m_callback_data.ssa = this;
+  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
 
   ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(SSADA, &callback_data); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(SSADA, &m_callback_data); CHKERRQ(ierr);
 
-  ierr = SNESSetDM(snes, SSADA); CHKERRQ(ierr);
+  ierr = SNESSetDM(m_snes, SSADA); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   int snes_max_it = 200;
-  ierr = SNESSetTolerances(snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
+  ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
                            snes_max_it, PETSC_DEFAULT);
   // ierr = SNESSetOptionsPrefix(snes, ((PetscObject)this)->prefix); CHKERRQ(ierr);
 
-  ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+  ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
 
   // Allocate feStore, which contains coefficient data at the quadrature points of all the elements.
   // There are nElement elements, and FEQuadrature::Nq quadrature points.
-  int nElements = element_index.element_count();
-  feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
+  int nElements = m_element_index.element_count();
+  m_feStore = new FEStoreNode[FEQuadrature::Nq*nElements];
 
   return 0;
 }
@@ -89,8 +89,8 @@ PetscErrorCode SSAFEM::allocate_fem() {
 PetscErrorCode SSAFEM::deallocate_fem() {
   PetscErrorCode ierr;
 
-  ierr = SNESDestroy(&snes); CHKERRQ(ierr);
-  delete[] feStore;
+  ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
+  delete[] m_feStore;
 
   return 0;
 }
@@ -126,12 +126,12 @@ PetscErrorCode SSAFEM::setFromOptions() {
 
   PetscFunctionBegin;
   ierr = PetscOptionsHead("SSA FEM options"); CHKERRQ(ierr);
-  dirichletScale = 1.0e9;
+  m_dirichletScale = 1.0e9;
   ierr = PetscOptionsReal("-ssa_fe_dirichlet_scale",
                           "Enforce Dirichlet conditions with this additional scaling",
                           "",
-                          dirichletScale,
-                          &dirichletScale, NULL); CHKERRQ(ierr);
+                          m_dirichletScale,
+                          &m_dirichletScale, NULL); CHKERRQ(ierr);
   ierr = PetscOptionsTail(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -198,7 +198,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
              CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer, "SNES before SSASolve_FE\n");
              CHKERRQ(ierr);
-    ierr = SNESView(snes, viewer); CHKERRQ(ierr);
+    ierr = SNESView(m_snes, viewer); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector before SSASolve_FE\n");
              CHKERRQ(ierr);
     ierr = VecView(SSAX, viewer); CHKERRQ(ierr);
@@ -210,11 +210,11 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     stdout_ssa = "  SSA: ";
 
   // Solve:
-  ierr = SNESSolve(snes, NULL, SSAX); CHKERRQ(ierr);
+  ierr = SNESSolve(m_snes, NULL, SSAX); CHKERRQ(ierr);
 
   // See if it worked.
   SNESConvergedReason snes_reason;
-  ierr = SNESGetConvergedReason(snes, &snes_reason); CHKERRQ(ierr);
+  ierr = SNESGetConvergedReason(m_snes, &snes_reason); CHKERRQ(ierr);
   reason.reset(new SNESTerminationReason(snes_reason));
   if (reason->failed()) {
     return 0;
@@ -276,43 +276,41 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = tauc->begin_access(); CHKERRQ(ierr);
 
-  int xs = element_index.xs, xm = element_index.xm,
-    ys   = element_index.ys, ym = element_index.ym;
+  int xs = m_element_index.xs, xm = m_element_index.xm,
+    ys   = m_element_index.ys, ym = m_element_index.ym;
 
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       double hq[FEQuadrature::Nq], hxq[FEQuadrature::Nq], hyq[FEQuadrature::Nq];
       double ds_xq[FEQuadrature::Nq], ds_yq[FEQuadrature::Nq];
       if (driving_stress_explicit) {
-        m_quadrature.computeTrialFunctionValues(i, j, dofmap, *driving_stress_x, ds_xq);
-        m_quadrature.computeTrialFunctionValues(i, j, dofmap, *driving_stress_y, ds_yq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *driving_stress_x, ds_xq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *driving_stress_y, ds_yq);
       } else {
         // Extract coefficient values at the quadrature points.
-        m_quadrature.computeTrialFunctionValues(i, j, dofmap, *surface, hq, hxq, hyq);
+        m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *surface, hq, hxq, hyq);
       }
 
       double Hq[FEQuadrature::Nq], bq[FEQuadrature::Nq], taucq[FEQuadrature::Nq];
-      m_quadrature.computeTrialFunctionValues(i, j, dofmap, *thickness, Hq);
-      m_quadrature.computeTrialFunctionValues(i, j, dofmap, *bed, bq);
-      m_quadrature.computeTrialFunctionValues(i, j, dofmap, *tauc, taucq);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *thickness, Hq);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *bed, bq);
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *tauc, taucq);
 
-      const int ij = element_index.flatten(i, j);
-      FEStoreNode *feS = &feStore[4*ij];
+      const int ij = m_element_index.flatten(i, j);
+      FEStoreNode *coefficients = &m_feStore[4*ij];
       for (q=0; q<4; q++) {
-        feS[q].H  = Hq[q];
-        feS[q].b  = bq[q];
-        feS[q].tauc = taucq[q];
+        coefficients[q].H  = Hq[q];
+        coefficients[q].b  = bq[q];
+        coefficients[q].tauc = taucq[q];
         if (driving_stress_explicit) {
-          feS[q].driving_stress.u = ds_xq[q];
-          feS[q].driving_stress.v = ds_yq[q];
+          coefficients[q].driving_stress.u = ds_xq[q];
+          coefficients[q].driving_stress.v = ds_yq[q];
         } else {
-          feS[q].driving_stress.u = -ice_density*earth_grav*Hq[q]*hxq[q];
-          feS[q].driving_stress.v = -ice_density*earth_grav*Hq[q]*hyq[q];
+          coefficients[q].driving_stress.u = -ice_density*m_earth_grav*Hq[q]*hxq[q];
+          coefficients[q].driving_stress.v = -ice_density*m_earth_grav*Hq[q]*hyq[q];
         }
-        // feS[q].hx = hxq[q];
-        // feS[q].hy = hyq[q];
 
-        feS[q].mask = gc.mask(feS[q].b, feS[q].H);
+        coefficients[q].mask = gc.mask(coefficients[q].b, coefficients[q].H);
       }
 
       // In the following, we obtain the averaged hardness value from enthalpy by
@@ -346,7 +344,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
       // Now, for each column over a quadrature point, find the averaged_hardness.
       for (q=0; q<FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
-        feS[q].B = flow_law->averaged_hardness(feS[q].H, grid.kBelowHeight(feS[q].H),
+        coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
                                                &grid.zlevels[0], Enth_q[q]);
       }
     }
@@ -374,7 +372,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
  *  and effective viscous bed strength from the current solution, at a
  *  single quadrature point.
  *
- * @param[in] feS SSA coefficients at the current quadrature point
+ * @param[in] coefficients SSA coefficients at the current quadrature point
  * @param[in] u the value of the solution
  * @param[in] Du the value of the symmetric gradient of the solution
  * @param[out] nuH product of the ice viscosity and thickness @f$ \nu H @f$
@@ -388,34 +386,34 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
  *
  * @return 0 on success
  */
-PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
-                                           const Vector2 *u, const double Du[],
+PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *coefficients,
+                                           const Vector2 &u, const double Du[],
                                            double *nuH, double *dNuH,
                                            double *beta, double *dbeta) {
 
   Mask M;
 
-  if (feS->H < strength_extension->get_min_thickness()) {
+  if (coefficients->H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
   } else {
-    flow_law->effective_viscosity(feS->B, secondInvariantDu_2D(Du),
+    flow_law->effective_viscosity(coefficients->B, secondInvariantDu_2D(Du),
                                   nuH, dNuH);
-    *nuH  *= feS->H;
+    *nuH  *= coefficients->H;
     *nuH  += m_epsilon_ssa;
-    if (dNuH) *dNuH *= feS->H;
+    if (dNuH) *dNuH *= coefficients->H;
   }
   *nuH  *=  2;
   if (dNuH) {
     *dNuH *= 2;
   }
 
-  if (M.grounded_ice(feS->mask)) {
-    basal_sliding_law->drag_with_derivative(feS->tauc, u->u, u->v, beta, dbeta);
+  if (M.grounded_ice(coefficients->mask)) {
+    basal_sliding_law->drag_with_derivative(coefficients->tauc, u.u, u.v, beta, dbeta);
   } else {
     *beta = 0;
 
-    if (M.ice_free_land(feS->mask)) {
+    if (M.ice_free_land(coefficients->mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
 
@@ -456,14 +454,13 @@ is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
                                               const Vector2 **velocity_global,
                                               Vector2 **residual_global) {
-  int              i, j, k, q;
   PetscErrorCode   ierr;
 
   (void) info; // Avoid compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
       residual_global[i][j].u = 0.0;
       residual_global[i][j].v = 0.0;
     }
@@ -491,30 +488,30 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   double local_bc_mask[FEQuadrature::Nk];
 
   // Iterate over the elements.
-  int xs = element_index.xs, xm = element_index.xm,
-    ys   = element_index.ys, ym = element_index.ym;
-  for (i = xs; i < xs + xm; i++) {
-    for (j = ys; j < ys + ym; j++) {
+  int xs = m_element_index.xs, xm = m_element_index.xm,
+    ys   = m_element_index.ys, ym = m_element_index.ym;
+  for (int i = xs; i < xs + xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
       // Storage for element-local solution and residuals.
       Vector2     velocity[4], residual[4];
       // Index into coefficient storage in feStore
-      const int ij = element_index.flatten(i, j);
+      const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
-      dofmap.reset(i, j, grid);
+      m_dofmap.reset(i, j, grid);
 
       // Obtain the value of the solution at the nodes adjacent to the element.
-      dofmap.extractLocalDOFs(i, j, velocity_global, velocity);
+      m_dofmap.extractLocalDOFs(i, j, velocity_global, velocity);
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (bc_locations && m_vel_bc) {
-        dofmap.extractLocalDOFs(i, j, *bc_locations, local_bc_mask);
-        FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, dofmap);
+        m_dofmap.extractLocalDOFs(i, j, *bc_locations, local_bc_mask);
+        FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, m_dofmap);
       }
 
       // Zero out the element-local residual in prep for updating it.
-      for (k=0; k<FEQuadrature::Nk; k++){
+      for (unsigned int k=0; k<FEQuadrature::Nk; k++){
         residual[k].u = 0;
         residual[k].v = 0;
       }
@@ -522,30 +519,31 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
       // Compute the solution values and symmetric gradient at the quadrature points.
       m_quadrature_vector.computeTrialFunctionValues(velocity, u, Du);
 
-      for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
+      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
 
         // Symmetric gradient at the quadrature point.
         double *Duq = Du[q];
 
         // Coefficients and weights for this quadrature point.
-        const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
+        const FEStoreNode *coefficients = &m_feStore[ij*FEQuadrature::Nq+q];
         const double    jw  = JxW[q];
         double nuH, beta;
-        ierr = PointwiseNuHAndBeta(feS, u+q, Duq, &nuH, NULL, &beta, NULL); CHKERRQ(ierr);
+        ierr = PointwiseNuHAndBeta(coefficients, u[q], Duq,
+                                   &nuH, NULL, &beta, NULL); CHKERRQ(ierr);
 
         // The next few lines compute the actual residual for the element.
         Vector2 f;
-        f.u = beta*u[q].u - feS->driving_stress.u;
-        f.v = beta*u[q].v - feS->driving_stress.v;
+        f.u = beta*u[q].u - coefficients->driving_stress.u;
+        f.v = beta*u[q].v - coefficients->driving_stress.v;
 
-        for (k=0; k<4; k++) {  // loop over the test functions.
+        for (unsigned int k=0; k<4; k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
-          residual[k].u += jw*(nuH*(testqk.dx*(2*Duq[0]+Duq[1]) + testqk.dy*Duq[2]) + testqk.val*f.u);
-          residual[k].v += jw*(nuH*(testqk.dy*(2*Duq[1]+Duq[0]) + testqk.dx*Duq[2]) + testqk.val*f.v);
+          residual[k].u += jw*(nuH*(testqk.dx*(2*Duq[0] + Duq[1]) + testqk.dy*Duq[2]) + testqk.val*f.u);
+          residual[k].v += jw*(nuH*(testqk.dy*(2*Duq[1] + Duq[0]) + testqk.dx*Duq[2]) + testqk.val*f.v);
         }
       } // q
 
-      dofmap.addLocalResidualBlock(residual, residual_global);
+      m_dofmap.addLocalResidualBlock(residual, residual_global);
     } // j-loop
   } // i-loop
 
@@ -553,12 +551,12 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   // We fix this now.
   if (bc_locations && m_vel_bc) {
     // Enforce Dirichlet conditions strongly
-    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
         if ((*bc_locations)(i, j) > 0.5) {
           // Enforce explicit dirichlet data.
-          residual_global[i][j].u = dirichletScale * (velocity_global[i][j].u - (*m_vel_bc)(i, j).u);
-          residual_global[i][j].v = dirichletScale * (velocity_global[i][j].v - (*m_vel_bc)(i, j).v);
+          residual_global[i][j].u = m_dirichletScale * (velocity_global[i][j].u - (*m_vel_bc)(i, j).u);
+          residual_global[i][j].v = m_dirichletScale * (velocity_global[i][j].v - (*m_vel_bc)(i, j).v);
         }
       }
     }
@@ -570,8 +568,8 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   ierr = PetscOptionsHasName(NULL, "-ssa_monitor_function", &monitorFunction); CHKERRQ(ierr);
   if (monitorFunction) {
     ierr = PetscPrintf(grid.com, "SSA Solution and Function values (pointwise residuals)\n"); CHKERRQ(ierr);
-    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
         ierr = PetscSynchronizedPrintf(grid.com,
                                        "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
                                        i, j,
@@ -626,8 +624,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   double local_bc_mask[FEQuadrature::Nk];
 
   // Loop through all the elements.
-  int xs = element_index.xs, xm = element_index.xm,
-           ys = element_index.ys, ym = element_index.ym;
+  int xs = m_element_index.xs, xm = m_element_index.xm,
+           ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Values of the solution at the nodes of the current element.
@@ -639,19 +637,19 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       double      K[(2*FEQuadrature::Nk)*(2*FEQuadrature::Nk)];
 
       // Index into the coefficient storage array.
-      const int ij = element_index.flatten(i, j);
+      const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
-      dofmap.reset(i, j, grid);
+      m_dofmap.reset(i, j, grid);
 
       // Obtain the value of the solution at the adjacent nodes to the element.
-      dofmap.extractLocalDOFs(i, j, velocity_global, velocity);
+      m_dofmap.extractLocalDOFs(i, j, velocity_global, velocity);
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (bc_locations && m_vel_bc) {
-        dofmap.extractLocalDOFs(i, j, *bc_locations, local_bc_mask);
-        FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, dofmap);
+        m_dofmap.extractLocalDOFs(i, j, *bc_locations, local_bc_mask);
+        FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, m_dofmap);
       }
 
       // Compute the values of the solution at the quadrature points.
@@ -666,11 +664,11 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
         double *Dwq = Dw[q];
 
         // Coefficients evaluated at the single quadrature point.
-        const FEStoreNode *coefficients = &feStore[ij*4+q];
+        const FEStoreNode *coefficients = &m_feStore[ij*4+q];
         const double    jw  = JxW[q];
         double nuH, dNuH, beta, dbeta;
-        ierr = PointwiseNuHAndBeta(coefficients,
-                                   &wq, Dwq, &nuH, &dNuH, &beta, &dbeta); CHKERRQ(ierr);
+        ierr = PointwiseNuHAndBeta(coefficients, wq, Dwq,
+                                   &nuH, &dNuH, &beta, &dbeta); CHKERRQ(ierr);
 
         for (int k=0; k<4; k++) {   // Test functions
           for (int l=0; l<4; l++) { // Trial functions
@@ -706,7 +704,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
           } // l
         } // k
       } // q
-      ierr = dofmap.addLocalJacobianBlock(K, Jac);
+      ierr = m_dofmap.addLocalJacobianBlock(K, Jac);
     } // j
   } // i
 
@@ -718,7 +716,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (bc_locations->as_int(i, j) == 1) {
-          const double ident[4] = {dirichletScale, 0, 0, dirichletScale};
+          const double ident[4] = {m_dirichletScale, 0, 0, m_dirichletScale};
           MatStencil row;
           // FIXME: Transpose shows up here!
           row.j = i; row.i = j;
@@ -745,7 +743,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
     char           file_name[PETSC_MAX_PATH_LEN];
     int iter;
-    ierr = SNESGetIterationNumber(snes, &iter);
+    ierr = SNESGetIterationNumber(m_snes, &iter);
     snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", iter);
 
       ierr = verbPrintf(2, grid.com,
