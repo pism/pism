@@ -26,7 +26,7 @@
 namespace pism {
 
 // This is a subset of NetCDF data-types.
-enum PISM_IO_Type {
+enum IO_Type {
   PISM_NAT    = 0,              /* NAT = 'Not A Type' (c.f. NaN) */
   PISM_BYTE   = 1,              /* signed 1 byte integer */
   PISM_CHAR   = 2,              /* ISO/ASCII character */
@@ -39,21 +39,21 @@ enum PISM_IO_Type {
 // This is a subset of NetCDF file modes. Use values that don't match
 // NetCDF flags so that we can detect errors caused by passing these
 // straight to NetCDF.
-enum PISM_IO_Mode {
-  PISM_READONLY          = 7,
-  PISM_READWRITE         = 8,
-  PISM_READWRITE_CLOBBER = 9,
-  PISM_READWRITE_MOVE    = 10
+enum IO_Mode {
+  PISM_READONLY          = 7,   //!< open an existing file for reading only
+  PISM_READWRITE         = 8,   //!< open an existing file for reading and writing
+  PISM_READWRITE_CLOBBER = 9,   //!< create a file for writing, overwrite if present
+  PISM_READWRITE_MOVE    = 10   //!< create a file for writing, move foo.nc to foo.nc~ if present
 };
 
 // This is the special value corresponding to the "unlimited" dimension length.
 // Gets cast to "int", so it should match the value used by NetCDF.
-enum PISM_Dim_Length {
+enum Dim_Length {
   PISM_UNLIMITED = 0
 };
 
 // "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
-enum PISM_Fill_Mode {
+enum Fill_Mode {
   PISM_FILL   = 0,
   PISM_NOFILL = 0x100
 };
@@ -77,14 +77,14 @@ enum PISM_Fill_Mode {
  * - Methods of this class should do what corresponding NetCDF C API calls do,
  *   no more and no less.
  */
-class PISMNCFile
+class NCFile
 {
 public:
-  PISMNCFile(MPI_Comm com);
-  virtual ~PISMNCFile();
+  NCFile(MPI_Comm com);
+  virtual ~NCFile();
 
   // open/create/close
-  virtual int open(std::string filename, PISM_IO_Mode mode) = 0;
+  virtual int open(std::string filename, IO_Mode mode) = 0;
 
   virtual int create(std::string filename) = 0;
 
@@ -109,7 +109,7 @@ public:
   virtual int inq_ndims(int &result) const = 0;
 
   // var
-  virtual int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const = 0;
+  virtual int def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const = 0;
 
   virtual int get_vara_double(std::string variable_name,
                               std::vector<unsigned int> start,
@@ -143,22 +143,22 @@ public:
 
   virtual int inq_varname(unsigned int j, std::string &result) const = 0;
 
-  virtual int inq_vartype(std::string variable_name, PISM_IO_Type &result) const = 0;
+  virtual int inq_vartype(std::string variable_name, IO_Type &result) const = 0;
 
   // att
   virtual int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const = 0;
 
   virtual int get_att_text(std::string variable_name, std::string att_name, std::string &result) const = 0;
 
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const = 0;
+  virtual int put_att_double(std::string variable_name, std::string att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
 
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, double value) const;
+  virtual int put_att_double(std::string variable_name, std::string att_name, IO_Type xtype, double value) const;
 
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const = 0;
 
   virtual int inq_attname(std::string variable_name, unsigned int n, std::string &result) const = 0;
 
-  virtual int inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const = 0;
+  virtual int inq_atttype(std::string variable_name, std::string att_name, IO_Type &result) const = 0;
 
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const = 0;
@@ -174,7 +174,7 @@ public:
   virtual int remove_if_exists(std::string filename, int rank_to_use = 0);
 
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const = 0;
+  virtual int integer_open_mode(IO_Mode input) const = 0;
   virtual void check(int return_code) const;
 
   MPI_Comm com;

@@ -24,7 +24,7 @@
 namespace pism {
 
 //! \brief A base class for mechanisms which modify the results of a surface
-//! processes model (an instance of PISMSurfaceModel) before they reach the ice.
+//! processes model (an instance of SurfaceModel) before they reach the ice.
 /*! 
   Frequently ice sheet models are driven by a "basic" surface model plus "forcings".
   This modifier class allows the implementations of forcings which alter the 
@@ -34,14 +34,14 @@ namespace pism {
   of this PSModifier class can be used to modify the surface mass balance and ice
   upper surface temperature "just before" it gets to the ice itself.
 */
-class PSModifier : public Modifier<PISMSurfaceModel>
+class PSModifier : public Modifier<SurfaceModel>
 {
 public:
-  PSModifier(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
-    : Modifier<PISMSurfaceModel>(g, conf, in) {}
+  PSModifier(IceGrid &g, const Config &conf, SurfaceModel* in)
+    : Modifier<SurfaceModel>(g, conf, in) {}
   virtual ~PSModifier() {}
 
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *in) {
+  virtual void attach_atmosphere_model(AtmosphereModel *in) {
     if (input_model != NULL) {
       input_model->attach_atmosphere_model(in);
     }

@@ -23,11 +23,11 @@
 
 namespace pism {
 
-class PAModifier : public Modifier<PISMAtmosphereModel>
+class PAModifier : public Modifier<AtmosphereModel>
 {
 public:
-  PAModifier(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-    : Modifier<PISMAtmosphereModel>(g, conf, in) {}
+  PAModifier(IceGrid &g, const Config &conf, AtmosphereModel* in)
+    : Modifier<AtmosphereModel>(g, conf, in) {}
   virtual ~PAModifier() {}
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result)

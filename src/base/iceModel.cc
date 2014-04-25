@@ -41,10 +41,11 @@
 #include "PISMFloatKill.hh"
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
+#include "Mask.hh"
 
 namespace pism {
 
-IceModel::IceModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
+IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
   : grid(g),
     config(conf),
     overrides(conf_overrides),
@@ -141,11 +142,11 @@ void IceModel::reset_counters() {
 IceModel::~IceModel() {
 
   // de-allocate time-series diagnostics
-  std::map<std::string,PISMTSDiagnostic*>::iterator i = ts_diagnostics.begin();
+  std::map<std::string,TSDiagnostic*>::iterator i = ts_diagnostics.begin();
   while (i != ts_diagnostics.end()) delete (i++)->second;
 
   // de-allocate diagnostics
-  std::map<std::string,PISMDiagnostic*>::iterator j = diagnostics.begin();
+  std::map<std::string,Diagnostic*>::iterator j = diagnostics.begin();
   while (j != diagnostics.end()) delete (j++)->second;
 
 
@@ -488,11 +489,11 @@ PetscErrorCode IceModel::createVecs() {
   cell_area.write_in_glaciological_units = true;
   ierr = variables.add(cell_area); CHKERRQ(ierr);
 
-  // fields owned by IceModel but filled by PISMSurfaceModel *surface:
+  // fields owned by IceModel but filled by SurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
   ierr = climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_attrs(
-                        "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
+                        "climate_from_SurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
                         "kg m-2 s-1",
                         "land_ice_surface_specific_mass_balance");  // CF standard_name
@@ -505,14 +506,14 @@ PetscErrorCode IceModel::createVecs() {
   //   processes (e.g. "10 m" or ice temperatures)
   ierr = ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = ice_surface_temp.set_attrs(
-                                    "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
+                                    "climate_from_SurfaceModel",  // FIXME: can we do better?
                                     "annual average ice surface temperature, below firn processes",
                                     "K",
                                     "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
 
   ierr = liqfrac_surface.create(grid, "liqfrac_surface", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = liqfrac_surface.set_attrs("climate_from_PISMSurfaceModel",
+  ierr = liqfrac_surface.set_attrs("climate_from_SurfaceModel",
                                    "liquid water fraction at the top surface of the ice",
                                    "1", ""); CHKERRQ(ierr);
   // ierr = variables.add(liqfrac_surface); CHKERRQ(ierr);
@@ -556,7 +557,7 @@ PetscErrorCode IceModel::createVecs() {
 
   std::string extra_vars_argument;
   bool extra_vars_set = false;
-  ierr = PISMOptionsString("-extra_vars", "", extra_vars_argument, extra_vars_set); CHKERRQ(ierr);
+  ierr = OptionsString("-extra_vars", "", extra_vars_argument, extra_vars_set); CHKERRQ(ierr);
   std::set<std::string> ex_vars;
   if (extra_vars_set) {
     std::istringstream arg(extra_vars_argument);
@@ -689,7 +690,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   if (ierr != 0) {
     std::string o_file = "stressbalance_failed.nc";
     bool o_file_set;
-    ierr = PISMOptionsString("-o", "output file name",
+    ierr = OptionsString("-o", "output file name",
                              o_file, o_file_set); CHKERRQ(ierr);
 
     o_file = pism_filename_add_suffix(o_file, "_stressbalance_failed", "");
@@ -906,7 +907,7 @@ PetscErrorCode IceModel::run() {
 
   bool flag;
   int pause_time = 0;
-  ierr = PISMOptionsInt("-pause", "Pause after the run, seconds",
+  ierr = OptionsInt("-pause", "Pause after the run, seconds",
                         pause_time, flag); CHKERRQ(ierr);
   if (pause_time > 0) {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
@@ -938,7 +939,7 @@ PetscErrorCode IceModel::init() {
   // make it wait for a connection.
 #ifdef PISM_WAIT_FOR_GDB
   bool wait_for_gdb = false;
-  ierr = PISMOptionsIsSet("-wait_for_gdb", wait_for_gdb); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-wait_for_gdb", wait_for_gdb); CHKERRQ(ierr);
   if (wait_for_gdb) {
     ierr = pism_wait_for_gdb(grid.com, 0); CHKERRQ(ierr);
   }
@@ -986,7 +987,7 @@ PetscErrorCode IceModel::init() {
     double my_start_time;
     ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
 
-    ierr = PISMGetTime(&my_start_time); CHKERRQ(ierr);
+    ierr = GetTime(&my_start_time); CHKERRQ(ierr);
     MPI_Allreduce(&my_start_time, &start_time, 1, mpi_type, MPI_MAX, grid.com);
 
   }

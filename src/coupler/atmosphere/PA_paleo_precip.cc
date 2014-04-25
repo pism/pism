@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PA_paleo_precip::PA_paleo_precip(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
+PA_paleo_precip::PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel* in)
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
 {
@@ -64,7 +64,7 @@ PA_paleo_precip::~PA_paleo_precip()
   // empty
 }
 
-PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
+PetscErrorCode PA_paleo_precip::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -117,7 +117,7 @@ void PA_paleo_precip::add_vars_to_output(std::string keyword, std::set<std::stri
 
 
 PetscErrorCode PA_paleo_precip::define_variables(std::set<std::string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+                                            IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

@@ -24,20 +24,20 @@
 
 namespace pism {
 
-class PISMVars;
+class Vars;
 class IceFlowLaw;
 class EnthalpyConverter;
 
 //! Shallow stress balance modifier (such as the non-sliding SIA).
-class SSB_Modifier : public PISMComponent
+class SSB_Modifier : public Component
 {
 public:
-  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
-    : PISMComponent(g, c), EC(e)
+  SSB_Modifier(IceGrid &g, EnthalpyConverter &e, const Config &c)
+    : Component(g, c), EC(e)
   { D_max = 0.0; variables = NULL; allocate(); }
   virtual ~SSB_Modifier() {}
 
-  virtual PetscErrorCode init(PISMVars &vars) { variables = &vars; return 0; }
+  virtual PetscErrorCode init(Vars &vars) { variables = &vars; return 0; }
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast) = 0;
 
@@ -73,7 +73,7 @@ protected:
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, strain_heating;
 
-  PISMVars *variables;
+  Vars *variables;
 };
 
 
@@ -81,10 +81,10 @@ protected:
 class ConstantInColumn : public SSB_Modifier
 {
 public:
-  ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c);
   virtual ~ConstantInColumn();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
   virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
@@ -93,7 +93,7 @@ public:
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
+                                          IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached

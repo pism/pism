@@ -61,7 +61,7 @@ PetscErrorCode SIAFD::allocate() {
   ierr = work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS); CHKERRQ(ierr);
 
   // bed smoother
-  bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
+  bed_smoother = new BedSmoother(grid, config, WIDE_STENCIL);
 
   second_to_kiloyear = grid.convert(1, "second", "1000 years");
 
@@ -78,7 +78,7 @@ PetscErrorCode SIAFD::allocate() {
 }
 
 //! \brief Initialize the SIA module.
-PetscErrorCode SIAFD::init(PISMVars &vars) {
+PetscErrorCode SIAFD::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
@@ -122,7 +122,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
   IceModelVec2Stag &h_x = work_2d_stag[0], &h_y = work_2d_stag[1];
 
-  // Check if the smoothed bed computed by PISMBedSmoother is out of date and
+  // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
     ierr = bed_smoother->preprocess_bed(*bed); CHKERRQ(ierr);
@@ -701,7 +701,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     ierr = delta[0].end_access(); CHKERRQ(ierr);
   }
 
-  ierr = PISMGlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
 
   delete [] delta_ij;
 

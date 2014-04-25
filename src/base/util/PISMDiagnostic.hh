@@ -28,7 +28,7 @@
 namespace pism {
 
 class IceModelVec;
-class PISMVars;
+class Vars;
 
 //! \brief Class representing diagnostic computations in PISM.
 /*!
@@ -49,19 +49,19 @@ class PISMVars;
  * which is the same as creating a method Foo::compute_bar(), but you \e can
  * get a pointer to it.
  *
- * PISMDiagnostic creates a common interface for all these compute_bar
+ * Diagnostic creates a common interface for all these compute_bar
  * functions.
  */
-class PISMDiagnostic
+class Diagnostic
 {
 public:
-  PISMDiagnostic(IceGrid &g, PISMVars &my_vars)
+  Diagnostic(IceGrid &g, Vars &my_vars)
     : variables(my_vars), grid(g) {
     output_datatype = PISM_FLOAT;
     dof = 1;
     vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   }
-  virtual ~PISMDiagnostic() {}
+  virtual ~Diagnostic() {}
 
   //! \brief Update a cumulative quantity needed to compute a rate of change.
   //! So far we there is only one such quantity: the rate of change of the ice
@@ -123,33 +123,33 @@ public:
     return 0;
   }
 protected:
-  PISMVars &variables;          //!< dictionary of variables
+  Vars &variables;          //!< dictionary of variables
   IceGrid &grid;                //!< the grid
   int dof;                      //!< number of degrees of freedom; 1 for scalar fields, 2 for vector fields
-  PISM_IO_Type output_datatype;      //!< data type to use in the file
+  IO_Type output_datatype;      //!< data type to use in the file
   std::vector<NCSpatialVariable> vars; //!< metadata corresponding to NetCDF variables
 };
 
-//! A template derived from PISMDiagnostic, adding a "Model".
+//! A template derived from Diagnostic, adding a "Model".
 template <class Model>
-class PISMDiag : public PISMDiagnostic
+class Diag : public Diagnostic
 {
 public:
-  PISMDiag(Model *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiagnostic(g, my_vars), model(m) {}
+  Diag(Model *m, IceGrid &g, Vars &my_vars)
+    : Diagnostic(g, my_vars), model(m) {}
 protected:
   Model *model;
 };
 
 //! \brief PISM's scalar time-series diagnostics.
-class PISMTSDiagnostic
+class TSDiagnostic
 {
 public:
-  PISMTSDiagnostic(IceGrid &g, PISMVars &my_vars)
+  TSDiagnostic(IceGrid &g, Vars &my_vars)
     : variables(my_vars), grid(g), ts(NULL) {
   }
 
-  virtual ~PISMTSDiagnostic() {
+  virtual ~TSDiagnostic() {
     delete ts;
   }
 
@@ -180,17 +180,17 @@ public:
   }
 
 protected:
-  PISMVars &variables;          //!< dictionary of variables
+  Vars &variables;          //!< dictionary of variables
   IceGrid &grid;                //!< the grid
   DiagnosticTimeseries *ts;
 };
 
 template <class Model>
-class PISMTSDiag : public PISMTSDiagnostic
+class TSDiag : public TSDiagnostic
 {
 public:
-  PISMTSDiag(Model *m, IceGrid &g, PISMVars &my_vars)
-    : PISMTSDiagnostic(g, my_vars), model(m) {
+  TSDiag(Model *m, IceGrid &g, Vars &my_vars)
+    : TSDiagnostic(g, my_vars), model(m) {
     time_units = grid.time->CF_units_string();
     time_dimension_name = grid.config.get_string("time_dimension_name");
   }

@@ -25,7 +25,7 @@
 
 namespace pism {
 
-class PISMConfig;
+class Config;
 class IceModelVec3;
 class EnthalpyConverter;
 
@@ -37,7 +37,7 @@ class EnthalpyConverter;
 class enthSystemCtx : public columnSystemCtx {
 public:
   enum WhichBoundary { BASAL, SURFACE };
-  enthSystemCtx(const PISMConfig &config,
+  enthSystemCtx(const Config &config,
                 IceModelVec3 &my_Enth3,
                 double my_dx,  double my_dy,
                 double my_dt,  double my_dz,

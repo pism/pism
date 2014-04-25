@@ -44,7 +44,7 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      PISMVector2 &u_obs_ij = m_u_observed(i, j);
+      Vector2 &u_obs_ij = m_u_observed(i, j);
       if( m_weights ) {
         w = (*m_weights)(i, j);
       }
@@ -58,7 +58,7 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
 
   ierr = m_u_observed.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -78,8 +78,8 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      PISMVector2 &x_ij = x(i, j);
-      PISMVector2 &u_obs_ij = m_u_observed(i, j);
+      Vector2 &x_ij = x(i, j);
+      Vector2 &u_obs_ij = m_u_observed(i, j);
       if( m_weights ) {
         w = (*m_weights)(i, j);
       }
@@ -94,7 +94,7 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
 
   value /= m_normalization;
 
-  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = x.end_access(); CHKERRQ(ierr);
 
@@ -118,8 +118,8 @@ PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec
   }
   for( int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
     for( int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      PISMVector2 &x_ij = x(i, j);
-      PISMVector2 &u_obs_ij = m_u_observed(i, j);
+      Vector2 &x_ij = x(i, j);
+      Vector2 &u_obs_ij = m_u_observed(i, j);
       if( m_weights ) {
         w = (*m_weights)(i, j);
       }

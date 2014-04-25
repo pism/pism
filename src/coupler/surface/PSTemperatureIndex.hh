@@ -41,17 +41,17 @@ namespace pism {
   precipitation during the ice sheet model time step, plus a variable temperature
   over that time step, to compute melt, refreeze, and surface balance.
 */
-class PSTemperatureIndex : public PISMSurfaceModel {
+class PSTemperatureIndex : public SurfaceModel {
 public:
-  PSTemperatureIndex(IceGrid &g, const PISMConfig &conf);
+  PSTemperatureIndex(IceGrid &g, const Config &conf);
   virtual ~PSTemperatureIndex();
   virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);  
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);  
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   LocalMassBalance *mbscheme;         //!< mass balance scheme to use

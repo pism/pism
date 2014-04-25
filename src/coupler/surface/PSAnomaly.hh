@@ -25,19 +25,19 @@
 namespace pism {
 
 //! \brief Reads and uses climatic_mass_balance and ice_surface_temp \b anomalies from a file.
-class PSAnomaly : public PGivenClimate<PSModifier,PISMSurfaceModel>
+class PSAnomaly : public PGivenClimate<PSModifier,SurfaceModel>
 {
 public:
-  PSAnomaly(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
+  PSAnomaly(IceGrid &g, const Config &conf, SurfaceModel* in);
   virtual ~PSAnomaly();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:

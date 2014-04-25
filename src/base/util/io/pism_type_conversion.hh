@@ -20,7 +20,7 @@
 //! Convert PISM's IO types into NetCDF types and back. Note that NC_* may be
 //! macros, so you need to include the appropriate NetCDF header first.
 
-static nc_type pism_type_to_nc_type(pism::PISM_IO_Type input) {
+static nc_type pism_type_to_nc_type(pism::IO_Type input) {
   switch (input) {
   case PISM_BYTE:
     return NC_BYTE;
@@ -39,7 +39,7 @@ static nc_type pism_type_to_nc_type(pism::PISM_IO_Type input) {
   }
 }
 
-static pism::PISM_IO_Type nc_type_to_pism_type(int input) {
+static pism::IO_Type nc_type_to_pism_type(int input) {
   switch (input) {
   case NC_BYTE:
     return PISM_BYTE;

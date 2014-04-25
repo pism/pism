@@ -27,12 +27,12 @@
 namespace pism {
 
 //! A wrapper class around BedDeformLC.
-class PBLingleClark : public PISMBedDef {
+class PBLingleClark : public BedDef {
 public:
-  PBLingleClark(IceGrid &g, const PISMConfig &conf);
+  PBLingleClark(IceGrid &g, const Config &conf);
   virtual ~PBLingleClark();
 
-  PetscErrorCode init(PISMVars &vars);
+  PetscErrorCode init(Vars &vars);
   PetscErrorCode update(double my_t, double my_dt);
 protected:
   PetscErrorCode correct_topg();

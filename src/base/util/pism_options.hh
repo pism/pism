@@ -23,35 +23,35 @@
 
 namespace pism {
 
-class PISMConfig;
+class Config;
 
 PetscErrorCode verbosityLevelFromOptions();
 
 // handy functions for processing options:
-PetscErrorCode PISMOptionsList(MPI_Comm com, std::string opt, std::string text, std::set<std::string> choices,
+PetscErrorCode OptionsList(MPI_Comm com, std::string opt, std::string text, std::set<std::string> choices,
                                std::string default_value, std::string &result, bool &flag);
 
-PetscErrorCode PISMOptionsString(std::string option, std::string text,
+PetscErrorCode OptionsString(std::string option, std::string text,
                                  std::string &result, bool &flag, bool allow_empty_arg = false);
-PetscErrorCode PISMOptionsStringArray(std::string opt, std::string text, std::string default_value,
+PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string default_value,
                                       std::vector<std::string>& result, bool &flag);
-PetscErrorCode PISMOptionsStringSet(std::string opt, std::string text, std::string default_value,
+PetscErrorCode OptionsStringSet(std::string opt, std::string text, std::string default_value,
                                     std::set<std::string>& result, bool &flag);
 
-PetscErrorCode PISMOptionsInt(std::string option, std::string text,
+PetscErrorCode OptionsInt(std::string option, std::string text,
                               int &result, bool &is_set);
-PetscErrorCode PISMOptionsIntArray(std::string option, std::string text,
+PetscErrorCode OptionsIntArray(std::string option, std::string text,
                                    std::vector<int> &result, bool &is_set);
 
-PetscErrorCode PISMOptionsReal(std::string option, std::string text,
+PetscErrorCode OptionsReal(std::string option, std::string text,
                                double &result, bool &is_set);
-PetscErrorCode PISMOptionsRealArray(std::string option, std::string text,
+PetscErrorCode OptionsRealArray(std::string option, std::string text,
                                     std::vector<double> &result, bool &is_set);
 
-PetscErrorCode PISMOptionsIsSet(std::string option, bool &result);
-PetscErrorCode PISMOptionsIsSet(std::string option, std::string descr, bool &result);
+PetscErrorCode OptionsIsSet(std::string option, bool &result);
+PetscErrorCode OptionsIsSet(std::string option, std::string descr, bool &result);
 
-PetscErrorCode PISMOptionsHasArgument(std::string option, bool &result);
+PetscErrorCode OptionsHasArgument(std::string option, bool &result);
 
 PetscErrorCode ignore_option(MPI_Comm com, std::string name);
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std::string new_name);
@@ -68,11 +68,11 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
 
 // config file initialization:
 PetscErrorCode init_config(MPI_Comm com,
-                           PISMConfig &config, PISMConfig &overrides,
+                           Config &config, Config &overrides,
                            bool process_options = false);
 
 PetscErrorCode set_config_from_options(MPI_Comm com,
-                                       PISMConfig &config);
+                                       Config &config);
 
 
 } // end of namespace pism

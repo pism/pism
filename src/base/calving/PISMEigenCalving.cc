@@ -24,9 +24,9 @@
 
 namespace pism {
 
-PISMEigenCalving::PISMEigenCalving(IceGrid &g, const PISMConfig &conf,
-                                   PISMStressBalance *stress_balance)
-  : PISMComponent(g, conf), m_stencil_width(2), m_mask(NULL),
+EigenCalving::EigenCalving(IceGrid &g, const Config &conf,
+                                   StressBalance *stress_balance)
+  : Component(g, conf), m_stencil_width(2), m_mask(NULL),
     m_stress_balance(stress_balance) {
   PetscErrorCode ierr;
   ierr = m_strain_rates.create(grid, "edot", WITH_GHOSTS,
@@ -57,11 +57,11 @@ PISMEigenCalving::PISMEigenCalving(IceGrid &g, const PISMConfig &conf,
   m_restrict_timestep = config.get_flag("cfl_eigen_calving");
 }
 
-PISMEigenCalving::~PISMEigenCalving() {
+EigenCalving::~EigenCalving() {
   // empty
 }
 
-PetscErrorCode PISMEigenCalving::init(PISMVars &vars) {
+PetscErrorCode EigenCalving::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2, grid.com,
@@ -89,7 +89,7 @@ PetscErrorCode PISMEigenCalving::init(PISMVars &vars) {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-PetscErrorCode PISMEigenCalving::update(double dt,
+PetscErrorCode EigenCalving::update(double dt,
                                         IceModelVec2Int &pism_mask,
                                         IceModelVec2S &Href,
                                         IceModelVec2S &ice_thickness) {
@@ -268,14 +268,14 @@ PetscErrorCode PISMEigenCalving::update(double dt,
  * @param[out] my_dt set the the maximum allowed time-step, in seconds
  * @param[out] restrict set to "true" if this component has a time-step restriction
  *
- * Note: this code uses the mask variable obtained from the PISMVars
+ * Note: this code uses the mask variable obtained from the Vars
  * dictionary. This is not the same mask that is used in the update()
  * call, since max_timestep() is called *before* the mass-continuity
  * time-step.
  *
  * @return 0 on success
  */
-PetscErrorCode PISMEigenCalving::max_timestep(double /*my_t*/,
+PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
                                               double &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
@@ -367,9 +367,9 @@ PetscErrorCode PISMEigenCalving::max_timestep(double /*my_t*/,
   ierr = m_strain_rates.end_access(); CHKERRQ(ierr);
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
-  ierr = PISMGlobalSum(&my_calving_rate_mean, &calving_rate_mean, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&my_calving_rate_counter, &calving_rate_counter, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&my_calving_rate_max, &calving_rate_max, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&my_calving_rate_mean, &calving_rate_mean, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&my_calving_rate_counter, &calving_rate_counter, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&my_calving_rate_max, &calving_rate_max, grid.com); CHKERRQ(ierr);
 
   calving_rate_mean /= calving_rate_counter;
 
@@ -391,17 +391,17 @@ PetscErrorCode PISMEigenCalving::max_timestep(double /*my_t*/,
   return 0;
 }
 
-void PISMEigenCalving::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/) {
+void EigenCalving::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode PISMEigenCalving::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                                  PISM_IO_Type /*nctype*/) {
+PetscErrorCode EigenCalving::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+                                                  IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMEigenCalving::write_variables(std::set<std::string> /*vars*/, const PIO& /*nc*/) {
+PetscErrorCode EigenCalving::write_variables(std::set<std::string> /*vars*/, const PIO& /*nc*/) {
   // empty
   return 0;
 }
@@ -409,14 +409,14 @@ PetscErrorCode PISMEigenCalving::write_variables(std::set<std::string> /*vars*/,
 /**
  * Update the strain rates field.
  *
- * Note: this code uses the mask obtained from the PISMVars
+ * Note: this code uses the mask obtained from the Vars
  * dictionary, because the velocity field used to compute it need not
  * extend past the ice margin corresponding to the *beginning* of the
  * time-step.
  *
  * @return 0 on success
  */
-PetscErrorCode PISMEigenCalving::update_strain_rates() {
+PetscErrorCode EigenCalving::update_strain_rates() {
   PetscErrorCode ierr;
 
   IceModelVec2V *ssa_velocity;
@@ -455,7 +455,7 @@ PetscErrorCode PISMEigenCalving::update_strain_rates() {
  *
  * @return 0 on success
  */
-PetscErrorCode PISMEigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
+PetscErrorCode EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
                                                        IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
 

@@ -193,13 +193,13 @@ public:
   virtual PetscErrorCode  rename(std::string short_name, std::string long_name,
                                  std::string standard_name, int component = 0);
   virtual PetscErrorCode  read_attributes(std::string filename, int component = 0);
-  virtual PetscErrorCode  define(const PIO &nc, PISM_IO_Type output_datatype);
+  virtual PetscErrorCode  define(const PIO &nc, IO_Type output_datatype);
 
   PetscErrorCode read(std::string filename, unsigned int time);
   PetscErrorCode read(const PIO &nc, unsigned int time);
 
-  PetscErrorCode  write(std::string filename, PISM_IO_Type nctype = PISM_DOUBLE);
-  PetscErrorCode  write(const PIO &nc, PISM_IO_Type nctype = PISM_DOUBLE);
+  PetscErrorCode  write(std::string filename, IO_Type nctype = PISM_DOUBLE);
+  PetscErrorCode  write(const PIO &nc, IO_Type nctype = PISM_DOUBLE);
 
   PetscErrorCode  regrid(std::string filename, RegriddingFlag flag,
                          double default_value = 0.0);
@@ -227,7 +227,7 @@ protected:
   virtual PetscErrorCode read_impl(const PIO &nc, unsigned int time);
   virtual PetscErrorCode regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual PetscErrorCode write_impl(const PIO &nc, PISM_IO_Type nctype = PISM_DOUBLE);
+  virtual PetscErrorCode write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE);
   std::vector<double> zlevels;
   unsigned int m_n_levels;                 //!< number of vertical levels
 
@@ -272,7 +272,7 @@ public:
 };
 
 
-enum PISM_Direction {North = 0, East, South, West};
+enum Direction {North = 0, East, South, West};
 
 //! \brief Star stencil points (in the map-plane).
 template <typename T>
@@ -284,7 +284,7 @@ struct planeStar {
 
   //! Get the element corresponding to a given direction.
   //! Use foo.ij to get the value at i,j (center of the star).
-  inline T& operator[](PISM_Direction direction) {
+  inline T& operator[](Direction direction) {
     switch (direction) {
     default:                    // just to silence the warning
     case North:
@@ -328,7 +328,7 @@ protected:
   virtual PetscErrorCode read_impl(const PIO &nc, const unsigned int time);
   virtual PetscErrorCode regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
-  virtual PetscErrorCode write_impl(const PIO &nc, PISM_IO_Type nctype = PISM_DOUBLE);
+  virtual PetscErrorCode write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE);
   PetscErrorCode get_component(unsigned int n, Vec result);
   PetscErrorCode set_component(unsigned int n, Vec source);
 };
@@ -432,10 +432,10 @@ public:
 };
 
 //! \brief A class representing a horizontal velocity at a certain grid point.
-class PISMVector2 {
+class Vector2 {
 public:
-  PISMVector2() : u(0), v(0) {}
-  PISMVector2(double a, double b) : u(a), v(b) {}
+  Vector2() : u(0), v(0) {}
+  Vector2(double a, double b) : u(a), v(b) {}
 
   //! Magnitude squared.
   inline double magnitude_squared() const {
@@ -446,7 +446,7 @@ public:
     return sqrt(magnitude_squared());
   }
 
-  inline PISMVector2& operator=(const PISMVector2 &other) {
+  inline Vector2& operator=(const Vector2 &other) {
     // NOTE: we don't check for self-assignment because there is no memory
     // (de-)allocation here.
     u = other.u;
@@ -454,48 +454,48 @@ public:
     return *this;
   }
 
-  inline PISMVector2& operator+=(const PISMVector2 &other) {
+  inline Vector2& operator+=(const Vector2 &other) {
     u += other.u;
     v += other.v;
     return *this;
   }
 
-  inline PISMVector2& operator-=(const PISMVector2 &other) {
+  inline Vector2& operator-=(const Vector2 &other) {
     u -= other.u;
     v -= other.v;
     return *this;
   }
 
-  inline PISMVector2& operator*=(const double &a) {
+  inline Vector2& operator*=(const double &a) {
     u *= a;
     v *= a;
     return *this;
   }
 
-  inline PISMVector2& operator/=(const double &a) {
+  inline Vector2& operator/=(const double &a) {
     u /= a;
     v /= a;
     return *this;
   }
 
   //! \brief Adds two vectors.
-  inline PISMVector2 operator+(const PISMVector2 &other) const {
-    return PISMVector2(u + other.u, v + other.v);
+  inline Vector2 operator+(const Vector2 &other) const {
+    return Vector2(u + other.u, v + other.v);
   }
 
   //! \brief Substracts two vectors.
-  inline PISMVector2 operator-(const PISMVector2 &other) const {
-    return PISMVector2(u - other.u, v - other.v);
+  inline Vector2 operator-(const Vector2 &other) const {
+    return Vector2(u - other.u, v - other.v);
   }
 
   //! \brief Scales a vector.
-  inline PISMVector2 operator*(const double &a) const {
-    return PISMVector2(u * a, v * a);
+  inline Vector2 operator*(const double &a) const {
+    return Vector2(u * a, v * a);
   }
 
   //! \brief Scales a vector.
-  inline PISMVector2 operator/(const double &a) const {
-    return PISMVector2(u / a, v / a);
+  inline Vector2 operator/(const double &a) const {
+    return Vector2(u / a, v / a);
   }
 
   double u, v;
@@ -517,16 +517,16 @@ public:
   virtual PetscErrorCode add(double alpha, IceModelVec &x, IceModelVec &result);
 
   // I/O:
-  virtual PetscErrorCode get_array(PISMVector2 ** &a);
+  virtual PetscErrorCode get_array(Vector2 ** &a);
   virtual PetscErrorCode magnitude(IceModelVec2S &result);
-  inline PISMVector2& operator()(int i, int j) {
+  inline Vector2& operator()(int i, int j) {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
 #endif
-    return static_cast<PISMVector2**>(array)[i][j];
+    return static_cast<Vector2**>(array)[i][j];
   }
 
-  inline planeStar<PISMVector2> star(int i, int j) {
+  inline planeStar<Vector2> star(int i, int j) {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
     check_array_indices(i+1, j, 0);
@@ -534,7 +534,7 @@ public:
     check_array_indices(i, j+1, 0);
     check_array_indices(i, j-1, 0);
 #endif
-    planeStar<PISMVector2> result;
+    planeStar<Vector2> result;
 
     result.ij = operator()(i,j);
     result.e =  operator()(i+1,j);

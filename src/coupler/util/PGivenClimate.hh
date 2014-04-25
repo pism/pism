@@ -31,7 +31,7 @@ template <class Model, class Input>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(IceGrid &g, const PISMConfig &conf, Input *in)
+  PGivenClimate(IceGrid &g, const Config &conf, Input *in)
     : Model(g, conf, in) {}
 
   virtual ~PGivenClimate() {
@@ -56,7 +56,7 @@ public:
 
   }
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype)
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype)
   {
     PetscErrorCode ierr;
 
@@ -117,13 +117,13 @@ protected:
 
     ierr = PetscOptionsBegin(Model::grid.com, "", "Climate forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString(option_prefix + "_file",
+      ierr = OptionsString(option_prefix + "_file",
                                "Specifies a file with boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsInt(option_prefix + "_period",
+      ierr = OptionsInt(option_prefix + "_period",
                             "Specifies the length of the climate data period (in years)",
                             bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsInt(option_prefix + "_reference_year",
+      ierr = OptionsInt(option_prefix + "_reference_year",
                             "Boundary condition reference year",
                             bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     }

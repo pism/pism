@@ -248,7 +248,7 @@ PetscErrorCode IceModel::ageStep() {
   x = new double[fMz]; // space for solution
 
   bool viewOneColumn;
-  ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   ageSystemCtx system(fMz, "age"); // linear system to solve in each column
   system.dx    = grid.dx;

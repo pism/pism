@@ -36,10 +36,11 @@ static char help[] =
 #include "SSB_Modifier.hh"
 #include "ShallowStressBalance.hh"
 #include "PISMVars.hh"
+#include "Mask.hh"
 
 using namespace pism;
 
-PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
+PetscErrorCode compute_strain_heating_errors(const Config &config,
                                   IceModelVec3 &strain_heating,
                                   IceModelVec2S &thickness,
                                   IceGrid &grid,
@@ -95,10 +96,10 @@ PetscErrorCode compute_strain_heating_errors(const PISMConfig &config,
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  ierr = PISMGlobalMax(&max_strain_heating_error, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&av_strain_heating_error, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&max_strain_heating_error, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&av_strain_heating_error, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
   double  gavcount;
-  ierr = PISMGlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
   gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -153,11 +154,11 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = w3.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
   gavUerr = gavUerr/(grid.Mx*grid.My);
-  ierr = PISMGlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
   gavWerr = gavWerr/(grid.Mx*grid.My);
   return 0;
 }
@@ -262,7 +263,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   return 0;
 }
 
-PetscErrorCode reportErrors(const PISMConfig &config,
+PetscErrorCode reportErrors(const Config &config,
                             IceGrid &grid,
                             IceModelVec2S *thickness,
                             IceModelVec3 *u_sia, IceModelVec3 *v_sia,
@@ -314,8 +315,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
@@ -344,13 +345,13 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", ""); CHKERRQ(ierr);
     {
       bool flag;
-      ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction",
+      ierr = OptionsInt("-Mx", "Number of grid points in the X direction",
                             grid.Mx, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
+      ierr = OptionsInt("-My", "Number of grid points in the X direction",
                             grid.My, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-Mz", "Number of vertical grid levels",
+      ierr = OptionsInt("-Mz", "Number of vertical grid levels",
                             tmp, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsString("-o", "Set the output file name",
+      ierr = OptionsString("-o", "Set the output file name",
                                output_file, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -382,7 +383,7 @@ int main(int argc, char *argv[]) {
       age;                      // is not used (and need not be allocated)
     const int WIDE_STENCIL = grid.max_stencil_width;
 
-    PISMVars vars;
+    Vars vars;
 
     // ice upper surface elevation
     ierr = ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
@@ -435,11 +436,11 @@ int main(int argc, char *argv[]) {
 
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
     // of the ice velocity, which is computed using incompressibility of ice in
-    // PISMStressBalance::compute_vertical_velocity().
+    // StressBalance::compute_vertical_velocity().
     SIAFD *sia = new SIAFD(grid, EC, config);
     ZeroSliding *no_sliding = new ZeroSliding(grid, EC, config);
 
-    PISMStressBalance stress_balance(grid, no_sliding, sia, config);
+    StressBalance stress_balance(grid, no_sliding, sia, config);
 
     // fill the fields:
     ierr = setInitStateF(grid, EC,

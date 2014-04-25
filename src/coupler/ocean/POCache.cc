@@ -25,7 +25,7 @@
 
 namespace pism {
 
-POCache::POCache(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
+POCache::POCache(IceGrid &g, const Config &conf, OceanModel* in)
   : POModifier(g, conf, in) {
 
   m_next_update_time = grid.time->current();
@@ -68,7 +68,7 @@ POCache::~POCache() {
 }
 
 
-PetscErrorCode POCache::init(PISMVars &vars) {
+PetscErrorCode POCache::init(Vars &vars) {
   PetscErrorCode ierr;
   int update_interval = m_update_interval_years;
   bool flag;
@@ -80,7 +80,7 @@ PetscErrorCode POCache::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "-ocean ...,cache options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsInt("-ocean_cache_update_interval",
+    ierr = OptionsInt("-ocean_cache_update_interval",
                           "Interval (in years) between ocean model updates",
                           update_interval, flag); CHKERRQ(ierr);
   }
@@ -154,7 +154,7 @@ PetscErrorCode POCache::melange_back_pressure_fraction(IceModelVec2S &result) {
 
 
 PetscErrorCode POCache::define_variables(std::set<std::string> vars, const PIO &nc,
-                                         PISM_IO_Type nctype) {
+                                         IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {

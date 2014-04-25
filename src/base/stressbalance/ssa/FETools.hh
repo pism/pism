@@ -24,7 +24,7 @@
 #define _FETOOLS_H_
 
 #include <petscmat.h>
-#include "iceModelVec.hh"       // to get PISMVector2
+#include "iceModelVec.hh"       // to get Vector2
 
 namespace pism {
 
@@ -160,7 +160,7 @@ struct FEFunctionGerm
 /*! Germ in meant in the mathematical sense, sort of. */
 struct FEVector2Germ
 {
-  PISMVector2  val,  //!< Function value.
+  Vector2  val,  //!< Function value.
     dx,  //!< Function deriviative with respect to x.
     dy;  //!< Function derivative with respect to y.
 };
@@ -229,7 +229,7 @@ public:
 
   An FEDOFMap mediates the transfer between element-local and global degrees of freedom.
   In this very concrete implementation, the global degrees of freedom are either
-  scalars (double's) or vectors (PISMVector2's), one per node in the IceGrid, 
+  scalars (double's) or vectors (Vector2's), one per node in the IceGrid, 
   and the local degrees of freedom on the element are FEDOFMap::Nk (%i.e. four) scalars or vectors, one 
   for each vertex of the element.
 
@@ -262,14 +262,14 @@ public:
   void addLocalResidualBlock(const double *y, double **yg);
 
   // vector
-  void extractLocalDOFs(IceModelVec2V &x_global, PISMVector2 *x_local) const;
-  void extractLocalDOFs(PISMVector2 const*const*x_global, PISMVector2 *x_local) const;
+  void extractLocalDOFs(IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void extractLocalDOFs(int i, int j, IceModelVec2V &x_global, PISMVector2 *x_local) const;
-  void extractLocalDOFs(int i, int j, PISMVector2 const*const*x_global, PISMVector2 *x_local) const;
+  void extractLocalDOFs(int i, int j, IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void addLocalResidualBlock(const PISMVector2 *y, IceModelVec2V &y_global);
-  void addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg);
+  void addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global);
+  void addLocalResidualBlock(const Vector2 *y, Vector2 **yg);
 
   void reset(int i, int j, const IceGrid &g);
   
@@ -437,21 +437,21 @@ private:
 class FEQuadrature_Vector : public FEQuadrature {
 public:
   FEQuadrature_Vector();
-  void computeTrialFunctionValues(const PISMVector2 *x,  PISMVector2 *vals);
-  void computeTrialFunctionValues(const PISMVector2 *x,  PISMVector2 *vals, double (*Dv)[3]);  
-  void computeTrialFunctionValues(const PISMVector2 *x,  PISMVector2 *vals, PISMVector2 *dx, PISMVector2 *dy);  
+  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
+  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);  
+  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);  
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, PISMVector2 const*const*x_global,  
-                                  PISMVector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, PISMVector2 const*const*x_global,  
-                                  PISMVector2 *vals, double (*Dv)[3]);
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, Vector2 const*const*x_global,  
+                                  Vector2 *vals);
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, Vector2 const*const*x_global,  
+                                  Vector2 *vals, double (*Dv)[3]);
 
   void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
-                                  PISMVector2 *vals);
+                                  Vector2 *vals);
   void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
-                                  PISMVector2 *vals, double (*Dv)[3]);
+                                  Vector2 *vals, double (*Dv)[3]);
 private:
-  PISMVector2 m_tmp[Nk];
+  Vector2 m_tmp[Nk];
 };
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
@@ -491,10 +491,10 @@ class DirichletData_Vector : public DirichletData {
 public:
   DirichletData_Vector();
   PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2V *values, double weight);
-  void update(FEDOFMap &dofmap, PISMVector2* x_e);
-  void update_homogeneous(FEDOFMap &dofmap, PISMVector2* x_e);
-  void fix_residual(PISMVector2 **x, PISMVector2 **r);
-  void fix_residual_homogeneous(PISMVector2 **r);
+  void update(FEDOFMap &dofmap, Vector2* x_e);
+  void update_homogeneous(FEDOFMap &dofmap, Vector2* x_e);
+  void fix_residual(Vector2 **x, Vector2 **r);
+  void fix_residual_homogeneous(Vector2 **r);
   PetscErrorCode fix_jacobian(Mat J);
   PetscErrorCode finish();
 protected:

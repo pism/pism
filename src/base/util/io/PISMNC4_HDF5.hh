@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNC4_HDF5_H_
-#define _PISMNC4_HDF5_H_
+#ifndef _NC4_HDF5_H_
+#define _NC4_HDF5_H_
 
 #include <hdf5.h>
 
@@ -25,13 +25,13 @@
 
 namespace pism {
 
-class PISMNC4_HDF5 : public PISMNCFile {
+class NC4_HDF5 : public NCFile {
 public:
-  PISMNC4_HDF5(MPI_Comm com);
-  virtual ~PISMNC4_HDF5();
+  NC4_HDF5(MPI_Comm com);
+  virtual ~NC4_HDF5();
 
   // open/create/close
-  virtual int open(std::string filename, PISM_IO_Mode mode);
+  virtual int open(std::string filename, IO_Mode mode);
 
   virtual int create(std::string filename);
 
@@ -56,7 +56,7 @@ public:
   virtual int inq_ndims(int &result) const;
 
   // var
-  virtual int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
+  virtual int def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const;
 
   virtual int get_vara_double(std::string variable_name,
                               std::vector<unsigned int> start,
@@ -88,29 +88,29 @@ public:
 
   virtual int inq_varname(unsigned int j, std::string &result) const;
 
-  virtual int inq_vartype(std::string variable_name, PISM_IO_Type &result) const;
+  virtual int inq_vartype(std::string variable_name, IO_Type &result) const;
 
   // att
   virtual int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const;
 
   virtual int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
 
-  using PISMNCFile::put_att_double;
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype,
+  using NCFile::put_att_double;
+  virtual int put_att_double(std::string variable_name, std::string att_name, IO_Type xtype,
                              const std::vector<double> &data) const;
 
   virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
 
   virtual int inq_attname(std::string variable_name, unsigned int n, std::string &result) const;
 
-  virtual int inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const;
+  virtual int inq_atttype(std::string variable_name, std::string att_name, IO_Type &result) const;
 
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const;
 
   virtual std::string get_format() const;
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const;
+  virtual int integer_open_mode(IO_Mode input) const;
   virtual void check(int return_code) const;
 
   hid_t file_id;
@@ -118,4 +118,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* _PISMNC4_HDF5_H_ */
+#endif /* _NC4_HDF5_H_ */

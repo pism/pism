@@ -49,8 +49,8 @@ int main(int argc, char *argv[]) {
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     bool iset, bfset;
-    ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-i", iset); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
     std::string usage =
       "  pismr {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
       ierr = show_usage_check_req_opts(com, "pismr", required, usage); CHKERRQ(ierr);
     }
 
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 

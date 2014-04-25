@@ -30,41 +30,6 @@
 
 namespace pism {
 
-//!  Computes volume and area of ice sheet, for reporting purposes.
-/*!
-  Communication done for global max and global sum.
-
-  Returns area in units of m^2 and volume in m^3.
- */
-PetscErrorCode IceModel::volumeArea(double& gvolume, double& garea) {
-
-  PetscErrorCode  ierr;
-  double     volume=0.0, area=0.0;
-
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  MaskQuery mask(vMask);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j)) {
-        area += cell_area(i,j);
-        const double dv = cell_area(i,j) * ice_thickness(i,j);
-        volume += dv;
-      }
-    }
-  }
-
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
-  return 0;
-}
-
-
 /*!
   Computes fraction of the base which is melted.
 
@@ -105,7 +70,7 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
   // communication
-  ierr = PISMGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
 
   // normalize fraction correctly
   if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
@@ -162,7 +127,7 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
   // communicate to turn into global original fraction
-  ierr = PISMGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
 
   // normalize fraction correctly
   if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
@@ -179,7 +144,8 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   double     max_diffusivity;
 
   // get volumes in m^3 and areas in m^2
-  ierr = volumeArea(gvolume, garea); CHKERRQ(ierr);
+  ierr = compute_ice_volume(gvolume); CHKERRQ(ierr);
+  ierr = compute_ice_area(garea); CHKERRQ(ierr);
 
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
     ierr = energyStats(garea, meltfrac); CHKERRQ(ierr);
@@ -369,7 +335,7 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
 
   ierr = cell_area.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -411,7 +377,7 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   ierr = bed_topography.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -447,7 +413,7 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(double &result) {
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -483,7 +449,7 @@ PetscErrorCode IceModel::compute_ice_volume_cold(double &result) {
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -507,7 +473,7 @@ PetscErrorCode IceModel::compute_ice_area(double &result) {
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -538,7 +504,7 @@ PetscErrorCode IceModel::compute_ice_area_temperate(double &result) {
   ierr = Enthbase.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -569,7 +535,7 @@ PetscErrorCode IceModel::compute_ice_area_cold(double &result) {
   ierr = Enthbase.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -591,7 +557,7 @@ PetscErrorCode IceModel::compute_ice_area_grounded(double &result) {
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -613,7 +579,7 @@ PetscErrorCode IceModel::compute_ice_area_floating(double &result) {
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -652,7 +618,7 @@ PetscErrorCode IceModel::compute_ice_enthalpy(double &result) {
 
   enthalpysum *= config.get("ice_density") * (grid.dx * grid.dy);
 
-  ierr = PISMGlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 

@@ -32,6 +32,7 @@ static char help[] =
 #include "SSAFD.hh"
 #include "SSATestCase.hh"
 #include "pism_options.hh"
+#include "Mask.hh"
 
 using namespace pism;
 
@@ -52,10 +53,10 @@ static double u_exact(double V0, double H0, double C, double x)
 class SSATestCaseCFBC: public SSATestCase
 {
 public:
-  SSATestCaseCFBC(MPI_Comm com, PISMConfig &c)
+  SSATestCaseCFBC(MPI_Comm com, Config &c)
     : SSATestCase(com, c)
   {
-    PISMUnitSystem s = c.get_unit_system();
+    UnitSystem s = c.get_unit_system();
     V0 = s.convert(300.0, "m/year", "m/second");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;
@@ -215,8 +216,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
@@ -242,13 +243,13 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction",
+      ierr = OptionsInt("-Mx", "Number of grid points in the X direction",
                                                       Mx, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-My", "Number of grid points in the Y direction",
+      ierr = OptionsInt("-My", "Number of grid points in the Y direction",
                                                       My, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsString("-o", "Set the output file name",
+      ierr = OptionsString("-o", "Set the output file name",
                                               output_file, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-verbose", "Verbosity level",
+      ierr = OptionsInt("-verbose", "Verbosity level",
                             my_verbosity_level, flag); CHKERRQ(ierr);
       if (flag) setVerbosityLevel(my_verbosity_level);
     }

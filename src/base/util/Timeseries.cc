@@ -38,7 +38,7 @@ Timeseries::Timeseries(IceGrid *g, std::string name, std::string dimension_name)
   private_constructor(g->com, name, dimension_name);
 }
 
-Timeseries::Timeseries(MPI_Comm c, PISMUnitSystem unit_system,
+Timeseries::Timeseries(MPI_Comm c, UnitSystem unit_system,
                        std::string name, std::string dimension_name)
   : m_unit_system(unit_system),
     dimension(dimension_name, dimension_name, m_unit_system),
@@ -58,7 +58,7 @@ void Timeseries::private_constructor(MPI_Comm c, std::string name, std::string d
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
+PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
   PetscErrorCode ierr;
 
   bool exists, found_by_standard_name;

@@ -27,11 +27,11 @@
 
 namespace pism {
 
-SSA* SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
+SSA* SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const Config &c) {
   return new SSAFD(g,ec,c);
 }
 
-SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSA(g,e,c) {
   PetscErrorCode ierr = allocate_fd();
   if (ierr != 0) {
@@ -192,7 +192,7 @@ PetscErrorCode SSAFD::deallocate_fd() {
   return 0;
 }
 
-PetscErrorCode SSAFD::init(PISMVars &vars) {
+PetscErrorCode SSAFD::init(Vars &vars) {
   PetscErrorCode ierr;
   ierr = SSA::init(vars); CHKERRQ(ierr);
 
@@ -209,9 +209,9 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "", "SSAFD options", ""); CHKERRQ(ierr);
   {
     bool flag;
-    ierr = PISMOptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
+    ierr = OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
                           nuh_viewer_size, flag); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer",
+    ierr = OptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer",
                             view_nuh); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -226,7 +226,7 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
   std::string tempPrefix;
-  ierr = PISMOptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
+  ierr = OptionsIsSet("-ssafd_matlab", "Save linear system in Matlab-readable ASCII format",
                           dump_system_matlab); CHKERRQ(ierr);
 
   m_default_pc_failure_count     = 0;
@@ -269,7 +269,7 @@ this.
  */
 PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   PetscErrorCode ierr;
-  PISMVector2 **rhs_uv;
+  Vector2 **rhs_uv;
   const double dx = grid.dx, dy = grid.dy;
 
   const double ice_free_default_velocity = 0.0;
@@ -1685,7 +1685,7 @@ PetscErrorCode SSAFD::write_system_matlab() {
   ierr = component.create(grid, "temp_storage", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
   bool flag;
-  ierr = PISMOptionsString("-ssafd_matlab",
+  ierr = OptionsString("-ssafd_matlab",
                            "Save the linear system to an ASCII .m file. Sets the file prefix.",
                            prefix, flag); CHKERRQ(ierr);
 
@@ -1761,8 +1761,8 @@ PetscErrorCode SSAFD::write_system_matlab() {
   return 0;
 }
 
-SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SSAFD>(m, g, my_vars) {
+SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SSAFD>(m, g, my_vars) {
 
   // set metadata:
   dof = 2;
@@ -1791,8 +1791,8 @@ PetscErrorCode SSAFD_nuH::compute(IceModelVec* &output) {
   return 0;
 }
 
-void SSAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                            std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
+void SSAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                            std::map<std::string, TSDiagnostic*> &ts_dict) {
   SSA::get_diagnostics(dict, ts_dict);
 
   dict["nuH"] = new SSAFD_nuH(this, grid, *variables);

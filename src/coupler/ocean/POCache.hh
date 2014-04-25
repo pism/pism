@@ -27,10 +27,10 @@ namespace pism {
 
 class POCache : public POModifier {
 public:
-  POCache(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
+  POCache(IceGrid &g, const Config &conf, OceanModel* in);
   virtual ~POCache();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode sea_level_elevation(double &result);
@@ -39,7 +39,7 @@ public:
   virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
 protected:

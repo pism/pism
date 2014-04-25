@@ -52,7 +52,7 @@ namespace pism {
 */
 class SSAStrengthExtension {
 public:
-  SSAStrengthExtension(const PISMConfig &c) : config(c) {
+  SSAStrengthExtension(const Config &c) : config(c) {
     min_thickness = config.get("min_thickness_strength_extension_ssa");
     constant_nu = config.get("constant_nu_strength_extension_ssa");
   }
@@ -88,7 +88,7 @@ public:
   }
 
 private:
-  const PISMConfig &config;
+  const Config &config;
   double  min_thickness, constant_nu;
 };
 
@@ -100,7 +100,7 @@ private:
   Subclasses of SSA should provide an associated function pointer matching the
   SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid &, EnthalpyConverter &, const PISMConfig &);
+typedef SSA * (*SSAFactory)(IceGrid &, EnthalpyConverter &, const Config &);
 
 
 //! PISM's SSA solver.
@@ -139,12 +139,12 @@ class SSA : public ShallowStressBalance
   friend class SSA_taub;
   friend class SSA_beta;
 public:
-  SSA(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  SSA(IceGrid &g, EnthalpyConverter &e, const Config &c);
   virtual ~SSA();
 
   SSAStrengthExtension *strength_extension;
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
@@ -153,13 +153,13 @@ public:
   virtual PetscErrorCode stdout_report(std::string &result);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate();
 
@@ -188,10 +188,10 @@ protected:
 
 //! \brief Computes the magnitude of the driving shear stress at the base of
 //! ice (diagnostically).
-class SSA_taud_mag : public PISMDiag<SSA>
+class SSA_taud_mag : public Diag<SSA>
 {
 public:
-  SSA_taud_mag(SSA *m, IceGrid &g, PISMVars &my_vars);
+  SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -200,10 +200,10 @@ public:
 /*! This is *not* a duplicate of SSB_taud: SSA_taud::compute() uses
   SSA::compute_driving_stress(), which tries to be smarter near ice margins.
 */
-class SSA_taud : public PISMDiag<SSA>
+class SSA_taud : public Diag<SSA>
 {
 public:
-  SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars);
+  SSA_taud(SSA *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

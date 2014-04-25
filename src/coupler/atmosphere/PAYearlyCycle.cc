@@ -27,8 +27,8 @@
 
 namespace pism {
 
-PAYearlyCycle::PAYearlyCycle(IceGrid &g, const PISMConfig &conf)
-  : PISMAtmosphereModel(g, conf), m_air_temp_snapshot(g.get_unit_system()) {
+PAYearlyCycle::PAYearlyCycle(IceGrid &g, const Config &conf)
+  : AtmosphereModel(g, conf), m_air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -78,7 +78,7 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
 }
 
 //! Allocates memory and reads in the precipitaion data.
-PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
+PetscErrorCode PAYearlyCycle::init(Vars &vars) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_variables = &vars;
@@ -120,7 +120,7 @@ void PAYearlyCycle::add_vars_to_output(std::string keyword, std::set<std::string
 }
 
 
-PetscErrorCode PAYearlyCycle::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PAYearlyCycle::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {

@@ -23,8 +23,8 @@ namespace pism {
 
 /// -ocean_delta_SL_file, ...
 
-PO_delta_SL::PO_delta_SL(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
-  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in),
+PO_delta_SL::PO_delta_SL(IceGrid &g, const Config &conf, OceanModel* in)
+  : PScalarForcing<OceanModel,POModifier>(g, conf, in),
     shelfbmassflux(g.get_unit_system()),
     shelfbtemp(g.get_unit_system())
 {
@@ -64,7 +64,7 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   return 0;
 }
 
-PetscErrorCode PO_delta_SL::init(PISMVars &vars) {
+PetscErrorCode PO_delta_SL::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -96,7 +96,7 @@ void PO_delta_SL::add_vars_to_output(std::string keyword, std::set<std::string> 
 }
 
 PetscErrorCode PO_delta_SL::define_variables(std::set<std::string> vars, const PIO &nc,
-                                             PISM_IO_Type nctype) {
+                                             IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {

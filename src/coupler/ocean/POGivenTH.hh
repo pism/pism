@@ -24,13 +24,13 @@
 
 namespace pism {
 
-class POGivenTH : public PGivenClimate<POModifier,PISMOceanModel>
+class POGivenTH : public PGivenClimate<POModifier,OceanModel>
 {
 public:
-  POGivenTH(IceGrid &g, const PISMConfig &conf);
+  POGivenTH(IceGrid &g, const Config &conf);
   virtual ~POGivenTH();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode sea_level_elevation(double &result);
@@ -42,7 +42,7 @@ public:
 
   class POGivenTHConstants {
   public:
-    POGivenTHConstants(const PISMConfig &config);
+    POGivenTHConstants(const Config &config);
     //! Coefficients for linearized freezing point equation for in situ
     //! temperature:
     //!

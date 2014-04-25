@@ -21,8 +21,8 @@
 
 namespace pism {
 
-POGiven::POGiven(IceGrid &g, const PISMConfig &conf)
-  : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
+POGiven::POGiven(IceGrid &g, const Config &conf)
+  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL)
 {
   PetscErrorCode ierr = allocate_POGiven(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -65,7 +65,7 @@ PetscErrorCode POGiven::allocate_POGiven() {
   return 0;
 }
 
-PetscErrorCode POGiven::init(PISMVars &) {
+PetscErrorCode POGiven::init(Vars &) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock

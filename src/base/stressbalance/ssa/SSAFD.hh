@@ -29,15 +29,15 @@ class SSAFD : public SSA
 {
   friend class SSAFD_nuH;
 public:
-  SSAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c);
   virtual ~SSAFD();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
   virtual PetscErrorCode allocate_fd();
 
@@ -106,14 +106,14 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
+SSA * SSAFDFactory(IceGrid &, EnthalpyConverter &, const Config &);
 
 //! \brief Reports the nuH (viscosity times thickness) product on the staggered
 //! grid.
-class SSAFD_nuH : public PISMDiag<SSAFD>
+class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
-  SSAFD_nuH(SSAFD *m, IceGrid &g, PISMVars &my_vars);
+  SSAFD_nuH(SSAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

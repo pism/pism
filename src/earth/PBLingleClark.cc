@@ -25,8 +25,8 @@
 
 namespace pism {
 
-PBLingleClark::PBLingleClark(IceGrid &g, const PISMConfig &conf)
-  : PISMBedDef(g, conf) {
+PBLingleClark::PBLingleClark(IceGrid &g, const Config &conf)
+  : BedDef(g, conf) {
 
   if (allocate() != 0) {
     PetscPrintf(grid.com, "PBLingleClark::PBLingleClark(...): allocate() failed\n");
@@ -148,10 +148,10 @@ PetscErrorCode PBLingleClark::deallocate() {
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
-PetscErrorCode PBLingleClark::init(PISMVars &vars) {
+PetscErrorCode PBLingleClark::init(Vars &vars) {
   PetscErrorCode ierr;
 
-  ierr = PISMBedDef::init(vars); CHKERRQ(ierr);
+  ierr = BedDef::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the Lingle-Clark bed deformation model...\n"); CHKERRQ(ierr);
@@ -179,17 +179,17 @@ PetscErrorCode PBLingleClark::correct_topg() {
   std::string boot_filename, regrid_filename;
   PIO nc(grid, "guess_mode");
 
-  ierr = PISMOptionsIsSet("-regrid_bed_special",
+  ierr = OptionsIsSet("-regrid_bed_special",
                           "Correct topg when switching to a different grid",
                           use_special_regrid_semantics); CHKERRQ(ierr);
 
   // Stop if topg correction was not requiested.
   if (!use_special_regrid_semantics) return 0;
 
-  ierr = PISMOptionsString("-regrid_file", "Specifies the name of a file to regrid from",
+  ierr = OptionsString("-regrid_file", "Specifies the name of a file to regrid from",
                            regrid_filename, regrid_file_set); CHKERRQ(ierr);
 
-  ierr = PISMOptionsString("-boot_file", "Specifies the name of the file to bootstrap from",
+  ierr = OptionsString("-boot_file", "Specifies the name of the file to bootstrap from",
                            boot_filename, boot_file_set); CHKERRQ(ierr);
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
@@ -208,7 +208,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
   // Stop if the user asked to regrid topg (in this case no correction is necessary).
   std::set<std::string> regrid_vars;
-  ierr = PISMOptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
+  ierr = OptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
                               regrid_vars, regrid_vars_set); CHKERRQ(ierr);
 
   if (regrid_vars_set) {

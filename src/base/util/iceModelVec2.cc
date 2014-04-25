@@ -152,7 +152,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::write_impl(const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   assert(v != NULL);
@@ -480,7 +480,7 @@ PetscErrorCode IceModelVec2S::sum(double &result) {
   ierr = end_access(); CHKERRQ(ierr);
 
   // find the global sum:
-  ierr = PISMGlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
 
   return 0;
 }
@@ -497,7 +497,7 @@ PetscErrorCode IceModelVec2S::max(double &result) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -513,7 +513,7 @@ PetscErrorCode IceModelVec2S::absmax(double &result) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -529,7 +529,7 @@ PetscErrorCode IceModelVec2S::min(double &result) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMin(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMin(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -741,8 +741,8 @@ PetscErrorCode IceModelVec2Stag::absmaxcomponents(double* z) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&(my_z[0]), &(z[0]), grid->com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&(my_z[0]), &(z[0]), grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
   return 0;
 }
 

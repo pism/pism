@@ -23,8 +23,8 @@
 
 namespace pism {
 
-PAAnomaly::PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-  : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in),
+PAAnomaly::PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in)
+  : PGivenClimate<PAModifier,AtmosphereModel>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
 {
@@ -82,7 +82,7 @@ PAAnomaly::~PAAnomaly()
   // empty
 }
 
-PetscErrorCode PAAnomaly::init(PISMVars &vars) {
+PetscErrorCode PAAnomaly::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -200,7 +200,7 @@ void PAAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &r
 
 
 PetscErrorCode PAAnomaly::define_variables(std::set<std::string> vars, const PIO &nc,
-                                           PISM_IO_Type nctype) {
+                                           IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

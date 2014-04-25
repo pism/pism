@@ -26,7 +26,7 @@
  * Ignores dimensions that already exist in the output file or don't exist in
  * the input file.
  */
-int define_dimension(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string dim_name) {
+int define_dimension(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string dim_name) {
   int stat;
   bool exists;
 
@@ -56,7 +56,7 @@ int define_dimension(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, 
  * The `extra_vars` output argument will contain names of coordinate variables
  * corresponding to dimensions used by this variable.
  */
-int define_variable(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string variable_name) {
+int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string variable_name) {
   int stat;
   bool exists;
   std::vector<std::string> dimensions;
@@ -90,7 +90,7 @@ int define_variable(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, s
     dimensions[k] = dim_name;
   }
 
-  pism::PISM_IO_Type var_type;
+  pism::IO_Type var_type;
   stat = input.inq_vartype(variable_name, var_type); check(stat);
 
   stat = output.def_var(variable_name, var_type, dimensions); check(stat);
@@ -101,7 +101,7 @@ int define_variable(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, s
 }
 
 //! \brief Copies variable attributes.
-int copy_attributes(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, std::string var_name) {
+int copy_attributes(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string var_name) {
   int stat;
   int n_attrs;
 
@@ -109,7 +109,7 @@ int copy_attributes(pism::PISMNC4_Serial &input, pism::PISMNC4_Serial &output, s
 
   for (int j = 0; j < n_attrs; ++j) {
     std::string att_name;
-    pism::PISM_IO_Type att_type;
+    pism::IO_Type att_type;
 
     stat = input.inq_attname(var_name, j, att_name); check(stat);
 

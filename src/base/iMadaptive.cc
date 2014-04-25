@@ -89,11 +89,11 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   ierr = w3->end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
 
   return 0;
 }
@@ -133,7 +133,7 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
   ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -212,7 +212,7 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
   const bool updateAtDepth = (skipCountDown == 0);
   const double time_to_end = grid.time->end() - grid.time->current();
 
-  // FIXME: we should probably create a std::vector<const PISMComponent_TS*>
+  // FIXME: we should probably create a std::vector<const Component_TS*>
   // (or similar) and iterate over that instead.
   bool restrict_dt = false;
   const double current_time = grid.time->current();

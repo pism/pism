@@ -95,8 +95,8 @@ PetscErrorCode IceModelVec3BTU::get_spacing(double &dzb) {
   return 0;
 }
 
-PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, const PISMConfig &conf)
-    : PISMComponent_TS(g, conf) {
+BedThermalUnit::BedThermalUnit(IceGrid &g, const Config &conf)
+    : Component_TS(g, conf) {
   bedtoptemp = NULL;
   ghf        = NULL;
 
@@ -118,22 +118,22 @@ PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, const PISMConfig &conf)
 
 //! \brief Allocate storage for the temperature in the bedrock layer (if there
 //! is a bedrock layer).
-PetscErrorCode PISMBedThermalUnit::allocate() {
+PetscErrorCode BedThermalUnit::allocate() {
   PetscErrorCode ierr;
   bool i_set, Mbz_set, Lbz_set;
   grid_info g;
 
-  ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "BedThermalUnit options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-i", "PISM input file name",
+    ierr = OptionsString("-i", "PISM input file name",
                              m_input_file, i_set); CHKERRQ(ierr);
 
     int tmp = Mbz;
-    ierr = PISMOptionsInt("-Mbz", "number of levels in bedrock thermal layer",
+    ierr = OptionsInt("-Mbz", "number of levels in bedrock thermal layer",
                           tmp, Mbz_set); CHKERRQ(ierr);
     Mbz = tmp;
 
-    ierr = PISMOptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
+    ierr = OptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
                            Lbz, Lbz_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -171,20 +171,20 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
       ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
       Lbz = 0;
     } else if (Mbz_set ^ Lbz_set) {
-      PetscPrintf(grid.com, "PISMBedThermalUnit ERROR: please specify both -Mbz and -Lbz.\n");
+      PetscPrintf(grid.com, "BedThermalUnit ERROR: please specify both -Mbz and -Lbz.\n");
       PISMEnd();
     }
   }
 
   // actual allocation:
   if ((Lbz <= 0.0) && (Mbz > 1)) {
-    SETERRQ(grid.com, 1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
+    SETERRQ(grid.com, 1,"BedThermalUnit can not be created with negative or zero Lbz value\n"
             " and more than one layers\n"); }
 
   if (Mbz > 1) {
     ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
     ierr = temp.set_attrs("model_state",
-                          "lithosphere (bedrock) temperature, in PISMBedThermalUnit",
+                          "lithosphere (bedrock) temperature, in BedThermalUnit",
                           "K", ""); CHKERRQ(ierr);
     temp.metadata().set_double("valid_min", 0.0);
   }
@@ -194,7 +194,7 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
 
 
 //! \brief Initialize the bedrock thermal unit.
-PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
+PetscErrorCode BedThermalUnit::init(Vars &vars) {
   PetscErrorCode ierr;
   grid_info g;
 
@@ -240,21 +240,21 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   }
 
   if (temp.was_created() == true) {
-    ierr = regrid("PISMBedThermalUnit", &temp, REGRID_WITHOUT_REGRID_VARS); CHKERRQ(ierr);
+    ierr = regrid("BedThermalUnit", &temp, REGRID_WITHOUT_REGRID_VARS); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
 
-void PISMBedThermalUnit::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void BedThermalUnit::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
   if (temp.was_created()) {
     result.insert(temp.metadata().get_string("short_name"));
   }
 }
 
-PetscErrorCode PISMBedThermalUnit::define_variables(
-                         std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode BedThermalUnit::define_variables(
+                         std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.metadata().get_string("short_name"))) {
@@ -264,7 +264,7 @@ PetscErrorCode PISMBedThermalUnit::define_variables(
   return 0;
 }
 
-PetscErrorCode PISMBedThermalUnit::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode BedThermalUnit::write_variables(std::set<std::string> vars, const PIO &nc) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.metadata().get_string("short_name"))) {
@@ -290,7 +290,7 @@ This is a formula for the maximum stable timestep.  For more, see [\ref MortonMa
 
 The above describes the general case where Mbz > 1.
  */
-PetscErrorCode PISMBedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
+PetscErrorCode BedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
 
   if (temp.was_created()) {
     double dzb;
@@ -317,13 +317,13 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 
 FIXME:  now a trapezoid rule could be used
 */
-PetscErrorCode PISMBedThermalUnit::update(double my_t, double my_dt) {
+PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if (temp.was_created() == false)
     return 0;  // in this case we are up to date
 
-  // as a derived class of PISMComponent_TS, has t,dt members which keep track
+  // as a derived class of Component_TS, has t,dt members which keep track
   // of last update time-interval; so we do some checks ...
   // CHECK: has the desired time-interval already been dealt with?
   if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12))
@@ -331,7 +331,7 @@ PetscErrorCode PISMBedThermalUnit::update(double my_t, double my_dt) {
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (my_dt < 0) {
-     SETERRQ(grid.com, 1,"PISMBedThermalUnit::update() does not allow negative timesteps\n"); }
+     SETERRQ(grid.com, 1,"BedThermalUnit::update() does not allow negative timesteps\n"); }
   // CHECK: is desired time-interval equal to [my_t,my_t+my_dt] where my_t = t + dt?
   if ((!gsl_isnan(m_t)) && (!gsl_isnan(m_dt))) { // this check should not fire on first use
     bool contiguous = true;
@@ -345,7 +345,7 @@ PetscErrorCode PISMBedThermalUnit::update(double my_t, double my_dt) {
     }
 
     if (contiguous == false) {
-     SETERRQ4(grid.com, 2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
+     SETERRQ4(grid.com, 2,"BedThermalUnit::update() requires next update to be contiguous with last;\n"
                 "  stored:     t = %f s,    dt = %f s\n"
                 "  desired: my_t = %f s, my_dt = %f s\n",
               m_t,m_dt,my_t,my_dt); }
@@ -355,7 +355,7 @@ PetscErrorCode PISMBedThermalUnit::update(double my_t, double my_dt) {
   bool restrict_dt;
   ierr = max_timestep(my_t, my_max_dt, restrict_dt); CHKERRQ(ierr);
   if (restrict_dt && my_max_dt < my_dt) {
-     SETERRQ(grid.com, 3,"PISMBedThermalUnit::update() thinks you asked for too big a timestep\n"); }
+     SETERRQ(grid.com, 3,"BedThermalUnit::update() thinks you asked for too big a timestep\n"); }
 
   // o.k., we have checked; we are going to do the desired timestep!
   m_t  = my_t;
@@ -418,7 +418,7 @@ The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
 When `Mbz` = 2 we use first-order differencing.  When temp was not created,
 the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
-PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
+PetscErrorCode BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   if (!temp.was_created()) {
@@ -449,7 +449,7 @@ PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &res
   return 0;
 }
 
-PetscErrorCode PISMBedThermalUnit::bootstrap() {
+PetscErrorCode BedThermalUnit::bootstrap() {
   PetscErrorCode ierr;
 
   if (Mbz < 2) return 0;
