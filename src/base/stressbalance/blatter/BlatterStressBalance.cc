@@ -55,7 +55,7 @@ void drag(void *ctx, double tauc, double u, double v,
 
 BlatterStressBalance::BlatterStressBalance(IceGrid &g,
 					   EnthalpyConverter &e,
-					   const PISMConfig &conf)
+					   const Config &conf)
   : ShallowStressBalance(g, e, conf), min_thickness(10.0)
 {
   if (allocate_blatter() != 0) {
@@ -163,7 +163,7 @@ PetscErrorCode BlatterStressBalance::deallocate_blatter() {
 }
 
 
-PetscErrorCode BlatterStressBalance::init(PISMVars &vars) {
+PetscErrorCode BlatterStressBalance::init(Vars &vars) {
 
   variables = &vars;
 
@@ -326,7 +326,7 @@ PetscErrorCode BlatterStressBalance::initialize_ice_hardness() {
 PetscErrorCode BlatterStressBalance::transfer_velocity() {
   PetscErrorCode ierr;
 
-  PISMVector2 ***U;
+  Vector2 ***U;
   PetscScalar *u_ij, *v_ij;
   DM da;
   Vec X;
@@ -411,7 +411,7 @@ PetscErrorCode BlatterStressBalance::transfer_velocity() {
 PetscErrorCode BlatterStressBalance::save_velocity() {
   PetscErrorCode ierr;
 
-  PISMVector2 ***U;
+  Vector2 ***U;
   PetscScalar *u_ij, *v_ij;
   DM da;
   Vec X;
@@ -469,7 +469,7 @@ void BlatterStressBalance::add_vars_to_output(std::string /*keyword*/, std::set<
 
 //! Defines requested couplings fields.
 PetscErrorCode BlatterStressBalance::define_variables(std::set<std::string> vars, const PIO &nc,
-						      PISM_IO_Type nctype) {
+                                                      IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "u_sigma")) {

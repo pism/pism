@@ -97,11 +97,11 @@ class BlatterStressBalance : public ShallowStressBalance
   friend void drag(void *ctx, double tauc, double u, double v,
 		   double *taud, double *dtaub);
 public:
-  BlatterStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  BlatterStressBalance(IceGrid &g, EnthalpyConverter &e, const Config &conf);
 
   virtual ~BlatterStressBalance();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(int old_Mz);
@@ -119,7 +119,7 @@ public:
   virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result);
 
   virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/);
+                                          IO_Type /*nctype*/);
 
   virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/);
 

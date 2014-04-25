@@ -60,7 +60,7 @@ static PetscErrorCode get_grid_from_file(std::string filename, IceGrid &grid) {
 }
 
 //! \brief Read data from an input file.
-static PetscErrorCode read_input_data(std::string filename, PISMVars &variables,
+static PetscErrorCode read_input_data(std::string filename, Vars &variables,
 				      EnthalpyConverter &EC) {
   PetscErrorCode ierr;
   // Get the names of all the variables allocated earlier:
@@ -80,7 +80,7 @@ static PetscErrorCode read_input_data(std::string filename, PISMVars &variables,
 }
 
 //! \brief Write data to an output file.
-static PetscErrorCode write_data(std::string filename, PISMVars &variables) {
+static PetscErrorCode write_data(std::string filename, Vars &variables) {
   PetscErrorCode ierr;
   // Get the names of all the variables allocated earlier:
   std::set<std::string> vars = variables.keys();
@@ -93,7 +93,7 @@ static PetscErrorCode write_data(std::string filename, PISMVars &variables) {
 }
 
 //! \brief Allocate IceModelVec2S variables.
-static PetscErrorCode allocate_variables(IceGrid &grid, PISMVars &variables) {
+static PetscErrorCode allocate_variables(IceGrid &grid, Vars &variables) {
   PetscErrorCode ierr;
   IceModelVec2S *thk, *topg, *tauc;
   IceModelVec3 *enthalpy;
@@ -129,7 +129,7 @@ static PetscErrorCode allocate_variables(IceGrid &grid, PISMVars &variables) {
 }
 
 //! \brief De-allocate IceModelVec2S variables.
-static PetscErrorCode deallocate_variables(PISMVars &variables) {
+static PetscErrorCode deallocate_variables(Vars &variables) {
   // Get the names of all the variables allocated earlier:
   std::set<std::string> vars = variables.keys();
 
@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
     ierr = set_config_from_options(com, config); CHKERRQ(ierr);
@@ -188,23 +188,23 @@ int main(int argc, char *argv[]) {
       bool flag;
       int Mz;
       double Lz;
-      ierr = PISMOptionsString("-i", "Set the input file name",
+      ierr = OptionsString("-i", "Set the input file name",
                                input_file, flag); CHKERRQ(ierr);
       if (! flag) {
         PetscPrintf(grid.com, "BLATTER_TEST ERROR: -i is required.\n");
         PISMEnd();
       }
-      ierr = PISMOptionsString("-o", "Set the output file name",
+      ierr = OptionsString("-o", "Set the output file name",
                                output_file, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsIsSet("-compare", "Compare \"cold\" and \"hot\" runs.",
+      ierr = OptionsIsSet("-compare", "Compare \"cold\" and \"hot\" runs.",
 			      compare_cold_and_hot); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-Mz", "Number of vertical levels in the PISM grid",
+      ierr = OptionsInt("-Mz", "Number of vertical levels in the PISM grid",
 			    Mz, flag); CHKERRQ(ierr);
       if (flag == true) {
 	grid.Mz = Mz;
       }
 
-      ierr = PISMOptionsReal("-Lz", "Vertical extent of the PISM grid",
+      ierr = OptionsReal("-Lz", "Vertical extent of the PISM grid",
 			     Lz, flag); CHKERRQ(ierr);
       if (flag == true) {
 	grid.Lz = Lz;;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
 
     ierr = get_grid_from_file(input_file, grid); CHKERRQ(ierr);
 
-    PISMVars variables;
+    Vars variables;
     ierr = allocate_variables(grid, variables); CHKERRQ(ierr);
 
     EnthalpyConverter EC(config);
