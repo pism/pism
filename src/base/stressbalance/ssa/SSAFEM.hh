@@ -83,7 +83,7 @@ public:
 
 protected:
 
-  virtual PetscErrorCode PointwiseNuHAndBeta(const SSACoefficients *,
+  virtual PetscErrorCode PointwiseNuHAndBeta(const SSACoefficients &,
                                              const Vector2 &, const double[],
                                              double *,double *,double *,double *);
 

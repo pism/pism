@@ -393,7 +393,7 @@ public:
   static const int Nq = 4;  //!< Number of quadrature points.
   static const int Nk = 4;  //!< Number of test functions on the element.
   
-  void init(const IceGrid &g,double L=1.0); // FIXME Allow a length scale to be specified.
+  void init(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
   const FEFunctionGerm (*testFunctionValues())[Nq];  
   const FEFunctionGerm *testFunctionValues(int q);
@@ -407,9 +407,9 @@ public:
   static const double quadWeights[Nq];
 
 protected:
-  //! The Jacobian determinant of the map from the reference element to the physical element.
+  //! The determinant of the Jacobian of the map from the reference element to the physical element.
   double m_jacobianDet;
-  //! Shape function values (for each of \a Nq quadrature points, and each of \a Nk shape function)
+  //! Trial function values (for each of \a Nq quadrature points, and each of \a Nk trial function).
   FEFunctionGerm m_germs[Nq][Nk];
 };
 

@@ -368,7 +368,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
   return 0;
 }
 
-/** @brief Compute the "2 x (effective viscosity) x (ice thickness)"
+/** @brief Compute the "(effective viscosity) x (ice thickness)"
  *  and effective viscous bed strength from the current solution, at a
  *  single quadrature point.
  *
@@ -376,7 +376,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
  * @param[in] u the value of the solution
  * @param[in] Du the value of the symmetric gradient of the solution
  * @param[out] nuH product of the ice viscosity and thickness @f$ \nu H @f$
- * @param[out] dNuH derivative of @f$ \nu H @f$ with respect to the
+ * @param[out] dnuH derivative of @f$ \nu H @f$ with respect to the
  *                  second invariant @f$ \gamma @f$. Set to NULL if
  *                  not desired.
  * @param[out] beta basal drag coefficient @f$ \beta @f$
@@ -386,34 +386,35 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
  *
  * @return 0 on success
  */
-PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients *coefficients,
+PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
                                            const Vector2 &u, const double Du[],
-                                           double *nuH, double *dNuH,
+                                           double *nuH, double *dnuH,
                                            double *beta, double *dbeta) {
 
   Mask M;
 
-  if (coefficients->H < strength_extension->get_min_thickness()) {
+  if (coefficients.H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
-    if (dNuH) *dNuH = 0;
+    if (dnuH) {
+      *dnuH = 0;
+    }
   } else {
-    flow_law->effective_viscosity(coefficients->B, secondInvariantDu_2D(Du),
-                                  nuH, dNuH);
-    *nuH  *= coefficients->H;
-    *nuH  += m_epsilon_ssa;
-    if (dNuH) *dNuH *= coefficients->H;
-  }
-  *nuH  *=  2;
-  if (dNuH) {
-    *dNuH *= 2;
+    flow_law->effective_viscosity(coefficients.B, secondInvariantDu_2D(Du),
+                                  nuH, dnuH);
+
+    *nuH  = m_epsilon_ssa + *nuH * coefficients.H;
+
+    if (dnuH) {
+      *dnuH *= coefficients.H;
+    }
   }
 
-  if (M.grounded_ice(coefficients->mask)) {
-    basal_sliding_law->drag_with_derivative(coefficients->tauc, u.u, u.v, beta, dbeta);
+  if (M.grounded_ice(coefficients.mask)) {
+    basal_sliding_law->drag_with_derivative(coefficients.tauc, u.u, u.v, beta, dbeta);
   } else {
     *beta = 0;
 
-    if (M.ice_free_land(coefficients->mask)) {
+    if (M.ice_free_land(coefficients.mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
 
@@ -488,12 +489,15 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   double local_bc_mask[FEQuadrature::Nk];
 
   // Iterate over the elements.
-  int xs = m_element_index.xs, xm = m_element_index.xm,
-    ys = m_element_index.ys, ym = m_element_index.ym;
+  int xs = m_element_index.xs,
+    xm   = m_element_index.xm,
+    ys   = m_element_index.ys,
+    ym   = m_element_index.ym;
+
   for (int i = xs; i < xs + xm; i++) {
     for (int j = ys; j < ys + ym; j++) {
       // Storage for element-local solution and residuals.
-      Vector2     velocity[4], residual[4];
+      Vector2 velocity[FEQuadrature::Nk], residual[FEQuadrature::Nk];
       // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
@@ -522,15 +526,16 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
       // Coefficients and weights for this quadrature point.
       const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
 
-      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
+      // loop over quadrature points on this element:
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
 
         // Symmetric gradient at the quadrature point.
-        double *Duq = Du[q];
+        const double *Duq = Du[q];
 
         // Coefficients and weights for this quadrature point.
-        const double    jw = JxW[q];
+        const double jw = JxW[q];
         double nuH = 0.0, beta = 0.0;
-        ierr = PointwiseNuHAndBeta(&coefficients[q], u[q], Duq,
+        ierr = PointwiseNuHAndBeta(coefficients[q], u[q], Duq,
                                    &nuH, NULL, &beta, NULL); CHKERRQ(ierr);
 
         // The next few lines compute the actual residual for the element.
@@ -539,10 +544,11 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
           tau_d = coefficients[q].driving_stress, // gravitational driving stress
           f     = tau_b + tau_d;
 
-        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {  // loop over the test functions.
+        // loop over the test functions.
+        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
           const FEFunctionGerm &testqk = test[q][k];
-          residual[k].u += jw*(nuH*(testqk.dx*(2*Duq[0] + Duq[1]) + testqk.dy*Duq[2]) - testqk.val*f.u);
-          residual[k].v += jw*(nuH*(testqk.dy*(2*Duq[1] + Duq[0]) + testqk.dx*Duq[2]) - testqk.val*f.v);
+          residual[k].u += jw*(2.0*nuH*(testqk.dx*(2*Duq[0] + Duq[1]) + testqk.dy*Duq[2]) - testqk.val*f.u);
+          residual[k].v += jw*(2.0*nuH*(testqk.dy*(2*Duq[1] + Duq[0]) + testqk.dx*Duq[2]) - testqk.val*f.v);
         }
       } // q
 
@@ -595,7 +601,6 @@ where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate so
 the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
                                               const Vector2 **velocity_global, Mat Jac) {
-  int         i, j;
   PetscErrorCode   ierr;
 
   // Avoid compiler warning.
@@ -629,8 +634,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   // Loop through all the elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
       // Values of the solution at the nodes of the current element.
       Vector2    velocity[FEQuadrature::Nk];
 
@@ -658,6 +663,9 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       // Compute the values of the solution at the quadrature points.
       m_quadrature_vector.computeTrialFunctionValues(velocity, w, Dw);
 
+      // Coefficients at quadrature points in the current element:
+      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
       for (int q = 0; q < FEQuadrature::Nq; q++) {
@@ -666,12 +674,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
         Vector2 &wq = w[q];
         double *Dwq = Dw[q];
 
-        // Coefficients evaluated at the single quadrature point.
-        const SSACoefficients *coefficients = &m_coefficients[ij*4+q];
         const double    jw  = JxW[q];
-        double nuH, dNuH, beta, dbeta;
-        ierr = PointwiseNuHAndBeta(coefficients, wq, Dwq,
-                                   &nuH, &dNuH, &beta, &dbeta); CHKERRQ(ierr);
+        double nuH = 0.0, dnuH = 0.0, beta = 0.0, dbeta = 0.0;
+        ierr = PointwiseNuHAndBeta(coefficients[q], wq, Dwq,
+                                   &nuH, &dnuH, &beta, &dbeta); CHKERRQ(ierr);
 
         for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
           for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
@@ -697,13 +703,13 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
               verbPrintf(1, grid.com, "nuh=0 i %d j %d q %d k %d\n", i, j, q, k);
             }
             // u-u coupling
-            K[k*16+l*2]     += jw*(beta*ht*h + dbeta*bvx*bux + nuH*(2*dxt*dx + dyt*0.5*dy) + dNuH*cvx*cux);
+            K[k*16+l*2]     += jw*(beta*ht*h + dbeta*bvx*bux + (2.0*nuH)*(2*dxt*dx + dyt*0.5*dy) + (2.0*dnuH)*cvx*cux);
             // u-v coupling
-            K[k*16+l*2+1]   += jw*(dbeta*bvx*buy + nuH*(0.5*dyt*dx + dxt*dy) + dNuH*cvx*cuy);
+            K[k*16+l*2+1]   += jw*(dbeta*bvx*buy + (2.0*nuH)*(0.5*dyt*dx + dxt*dy) + (2.0*dnuH)*cvx*cuy);
             // v-u coupling
-            K[k*16+8+l*2]   += jw*(dbeta*bvy*bux + nuH*(0.5*dxt*dy + dyt*dx) + dNuH*cvy*cux);
+            K[k*16+8+l*2]   += jw*(dbeta*bvy*bux + (2.0*nuH)*(0.5*dxt*dy + dyt*dx) + (2.0*dnuH)*cvy*cux);
             // v-v coupling
-            K[k*16+8+l*2+1] += jw*(beta*ht*h + dbeta*bvy*buy + nuH*(2*dyt*dy + dxt*0.5*dx) + dNuH*cvy*cuy);
+            K[k*16+8+l*2+1] += jw*(beta*ht*h + dbeta*bvy*buy + (2.0*nuH)*(2*dyt*dy + dxt*0.5*dx) + (2.0*dnuH)*cvy*cuy);
           } // l
         } // k
       } // q
@@ -716,8 +722,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
   // columns previously, the symmetry of the Jacobian matrix is preserved.
   if (bc_locations && m_vel_bc) {
-    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+    for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (bc_locations->as_int(i, j) == 1) {
           const double ident[4] = {m_dirichletScale, 0, 0, m_dirichletScale};
           MatStencil row;
