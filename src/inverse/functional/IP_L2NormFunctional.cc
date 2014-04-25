@@ -52,7 +52,7 @@ PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
     } // j
   } // i
 
-  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = x.end_access(); CHKERRQ(ierr);
   return 0;
@@ -92,7 +92,7 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
     } // j
   } // i
 
-  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = a.end_access(); CHKERRQ(ierr);
   ierr = b.end_access(); CHKERRQ(ierr);
@@ -158,8 +158,8 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
   // The value of the objective
   double value = 0;
 
-  PISMVector2 x_e[FEQuadrature::Nk];
-  PISMVector2 x_q[FEQuadrature::Nq];
+  Vector2 x_e[FEQuadrature::Nk];
+  Vector2 x_q[FEQuadrature::Nq];
 
   ierr = x.begin_access(); CHKERRQ(ierr);
 
@@ -178,13 +178,13 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
       m_quadrature_vector.computeTrialFunctionValues(x_e, x_q);
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
-        const PISMVector2 &x_qq = x_q[q];
+        const Vector2 &x_qq = x_q[q];
         value += JxW[q]*(x_qq.u*x_qq.u+x_qq.v*x_qq.v);
       } // q
     } // j
   } // i
 
-  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = x.end_access(); CHKERRQ(ierr);
   return 0;
@@ -197,9 +197,9 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
   // The value of the objective
   double value = 0;
 
-  PISMVector2 a_q[FEQuadrature::Nq];
+  Vector2 a_q[FEQuadrature::Nq];
 
-  PISMVector2 b_q[FEQuadrature::Nq];
+  Vector2 b_q[FEQuadrature::Nq];
 
   ierr = a.begin_access(); CHKERRQ(ierr);
   ierr = b.begin_access(); CHKERRQ(ierr);
@@ -224,7 +224,7 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
     } // j
   } // i
 
-  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = a.end_access(); CHKERRQ(ierr);
   ierr = b.end_access(); CHKERRQ(ierr);
@@ -238,10 +238,10 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
   // Clear the gradient before doing anything with it!
   ierr = gradient.set(0); CHKERRQ(ierr);
 
-  PISMVector2 x_q[FEQuadrature::Nq];
+  Vector2 x_q[FEQuadrature::Nq];
   ierr = x.begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 gradient_e[FEQuadrature::Nk];
+  Vector2 gradient_e[FEQuadrature::Nk];
   ierr = gradient.begin_access(); CHKERRQ(ierr);
 
   // An Nq by Nk array of test function values.
@@ -270,7 +270,7 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
       }
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
-        const PISMVector2 &x_qq = x_q[q];
+        const Vector2 &x_qq = x_q[q];
         for(int k=0; k<FEQuadrature::Nk; k++ ) {
           double gcommon =2*JxW[q]*test[q][k].val;
           gradient_e[k].u += gcommon*x_qq.u;

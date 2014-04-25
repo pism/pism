@@ -150,11 +150,15 @@ PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
   }
 
   if (config.get_flag("part_grid")) {
-    // if part_grid is "on", set fields tracking contents of partially-filled
-    // cells to zero. Note that the contents of these fields are
-    // grid-dependent, so we don't want to read them from a bootstrapping file
-    // using linear interpolation.
-    ierr = vHref.set(0.0); CHKERRQ(ierr);
+    // Read the Href field from an input file. This field is
+    // grid-dependent, so interpolating it from one grid to a
+    // different one does not make sense in general.
+    // (IceModel::Href_cleanup() will take care of the side effects of
+    // such interpolation, though.)
+    //
+    // On the other hand, we need to read it in to be able to re-start
+    // from a PISM output file using the -boot_file option.
+    ierr = vHref.regrid(filename, OPTIONAL, 0.0); CHKERRQ(ierr);
   }
 
   if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
@@ -273,7 +277,7 @@ pressure-melting temperature.
 We set \f$T(z)=T_s\f$ above the top of the ice.
 
 This method determines \f$T(0)\f$, the ice temperature at the ice base.  This
-temperature is used by PISMBedThermalUnit::bootstrap() to determine a
+temperature is used by BedThermalUnit::bootstrap() to determine a
 bootstrap temperature profile in the bedrock.
 */
 PetscErrorCode IceModel::putTempAtDepth() {

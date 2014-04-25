@@ -34,7 +34,7 @@ namespace pism {
 
 ///// PA_SeaRISE_Greenland
 
-PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const PISMConfig &conf)
+PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const Config &conf)
   : PAYearlyCycle(g, conf) {
   // empty
 }
@@ -42,7 +42,7 @@ PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const PISMConfig &conf)
 PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
 }
 
-PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
+PetscErrorCode PA_SeaRISE_Greenland::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -61,7 +61,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
                            "-atmosphere searise_greenland options", ""); CHKERRQ(ierr);
   {
     std::string option_prefix = "-atmosphere_searise_greenland";
-    ierr = PISMOptionsString(option_prefix + "_file",
+    ierr = OptionsString(option_prefix + "_file",
                              "Specifies a file with boundary conditions",
                              m_precip_filename, precip_file_set); CHKERRQ(ierr);
   }

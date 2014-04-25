@@ -28,20 +28,20 @@ namespace pism {
 class EnthalpyConverter;
 
 //! Climate inputs for verification tests.
-class PSVerification : public PISMSurfaceModel {
+class PSVerification : public SurfaceModel {
 public:
-  PSVerification(IceGrid &g, const PISMConfig &conf, EnthalpyConverter *EC, int test);
+  PSVerification(IceGrid &g, const Config &conf, EnthalpyConverter *EC, int test);
   ~PSVerification();
 
   // the interface:
-  PetscErrorCode init(PISMVars &vars);
-  void attach_atmosphere_model(PISMAtmosphereModel *input);
+  PetscErrorCode init(Vars &vars);
+  void attach_atmosphere_model(AtmosphereModel *input);
   PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   PetscErrorCode update(PetscReal t, PetscReal dt);
   void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                  PISM_IO_Type nctype);
+                                  IO_Type nctype);
   PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 private:
   int m_testname;

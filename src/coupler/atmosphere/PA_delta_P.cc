@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PA_delta_P::PA_delta_P(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
+PA_delta_P::PA_delta_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
 {
@@ -62,7 +62,7 @@ PA_delta_P::~PA_delta_P()
   // empty
 }
 
-PetscErrorCode PA_delta_P::init(PISMVars &vars) {
+PetscErrorCode PA_delta_P::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -117,7 +117,7 @@ void PA_delta_P::add_vars_to_output(std::string keyword, std::set<std::string> &
 
 
 PetscErrorCode PA_delta_P::define_variables(std::set<std::string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+                                            IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

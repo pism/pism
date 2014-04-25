@@ -25,7 +25,7 @@ namespace pism {
 
 /* Purely plastic */
 
-IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const PISMConfig &config)
+IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
   : m_unit_system(config.get_unit_system()) {
   plastic_regularize = config.get("plastic_regularization", "m/year", "m/second");
 }
@@ -61,7 +61,7 @@ void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, 
 
 /* Pseudo-plastic */
 
-IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const PISMConfig &config)
+IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Config &config)
   : IceBasalResistancePlasticLaw(config) {
   pseudo_q = config.get("pseudo_plastic_q");
   pseudo_u_threshold = config.get("pseudo_plastic_uthreshold", "m/year", "m/second");

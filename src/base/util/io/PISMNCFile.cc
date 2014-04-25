@@ -30,35 +30,35 @@
 
 namespace pism {
 
-PISMNCFile::PISMNCFile(MPI_Comm c)
+NCFile::NCFile(MPI_Comm c)
   : com(c) {
   ncid = -1;
   define_mode = false;
   m_xs = m_xm = m_ys = m_ym = -1;
 }
 
-PISMNCFile::~PISMNCFile() {
+NCFile::~NCFile() {
   // empty
 }
 
-std::string PISMNCFile::get_filename() const {
+std::string NCFile::get_filename() const {
   return m_filename;
 }
 
-int PISMNCFile::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type nctype, double value) const {
+int NCFile::put_att_double(std::string variable_name, std::string att_name, IO_Type nctype, double value) const {
   std::vector<double> tmp(1);
   tmp[0] = value;
   return put_att_double(variable_name, att_name, nctype, tmp);
 }
 
 //! \brief Prints an error message; for debugging.
-void PISMNCFile::check(int return_code) const {
+void NCFile::check(int return_code) const {
   if (return_code != NC_NOERR) {
     fprintf(stderr, "NC_ERR: %s\n", nc_strerror(return_code));
   }
 }
 
-void PISMNCFile::set_local_extent(unsigned int xs, unsigned int xm,
+void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
                                   unsigned int ys, unsigned int ym) const {
   m_xs = xs;
   m_xm = xm;
@@ -70,7 +70,7 @@ void PISMNCFile::set_local_extent(unsigned int xs, unsigned int xm,
 /*!
  * Note: only processor 0 does the renaming.
  */
-int PISMNCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
+int NCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
   int stat, rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -110,7 +110,7 @@ int PISMNCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
 /*!
  * Note: only processor 0 does the job.
  */
-int PISMNCFile::remove_if_exists(std::string file_to_remove, int rank_to_use) {
+int NCFile::remove_if_exists(std::string file_to_remove, int rank_to_use) {
   int stat, rank = 0;
   MPI_Comm_rank(com, &rank);
 

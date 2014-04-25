@@ -286,7 +286,7 @@ void pism::PISMEndQuiet() {
   PISMEnd();
 }
 
-PetscErrorCode pism::PISMGetTime(PetscLogDouble *result) {
+PetscErrorCode pism::GetTime(PetscLogDouble *result) {
 #if PETSC_VERSION_LT(3,4,0)
   PetscErrorCode ierr = PetscGetTime(result); CHKERRQ(ierr);
 #else

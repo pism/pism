@@ -23,7 +23,7 @@
 
 namespace pism {
 
-EnthalpyConverter::EnthalpyConverter(const PISMConfig &config) {
+EnthalpyConverter::EnthalpyConverter(const Config &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
   g     = config.get("standard_gravity");                        // m s-2

@@ -61,7 +61,7 @@ Instead see the PSForceThickness surface model modifier class.
 //! no_model_mask and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, PISMConfig &c, PISMConfig &o)
+  IceRegionalModel(IceGrid &g, Config &c, Config &o)
      : IceModel(g,c,o) {};
 protected:
   virtual PetscErrorCode set_vars_from_options();
@@ -74,7 +74,7 @@ protected:
   virtual PetscErrorCode massContExplicitStep();
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<PISMVector2> input_velocity,
+                                     planeStar<Vector2> input_velocity,
                                      planeStar<double> input_flux,
                                      planeStar<double> &output_velocity,
                                      planeStar<double> &output_flux);
@@ -180,7 +180,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
   ierr = bmr_stored.copy_from(basal_melt_rate); CHKERRQ(ierr);
 
   bool zgwnm;
-  ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
   if (zgwnm) {
     ierr = thkstore.set(0.0); CHKERRQ(ierr);
     ierr = usurfstore.set(0.0); CHKERRQ(ierr);
@@ -188,7 +188,7 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
 
   bool nmstripSet;
   double stripkm = 0.0;
-  ierr = PISMOptionsReal("-no_model_strip", 
+  ierr = OptionsReal("-no_model_strip", 
                          "width in km of strip near boundary in which modeling is turned off",
                          stripkm, nmstripSet);
 
@@ -230,8 +230,8 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
     SETERRQ(grid.com, 1, "invalid stress balance model");
   }
 
-  // ~PISMStressBalance() will de-allocate sliding and modifier.
-  stress_balance = new PISMStressBalance(grid, sliding, modifier, config);
+  // ~StressBalance() will de-allocate sliding and modifier.
+  stress_balance = new StressBalance(grid, sliding, modifier, config);
 
   // PISM stress balance computations are diagnostic, i.e. do not
   // have a state that changes in time.  Therefore this call can be here
@@ -259,9 +259,9 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
     std::string yield_stress_model = config.get_string("yield_stress_model");
 
     if (yield_stress_model == "constant") {
-      basal_yield_stress_model = new PISMConstantYieldStress(grid, config);
+      basal_yield_stress_model = new ConstantYieldStress(grid, config);
     } else if (yield_stress_model == "mohr_coulomb") {
-      basal_yield_stress_model = new PISMRegionalDefaultYieldStress(grid, config, subglacial_hydrology);
+      basal_yield_stress_model = new RegionalDefaultYieldStress(grid, config, subglacial_hydrology);
     } else {
       PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
                   yield_stress_model.c_str());
@@ -290,7 +290,7 @@ PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
   PIO nc(grid, "guess_mode");
 
   bool no_model_strip_set;
-  ierr = PISMOptionsIsSet("-no_model_strip", "No-model strip, in km",
+  ierr = OptionsIsSet("-no_model_strip", "No-model strip, in km",
                           no_model_strip_set); CHKERRQ(ierr);
 
   if (no_model_strip_set) {
@@ -323,7 +323,7 @@ PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
   }
 
   bool zgwnm;
-  ierr = PISMOptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-zero_grad_where_no_model", zgwnm); CHKERRQ(ierr);
   if (zgwnm) {
     thkstore.metadata().set_string("pism_intent", "internal");
     usurfstore.metadata().set_string("pism_intent", "internal");
@@ -351,7 +351,7 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
   // base class reads the -boot_file option and does the bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
 
-  ierr = PISMOptionsIsSet("-no_model_strip", 
+  ierr = OptionsIsSet("-no_model_strip", 
                           "width in km of strip near boundary in which modeling is turned off",
                           nmstripSet);
   if (!nmstripSet) {
@@ -385,7 +385,7 @@ PetscErrorCode IceRegionalModel::massContExplicitStep() {
 
 void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
                                              int i, int j,
-                                             planeStar<PISMVector2> input_velocity,
+                                             planeStar<Vector2> input_velocity,
                                              planeStar<double> input_flux,
                                              planeStar<double> &output_velocity,
                                              planeStar<double> &output_flux) {
@@ -397,10 +397,10 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
                                   output_flux);
 
   planeStar<int> nmm = no_model_mask.int_star(i,j);
-  PISM_Direction dirs[4] = {North, East, South, West};
+  Direction dirs[4] = {North, East, South, West};
 
   for (int n = 0; n < 4; ++n) {
-    PISM_Direction direction = dirs[n];
+    Direction direction = dirs[n];
 
       if ((nmm.ij == 1) ||
           (nmm.ij == 0 && nmm[direction] == 1)) {
@@ -474,8 +474,8 @@ int main(int argc, char *argv[]) {
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
     bool iset, bfset;
-    ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-i", iset); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
     std::string usage =
       "  pismo {-i IN.nc|-boot_file IN.nc} [-no_model_strip X] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
@@ -497,8 +497,8 @@ int main(int argc, char *argv[]) {
       ierr = show_usage_check_req_opts(com, "pismo", required, usage); CHKERRQ(ierr);
     }
 
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 

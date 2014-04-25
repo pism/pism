@@ -219,7 +219,7 @@ PetscErrorCode LocalInterpCtx::printArray() {
   return 0;
 }
 
-void LocalInterpCtx::print_grid_info(grid_info g, PISMUnitSystem s, int threshold) {
+void LocalInterpCtx::print_grid_info(grid_info g, UnitSystem s, int threshold) {
 
   verbPrintf(threshold, com,
              "\nRegridding file grid info:\n");

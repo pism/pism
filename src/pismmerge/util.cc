@@ -57,7 +57,7 @@ std::string output_filename(std::string input, std::string var_name) {
 }
 
 //! \brief Gets the total number of patches.
-int get_quilt_size(pism::PISMNC4_Serial &input, int &mpi_size) {
+int get_quilt_size(pism::NC4_Serial &input, int &mpi_size) {
   int stat;
 
   std::vector<double> tmp;
@@ -74,7 +74,7 @@ int get_quilt_size(pism::PISMNC4_Serial &input, int &mpi_size) {
 //! \brief Checks if all input files are present. (We do this before creating
 //! the output file to make sure we don't end up bailing in the middle of it.)
 int check_input_files(std::string filename) {
-  pism::PISMNC4_Serial nc(MPI_COMM_SELF, 0);
+  pism::NC4_Serial nc(MPI_COMM_SELF, 0);
   int stat;
 
   stat = nc.open(patch_filename(filename, 0), pism::PISM_READONLY);
@@ -104,7 +104,7 @@ int check_input_files(std::string filename) {
 
 //! \brief Reads the size of the local patch and its location within the
 //! dataset from an input file.
-int patch_geometry(pism::PISMNC4_Serial &input, int &xs, int &ys,
+int patch_geometry(pism::NC4_Serial &input, int &xs, int &ys,
                    unsigned int &xm, unsigned int &ym) {
   int stat;
   std::vector<double> tmp;

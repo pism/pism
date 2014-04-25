@@ -26,13 +26,13 @@ namespace pism {
 //! Initializes the scale parameters of the parameterization.
 /*! Every IPDesignVariableParameterization has an associated scale for the design variable
 \f$d_{\rm scale}\f$ that equals 1 in internal units.  The scale for a design variable named \a foo
-is stored in an PISMConfig file as design_param_foo_scale.  Subclasses may have additional
+is stored in an Config file as design_param_foo_scale.  Subclasses may have additional
 parameters that are follow the naming convention \a design_param_foo_*.
 
 \param config          The config file to read the scale parameters from.
 \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
 */
-PetscErrorCode IPDesignVariableParameterization::set_scales(const PISMConfig & config, const char *design_var_name ) {
+PetscErrorCode IPDesignVariableParameterization::set_scales(const Config & config, const char *design_var_name ) {
   std::string key("design_param_");
   key += design_var_name;
   key += "_scale";
@@ -121,7 +121,7 @@ PetscErrorCode IPDesignVariableParamSquare::fromDesignVariable(double d, double 
   return 0;
 }
 
-PetscErrorCode IPDesignVariableParamExp::set_scales(const PISMConfig &config, const char *design_var_name ) {
+PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const char *design_var_name ) {
   PetscErrorCode ierr;
   ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
 
@@ -155,7 +155,7 @@ PetscErrorCode IPDesignVariableParamExp::fromDesignVariable(double d, double *OU
 }
 
 
-PetscErrorCode IPDesignVariableParamTruncatedIdent::set_scales(const PISMConfig &config,
+PetscErrorCode IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
                                                                const char *design_var_name ) {
   PetscErrorCode ierr;
   ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);

@@ -65,7 +65,7 @@ public:
   
   virtual ~IPDesignVariableParameterization() {};
 
-  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const Config &config, const char *design_var_name);
 
   //! Converts from parameterization value \f$\zeta\f$ to \f$d=g(\zeta)\f$.
   /*!
@@ -120,7 +120,7 @@ public:
 
   virtual ~IPDesignVariableParamExp() {};
 
-  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const Config &config, const char *design_var_name);
 
   virtual PetscErrorCode toDesignVariable( double p, double *value, double *derivative);
 
@@ -142,7 +142,7 @@ public:
 
   virtual ~IPDesignVariableParamTruncatedIdent() {};
 
-  virtual PetscErrorCode set_scales( const PISMConfig &config, const char *design_var_name);
+  virtual PetscErrorCode set_scales( const Config &config, const char *design_var_name);
 
   virtual PetscErrorCode toDesignVariable( double p, double *value, double *derivative);
 

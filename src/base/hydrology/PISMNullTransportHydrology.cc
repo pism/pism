@@ -22,31 +22,31 @@
 
 namespace pism {
 
-PISMNullTransportHydrology::PISMNullTransportHydrology(IceGrid &g, const PISMConfig &conf)
-  : PISMHydrology(g, conf) {
+NullTransportHydrology::NullTransportHydrology(IceGrid &g, const Config &conf)
+  : Hydrology(g, conf) {
 }
 
-PISMNullTransportHydrology::~PISMNullTransportHydrology() {
+NullTransportHydrology::~NullTransportHydrology() {
 }
 
-PetscErrorCode PISMNullTransportHydrology::init(PISMVars &vars) {
+PetscErrorCode NullTransportHydrology::init(Vars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
     "* Initializing the null-transport (till only) subglacial hydrology model ...\n"); CHKERRQ(ierr);
-  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
+  ierr = Hydrology::init(vars); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
-PetscErrorCode PISMNullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
+PetscErrorCode NullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
   return 0;
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the non-existent transportable water, because this is the least harmful output if this is misused.
-PetscErrorCode PISMNullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+PetscErrorCode NullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
   return 0;
 }
@@ -65,7 +65,7 @@ not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-PetscErrorCode PISMNullTransportHydrology::update(double icet, double icedt) {
+PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6))
     return 0;
@@ -81,7 +81,7 @@ PetscErrorCode PISMNullTransportHydrology::update(double icet, double icedt) {
 
   if (tillwat_max < 0.0) {
     PetscPrintf(grid.com,
-       "PISMNullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
+       "NullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
        "            this is not allowed ... ENDING ... \n\n");
     PISMEnd();
   }

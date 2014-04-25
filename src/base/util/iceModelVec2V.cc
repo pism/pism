@@ -42,16 +42,16 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, std::string my_short_nam
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::get_array(PISMVector2** &a) {
+PetscErrorCode IceModelVec2V::get_array(Vector2** &a) {
   PetscErrorCode ierr;
   ierr = begin_access(); CHKERRQ(ierr);
-  a = static_cast<PISMVector2**>(array);
+  a = static_cast<Vector2**>(array);
   return 0;
 }
 
 PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PISMVector2** a;
+  Vector2** a;
   double **mag;
 
   ierr = result.get_array(mag); CHKERRQ(ierr);

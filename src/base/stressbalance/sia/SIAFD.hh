@@ -20,11 +20,11 @@
 #define _SIAFD_H_
 
 #include "SSB_Modifier.hh"      // derivesfrom SSB_Modifier
-#include "PISMDiagnostic.hh"    // derives from PISMDiag
+#include "PISMDiagnostic.hh"    // derives from Diag
 
 namespace pism {
 
-class PISMBedSmoother;
+class BedSmoother;
 
 /** Implements the shallow ice approximation stress balance.
  *
@@ -54,12 +54,12 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_h_x;
   friend class SIAFD_h_y;
 public:
-  SIAFD(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+  SIAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
     : SSB_Modifier(g, e, c), WIDE_STENCIL(2) { allocate(); }
 
   virtual ~SIAFD();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 
@@ -67,8 +67,8 @@ public:
   virtual PetscErrorCode extend_the_grid(int old_Mz);
 
   //! Add pointers to diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 
   virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
   { }
@@ -76,7 +76,7 @@ public:
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
+                                          IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
@@ -119,7 +119,7 @@ protected:
   IceModelVec3 work_3d[2];      // used to store I and strain_heating
   // on the staggered grid
 
-  PISMBedSmoother *bed_smoother;
+  BedSmoother *bed_smoother;
   const int WIDE_STENCIL;
   int bed_state_counter;
 
@@ -135,10 +135,10 @@ protected:
 /*!
   See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 */
-class SIAFD_schoofs_theta : public PISMDiag<SIAFD>
+class SIAFD_schoofs_theta : public Diag<SIAFD>
 {
 public:
-  SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -147,10 +147,10 @@ public:
 /*!
   See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 */
-class SIAFD_topgsmooth : public PISMDiag<SIAFD>
+class SIAFD_topgsmooth : public Diag<SIAFD>
 {
 public:
-  SIAFD_topgsmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -159,44 +159,44 @@ public:
 /*!
   See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 */
-class SIAFD_thksmooth : public PISMDiag<SIAFD>
+class SIAFD_thksmooth : public Diag<SIAFD>
 {
 public:
-  SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Compute diffusivity of the SIA flow.
-class SIAFD_diffusivity : public PISMDiag<SIAFD>
+class SIAFD_diffusivity : public Diag<SIAFD>
 {
 public:
-  SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  SIAFD_diffusivity(SIAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Compute diffusivity of the SIA flow (on the staggered grid).
-class SIAFD_diffusivity_staggered : public PISMDiag<SIAFD>
+class SIAFD_diffusivity_staggered : public Diag<SIAFD>
 {
 public:
-  SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Reports the x-component of the ice surface gradient on the staggered
 //! grid as computed by SIAFD.
-class SIAFD_h_x : public PISMDiag<SIAFD>
+class SIAFD_h_x : public Diag<SIAFD>
 {
 public:
-  SIAFD_h_x(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Reports the y-component of the ice surface gradient on the staggered
 //! grid as computed by SIAFD.
-class SIAFD_h_y : public PISMDiag<SIAFD>
+class SIAFD_h_y : public Diag<SIAFD>
 {
 public:
-  SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

@@ -24,13 +24,13 @@
 
 namespace pism {
 
-class PA_delta_P : public PScalarForcing<PISMAtmosphereModel,PAModifier>
+class PA_delta_P : public PScalarForcing<AtmosphereModel,PAModifier>
 {
 public:
-  PA_delta_P(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
+  PA_delta_P(IceGrid &g, const Config &conf, AtmosphereModel* in);
   virtual ~PA_delta_P();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
@@ -40,7 +40,7 @@ public:
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
 
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 

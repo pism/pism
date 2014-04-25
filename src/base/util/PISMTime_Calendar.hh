@@ -24,13 +24,13 @@
 
 namespace pism {
 
-class PISMTime_Calendar : public PISMTime
+class Time_Calendar : public Time
 {
 public:
-  PISMTime_Calendar(MPI_Comm c, const PISMConfig &conf,
+  Time_Calendar(MPI_Comm c, const Config &conf,
                     std::string calendar,
-                    PISMUnitSystem units_system);
-  virtual ~PISMTime_Calendar();
+                    UnitSystem units_system);
+  virtual ~Time_Calendar();
 
   virtual PetscErrorCode init();
 
@@ -85,8 +85,8 @@ protected:
   PetscErrorCode compute_times_yearly(std::vector<double> &result);
 private:
   // Hide copy constructor / assignment operator.
-  PISMTime_Calendar(PISMTime_Calendar const &);
-  PISMTime_Calendar & operator=(PISMTime_Calendar const &);
+  Time_Calendar(Time_Calendar const &);
+  Time_Calendar & operator=(Time_Calendar const &);
 };
 
 

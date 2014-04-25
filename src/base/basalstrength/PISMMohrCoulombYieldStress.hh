@@ -28,19 +28,19 @@ namespace pism {
 
 
 //! \brief PISM's default basal yield stress model which applies the Mohr-Coulomb model of deformable, pressurized till.
-class PISMMohrCoulombYieldStress : public PISMYieldStress
+class MohrCoulombYieldStress : public YieldStress
 {
 public:
-  PISMMohrCoulombYieldStress(IceGrid &g, const PISMConfig &conf, PISMHydrology *hydro);
+  MohrCoulombYieldStress(IceGrid &g, const Config &conf, Hydrology *hydro);
 
-  virtual ~PISMMohrCoulombYieldStress();
+  virtual ~MohrCoulombYieldStress();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
 
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
@@ -53,8 +53,8 @@ protected:
   IceModelVec2S m_bwat;  // only allocated and used if tauc_add_transportable_water = true
   IceModelVec2S *m_bed_topography;
   IceModelVec2Int *m_mask;
-  PISMVars *m_variables;
-  PISMHydrology *m_hydrology;
+  Vars *m_variables;
+  Hydrology *m_hydrology;
 
   PetscErrorCode allocate();
   PetscErrorCode topg_to_phi();

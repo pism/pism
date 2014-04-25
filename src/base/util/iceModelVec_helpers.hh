@@ -37,7 +37,7 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
  * IceModelVec2S::operator() and IceModelVec2V::operator() return different
  * types.
  *
- * Note: this code uses overloaded operators (PISMVector2::operator*, etc).
+ * Note: this code uses overloaded operators (Vector2::operator*, etc).
  */
 template<class V>
 PetscErrorCode add_2d(IceModelVec* const x_in, double alpha, IceModelVec* const y_in,

@@ -27,11 +27,11 @@ namespace pism {
 class IceModelVec2S;
 
 //! A very rudimentary PISM ocean model.
-class PISMOceanModel : public PISMComponent_TS {
+class OceanModel : public Component_TS {
 public:
-  PISMOceanModel(IceGrid &g, const PISMConfig &conf)
-    : PISMComponent_TS(g, conf), sea_level(0) {}
-  virtual ~PISMOceanModel() {};
+  OceanModel(IceGrid &g, const Config &conf)
+    : Component_TS(g, conf), sea_level(0) {}
+  virtual ~OceanModel() {};
 
   virtual PetscErrorCode sea_level_elevation(double &result) = 0;
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result) = 0;

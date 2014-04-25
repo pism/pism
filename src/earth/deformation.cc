@@ -54,7 +54,7 @@ BedDeformLC::~BedDeformLC() {
   }
 }
 
-PetscErrorCode BedDeformLC::settings(const PISMConfig &config,
+PetscErrorCode BedDeformLC::settings(const Config &config,
                                      bool  myinclude_elastic,
                                      int myMx, int myMy,
                                      double mydx, double mydy,

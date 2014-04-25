@@ -43,9 +43,9 @@
 
 namespace pism {
 
-static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
+static NCFile* create_backend(MPI_Comm com, std::string mode) {
   if (mode == "netcdf3") {
-    return new PISMNC3File(com);
+    return new NC3File(com);
   } else if (mode.find("quilt") == 0) {
     size_t n = mode.find(":");
     int compression_level = 0;
@@ -61,21 +61,21 @@ static PISMNCFile* create_backend(MPI_Comm com, std::string mode) {
       }
     }
 
-    return new PISMNC4_Quilt(com, compression_level);
+    return new NC4_Quilt(com, compression_level);
   }
 #if (PISM_USE_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
-    return new PISMNC4_Par(com);
+    return new NC4_Par(com);
   }
 #endif
 #if (PISM_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
-    return new PISMPNCFile(com);
+    return new PNCFile(com);
   }
 #endif
 #if (PISM_USE_HDF5==1)
   else if (mode == "hdf5") {
-    return new PISMNC4_HDF5(com);
+    return new NC4_HDF5(com);
   }
 #endif
   else {
@@ -100,7 +100,7 @@ void PIO::constructor(MPI_Comm c, std::string mode) {
   }
 }
 
-PIO::PIO(MPI_Comm c, std::string mode, PISMUnitSystem units_system)
+PIO::PIO(MPI_Comm c, std::string mode, UnitSystem units_system)
   : m_unit_system(units_system) {
   constructor(c, mode);
 }
@@ -134,7 +134,7 @@ PetscErrorCode PIO::detect_mode(std::string filename) {
   if (nc != NULL)
     return 1;
 
-  PISMNC3File nc3(m_com);
+  NC3File nc3(m_com);
 
   stat = nc3.open(filename, PISM_READONLY);
   if (stat != 0) {
@@ -203,7 +203,7 @@ PetscErrorCode PIO::check_if_exists(std::string filename, bool &result) {
 }
 
 
-PetscErrorCode PIO::open(std::string filename, PISM_IO_Mode mode) {
+PetscErrorCode PIO::open(std::string filename, IO_Mode mode) {
   PetscErrorCode stat;
 
   // opening for reading
@@ -443,7 +443,7 @@ PetscErrorCode PIO::inq_dimlen(std::string name, unsigned int &result) const {
 PetscErrorCode PIO::inq_dimtype(std::string name, AxisType &result) const {
   PetscErrorCode ierr;
   std::string axis, standard_name, units;
-  PISMUnit tmp_units(m_unit_system);
+  Unit tmp_units(m_unit_system);
   bool exists;
 
   ierr = nc->inq_varid(name, exists); CHKERRQ(ierr);
@@ -465,7 +465,7 @@ PetscErrorCode PIO::inq_dimtype(std::string name, AxisType &result) const {
     PISMEnd();
   }
 
-  PISMUnit seconds(m_unit_system);
+  Unit seconds(m_unit_system);
   int errcode = seconds.parse("seconds");
   assert(errcode == 0);
   if (units_are_convertible(tmp_units, seconds)) {
@@ -612,7 +612,7 @@ PetscErrorCode PIO::inq_grid(std::string var_name, IceGrid *grid, Periodicity pe
   variables: in these two cases we need to handle the reference date
   correctly.
  */
-PetscErrorCode PIO::inq_units(std::string name, bool &has_units, PISMUnit &units) const {
+PetscErrorCode PIO::inq_units(std::string name, bool &has_units, Unit &units) const {
   PetscErrorCode ierr;
   std::string units_string;
 
@@ -735,7 +735,7 @@ PetscErrorCode PIO::def_dim(unsigned long int length,
 }
 
 //! \brief Define a variable.
-PetscErrorCode PIO::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
+PetscErrorCode PIO::def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const {
   PetscErrorCode ierr;
 
   ierr = nc->def_var(name, nctype, dims); CHKERRQ(ierr);
@@ -857,7 +857,7 @@ PetscErrorCode PIO::append_history(std::string history) const {
 }
 
 //! \brief Write a multiple-valued double attribute.
-PetscErrorCode PIO::put_att_double(std::string var_name, std::string att_name, PISM_IO_Type nctype,
+PetscErrorCode PIO::put_att_double(std::string var_name, std::string att_name, IO_Type nctype,
                                    std::vector<double> values) const {
   PetscErrorCode ierr;
 
@@ -869,7 +869,7 @@ PetscErrorCode PIO::put_att_double(std::string var_name, std::string att_name, P
 }
 
 //! \brief Write a single-valued double attribute.
-PetscErrorCode PIO::put_att_double(std::string var_name, std::string att_name, PISM_IO_Type nctype,
+PetscErrorCode PIO::put_att_double(std::string var_name, std::string att_name, IO_Type nctype,
                                    double value) const {
   PetscErrorCode ierr;
   std::vector<double> tmp; tmp.push_back(value);
@@ -899,8 +899,8 @@ PetscErrorCode PIO::get_att_double(std::string var_name, std::string att_name,
                                    std::vector<double> &result) const {
 
   PetscErrorCode ierr;
-  PISM_IO_Type att_type;
-  // virtual int inq_atttype(string variable_name, string att_name, PISM_IO_Type &result) const = 0;
+  IO_Type att_type;
+  // virtual int inq_atttype(string variable_name, string att_name, IO_Type &result) const = 0;
 
   ierr = nc->inq_atttype(var_name, att_name, att_type); CHKERRQ(ierr);
 
@@ -977,7 +977,7 @@ PetscErrorCode PIO::inq_attname(std::string var_name, unsigned int n, std::strin
 }
 
 
-PetscErrorCode PIO::inq_atttype(std::string var_name, std::string att_name, PISM_IO_Type &result) const {
+PetscErrorCode PIO::inq_atttype(std::string var_name, std::string att_name, IO_Type &result) const {
   PetscErrorCode ierr = nc->inq_atttype(var_name, att_name, result); CHKERRQ(ierr);
   return 0;
 }
@@ -1371,7 +1371,7 @@ PetscErrorCode PIO::read_attributes(std::string name, NCVariable &variable) cons
 
   for (int j = 0; j < nattrs; ++j) {
     std::string attribute_name;
-    PISM_IO_Type nctype;
+    IO_Type nctype;
     ierr = this->inq_attname(name, j, attribute_name); CHKERRQ(ierr);
     ierr = this->inq_atttype(name, attribute_name, nctype); CHKERRQ(ierr);
 
@@ -1406,7 +1406,7 @@ PetscErrorCode PIO::read_attributes(std::string name, NCVariable &variable) cons
   \li if both valid_min and valid_max are set, then valid_range is written
   instead of the valid_min, valid_max pair.
  */
-PetscErrorCode PIO::write_attributes(const NCVariable &var, PISM_IO_Type nctype,
+PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
                                      bool write_in_glaciological_units) const {
   int ierr;
 
@@ -1526,7 +1526,7 @@ PetscErrorCode PIO::write_global_attributes(const NCVariable &var) const {
  */
 PetscErrorCode PIO::read_valid_range(std::string name, NCVariable &variable) const {
   std::string input_units_string;
-  PISMUnit input_units(variable.get_units().get_system());
+  Unit input_units(variable.get_units().get_system());
   std::vector<double> bounds;
   int ierr;
 
@@ -1571,7 +1571,7 @@ PetscErrorCode PIO::read_valid_range(std::string name, NCVariable &variable) con
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
-                                    PISMTime *time,
+                                    Time *time,
                                     std::vector<double> &data) const {
   PetscErrorCode ierr;
   bool variable_exists;
@@ -1625,7 +1625,7 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
 
   bool input_has_units;
   std::string input_units_string;
-  PISMUnit internal_units = metadata.get_units(),
+  Unit internal_units = metadata.get_units(),
     input_units(internal_units.get_system());
 
   ierr = this->get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
@@ -1662,7 +1662,7 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
 }
 
 PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
-                                     double data, PISM_IO_Type nctype) const {
+                                     double data, IO_Type nctype) const {
   PetscErrorCode ierr;
   std::vector<double> vector_data(1, data);
 
@@ -1677,7 +1677,7 @@ PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_star
  */
 PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
                                      std::vector<double> &data,
-                                     PISM_IO_Type nctype) const {
+                                     IO_Type nctype) const {
   PetscErrorCode ierr;
   bool variable_exists = false;
 
@@ -1705,7 +1705,7 @@ PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_star
 }
 
 PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
-                                     PISMTime *time,
+                                     Time *time,
                                      std::vector<double> &data) const {
   PetscErrorCode ierr;
   bool variable_exists = false;
@@ -1714,7 +1714,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
     name     = metadata.get_name(),
     filename = this->inq_filename();
 
-  PISMUnit internal_units = metadata.get_units();
+  Unit internal_units = metadata.get_units();
 
   // Find the variable:
   ierr = this->inq_var(name, variable_exists); CHKERRQ(ierr);
@@ -1789,7 +1789,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
 
   bool input_has_units = false;
   std::string input_units_string;
-  PISMUnit input_units(internal_units.get_system());
+  Unit input_units(internal_units.get_system());
 
   ierr = this->get_att_text(dimension_name, "units", input_units_string); CHKERRQ(ierr);
   input_units_string = time->CF_units_to_PISM_units(input_units_string);
@@ -1827,7 +1827,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
 
 PetscErrorCode PIO::write_time_bounds(const NCTimeBounds &metadata,
                                       size_t t_start,
-                                      std::vector<double> &data, PISM_IO_Type nctype) const {
+                                      std::vector<double> &data, IO_Type nctype) const {
   PetscErrorCode ierr;
   bool variable_exists = false;
 

@@ -28,14 +28,14 @@ namespace pism {
 //! based on a temperature parameterization using mean annual and mean July
 //! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
 //! (constant in time) precipitation field.
-class PAYearlyCycle : public PISMAtmosphereModel {
+class PAYearlyCycle : public AtmosphereModel {
 public:
-  PAYearlyCycle(IceGrid &g, const PISMConfig &conf);
+  PAYearlyCycle(IceGrid &g, const Config &conf);
   virtual ~PAYearlyCycle();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(double my_t, double my_dt) = 0;
@@ -51,7 +51,7 @@ public:
 protected:
   PetscErrorCode init_internal(std::string input_filename, bool regrid,
                                unsigned int start);
-  PISMVars *m_variables;
+  Vars *m_variables;
   double m_snow_temp_july_day;
   std::string m_reference, m_precip_filename;
   IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_july, m_precipitation;

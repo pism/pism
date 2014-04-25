@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
@@ -56,10 +56,10 @@ int main(int argc, char *argv[]) {
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
     ierr = grid.allocate(); CHKERRQ(ierr);
 
-    PetscPrintf(grid.com,"PISMBedSmoother TEST\n");
+    PetscPrintf(grid.com,"BedSmoother TEST\n");
 
     bool show;
-    ierr = PISMOptionsIsSet("-show", show); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-show", show); CHKERRQ(ierr);
 
     IceModelVec2S topg, usurf, theta;
     ierr = topg.create(grid, "topg", WITH_GHOSTS, 1); CHKERRQ(ierr);
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     // actually use the smoother/bed-roughness-parameterizer
     config.set_double("Glen_exponent", 3.0);
     config.set_double("bed_smoother_range", 50.0e3);
-    PISMBedSmoother smoother(grid, config, 1);
+    BedSmoother smoother(grid, config, 1);
     ierr = smoother.preprocess_bed(topg); CHKERRQ(ierr);
     int Nx,Ny;
     ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);

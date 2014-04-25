@@ -37,21 +37,21 @@ PetscErrorCode IceModel::init_timeseries() {
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling scalar diagnostic time-series", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-ts_file", "Specifies the time-series output file name",
+    ierr = OptionsString("-ts_file", "Specifies the time-series output file name",
                              ts_filename, ts_file_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-ts_times", "Specifies a MATLAB-style range or a list of requested times",
+    ierr = OptionsString("-ts_times", "Specifies a MATLAB-style range or a list of requested times",
                              times, ts_times_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-ts_vars", "Specifies a comma-separated list of veriables to save",
+    ierr = OptionsString("-ts_vars", "Specifies a comma-separated list of veriables to save",
                              vars, ts_vars_set); CHKERRQ(ierr);
 
     // default behavior is to move the file aside if it exists already; option allows appending
-    ierr = PISMOptionsIsSet("-ts_append", append); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-ts_append", append); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  PISM_IO_Mode mode = PISM_READWRITE;
+  IO_Mode mode = PISM_READWRITE;
   if (append == false) {
     mode = PISM_READWRITE_MOVE;
   }
@@ -100,7 +100,7 @@ PetscErrorCode IceModel::init_timeseries() {
       ts_vars.insert(var_name);
 
   } else {
-    std::map<std::string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+    std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
     while (j != ts_diagnostics.end()) {
       ts_vars.insert(j->first);
       ++j;
@@ -136,7 +136,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
 
   // set the output file:
-  std::map<std::string,PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+  std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
     ierr = (j->second)->init(ts_filename); CHKERRQ(ierr);
     ++j;
@@ -178,7 +178,7 @@ PetscErrorCode IceModel::write_timeseries() {
     return 0;
   
   for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
-    PISMTSDiagnostic *diag = ts_diagnostics[*j];
+    TSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
       ierr = diag->update(grid.time->current() - dt, grid.time->current()); CHKERRQ(ierr);
@@ -195,7 +195,7 @@ PetscErrorCode IceModel::write_timeseries() {
       continue;
 
     for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
-      PISMTSDiagnostic *diag = ts_diagnostics[*j];
+      TSDiagnostic *diag = ts_diagnostics[*j];
 
       if (diag != NULL) {
         ierr = diag->save(ts_times[current_ts - 1], ts_times[current_ts]); CHKERRQ(ierr);
@@ -218,16 +218,16 @@ PetscErrorCode IceModel::init_extras() {
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling 2D and 3D diagnostic output", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-extra_file", "Specifies the output file",
+    ierr = OptionsString("-extra_file", "Specifies the output file",
                              extra_filename, extra_file_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-extra_times", "Specifies times to save at",
+    ierr = OptionsString("-extra_times", "Specifies times to save at",
                              times, extra_times_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
+    ierr = OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
                              vars, extra_vars_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsIsSet("-extra_split", "Specifies whether to save to separate files",
+    ierr = OptionsIsSet("-extra_split", "Specifies whether to save to separate files",
                             split); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -254,7 +254,7 @@ PetscErrorCode IceModel::init_extras() {
   }
 
   bool append;
-  ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-extra_append", append); CHKERRQ(ierr);
 
   if (append == true && split == true) {
     PetscPrintf(grid.com, "PISM ERROR: both -extra_split and -extra_append are set.\n");
@@ -406,7 +406,7 @@ PetscErrorCode IceModel::write_extras() {
 
     std::set<std::string>::iterator j = extra_vars.begin();
     while(j != extra_vars.end()) {
-      PISMDiagnostic *diag = diagnostics[*j];
+      Diagnostic *diag = diagnostics[*j];
 
       if (diag != NULL) {
         ierr = diag->update_cumulative(); CHKERRQ(ierr);
@@ -452,7 +452,7 @@ PetscErrorCode IceModel::write_extras() {
   double wall_clock_hours;
   if (grid.rank == 0) {
     PetscLogDouble current_time;
-    ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
+    ierr = GetTime(&current_time); CHKERRQ(ierr);
     wall_clock_hours = (current_time - start_time) / 3600.0;
   }
 
@@ -463,9 +463,9 @@ PetscErrorCode IceModel::write_extras() {
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append = false;
-    ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-extra_append", append); CHKERRQ(ierr);
 
-    PISM_IO_Mode mode = PISM_READWRITE;
+    IO_Mode mode = PISM_READWRITE;
     if (append == false) {
       mode = PISM_READWRITE_MOVE;
     }
@@ -608,7 +608,7 @@ PetscErrorCode IceModel::flush_timeseries() {
   PetscErrorCode ierr;
   // flush all the time-series buffers:
   for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
-    PISMTSDiagnostic *diag = ts_diagnostics[*j];
+    TSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
       ierr = diag->flush(); CHKERRQ(ierr);

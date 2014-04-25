@@ -32,11 +32,11 @@ namespace pism {
 class SIA_Sliding : public ShallowStressBalance
 {
 public:
-  SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
 
   virtual ~SIA_Sliding();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
@@ -46,7 +46,7 @@ public:
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/)
+                                          IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached

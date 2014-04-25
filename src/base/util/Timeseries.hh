@@ -74,10 +74,10 @@ class IceGrid;
 class Timeseries {
 public:
   Timeseries(IceGrid * g, std::string name, std::string dimension_name);
-  Timeseries(MPI_Comm com, PISMUnitSystem units_system,
+  Timeseries(MPI_Comm com, UnitSystem units_system,
              std::string name, std::string dimension_name);
   
-  PetscErrorCode read(const PIO &nc, PISMTime *time);
+  PetscErrorCode read(const PIO &nc, Time *time);
   PetscErrorCode write(const PIO &nc);
   double operator()(double time);
   double operator[](unsigned int j) const;
@@ -94,7 +94,7 @@ public:
 
   std::string short_name;
 protected:
-  PISMUnitSystem m_unit_system;
+  UnitSystem m_unit_system;
   NCTimeseries dimension, var;
   MPI_Comm com;
   NCTimeBounds bounds;

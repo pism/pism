@@ -39,12 +39,13 @@
 #include "pism_options.hh"
 #include "POConstant.hh"
 #include "PSVerification.hh"
+#include "Mask.hh"
 
 namespace pism {
 
 const double IceCompModel::secpera = 3.15569259747e7;
 
-IceCompModel::IceCompModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides, int mytest)
+IceCompModel::IceCompModel(IceGrid &g, Config &conf, Config &conf_overrides, int mytest)
   : IceModel(g, conf, conf_overrides) {
 
   // note lots of defaults are set by the IceModel constructor
@@ -154,7 +155,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
   /* This switch turns off actual numerical evolution and simply reports the
      exact solution. */
   bool flag;
-  ierr = PISMOptionsIsSet("-eo", flag); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-eo", flag); CHKERRQ(ierr);
   if (flag) {
     exactOnly = PETSC_TRUE;
     ierr = verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
@@ -234,7 +235,7 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
 
   // this switch changes Test K to make material properties for bedrock the same as for ice
   bool biiSet;
-  ierr = PISMOptionsIsSet("-bedrock_is_ice", biiSet); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-bedrock_is_ice", biiSet); CHKERRQ(ierr);
   if (biiSet == PETSC_TRUE) {
     if (testname == 'K') {
       ierr = verbPrintf(1,grid.com,
@@ -276,7 +277,7 @@ PetscErrorCode IceCompModel::allocate_stressbalance() {
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *EC, config);
     SIAFD *sia = new SIAFD(grid, *EC, config);
 
-    stress_balance = new PISMStressBalance(grid, ssb, sia, config);
+    stress_balance = new StressBalance(grid, ssb, sia, config);
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
   } else {
     ierr = IceModel::allocate_stressbalance(); CHKERRQ(ierr);
@@ -605,7 +606,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
 PetscErrorCode IceCompModel::fillSolnTestE() {
   PetscErrorCode  ierr;
   double     H, accum, dummy;
-  PISMVector2     bvel;
+  Vector2     bvel;
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
@@ -773,21 +774,21 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
 
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;
-  ierr = PISMGlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&areaexact, &gareaexact, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&areaexact, &gareaexact, grid.com); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&vol, &gvol, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&vol, &gvol, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
   volerr = PetscAbsReal(gvol - gvolexact);
   areaerr = PetscAbsReal(garea - gareaexact);
 
-  ierr = PISMGlobalMax(&Herr, &gmaxHerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&Herr, &gmaxHerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
   gavHerr = gavHerr/(grid.Mx*grid.My);
-  ierr = PISMGlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
   centerHerr = PetscAbsReal(gdomeH - gdomeHexact);
 
   return 0;
@@ -801,7 +802,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
   PetscErrorCode ierr;
   double    maxvecerr, avvecerr, maxuberr, maxvberr;
   double    ubexact,vbexact, dummy1,dummy2,dummy3;
-  PISMVector2    bvel;
+  Vector2    bvel;
 
   if (testname != 'E')
     SETERRQ(grid.com, 1,"basal velocity errors only computable for test E\n");
@@ -831,11 +832,11 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   ierr = vel_adv->end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
   const double xpeak = 450e3 * cos(25.0*(M_PI/180.0)),
@@ -955,7 +956,7 @@ PetscErrorCode IceCompModel::reportErrors() {
   PetscErrorCode  ierr;
 
   bool dont_report;
-  ierr = PISMOptionsIsSet("-no_report", "Don't report numerical errors",
+  ierr = OptionsIsSet("-no_report", "Don't report numerical errors",
                           dont_report); CHKERRQ(ierr);
 
   if (dont_report)
@@ -984,12 +985,12 @@ PetscErrorCode IceCompModel::reportErrors() {
 
   PIO nc(grid.com, "netcdf3", grid.get_unit_system()); // OK to use netcdf3
 
-  ierr = PISMOptionsString("-report_file", "NetCDF error report file",
+  ierr = OptionsString("-report_file", "NetCDF error report file",
                            filename, netcdf_report); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-append", "Append the NetCDF error report",
+  ierr = OptionsIsSet("-append", "Append the NetCDF error report",
                           append); CHKERRQ(ierr);
 
-  PISM_IO_Mode mode = PISM_READWRITE;
+  IO_Mode mode = PISM_READWRITE;
   if (append == false) {
     mode = PISM_READWRITE_MOVE;
   }
@@ -1288,11 +1289,11 @@ PetscErrorCode IceCompModel::test_V_init() {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (i <= 2) {
         vBCMask(i,j) = 1;
-        vBCvel(i,j)  = PISMVector2(upstream_velocity, 0.0);
+        vBCvel(i,j)  = Vector2(upstream_velocity, 0.0);
         ice_thickness(i, j) = upstream_thk;
       } else {
         vBCMask(i,j) = 0;
-        vBCvel(i,j)  = PISMVector2(0.0, 0.0);
+        vBCvel(i,j)  = Vector2(0.0, 0.0);
         ice_thickness(i, j) = 0;
       }
     }

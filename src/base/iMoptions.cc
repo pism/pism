@@ -47,8 +47,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = set_config_from_options(grid.com, config); CHKERRQ(ierr);
 
-  ierr = PISMOptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
-  ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
+  ierr = OptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
+  ierr = OptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -113,7 +113,7 @@ PetscErrorCode IceModel::set_output_size(std::string option,
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
-  ierr = PISMOptionsList(grid.com, option,
+  ierr = OptionsList(grid.com, option,
                          description, choices,
                          default_value, keyword, flag); CHKERRQ(ierr);
 
@@ -216,7 +216,7 @@ std::string IceModel::get_output_size(std::string option) {
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
-  PISMOptionsList(grid.com, option,
+  OptionsList(grid.com, option,
                   "UNKNOWN", choices,
                   "UNKNOWN", keyword, flag);
   return keyword;

@@ -27,7 +27,7 @@ namespace pism {
 
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
                                                        IPDesignVariableParameterization &tp,
-                                                       const PISMConfig &c)
+                                                       const Config &c)
   : SSAFEM(g, e, c),
     m_grid(grid), m_zeta(NULL),
     m_fixed_design_locations(NULL),
@@ -87,25 +87,24 @@ kept.
 PetscErrorCode IP_SSAHardavForwardProblem::set_design(IceModelVec2S &new_zeta )
 {
   PetscErrorCode ierr;
-  int i, j, q;
 
   m_zeta = &new_zeta;
 
   // Convert zeta to hardav.
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
-  // Cache hardav at the quadrature points in feStore.
+  // Cache hardav at the quadrature points in m_coefficients.
   double hardav_q[FEQuadrature::Nq];
   ierr = m_hardav.begin_access(); CHKERRQ(ierr);
   int xs = m_element_index.xs, xm = m_element_index.xm,
-           ys = m_element_index.ys, ym = m_element_index.ym;
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys;j<ys+ym; j++) {
-      m_quadrature.computeTrialFunctionValues(i, j, dofmap, m_hardav, hardav_q);
+    ys = m_element_index.ys, ym = m_element_index.ym;
+  for (int i = xs; i < xs + xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
+      m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, m_hardav, hardav_q);
       const int ij = m_element_index.flatten(i, j);
-      FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq];
-      for (q=0; q<4; q++) {
-        feS[q].B = hardav_q[q];
+      SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+      for (int q = 0; q < FEQuadrature::Nq; q++) {
+        coefficients[q].B = hardav_q[q];
       }
     }
   }
@@ -136,13 +135,13 @@ of the residual is returned in \a RHS.*/
 PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
   PetscErrorCode ierr;
 
-  PISMVector2 **u_a, **rhs_a;
+  Vector2 **u_a, **rhs_a;
 
   ierr = u.get_array(u_a); CHKERRQ(ierr);
   ierr = RHS.get_array(rhs_a); CHKERRQ(ierr);
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_function(info, const_cast<const PISMVector2 **>(u_a), rhs_a); CHKERRQ(ierr);
+  ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
 
   ierr = u.end_access(); CHKERRQ(ierr);
   ierr = RHS.end_access(); CHKERRQ(ierr);
@@ -156,13 +155,13 @@ the method is identical to the assemble_residual returning values as a StateVec 
 PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
   PetscErrorCode ierr;
 
-  PISMVector2 **u_a, **rhs_a;
+  Vector2 **u_a, **rhs_a;
 
   ierr = u.get_array(u_a); CHKERRQ(ierr);
   ierr = DMDAVecGetArray(SSADA, RHS, &rhs_a); CHKERRQ(ierr);
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_function(info, const_cast<const PISMVector2 **>(u_a), rhs_a); CHKERRQ(ierr);
+  ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
 
   ierr = DMDAVecRestoreArray(SSADA, RHS, &rhs_a); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
@@ -181,11 +180,11 @@ to this method.
 PetscErrorCode IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
   PetscErrorCode ierr;
 
-  PISMVector2 **u_a;
+  Vector2 **u_a;
   ierr = u.get_array(u_a); CHKERRQ(ierr);
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_jacobian(info, const_cast<const PISMVector2 **>(u_a), Jac); CHKERRQ(ierr);
+  ierr = this->compute_local_jacobian(info, const_cast<const Vector2 **>(u_a), Jac); CHKERRQ(ierr);
 
   ierr = u.end_access(); CHKERRQ(ierr);
 
@@ -198,7 +197,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V
 */
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du) {
   PetscErrorCode ierr;
-  PISMVector2 **du_a;
+  Vector2 **du_a;
   ierr = du.get_array(du_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design(u, dzeta, du_a);
   ierr = du.end_access(); CHKERRQ(ierr);
@@ -211,7 +210,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 */
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du) {
   PetscErrorCode ierr;
-  PISMVector2 **du_a;
+  Vector2 **du_a;
   ierr = DMDAVecGetArray(SSADA, du, &du_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design(u, dzeta, du_a);
   ierr = DMDAVecRestoreArray(SSADA, du, &du_a); CHKERRQ(ierr);
@@ -241,7 +240,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 */
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                                  IceModelVec2S &dzeta,
-                                                                 PISMVector2 **du_a) {
+                                                                 Vector2 **du_a) {
   PetscErrorCode ierr;
 
   int i, j;
@@ -270,13 +269,13 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  double           m_dirichletWeight    = dirichletScale;
+  double           m_dirichletWeight    = m_dirichletScale;
 
-  PISMVector2 u_e[FEQuadrature::Nk];
-  PISMVector2 u_q[FEQuadrature::Nq];
+  Vector2 u_e[FEQuadrature::Nk];
+  Vector2 u_q[FEQuadrature::Nq];
   double Du_q[FEQuadrature::Nq][3];
 
-  PISMVector2 du_e[FEQuadrature::Nk];
+  Vector2 du_e[FEQuadrature::Nk];
 
   double dzeta_e[FEQuadrature::Nk];
 
@@ -311,8 +310,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
         du_e[k].v = 0;
       }
 
-      // Index into coefficient storage in feStore
-      const int ij = element_index.flatten(i, j);
+      // Index into coefficient storage in m_coefficients
+      const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -342,12 +341,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
         // Symmetric gradient at the quadrature point.
         double *Duqq = Du_q[q];
 
-        const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
 
         double d_nuH = 0;
-        if (feS->H >= strength_extension->get_min_thickness()) {
+        if (coefficients->H >= strength_extension->get_min_thickness()) {
           flow_law->effective_viscosity(dB_q[q], secondInvariantDu_2D(Duqq), &d_nuH, NULL);
-          d_nuH  *= (2*feS->H);
+          d_nuH  *= (2*coefficients->H);
         }
 
         for (int k=0; k<FEQuadrature::Nk; k++) {
@@ -443,14 +442,14 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   }
   ierr = du_local->begin_access(); CHKERRQ(ierr);
 
-  PISMVector2 u_e[FEQuadrature::Nk];
-  PISMVector2 u_q[FEQuadrature::Nq];
+  Vector2 u_e[FEQuadrature::Nk];
+  Vector2 u_q[FEQuadrature::Nq];
   double Du_q[FEQuadrature::Nq][3];
 
-  PISMVector2 du_e[FEQuadrature::Nk];
-  PISMVector2 du_q[FEQuadrature::Nq];
-  PISMVector2 du_dx_q[FEQuadrature::Nq];
-  PISMVector2 du_dy_q[FEQuadrature::Nq];
+  Vector2 du_e[FEQuadrature::Nk];
+  Vector2 du_q[FEQuadrature::Nq];
+  Vector2 du_dx_q[FEQuadrature::Nq];
+  Vector2 du_dy_q[FEQuadrature::Nq];
 
   double dzeta_e[FEQuadrature::Nk];
 
@@ -461,7 +460,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   // Aliases to help with notation consistency.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  double        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = m_dirichletScale;
   ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues,
                           m_dirichletWeight); CHKERRQ(ierr);
 
@@ -480,8 +479,8 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
            ys = m_element_index.ys, ym = m_element_index.ym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      // Index into coefficient storage in feStore
-      const int ij = element_index.flatten(i, j);
+      // Index into coefficient storage in m_coefficients
+      const int ij = m_element_index.flatten(i, j);
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, m_grid);
@@ -505,13 +504,13 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
         // Symmetric gradient at the quadrature point.
         double *Duqq = Du_q[q];
 
-        const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
+        const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq+q];
 
         // Determine "d_nuH/dB" at the quadrature point
         double d_nuH_dB = 0;
-        if (feS->H >= strength_extension->get_min_thickness()) {
+        if (coefficients->H >= strength_extension->get_min_thickness()) {
           flow_law->effective_viscosity(1., secondInvariantDu_2D(Duqq), &d_nuH_dB, NULL);
-          d_nuH_dB  *= (2*feS->H);
+          d_nuH_dB  *= (2*coefficients->H);
         }
 
         for (int k=0; k<FEQuadrature::Nk; k++) {
@@ -623,10 +622,10 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   // Aliases to help with notation consistency below.
   IceModelVec2Int *m_dirichletLocations = bc_locations;
   IceModelVec2V   *m_dirichletValues    = m_vel_bc;
-  double        m_dirichletWeight    = dirichletScale;
+  double        m_dirichletWeight    = m_dirichletScale;
 
   ierr = m_du_global.copy_from(du); CHKERRQ(ierr);
-  PISMVector2 **du_a;
+  Vector2 **du_a;
   ierr = m_du_global.get_array(du_a); CHKERRQ(ierr);
   DirichletData_Vector dirichletBC;
   ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight); CHKERRQ(ierr);

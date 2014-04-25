@@ -23,20 +23,20 @@
 
 namespace pism {
 
-class PISMNC4_Par : public PISMNC4File
+class NC4_Par : public NC4File
 {
 public:
-  PISMNC4_Par(MPI_Comm c)
-    : PISMNC4File(c, 0) {}
-  virtual ~PISMNC4_Par() {}
+  NC4_Par(MPI_Comm c)
+    : NC4File(c, 0) {}
+  virtual ~NC4_Par() {}
 
   // open/create/close
-  virtual int open(std::string filename, PISM_IO_Mode mode);
+  virtual int open(std::string filename, IO_Mode mode);
 
   virtual int create(std::string filename);
 
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const;
+  virtual int integer_open_mode(IO_Mode input) const;
   virtual int set_access_mode(int varid, bool mapped) const;
 };
 

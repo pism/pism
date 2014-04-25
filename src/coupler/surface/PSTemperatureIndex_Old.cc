@@ -29,8 +29,8 @@ namespace pism {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const PISMConfig &conf)
-  : PISMSurfaceModel(g, conf), ice_surface_temp(g.get_unit_system()) {
+PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
+  : SurfaceModel(g, conf), ice_surface_temp(g.get_unit_system()) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = config.get("pdd_factor_snow");
@@ -95,39 +95,39 @@ PSTemperatureIndex_Old::~PSTemperatureIndex_Old() {
   delete faustogreve;
 }
 
-PetscErrorCode PSTemperatureIndex_Old::init(PISMVars &vars) {
+PetscErrorCode PSTemperatureIndex_Old::init(Vars &vars) {
   PetscErrorCode ierr;
   bool           pdd_rand, pdd_rand_repeatable, fausto_params, pSet;
 
-  ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
+  ierr = SurfaceModel::init(vars); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
   CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-pdd_rand",
+    ierr = OptionsIsSet("-pdd_rand",
                             "Use a PDD implementation based on simulating a random process",
 			    pdd_rand); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-pdd_rand_repeatable",
+    ierr = OptionsIsSet("-pdd_rand_repeatable",
                             "Use a PDD implementation based on simulating a repeatable random process",
 			    pdd_rand_repeatable); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-pdd_fausto",
+    ierr = OptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
 			    fausto_params); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-pdd_annualize",
+    ierr = OptionsIsSet("-pdd_annualize",
                             "Compute annual mass balance, removing yearly variations",
                             pdd_annualize); CHKERRQ(ierr);
 
-    ierr = PISMOptionsReal("-pdd_factor_snow", "PDD snow factor",
+    ierr = OptionsReal("-pdd_factor_snow", "PDD snow factor",
                            base_ddf.snow, pSet); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-pdd_factor_ice", "PDD ice factor",
+    ierr = OptionsReal("-pdd_factor_ice", "PDD ice factor",
                            base_ddf.ice, pSet); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-pdd_refreeze", "PDD refreeze fraction",
+    ierr = OptionsReal("-pdd_refreeze", "PDD refreeze fraction",
                            base_ddf.refreezeFrac, pSet); CHKERRQ(ierr);
 
-    ierr = PISMOptionsReal("-pdd_std_dev", "PDD standard deviation",
+    ierr = OptionsReal("-pdd_std_dev", "PDD standard deviation",
                            base_pddStdDev, pSet); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-pdd_positive_threshold_temp",
+    ierr = OptionsReal("-pdd_positive_threshold_temp",
                            "PDD uses this temp in K to determine 'positive' temperatures",
                            base_pddThresholdTemp, pSet); CHKERRQ(ierr);
   }
@@ -323,7 +323,7 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      // the temperature time series from the PISMAtmosphereModel and its modifiers
+      // the temperature time series from the AtmosphereModel and its modifiers
       ierr = atmosphere->temp_time_series(i, j, &T[0]); CHKERRQ(ierr);
 
       if (faustogreve != NULL) {
@@ -414,10 +414,10 @@ void PSTemperatureIndex_Old::add_vars_to_output(std::string keyword, std::set<st
   atmosphere->add_vars_to_output(keyword, result);
 }
 
-PetscErrorCode PSTemperatureIndex_Old::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSTemperatureIndex_Old::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
-  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, temperature_name)) {
     ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
@@ -476,7 +476,7 @@ PetscErrorCode PSTemperatureIndex_Old::write_variables(std::set<std::string> var
     vars.erase("srunoff");
   }
 
-  ierr = PISMSurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
+  ierr = SurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

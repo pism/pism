@@ -25,8 +25,8 @@
 
 namespace pism {
 
-void PISMStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                                        std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
+void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                                        std::map<std::string, TSDiagnostic*> &ts_dict) {
 
   dict["bfrict"]   = new PSB_bfrict(this, grid, *m_variables);
 
@@ -55,8 +55,8 @@ void PISMStressBalance::get_diagnostics(std::map<std::string, PISMDiagnostic*> &
   m_modifier->get_diagnostics(dict, ts_dict);
 }
 
-PSB_velbar::PSB_velbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_velbar::PSB_velbar(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   dof = 2;
   vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
@@ -143,8 +143,8 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_velbar_mag::PSB_velbar_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_velbar_mag::PSB_velbar_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("velbar_mag", grid);
@@ -188,8 +188,8 @@ PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_flux_mag::PSB_flux_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_flux_mag::PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("flux_mag", grid);
@@ -235,8 +235,8 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_velbase_mag::PSB_velbase_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
- : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_velbase_mag::PSB_velbase_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
+ : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("velbase_mag", grid);
@@ -275,8 +275,8 @@ PetscErrorCode PSB_velbase_mag::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_velsurf_mag::PSB_velsurf_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
   // set metadata:
   vars[0].init_2d("velsurf_mag", grid);
 
@@ -316,8 +316,8 @@ PetscErrorCode PSB_velsurf_mag::compute(IceModelVec* &output) {
 }
 
 
-PSB_velsurf::PSB_velsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_velsurf::PSB_velsurf(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   dof = 2;
@@ -388,8 +388,8 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_wvel::PSB_wvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_wvel::PSB_wvel(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("wvel", grid, g.zlevels);
@@ -484,8 +484,8 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_wvelsurf::PSB_wvelsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_wvelsurf::PSB_wvelsurf(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("wvelsurf", grid);
@@ -542,8 +542,8 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_wvelbase::PSB_wvelbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_wvelbase::PSB_wvelbase(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("wvelbase", grid);
@@ -597,8 +597,8 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_velbase::PSB_velbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_velbase::PSB_velbase(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   dof = 2;
@@ -667,8 +667,8 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
 }
 
 
-PSB_bfrict::PSB_bfrict(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_bfrict::PSB_bfrict(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("bfrict", grid);
@@ -694,8 +694,8 @@ PetscErrorCode PSB_bfrict::compute(IceModelVec* &output) {
 }
 
 
-PSB_uvel::PSB_uvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_uvel::PSB_uvel(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("uvel", grid, g.zlevels);
@@ -749,8 +749,8 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_vvel::PSB_vvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_vvel::PSB_vvel(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("vvel", grid, g.zlevels);
@@ -804,8 +804,8 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_wvel_rel::PSB_wvel_rel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_wvel_rel::PSB_wvel_rel(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("wvel_rel", grid, g.zlevels);
@@ -860,8 +860,8 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
 }
 
 
-PSB_strainheat::PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_strainheat::PSB_strainheat(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("strainheat", grid, grid.zlevels);
@@ -887,8 +887,8 @@ PetscErrorCode PSB_strainheat::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_strain_rates::PSB_strain_rates(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_strain_rates::PSB_strain_rates(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
   dof = 2;
   vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
 
@@ -934,8 +934,8 @@ PetscErrorCode PSB_strain_rates::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_deviatoric_stresses::PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
   dof = 3;
   vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
 

@@ -51,7 +51,7 @@ PetscErrorCode SIA_Sliding::allocate() {
   return 0;
 }
 
-SIA_Sliding::SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf)
+SIA_Sliding::SIA_Sliding(IceGrid &g, EnthalpyConverter &e, const Config &conf)
   : ShallowStressBalance(g, e, conf)
 {
   verification_mode = false;
@@ -67,7 +67,7 @@ SIA_Sliding::~SIA_Sliding()
   }
 }
 
-PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
+PetscErrorCode SIA_Sliding::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);

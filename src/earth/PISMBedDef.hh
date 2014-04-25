@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMBedDef_hh
-#define __PISMBedDef_hh
+#ifndef __BedDef_hh
+#define __BedDef_hh
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
@@ -25,18 +25,18 @@
 namespace pism {
 
 //! PISM bed deformation model (base class).
-/*! Unlike other PISMComponent_TS derived classes, the update() method of
-  PISMBedDef has side-effects (modifies IceModel data members).
+/*! Unlike other Component_TS derived classes, the update() method of
+  BedDef has side-effects (modifies IceModel data members).
 */
-class PISMBedDef : public PISMComponent_TS {
+class BedDef : public Component_TS {
 public:
-  PISMBedDef(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMBedDef() {}
-  virtual PetscErrorCode init(PISMVars &vars);
+  BedDef(IceGrid &g, const Config &conf);
+  virtual ~BedDef() {}
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt) = 0;
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
@@ -51,11 +51,11 @@ protected:
 };
 
 //! Pointwide isostasy bed deformation model.
-class PBPointwiseIsostasy : public PISMBedDef {
+class PBPointwiseIsostasy : public BedDef {
 public:
-  PBPointwiseIsostasy(IceGrid &g, const PISMConfig &conf); 
+  PBPointwiseIsostasy(IceGrid &g, const Config &conf); 
   virtual ~PBPointwiseIsostasy() {}
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 protected:
   PetscErrorCode allocate();
@@ -64,4 +64,4 @@ protected:
 
 } // end of namespace pism
 
-#endif  // __PISMBedDef_hh
+#endif  // __BedDef_hh

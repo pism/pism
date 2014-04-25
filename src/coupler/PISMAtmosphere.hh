@@ -25,14 +25,14 @@
 namespace pism {
 class IceModelVec2S;
 
-///// PISMAtmosphereModel: models which provide precipitation and temperature
-/////                      to the PISMSurfaceModel below
+///// AtmosphereModel: models which provide precipitation and temperature
+/////                      to the SurfaceModel below
 
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
-class PISMAtmosphereModel : public PISMComponent_TS {
+class AtmosphereModel : public Component_TS {
 public:
-  PISMAtmosphereModel(IceGrid &g, const PISMConfig &conf)
-    : PISMComponent_TS(g, conf) {};
+  AtmosphereModel(IceGrid &g, const Config &conf)
+    : Component_TS(g, conf) {};
 
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result) = 0;

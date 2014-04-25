@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
         "(see User's Manual for tests I and J).\n"
         ); CHKERRQ(ierr);
 
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     bool   test_chosen;
     ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString("-test", "Specifies PISM verification test",
+      ierr = OptionsString("-test", "Specifies PISM verification test",
                                testname, test_chosen); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);

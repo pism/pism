@@ -25,14 +25,14 @@
 
 namespace pism {
 
-PISMOceanKill::PISMOceanKill(IceGrid &g, const PISMConfig &conf)
-  : PISMComponent(g, conf) {
+OceanKill::OceanKill(IceGrid &g, const Config &conf)
+  : Component(g, conf) {
   PetscErrorCode ierr;
 
   ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
                                   grid.max_stencil_width);
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for PISMOceanKill.\n");
+    PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for OceanKill.\n");
     PISMEnd();
   }
 
@@ -42,11 +42,11 @@ PISMOceanKill::PISMOceanKill(IceGrid &g, const PISMConfig &conf)
   m_ocean_kill_mask.set_time_independent(true);
 }
 
-PISMOceanKill::~PISMOceanKill() {
+OceanKill::~OceanKill() {
   // empty
 }
 
-PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
+PetscErrorCode OceanKill::init(Vars &vars) {
   PetscErrorCode ierr;
   std::string filename;
   bool flag;
@@ -56,7 +56,7 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-ocean_kill_file", "Specifies a file to get ocean_kill thickness from",
+    ierr = OptionsString("-ocean_kill_file", "Specifies a file to get ocean_kill thickness from",
                              filename, flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -108,7 +108,7 @@ PetscErrorCode PISMOceanKill::init(PISMVars &vars) {
 }
 
 // Updates mask and ice thickness, including ghosts.
-PetscErrorCode PISMOceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
+PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
 
   ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
@@ -130,13 +130,13 @@ PetscErrorCode PISMOceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
   return 0;
 }
 
-void PISMOceanKill::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void OceanKill::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big")
     result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
 }
 
-PetscErrorCode PISMOceanKill::define_variables(std::set<std::string> vars, const PIO &nc,
-                                               PISM_IO_Type nctype) {
+PetscErrorCode OceanKill::define_variables(std::set<std::string> vars, const PIO &nc,
+                                               IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {
@@ -146,7 +146,7 @@ PetscErrorCode PISMOceanKill::define_variables(std::set<std::string> vars, const
   return 0;
 }
 
-PetscErrorCode PISMOceanKill::write_variables(std::set<std::string> vars, const PIO& nc) {
+PetscErrorCode OceanKill::write_variables(std::set<std::string> vars, const PIO& nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {

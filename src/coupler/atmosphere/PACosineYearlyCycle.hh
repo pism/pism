@@ -27,10 +27,10 @@ class Timeseries;
 
 class PACosineYearlyCycle : public PAYearlyCycle {
 public:
-  PACosineYearlyCycle(IceGrid &g, const PISMConfig &conf);
+  PACosineYearlyCycle(IceGrid &g, const Config &conf);
   virtual ~PACosineYearlyCycle();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);

@@ -20,8 +20,8 @@
 
 namespace pism {
 
-PSLapseRates::PSLapseRates(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
-  : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in),
+PSLapseRates::PSLapseRates(IceGrid &g, const Config &conf, SurfaceModel* in)
+  : PLapseRates<SurfaceModel,PSModifier>(g, conf, in),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
 {
@@ -60,7 +60,7 @@ PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
 }
 
 
-PetscErrorCode PSLapseRates::init(PISMVars &vars) {
+PetscErrorCode PSLapseRates::init(Vars &vars) {
   PetscErrorCode ierr;
   bool smb_lapse_rate_set;
 
@@ -75,7 +75,7 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsReal("-smb_lapse_rate",
+    ierr = OptionsReal("-smb_lapse_rate",
                            "Elevation lapse rate for the surface mass balance, in m/year per km",
                            smb_lapse_rate, smb_lapse_rate_set); CHKERRQ(ierr);
   }
@@ -117,7 +117,7 @@ void PSLapseRates::add_vars_to_output(std::string keyword, std::set<std::string>
   input_model->add_vars_to_output(keyword, result);
 }
 
-PetscErrorCode PSLapseRates::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSLapseRates::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

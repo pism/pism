@@ -30,18 +30,18 @@ namespace pism {
  *
  * Other fields are passed through without change.
  */
-class PS_delta_T : public PScalarForcing<PISMSurfaceModel,PSModifier>
+class PS_delta_T : public PScalarForcing<SurfaceModel,PSModifier>
 {
 public:
-  PS_delta_T(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in);
+  PS_delta_T(IceGrid &g, const Config &conf, SurfaceModel* in);
   virtual ~PS_delta_T();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
 protected:

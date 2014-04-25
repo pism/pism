@@ -22,7 +22,7 @@
 /*!
  * This function processes coordinate variables and time bounds.
  */
-int copy_coordinate_variable(pism::PISMNC4_Serial &input, std::string var_name, pism::PISMNC4_Serial &output) {
+int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism::NC4_Serial &output) {
   int stat;
   unsigned int dim1_len = 0, dim2_len = 0;
   std::vector<unsigned int> start, count;
@@ -82,9 +82,9 @@ int copy_coordinate_variable(pism::PISMNC4_Serial &input, std::string var_name, 
  * maximum buffer size and allocate once, although it is also not clear if this
  * would give any performance benefit.
  */
-int copy_spatial_variable(std::string filename, std::string var_name, pism::PISMNC4_Serial &output) {
+int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_Serial &output) {
   std::map<std::string, int> dim_lengths;
-  pism::PISMNC4_Serial input(MPI_COMM_SELF, 0);
+  pism::NC4_Serial input(MPI_COMM_SELF, 0);
   int stat;
   std::vector<std::string> dims;
   std::vector<unsigned int> in_start, out_start, count;
@@ -184,9 +184,9 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::PISM
  * Loops over variables present in an output file. This allows us to process
  * both cases ("-v foo" and without "-v").
  */
-int copy_all_variables(std::string filename, pism::PISMNC4_Serial &output) {
+int copy_all_variables(std::string filename, pism::NC4_Serial &output) {
   int n_vars, stat;
-  pism::PISMNC4_Serial input(MPI_COMM_SELF, 0);
+  pism::NC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dimensions, spatial_vars;
 
   stat = input.open(patch_filename(filename, 0), pism::PISM_READONLY); check(stat);

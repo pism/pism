@@ -30,29 +30,29 @@ namespace pism {
 
 ///// PISMSurfaceModel base class:
 
-PISMSurfaceModel::PISMSurfaceModel(IceGrid &g, const PISMConfig &conf)
-  : PISMComponent_TS(g, conf) {
+SurfaceModel::SurfaceModel(IceGrid &g, const Config &conf)
+  : Component_TS(g, conf) {
   atmosphere = NULL;
 }
 
-PISMSurfaceModel::~PISMSurfaceModel() {
+SurfaceModel::~SurfaceModel() {
   delete atmosphere;
 }
 
-void PISMSurfaceModel::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                                       std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
+void SurfaceModel::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                                       std::map<std::string, TSDiagnostic*> &ts_dict) {
   if (atmosphere)
     atmosphere->get_diagnostics(dict, ts_dict);
 }
 
-void PISMSurfaceModel::attach_atmosphere_model(PISMAtmosphereModel *input) {
+void SurfaceModel::attach_atmosphere_model(AtmosphereModel *input) {
   if (atmosphere != NULL) {
     delete atmosphere;
   }
   atmosphere = input;
 }
 
-PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
+PetscErrorCode SurfaceModel::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -68,7 +68,7 @@ PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
+PetscErrorCode SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.set(0.0); CHKERRQ(ierr);
@@ -83,7 +83,7 @@ PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(IceModelVec2S &resul
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-PetscErrorCode PISMSurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
+PetscErrorCode SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.set(0.0); CHKERRQ(ierr);
@@ -95,7 +95,7 @@ PetscErrorCode PISMSurfaceModel::surface_layer_thickness(IceModelVec2S &result) 
 /*!
  * Most PISM surface models return 0.
  */
-PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+PetscErrorCode SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.set(0.0); CHKERRQ(ierr);
@@ -103,7 +103,7 @@ PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode SurfaceModel::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
@@ -113,7 +113,7 @@ PetscErrorCode PISMSurfaceModel::define_variables(std::set<std::string> vars, co
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode SurfaceModel::write_variables(std::set<std::string> vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
@@ -123,7 +123,7 @@ PetscErrorCode PISMSurfaceModel::write_variables(std::set<std::string> vars, con
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
+PetscErrorCode SurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
@@ -136,7 +136,7 @@ PetscErrorCode PISMSurfaceModel::max_timestep(double my_t, double &my_dt, bool &
   return 0;
 }
 
-void PISMSurfaceModel::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void SurfaceModel::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
   if (atmosphere != NULL) {
     atmosphere->add_vars_to_output(keyword, result);
   }

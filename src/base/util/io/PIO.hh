@@ -46,14 +46,14 @@ class NCTimeBounds;
 class PIO
 {
 public:
-  PIO(MPI_Comm com, std::string mode, PISMUnitSystem units_system);
+  PIO(MPI_Comm com, std::string mode, UnitSystem units_system);
   PIO(IceGrid &g, std::string mode);
   PIO(const PIO &other);
   ~PIO();
 
   PetscErrorCode check_if_exists(std::string filename, bool &result);
 
-  PetscErrorCode open(std::string filename, PISM_IO_Mode mode);
+  PetscErrorCode open(std::string filename, IO_Mode mode);
 
   PetscErrorCode close();
 
@@ -84,13 +84,13 @@ public:
 
   PetscErrorCode inq_grid(std::string var_name, IceGrid *grid, Periodicity periodicity) const;
 
-  PetscErrorCode inq_units(std::string name, bool &has_units, PISMUnit &units) const;
+  PetscErrorCode inq_units(std::string name, bool &has_units, Unit &units) const;
 
   PetscErrorCode inq_grid_info(std::string name, grid_info &g) const;
 
   PetscErrorCode def_dim(unsigned long int length, const NCVariable &metadata) const;
 
-  PetscErrorCode def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
+  PetscErrorCode def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const;
 
   PetscErrorCode get_dim(std::string name, std::vector<double> &result) const;
 
@@ -112,12 +112,12 @@ public:
 
   PetscErrorCode inq_attname(std::string var_name, unsigned int n, std::string &result) const;
 
-  PetscErrorCode inq_atttype(std::string var_name, std::string att_name, PISM_IO_Type &result) const;
+  PetscErrorCode inq_atttype(std::string var_name, std::string att_name, IO_Type &result) const;
 
-  PetscErrorCode put_att_double(std::string var_name, std::string att_name, PISM_IO_Type nctype,
+  PetscErrorCode put_att_double(std::string var_name, std::string att_name, IO_Type nctype,
                                 const std::vector<double> values) const;
 
-  PetscErrorCode put_att_double(std::string var_name, std::string att_name, PISM_IO_Type nctype,
+  PetscErrorCode put_att_double(std::string var_name, std::string att_name, IO_Type nctype,
                                 double value) const;
 
   PetscErrorCode put_att_text(std::string var_name, std::string att_name, std::string value) const;
@@ -159,27 +159,27 @@ public:
                         unsigned int ys, unsigned int ym);
 
   PetscErrorCode read_timeseries(const NCTimeseries &metadata,
-                                 PISMTime *time,
+                                 Time *time,
                                  std::vector<double> &data) const;
 
 
   PetscErrorCode write_timeseries(const NCTimeseries &metadata, size_t t_start,
                                   double data,
-                                  PISM_IO_Type nctype = PISM_DOUBLE) const;
+                                  IO_Type nctype = PISM_DOUBLE) const;
   PetscErrorCode write_timeseries(const NCTimeseries &metadata, size_t t_start,
                                   std::vector<double> &data,
-                                  PISM_IO_Type nctype = PISM_DOUBLE) const;
+                                  IO_Type nctype = PISM_DOUBLE) const;
 
   PetscErrorCode read_time_bounds(const NCTimeBounds &metadata,
-                                  PISMTime *time,
+                                  Time *time,
                                   std::vector<double> &data) const;
 
   PetscErrorCode write_time_bounds(const NCTimeBounds &metadata, size_t t_start,
                                    std::vector<double> &data,
-                                   PISM_IO_Type nctype = PISM_DOUBLE) const;
+                                   IO_Type nctype = PISM_DOUBLE) const;
 
   PetscErrorCode read_attributes(std::string name, NCVariable &variable) const;
-  PetscErrorCode write_attributes(const NCVariable &var, PISM_IO_Type nctype,
+  PetscErrorCode write_attributes(const NCVariable &var, IO_Type nctype,
                                   bool write_in_glaciological_units) const;
 
   PetscErrorCode write_global_attributes(const NCVariable &var) const;
@@ -190,9 +190,9 @@ private:
   MPI_Comm m_com;
   std::string m_mode;
   bool shallow_copy;
-  PISMNCFile *nc;
+  NCFile *nc;
   int m_xs, m_xm, m_ys, m_ym;
-  PISMUnitSystem m_unit_system;
+  UnitSystem m_unit_system;
 
   PetscErrorCode get_interp_context(std::string name,
                                     const IceGrid &grid,

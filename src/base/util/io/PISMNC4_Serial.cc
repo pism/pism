@@ -27,7 +27,7 @@
 
 namespace pism {
 
-int PISMNC4_Serial::integer_open_mode(PISM_IO_Mode input) const {
+int NC4_Serial::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
     return NC_NOWRITE;
   } else {
@@ -35,7 +35,7 @@ int PISMNC4_Serial::integer_open_mode(PISM_IO_Mode input) const {
   }
 }
 
-int PISMNC4_Serial::open(std::string fname, PISM_IO_Mode mode) {
+int NC4_Serial::open(std::string fname, IO_Mode mode) {
   int stat;
 
   m_filename = fname;
@@ -48,7 +48,7 @@ int PISMNC4_Serial::open(std::string fname, PISM_IO_Mode mode) {
   return stat;
 }
 
-int PISMNC4_Serial::create(std::string fname) {
+int NC4_Serial::create(std::string fname) {
   int stat;
 
   m_filename = fname;

@@ -23,8 +23,8 @@
 
 namespace pism {
 
-PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const PISMConfig &conf)
-  : PISMBedDef(g, conf) {
+PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const Config &conf)
+  : BedDef(g, conf) {
   PetscErrorCode ierr;
 
   ierr = allocate();
@@ -43,10 +43,10 @@ PetscErrorCode PBPointwiseIsostasy::allocate() {
   return 0;
 }
 
-PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
+PetscErrorCode PBPointwiseIsostasy::init(Vars &vars) {
   PetscErrorCode ierr;
 
-  ierr = PISMBedDef::init(vars); CHKERRQ(ierr);
+  ierr = BedDef::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the pointwise isostasy bed deformation model...\n"); CHKERRQ(ierr);

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMComponent_hh
-#define __PISMComponent_hh
+#ifndef __Component_hh
+#define __Component_hh
 
 #include <petscsys.h>
 #include <gsl/gsl_math.h>
@@ -30,11 +30,11 @@
 namespace pism {
 
 class IceGrid;
-class PISMConfig;
+class Config;
 class NCSpatialVariable;
-class PISMDiagnostic;
-class PISMTSDiagnostic;
-class PISMVars;
+class Diagnostic;
+class TSDiagnostic;
+class Vars;
 class IceModelVec;
 
 //! \brief A class defining a common interface for most PISM sub-models.
@@ -45,18 +45,18 @@ class IceModelVec;
   "initialized", "updated", asked for diagnostic quantities, asked to write the
   model state...
 
-  PISMComponent and its derived classes were created to have a common interface
+  Component and its derived classes were created to have a common interface
   for PISM sub-models, such as surface, atmosphere, ocean and bed deformation
   models.
 
   \subsection pismcomponent_init Initialization
 
-  PISMComponent::init() should contain all the initialization code,
+  Component::init() should contain all the initialization code,
   excluding memory-allocation. (We might need to "re-initialize" a
   component.)
 
   Many PISM sub-models read data from the same file the rest of PISM reads
-  from. PISMComponent::find_pism_input() checks -i and -boot_file command-line
+  from. Component::find_pism_input() checks -i and -boot_file command-line
   options and simplifies finding this file.
 
   \subsection pismcomponent_output Writing to an output file
@@ -87,16 +87,16 @@ class IceModelVec;
 
   \subsection pismcomponent_timestep Restricting time-steps
 
-  Implement PISMComponent_TS::max_timestep() to affect PISM's adaptive time-stepping mechanism.
+  Implement Component_TS::max_timestep() to affect PISM's adaptive time-stepping mechanism.
 */
-class PISMComponent {
+class Component {
 public:
-  /** Create a PISMComponent instance given a grid and a configuration database. */
-  PISMComponent(IceGrid &g, const PISMConfig &conf)
+  /** Create a Component instance given a grid and a configuration database. */
+  Component(IceGrid &g, const Config &conf)
     : grid(g), config(conf) {}
-  virtual ~PISMComponent() {}
+  virtual ~Component() {}
 
-  virtual PetscErrorCode init(PISMVars &vars) = 0;
+  virtual PetscErrorCode init(Vars &vars) = 0;
 
   //! \brief Adds more variable names to result (to let sub-models respect
   //! -o_size or -save_size).
@@ -108,15 +108,15 @@ public:
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype) = 0;
+                                          IO_Type nctype) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict)
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict)
   {
     (void)dict;
     (void)ts_dict;
@@ -125,7 +125,7 @@ public:
 protected:
   virtual PetscErrorCode find_pism_input(std::string &filename, bool &regrid, int &start);
   IceGrid &grid;
-  const PISMConfig &config;
+  const Config &config;
 
   /** @brief This flag determines whether a variable is read from the
       `-regrid_file` file even if it is not listed among variables in
@@ -139,14 +139,14 @@ protected:
 //! \brief An abstract class for time-stepping PISM components. Created to
 //! simplify creating basic surface, snow, atmosphere, ocean... models for
 //! PISM.
-class PISMComponent_TS : public PISMComponent
+class Component_TS : public Component
 {
 public:
-  /** Create an instance of PISMComponent_TS given a grid and a configuration database. */
-  PISMComponent_TS(IceGrid &g, const PISMConfig &conf)
-    : PISMComponent(g, conf)
+  /** Create an instance of Component_TS given a grid and a configuration database. */
+  Component_TS(IceGrid &g, const Config &conf)
+    : Component(g, conf)
   { m_t = m_dt = GSL_NAN; }
-  virtual ~PISMComponent_TS() {}
+  virtual ~Component_TS() {}
 
   //! \brief Reports the maximum time-step the model can take at t. Sets
   //! dt to -1 if any time-step is OK.
@@ -180,10 +180,10 @@ public:
    * may get called twice at the beginning of the run.
    *
    * Other interface methods
-   * (PISMSurfaceModel::ice_surface_temperature() is an example)
+   * (SurfaceModel::ice_surface_temperature() is an example)
    * should use cached values if the corresponding computation is
    * expensive. Methods like
-   * PISMSurfaceModel::ice_surface_temperature() might be called
+   * SurfaceModel::ice_surface_temperature() might be called
    * multiple times per time-step.
    *
    * PSTemperatureIndex is an example of a component that does a
@@ -207,8 +207,8 @@ protected:
     m_dt;                               //!< Last time-step used as an argument for the update() method.
 };
 
-//! \brief This template allows creating PISMComponent_TS (PISMAtmosphereModel,
-//! PISMSurfaceModel and PISMOceanModel) modifiers with minimum effort.
+//! \brief This template allows creating Component_TS (AtmosphereModel,
+//! SurfaceModel and OceanModel) modifiers with minimum effort.
 /*!
  * A specialization of this template will implement all important methods
  * except init(). This means that to create a complete modifier, one needs to
@@ -219,7 +219,7 @@ template<class Model>
 class Modifier : public Model
 {
 public:
-  Modifier(IceGrid &g, const PISMConfig &conf, Model* in)
+  Modifier(IceGrid &g, const Config &conf, Model* in)
     : Model(g, conf), input_model(in) {}
   virtual ~Modifier()
   {
@@ -236,7 +236,7 @@ public:
   }
 
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype)
+                                          IO_Type nctype)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -252,8 +252,8 @@ public:
     return 0;
   }
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict)
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict)
   {
     if (input_model != NULL) {
       input_model->get_diagnostics(dict, ts_dict);
@@ -287,4 +287,4 @@ protected:
 
 } // end of namespace pism
 
-#endif // __PISMComponent_hh
+#endif // __Component_hh

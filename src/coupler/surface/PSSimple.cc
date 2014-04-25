@@ -27,8 +27,8 @@
 namespace pism {
 
 ///// Simple PISM surface model.
-PSSimple::PSSimple(IceGrid &g, const PISMConfig &conf)
-  : PISMSurfaceModel(g, conf),
+PSSimple::PSSimple(IceGrid &g, const Config &conf)
+  : SurfaceModel(g, conf),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
 {
@@ -60,7 +60,7 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
 }
 
 
-PetscErrorCode PSSimple::init(PISMVars &vars) {
+PetscErrorCode PSSimple::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -101,7 +101,7 @@ PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
 }
 
 void PSSimple::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
-  PISMSurfaceModel::add_vars_to_output(keyword, result);
+  SurfaceModel::add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
@@ -109,7 +109,7 @@ void PSSimple::add_vars_to_output(std::string keyword, std::set<std::string> &re
   }
 }
 
-PetscErrorCode PSSimple::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSSimple::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -120,7 +120,7 @@ PetscErrorCode PSSimple::define_variables(std::set<std::string> vars, const PIO 
     ierr = climatic_mass_balance.define(nc, nctype, true); CHKERRQ(ierr);
   }
 
-  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   return 0;
 }
@@ -152,7 +152,7 @@ PetscErrorCode PSSimple::write_variables(std::set<std::string> vars, const PIO &
     vars.erase("climatic_mass_balance");
   }
 
-  ierr = PISMSurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
+  ierr = SurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

@@ -24,18 +24,18 @@
 
 namespace pism {
 
-class PO_delta_SL : public PScalarForcing<PISMOceanModel,POModifier>
+class PO_delta_SL : public PScalarForcing<OceanModel,POModifier>
 {
 public:
-  PO_delta_SL(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
+  PO_delta_SL(IceGrid &g, const Config &conf, OceanModel* in);
   virtual ~PO_delta_SL();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode sea_level_elevation(double &result);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;

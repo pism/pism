@@ -57,12 +57,12 @@ inline bool pism_is_valid_calendar_name(std::string name) {
  * to keep in mind that the year "1986" in this context is not the year of the
  * Chernobyl disaster but a year 1986 years since some date.
  */
-class PISMTime
+class Time
 {
 public:
-  PISMTime(MPI_Comm c, const PISMConfig &conf, std::string calendar,
-           PISMUnitSystem units_system);
-  virtual ~PISMTime();
+  Time(MPI_Comm c, const Config &conf, std::string calendar,
+           UnitSystem units_system);
+  virtual ~Time();
 
   //! \brief Sets the current time (in seconds since the reference time).
   void set(double new_time);
@@ -105,8 +105,8 @@ public:
 
   //! \brief Internal time units.
   /*!
-   * May or may not contain a reference date. (The base class PISMTime does not
-   * use the reference date, while PISMTime_Calendar does.)
+   * May or may not contain a reference date. (The base class Time does not
+   * use the reference date, while Time_Calendar does.)
    */
   virtual std::string units_string();
 
@@ -179,9 +179,9 @@ protected:
 
 protected:
   MPI_Comm m_com;
-  const PISMConfig &m_config;
-  PISMUnitSystem m_unit_system;
-  PISMUnit m_time_units;
+  const Config &m_config;
+  UnitSystem m_unit_system;
+  Unit m_time_units;
   double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
   double m_time_in_seconds, //!< current time, in seconds since the reference time
     m_run_start,                  //!< run start time, in seconds since the reference time

@@ -24,11 +24,11 @@
 
 namespace pism {
 
-class BTU_Verification : public PISMBedThermalUnit
+class BTU_Verification : public BedThermalUnit
 {
 public:
-  BTU_Verification(IceGrid &g, const PISMConfig &conf, int test, int bii)
-    : PISMBedThermalUnit(g, conf) { testname = test; bedrock_is_ice = bii; }
+  BTU_Verification(IceGrid &g, const Config &conf, int test, int bii)
+    : BedThermalUnit(g, conf) { testname = test; bedrock_is_ice = bii; }
   virtual ~BTU_Verification() {}
 
   virtual PetscErrorCode get_temp(IceModelVec3BTU* &result);
@@ -40,7 +40,7 @@ protected:
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides, int mytest);
+  IceCompModel(IceGrid &g, Config &config, Config &overrides, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:

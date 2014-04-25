@@ -27,9 +27,12 @@
 namespace pism {
 
 //! Storage for SSA coefficients at a quadrature point.
-struct FEStoreNode {
-  double H,tauc,b,B;
-  PISMVector2 driving_stress;
+struct SSACoefficients {
+  double H,                     //!< ice thickness
+    tauc,                       //!< basal yield stress
+    b,                          //!< bed elevation
+    B;                          //!< ice hardness
+  Vector2 driving_stress;
   int mask;
 };
 
@@ -49,14 +52,14 @@ struct SSAFEM_SNESCallbackData {
 
 //! SNES callbacks.  
 /*! These simply forward the call on to the SSAFEM memeber of the SSAFEM_SNESCallbackData */
-PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, 
-                             PISMVector2 **, SSAFEM_SNESCallbackData *);
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+PetscErrorCode SSAFEFunction(DMDALocalInfo *, const Vector2 **, 
+                             Vector2 **, SSAFEM_SNESCallbackData *);
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
                              Mat A, Mat J,
                              MatStructure *str, SSAFEM_SNESCallbackData *fe);
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
+SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const Config &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -65,35 +68,35 @@ SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
 */
 class SSAFEM : public SSA
 {
-  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
-  friend PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const Vector2 **, Vector2 **, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
                                             Mat A, Mat J,
                                             MatStructure *str, SSAFEM_SNESCallbackData *fe);
 public:
-  SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
+  SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c);
 
   virtual ~SSAFEM();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode cacheQuadPtValues();
 
 protected:
 
-  virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
-                                             const PISMVector2 *,const double[],
+  virtual PetscErrorCode PointwiseNuHAndBeta(const SSACoefficients *,
+                                             const Vector2 &, const double[],
                                              double *,double *,double *,double *);
 
   void FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
-                          PISMVector2 x[], FEDOFMap &my_dofmap);
+                          Vector2 x[], FEDOFMap &my_dofmap);
 
   virtual PetscErrorCode allocate_fem();
 
   virtual PetscErrorCode deallocate_fem();
 
-  virtual PetscErrorCode compute_local_function(DMDALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg);
+  virtual PetscErrorCode compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
 
-  virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const PISMVector2 **xg, Mat J);
+  virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
 
   virtual PetscErrorCode solve();
 
@@ -105,20 +108,20 @@ protected:
 
 
   // objects used internally
-  SSAFEM_SNESCallbackData callback_data;
+  SSAFEM_SNESCallbackData m_callback_data;
 
-  SNES         snes;
-  FEStoreNode *feStore;
-  double    dirichletScale;
-  double    ocean_rho;
-  double    earth_grav;
+  SNES         m_snes;
+  SSACoefficients *m_coefficients;
+  double    m_dirichletScale;
+  double    m_ocean_rho;
+  double    m_earth_grav;
   double    m_beta_ice_free_bedrock;
   double    m_epsilon_ssa;
 
-  FEElementMap element_index;
+  FEElementMap m_element_index;
   FEQuadrature_Scalar m_quadrature;
   FEQuadrature_Vector m_quadrature_vector;
-  FEDOFMap dofmap;
+  FEDOFMap m_dofmap;
 };
 
 

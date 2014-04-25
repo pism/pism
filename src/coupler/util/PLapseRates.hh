@@ -34,7 +34,7 @@ template <class Model, class Mod>
 class PLapseRates : public Mod
 {
 public:
-  PLapseRates(IceGrid &g, const PISMConfig &conf, Model* in)
+  PLapseRates(IceGrid &g, const Config &conf, Model* in)
     : Mod(g, conf, in)
   {
     surface = thk = NULL;
@@ -104,7 +104,7 @@ protected:
     temp_lapse_rate;
   std::string option_prefix;
 
-  virtual PetscErrorCode init_internal(PISMVars &vars)
+  virtual PetscErrorCode init_internal(Vars &vars)
   {
     PetscErrorCode ierr;
     std::string filename;
@@ -117,16 +117,16 @@ protected:
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString(option_prefix + "_file",
+      ierr = OptionsString(option_prefix + "_file",
                                "Specifies a file with top-surface boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option_prefix + "_period",
+      ierr = OptionsReal(option_prefix + "_period",
                              "Specifies the length of the climate data period",
                              bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal(option_prefix + "_reference_year",
+      ierr = OptionsReal(option_prefix + "_reference_year",
                              "Boundary condition reference year",
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-temp_lapse_rate",
+      ierr = OptionsReal("-temp_lapse_rate",
                              "Elevation lapse rate for the temperature, in K per km",
                              temp_lapse_rate, temp_lapse_rate_set); CHKERRQ(ierr);
     }

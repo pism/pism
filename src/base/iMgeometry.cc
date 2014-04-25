@@ -175,14 +175,14 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
   // Prepare to loop over neighbors:
   // directions
-  PISM_Direction dirs[] = {North, East, South, West};
+  Direction dirs[] = {North, East, South, West};
   // mask values
   int mask_current = mask.ij;
   Mask M;
 
   // Loop over neighbors:
   for (int n = 0; n < 4; ++n) {
-    PISM_Direction direction = dirs[n];
+    Direction direction = dirs[n];
     int mask_neighbor = mask[direction];
 
     // Only one of the cases below applies at any given time/location, so
@@ -309,17 +309,17 @@ void IceModel::adjust_flow(planeStar<int> mask,
  */
 void IceModel::cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<PISMVector2> in_SSA_velocity,
+                                     planeStar<Vector2> in_SSA_velocity,
                                      planeStar<double> in_SIA_flux,
                                      planeStar<double> &out_SSA_velocity,
                                      planeStar<double> &out_SIA_flux) {
 
   planeStar<int> mask = vMask.int_star(i,j);
-  PISM_Direction dirs[4] = {North, East, South, West};
+  Direction dirs[4] = {North, East, South, West};
   Mask M;
 
   planeStar<int> bc_mask;
-  planeStar<PISMVector2> bc_velocity;
+  planeStar<Vector2> bc_velocity;
   if (dirichlet_bc) {
     bc_mask = vBCMask.int_star(i,j);
     bc_velocity = vBCvel.star(i,j);
@@ -329,7 +329,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   out_SIA_flux.ij = 0.0;
 
   for (int n = 0; n < 4; ++n) {
-    PISM_Direction direction = dirs[n];
+    Direction direction = dirs[n];
     int mask_current = mask.ij,
       mask_neighbor = mask[direction];
 
@@ -424,8 +424,8 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   the vertically-averaged horizontal velocity of the ice.  This procedure uses
   this conservation of mass equation to update the ice thickness.
 
-  The PISMSurfaceModel IceModel::surface provides \f$M\f$.  The
-  PISMOceanModel IceModel::ocean provides \f$S\f$ at locations below
+  The SurfaceModel IceModel::surface provides \f$M\f$.  The
+  OceanModel IceModel::ocean provides \f$S\f$ at locations below
   floating ice (ice shelves).
 
   Even if we regard the map-plane flux as defined by the formula
@@ -441,7 +441,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
   We interpret \f$\mathbf{U}_b\f$ as a basal sliding velocity in the hybrid.
 
   The main ice-dynamical inputs to this method are identified in these lines,
-  which get outputs from PISMStressBalance *stress_balance:
+  which get outputs from StressBalance *stress_balance:
   \code
   IceModelVec2Stag *Qdiff;
   stress_balance->get_diffusive_flux(Qdiff);
@@ -471,9 +471,9 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
 We also compute total ice fluxes in kg s-1 at 3 interfaces:
 
   \li the ice-atmosphere interface: gets surface mass balance rate from
-      PISMSurfaceModel *surface,
+      SurfaceModel *surface,
   \li the ice-ocean interface at the bottom of ice shelves: gets ocean-imposed
-      basal melt rate from PISMOceanModel *ocean, and
+      basal melt rate from OceanModel *ocean, and
   \li the ice-bedrock interface: gets basal melt rate from IceModelVec2S basal_melt_rate.
 
 A unit-conversion occurs for all three quantities, from ice-equivalent m s-1
@@ -825,14 +825,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    ierr = PISMGlobalSum(&proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux, grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_nonneg_rule_flux,   &total_nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_sum_divQ_SIA,       &total_sum_divQ_SIA,       grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_sum_divQ_SSA,       &total_sum_divQ_SSA,       grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_Href_to_H_flux,     &total_Href_to_H_flux,     grid.com); CHKERRQ(ierr);
-    ierr = PISMGlobalSum(&proc_H_to_Href_flux,     &total_H_to_Href_flux,     grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux, grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_nonneg_rule_flux,   &total_nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_sum_divQ_SIA,       &total_sum_divQ_SIA,       grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_sum_divQ_SSA,       &total_sum_divQ_SSA,       grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_Href_to_H_flux,     &total_Href_to_H_flux,     grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&proc_H_to_Href_flux,     &total_H_to_Href_flux,     grid.com); CHKERRQ(ierr);
 
     grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux;
     sub_shelf_ice_flux_cumulative      += total_sub_shelf_ice_flux;

@@ -38,7 +38,7 @@ namespace pism {
   till_water_thickness(IceModelVec2S &result)
   \endcode
   These correspond to state variables \f$W\f$, \f$P\f$, and \f$W_{\text{til}}\f$
-  in [\ref BuelervanPeltDRAFT], though not all derived classes of PISMHydrology
+  in [\ref BuelervanPeltDRAFT], though not all derived classes of Hydrology
   have all of them as state variables.
 
   Additional modeled fields, for diagnostic purposes, are
@@ -64,24 +64,24 @@ namespace pism {
   The till water thickness is can be used, via the theory of
   [\ref Tulaczyketal2000], to compute an effective pressure for the water in the
   pore spaces of the till, which can then be used by the Mohr-Coulomb criterion
-  to provide a yield stress.  Class PISMMohrCoulombYieldStress does this
-  calculation.  Here in PISMHydrology only the till water thickness tillwat is
+  to provide a yield stress.  Class MohrCoulombYieldStress does this
+  calculation.  Here in Hydrology only the till water thickness tillwat is
   computed.
 
-  PISMHydrology is a timestepping component (PISMComponent_TS).  Because of the
+  Hydrology is a timestepping component (Component_TS).  Because of the
   short physical timescales associated to liquid water moving under a glacier,
-  PISMHydrology (and derived) classes generally take many substeps in PISM's major
-  ice dynamics time steps.  Thus when an update() method in a PISMHydrology
+  Hydrology (and derived) classes generally take many substeps in PISM's major
+  ice dynamics time steps.  Thus when an update() method in a Hydrology
   class is called it will advance its internal time to the new goal t+dt
   using its own internal time steps.
 
-  Generally PISMHydrology classes use the ice geometry, the basal melt
+  Generally Hydrology classes use the ice geometry, the basal melt
   rate, and the basal sliding velocity in determining the evolution of the
   hydrology state variables.  Note that the basal melt rate is an
   energy-conservation-derived field and the basal-sliding velocity is derived
   from the solution of a stress balance.  The basal melt rate and
   sliding velocity fields therefore generally come from IceModel and
-  PISMStressBalance, respectively.
+  StressBalance, respectively.
 
   Additional, time-dependent and spatially-variable water input to the basal
   layer, taken directly from a file, is possible too.
@@ -90,24 +90,24 @@ namespace pism {
   during the update() call for the interval [t,t+dt].  Thus the coupling is
   one-way during the update() call.
 */
-class PISMHydrology : public PISMComponent_TS {
+class Hydrology : public Component_TS {
 public:
-  PISMHydrology(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMHydrology();
+  Hydrology(IceGrid &g, const Config &conf);
+  virtual ~Hydrology();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
-  friend class PISMHydrology_hydroinput;
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
+  friend class Hydrology_hydroinput;
 
   // in the base class these only add/define/write tillwat
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  // all PISMHydrology models have a Wtil state variable, which this returns
+  // all Hydrology models have a Wtil state variable, which this returns
   virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
 
   // this diagnostic method returns the standard shallow approximation
@@ -138,7 +138,7 @@ protected:
   unsigned int inputtobed_period;      // in years
   double inputtobed_reference_time; // in seconds
 
-  PISMVars *variables;
+  Vars *variables;
 
   virtual PetscErrorCode get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
 
@@ -158,12 +158,12 @@ protected:
   Here is a talk which illustrates the "till-can" metaphor:
   http://www2.gi.alaska.edu/snowice/glaciers/iceflow/bueler-igs-fairbanks-june2012.pdf
 */
-class PISMNullTransportHydrology : public PISMHydrology {
+class NullTransportHydrology : public Hydrology {
 public:
-  PISMNullTransportHydrology(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMNullTransportHydrology();
+  NullTransportHydrology(IceGrid &g, const Config &conf);
+  virtual ~NullTransportHydrology();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   //! Sets result to 0.
   virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
@@ -206,11 +206,11 @@ public:
   books on this model.
 
   The state space includes both the till water effective thickness \f$W_{til}\f$,
-  which is in PISMHydrology, and the transportable water layer thickness \f$W\f$.
+  which is in Hydrology, and the transportable water layer thickness \f$W\f$.
 
   For more complete modeling where the water pressure is determined by a
   physical model for the opening and closing of cavities, and where the state
-  space includes a nontrivial pressure variable, see PISMDistributedHydrology.
+  space includes a nontrivial pressure variable, see DistributedHydrology.
 
   There is an option `-hydrology_null_strip` `X` which produces a strip of
   `X` km around the edge of the computational domain.  In that strip the water flow
@@ -234,20 +234,20 @@ public:
   ice.)  See wall_melt().  At this time the wall melt is diagnostic only and does
   not add to the water amount W; such an addition is generally unstable.
 */
-class PISMRoutingHydrology : public PISMHydrology {
+class RoutingHydrology : public Hydrology {
 public:
-  PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMRoutingHydrology();
+  RoutingHydrology(IceGrid &g, const Config &conf);
+  virtual ~RoutingHydrology();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 
   virtual PetscErrorCode wall_melt(IceModelVec2S &result);
 
@@ -274,7 +274,7 @@ protected:
   // if negative then the strip mechanism is inactive inactive
 
   PetscErrorCode allocate();
-  virtual PetscErrorCode init_bwat(PISMVars &vars);
+  virtual PetscErrorCode init_bwat(Vars &vars);
 
   // when we update the water amounts, careful mass accounting at the
   // boundary is needed; we update the new thickness variable, typically a
@@ -291,7 +291,7 @@ protected:
 
   virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
   virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
-  friend class PISMRoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
+  friend class RoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
   virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
 
   virtual PetscErrorCode adaptive_for_W_evolution(
@@ -310,27 +310,27 @@ protected:
   This implements the new Bueler & van Pelt model documented at the repo (currently
   private):
   https://github.com/bueler/hydrolakes
-  Unlike PISMRoutingHydrology, the water pressure P is a state variable, and there
+  Unlike RoutingHydrology, the water pressure P is a state variable, and there
   are modeled mechanisms for cavity geometry evolution, including creep closure
   and opening through sliding ("cavitation").  Because of cavitation, this model
-  needs access to a PISMStressBalance object.
+  needs access to a StressBalance object.
 
-  In addition to the actions within the null strip taken by PISMRoutingHydrology,
+  In addition to the actions within the null strip taken by RoutingHydrology,
   this model also sets the staggered grid values of the gradient of the hydraulic
   potential to zero if either regular grid neighbor is in the null strip.
 */
-class PISMDistributedHydrology : public PISMRoutingHydrology {
+class DistributedHydrology : public RoutingHydrology {
 public:
-  PISMDistributedHydrology(IceGrid &g, const PISMConfig &conf, PISMStressBalance *sb);
-  virtual ~PISMDistributedHydrology();
+  DistributedHydrology(IceGrid &g, const Config &conf, StressBalance *sb);
+  virtual ~DistributedHydrology();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+                                          IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 
   virtual PetscErrorCode update(double icet, double icedt);
@@ -338,7 +338,7 @@ public:
   virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
-  // this model's state, in addition to what is in PISMRoutingHydrology
+  // this model's state, in addition to what is in RoutingHydrology
   IceModelVec2S P;      //!< water pressure
   // this model's auxiliary variables, in addition ...
   IceModelVec2S psi,    //!< hydraulic potential
@@ -346,10 +346,10 @@ protected:
     Pnew;   //!< pressure during update
 
   // need to get basal sliding velocity (thus speed):
-  PISMStressBalance* stressbalance;
+  StressBalance* stressbalance;
 
   PetscErrorCode allocate_pressure();
-  virtual PetscErrorCode init_bwp(PISMVars &vars);
+  virtual PetscErrorCode init_bwp(Vars &vars);
 
   virtual PetscErrorCode check_P_bounds(bool enforce_upper);
 

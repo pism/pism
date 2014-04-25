@@ -26,7 +26,7 @@ extern "C" {
 
 namespace pism {
 
-int PISMNC4_Par::integer_open_mode(PISM_IO_Mode input) const {
+int NC4_Par::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
     return NC_NOWRITE;
   } else {
@@ -34,7 +34,7 @@ int PISMNC4_Par::integer_open_mode(PISM_IO_Mode input) const {
   }
 }
 
-int PISMNC4_Par::open(std::string fname, PISM_IO_Mode mode) {
+int NC4_Par::open(std::string fname, IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -50,7 +50,7 @@ int PISMNC4_Par::open(std::string fname, PISM_IO_Mode mode) {
   return stat;
 }
 
-int PISMNC4_Par::create(std::string fname) {
+int NC4_Par::create(std::string fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -64,7 +64,7 @@ int PISMNC4_Par::create(std::string fname) {
   return stat;
 }
 
-int PISMNC4_Par::set_access_mode(int varid, bool mapped) const {
+int NC4_Par::set_access_mode(int varid, bool mapped) const {
   int stat;
 
   if (mapped) {

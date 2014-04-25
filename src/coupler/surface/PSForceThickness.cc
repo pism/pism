@@ -25,7 +25,7 @@
 namespace pism {
 
 ///// "Force-to-thickness" mechanism
-PSForceThickness::PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input)
+PSForceThickness::PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel *input)
   : PSModifier(g, conf, input),
     climatic_mass_balance(g.get_unit_system()),
     climatic_mass_balance_original(g.get_unit_system()),
@@ -41,7 +41,7 @@ PSForceThickness::~PSForceThickness() {
   // empty
 }
 
-void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {
+void PSForceThickness::attach_atmosphere_model(AtmosphereModel *input) {
   input_model->attach_atmosphere_model(input);
 }
 
@@ -85,7 +85,7 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   return 0;
 }
 
-PetscErrorCode PSForceThickness::init(PISMVars &vars) {
+PetscErrorCode PSForceThickness::init(Vars &vars) {
   PetscErrorCode ierr;
   char fttfile[PETSC_MAX_PATH_LEN] = "";
   PetscBool opt_set;
@@ -380,7 +380,7 @@ void PSForceThickness::add_vars_to_output(std::string keyword, std::set<std::str
   result.insert("ftt_target_thk");
 }
 
-PetscErrorCode PSForceThickness::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSForceThickness::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ftt_mask")) {

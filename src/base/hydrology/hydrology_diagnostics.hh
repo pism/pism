@@ -25,81 +25,81 @@
 
 namespace pism {
 /*! \file
-  Interfaces for the following diagnostics which are handled by PISMHydrology
+  Interfaces for the following diagnostics which are handled by Hydrology
   instances; some of these may be replaced by state variables; listed by short
   name:
-  * bwat [replace by state var in PISMRoutingHydrology and PISMDistributedHydrology]
-  * bwp [replace by state var in PISMDistributedHydrology]
+  * bwat [replace by state var in RoutingHydrology and DistributedHydrology]
+  * bwp [replace by state var in DistributedHydrology]
   * bwprel
   * effbwp
   * hydroinput
   * wallmelt
   Interfaces for the following diagnostics which are handled by
-  PISMRoutingHydrology instances:
+  RoutingHydrology instances:
   * bwatvel
   */
 
 
 //! \brief Reports the thickness of the transportable water in the subglacial layer.
-class PISMHydrology_bwat : public PISMDiag<PISMHydrology>
+class Hydrology_bwat : public Diag<Hydrology>
 {
 public:
-  PISMHydrology_bwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  Hydrology_bwat(Hydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer.
-class PISMHydrology_bwp : public PISMDiag<PISMHydrology>
+class Hydrology_bwp : public Diag<Hydrology>
 {
 public:
-  PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  Hydrology_bwp(Hydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer as a fraction of the overburden pressure.
-class PISMHydrology_bwprel : public PISMDiag<PISMHydrology>
+class Hydrology_bwprel : public Diag<Hydrology>
 {
 public:
-  PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  Hydrology_bwprel(Hydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
 //! \brief Reports the effective pressure of the transportable water in the subglacial layer, that is, the overburden pressure minus the pressure.
-class PISMHydrology_effbwp : public PISMDiag<PISMHydrology>
+class Hydrology_effbwp : public Diag<Hydrology>
 {
 public:
-  PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  Hydrology_effbwp(Hydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
 //! \brief Reports the total input rate of water into the subglacial layer.
-class PISMHydrology_hydroinput : public PISMDiag<PISMHydrology>
+class Hydrology_hydroinput : public Diag<Hydrology>
 {
 public:
-  PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  Hydrology_hydroinput(Hydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
 //! \brief Report the wall melt rate from dissipation of the potential energy of the transportable water.
-class PISMHydrology_wallmelt : public PISMDiag<PISMHydrology>
+class Hydrology_wallmelt : public Diag<Hydrology>
 {
 public:
-  PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars);
+  Hydrology_wallmelt(Hydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 
 //! \brief Diagnostically reports the staggered-grid components of the velocity of the water in the subglacial layer.
-/*! Only available for PISMRoutingHydrology and its derived classes. */
-class PISMRoutingHydrology_bwatvel : public PISMDiag<PISMRoutingHydrology>
+/*! Only available for RoutingHydrology and its derived classes. */
+class RoutingHydrology_bwatvel : public Diag<RoutingHydrology>
 {
 public:
-  PISMRoutingHydrology_bwatvel(PISMRoutingHydrology *m, IceGrid &g, PISMVars &my_vars);
+  RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
