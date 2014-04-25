@@ -242,14 +242,8 @@ public:
 class FEDOFMap
 {
 public:
-  FEDOFMap()
-  {
-    m_i = m_j = 0;
-    PetscMemzero(m_row, Nk*sizeof(MatStencil));
-    PetscMemzero(m_col, Nk*sizeof(MatStencil));
-  };
-  
-  ~FEDOFMap() {};
+  FEDOFMap();
+  ~FEDOFMap();
 
   // scalar
   void extractLocalDOFs(IceModelVec2S &x_global, double *x_local) const;
@@ -283,7 +277,7 @@ public:
 
   static const int Nk = 4; //<! The number of test functions defined on an element.
   
-protected:
+private:
   static const int kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
   static const int kIOffset[Nk];
   static const int kJOffset[Nk];
