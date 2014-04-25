@@ -466,10 +466,7 @@ protected:
 
   StressBalance *stress_balance;
 
-public:
-  StressBalance* get_stress_balance();
 protected:
-
   std::map<std::string,Diagnostic*> diagnostics;
   std::map<std::string,TSDiagnostic*> ts_diagnostics;
 
