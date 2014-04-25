@@ -90,7 +90,7 @@ double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 /**
  * Use the rectangle method for simplicity.
  *
- * @param pddStdDev standard deviation for air temperature excursions
+ * @param S standard deviation for air temperature excursions
  * @param dt_series length of the step for the time-series
  * @param T air temperature (array of length N)
  * @param N length of the T array
@@ -259,7 +259,7 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  * \text{PDD} = \sum_{i=0}^{N-1} h_{\text{days}} \cdot \text{max}(T_i-T_{\text{threshold}}, 0).
  * \f]
  * 
- * @param pddStdDev \f$\sigma\f$ (standard deviation for daily temperature excursions)
+ * @param S \f$\sigma\f$ (standard deviation for daily temperature excursions)
  * @param dt_series time-series step, in seconds
  * @param T air temperature
  * @param N number of points in the temperature time-series, each corresponds to a sub-interval
