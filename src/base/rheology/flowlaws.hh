@@ -68,14 +68,28 @@ public:
   virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions();
 
-  //! \brief Computes effective viscosity and its derivative with respect to the
-  //! squared second invariant \f$ \gamma \f$.
+  //! \brief Computes the regularized effective viscosity and its derivative with respect to the
+  //! second invariant \f$ \gamma \f$.
   /*!
+   *
+   * @f{align*}{
+   * \nu &= \frac{1}{2} B \left( \epsilon + \gamma \right)^{(1-n)/(2n)},\\
+   * \diff{\nu}{\gamma} &= \frac{1}{2} B \cdot \frac{1-n}{2n} \cdot \left(\epsilon + \gamma \right)^{(1-n)/(2n) - 1}, \\
+   * &= \frac{1-n}{2n} \cdot \frac{1}{2} B \left( \epsilon + \gamma \right)^{(1-n)/(2n)} \cdot \frac{1}{\epsilon + \gamma}, \\
+   * &= \frac{1-n}{2n} \cdot \frac{\nu}{\epsilon + \gamma}.
+   * @f}
+   * Here @f$ \gamma @f$ is the second invariant
+   * @f{align*}{
+   * \gamma &= \frac{1}{2} D_{ij} D_{ij}\\
+   * &= \frac{1}{2}\, ((u_x)^2 + (v_y)^2 + (u_x + v_y)^2 + \frac{1}{2}\, (u_y + v_x)^2) \\
+   * @f}
+   * and
+   * @f[ D_{ij}(\mathbf{u}) = \frac{1}{2}\left(\diff{u_{i}}{x_{j}} + \diff{u_{j}}{x_{i}}\right). @f]
    *
    * Either one of \c nu and \c dnu can be NULL if the corresponding output is not needed.
    *
    * \param[in] hardness ice hardness
-   * \param[in] gamma the second invariant \f$ \gamma = \frac{1}{2} D_{ij} D_{ij}\f$ if \f$D_{ij}\f$ is the strain rate tensor
+   * \param[in] gamma the second invariant
    * \param[out] nu effective viscosity
    * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
    */
