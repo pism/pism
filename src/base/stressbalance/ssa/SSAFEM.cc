@@ -292,7 +292,6 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
         m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *driving_stress_x, ds_xq);
         m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *driving_stress_y, ds_yq);
       } else {
-        // Extract coefficient values at the quadrature points.
         m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *surface, hq, hxq, hyq);
       }
 
