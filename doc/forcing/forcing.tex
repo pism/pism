@@ -1027,24 +1027,24 @@ time-dependent model thickness. Note that a surface model~component described
 in this section produces the $M$ term in the mass continuity equation
 $$\frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q}.$$
 (Other details of this equation do not concern us here.) Option
-\fileopt{force_to_thk} causes $M$ to be modified by a multiple of the
+\fileopt{force_to_thickness_file} causes $M$ to be modified by a multiple of the
 difference between the target thickness and the current thickness,
 $$\Delta M = \alpha (H_{\text{tar}} - H)$$
 where $\alpha>0$. We are adding mass ($\Delta M>0$) where $H_{\text{tar}} > H$
 and ablating where $H_{\text{tar}} < H$.
 
-Option \fileopt{force_to_thk} identifies the file containing the target ice
+Option \fileopt{force_to_thickness_file} identifies the file containing the target ice
 thickness field. A basic run modifying surface model \texttt{given} would
 look like
 \begin{verbatim}
-$ pismr -i foo.nc -surface given,forcing -force_to_thk bar.nc
+$ pismr -i foo.nc -surface given,forcing -force_to_thickness_file bar.nc
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
 
 In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp},
-as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
+≈as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
 \variable{thk} which will serve as the target thickness. Option
-\intextoption{force_to_thk_alpha} adjusts the value of $\alpha_0$, which has a
+\intextoption{force_to_thickness_alpha} adjusts the value of $\alpha_0$, which has a
 default value specified in the \emph{Source Code Browser}
 \url{\PISMBROWSERURL}.
 

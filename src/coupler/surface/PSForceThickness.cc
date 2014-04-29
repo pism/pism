@@ -98,18 +98,18 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Surface model forcing", ""); CHKERRQ(ierr);
 
-  ierr = PetscOptionsString("-force_to_thk",
+  ierr = PetscOptionsString("-force_to_thickness_file",
                             "Specifies the target thickness file for the force-to-thickness mechanism",
                             "", "",
                             fttfile, PETSC_MAX_PATH_LEN, &opt_set); CHKERRQ(ierr);
 
   if (!opt_set) {
     ierr = PetscPrintf(grid.com,
-                       "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
+                       "ERROR: surface model forcing requires the -force_to_thickness_file option.\n"); CHKERRQ(ierr);
     PISMEnd();
   }
 
-  ierr = PetscOptionsReal("-force_to_thk_alpha",
+  ierr = PetscOptionsReal("-force_to_thickness_alpha",
                           "Specifies the force-to-thickness alpha value in per-year units",
                           "", grid.convert(alpha, "s-1", "yr-1"),
                           &fttalpha, &fttalphaSet); CHKERRQ(ierr);
@@ -125,18 +125,18 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
   if (fttalphaSet == PETSC_TRUE) {
-    ierr = verbPrintf(3, grid.com, "    option -force_to_thk_alpha seen\n");
+    ierr = verbPrintf(3, grid.com, "    option -force_to_thickness_alpha seen\n");
        CHKERRQ(ierr);
     alpha = grid.convert(fttalpha, "yr-1", "s-1");
   }
 
   ierr = verbPrintf(2, grid.com,
-                    "    alpha = %.6f year-1 for -force_to_thk mechanism\n",
+                    "    alpha = %.6f year-1 for -force_to_thickness mechanism\n",
                     grid.convert(alpha, "s-1", "yr-1")); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  // fttfile now contains name of -force_to_thk file; now check
+  // fttfile now contains name of -force_to_thickness_file file; now check
   // it is really there; and regrid the target thickness
   PIO nc(grid, "guess_mode");
   bool mask_exists = false;
@@ -179,13 +179,13 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
 }
 
 /*!
-If `-force_to_thk` `foo.nc` is in use then vthktarget will have a target ice thickness
+If `-force_to_thickness_file` `foo.nc` is in use then vthktarget will have a target ice thickness
 map.  Let \f$H_{\text{tar}}\f$ be this target thickness,
 and let \f$H\f$ be the current model thickness.  Recall that the mass continuity
 equation solved by IceModel::massContExplicitStep() is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
 and that this procedure is supposed to produce \f$M\f$.
-In this context, the semantics of `-force_to_thk` are that \f$M\f$ is modified
+In this context, the semantics of `-force_to_thickness` are that \f$M\f$ is modified
 by a multiple of the difference between the target thickness and the current thickness.
 In particular, the \f$\Delta M\f$ that is produced here is
   \f[\Delta M = \alpha (H_{\text{tar}} - H)\f]
@@ -265,20 +265,20 @@ $PISM_DO $cmd
 echo
 
 cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
-  -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc \
+  -surface pdd,forcing -pdd_fausto -force_to_thickness_file green20km_y1.nc \
   -o default_force.nc -ts_file ts_default_force.nc -ts_times -1000:yearly:0"
 $PISM_DO $cmd
 
 echo
 
 cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
-    -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc -force_to_thk_alpha 0.005 \
+    -surface pdd,forcing -pdd_fausto -force_to_thickness_file green20km_y1.nc -force_to_thickness_alpha 0.005 \
     -o weak_force.nc -ts_file ts_weak_force.nc -ts_times -1000:yearly:0"
 $PISM_DO $cmd
 
 
 cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
-    -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc -force_to_thk_alpha 0.05 \
+    -surface pdd,forcing -pdd_fausto -force_to_thickness_file green20km_y1.nc -force_to_thickness_alpha 0.05 \
     -o strong_force.nc -ts_file ts_strong_force.nc -ts_times -1000:yearly:0"
 $PISM_DO $cmd
 
@@ -290,11 +290,11 @@ As shown below, the time series for `ivol` and `maximum_diffusivity` in the
 above time series files show that the force-to-thickness mechanism is forcing
 a system with negative feedback.
 
-image html ivol_force_to_thk.png "\b Volume results from the -force_to_thk mechanism."
-\anchor ivol_force_to_thk
+image html ivol_force_to_thickness.png "\b Volume results from the -force_to_thickness mechanism."
+\anchor ivol_force_to_thickness
 
-image html diffusivity_force_to_thk.png "\b Maximum diffusivity results from the -force_to_thk mechanism."
-\anchor diffusivity_force_to_thk
+image html diffusivity_force_to_thickness.png "\b Maximum diffusivity results from the -force_to_thickness mechanism."
+\anchor diffusivity_force_to_thickness
 
  */
 PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
@@ -304,7 +304,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
 
   ierr = verbPrintf(5, grid.com,
-                    "    updating surface mass balance using -force_to_thk mechanism ...");
+                    "    updating surface mass balance using -force_to_thickness mechanism ...");
   CHKERRQ(ierr);
 
   double ice_density = config.get("ice_density");
