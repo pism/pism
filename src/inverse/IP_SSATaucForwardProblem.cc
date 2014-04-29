@@ -83,7 +83,7 @@ directly.  Use this method in conjuction with
 The vector \f$\zeta\f$ is not copied; a reference to the IceModelVec is
 kept.
 */
-PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
+PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
 {
   PetscErrorCode ierr;
 
@@ -120,7 +120,7 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta )
 //! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
 /* Use this method for inverse methods employing the reduced gradient. Use this method
 in conjuction with apply_linearization and apply_linearization_transpose.*/
-PetscErrorCode IP_SSATaucForwardProblem::linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
+PetscErrorCode IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason) {
 
   PetscErrorCode ierr;
   ierr = this->set_design(zeta); CHKERRQ(ierr);
@@ -301,7 +301,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     for (j = ys; j < ys + ym; j++) {
 
       // Zero out the element - local residual in prep for updating it.
-      for (int k = 0; k < FEQuadrature::Nk; k++){
+      for (int k = 0; k < FEQuadrature::Nk; k++) {
         du_e[k].u = 0;
         du_e[k].v = 0;
       }
@@ -327,7 +327,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
       // Compute the change in tau_c with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
-      for (int k = 0; k < FEQuadrature::Nk; k++){
+      for (int k = 0; k < FEQuadrature::Nk; k++) {
         m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
         dtauc_e[k] *= dzeta_e[k];
       }
@@ -340,7 +340,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         // Determine "dbeta / dzeta" at the quadrature point
         double dbeta = 0;
-        if (M.grounded_ice(coefficients->mask) ) {
+        if (M.grounded_ice(coefficients->mask)) {
           dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
         }
 
@@ -479,7 +479,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
       m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for (int k=0; k<FEQuadrature::Nk; k++){
+      for (int k=0; k<FEQuadrature::Nk; k++) {
         dzeta_e[k] = 0;
       }
 
@@ -505,8 +505,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   } // i
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  for (i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++){
-    for (j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++){
+  for (i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
+    for (j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
       double dtauc_dzeta;
       m_tauc_param.toDesignVariable((*m_zeta)(i, j), NULL, &dtauc_dzeta);
       dzeta_a[i][j] *= dtauc_dzeta;

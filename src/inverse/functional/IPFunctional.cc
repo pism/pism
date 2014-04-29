@@ -30,8 +30,8 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceM
   ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
   
   ierr = gradient.begin_access(); CHKERRQ(ierr);
-  for(int i=grid.xs; i< grid.xs+grid.xm; i++) {
-    for(int j=grid.ys; j< grid.ys+grid.ym; j++) {
+  for (int i=grid.xs; i< grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j< grid.ys+grid.ym; j++) {
       x.begin_access(); CHKERRQ(ierr);
       x(i,j) += h;
       x.end_access(); CHKERRQ(ierr);
@@ -58,8 +58,8 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceM
   ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
   
   ierr = gradient.begin_access(); CHKERRQ(ierr);
-  for(int i=grid.xs; i< grid.xs+grid.xm; i++) {
-    for(int j=grid.ys; j< grid.ys+grid.ym; j++) {
+  for (int i=grid.xs; i< grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j< grid.ys+grid.ym; j++) {
       x.begin_access(); CHKERRQ(ierr);
       x(i,j).u += h;
       x.end_access(); CHKERRQ(ierr);

@@ -74,7 +74,7 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
           h_x(i, j, 1) = 0.0;
         else
           h_x(i, j, 1) = ( + hst(i + 1, j + 1) + hst(i + 1, j)
-                           - hst(i - 1, j + 1) - hst(i - 1, j) ) / (4.0 * dx);
+                           - hst(i - 1, j + 1) - hst(i - 1, j)) / (4.0 * dx);
 
       }
 
@@ -85,7 +85,7 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
           h_y(i, j, 0) = 0.0;
         else
           h_y(i, j, 0) = ( + hst(i + 1, j + 1) + hst(i, j + 1)
-                           - hst(i + 1, j - 1) - hst(i, j - 1) ) / (4.0 * dy);
+                           - hst(i + 1, j - 1) - hst(i, j - 1)) / (4.0 * dy);
       }
 
       // y-component, j-offset

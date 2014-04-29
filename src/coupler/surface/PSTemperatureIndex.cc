@@ -254,8 +254,8 @@ PetscErrorCode PSTemperatureIndex::init(Vars &vars) {
     ierr = air_temp_sd.init(filename, sd_period, sd_ref_time); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
-                      "  Option -pdd_sd_file is not set. Using a constant value.\n"
-                      ); CHKERRQ(ierr);
+                      "  Option -pdd_sd_file is not set. Using a constant value.\n");
+    CHKERRQ(ierr);
     ierr = air_temp_sd.set(base_pddStdDev); CHKERRQ(ierr);
   }
 

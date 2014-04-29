@@ -49,7 +49,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   if (!(g.periodicity & X_PERIODIC))
     {
       // Leftmost element has x-index 0.
-      if (xs < 0){
+      if (xs < 0) {
         xs = 0;
       }
       // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
@@ -63,7 +63,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   if (!(g.periodicity & Y_PERIODIC))
     {
       // Bottom element has y-index 0.
-      if (ys < 0){
+      if (ys < 0) {
         ys = 0;
       }
       // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
@@ -80,6 +80,17 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   lxm = lxf - lxs + 1;
   lym = lyf - lys + 1;
 
+}
+
+FEDOFMap::FEDOFMap() {
+  m_i = 0;
+  m_j = 0;
+  PetscMemzero(m_row, Nk*sizeof(MatStencil));
+  PetscMemzero(m_col, Nk*sizeof(MatStencil));
+}
+
+FEDOFMap::~FEDOFMap() {
+  // empty
 }
 
 
@@ -158,10 +169,15 @@ void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
   // The meaning of i and j for a PISM IceGrid and for a Petsc DA are swapped (the so-called
   // fundamental transpose.  The interface between PISM and Petsc is the stencils, so all
   // interactions with the stencils involve a transpose.
-  m_col[0].j = i;   m_col[0].i = j;
-  m_col[1].j = i + 1; m_col[1].i = j;
-  m_col[2].j = i + 1; m_col[2].i = j + 1;
-  m_col[3].j = i;   m_col[3].i = j + 1;
+  m_col[0].i = j;
+  m_col[1].i = j;
+  m_col[2].i = j + 1;
+  m_col[3].i = j + 1;
+
+  m_col[0].j = i;
+  m_col[1].j = i + 1;
+  m_col[2].j = i + 1;
+  m_col[3].j = i;
 
   memcpy(m_row, m_col, Nk*sizeof(m_col[0]));
 
@@ -191,7 +207,7 @@ void FEDOFMap::markColInvalid(int k) {
   vector `yg`. */
 /*! The element-local residual should be an array of Nk values.*/
 void FEDOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
-  for (int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < Nk; k++) {
     if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
     yg[m_row[k].j][m_row[k].i].u += y[k].u;
     yg[m_row[k].j][m_row[k].i].v += y[k].v;
@@ -199,14 +215,14 @@ void FEDOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
 }
 
 void FEDOFMap::addLocalResidualBlock(const double *y, double **yg) {
-  for (int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < Nk; k++) {
     if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
     yg[m_row[k].j][m_row[k].i] += y[k];
   }
 }
 
 void FEDOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
-  for (int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < Nk; k++) {
     if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
     y_global(m_row[k].j, m_row[k].i).u += y[k].u;
     y_global(m_row[k].j, m_row[k].i).v += y[k].v;
@@ -214,7 +230,7 @@ void FEDOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) 
 }
 
 void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
-  for (int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < Nk; k++) {
     if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
     y_global(m_row[k].j, m_row[k].i) += y[k];
   }
@@ -224,7 +240,7 @@ void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
 /*! The element-local Jacobian should be givnen as a row-major array of Nk*Nk values in the
   scalar case or (2Nk)*(2Nk) values in the vector valued case. */
 PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row, Nk, m_col, K, ADD_VALUES);CHKERRQ(ierr);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row, Nk, m_col, K, ADD_VALUES); CHKERRQ(ierr);
   return 0;
 }
 
@@ -235,8 +251,8 @@ PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
   interactions at grid point (`i`, `j`).  Sheesh.*/
 PetscErrorCode FEDOFMap::setJacobianDiag(int i, int j, const double*K, Mat J) {
   MatStencil row;
-  row.i=j; row.j=i;
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, K, INSERT_VALUES);CHKERRQ(ierr);
+  row.i = j; row.j = i;
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, K, INSERT_VALUES); CHKERRQ(ierr);
   return 0;
 }
 
@@ -250,7 +266,7 @@ FEQuadrature_Scalar::FEQuadrature_Scalar() {
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
 void FEQuadrature::getWeightedJacobian(double *jxw) {
-  for (int q=0;q<Nq;q++)
+  for (int q=0; q<Nq; q++)
     {
       jxw[q] = m_jacobianDet * quadWeights[q];
     }
@@ -268,8 +284,8 @@ void FEQuadrature::init(const IceGrid &grid, double L) {
   m_jacobianDet = jacobian_x*jacobian_y;
 
   FEShapeQ1 shape;
-  for (int q = 0; q < Nq; q++){
-    for (int k = 0; k < Nk; k++){
+  for (int q = 0; q < Nq; q++) {
+    for (int k = 0; k < Nk; k++) {
       shape.eval(k, quadPoints[q][0], quadPoints[q][1], &m_germs[q][k]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
@@ -283,7 +299,7 @@ FEQuadrature_Vector::FEQuadrature_Vector() {
 
 //! Return the values at all quadrature points of all shape functions.
 //* The return value is an Nq by Nk array of FEFunctionGerms. */
-const FEFunctionGerm (*FEQuadrature::testFunctionValues())[FEQuadrature::Nq]
+const FEQuadrature::FEFunctionGermArray* FEQuadrature::testFunctionValues()
 {
   return m_germs;
 }
@@ -301,7 +317,7 @@ const FEFunctionGerm *FEQuadrature::testFunctionValues(int q, int k) {
 
 
 /*! @brief Compute the values at the quadrature ponits of a scalar-valued
-  finite-element function with element-local  degrees of freedom `x_local`.*/
+  finite-element function with element-local degrees of freedom `x_local`.*/
 /*! There should be room for FEQuadrature::Nq values in the output vector `vals`. */
 void FEQuadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals) {
   for (int q = 0; q < Nq; q++) {
@@ -522,12 +538,12 @@ PetscErrorCode DirichletData::init_impl(IceModelVec2Int *indices, IceModelVec *v
 
 PetscErrorCode DirichletData::finish_impl(IceModelVec *values) {
   PetscErrorCode ierr;
-  if (m_indices) {
+  if (m_indices != NULL) {
     ierr = m_indices->end_access(); CHKERRQ(ierr);
     m_indices = NULL;
   }
 
-  if (values) {
+  if (values != NULL) {
     ierr = values->end_access(); CHKERRQ(ierr);
   }
 
@@ -713,7 +729,6 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
 }
 
 PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
-  int i, j;
   PetscErrorCode ierr;
   IceGrid &grid = *m_indices->get_grid();
 
@@ -723,9 +738,10 @@ PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
   // these columns previously, the symmetry of the Jacobian matrix is
   // preserved.
 
-  const double identity[4] = {m_weight, 0, 0, m_weight};
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+  const double identity[4] = {m_weight, 0,
+                              0, m_weight};
+  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
         // Transpose shows up here!

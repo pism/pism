@@ -48,14 +48,20 @@ double IceBasalResistancePlasticLaw::drag(double tauc, double vx, double vy) con
 }
 
 //! Compute the drag coefficient and its derivative with respect to \f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) \f$
+/**
+ * @f{align*}{
+ * \beta &= \frac{\tau_{c}}{|\mathbf{u}|} = \tau_{c}\cdot (|\mathbf{u}|^{2})^{-1/2}\\
+ * \diff{\beta}{\frac12 |\mathbf{u}|^{2}} &= -\frac{1}{|\mathbf{u}|^{2}}\cdot \beta
+ * @f}
+ */
 void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, double vy,
-                                                        double *d, double *dd) const {
+                                                        double *beta, double *dbeta) const {
   const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
-  *d = tauc / sqrt(magreg2);
+  *beta = tauc / sqrt(magreg2);
 
-  if (dd)
-    *dd = -1 * (*d) / magreg2;
+  if (dbeta)
+    *dbeta = -1 * (*beta) / magreg2;
 
 }
 
@@ -113,8 +119,8 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MP
   by  @f$ A @f$ . It would have exactly this effect \e if the driving
   stress were \e hypothetically completely held by the basal
   resistance. Thus this scale factor is used to reduce (if
-  `-sliding_scale_factor_reduces_tauc`  @f$ A @f$  with  @f$ A > 1 @f$ ) or increase (if  @f$ A <
-  1 @f$ ) the value of the (pseudo-) yield stress `tauc`. The concept
+  `-sliding_scale_factor_reduces_tauc`  @f$ A @f$  with  @f$ A > 1 @f$) or increase (if  @f$ A <
+  1 @f$) the value of the (pseudo-) yield stress `tauc`. The concept
   behind this is described at
   http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
 
@@ -154,20 +160,27 @@ double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double v
 
 
 //! Compute the drag coefficient and its derivative with respect to @f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) @f$
+/**
+ * @f{align*}{
+ * \beta &= \frac{\tau_{c}}{u_{\text{threshold}}}\cdot (|u|^{2})^{\frac{q-1}{2}} \\
+ * \diff{\beta}{\frac12 |\mathbf{u}|^{2}} &= \frac{\tau_{c}}{u_{\text{threshold}}}\cdot \frac{q-1}{2}\cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2} - 1}\cdot 2 \\
+ * &= \frac{q-1}{|\mathbf{u}|^{2}}\cdot \beta(\mathbf{u}) \\
+ * @f}
+ */
 void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, double vx, double vy,
-                                                              double *d, double *dd) const
+                                                              double *beta, double *dbeta) const
 {
   const double magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
 
   if (sliding_scale_factor_reduces_tauc > 0.0) {
     double Aq = pow(sliding_scale_factor_reduces_tauc, pseudo_q);
-    *d = (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+    *beta = (tauc / Aq) * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
   } else {
-    *d =  tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
+    *beta =  tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
   }
 
-  if (dd)
-    *dd = (pseudo_q - 1) * (*d) / magreg2;
+  if (dbeta)
+    *dbeta = (pseudo_q - 1) * (*beta) / magreg2;
 
 }
 

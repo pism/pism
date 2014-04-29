@@ -189,7 +189,7 @@ if __name__ == "__main__":
         var_out[:] = gc_lat
 
 
-    if (not 'lon' in nc.variables.keys()) or ( not 'lat' in nc.variables.keys()):
+    if (not 'lon' in nc.variables.keys()) or (not 'lat' in nc.variables.keys()):
         print("No lat/lon coordinates found, creating them")
         ee, nn = np.meshgrid(easting,northing)
         lon, lat = proj(ee, nn, inverse=True)

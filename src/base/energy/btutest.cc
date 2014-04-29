@@ -137,8 +137,7 @@ int main(int argc, char *argv[]) {
       "  -ye            end year in using Test K\n"
       "  -dt            time step B (= positive float) in years\n"
       "  -Mz            number of ice levels to use\n"
-      "  -Lz            height of ice/atmospher box\n"
-      ); CHKERRQ(ierr);
+      "  -Lz            height of ice/atmospher box\n"); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com,
         "btutest tests BedThermalUnit and IceModelVec3BTU\n"); CHKERRQ(ierr);

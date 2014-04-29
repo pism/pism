@@ -153,13 +153,13 @@ static hid_t H5DS_get_REFLIST_type(void)
      used to store ds_list_t structure in the REFERENCE_LIST
      attribute */
 
-  if((ntid_t = H5Tcreate(H5T_COMPOUND, sizeof(ds_list_t))) < 0)
+  if ((ntid_t = H5Tcreate(H5T_COMPOUND, sizeof(ds_list_t))) < 0)
     goto out;
 
-  if(H5Tinsert(ntid_t, "dataset", HOFFSET(ds_list_t,ref), H5T_STD_REF_OBJ) < 0)
+  if (H5Tinsert(ntid_t, "dataset", HOFFSET(ds_list_t,ref), H5T_STD_REF_OBJ) < 0)
     goto out;
 
-  if(H5Tinsert(ntid_t, "dimension", HOFFSET(ds_list_t, dim_idx), H5T_NATIVE_INT) < 0)
+  if (H5Tinsert(ntid_t, "dimension", HOFFSET(ds_list_t, dim_idx), H5T_NATIVE_INT) < 0)
     goto out;
 
   return ntid_t;
@@ -283,7 +283,7 @@ static herr_t inq_dimensions(hid_t dsid, std::vector<std::string> &dims) {
   assert(space_id >= 0);
 
   hvl_t *buf = (hvl_t *)malloc((size_t)rank * sizeof(hvl_t));
-  if(buf == NULL)
+  if (buf == NULL)
     goto out;
 
   stat = H5Aread(attr_id, tid, buf);
@@ -376,7 +376,7 @@ static herr_t extend_dimension(hid_t dim_id, int increment) {
 
   /* try to find the attribute "REFERENCE_LIST" on the dataset */
   int has_reflist = H5LTfind_attribute(dim_id, REFERENCE_LIST);
-  if(has_reflist < 0)
+  if (has_reflist < 0)
     return has_reflist;
 
   if (has_reflist == 0)
@@ -390,25 +390,25 @@ static herr_t extend_dimension(hid_t dim_id, int increment) {
   assert(attr_id >= 0);
 
   hid_t attr_space_id = H5Aget_space(attr_id);
-  if(attr_space_id < 0)
+  if (attr_space_id < 0)
     return -1;
 
   int nelmts = H5Sget_simple_extent_npoints(attr_space_id);
-  if(nelmts < 0)
+  if (nelmts < 0)
     return -1;
 
   ds_list_t *dsbuf = (ds_list_t*) malloc((size_t)nelmts * sizeof(ds_list_t));
-  if(dsbuf == NULL)
+  if (dsbuf == NULL)
     return -1;
 
   hid_t reflist_t = H5DS_get_REFLIST_type();
   assert(reflist_t > 0);
 
   stat = H5Aread(attr_id, reflist_t, dsbuf);
-  if(stat < 0)
+  if (stat < 0)
     goto out;
 
-  for(int ii = 0; ii < nelmts; ii++) {
+  for (int ii = 0; ii < nelmts; ii++) {
 
     hid_t dim_id_i = 0;
 
@@ -834,7 +834,7 @@ int NC4_HDF5::put_vara_double(std::string variable_name,
     }
 
     H5Sclose(space_id);
-  } // end of "if(is_scale > 0)"
+  } // end of "if (is_scale > 0)"
 
   // Enable collective I/O.
   hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);

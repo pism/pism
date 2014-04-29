@@ -268,8 +268,7 @@ PetscErrorCode reportErrors(const Config &config,
                             IceModelVec2S *thickness,
                             IceModelVec3 *u_sia, IceModelVec3 *v_sia,
                             IceModelVec3 *w_sia,
-                            IceModelVec3 *strain_heating
-                            ) {
+                            IceModelVec3 *strain_heating) {
   PetscErrorCode ierr;
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)

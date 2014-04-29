@@ -84,8 +84,8 @@ PetscErrorCode SSA::init(Vars &vars) {
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   driving_stress_x = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_x"));
   driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
-  if( (driving_stress_x==NULL) || (driving_stress_y==NULL) ) {
-    if(surface == NULL) {
+  if ((driving_stress_x==NULL) || (driving_stress_y==NULL)) {
+    if (surface == NULL) {
       SETERRQ(grid.com, 1,
               "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
     }

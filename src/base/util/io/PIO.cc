@@ -1806,7 +1806,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
     input_has_units = true;
   }
 
-  if (metadata.has_attribute("units") && input_has_units == false ) {
+  if (metadata.has_attribute("units") && input_has_units == false) {
     std::string units_string = internal_units.format();
     ierr = verbPrintf(2, m_com,
                       "PISM WARNING: Variable '%s' does not have the units attribute.\n"

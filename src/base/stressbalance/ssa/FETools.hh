@@ -214,7 +214,7 @@ public:
   static const ShapeFunctionSpec shapeFunction[Nk];
   
   //! Evaluate shape function \a k at (\a x,\a y) with values returned in \a germ.
-  virtual void eval(int k, double x, double y,FEFunctionGerm*germ){
+  virtual void eval(int k, double x, double y,FEFunctionGerm*germ) {
     shapeFunction[k](x,y,germ);
   }
 };
@@ -242,14 +242,8 @@ public:
 class FEDOFMap
 {
 public:
-  FEDOFMap()
-  {
-    m_i = m_j = 0;
-    PetscMemzero(m_row, Nk*sizeof(MatStencil));
-    PetscMemzero(m_col, Nk*sizeof(MatStencil));
-  };
-  
-  ~FEDOFMap() {};
+  FEDOFMap();
+  ~FEDOFMap();
 
   // scalar
   void extractLocalDOFs(IceModelVec2S &x_global, double *x_local) const;
@@ -283,7 +277,7 @@ public:
 
   static const int Nk = 4; //<! The number of test functions defined on an element.
   
-protected:
+private:
   static const int kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
   static const int kIOffset[Nk];
   static const int kJOffset[Nk];
@@ -393,11 +387,15 @@ public:
   static const int Nq = 4;  //!< Number of quadrature points.
   static const int Nk = 4;  //!< Number of test functions on the element.
   
-  void init(const IceGrid &g,double L=1.0); // FIXME Allow a length scale to be specified.
+  void init(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
-  const FEFunctionGerm (*testFunctionValues())[Nq];  
-  const FEFunctionGerm *testFunctionValues(int q);
-  const FEFunctionGerm *testFunctionValues(int q,int k);
+  // define FEFunctionGermArray, which is an array of FEQuadrature::Nq
+  // FEFunctionGerms
+  typedef FEFunctionGerm FEFunctionGermArray[FEQuadrature::Nq];
+
+  const FEFunctionGermArray* testFunctionValues();
+  const FEFunctionGerm* testFunctionValues(int q);
+  const FEFunctionGerm* testFunctionValues(int q,int k);
   
   void getWeightedJacobian(double *jxw);
 
@@ -407,9 +405,9 @@ public:
   static const double quadWeights[Nq];
 
 protected:
-  //! The Jacobian determinant of the map from the reference element to the physical element.
+  //! The determinant of the Jacobian of the map from the reference element to the physical element.
   double m_jacobianDet;
-  //! Shape function values (for each of \a Nq quadrature points, and each of \a Nk shape function)
+  //! Trial function values (for each of \a Nq quadrature points, and each of \a Nk trial function).
   FEFunctionGerm m_germs[Nq][Nk];
 };
 

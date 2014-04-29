@@ -303,7 +303,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   
   ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
 
-  if (save_snapshots && (!split_snapshots) ) {
+  if (save_snapshots && (!split_snapshots)) {
     char tmp[20];
     snprintf(tmp, 20, "%d", grid.Mz);
     

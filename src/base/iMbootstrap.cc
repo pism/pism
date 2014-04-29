@@ -200,7 +200,7 @@ PetscErrorCode IceModel::bootstrap_3d() {
   
   ierr = verbPrintf(2, grid.com, "  filling ice temperatures using surface temps (and %s)\n",
                     (config.get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
-                     ? "quartic guess sans smb" : "mass balance for velocity estimate") );
+                     ? "quartic guess sans smb" : "mass balance for velocity estimate"));
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
@@ -341,7 +341,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
           for (unsigned int k = 0; k < ks; k++) {
             const double z = grid.zlevels[k],
               Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
-            T[k] = Ts + C0 * ( erf(gamma0) - erf(gamma0 * z / HH) );
+            T[k] = Ts + C0 * (erf(gamma0) - erf(gamma0 * z / HH));
             T[k] = PetscMin(Tpmp,T[k]);
           }
         }

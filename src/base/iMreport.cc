@@ -55,7 +55,7 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (mask.icy(i, j)) {
         // accumulate area of base which is at melt point
-        if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)) )) // FIXME issue #15
+        if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) // FIXME issue #15
           meltarea += a;
       }
       // if you happen to be at center, record absolute basal temp there
@@ -160,8 +160,8 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
     const double CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx * grid.Mz * grid.Mz);
     // at default verbosity level, only report CFL viols if above:
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
-    if (   (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT)
-        || (getVerbosityLevel() > 2) ) {
+    if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||
+        getVerbosityLevel() > 2) {
       char tempstr[90] = "";
       snprintf(tempstr,90,
               "  [!CFL#=%1.0f (=%5.2f%% of 3D grid)] ",
@@ -357,14 +357,14 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.grounded(i,j)){
+      if (mask.grounded(i,j)) {
         // count all ice, including cells which have so little they
         // are considered "ice-free"
         if (ice_thickness(i,j) > 0) {
-          if(bed_topography(i, j) > sea_level){
+          if (bed_topography(i, j) > sea_level) {
             volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho ;
           } else {
-            volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho - cell_area(i,j) * ( sea_level - bed_topography(i, j) );
+            volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho - cell_area(i,j) * (sea_level - bed_topography(i, j));
           }
         }
       }

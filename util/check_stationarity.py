@@ -36,7 +36,7 @@ parser.usage = "usage: %prog [options] FILE"
 parser.description = '''Check stationarity of a variable in FILE by calculating
 the rate of change of its p-norm. That is
 d/dt || X ||_{p} =
-(\sum_{i}^{m} ( E_{i}^{n+1}-E_{i}^{n} )^p)^(1/p)/(t^{n+1}-t^{n+1}),
+(\sum_{i}^{m} (E_{i}^{n+1}-E_{i}^{n})^p)^(1/p)/(t^{n+1}-t^{n+1}),
 where E_{i}^{n} is the value at time n and coordinate i.'''
 parser.add_option("-p", "--pnorm", dest="pnorm", type='float',
                   help="use P norm (default p = 2)",

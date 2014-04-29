@@ -117,17 +117,17 @@ double columnSystemCtx::ddratio(unsigned int n) const {
   }
   const double scale = norm1(n);
 
-  if ( (fabs(D[0]) / scale) < 1.0e-12)  return -1.0;
+  if ((fabs(D[0]) / scale) < 1.0e-12)  return -1.0;
   double z = fabs(U[0]) / fabs(D[0]);
 
   for (unsigned int k = 1; k < n-1; k++) {  // k is row index (zero-based)
-    if ( (fabs(D[k]) / scale) < 1.0e-12)  return -1.0;
+    if ((fabs(D[k]) / scale) < 1.0e-12)  return -1.0;
     const double s = fabs(L[k]) + fabs(U[k]);
-    z = PetscMax(z, s / fabs(D[k]) );
+    z = PetscMax(z, s / fabs(D[k]));
   }
 
-  if ( (fabs(D[n-1]) / scale) < 1.0e-12)  return -1.0;
-  z = PetscMax(z, fabs(L[n-1]) / fabs(D[n-1]) );
+  if ((fabs(D[n-1]) / scale) < 1.0e-12)  return -1.0;
+  z = PetscMax(z, fabs(L[n-1]) / fabs(D[n-1]));
 
   return z;
 }
@@ -383,10 +383,10 @@ communicator PETSC_COMM_SELF.
 PetscErrorCode columnSystemCtx::viewColumnInfoMFile(char *filename, double *x, unsigned int n) {
   PetscErrorCode ierr;
   PetscViewer viewer;
-  ierr = PetscViewerCreate(PETSC_COMM_SELF, &viewer);CHKERRQ(ierr);
-  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(viewer, filename);CHKERRQ(ierr);
+  ierr = PetscViewerCreate(PETSC_COMM_SELF, &viewer); CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, filename); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
         "%%  system has 1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n",
         norm1(n), ddratio(n)); CHKERRQ(ierr);

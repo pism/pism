@@ -35,7 +35,7 @@ class testi(PISM.ssa.SSAExactTestCase):
   def _initGrid(self):
     Mx = self.Mx; My = self.My;
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-    Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
+    Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)))
     PISM.model.initShallowGrid(self.grid,Lx,Ly,Mx,My,PISM.NOT_PERIODIC);
 
   def _initPhysics(self):
@@ -87,13 +87,13 @@ class testi(PISM.ssa.SSAExactTestCase):
         bed[i,j] = bed_ij
         surface[i,j] = bed_ij + H0_schoof
 
-        edge = ( (j == 0) or (j == grid.My - 1) ) or ( (i==0) or (i==grid.Mx-1) );
+        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx-1));
         if (edge):
           bc_mask[i,j] = 1;
           vel_bc[i,j].u = u;
           vel_bc[i,j].v = v;
       
-  def exactSolution( self, i, j, x, y ):
+  def exactSolution(self, i, j, x, y):
     (j1,j2,u,v) = PISM.exactI(m_schoof,x,y)
     return [u,v]
 

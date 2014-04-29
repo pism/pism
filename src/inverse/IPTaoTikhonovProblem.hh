@@ -58,7 +58,7 @@ public:
 
   //! The method called after each minimization iteration.
   virtual PetscErrorCode 
-  iteration( IPTaoTikhonovProblem<ForwardProblem> &problem,
+  iteration(IPTaoTikhonovProblem<ForwardProblem> &problem,
              double eta, int iter,
              double objectiveValue, double designValue,
              DesignVec &d, DesignVec &diff_d, DesignVec &grad_d,
@@ -105,7 +105,7 @@ public:
   TerminationReason::Ptr reason;
   solver.solve(reason);
 
-  if(reason->succeeded()) {
+  if (reason->succeeded()) {
   printf("Success: %s\n",reason->description().c_str());
   } else {
   printf("Failure: %s\n",reason->description().c_str());
@@ -127,7 +127,7 @@ public:
 
   <li> A method
   \code
-  PetscErrorCode linearize_at( DesignVec &d, TerminationReason::Ptr &reason);
+  PetscErrorCode linearize_at(DesignVec &d, TerminationReason::Ptr &reason);
   \endcode
   that instructs the class to compute the value of F and 
   anything needed to compute its linearization at \a d.   This is the first method
@@ -189,7 +189,7 @@ public:
 
   //! Sets the initial guess for minimization iterations. If this isn't set explicitly,
   //  the parameter \f$d0\f$ appearing the in the Tikhonov functional will be used.
-  virtual PetscErrorCode setInitialGuess( DesignVec &d) {
+  virtual PetscErrorCode setInitialGuess(DesignVec &d) {
     PetscErrorCode ierr;
     ierr = m_dGlobal.copy_from(d); CHKERRQ(ierr);
     return 0;
@@ -199,7 +199,7 @@ public:
   virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, double *value, Vec gradient);
 
   //! Add an object to the list of objects to be called after each iteration.
-  virtual void addListener( typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr listener) {
+  virtual void addListener(typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr listener) {
     m_listeners.push_back(listener);
   }
 
@@ -272,9 +272,9 @@ protected:
 
 };
 
-template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem( ForwardProblem &forward,
+template<class ForwardProblem> IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forward,
                                                                                            DesignVec &d0, StateVec &u_obs, double eta,
-                                                                                           IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional ):
+                                                                                           IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
   m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
   m_designFunctional(designFunctional), m_stateFunctional(stateFunctional)
 {
@@ -298,12 +298,12 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   ierr = m_dGlobal.create(*m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dGlobal.copy_from(m_d0); CHKERRQ(ierr);
 
-  ierr = m_u_diff.create( *m_grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create( *m_grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_u_diff.create(*m_grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff.create(*m_grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_grad_state.create( *m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad_design.create( *m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad.create( *m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_state.create(*m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_design.create(*m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad.create(*m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
   ierr = m_adjointRHS.create(*m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
@@ -330,15 +330,15 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   PetscErrorCode ierr;
   
   int its;
-  ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL ); CHKERRQ(ierr);
+  ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
   
   int nListeners = m_listeners.size();
-  for(int k=0; k<nListeners; k++) {
+  for (int k=0; k<nListeners; k++) {
     ierr = m_listeners[k]->iteration(*this,m_eta,
                                      its,m_val_design,m_val_state,
                                      m_d, m_d_diff, m_grad_design,
                                      m_forward.solution(), m_u_diff, m_grad_state,
-                                     m_grad );
+                                     m_grad);
     CHKERRQ(ierr);
   }
   return 0;
@@ -357,9 +357,9 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   designNorm *= dWeight;    
   stateNorm  *= sWeight;
   
-  if( sumNorm < m_tikhonov_atol) {
+  if (sumNorm < m_tikhonov_atol) {
     ierr = TaoSetTerminationReason(tao, TAO_CONVERGED_GATOL); CHKERRQ(ierr);    
-  } else if( sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm) ) {
+  } else if (sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm)) {
     ierr = TaoSetTerminationReason(tao,TAO_CONVERGED_USER); CHKERRQ(ierr);
   } else {
     ierr = TaoDefaultConvergenceTest(tao,NULL); CHKERRQ(ierr);
@@ -375,7 +375,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 
   TerminationReason::Ptr reason;
   ierr = m_forward.linearize_at(m_d, reason); CHKERRQ(ierr);
-  if(reason->failed()) {
+  if (reason->failed()) {
     ierr = verbPrintf(2,m_grid->com,"IPTaoTikhonovProblem::evaluateObjectiveAndGradient failure in forward solve\n%s\n",reason->description().c_str()); CHKERRQ(ierr);
     ierr = TaoSetTerminationReason(tao,TAO_DIVERGED_USER); CHKERRQ(ierr);
     return 0;

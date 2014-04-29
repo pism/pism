@@ -87,7 +87,7 @@ class BasalTillStrength:
           tauc[i,j] = 1000.0e3;  #// large yield stress of 1000 kPa = 10 bar if no ice
         else: # grounded and there is some ice
           p_over = rho_g * H_ij
-          p_w    = self.getBasalWaterPressure( H_ij,
+          p_w    = self.getBasalWaterPressure(H_ij,
                                          bwat[i,j],bmr[i,j],hydrology_pressure_fraction, 
                                          bwat_max)
           N = p_over - p_w #  effective pressure on till
@@ -123,7 +123,7 @@ class BasalTillStrength:
             tillphi[i,j] = tillphi_prev[i,j]
         else: # grounded and there is some ice
           p_over = rho_g * H_ij
-          p_w    = self.getBasalWaterPressure( H_ij,
+          p_w    = self.getBasalWaterPressure(H_ij,
                                          bwat[i,j],bmr[i,j],hydrology_pressure_fraction, 
                                          bwat_max)
           N = p_over - p_w #  effective pressure on till
@@ -133,11 +133,11 @@ class BasalTillStrength:
           else:
             tillphi[i,j] = (180./math.pi)*math.atan((tauc[i,j]-till_c_0)/N)
 
-  def getBasalWaterPressure( self, thk, bwat, bmr, frac, bwat_max ):  
+  def getBasalWaterPressure(self, thk, bwat, bmr, frac, bwat_max):  
     if (bwat > bwat_max + 1.0e-6):
       verbPrintf(1,grid.com,
         "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n" +
-        "  in IceModel::getBasalWaterPressure()\n", bwat, bwat_max );
+        "  in IceModel::getBasalWaterPressure()\n", bwat, bwat_max);
       PISM.PISMEnd();
 
     # the model; note  0 <= p_pw <= frac * p_overburden
@@ -149,7 +149,7 @@ class BasalTillStrength:
       # add to pressure from instantaneous basal melt rate;
       #   note  (additional) <= (1.0 - frac) * p_overburden so
       #   0 <= p_pw <= p_overburden
-      p_pw += ( 1.0 - math.exp( - max(0.0,bmr) / self.bmr_scale ) ) \
+      p_pw += (1.0 - math.exp(- max(0.0,bmr) / self.bmr_scale)) \
               * (1.0 - frac) * p_overburden;
     if self.usethkeff:
       # ice thickness is surrogate for distance to margin; near margin the till
@@ -203,15 +203,15 @@ if PISM.optionsIsSet("-ssa_glen"):
 else:
   config.set_string("ssa_flow_law", "gpbld")
 
-surface    = PISM.model.createIceSurfaceVec( grid )
-thickness  = PISM.model.createIceThicknessVec( grid )
-bed        = PISM.model.createBedrockElevationVec( grid )
-enthalpy   = PISM.model.createEnthalpyVec( grid )
-ice_mask   = PISM.model.createIceMaskVec( grid )
+surface    = PISM.model.createIceSurfaceVec(grid)
+thickness  = PISM.model.createIceThicknessVec(grid)
+bed        = PISM.model.createBedrockElevationVec(grid)
+enthalpy   = PISM.model.createEnthalpyVec(grid)
+ice_mask   = PISM.model.createIceMaskVec(grid)
 v = [surface,thickness,bed,enthalpy,ice_mask]
 for var in v:
   var.regrid(bootfile,True)
-tauc       = PISM.model.createYieldStressVec( grid )
+tauc       = PISM.model.createYieldStressVec(grid)
 
 # Compute yield stress from PISM state variables
 # (basal melt rate, tillphi, and basal water height)

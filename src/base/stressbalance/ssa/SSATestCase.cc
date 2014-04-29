@@ -365,7 +365,7 @@ PetscErrorCode SSATestCase::report_netcdf(std::string testname,
 
 PetscErrorCode SSATestCase::exactSolution(int /*i*/, int /*j*/, 
                                           double /*x*/, double /*y*/,
-                                          double *u, double *v )
+                                          double *u, double *v)
 {
   *u=0; *v=0;
   return 0;

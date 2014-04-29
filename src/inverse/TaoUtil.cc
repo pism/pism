@@ -23,7 +23,7 @@ namespace pism {
 TaoInitializer::TaoInitializer(int *argc, char ***argv, char *file, char *help) {
   PetscErrorCode ierr = TaoInitialize(argc,argv,file,help);
   CHKERRCONTINUE(ierr);
-  if(ierr) {
+  if (ierr) {
     PetscPrintf(PETSC_COMM_WORLD,"FATAL ERROR: Unable to initialize TAO.");
     PISMEnd();
   }
@@ -32,7 +32,7 @@ TaoInitializer::TaoInitializer(int *argc, char ***argv, char *file, char *help) 
 TaoInitializer::TaoInitializer(int *argc, char ***argv, char *help) {
   PetscErrorCode ierr = TaoInitialize(argc,argv,NULL,help);
   CHKERRCONTINUE(ierr);
-  if(ierr) {
+  if (ierr) {
     PetscPrintf(PETSC_COMM_WORLD,"FATAL ERROR: Unable to initialize TAO.");
     PISMEnd();
   }
@@ -41,7 +41,7 @@ TaoInitializer::TaoInitializer(int *argc, char ***argv, char *help) {
 TaoInitializer::TaoInitializer(int *argc, char ***argv) {
   PetscErrorCode ierr = TaoInitialize(argc,argv,NULL,NULL);
   CHKERRCONTINUE(ierr);
-  if(ierr) {
+  if (ierr) {
     PetscPrintf(PETSC_COMM_WORLD,"FATAL ERROR: Unable to initialize TAO.");
     PISMEnd();
   }
@@ -50,7 +50,7 @@ TaoInitializer::TaoInitializer(int *argc, char ***argv) {
 TaoInitializer::~TaoInitializer() {
   PetscErrorCode ierr = TaoFinalize();
   CHKERRCONTINUE(ierr);
-  if(ierr) {
+  if (ierr) {
     PetscPrintf(PETSC_COMM_WORLD,"FATAL ERROR: Unable to finalize TAO.");
     PISMEnd();
   }
@@ -80,11 +80,11 @@ const char *TaoConvergedReasonsShifted[] = {
   "TAO_CONVERGED_USER" };
 const char *const* TaoConvergedReasons = TaoConvergedReasonsShifted + 10;
 
-TAOTerminationReason::TAOTerminationReason( TaoSolverTerminationReason r)  {
+TAOTerminationReason::TAOTerminationReason(TaoSolverTerminationReason r)  {
   m_reason = r;
 }
-void TAOTerminationReason::get_description( std::ostream &desc, int indent_level) {
-  for( int i=0; i < indent_level; i++) {
+void TAOTerminationReason::get_description(std::ostream &desc, int indent_level) {
+  for (int i=0; i < indent_level; i++) {
     desc << sm_indent;
   }
   desc << TaoConvergedReasons[m_reason];

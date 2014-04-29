@@ -211,7 +211,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
   config.set_flag("do_cold_ice_methods", true);
 
-  ierr = IceModel::setFromOptions();CHKERRQ(ierr);
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -309,7 +309,7 @@ PetscErrorCode IceCompModel::allocate_bed_deformation() {
 
   std::string bed_def_model = config.get_string("bed_deformation_model");
 
-  if ( (testname == 'H') && bed_def_model != "iso" ) {
+  if ((testname == 'H') && bed_def_model != "iso") {
     ierr = verbPrintf(1,grid.com,
                       "IceCompModel WARNING: Test H should be run with option\n"
                       "  '-bed_def iso'  for the reported errors to be correct.\n"); CHKERRQ(ierr);

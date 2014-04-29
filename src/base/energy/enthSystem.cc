@@ -411,7 +411,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
   // generic ice segment in k location (if any; only runs if ks >= 2)
   for (int k = 1; k < m_ks; k++) {
     const double
-        Rminus = 0.5 * (R[k-1] + R[k]  ),
+        Rminus = 0.5 * (R[k-1] + R[k]),
         Rplus  = 0.5 * (R[k]   + R[k+1]);
     L[k] = - Rminus;
     D[k] = 1.0 + Rminus + Rplus;

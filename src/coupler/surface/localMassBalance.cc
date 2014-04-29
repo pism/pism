@@ -90,7 +90,7 @@ double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 /**
  * Use the rectangle method for simplicity.
  *
- * @param pddStdDev standard deviation for air temperature excursions
+ * @param S standard deviation for air temperature excursions
  * @param dt_series length of the step for the time-series
  * @param T air temperature (array of length N)
  * @param N length of the T array
@@ -259,7 +259,7 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  * \text{PDD} = \sum_{i=0}^{N-1} h_{\text{days}} \cdot \text{max}(T_i-T_{\text{threshold}}, 0).
  * \f]
  * 
- * @param pddStdDev \f$\sigma\f$ (standard deviation for daily temperature excursions)
+ * @param S \f$\sigma\f$ (standard deviation for daily temperature excursions)
  * @param dt_series time-series step, in seconds
  * @param T air temperature
  * @param N number of points in the temperature time-series, each corresponds to a sub-interval
@@ -322,7 +322,7 @@ PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
       ddf.snow = beta_snow_c;
     } else { // middle case   T_c < T_mj < T_w
       const double
-         lam_i = pow( (T_w - T_mj) / (T_w - T_c) , 3.0),
+         lam_i = pow((T_w - T_mj) / (T_w - T_c) , 3.0),
          lam_s = (T_mj - T_c) / (T_w - T_c);
       ddf.ice  = beta_ice_w + (beta_ice_c - beta_ice_w) * lam_i;
       ddf.snow = beta_snow_w + (beta_snow_c - beta_snow_w) * lam_s;

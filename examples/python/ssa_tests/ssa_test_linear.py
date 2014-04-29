@@ -64,7 +64,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     grid = self.grid
     with PISM.vec.Access(comm=[bc_mask, vel_bc]):
       for (i,j) in grid.points():
-        edge = ( (j == 0) or (j == grid.My - 1) ) or ( (i==0) or (i==grid.Mx-1) );
+        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx-1));
         if edge:
           bc_mask[i,j] = 1;
           x = grid.x[i]; y=grid.y[j];
@@ -82,12 +82,12 @@ class test_linear(PISM.ssa.SSAExactTestCase):
     self.config.set_flag("compute_surf_grad_inward_ssa", True);
 
 
-  def exactSolution(self, i, j, x, y ):
+  def exactSolution(self, i, j, x, y):
     tauc_threshold_velocity = self.config.get("pseudo_plastic_uthreshold",
                                               "m/year", "m/second")
     v0 = self.grid.convert(100, "m/year", "m/second")
-    alpha = math.sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
-    return [v0*math.exp( -alpha*(x-L)), 0]
+    alpha = math.sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));
+    return [v0*math.exp(-alpha*(x-L)), 0]
 
 # The main code for a run follows:
 if __name__ == '__main__':

@@ -337,10 +337,10 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
     bool contiguous = true;
 
     if (fabs(m_t + m_dt) < 1) {
-      if ( fabs(my_t - (m_t + m_dt)) >= 1e-12 ) // check if the absolute difference is small
+      if (fabs(my_t - (m_t + m_dt)) >= 1e-12) // check if the absolute difference is small
         contiguous = false;
     } else {
-      if ( fabs(my_t - (m_t + m_dt)) / (m_t + m_dt) >= 1e-12 ) // check if the relative difference is small
+      if (fabs(my_t - (m_t + m_dt)) / (m_t + m_dt) >= 1e-12) // check if the relative difference is small
         contiguous = false;
     }
 

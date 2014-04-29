@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012 David Maxwell
+# Copyright (C) 2012, 2014 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -41,7 +41,7 @@ from PISM.logging import logMessage
 import PISM
 
 def view(vec,viewer):  
-  if(isinstance(vec,PISM.IceModelVec2S)):
+  if (isinstance(vec,PISM.IceModelVec2S)):
     v_global = PISM.IceModelVec2S()
   else:
     v_global = PISM.IceModelVec2V()
@@ -143,7 +143,7 @@ def test_lin(ssarun):
     n_d_Td_linf = d_Td.norm(PETSc.NormType.NORM_INFINITY)
 
     PISM.verbPrintf(1,grid.com,"(i,j)=(%d,%d)\n" % (i,j))
-    PISM.verbPrintf(1,grid.com,"apply_linearization(d): l2 norm %.10g; finite difference %.10g\n" % (n_Td_l2,n_Td_fd) )
+    PISM.verbPrintf(1,grid.com,"apply_linearization(d): l2 norm %.10g; finite difference %.10g\n" % (n_Td_l2,n_Td_fd))
 
     r_d_l2 = 0
     if n_Td_l2 != 0:
@@ -155,7 +155,7 @@ def test_lin(ssarun):
     r_d_linf = 0
     if n_Td_linf != 0:
       r_d_linf = n_d_Td_linf/n_Td_linf
-    PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (r_d_l2, r_d_l1, r_d_linf) )
+    PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (r_d_l2, r_d_l1, r_d_linf))
 
     PISM.verbPrintf(1,grid.com,"\n")
 
@@ -256,11 +256,11 @@ def test_j_design(ssarun):
     n_d_drhs_linf = d_drhs.norm(PETSc.NormType.NORM_INFINITY)
 
     PISM.verbPrintf(1,grid.com,"\nTest Jacobian Design (Comparison with finite differences):\n")
-    PISM.verbPrintf(1,grid.com,"jacobian_design(d): l2 norm %.10g; finite difference %.10g\n" % (n_drhs_l2,n_drhs_fd) )
+    PISM.verbPrintf(1,grid.com,"jacobian_design(d): l2 norm %.10g; finite difference %.10g\n" % (n_drhs_l2,n_drhs_fd))
     if n_drhs_linf == 0:
-      PISM.verbPrintf(1,grid.com,"difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2,n_d_drhs_l1,n_d_drhs_linf) )
+      PISM.verbPrintf(1,grid.com,"difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2,n_d_drhs_l1,n_d_drhs_linf))
     else:
-      PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2/n_drhs_l2,n_d_drhs_l1/n_drhs_l1,n_d_drhs_linf/n_drhs_linf) )
+      PISM.verbPrintf(1,grid.com,"relative difference: l2 norm %.10g l1 norm %.10g linf norm %.10g\n" % (n_d_drhs_l2/n_drhs_l2,n_d_drhs_l1/n_drhs_l1,n_d_drhs_linf/n_drhs_linf))
 
     view(d,d_viewer)
     view(drhs,drhs_viewer)
@@ -312,7 +312,7 @@ def test_j_design_transpose(ssarun):
       r_global.create(grid,"",PISM.WITHOUT_GHOSTS)
       r_global.copy_from(r)
   
-      for(k,l) in grid.points():
+      for (k,l) in grid.points():
         with PISM.vec.Access(nocomm=JStarR_indirect):
           d = PISM.IceModelVec2S()
           d.create(grid,"",PISM.WITH_GHOSTS)
@@ -383,7 +383,7 @@ def test_linearization_transpose(ssarun):
       r_global.create(grid,"",PISM.WITHOUT_GHOSTS)
       r_global.copy_from(r)
 
-      for(k,l) in grid.points():
+      for (k,l) in grid.points():
         with PISM.vec.Access(nocomm=TStarR_indirect):
           d = PISM.IceModelVec2S()
           d.create(grid,"",PISM.WITH_GHOSTS)
@@ -449,9 +449,9 @@ if __name__ == "__main__":
     design_prior.regrid(inv_data_filename,critical=True)
   else:
     if not PISM.util.fileHasVariable(input_filename,design_var):
-      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var,input_filename) )
+      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var,input_filename))
       exit(1)
-    PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var,design_var) );
+    PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var,design_var));
     design = createDesignVec(grid,design_var)
     design.regrid(input_filename,True)
     design_prior.copy_from(design)

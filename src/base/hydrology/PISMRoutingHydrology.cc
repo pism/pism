@@ -444,11 +444,11 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(
     ierr = result.begin_access(); CHKERRQ(ierr);
     for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
       for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        dRdx = ( R(i+1,j) - R(i,j) ) / grid.dx;
-        dRdy = ( R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1) ) / (4.0 * grid.dy);
+        dRdx = (R(i+1,j) - R(i,j)) / grid.dx;
+        dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy);
         result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
-        dRdx = ( R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j) ) / (4.0 * grid.dx);
-        dRdy = ( R(i,j+1) - R(i,j) ) / grid.dy;
+        dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx);
+        dRdy = (R(i,j+1) - R(i,j)) / grid.dy;
         result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
       }
     }
@@ -473,7 +473,7 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(
         } else { // beta == 2.0
           result(i,j,o) = Ktmp;
         }
-        mymaxKW = PetscMax( mymaxKW, result(i,j,o) * Wstag(i,j,o) );
+        mymaxKW = PetscMax(mymaxKW, result(i,j,o) * Wstag(i,j,o));
       }
     }
   }
@@ -533,17 +533,17 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
       if (W(i,j) > 0.0) {
         dRdx = 0.0;
         if (W(i+1,j) > 0.0) {
-          dRdx =  ( R(i+1,j) - R(i,j) ) / (2.0 * grid.dx);
+          dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx);
         }
         if (W(i-1,j) > 0.0) {
-          dRdx += ( R(i,j) - R(i-1,j) ) / (2.0 * grid.dx);
+          dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx);
         }
         dRdy = 0.0;
         if (W(i,j+1) > 0.0) {
-          dRdy =  ( R(i,j+1) - R(i,j) ) / (2.0 * grid.dy);
+          dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy);
         }
         if (W(i,j-1) > 0.0) {
-          dRdy += ( R(i,j) - R(i,j-1) ) / (2.0 * grid.dy);
+          dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy);
         }
         result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
       } else
@@ -632,7 +632,7 @@ PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j  );
+      result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j);
       result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
     }
   }
@@ -736,8 +736,8 @@ PetscErrorCode RoutingHydrology::raw_update_W(double hdt) {
                          Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
                          Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
                          Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
-        diffW =   wux * (  De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)) )
-                + wuy * (  Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)) );
+        diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
+                + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
         Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
                     + hdt * (- divadflux + diffW + total_input(i,j));
       }

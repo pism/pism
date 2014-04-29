@@ -105,7 +105,7 @@ PetscErrorCode IceFlowLawFactory::registerAll()
   ierr = registerType(ICE_GPBLD, &create_gpbld);  CHKERRQ(ierr);
   ierr = registerType(ICE_HOOKE, &create_hooke);  CHKERRQ(ierr);
   ierr = registerType(ICE_ARR, &create_arr);    CHKERRQ(ierr);
-  ierr = registerType(ICE_ARRWARM, &create_arrwarm);CHKERRQ(ierr);
+  ierr = registerType(ICE_ARRWARM, &create_arrwarm); CHKERRQ(ierr);
   ierr = registerType(ICE_GOLDSBY_KOHLSTEDT, &create_goldsby_kohlstedt); CHKERRQ(ierr);
 
   return 0;
@@ -134,7 +134,7 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
   bool flag;
   std::string my_type_name;
 
-  ierr = PetscOptionsBegin(com, prefix, "IceFlowLawFactory options", "IceFlowLaw");CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(com, prefix, "IceFlowLawFactory options", "IceFlowLaw"); CHKERRQ(ierr);
   {
 
     // build the list of choices
@@ -146,14 +146,14 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
     }
 
     ierr = OptionsList(com, "-flow_law", "flow law type", choices,
-                           type_name, my_type_name, flag);CHKERRQ(ierr);
+                           type_name, my_type_name, flag); CHKERRQ(ierr);
 
     if (flag) {
       ierr = setType(my_type_name); CHKERRQ(ierr);
     }
 
   }
-  ierr = PetscOptionsEnd();CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -179,7 +179,7 @@ PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
   }
 
   // create an IceFlowLaw instance:
-  ierr = (*r)(com, prefix, config, EC, &ice);CHKERRQ(ierr);
+  ierr = (*r)(com, prefix, config, EC, &ice); CHKERRQ(ierr);
   *inice = ice;
 
   PetscFunctionReturn(0);

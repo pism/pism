@@ -200,7 +200,7 @@ PetscErrorCode EigenCalving::update(double dt,
         if (calving_rate > 0.0) {
           Href(i, j) -= calving_rate * dt; // in m
 
-          if(Href(i, j) < 0.0) {
+          if (Href(i, j) < 0.0) {
             // Partially filled grid cell became ice-free
 
             m_thk_loss(i, j) = -Href(i, j); // in m, corresponds to additional ice loss
@@ -208,7 +208,7 @@ PetscErrorCode EigenCalving::update(double dt,
 
             // additional mass loss will be distributed among
             // N_floating_neighbors:
-            if(N_floating_neighbors > 0)
+            if (N_floating_neighbors > 0)
               m_thk_loss(i, j) /= N_floating_neighbors;
           }
         }
@@ -379,7 +379,7 @@ PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
   my_dt = 1.0 / (denom + epsilon);
 
   ierr = verbPrintf(2, grid.com,
-                    "!!!!! c_rate = %.0f m/year ( dt=%.5f a ) at point %d, %d with mean_c=%.0f m/year over %.0f cells \n",
+                    "!!!!! c_rate = %.0f m/year (dt=%.5f a) at point %d, %d with mean_c=%.0f m/year over %.0f cells \n",
                     grid.convert(calving_rate_max, "m/s", "m/year"),
                     grid.convert(my_dt, "seconds", "years"),
                     i0, j0,

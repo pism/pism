@@ -53,7 +53,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j,
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
 };
 
@@ -115,7 +115,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting vel_bc approriately
-      if ( (i == (grid.Mx)/2) && (j == (grid.My)/2) ) {
+      if ((i == (grid.Mx)/2) && (j == (grid.My)/2)) {
         bc_mask(i,j) = 1;
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
@@ -209,8 +209,8 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if(driver == "fem") ssafactory = SSAFEMFactory;
-    else if(driver == "fd") ssafactory = SSAFDFactory;
+    if (driver == "fem") ssafactory = SSAFEMFactory;
+    else if (driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
     SSATestCaseJ testcase(com,config);

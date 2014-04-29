@@ -31,7 +31,7 @@ class Plotter:
         dx = self.nc.variables[x][mask]
         dim = log10(dx)
 
-        figure(figsize=(10,6));clf();hold(True)
+        figure(figsize=(10,6)); clf(); hold(True)
 
         colors = ['red', 'blue', 'green', 'black', 'brown', 'cyan']
         for (v,c) in zip(vars,colors):

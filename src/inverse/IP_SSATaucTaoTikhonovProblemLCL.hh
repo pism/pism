@@ -60,7 +60,7 @@ public:
   
   //!Callback called after each iteration.
   virtual PetscErrorCode 
-  iteration( IP_SSATaucTaoTikhonovProblemLCL &problem,  ///< The class calling the callback.
+  iteration(IP_SSATaucTaoTikhonovProblemLCL &problem,  ///< The class calling the callback.
              double eta,                             ///< Tikhonov penalty parameter.
              int iter,                             ///< Current iteration count.
              double objectiveValue,                  ///< Value of the state functional.
@@ -88,7 +88,7 @@ public:
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
-  IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta,
+  IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta,
                                    IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional);
 
   virtual ~IP_SSATaucTaoTikhonovProblemLCL();
@@ -100,7 +100,7 @@ public:
   virtual StateVec &stateSolution();
   virtual DesignVec &designSolution();
 
-  virtual PetscErrorCode setInitialGuess( DesignVec &d0);
+  virtual PetscErrorCode setInitialGuess(DesignVec &d0);
 
   PetscErrorCode connect(TaoSolver tao);
 

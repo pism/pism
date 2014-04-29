@@ -50,7 +50,7 @@ public:
   typedef IceModelVec2V StateVec;
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
-  IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
+  IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
                               IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
 
   ~IP_SSATaucTikhonovGNSolver();
@@ -63,14 +63,14 @@ public:
     return m_d;
   }
 
-  virtual PetscErrorCode setInitialGuess( DesignVec &d) {
+  virtual PetscErrorCode setInitialGuess(DesignVec &d) {
     PetscErrorCode ierr;
     ierr = m_d.copy_from(d); CHKERRQ(ierr);
     return 0;
   }
 
   //! Sets the desired target misfit (in units of \f$\sqrt{J_{\rm misfit}}\f$).
-  virtual PetscErrorCode setTargetMisfit( double misfit) {
+  virtual PetscErrorCode setTargetMisfit(double misfit) {
     m_target_misfit = misfit;
     return 0;
   }

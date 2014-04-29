@@ -60,7 +60,7 @@ namespace pism {
   \f]
   usually using Newton's method. Let
   \f[
-  \mathcal{R}(u, \zeta) = \mathcal{R}_{SSA}(u;g(\pi(\zeta)), \text{other parameters}).
+  \mathcal{R}(u, \zeta) = \mathcal{R}_{SSA}(u; g(\pi(\zeta)), \text{other parameters}).
   \f]
 
   The derivative of \f$\mathcal{R}\f$ with respect to \f$ u\f$ is called the state Jacobian,
@@ -139,9 +139,9 @@ public:
     return m_tauc_param;
   }
 
-  virtual PetscErrorCode set_design( IceModelVec2S &zeta);
+  virtual PetscErrorCode set_design(IceModelVec2S &zeta);
 
-  virtual PetscErrorCode linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason);
+  virtual PetscErrorCode linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason);
 
   virtual PetscErrorCode assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
   virtual PetscErrorCode assemble_residual(IceModelVec2V &u, Vec R);

@@ -67,7 +67,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j, 
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
 
   double H0; // Thickness
@@ -133,7 +133,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
       bed(i,j) = -myx*(dhdx);
       surface(i,j) = bed(i,j) + H0;
       
-      bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
+      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
       if (edge) {
         bc_mask(i,j) = 1;
         exactSolution(i,j,myx,myy,&myu,&myv);
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
              
       ierr = OptionsString("-o", "Set the output file name", 
                                               output_file, flag); CHKERRQ(ierr);
-      ierr = OptionsReal("-ssa_glen_n", "", glen_n, flag ); CHKERRQ(ierr);
+      ierr = OptionsReal("-ssa_glen_n", "", glen_n, flag); CHKERRQ(ierr);
 
       ierr = OptionsInt("-verbose", "Verbosity level",
                             my_verbosity_level, flag); CHKERRQ(ierr);
@@ -236,8 +236,8 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if(driver == "fem") ssafactory = SSAFEMFactory;
-    else if(driver == "fd") ssafactory = SSAFDFactory;
+    if (driver == "fem") ssafactory = SSAFEMFactory;
+    else if (driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
     SSATestCasePlug testcase(com,config,glen_n);

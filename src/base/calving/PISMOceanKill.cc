@@ -91,7 +91,7 @@ PetscErrorCode OceanKill::init(Vars &vars) {
 
   for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((*tmp)(i, j) > 0 || m.grounded(i, j) ) // FIXME: use GeometryCalculator
+      if ((*tmp)(i, j) > 0 || m.grounded(i, j)) // FIXME: use GeometryCalculator
         m_ocean_kill_mask(i, j) = 0;
       else
         m_ocean_kill_mask(i, j) = 1;

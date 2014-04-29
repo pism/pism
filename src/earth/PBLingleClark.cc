@@ -193,7 +193,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
                            boot_filename, boot_file_set); CHKERRQ(ierr);
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
-  if (! (regrid_file_set && boot_file_set) ) return 0;
+  if (! (regrid_file_set && boot_file_set)) return 0;
 
   ierr = nc.open(regrid_filename, PISM_READONLY); CHKERRQ(ierr);
 
@@ -202,7 +202,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Stop if the regridding file does not have both topg and topg_initial.
-  if ( !(topg_initial_exists && topg_exists) ) {
+  if (!(topg_initial_exists && topg_exists)) {
     return 0;
   }
 

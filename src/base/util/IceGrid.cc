@@ -175,8 +175,8 @@ which may not even be a grid created by this routine).
   - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent
     is that the spacing is smaller near the base than near the top.  In particular, if
     \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *
-    ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
-    * \f$\zeta_k\f$) )` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
+    ((\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
+    * \f$\zeta_k\f$))` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
     indicates the slope of the quadratic function as it leaves the base.
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
@@ -210,7 +210,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < Mz - 1; k++) {
       const double zeta = ((double) k) / ((double) Mz - 1);
-      zlevels[k] = Lz * ( (zeta / lambda) * (1.0 + (lambda - 1.0) * zeta) );
+      zlevels[k] = Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
@@ -429,7 +429,7 @@ PetscErrorCode IceGrid::set_vertical_levels(std::vector<double> new_zlevels) {
     SETERRQ(com, 1, "IceGrid::set_vertical_levels(): Mz has to be at least 2.");
   }
 
-  if ( (!is_increasing(new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10) ) {
+  if ((!is_increasing(new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10)) {
     SETERRQ(com, 3, "IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 
@@ -660,10 +660,10 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
 
   // if either dimension is larger than twice the target, shrink appropriately
   if (X > 2 * target_size) {
-    Y = (int) ( (double)(Y) * (2.0 * (double)target_size / (double)(X)) );
+    Y = (int) ((double)(Y) * (2.0 * (double)target_size / (double)(X)));
     X = 2 * target_size;
   } else if (Y > 2 * target_size) {
-    X = (int) ( (double)(X) * (2.0 * (double)target_size / (double)(Y)) );
+    X = (int) ((double)(X) * (2.0 * (double)target_size / (double)(Y)));
     Y = 2 * target_size;
   }
 

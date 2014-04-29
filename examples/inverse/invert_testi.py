@@ -127,7 +127,7 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
   def _initGrid(self):
     Mx=self.Mx; My=self.My
     Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-    Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
+    Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)))
     PISM.model.initShallowGrid(self.grid,Lx,Ly,Mx,My,PISM.X_PERIODIC);
 
   def _initPhysics(self):
@@ -145,14 +145,14 @@ class testi_run(PISM.invert.ssa.SSATaucForwardRun):
 
   def _initSSACoefficients(self):
     vecs = self.modeldata.vecs; grid = self.grid
-    vecs.add( model.createIceThicknessVec( grid ), 'thickness')
-    vecs.add( model.createBedrockElevationVec(grid), 'bed')
-    vecs.add( model.createYieldStressVec( grid ), 'tauc')
-    vecs.add( model.createEnthalpyVec( grid ), 'enthalpy' )
-    vecs.add( model.createIceMaskVec( grid ), 'ice_mask' )
-    vecs.add( model.createDrivingStressXVec( grid ) )
-    vecs.add( model.createDrivingStressYVec( grid ) )
-    vecs.add( model.createVelocityMisfitWeightVec(grid) )
+    vecs.add(model.createIceThicknessVec(grid), 'thickness')
+    vecs.add(model.createBedrockElevationVec(grid), 'bed')
+    vecs.add(model.createYieldStressVec(grid), 'tauc')
+    vecs.add(model.createEnthalpyVec(grid), 'enthalpy')
+    vecs.add(model.createIceMaskVec(grid), 'ice_mask')
+    vecs.add(model.createDrivingStressXVec(grid))
+    vecs.add(model.createDrivingStressYVec(grid))
+    vecs.add(model.createVelocityMisfitWeightVec(grid))
 
     self._allocateBCs()
 
@@ -213,7 +213,7 @@ if __name__ == "__main__":
   f0 = ice_density * standard_gravity * H0_schoof * slope
   stress_scale  = f0
   Ly = 3*L_schoof   # 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)) )
+  Lx = max(60.0e3, ((Mx - 1) / 2.) * (2.0 * Ly / (My - 1)))
   area_scale    = Lx*Ly
   depth_scale   = H0_schoof
 
@@ -281,7 +281,7 @@ if __name__ == "__main__":
 
   # Send the true yeild stress through the forward problem to 
   # get at true velocity field.
-  u_obs = PISM.model.create2dVelocityVec( grid, name='_ssa_true', desc='SSA velocity boundary condition',intent='intent' )
+  u_obs = PISM.model.create2dVelocityVec(grid, name='_ssa_true', desc='SSA velocity boundary condition',intent='intent')
   solver.solveForward(zeta_true,out=u_obs)
 
   # Attach various iteration listeners to the solver as needed for:

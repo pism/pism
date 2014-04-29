@@ -601,7 +601,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         const int oi = 1 - o, oj = o;
 
         const double
-          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
         // zero thickness case:
         if (thk == 0.0) {
@@ -624,7 +624,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         const int      ks = grid.kBelowHeight(thk);
         const double   alpha =
           sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
-        const double theta_local = 0.5 * ( theta(i,j) + theta(i+oi,j+oj) );
+        const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
 
         double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
         for (int k = 0; k <= ks; ++k) {
@@ -759,7 +759,7 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
 
         const double
-          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
         if (thk == 0) {
           D_stag(i,j,o) = 0.0;
@@ -842,7 +842,7 @@ PetscErrorCode SIAFD::compute_I() {
       for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         const int oi = 1-o, oj=o;
         const double
-          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
         ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
@@ -935,10 +935,10 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
         vel_input_v = (*vel_input)(i, j).v;
 
       for (unsigned int k = 0; k < grid.Mz; ++k) {
-        u_ij[k] = - 0.25 * ( IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
-                             INORTH[k] * h_x_n + ISOUTH[k] * h_x_s );
-        v_ij[k] = - 0.25 * ( IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
-                             INORTH[k] * h_y_n + ISOUTH[k] * h_y_s );
+        u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
+                             INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
+        v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
+                             INORTH[k] * h_y_n + ISOUTH[k] * h_y_s);
 
         // Add the "SSA" velocity:
         u_ij[k] += vel_input_u;
