@@ -389,9 +389,13 @@ public:
   
   void init(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
-  const FEFunctionGerm (*testFunctionValues())[Nq];  
-  const FEFunctionGerm *testFunctionValues(int q);
-  const FEFunctionGerm *testFunctionValues(int q,int k);
+  // define FEFunctionGermArray, which is an array of FEQuadrature::Nq
+  // FEFunctionGerms
+  typedef FEFunctionGerm FEFunctionGermArray[FEQuadrature::Nq];
+
+  const FEFunctionGermArray* testFunctionValues();
+  const FEFunctionGerm* testFunctionValues(int q);
+  const FEFunctionGerm* testFunctionValues(int q,int k);
   
   void getWeightedJacobian(double *jxw);
 

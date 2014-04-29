@@ -299,7 +299,7 @@ FEQuadrature_Vector::FEQuadrature_Vector() {
 
 //! Return the values at all quadrature points of all shape functions.
 //* The return value is an Nq by Nk array of FEFunctionGerms. */
-const FEFunctionGerm (*FEQuadrature::testFunctionValues())[FEQuadrature::Nq]
+const FEQuadrature::FEFunctionGermArray* FEQuadrature::testFunctionValues()
 {
   return m_germs;
 }
@@ -317,7 +317,7 @@ const FEFunctionGerm *FEQuadrature::testFunctionValues(int q, int k) {
 
 
 /*! @brief Compute the values at the quadrature ponits of a scalar-valued
-  finite-element function with element-local  degrees of freedom `x_local`.*/
+  finite-element function with element-local degrees of freedom `x_local`.*/
 /*! There should be room for FEQuadrature::Nq values in the output vector `vals`. */
 void FEQuadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals) {
   for (int q = 0; q < Nq; q++) {
