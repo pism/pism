@@ -136,7 +136,7 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  // fttfile now contains name of -force_to_thickness_file file; now check
+  // fttfile now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness
   PIO nc(grid, "guess_mode");
   bool mask_exists = false;
@@ -285,17 +285,6 @@ $PISM_DO $cmd
 \endcode
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
-
-As shown below, the time series for `ivol` and `maximum_diffusivity` in the
-above time series files show that the force-to-thickness mechanism is forcing
-a system with negative feedback.
-
-image html ivol_force_to_thickness.png "\b Volume results from the -force_to_thickness mechanism."
-\anchor ivol_force_to_thickness
-
-image html diffusivity_force_to_thickness.png "\b Maximum diffusivity results from the -force_to_thickness mechanism."
-\anchor diffusivity_force_to_thickness
-
  */
 PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;

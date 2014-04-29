@@ -52,7 +52,7 @@ simplifications and boundary conditions are enforced in this script:
 the gradient of a saved surface elevation, and
 * the base is made strong so that no sliding occurs.
 
-Also options `-force_to_thickness` and variable `ftt_mask` play a role in isolating
+Also options `-force_to_thickness_file` and variable `ftt_mask` play a role in isolating
 the modeled outlet glacier.  But there is no code here for that purpose. 
 Instead see the PSForceThickness surface model modifier class.
  */
