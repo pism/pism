@@ -28,7 +28,7 @@ PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(TaoSolver tao) {
 
   const char *type;
   ierr = TaoGetType(tao,&type); CHKERRQ(ierr);
-  if( strcmp(type,"blmvm") == 0 ) {
+  if (strcmp(type,"blmvm") == 0) {
     ierr = TaoGetVariableBoundsCallback<IP_SSAHardavTaoTikhonovProblem>::connect(tao,*this); CHKERRQ(ierr);    
   }  
   return 0;

@@ -61,7 +61,7 @@ public:
     typename std::map<std::string,void(*)(IceGrid&, const Config&, Model*&)>::iterator k;
     k = models.begin();
     model_list = "[" + (k++)->first;
-    for(; k != models.end(); k++) {
+    for (; k != models.end(); k++) {
       model_list += ", " + k->first;
     }
     model_list += "]";
@@ -70,7 +70,7 @@ public:
     typename std::map<std::string,void(*)(IceGrid&, const Config&, Model*, Modifier*&)>::iterator p;
     p = modifiers.begin();
     modifier_list = "[" + (p++)->first;
-    for(; p != modifiers.end(); p++) {
+    for (; p != modifiers.end(); p++) {
       modifier_list += ", " + p->first;
     }
     modifier_list += "]";

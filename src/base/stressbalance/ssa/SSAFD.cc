@@ -198,7 +198,7 @@ PetscErrorCode SSAFD::init(Vars &vars) {
 
   // The FD solver does not support direct specification of a driving stress;
   // a surface elevation must be explicitly given.
-  if(surface == NULL) {
+  if (surface == NULL) {
     SETERRQ(grid.com, 1, "The finite difference SSA solver requires a surface elevation."
             "An explicit driving stress was specified instead and cannot be used.");
   }
@@ -363,7 +363,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
           } else {
             // grounded terminus
-            if(b >= sea_level) {
+            if (b >= sea_level) {
               ocean_pressure = 0.5 * rho_g * H_ij2;
             } else {
               ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
@@ -525,7 +525,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   }
   
   const bool sub_gl = config.get_flag("sub_groundingline");
-  if (sub_gl){
+  if (sub_gl) {
     ierr = gl_mask->begin_access(); CHKERRQ(ierr);
    }
 
@@ -560,7 +560,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       double c_s = nuH(i,j-1,1);
       double c_n = nuH(i,j,1);
 
-      if (nu_bedrock_set){
+      if (nu_bedrock_set) {
        // if option is set, the viscosity at ice-bedrock boundary layer will
        // be prescribed and is a temperature-independent free (user determined) parameter
 
@@ -724,7 +724,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
           // areas already have a strength extension
           beta = beta_ice_free_bedrock;
         }
-        if (sub_gl){
+        if (sub_gl) {
           // reduce the basal drag at grid cells that are partially grounded:
           if (M.icy(M_ij)) {
             beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
@@ -767,7 +767,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
   }
 
-  if (sub_gl){
+  if (sub_gl) {
     ierr = gl_mask->end_access(); CHKERRQ(ierr);
    }
 
@@ -785,7 +785,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 #if (PISM_DEBUG==1)
-  ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+  ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE); CHKERRQ(ierr);
 #endif
 
   int zero_pivot_flag_global = 0;
@@ -898,7 +898,7 @@ PetscErrorCode SSAFD::solve() {
     ierr = write_system_matlab(); CHKERRQ(ierr);
   }
   
-  if (config.get_flag("brutal_sliding")){
+  if (config.get_flag("brutal_sliding")) {
     const double brutal_sliding_scaleFactor = config.get("brutal_sliding_scale");
     ierr = m_velocity.scale(brutal_sliding_scaleFactor); CHKERRQ(ierr);
 
@@ -1696,10 +1696,10 @@ PetscErrorCode SSAFD::write_system_matlab() {
   ierr = verbPrintf(2, grid.com,
                     "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
                     file_name.c_str()); CHKERRQ(ierr);
-  ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
-  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(viewer, file_name.c_str());CHKERRQ(ierr);
+  ierr = PetscViewerCreate(grid.com, &viewer); CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name.c_str()); CHKERRQ(ierr);
 
   // get the command which started the run
   std::string cmdstr = pism_args_string();
@@ -1721,13 +1721,13 @@ PetscErrorCode SSAFD::write_system_matlab() {
 
   ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");  CHKERRQ(ierr);
   ierr = PetscObjectSetName((PetscObject) m_A,"A"); CHKERRQ(ierr);
-  ierr = MatView(m_A, viewer);CHKERRQ(ierr);
+  ierr = MatView(m_A, viewer); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");  CHKERRQ(ierr);
 
   ierr = PetscObjectSetName((PetscObject) m_b,"rhs"); CHKERRQ(ierr);
-  ierr = VecView(m_b, viewer);CHKERRQ(ierr);
+  ierr = VecView(m_b, viewer); CHKERRQ(ierr);
   ierr = PetscObjectSetName((PetscObject) SSAX,"uv"); CHKERRQ(ierr);
-  ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
+  ierr = VecView(SSAX, viewer); CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",

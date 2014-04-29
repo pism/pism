@@ -341,7 +341,7 @@ std::string IceModelVec::name() const {
 PetscErrorCode IceModelVec::rename(std::string short_name, std::string long_name,
                                    std::string standard_name, int N) {
 
-  if(short_name.empty() == false) {
+  if (short_name.empty() == false) {
     if (N == 0) m_name = short_name;
     metadata(N).set_name(short_name);
   }
@@ -688,7 +688,7 @@ PetscErrorCode IceModelVec::has_nan() {
 
   ierr = norm(NORM_INFINITY, tmp); CHKERRQ(ierr);
 
-  if ( gsl_isnan(tmp) ) {
+  if (gsl_isnan(tmp)) {
     PetscPrintf(grid->com, "IceModelVec %s has uninitialized grid points (or NANs)\n", m_name.c_str());
     return 1;
   }

@@ -86,14 +86,14 @@ PetscErrorCode PA_paleo_precip::init_timeseries(double *ts, unsigned int N) {
 
   m_scaling_values.resize(N);
   for (unsigned int k = 0; k < N; ++k)
-    m_scaling_values[k] = exp( m_precipexpfactor * (*offset)(m_ts_times[k]));
+    m_scaling_values[k] = exp(m_precipexpfactor * (*offset)(m_ts_times[k]));
 
   return 0;
 }
 
 PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_precipitation(result);
-  ierr = result.scale(exp( m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt) )); CHKERRQ(ierr);
+  ierr = result.scale(exp(m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt))); CHKERRQ(ierr);
   return 0;
 }
 

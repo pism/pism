@@ -52,7 +52,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j, 
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
 };
 
@@ -67,7 +67,7 @@ const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
   double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
+  double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -128,7 +128,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
       exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
       surface(i,j) = bed(i,j) + H0_schoof;
 
-      bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
+      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
       if (edge) {
         bc_mask(i,j) = 1;
         vel_bc(i,j).u = myu;
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if(driver == "fem") ssafactory = SSAFEMFactory;
-    else if(driver == "fd") ssafactory = SSAFDFactory;
+    if (driver == "fem") ssafactory = SSAFEMFactory;
+    else if (driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
     SSATestCaseI testcase(com, config);

@@ -72,7 +72,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j,
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
   double V0, //!< grounding line vertically-averaged velocity
     H0,      //!< grounding line thickness (meters)

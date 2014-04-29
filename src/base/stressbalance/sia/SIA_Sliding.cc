@@ -145,9 +145,9 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
         const double
           myx = grid.x[i],
           myy = grid.y[j],
-          myhx = 0.25 * (  h_x(i,j,0) + h_x(i-1,j,0)
+          myhx = 0.25 * (h_x(i,j,0) + h_x(i-1,j,0)
                            + h_x(i,j,1) + h_x(i,j-1,1)),
-          myhy = 0.25 * (  h_y(i,j,0) + h_y(i-1,j,0)
+          myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)
                            + h_y(i,j,1) + h_y(i,j-1,1)),
           alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
         double T, basalC;
@@ -406,21 +406,21 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
             icefreeSE = (H(i+1,j-1) <= Hicefree);
 
           double hhE = h(i+1,j);  // east pseudo-surface elevation
-          if (icefreeE  && (b(i+1,j)   > h(i,j)    ))  hhE  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i+1,j)  ))  hhE  = h(i,j);
+          if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
           h_x(i,j,o) = (hhE - h(i,j)) / dx;
 
           double hhN  = h(i,j+1);  // north pseudo-surface elevation
-          if (icefreeN  && (b(i,j+1)   > h(i,j)    ))  hhN  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i,j+1)  ))  hhN  = h(i,j);
+          if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
           double hhS  = h(i,j-1);  // south pseudo-surface elevation
-          if (icefreeS  && (b(i,j-1)   > h(i,j)    ))  hhS  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i,j-1)  ))  hhS  = h(i,j);
+          if (icefreeS  && (b(i,j-1)   > h(i,j)))  hhS  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i,j-1)))  hhS  = h(i,j);
           double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
-          if (icefreeNE && (b(i+1,j+1) > h(i+1,j)  ))  hhNE = h(i+1,j);
+          if (icefreeNE && (b(i+1,j+1) > h(i+1,j)))  hhNE = h(i+1,j);
           if (icefreeE  && (b(i+1,j)   > h(i+1,j+1)))  hhNE = h(i+1,j);
           double hhSE = h(i+1,j-1);// southeast pseudo-surface elevation
-          if (icefreeSE && (b(i+1,j-1) > h(i+1,j)  ))  hhSE = h(i+1,j);
+          if (icefreeSE && (b(i+1,j-1) > h(i+1,j)))  hhSE = h(i+1,j);
           if (icefreeE  && (b(i+1,j)   > h(i+1,j-1)))  hhSE = h(i+1,j);
           h_y(i,j,o) = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
         } else {        // J-offset
@@ -432,21 +432,21 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
             icefreeNW = (H(i-1,j+1) <= Hicefree);
 
           double hhN  = h(i,j+1);  // north pseudo-surface elevation
-          if (icefreeN  && (b(i,j+1)   > h(i,j)    ))  hhN  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i,j+1)  ))  hhN  = h(i,j);
+          if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
           h_y(i,j,o) = (hhN - h(i,j)) / dy;
 
           double hhE  = h(i+1,j);  // east pseudo-surface elevation
-          if (icefreeE  && (b(i+1,j)   > h(i,j)    ))  hhE  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i+1,j)  ))  hhE  = h(i,j);
+          if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
           double hhW  = h(i-1,j);  // west pseudo-surface elevation
-          if (icefreeW  && (b(i-1,j)   > h(i,j)    ))  hhW  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i-1,j)  ))  hhW  = h(i,j);
+          if (icefreeW  && (b(i-1,j)   > h(i,j)))  hhW  = h(i,j);
+          if (icefreeP  && (b(i,j)     > h(i-1,j)))  hhW  = h(i,j);
           double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
-          if (icefreeNE && (b(i+1,j+1) > h(i,j+1)  ))  hhNE = h(i,j+1);
+          if (icefreeNE && (b(i+1,j+1) > h(i,j+1)))  hhNE = h(i,j+1);
           if (icefreeN  && (b(i,j+1)   > h(i+1,j+1)))  hhNE = h(i,j+1);
           double hhNW = h(i-1,j+1);// northwest pseudo-surface elevation
-          if (icefreeNW && (b(i-1,j+1) > h(i,j+1)  ))  hhNW = h(i,j+1);
+          if (icefreeNW && (b(i-1,j+1) > h(i,j+1)))  hhNW = h(i,j+1);
           if (icefreeN  && (b(i,j+1)   > h(i-1,j+1)))  hhNW = h(i,j+1);
           h_x(i,j,o) = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
         }

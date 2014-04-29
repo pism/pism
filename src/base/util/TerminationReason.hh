@@ -51,16 +51,16 @@ public:
     this->get_description(sdesc);
     return sdesc.str();
   }
-  virtual void get_description( std::ostream &desc,int indent_level=0) = 0;
+  virtual void get_description(std::ostream &desc,int indent_level=0) = 0;
 
   virtual std::string nested_description(int indent_level=0) {
     std::stringstream sdesc;
     this->get_nested_description(sdesc,indent_level);
     return sdesc.str();
   }
-  virtual void get_nested_description( std::ostream &desc,int indent_level=0) {
+  virtual void get_nested_description(std::ostream &desc,int indent_level=0) {
     this->get_description(desc,indent_level);
-    if(this->has_root_cause()) {
+    if (this->has_root_cause()) {
       indent_level++;
       desc << std::endl;
       this->root_cause()->get_nested_description(desc,indent_level);
@@ -103,14 +103,14 @@ private:
 
 class KSPTerminationReason: public TerminationReason {
 public:
-  KSPTerminationReason( KSPConvergedReason r);
-  virtual void get_description( std::ostream &desc,int indent_level=0);
+  KSPTerminationReason(KSPConvergedReason r);
+  virtual void get_description(std::ostream &desc,int indent_level=0);
 };
 
 class SNESTerminationReason: public TerminationReason {
 public:
-  SNESTerminationReason( SNESConvergedReason r);
-  virtual void get_description( std::ostream &desc,int indent_level=0);
+  SNESTerminationReason(SNESConvergedReason r);
+  virtual void get_description(std::ostream &desc,int indent_level=0);
 };
 
 class GenericTerminationReason: public TerminationReason {
@@ -145,7 +145,7 @@ public:
     return sm_failure;
   }
 
-  virtual void get_description( std::ostream &desc, int indent_level=0); 
+  virtual void get_description(std::ostream &desc, int indent_level=0); 
 protected:
   std::string m_description;
 };

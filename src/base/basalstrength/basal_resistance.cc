@@ -119,8 +119,8 @@ PetscErrorCode IceBasalResistancePseudoPlasticLaw::print_info(int verbthresh, MP
   by  @f$ A @f$ . It would have exactly this effect \e if the driving
   stress were \e hypothetically completely held by the basal
   resistance. Thus this scale factor is used to reduce (if
-  `-sliding_scale_factor_reduces_tauc`  @f$ A @f$  with  @f$ A > 1 @f$ ) or increase (if  @f$ A <
-  1 @f$ ) the value of the (pseudo-) yield stress `tauc`. The concept
+  `-sliding_scale_factor_reduces_tauc`  @f$ A @f$  with  @f$ A > 1 @f$) or increase (if  @f$ A <
+  1 @f$) the value of the (pseudo-) yield stress `tauc`. The concept
   behind this is described at
   http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
 

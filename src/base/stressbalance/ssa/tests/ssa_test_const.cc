@@ -74,7 +74,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j, 
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
   double basal_q,
     L, H0, dhdx, nu0, tauc0;
@@ -130,7 +130,7 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
       bed(i,j) = -myx*(dhdx);
       surface(i,j) = bed(i,j) + H0;
       
-      bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
+      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
       if (edge) {
         bc_mask(i,j) = 1;
         exactSolution(i,j,myx,myy,&myu,&myv);
@@ -235,8 +235,8 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if(driver == "fem") ssafactory = SSAFEMFactory;
-    else if(driver == "fd") ssafactory = SSAFDFactory;
+    if (driver == "fem") ssafactory = SSAFEMFactory;
+    else if (driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
     SSATestCaseConst testcase(com,config,basal_q);

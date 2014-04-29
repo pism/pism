@@ -643,10 +643,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
         // Plug flow part (i.e. basal sliding; from SSA): upwind by staggered grid
         // PIK method;  this is   \nabla \cdot [(u, v) H]
-        divQ_SSA += ( v.e * (v.e > 0 ? ice_thickness(i, j) : ice_thickness(i + 1, j))
-                      - v.w * (v.w > 0 ? ice_thickness(i - 1, j) : ice_thickness(i, j)) ) / dx;
-        divQ_SSA += ( v.n * (v.n > 0 ? ice_thickness(i, j) : ice_thickness(i, j + 1))
-                      - v.s * (v.s > 0 ? ice_thickness(i, j - 1) : ice_thickness(i, j)) ) / dy;
+        divQ_SSA += (v.e * (v.e > 0 ? ice_thickness(i, j) : ice_thickness(i + 1, j))
+                      - v.w * (v.w > 0 ? ice_thickness(i - 1, j) : ice_thickness(i, j))) / dx;
+        divQ_SSA += (v.n * (v.n > 0 ? ice_thickness(i, j) : ice_thickness(i, j + 1))
+                      - v.s * (v.s > 0 ? ice_thickness(i, j - 1) : ice_thickness(i, j))) / dy;
       }
 
       // Set source terms

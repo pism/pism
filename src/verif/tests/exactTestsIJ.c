@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2008, 2011 Ed Bueler
+   Copyright (C) 2007-2008, 2011, 2014 Ed Bueler
   
    This file is part of PISM.
   
@@ -62,10 +62,10 @@ int exactI(const double m, const double x, const double y,
     C2 = (m+1.0) * C1;
     C3 = (m+1.0) * C2;
     C4 = (m+1.0) * C3;
-    z1 = ( pow(s,4.0) - C1 ) / 4.0;
-    z2 = ( pow(s,m+4.0) - C2 ) / ( (m+1.0) * (m+4.0) );
-    z3 = ( pow(s,2.0*m+4.0) - C3 ) / ( (m+1.0)*(m+1.0) * (2.0*m+4.0) );
-    z4 = ( pow(s,3.0*m+4.0) - C4 ) / ( pow((m+1.0),3.0) * (3.0*m+4.0) );
+    z1 = (pow(s,4.0) - C1) / 4.0;
+    z2 = (pow(s,m+4.0) - C2) / ((m+1.0) * (m+4.0));
+    z3 = (pow(s,2.0*m+4.0) - C3) / ((m+1.0)*(m+1.0) * (2.0*m+4.0));
+    z4 = (pow(s,3.0*m+4.0) - C4) / (pow((m+1.0),3.0) * (3.0*m+4.0));
     /* printf("  u / C0 = %10.5e\n",- (z1 - 3.0 * z2 + 3.0 * z3 - z4)); */
     *u = - C0 * (z1 - 3.0 * z2 + 3.0 * z3 - z4);  /* comes out positive */
   } else {

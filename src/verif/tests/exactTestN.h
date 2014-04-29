@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010 Ed Bueler
+   Copyright (C) 2010, 2014 Ed Bueler
   
    This file is part of PISM.
   
@@ -64,7 +64,7 @@ int exactN(double x, double *H, double *hx, double *u, double *M, double *B, dou
 
          M(x) - (u H)_x = 0
 
-         ( 2 H B(x) |u_x|^((1/n)-1) u_x )_x - beta(x) u = rho g H h_x
+         (2 H B(x) |u_x|^((1/n)-1) u_x)_x - beta(x) u = rho g H h_x
          
       Here H = H(x) is ice thickness and u = u(x) is ice velocity.  Also
       h(x) = H(x), up to a constant the user may choose, because the bed is flat.

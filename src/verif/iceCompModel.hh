@@ -62,8 +62,8 @@ protected:
   int          testname;
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
-  PetscErrorCode computeGeometryErrors(    // all tests except K
-                                       double &gvolexact, double &gareaexact, double &gdomeHexact,
+  // all tests except K
+  PetscErrorCode computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
                                        double &volerr, double &areaerr,
                                        double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
                                        double &centerHerr);
@@ -75,8 +75,9 @@ protected:
   
   // related to test E
   PetscErrorCode fillSolnTestE();  // only used with exactOnly == PETSC_TRUE
-  PetscErrorCode computeBasalVelocityErrors(    // test E only
-                                            double &exactmaxspeed,
+
+  // test E only
+  PetscErrorCode computeBasalVelocityErrors(double &exactmaxspeed,
                                             double &gmaxvecerr, double &gavvecerr,
                                             double &gmaxuberr, double &gmaxvberr);
 
@@ -92,14 +93,15 @@ protected:
   PetscErrorCode initTestFG();
   PetscErrorCode getCompSourcesTestFG();
   PetscErrorCode fillSolnTestFG();  // only used with exactOnly == PETSC_TRUE
-  PetscErrorCode computeTemperatureErrors(      // tests F and G
-                                          double &gmaxTerr, double &gavTerr);
-  PetscErrorCode computeBasalTemperatureErrors( // tests F and G
-                                               double &gmaxTerr, double &gavTerr, double &centerTerr);
-  PetscErrorCode compute_strain_heating_errors(            // tests F and G
-                                               double &gmax_strain_heating_err, double &gav_strain_heating_err);
-  PetscErrorCode computeSurfaceVelocityErrors(  // tests F and G
-                                              double &gmaxUerr, double &gavUerr,  // 2D vector errors
+  // tests F and G
+  PetscErrorCode computeTemperatureErrors(double &gmaxTerr, double &gavTerr);
+  // tests F and G
+  PetscErrorCode computeBasalTemperatureErrors(double &gmaxTerr, double &gavTerr, double &centerTerr);
+  // tests F and G
+  PetscErrorCode compute_strain_heating_errors(double &gmax_strain_heating_err, double &gav_strain_heating_err);
+
+  // tests F and G
+  PetscErrorCode computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
   
   IceModelVec3   strain_heating3_comp;
@@ -109,11 +111,11 @@ protected:
   PetscErrorCode fillTemperatureSolnTestsKO();  // used in initialzation
   //   and with exactOnly == PETSC_TRUE
   PetscErrorCode fillBasalMeltRateSolnTestO();  // used only with exactOnly == PETSC_TRUE
-  PetscErrorCode computeIceBedrockTemperatureErrors( // tests K and O only
-                                                    double &gmaxTerr, double &gavTerr,
+ // tests K and O only
+  PetscErrorCode computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
                                                     double &gmaxTberr, double &gavTberr);
-  PetscErrorCode computeBasalMeltRateErrors( // test O only
-                                            double &gmaxbmelterr, double &gminbmelterr);
+  // test O only
+  PetscErrorCode computeBasalMeltRateErrors(double &gmaxbmelterr, double &gminbmelterr);
 
   // using Van der Veen's exact solution to test CFBC and the part-grid code
   PetscErrorCode test_V_init();

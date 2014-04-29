@@ -214,7 +214,7 @@ public:
   static const ShapeFunctionSpec shapeFunction[Nk];
   
   //! Evaluate shape function \a k at (\a x,\a y) with values returned in \a germ.
-  virtual void eval(int k, double x, double y,FEFunctionGerm*germ){
+  virtual void eval(int k, double x, double y,FEFunctionGerm*germ) {
     shapeFunction[k](x,y,germ);
   }
 };

@@ -390,7 +390,7 @@ PetscErrorCode IceModel::write_extras() {
     // update next_extra
     while (next_extra < extra_times.size() &&
            (extra_times[next_extra] <= grid.time->current() ||
-            fabs(grid.time->current() - extra_times[next_extra]) < 1.0) )
+            fabs(grid.time->current() - extra_times[next_extra]) < 1.0))
       next_extra++;
 
     saving_after = extra_times[current_extra];

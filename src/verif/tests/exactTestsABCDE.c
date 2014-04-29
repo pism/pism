@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2014 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -68,7 +68,7 @@ int exactB(const double t, const double r, double *H, double *M) {
   Rmargin=R0*pow(t/t0,beta);
   if (r<Rmargin)
     *H = H0 * pow(t/t0,-alpha) 
-          * pow(  1.0-pow( pow(t/t0,-beta)*(r/R0), (n+1)/n ),  n/(2*n+1)  );
+          * pow(1.0-pow(pow(t/t0,-beta)*(r/R0), (n+1)/n),  n/(2*n+1));
   else
     *H = 0.0;
 
@@ -90,7 +90,7 @@ int exactC(const double t, const double r, double *H, double *M) {
   Rmargin=R0*pow(t/t0,beta);
   if (r<Rmargin)
     *H = H0 * pow(t/t0,-alpha)
-          * pow(  1.0-pow( pow(t/t0,-beta)*(r/R0), (n+1)/n ),  n/(2*n+1)  );
+          * pow(1.0-pow(pow(t/t0,-beta)*(r/R0), (n+1)/n),  n/(2*n+1));
   else
     *H = 0.0;
 
@@ -142,7 +142,7 @@ int exactD(const double t, const double rin, double *H, double *M) {
 
 	  /* compute H from analytical steady state Hs plus perturbation */
 	  lamhat = (1+1/n)*s - (1/n) + pow(1-s,1+1/n) - pow(s,1+1/n);
-	  if ((r>0.3*L) && (r<0.9*L))    f = pow( cos(pi*(r-0.6*L)/(0.6*L)) ,2.0);
+	  if ((r>0.3*L) && (r<0.9*L))    f = pow(cos(pi*(r-0.6*L)/(0.6*L)) ,2.0);
 	  else                           f = 0.0;
 	  Hs = (H0 / pow(1-1/n,power)) * pow(lamhat,power);
 	  *H = Hs + Cp * sin(2.0*pi*t/Tp) * f;
@@ -151,7 +151,7 @@ int exactD(const double t, const double rin, double *H, double *M) {
 	  temp = pow(s,1/n) + pow(1-s,1/n) - 1;
 	  C = Gamma * pow(H0,2*n+2) / pow(2.0 * L * (1-1/n),n);
 	  Ms = (C/r) * pow(temp,n-1)
-	                *  ( 2*pow(s,1/n) + pow(1-s,(1/n)-1) * (1 - 2*s) - 1 );
+	                *  (2*pow(s,1/n) + pow(1-s,(1/n)-1) * (1 - 2*s) - 1);
 
 	  /* derivs of H */
 	  if ((r>0.3*L) && (r<0.9*L)) {
@@ -159,15 +159,15 @@ int exactD(const double t, const double rin, double *H, double *M) {
 	    ddf = -(pi*pi/(0.18*L*L)) * cos(pi*(r-0.6*L)/(0.3*L));
 	    chi = (4.0/3.0)*s - 1.0/3.0 + pow(1-s,4.0/3.0) - pow(s,4.0/3.0);
 	    dchi = -(4.0/(3.0*L)) * (pow(s,1.0/3.0) + pow(1-s,1.0/3.0) - 1);
-	    ddchi = -(4.0/(9.0*L*L)) * ( pow(s,-2.0/3.0) - pow(1-s,-2.0/3.0) );
+	    ddchi = -(4.0/(9.0*L*L)) * (pow(s,-2.0/3.0) - pow(1-s,-2.0/3.0));
 	    c1 = (3.0*H0) / (8.0*pow(2.0/3.0,3.0/8.0));
 	    dHs = c1 * pow(chi,-5.0/8.0) * dchi;
-	    ddHs = c1 * ( (-5.0/8.0) * pow(chi,-13.0/8.0) * dchi * dchi
-	                   + pow(chi,-5.0/8.0) * ddchi );
+	    ddHs = c1 * ((-5.0/8.0) * pow(chi,-13.0/8.0) * dchi * dchi
+	                   + pow(chi,-5.0/8.0) * ddchi);
 	    dH = dHs + Cp * sin(2.0*pi*t/Tp) * df;
 	    ddH = ddHs + Cp * sin(2.0*pi*t/Tp) * ddf;
 	    divterms = Gamma * pow(*H,4.) * dH * dH
-	         * ( (1.0/r) * (*H) * dH + 5.0 * dH * dH + 3.0 * (*H) * ddH );
+	         * ((1.0/r) * (*H) * dH + 5.0 * dH * dH + 3.0 * (*H) * ddH);
 	    Mc = (2.0*pi*Cp/Tp) * cos(2.0*pi*t/Tp) * f - Ms - divterms;
 	  } else {
 	    Mc = 0.0;
@@ -220,7 +220,7 @@ int exactE(const double xIN, const double yIN,
     else
       theta = atan(y / x);
 
-    if ( (r <= r1) || (r >= r2) || (theta <= theta1) || (theta >= theta2) ) {
+    if ((r <= r1) || (r >= r2) || (theta <= theta1) || (theta >= theta2)) {
       /* if outside sliding region but within ice cap, return as in test A */
       *M = M0;
       *mu = 0.0;
@@ -237,13 +237,13 @@ int exactE(const double xIN, const double yIN,
       P = rho * g * (*H);
       h_x = dhdr * cos(theta);
       h_y = dhdr * sin(theta);
-      *ub = sgnx * ( -(*mu) * P * h_x );
-      *vb = sgny * ( -(*mu) * P * h_y );
+      *ub = sgnx * (-(*mu) * P * h_x);
+      *vb = sgny * (-(*mu) * P * h_y);
  
-      d2hdr2 = dhdr * ( -((n + 2.0) / m) * dchidr / chi + 1.0 / (n * r) );
+      d2hdr2 = dhdr * (-((n + 2.0) / m) * dchidr / chi + 1.0 / (n * r));
       dmudr = mufactor * 4.0 * (r1 + r2 - 2.0 * r) / rbot;
-      Mb = -P * ( ((*mu) / r) * (*H) * dhdr + dmudr * (*H) * dhdr  
-                  + 2.0 * (*mu) * dhdr * dhdr + (*mu) * (*H) * d2hdr2 );
+      Mb = -P * (((*mu) / r) * (*H) * dhdr + dmudr * (*H) * dhdr  
+                  + 2.0 * (*mu) * dhdr * dhdr + (*mu) * (*H) * d2hdr2);
       *M = M0 + Mb;
     }
   } else { /* outside of ice cap */

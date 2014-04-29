@@ -210,8 +210,7 @@ public:
                                    const double*, const double*) const
   { return hardness_B; }
 
-  virtual double flow(double stress, double,
-                      double, double ) const
+  virtual double flow(double stress, double, double, double) const
   { return softness_A * pow(stress, n-1); }
 
   virtual double softness_parameter(double, double) const
@@ -224,8 +223,7 @@ public:
   { return "isothermal Glen"; }
 
 protected:
-  virtual double flow_from_temp(double stress, double,
-                                double, double ) const
+  virtual double flow_from_temp(double stress, double, double, double) const
   { return softness_A * pow(stress,n-1); }
 
 protected:
@@ -275,7 +273,7 @@ protected:
 
   // ignores pressure and uses non-pressure-adjusted temperature
   virtual double flow_from_temp(double stress, double temp,
-                                double , double ) const
+                                double , double) const
   { return softness_parameter_from_temp(temp) * pow(stress,n-1); }
 };
 

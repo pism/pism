@@ -35,7 +35,7 @@ PAYearlyCycle::PAYearlyCycle(IceGrid &g, const Config &conf)
 
 }
 
-PAYearlyCycle::~PAYearlyCycle(){
+PAYearlyCycle::~PAYearlyCycle() {
   // empty
 }
 

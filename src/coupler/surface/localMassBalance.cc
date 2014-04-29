@@ -322,7 +322,7 @@ PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
       ddf.snow = beta_snow_c;
     } else { // middle case   T_c < T_mj < T_w
       const double
-         lam_i = pow( (T_w - T_mj) / (T_w - T_c) , 3.0),
+         lam_i = pow((T_w - T_mj) / (T_w - T_c) , 3.0),
          lam_s = (T_mj - T_c) / (T_w - T_c);
       ddf.ice  = beta_ice_w + (beta_ice_c - beta_ice_w) * lam_i;
       ddf.snow = beta_snow_w + (beta_snow_c - beta_snow_w) * lam_s;

@@ -222,7 +222,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
 
   // Matlab version:
   //        frhs = right.*fft2(uplift);
-  //        u = real(ifft2( frhs. / left ));
+  //        u = real(ifft2(frhs. / left));
   {
     VecAccessor2D<fftw_complex> u0_hat(fftw_input, Nx, Ny),
       uplift_hat(fftw_output, Nx, Ny);
@@ -261,8 +261,8 @@ PetscErrorCode BedDeformLC::uplift_init() {
 
 PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_from_start) {
   // solves:
-  //     (2 eta |grad| U^{n+1}) + (dt/2) * ( rho_r g U^{n+1} + D grad^4 U^{n+1} )
-  //   = (2 eta |grad| U^n) - (dt/2) * ( rho_r g U^n + D grad^4 U^n ) - dt * rho g H_start
+  //     (2 eta |grad| U^{n+1}) + (dt/2) * (rho_r g U^{n+1} + D grad^4 U^{n+1})
+  //   = (2 eta |grad| U^n) - (dt/2) * (rho_r g U^n + D grad^4 U^n) - dt * rho g H_start
   // where U=plate; see equation (7) in
   // Bueler, Lingle, Brown (2007) "Fast computation of a viscoelastic
   // deformable Earth model for ice sheet simulations", Ann. Glaciol. 46, 97--105
@@ -302,7 +302,7 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   }
 
   //         frhs = right.*fft2(uun) + fft2(dt*sszz);
-  //         uun1 = real(ifft2( frhs./left ));
+  //         uun1 = real(ifft2(frhs./left));
   {
     VecAccessor2D<fftw_complex> input(fftw_input, Nx, Ny),
       u_hat(fftw_output, Nx, Ny), load_hat(loadhat, Nx, Ny);
@@ -351,7 +351,7 @@ void BedDeformLC::tweak(double seconds_from_start) {
 
   // find average value along "distant" boundary of [-Lx_fat, Lx_fat]X[-Ly_fat, Ly_fat]
   // note domain is periodic, so think of cut locus of torus (!)
-  // (will remove it:   uun1=uun1-( sum(uun1(1, :))+sum(uun1(:, 1)) )/(2*N);)
+  // (will remove it:   uun1=uun1-(sum(uun1(1, :))+sum(uun1(:, 1)))/(2*N);)
   double av = 0.0;
   for (int i = 0; i < Nx; i++)
     av += u(i, 0);

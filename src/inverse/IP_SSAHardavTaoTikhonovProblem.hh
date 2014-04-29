@@ -46,7 +46,7 @@ namespace pism {
 class IP_SSAHardavTaoTikhonovProblem: public IPTaoTikhonovProblem<IP_SSAHardavForwardProblem> {
 public:
 
-  IP_SSAHardavTaoTikhonovProblem( IP_SSAHardavForwardProblem &forward, 
+  IP_SSAHardavTaoTikhonovProblem(IP_SSAHardavForwardProblem &forward, 
                                   IP_SSAHardavTaoTikhonovProblem::DesignVec &d0, 
                                   IP_SSAHardavTaoTikhonovProblem::StateVec &u_obs, double eta, 
                                   IPFunctional<IP_SSAHardavTaoTikhonovProblem::DesignVec>&designFunctional, 

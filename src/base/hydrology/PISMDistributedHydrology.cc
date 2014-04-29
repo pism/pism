@@ -480,13 +480,13 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
                            Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
                            Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
                            Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
-          diffW =   wux * (  De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)) )
-                  + wuy * (  Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)) );
+          diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
+                  + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
           divflux = - divadflux + diffW;
 
           // pressure update equation
           ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
-          Pnew(i,j) = P(i,j) + CC * ( divflux + ZZ );
+          Pnew(i,j) = P(i,j) + CC * (divflux + ZZ);
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
         }

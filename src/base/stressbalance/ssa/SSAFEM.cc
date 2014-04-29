@@ -524,7 +524,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
       }
 
       // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k = 0; k < FEQuadrature::Nk; k++){
+      for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
         residual[k].u = 0;
         residual[k].v = 0;
       }

@@ -432,7 +432,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                       get_string("glaciological_units").c_str());
     CHKERRQ(ierr);
     ierr = VecSet(v, default_value); CHKERRQ(ierr);
-  } // end of if(exists)
+  } // end of if (exists)
 
   return 0;
 }

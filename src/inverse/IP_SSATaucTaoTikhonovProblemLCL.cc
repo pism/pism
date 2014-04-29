@@ -27,7 +27,7 @@ typedef IceModelVec2V  StateVec;
 // typedef TikhonovProblemListener<InverseProblem> Listener;
 // typedef typename Listener::Ptr ListenerPtr;
 
-IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL( IP_SSATaucForwardProblem &ssaforward,
+IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwardProblem &ssaforward,
 IP_SSATaucTaoTikhonovProblemLCL::DesignVec &d0, IP_SSATaucTaoTikhonovProblemLCL::StateVec &u_obs, double eta,
 IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
@@ -61,12 +61,12 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
   ierr = m_du.create(grid, "du", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
   ierr = m_u_Jdesign.create(grid, "Jdesign state variable", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
   
-  ierr = m_u_diff.create( grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_d_diff.create( grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_u_diff.create(grid, "state residual", WITH_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_d_diff.create(grid, "design residual", WITH_GHOSTS, design_stencil_width); CHKERRQ(ierr);
   ierr = m_dzeta.create(grid,"dzeta",WITH_GHOSTS,design_stencil_width); CHKERRQ(ierr);
 
-  ierr = m_grad_state.create( grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width); CHKERRQ(ierr);
-  ierr = m_grad_design.create( grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_state.create(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width); CHKERRQ(ierr);
+  ierr = m_grad_design.create(grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width); CHKERRQ(ierr);
 
   ierr = m_constraints.create(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width); CHKERRQ(ierr);
 
@@ -99,7 +99,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::destruct() {
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess( DesignVec &d0) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
   PetscErrorCode ierr;
   ierr = m_dGlobal.copy_from(d0); CHKERRQ(ierr);
   return 0;
@@ -133,10 +133,10 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(TaoSolver tao) {
   PetscErrorCode ierr;
   
   int its;
-  ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL ); CHKERRQ(ierr);
+  ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
   
   int nListeners = m_listeners.size();
-  for(int k=0; k<nListeners; k++) {
+  for (int k=0; k<nListeners; k++) {
    ierr = m_listeners[k]->iteration(*this,m_eta,
                  its,m_val_design,m_val_state,
                  m_d, m_d_diff, m_grad_design,
@@ -180,7 +180,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x,Terminat
   PetscErrorCode ierr;
   ierr = m_d.copy_from(m_dGlobal); CHKERRQ(ierr);
   ierr = m_ssaforward.linearize_at(m_d,reason); CHKERRQ(ierr);
-  if(reason->failed()) {
+  if (reason->failed()) {
     return 0;
   }
   

@@ -734,7 +734,7 @@ PetscErrorCode IceModel::write_snapshot() {
     return 0;
 
   // do we need to save *now*?
-  if ( (grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
+  if ((grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
     saving_after = snapshot_times[current_snapshot];
 
     while ((current_snapshot < snapshot_times.size()) &&

@@ -47,7 +47,7 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(x, x_e);
-      if(dirichletBC) dirichletBC.update_homogeneous(m_dofmap, x_e);
+      if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, x_e);
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
@@ -96,13 +96,13 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(a, a_e);
-      if(dirichletBC) {
+      if (dirichletBC) {
         dirichletBC.update_homogeneous(m_dofmap, a_e);
       }
       m_quadrature.computeTrialFunctionValues(a_e, a_q, dadx_q, dady_q);
 
       m_dofmap.extractLocalDOFs(b, b_e);
-      if(dirichletBC) dirichletBC.update_homogeneous(m_dofmap, b_e);
+      if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, b_e);
       m_quadrature.computeTrialFunctionValues(b_e, b_q, dbdx_q, dbdy_q);
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
@@ -157,21 +157,21 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(i, j, x, x_e);
-      if(dirichletBC) {
+      if (dirichletBC) {
         dirichletBC.constrain(m_dofmap);
         dirichletBC.update_homogeneous(m_dofmap, x_e);
       }
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for(int k=0;k<FEQuadrature::Nk;k++){
+      for (int k=0; k<FEQuadrature::Nk; k++) {
         gradient_e[k] = 0;
       }
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
-        for(int k=0; k<FEQuadrature::Nk; k++ ) {
+        for (int k=0; k<FEQuadrature::Nk; k++) {
           gradient_e[k] += 2*JxW[q]*(m_cL2*x_qq*test[q][k].val +
             m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
@@ -190,7 +190,7 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
   PetscErrorCode   ierr;
 
   // Zero out the Jacobian in preparation for updating it.
-  ierr = MatZeroEntries(form);CHKERRQ(ierr);
+  ierr = MatZeroEntries(form); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   double JxW[FEQuadrature::Nq];
@@ -219,12 +219,12 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
       m_dofmap.reset(i, j, m_grid);
 
       // Don't update rows/cols where we project to zero.
-      if(zeroLocs) {
+      if (zeroLocs) {
         zeroLocs.constrain(m_dofmap);
       }
 
       // Build the element-local Jacobian.
-      ierr = PetscMemzero(K, sizeof(K));CHKERRQ(ierr);
+      ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
       for (int q=0; q<FEQuadrature::Nq; q++) {
         for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
           for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
@@ -240,13 +240,13 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
     } // j
   } // i
 
-  if(zeroLocs) {
+  if (zeroLocs) {
     ierr = zeroLocs.fix_jacobian(form); CHKERRQ(ierr);
   }
   ierr = zeroLocs.finish(); CHKERRQ(ierr);
 
-  ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(form, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(form, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
   return 0;
 }

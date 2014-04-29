@@ -99,8 +99,8 @@ PetscErrorCode IceModel::energyStep() {
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
-    if (   (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT)
-        && (getVerbosityLevel() > 2)                    ) {
+    if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
+        getVerbosityLevel() > 2) {
       char tempstr[50] = "";
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
       stdout_flags = tempstr + stdout_flags;
@@ -111,7 +111,7 @@ PetscErrorCode IceModel::energyStep() {
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";
-    snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)) );
+    snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)));
     stdout_flags = tempstr + stdout_flags;
   }
 

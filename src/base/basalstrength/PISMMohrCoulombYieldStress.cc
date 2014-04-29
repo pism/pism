@@ -423,7 +423,7 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
         double water = m_tillwat(i,j); // usual case
         if (slipperygl == true &&
             (*m_bed_topography)(i,j) <= sea_level &&
-            (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j)) ) {
+            (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j))) {
           water = tillwat_max;
         } else if (addtransportable == true) {
           water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);

@@ -49,7 +49,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   if (!(g.periodicity & X_PERIODIC))
     {
       // Leftmost element has x-index 0.
-      if (xs < 0){
+      if (xs < 0) {
         xs = 0;
       }
       // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
@@ -63,7 +63,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   if (!(g.periodicity & Y_PERIODIC))
     {
       // Bottom element has y-index 0.
-      if (ys < 0){
+      if (ys < 0) {
         ys = 0;
       }
       // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
@@ -240,7 +240,7 @@ void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
 /*! The element-local Jacobian should be givnen as a row-major array of Nk*Nk values in the
   scalar case or (2Nk)*(2Nk) values in the vector valued case. */
 PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row, Nk, m_col, K, ADD_VALUES);CHKERRQ(ierr);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row, Nk, m_col, K, ADD_VALUES); CHKERRQ(ierr);
   return 0;
 }
 
@@ -252,7 +252,7 @@ PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
 PetscErrorCode FEDOFMap::setJacobianDiag(int i, int j, const double*K, Mat J) {
   MatStencil row;
   row.i = j; row.j = i;
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, K, INSERT_VALUES);CHKERRQ(ierr);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, K, INSERT_VALUES); CHKERRQ(ierr);
   return 0;
 }
 
@@ -266,7 +266,7 @@ FEQuadrature_Scalar::FEQuadrature_Scalar() {
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
 void FEQuadrature::getWeightedJacobian(double *jxw) {
-  for (int q=0;q<Nq;q++)
+  for (int q=0; q<Nq; q++)
     {
       jxw[q] = m_jacobianDet * quadWeights[q];
     }
@@ -284,8 +284,8 @@ void FEQuadrature::init(const IceGrid &grid, double L) {
   m_jacobianDet = jacobian_x*jacobian_y;
 
   FEShapeQ1 shape;
-  for (int q = 0; q < Nq; q++){
-    for (int k = 0; k < Nk; k++){
+  for (int q = 0; q < Nq; q++) {
+    for (int k = 0; k < Nk; k++) {
       shape.eval(k, quadPoints[q][0], quadPoints[q][1], &m_germs[q][k]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;

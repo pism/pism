@@ -429,7 +429,7 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
         // thickness exceeds maximum variation in patch of local topography,
         // so ice buries local topography; note maxtl >= 0 always
         const double Hinv = 1.0 / PetscMax(H, 1.0);
-        double omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
+        double omega = 1.0 + Hinv*Hinv * (C2(i,j) + Hinv * (C3(i,j) + Hinv*C4(i,j)));
         if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
           SETERRQ2(grid.com, 1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
                      "    in BedSmoother.get_theta() ... ending\n",i,j);

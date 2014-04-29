@@ -32,7 +32,7 @@ parameters that are follow the naming convention \a design_param_foo_*.
 \param config          The config file to read the scale parameters from.
 \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
 */
-PetscErrorCode IPDesignVariableParameterization::set_scales(const Config & config, const char *design_var_name ) {
+PetscErrorCode IPDesignVariableParameterization::set_scales(const Config & config, const char *design_var_name) {
   std::string key("design_param_");
   key += design_var_name;
   key += "_scale";
@@ -121,7 +121,7 @@ PetscErrorCode IPDesignVariableParamSquare::fromDesignVariable(double d, double 
   return 0;
 }
 
-PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const char *design_var_name ) {
+PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const char *design_var_name) {
   PetscErrorCode ierr;
   ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
 
@@ -156,7 +156,7 @@ PetscErrorCode IPDesignVariableParamExp::fromDesignVariable(double d, double *OU
 
 
 PetscErrorCode IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
-                                                               const char *design_var_name ) {
+                                                               const char *design_var_name) {
   PetscErrorCode ierr;
   ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
 

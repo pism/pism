@@ -228,7 +228,7 @@ PetscErrorCode IcebergRemover::define_variables(std::set<std::string>, const PIO
   return 0;
 }
 
-PetscErrorCode IcebergRemover::write_variables(std::set<std::string>, const PIO& ) {
+PetscErrorCode IcebergRemover::write_variables(std::set<std::string>, const PIO&) {
   // empty
   return 0;
 }

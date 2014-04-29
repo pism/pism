@@ -74,7 +74,7 @@ plt.rcParams['legend.fontsize']=14
 plt.rcParams['contour.negative_linestyle'] = 'solid'
 
 plt.clf()
-figure(1, figsize=(10,9));clf();hold(True)
+figure(1, figsize=(10,9)); clf(); hold(True)
 plt.subplots_adjust(left=0.14, bottom=0.14, right=0.86, top=None, wspace=0.08,
                     hspace=0.15)
 plt.clf()
@@ -104,7 +104,7 @@ plt.yticks(np.arange(0,1000,200))
 #             arrowprops=dict(arrowstyle="->"))
 # 
 # ax2.annotate(arrowtext2b, xy=(int(x[np.argmax(u)]),int(np.max(u))),  xycoords='data',
-#            xytext=(40, 0), textcoords='offset points', arrowprops=dict(arrowstyle="->") )
+#            xytext=(40, 0), textcoords='offset points', arrowprops=dict(arrowstyle="->"))
 plt.grid(True)
 plt.savefig(printfile, format='pdf')
 plt.show()

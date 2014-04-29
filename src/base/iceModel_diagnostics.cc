@@ -576,7 +576,7 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
 
         if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
           // is 273.15
-          if ( model->EC->isTemperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
+          if (model->EC->isTemperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
             Tij[k] = melting_point_temp;
           }
         }
@@ -644,7 +644,7 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
 
       if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
         // is 273.15
-        if ( model->EC->isTemperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
+        if (model->EC->isTemperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
           (*result)(i,j) = melting_point_temp;
         }
       }

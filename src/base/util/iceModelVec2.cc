@@ -124,7 +124,7 @@ PetscErrorCode IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S
   ierr = get_array(mag); CHKERRQ(ierr);
   for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      mag[i][j] = sqrt( PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)) );
+      mag[i][j] = sqrt(PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)));
     }
   }
   ierr = v_x.end_access(); CHKERRQ(ierr);
@@ -396,40 +396,40 @@ PetscErrorCode IceModelVec2S::has_nan() {
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
 double IceModelVec2S::diff_x(int i, int j) {
-  return ( (*this)(i + 1,j) - (*this)(i - 1,j) ) / (2 * grid->dx);
+  return ((*this)(i + 1,j) - (*this)(i - 1,j)) / (2 * grid->dx);
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences.
 double IceModelVec2S::diff_y(int i, int j) {
-  return ( (*this)(i,j + 1) - (*this)(i,j - 1) ) / (2 * grid->dy);
+  return ((*this)(i,j + 1) - (*this)(i,j - 1)) / (2 * grid->dy);
 }
 
 
 //! \brief Returns the x-derivative at East staggered point i+1/2,j approximated 
 //! using centered (obvious) finite differences.
 double IceModelVec2S::diff_x_stagE(int i, int j) {
-  return ( (*this)(i+1,j) - (*this)(i,j) ) / (grid->dx);
+  return ((*this)(i+1,j) - (*this)(i,j)) / (grid->dx);
 }
 
 //! \brief Returns the y-derivative at East staggered point i+1/2,j approximated 
 //! using centered finite differences.
 double IceModelVec2S::diff_y_stagE(int i, int j) {
-  return (   (*this)(i+1,j+1) + (*this)(i,j+1)
-           - (*this)(i+1,j-1) - (*this)(i,j-1) ) / ( 4* grid->dy);
+  return ((*this)(i+1,j+1) + (*this)(i,j+1)
+           - (*this)(i+1,j-1) - (*this)(i,j-1)) / (4* grid->dy);
 }
 
 //! \brief Returns the x-derivative at North staggered point i,j+1/2 approximated 
 //! using centered finite differences.
 double IceModelVec2S::diff_x_stagN(int i, int j) {
-  return (   (*this)(i+1,j+1) + (*this)(i+1,j)
-           - (*this)(i-1,j+1) - (*this)(i-1,j) ) / ( 4* grid->dx);
+  return ((*this)(i+1,j+1) + (*this)(i+1,j)
+           - (*this)(i-1,j+1) - (*this)(i-1,j)) / (4* grid->dx);
 }
 
 //! \brief Returns the y-derivative at North staggered point i,j+1/2 approximated 
 //! using centered (obvious) finite differences.
 double IceModelVec2S::diff_y_stagN(int i, int j) {
-  return ( (*this)(i,j+1) - (*this)(i,j) ) / (grid->dy);
+  return ((*this)(i,j+1) - (*this)(i,j)) / (grid->dy);
 }
 
 
@@ -441,9 +441,9 @@ double IceModelVec2S::diff_x_p(int i, int j) {
     return diff_x(i,j);
   
   if (i == 0)
-    return ( (*this)(i + 1,j) - (*this)(i,j) ) / (grid->dx);
+    return ((*this)(i + 1,j) - (*this)(i,j)) / (grid->dx);
   else if (i == grid->Mx - 1)
-    return ( (*this)(i,j) - (*this)(i - 1,j) ) / (grid->dx);
+    return ((*this)(i,j) - (*this)(i - 1,j)) / (grid->dx);
   else
     return diff_x(i,j);
 }
@@ -456,9 +456,9 @@ double IceModelVec2S::diff_y_p(int i, int j) {
     return diff_y(i,j);
   
   if (j == 0)
-    return ( (*this)(i,j + 1) - (*this)(i,j) ) / (grid->dy);
+    return ((*this)(i,j + 1) - (*this)(i,j)) / (grid->dy);
   else if (j == grid->My - 1)
-    return ( (*this)(i,j) - (*this)(i,j - 1) ) / (grid->dy);
+    return ((*this)(i,j) - (*this)(i,j - 1)) / (grid->dy);
   else
     return diff_y(i,j);
 }
@@ -693,8 +693,8 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
   ierr = begin_access(); CHKERRQ(ierr);
   for (int i = grid->xs; i < grid->xs+grid->xm; ++i) {
     for (int j = grid->ys; j < grid->ys+grid->ym; ++j) {
-      result(i,j) = 0.25 * (  (*this)(i,j,0) + (*this)(i,j,1)
-                              + (*this)(i,j-1,1) + (*this)(i-1,j,0) );
+      result(i,j) = 0.25 * ((*this)(i,j,0) + (*this)(i,j,1)
+                              + (*this)(i,j-1,1) + (*this)(i-1,j,0));
     } // j
   }   // i
   ierr = end_access(); CHKERRQ(ierr);

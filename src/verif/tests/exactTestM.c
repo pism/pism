@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2008 Ed Bueler
+   Copyright (C) 2008, 2014 Ed Bueler
   
    This file is part of PISM.
   
@@ -68,7 +68,7 @@ int funcM_ode_G(double r, const double alpha[], double f[], void* params) {
      no range checking on r, so use away from zero */
   
   const double Q = (1.0 - rho / rhow) * rho * g * Rc * H0 / (2.0 * barB),
-               guess = 0.15 * (  pow(Q/r,n) - alpha[0]/r  );
+               guess = 0.15 * (pow(Q/r,n) - alpha[0]/r);
   /* in Python (exactM.py):  f[0] = fsolve(F_M,guess,args=(alpha[0],r));
      we could call GSL to find root, but hand-coding Newton's is easier */
   double Old = guess, New;	/* capitalized to avoid the C++ keyword name

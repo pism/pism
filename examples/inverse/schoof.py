@@ -6,7 +6,7 @@ class SchoofSSA1dExact:
 
   The PDE is:
 
-  -d/dy ( Bh/2 |1/2 du/dy|^(-2/3) du/dy) = f (1-|y/L|^m)
+  -d/dy (Bh/2 |1/2 du/dy|^(-2/3) du/dy) = f (1-|y/L|^m)
 
   on the domain -3L <= y <= 3L with periodic boundary conditions.  The resulting $u$
   is the downstream velocity on an infinite slab.
@@ -28,10 +28,10 @@ class SchoofSSA1dExact:
     if u>W:
       v=0
     else:
-      v = -L**4*(  (u**4-(m+1)**(4./m))/4 -
-                      3*(u**(m+4)-(m+1)**(1+4./m))/( (m+1)*(m+4)) + 
+      v = -L**4*((u**4-(m+1)**(4./m))/4 -
+                      3*(u**(m+4)-(m+1)**(1+4./m))/((m+1)*(m+4)) + 
                       3*(u**(2*m+4)-(m+1)**(2+4./m))/((m+1)**2*(2*m+4.)) -
-                      (u**(3*m+4)-(m+1)**(3+4./m))/( (m+1)**3*(3*m+4) ) )
+                      (u**(3*m+4)-(m+1)**(3+4./m))/((m+1)**3*(3*m+4)))
 
     v *= self.scale
     return v

@@ -129,7 +129,7 @@ PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
   ierr = hardav.end_access();    CHKERRQ(ierr);
   ierr = enthalpy.end_access();  CHKERRQ(ierr);
 
-  if(hardav.has_ghosts()) {
+  if (hardav.has_ghosts()) {
     ierr = hardav.update_ghosts(); CHKERRQ(ierr);
   }
 
@@ -225,7 +225,7 @@ double GPBLDIce::softness_parameter(
         "getPATemp() returned ierr>0 in GPBLDIce::softness_parameter()\n");
       endPrintRank();
     }
-    return softness_parameter_paterson_budd( T_pa );
+    return softness_parameter_paterson_budd(T_pa);
   } else { // temperate ice
     double omega;
     ierr = EC->getWaterFraction(enthalpy, pressure, omega);
@@ -283,7 +283,7 @@ HookeIce::HookeIce(MPI_Comm c, const char pre[],
 }
 
 double HookeIce::softness_parameter_from_temp(double T_pa) const {
-  return A_Hooke * exp( -Q_Hooke/(ideal_gas_constant * T_pa)
+  return A_Hooke * exp(-Q_Hooke/(ideal_gas_constant * T_pa)
                         + 3.0 * C_Hooke * pow(Tr_Hooke - T_pa, -K_Hooke));
 }
 
@@ -369,7 +369,7 @@ double GoldsbyKohlstedtIce::hardness_parameter(double enthalpy, double pressure)
   return pow(softness, hardness_power);
 }
 
-double GoldsbyKohlstedtIce::softness_parameter(double , double ) const {
+double GoldsbyKohlstedtIce::softness_parameter(double , double) const {
   PetscPrintf(com, "ERROR: GoldsbyKohlstedtIce::softness_parameter is not implemented\n");
   PISMEnd();
   return 0;

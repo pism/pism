@@ -88,7 +88,7 @@ protected:
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
   virtual PetscErrorCode exactSolution(int i, int j,
-                                       double x, double y, double *u, double *v );
+                                       double x, double y, double *u, double *v);
 
   PetscErrorCode report_netcdf(std::string testname,
                                double max_vector,

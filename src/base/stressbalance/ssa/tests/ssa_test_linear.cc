@@ -69,7 +69,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j, 
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
   double L, H0, dhdx, nu0, tauc0;
 };
@@ -125,7 +125,7 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
       double myu, myv;
       const double myx = grid.x[i], myy=grid.y[j];
       
-      bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
+      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
       if (edge) {
         bc_mask(i,j) = 1;
         exactSolution(i,j,myx,myy,&myu,&myv);
@@ -157,8 +157,8 @@ PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/,
                                                    "m/year", "m/second");
   double v0 = grid.convert(100.0, "m/year", "m/second");
   // double alpha=log(2.)/(2*L);
-  double alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
-  *u = v0*exp( -alpha*(x-L));
+  double alpha = sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));
+  *u = v0*exp(-alpha*(x-L));
   *v = 0;
   return 0;
 }
@@ -225,8 +225,8 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if(driver == "fem") ssafactory = SSAFEMFactory;
-    else if(driver == "fd") ssafactory = SSAFDFactory;
+    if (driver == "fem") ssafactory = SSAFEMFactory;
+    else if (driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
     SSATestCaseExp testcase(com,config);

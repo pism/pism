@@ -132,13 +132,13 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, x, x_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for(int k=0;k<FEQuadrature::Nk;k++){
+      for (int k=0; k<FEQuadrature::Nk; k++) {
         gradient_e[k] = 0;
       }
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
         const double x_qq = x_q[q];
-        for(int k=0; k<FEQuadrature::Nk; k++ ) {
+        for (int k=0; k<FEQuadrature::Nk; k++) {
           gradient_e[k] += 2*JxW[q]*x_qq*test[q][k].val;
         } // k
       } // q
@@ -264,14 +264,14 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
       m_quadrature_vector.computeTrialFunctionValues(i, j, m_dofmap, x, x_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for(int k=0;k<FEQuadrature::Nk;k++){
+      for (int k=0; k<FEQuadrature::Nk; k++) {
         gradient_e[k].u = 0;
         gradient_e[k].v = 0;
       }
 
       for (int q=0; q<FEQuadrature::Nq; q++) {
         const Vector2 &x_qq = x_q[q];
-        for(int k=0; k<FEQuadrature::Nk; k++ ) {
+        for (int k=0; k<FEQuadrature::Nk; k++) {
           double gcommon =2*JxW[q]*test[q][k].val;
           gradient_e[k].u += gcommon*x_qq.u;
           gradient_e[k].v += gcommon*x_qq.v;

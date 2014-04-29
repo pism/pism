@@ -50,7 +50,7 @@ namespace pism {
 class IP_SSATaucTaoTikhonovProblem: public IPTaoTikhonovProblem<IP_SSATaucForwardProblem> {
 public:
 
-  IP_SSATaucTaoTikhonovProblem( IP_SSATaucForwardProblem &forward, 
+  IP_SSATaucTaoTikhonovProblem(IP_SSATaucForwardProblem &forward, 
                                 IP_SSATaucTaoTikhonovProblem::DesignVec &d0, 
                                 IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, double eta, 
                                 IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec>&designFunctional, 

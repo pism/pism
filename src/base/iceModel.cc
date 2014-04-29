@@ -280,7 +280,7 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
-  if(calving_methods.find("eigen_calving") != calving_methods.end()) {
+  if (calving_methods.find("eigen_calving") != calving_methods.end()) {
     ierr = vMask.create(grid, "mask", WITH_GHOSTS, 3); CHKERRQ(ierr);
     // This wider stencil is required by the calving code when asking
     // for mask values at the ice margin (offset+1)

@@ -84,41 +84,41 @@ PetscErrorCode pism::verbPrintf(const int thresh,
 
   if ((thresh < 1) || (thresh > 5)) { SETERRQ(comm, 1,"invalid threshold in verbPrintf()"); }
 
-  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
-  if (!rank && ((verbosityLevel >= thresh) || petsc_history) ) {
+  ierr = MPI_Comm_rank(comm,&rank); CHKERRQ(ierr);
+  if (!rank && ((verbosityLevel >= thresh) || petsc_history)) {
     va_list Argp;
     va_start(Argp,format);
 
-    ierr = PetscStrstr(format,"%A",&sub1);CHKERRQ(ierr);
+    ierr = PetscStrstr(format,"%A",&sub1); CHKERRQ(ierr);
     if (sub1) {
-      ierr = PetscStrstr(format,"%",&sub2);CHKERRQ(ierr);
+      ierr = PetscStrstr(format,"%",&sub2); CHKERRQ(ierr);
       if (sub1 != sub2) SETERRQ(comm, PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
-      ierr    = PetscStrlen(format,&len);CHKERRQ(ierr);
-      ierr    = PetscMalloc((len+16)*sizeof(char),&buffer);CHKERRQ(ierr);
-      ierr    = PetscStrcpy(buffer,format);CHKERRQ(ierr);
-      ierr    = PetscStrstr(buffer,"%",&sub2);CHKERRQ(ierr);
+      ierr    = PetscStrlen(format,&len); CHKERRQ(ierr);
+      ierr    = PetscMalloc((len+16)*sizeof(char),&buffer); CHKERRQ(ierr);
+      ierr    = PetscStrcpy(buffer,format); CHKERRQ(ierr);
+      ierr    = PetscStrstr(buffer,"%",&sub2); CHKERRQ(ierr);
       sub2[0] = 0;
       value   = (double)va_arg(Argp,double);
       if (PetscAbsReal(value) < 1.e-12) {
-        ierr    = PetscStrcat(buffer,"< 1.e-12");CHKERRQ(ierr);
+        ierr    = PetscStrcat(buffer,"< 1.e-12"); CHKERRQ(ierr);
       } else {
-        ierr    = PetscStrcat(buffer,"%g");CHKERRQ(ierr);
+        ierr    = PetscStrcat(buffer,"%g"); CHKERRQ(ierr);
         va_end(Argp);
         va_start(Argp,format);
       }
-      ierr    = PetscStrcat(buffer,sub1+2);CHKERRQ(ierr);
+      ierr    = PetscStrcat(buffer,sub1+2); CHKERRQ(ierr);
       nformat = buffer;
     } else {
       nformat = format;
     }
     if (verbosityLevel >= thresh) {
-      ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp);CHKERRQ(ierr);
+      ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp); CHKERRQ(ierr);
     }
     if (petsc_history) { // always print to history
-      ierr = PetscVFPrintf(petsc_history,nformat,Argp);CHKERRQ(ierr);
+      ierr = PetscVFPrintf(petsc_history,nformat,Argp); CHKERRQ(ierr);
     }
     va_end(Argp);
-    if (sub1) {ierr = PetscFree(buffer);CHKERRQ(ierr);}
+    if (sub1) {ierr = PetscFree(buffer); CHKERRQ(ierr);}
   }
   PetscFunctionReturn(0);
 }
@@ -275,7 +275,7 @@ void pism::PISMEnd() {
   PetscFinalize();
 
   MPI_Finalized(&flag);
-  if ( ! flag )
+  if (flag == false)
     MPI_Finalize();
 
   exit(0);
