@@ -41,11 +41,11 @@ public:
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
 protected:
-  std::string input_file;
-  double alpha;
-  IceModelVec2S *ice_thickness; //!< current ice thickness produced by IceModel.
-  IceModelVec2S target_thickness, ftt_mask;
-  NCSpatialVariable climatic_mass_balance, climatic_mass_balance_original, ice_surface_temp;
+  std::string m_input_file;
+  double m_alpha;
+  IceModelVec2S *m_ice_thickness; //!< current ice thickness produced by IceModel.
+  IceModelVec2S m_target_thickness, m_ftt_mask;
+  NCSpatialVariable m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
 private:
   PetscErrorCode allocate_PSForceThickness();
 };
