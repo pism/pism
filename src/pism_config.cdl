@@ -436,6 +436,11 @@ netcdf pism_config {
     pism_config:force_to_thickness_alpha = 0.01;
     pism_config:force_to_thickness_alpha_doc = "yr-1; exponential coefficient in force-to-thickness mechanism";
 
+    pism_config:force_to_thickness_ice_free_alpha_factor = 1.0;
+    pism_config:force_to_thickness_ice_free_alpha_factor_doc = "; force_to_thickness_alpha is multiplied by this factor in areas that are ice-free according to the target ice thickness and force_to_thickness_ice_free_thickness_threshold";
+
+    pism_config:force_to_thickness_ice_free_thickness_threshold = 1.0;
+    pism_config:force_to_thickness_ice_free_thickness_threshold_doc = "m; threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use force_to_thickness_ice_free_alpha_factor.";
 
     // PISMOceanModel constants
 

@@ -275,7 +275,7 @@ PetscErrorCode OptionsList(MPI_Comm com, std::string opt, std::string descriptio
 
 //! \brief Process a command-line option taking a string as an argument.
 PetscErrorCode OptionsString(std::string option, std::string text,
-				 std::string &result, bool &is_set, bool allow_empty_arg) {
+                             std::string &result, bool &is_set, bool allow_empty_arg) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscBool flag;

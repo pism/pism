@@ -1041,12 +1041,13 @@ $ pismr -i foo.nc -surface given,forcing -force_to_thickness_file bar.nc
 \end{verbatim}
 %$ - match dollar signs to make emacs happy
 
-In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp},
-≈as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
+In this case \texttt{foo.nc} contains fields \variable{climatic_mass_balance} and \variable{ice_surface_temp}, as normal for \texttt{-surface~given}, and \texttt{bar.nc} contains field
 \variable{thk} which will serve as the target thickness. Option
-\intextoption{force_to_thickness_alpha} adjusts the value of $\alpha_0$, which has a
+\intextoption{force_to_thickness_alpha} adjusts the value of $\alpha$, which has a
 default value specified in the \emph{Source Code Browser}
 \url{\PISMBROWSERURL}.
+
+In addition to this one can specify a multiplicative factor $C$ used in areas where the target thickness field has less than \intextoption{force_to_thickness_ice_free_thickness_threshold} meters of ice; $\alpha_{\text{ice free}} = C \times \alpha$. Use the \intextoption{force_to_thickness_ice_free_alpha_factor} option to set $C$.
 
 \subsection{Modifier: Anomalies}
 \label{sec:surface-anomaly}

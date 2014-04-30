@@ -40,13 +40,12 @@ public:
   virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
-protected:
+private:
   std::string m_input_file;
-  double m_alpha;
+  double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
   IceModelVec2S *m_ice_thickness; //!< current ice thickness produced by IceModel.
   IceModelVec2S m_target_thickness, m_ftt_mask;
   NCSpatialVariable m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
-private:
   PetscErrorCode allocate_PSForceThickness();
 };
 
