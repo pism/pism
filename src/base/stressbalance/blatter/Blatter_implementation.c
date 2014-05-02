@@ -619,9 +619,9 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
           if (q == 0) etabase = eta;
 
           for (l = ls; l < 8; l++) { /* test functions */
-            const PetscReal pp = phi[l], *dp = dphi[l];
-            element_residual[l]->u += dp[0]*jw*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*du[2] + pp*jw*ctx->rhog*ds[q % 4][0];
-            element_residual[l]->v += dp[1]*jw*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*dv[2] + pp*jw*ctx->rhog*ds[q % 4][1];
+            const PetscReal *dp = dphi[l];
+            element_residual[l]->u += dp[0]*jw*eta*(4.0*du[0] + 2.0*dv[1]) + dp[1]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*du[2] + phi[l]*jw*ctx->rhog*ds[q % 4][0];
+            element_residual[l]->v += dp[1]*jw*eta*(2.0*du[0] + 4.0*dv[1]) + dp[0]*jw*eta*(du[1] + dv[0]) + dp[2]*jw*eta*dv[2] + phi[l]*jw*ctx->rhog*ds[q % 4][1];
           }
         }             /* q-loop */
 
@@ -653,7 +653,7 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
                 *phi = ctx->Q12D.chi[q];
 
               PetscScalar u = 0, v = 0, tauc = 0;
-              PetscReal taub, dtaub;
+              PetscReal beta;   /* basal drag coefficient; tau_{b,x} = beta*u; tau_{b,y} = beta*v */
               for (l = 0; l < 4; l++) {
                 u += phi[l]*element_velocity[l].u;
                 v += phi[l]*element_velocity[l].v;
@@ -661,12 +661,11 @@ static PetscErrorCode BlatterQ1_residual_local(DMDALocalInfo *info, Node ***velo
               }
 
               ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
-                                  &taub, &dtaub);
+                                  &beta, NULL);
 
               for (l = 0; l < 4; l++) {
-                const PetscReal pp = phi[l];
-                element_residual[ls + l]->u += pp*jw*taub*u;
-                element_residual[ls + l]->v += pp*jw*taub*v;
+                element_residual[ls + l]->u += phi[l]*jw*(beta*u);
+                element_residual[ls + l]->v += phi[l]*jw*(beta*v);
               }
             } /* end of the quadrature loop */
 
@@ -848,7 +847,8 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
               const PetscReal jw = 0.25*dx*dy / ctx->rhog, /* FIXME: det(J)*w is wrong here */
                 *phi = ctx->Q12D.chi[q];
               PetscScalar u = 0, v = 0, tauc = 0;
-              PetscReal taub, dtaub;
+              PetscReal beta,   /* basal drag coefficient; tau_{b,x} = beta*u; tau_{b,y} = beta*v */
+                dbeta;          /* derivative of beta with respect to alpha = 1/2 * (u*u + v*v) */
 
               /* Compute u, v, \tau_c at a quadrature point on the bottom face using basis expansions: */
               for (l = 0; l < 4; l++) {
@@ -859,19 +859,19 @@ static PetscErrorCode BlatterQ1_Jacobian_local(DMDALocalInfo *info, Node ***velo
 
               /* Compute the friction coefficient at this quadrature point: */
               ctx->nonlinear.drag(ctx, PetscRealPart(tauc), u, v,
-                                  &taub, &dtaub);
+                                  &beta, &dbeta);
 
               for (l = 0; l < 4; l++) {
                 const PetscReal pp = phi[l];
                 for (ll = 0; ll < 4; ll++) {
                   const PetscReal ppl = phi[ll];
-                  Ke[l*2 + 0][ll*2 + 0] += pp*jw*taub*ppl + pp*jw*dtaub*u*u*ppl;
-                  Ke[l*2 + 0][ll*2 + 1] +=                  pp*jw*dtaub*u*v*ppl;
-                  Ke[l*2 + 1][ll*2 + 0] +=                  pp*jw*dtaub*v*u*ppl;
-                  Ke[l*2 + 1][ll*2 + 1] += pp*jw*taub*ppl + pp*jw*dtaub*v*v*ppl;
-                }
-              }
-            }
+                  Ke[l*2 + 0][ll*2 + 0] += pp*jw*beta*ppl + pp*jw*dbeta*u*u*ppl;
+                  Ke[l*2 + 0][ll*2 + 1] +=                  pp*jw*dbeta*u*v*ppl;
+                  Ke[l*2 + 1][ll*2 + 0] +=                  pp*jw*dbeta*v*u*ppl;
+                  Ke[l*2 + 1][ll*2 + 1] += pp*jw*beta*ppl + pp*jw*dbeta*v*v*ppl;
+                } /* ll-loop (trial functions) */
+              } /* l-loop (test functions) */
+            } /* q-loop */
 
           } /* generic basal boundary condition */
         } /* end of "if (k == 0)" */

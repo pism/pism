@@ -188,19 +188,20 @@ void compute_element_info(PetscReal chi[8][8],PetscReal dchi[8][8][3],
 			  PetscReal dphi[restrict][3],
 			  PetscReal *restrict jw)
 {
-  const PetscReal jac[3][3] = {{dx / 2, 0, 0}, {0, dy / 2, 0}, {dz[0], dz[1], dz[2]}},
+  const PetscReal jac[3][3] = {{dx / 2, 0,      0},
+                               {0,      dy / 2, 0},
+                               {dz[0],  dz[1],  dz[2]}},
     ijac[3][3] = {{1 / jac[0][0], 0, 0},
                   {0, 1 / jac[1][1], 0},
                   { - jac[2][0] / (jac[0][0]*jac[2][2]), - jac[2][1] / (jac[1][1]*jac[2][2]), 1 / jac[2][2]}},
       jdet = jac[0][0]*jac[1][1]*jac[2][2];
-  PetscInt i;
 
-  for (i = 0; i < 8; i++) {
+  for (int i = 0; i < 8; i++) {
     const PetscReal *dchi_q = dchi[q][i];
     phi[i] = chi[q][i];
-    dphi[i][0] = dchi_q[0]*ijac[0][0] + dchi_q[1]*ijac[1][0] + dchi_q[2]*ijac[2][0];
-    dphi[i][1] = dchi_q[0]*ijac[0][1] + dchi_q[1]*ijac[1][1] + dchi_q[2]*ijac[2][1];
-    dphi[i][2] = dchi_q[0]*ijac[0][2] + dchi_q[1]*ijac[1][2] + dchi_q[2]*ijac[2][2];
+    dphi[i][0] = dchi_q[0]*ijac[0][0] + dchi_q[1]*ijac[1][0] + dchi_q[2]*ijac[2][0]; /* x-derivative */
+    dphi[i][1] = dchi_q[0]*ijac[0][1] + dchi_q[1]*ijac[1][1] + dchi_q[2]*ijac[2][1]; /* y-derivative */
+    dphi[i][2] = dchi_q[0]*ijac[0][2] + dchi_q[1]*ijac[1][2] + dchi_q[2]*ijac[2][2]; /* z-derivative */
   }
   *jw = 1.0 * jdet;		/* hard-wired quadrature weights */
 }
