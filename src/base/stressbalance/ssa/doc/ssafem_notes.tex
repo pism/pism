@@ -221,15 +221,7 @@ We use a Newton's method to solve the system resulting from discretizing equatio
 \subsection{Residual evaluation}
 \label{sec-3-1}
 
-I should just say that we focus on an element contribution to the residual and the Jacobian matrix and use shape functions defined on the reference element.
-
-Consider a physical element $K$, which has $N_k$ nodes corresponding to it.
-
-On this element, $N_k$ trial functions $\hat \psi_k$ are defined, so that $u = \sum_{k = 1}^{N_k} u_k \hat \psi_k$, where $u_k$ are nodal values of $u$.
-
-Let $N_q$ be the number of quadrature points, $w_q$ be corresponding quadrature weights, and $J_q$ be the Jacobian of the map from the reference element to a physical element.
-
-Let $\psi_k$ be one of $N_k$ test functions defined on the reference element, with $\psi_k$ corresponding to $\hat \psi_k$. Then the residual $F_k = (F_{k,1}, F_{k,2})$ at the node $k$ corresponding to $\hat \psi_k$ is
+In this and following sections we focus on element contributions to the residual and the Jacobian. Basis functions used here are defined on the reference element, hence the added determinant of the Jacobian of the map from the reference element to a particular physical element $|J_q|$ appearing in all quadratures.
 
 \begin{align}
   \label{eq:3}
@@ -242,7 +234,7 @@ Let $\psi_k$ be one of $N_k$ test functions defined on the reference element, wi
 \subsection{Jacobian evaluation}
 \label{sec-3-2}
 
-Equations (\ref{eq:3}) and (\ref{eq:4}) define a map from $\R^{2\times M}$ to $\R^{2\times M}$, where $M$ is the number of nodes in a FEM mesh. To use Newton's method, we need to compute the Jacobian \emph{of this map}.
+Equations (\ref{eq:3}) and (\ref{eq:4}) define a map from $\R^{2\times N}$ to $\R^{2\times N}$, where $N$ is the number of nodes in a FEM mesh. To use Newton's method, we need to be able to compute the Jacobian \emph{of this map}.
 
 It is helpful to rewrite equations defining $F_{k,1}$ and $F_{k,2}$ using basis expansions for $u_x$, $u_y$, $v_x$, and $v_y$ (see (\ref{eq:5})), as follows:
 
@@ -325,19 +317,21 @@ The derivative of $\nu$ with respect to $\gamma$ can be written in terms of $\nu
       & = \highlight{ \frac{1 - n}{2n} \cdot \frac{\nu}{\epsilon_{\nu} + \gamma} }.
 \end{align*}
 
-To compute $\diff{\gamma}{u_l}$ and $\diff{\gamma}{v_l}$ we need to re-write $\gamma$ using the basis expansion (\ref{eq:5}):
+To compute $\diff{\gamma}{u_l}$ and $\diff{\gamma}{v_l}$ we need to re-write $\gamma$ (equation (\ref{eq:6})) using the basis expansion (\ref{eq:5}):
 \begin{align*}
   \gamma &=
            \begin{aligned}[t]
              \frac{1}{2}\, \Bigg(&\left(\UX\right)^2 + \left(\VY\right)^2 \\
-             & + \left(\UX + \VY\right)^2 + \frac{1}{2}\, \left(\UY + \VX\right)^2\Bigg) \\
+             & + \left(\UX + \VY\right)^2 + \frac{1}{2}\, \left(\UY + \VX\right)^2\Bigg). \\
            \end{aligned}
 \end{align*}
 
 So,
 \begin{align}
-  \diff{\gamma}{u_l} &= \highlight{ \frac{1}{2} \left( 2 u_x \diff{\phi_l}{x} + 2 (u_x + v_y)\diff{\phi_l}{x} + (u_y + v_x)\diff{\phi_l}{y} \right) },\\
-  \diff{\gamma}{v_l} &= \highlight{ \frac{1}{2} \left( 2 v_y \diff{\phi_l}{y} + 2 (u_x + v_y)\diff{\phi_l}{y} + (u_y + v_x)\diff{\phi_l}{x} \right) }.
+  \diff{\gamma}{u_l} &= u_x \diff{\phi_l}{x} + (u_x + v_y)\diff{\phi_l}{x} + \frac{1}{2} (u_y + v_x)\diff{\phi_l}{y},\notag\\
+                     &= \highlight{ (2 u_x + v_y) \diff{\phi_l}{x} + \frac{1}{2} (u_y + v_x)\diff{\phi_l}{y} },\\
+  \diff{\gamma}{v_l} &= v_y \diff{\phi_l}{y} + (u_x + v_y)\diff{\phi_l}{y} + \frac{1}{2} (u_y + v_x)\diff{\phi_l}{x},\notag\\
+                     &= \highlight{ \frac{1}{2} (u_y + v_x)\diff{\phi_l}{x} + (u_x + 2 v_y)\diff{\phi_l}{y} }.
 \end{align}
 
 
@@ -357,7 +351,7 @@ Recall from equation (\ref{eq:9})
   \taubx &=  \highlight{ - \betaU\cdot u }, &  \tauby &= \highlight{ - \betaU\cdot v }.
 \end{align*}
 
-Using the chain rule, we get
+Using product and chain rules, we get
 \begin{align*}
   \diff{\taubx}{u_l} &= -\left(\betaU\cdot \diff{u}{u_l} + \diff{\betaU}{u_l}\cdot u\right)\\
                      &= -\left( \betaU\cdot \phi_l + \diff{\betaU}{\alpha}\cdot \diff{\alpha}{u_l}\cdot u \right)\\
