@@ -41,6 +41,10 @@ ncatted -O -a units,ice_surface_temp,c,c,"Celsius" $PISMVERSION
 # use pism-recognized name and standard_name for surface mass balance, after
 # converting from liquid water equivalent thickness per year to [kg m-2 year-1]
 ncap2 -O -s "climatic_mass_balance=1000.0*smb" $PISMVERSION $PISMVERSION
+# Note: The RACMO field smb has value 0 as a missing value, unfortunately,
+# everywhere the ice thickness is zero.  Here we replace with 1 m a-1 ablation.
+# This is a *choice* of the model of surface mass balance in thk==0 areas.
+ncap2 -O -s "where(thk <= 0.0){climatic_mass_balance=-1000.0;}" $PISMVERSION $PISMVERSION
 ncatted -O -a standard_name,climatic_mass_balance,m,c,"land_ice_surface_specific_mass_balance" $PISMVERSION
 ncatted -O -a units,climatic_mass_balance,m,c,"kg m-2 year-1" $PISMVERSION
 # de-clutter by only keeping vars we want
