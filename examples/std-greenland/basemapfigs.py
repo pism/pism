@@ -81,7 +81,7 @@ elif field == 'mask':
   fill       = -1.0
   logscale   = False
   contour100 = False
-  myvmin     = 1.0
+  myvmin     = 0.0
   myvmax     = 4.0
   ticklist   = [0, 1, 2, 3, 4]
 else:
