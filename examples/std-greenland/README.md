@@ -59,6 +59,9 @@ The reference for RACMO model outputs is:
     _of the Greenland ice sheet revealed by high-resolution climate modeling._
     Geophys. Res. Lett. 36 (L12501), doi:10.1029/2009GL038110.
 
+Note that the RACMO surface mass balance is missing where there is no
+(present-day) ice.
+
 For further references on the SeaRISE data, run
 
     $ ncdump -h Greenland_5km_v1.1.nc |less
@@ -73,11 +76,11 @@ the runs shown here.  They can be found in the `stable0.5` branch of PISM.  See
 
 # Basic Parameter study
 
-An example for a basic paramter study is given in param20km.sh (or
-param20kmspawn.sh, to run on supercomputers like on [ARSC's
-pacman](http://www.arsc.edu/arsc/support/howtos/usingpacman/)). Run
+An example for a basic parameter study is given by running the script `param.sh`
+and either `runsequential.sh` or `runparallel.sh`.  See the User's Manual.  Also
+see scripts in `advanced/`.
 
-    ./param20km.sh
+# Visualization
 
 Results can be visualized using, e.g. `im-plot.py` from
 [pypismtools](https://github.com/pism/pypismtools):
