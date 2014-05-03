@@ -796,7 +796,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   // end the flag line
-  stdout_flags += " " + adaptReasonFlag;
+  stdout_flags += " " + m_adaptive_timestep_reason;
 
 #if (PISM_DEBUG==1)
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
@@ -855,7 +855,7 @@ PetscErrorCode IceModel::run() {
 
   stdout_flags.erase(); // clear it out
   ierr = summaryPrintLine(PETSC_TRUE, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
-  adaptReasonFlag = '$'; // no reason for no timestep
+  m_adaptive_timestep_reason = '$'; // no reason for no timestep
   ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
 
   t_TempAge = grid.time->current();
@@ -876,7 +876,7 @@ PetscErrorCode IceModel::run() {
     bool updateAtDepth = skipCountDown == 0;
     bool tempAgeStep = updateAtDepth && (do_energy || do_age);
 
-    const bool show_step = tempAgeStep || adaptReasonFlag == "end of the run";
+    const bool show_step = tempAgeStep || m_adaptive_timestep_reason == "end of the run";
     ierr = summary(show_step); CHKERRQ(ierr);
 
     // writing these fields here ensures that we do it after the last time-step

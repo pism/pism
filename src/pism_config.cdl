@@ -436,6 +436,11 @@ netcdf pism_config {
     pism_config:force_to_thickness_alpha = 0.01;
     pism_config:force_to_thickness_alpha_doc = "yr-1; exponential coefficient in force-to-thickness mechanism";
 
+    pism_config:force_to_thickness_ice_free_alpha_factor = 1.0;
+    pism_config:force_to_thickness_ice_free_alpha_factor_doc = "; force_to_thickness_alpha is multiplied by this factor in areas that are ice-free according to the target ice thickness and force_to_thickness_ice_free_thickness_threshold";
+
+    pism_config:force_to_thickness_ice_free_thickness_threshold = 1.0;
+    pism_config:force_to_thickness_ice_free_thickness_threshold_doc = "m; threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use force_to_thickness_ice_free_alpha_factor.";
 
     // PISMOceanModel constants
 
@@ -660,9 +665,6 @@ netcdf pism_config {
 
     pism_config:mantle_viscosity = 1.0e21;
     pism_config:mantle_viscosity_doc = "Pa s; half-space (mantle) viscosity used by the bed deformation model. See [@ref LingleClark, @ref BLKfastearth]";
-
-    pism_config:seconds_per_year = 3.15569259747e7;
-    pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS-2";
 
     pism_config:standard_gravity = 9.81;
     pism_config:standard_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";

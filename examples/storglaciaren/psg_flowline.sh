@@ -156,7 +156,7 @@ TSTIMES=$STARTYEAR:$STEP:$ENDTIME
 echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -i $INNAME $COUPLER_FORCING $FULLPHYS\
-     -force_to_thk $INNAME -force_to_thk_alpha $FTALPHA \
+     -force_to_thickness_file $INNAME -force_to_thickness_alpha $FTALPHA \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd

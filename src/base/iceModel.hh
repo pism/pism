@@ -301,7 +301,7 @@ protected:
   unsigned int skipCountDown;
 
   // flags
-  std::string adaptReasonFlag;
+  std::string m_adaptive_timestep_reason;
 
   std::string stdout_flags;
 

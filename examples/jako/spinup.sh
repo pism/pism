@@ -52,7 +52,7 @@ BOOT=jako.nc
 CLIMATEFILE=g5km_climate.nc
 BCFILE=g5km_bc.nc
 
-CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thk $BOOT"
+CLIMATE="-surface given,forcing -surface_given_file $CLIMATEFILE -force_to_thickness_file $BOOT"
 
 # regarding physics: '-till_effective_fraction_overburden 0.02' plus
 #   '-pseudo_plastic -pseudo_plastic_q 0.25' plus '-tauc_slippery_grounding_lines'

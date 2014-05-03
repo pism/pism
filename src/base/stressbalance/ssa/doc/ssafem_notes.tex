@@ -1,0 +1,398 @@
+\documentclass{amsart}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{underscore}
+\usepackage[svgnames]{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{fancybox}
+
+% disable indenting the first line of a paragraph
+\parindent=0in
+\parskip=0.5\baselineskip
+
+% show sub-sub-sections in toc
+\setcounter{tocdepth}{4}
+
+% trace of a matrix
+\DeclareMathOperator{\Tr}{tr}
+
+% allow align to span page breaks
+\allowdisplaybreaks[1]
+
+% area integral
+\newcommand{\I}{\ensuremath{\int_{\Omega}}}
+% boundary integral
+\newcommand{\bI}{\ensuremath{\int_{\partial \Omega}}}
+% effective stress tensor
+\newcommand{\M}{\ensuremath{\eta M}}
+% partial derivatives
+\newcommand{\diff}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+% sum over quadrature points
+\newcommand{\sumQ}{\ensuremath{\sum_{q = 1}^{N_q}}}
+% basis expansion of a partial derivative
+\newcommand{\diffbasisexpansion}[3]{\ensuremath{\sum_{#3 = 1}^{N_k} {#1}_{#3} \diff{\phi_{#3}}{#2} }}
+\newcommand{\UX}{\diffbasisexpansion{u}{x}{m}}
+\newcommand{\UY}{\diffbasisexpansion{u}{y}{m}}
+\newcommand{\VX}{\diffbasisexpansion{v}{x}{m}}
+\newcommand{\VY}{\diffbasisexpansion{v}{y}{m}}
+% drag coefficient as a function of velocity
+\newcommand{\betaU}{\beta(\boldsymbol{u})}
+
+% basal shear stress
+\newcommand{\basalshearstress}[1]{\boldsymbol{\tau}_{b#1}}
+\newcommand{\taub}{\basalshearstress{}}
+\newcommand{\taubx}{\basalshearstress{,x}}
+\newcommand{\tauby}{\basalshearstress{,y}}
+
+% basal driving stress
+\newcommand{\drivingstress}[1]{\boldsymbol{\tau}_{d#1}}
+\newcommand{\taud}{\drivingstress{}}
+\newcommand{\taudx}{\drivingstress{,x}}
+\newcommand{\taudy}{\drivingstress{,y}}
+
+\newcommand{\highlight}[1]{{\color{red!80!black} \fbox{$ \displaystyle #1 $} }}
+
+\newcommand{\R}{\mathbb{R}}
+
+\begin{document}
+
+\title{SSA FEM notes}
+\author{Constantine Khroulev}
+\maketitle
+\tableofcontents
+
+
+\section{Notation}
+\label{sec-1}
+
+\begin{center}
+\begin{tabular}{ll}
+Symbol & Meaning\\
+\hline
+$B$ & vertically-averaged ice hardness\\
+$g$ & acceleration due to gravity\\
+$H$ & ice thickness\\
+$h$ & ice top surface elevation\\
+$n$ & Glen flow law exponent\\
+$N_k$ & number of trial functions per element\\
+$N_q$ & number of quadrature points per element\\
+$q$ & sliding power law exponent\\
+$\boldsymbol{u} = (u,v)$ & horizontal ice velocity\\
+$\epsilon_{\beta}$, $\epsilon_{\nu}$, $\epsilon_{\eta}$ & regularization parameters for $\betaU$, $\nu$, $\eta$\\
+$\nu$ & effective viscosity of ice\\
+$\phi$ & trial functions\\
+$\psi$ & test functions\\
+$\rho$ & ice density\\
+$\taub$ & basal shear stress\\
+$\taud$ & driving shear stress\\
+\end{tabular}
+\end{center}
+
+Formulas that appear in the code are \highlight{highlighted.}
+
+\section{The shallow shelf approximation}
+\label{sec:ssa-strong}
+
+Define the effective SSA strain rate tensor $M$ \cite{Dukowiczetal2010}:
+\begin{equation*}
+  M =
+    \begin{pmatrix}
+      4u_x + 2v_y & u_y + v_x\\
+      u_y + v_x & 2u_x + 4v_y\\
+    \end{pmatrix}.
+\end{equation*}
+Then the strong form of the SSA system (without boundary conditions) is
+\begin{align}
+  \label{eq:12}
+  - \nabla\cdot(\eta\, M) & = \taub + \taud,\\
+  \label{eq:13}
+  \eta &= \highlight{ \epsilon_{\eta} + \nu\, H }.
+\end{align}
+This is equivalent to the more familiar form (found in \cite{SchoofStream}, for example):
+\begin{align*}
+ - \Big[ (\eta (4 u_x + 2 v_y))_x + (\eta (u_y + v_x))_y \Big] & = \taubx + \taudx, \\
+ - \Big[ (\eta (u_y + v_x))_x + (\eta (2 u_x + 4 v_y))_y \Big] & = \tauby + \taudy.\\
+\end{align*}
+
+Here $\taud = \highlight{ \rho g H \nabla h }$ is the gravitational driving shear stress; see subsections for definitions of $\taub$ and the ice viscosity $\nu$.
+
+
+\subsection{Ice viscosity}
+\label{sec:ice-viscosity}
+
+Let $U = \{u,v,w\}$ and $X = \{x, y, z\}$.
+
+The three-dimensional strain rate tensor $D$ (\cite{GreveBlatter2009}, equations 3.25 and 3.29) is defined by
+
+\begin{equation*}
+  D_{i,j}(\boldsymbol{u}) = \frac 12 \left( \diff{U_i}{X_j} + \diff{U_j}{X_i} \right).
+\end{equation*}
+
+We assume that ice is incompressible, so $w_z = - (u_x + v_y)$. Moreover, in the shallow shelf approximation horizontal velocity components do not vary with depth, so $u_z = v_z = 0$.
+
+With these assumptions $D$ becomes
+\begin{equation*}
+  D =
+  \begin{pmatrix}
+    u_x & \frac{1}{2}\,(u_y + v_x) & 0\\
+    \frac{1}{2}\,(u_y + v_x) & v_y & 0\\
+    0 & 0 & - (u_x + v_y)\\
+  \end{pmatrix}
+\end{equation*}
+
+Now the second invariant of $D$ (\cite{GreveBlatter2009}, equation 2.42)
+\begin{equation*}
+  \gamma = \Tr (D^2) - \left( \Tr D \right)^2
+\end{equation*}
+simplifies to
+\begin{equation}
+  \label{eq:6}
+  \gamma = \highlight{ \frac{1}{2}\, \left( (u_x)^2 + (v_y)^2 + (u_x + v_y)^2 + \frac{1}{2}\,(u_y + v_x)^2 \right) }.
+\end{equation}
+
+We define the regularized effective viscosity of ice $\nu$ (\cite{SchoofStream}, equation 2.3):
+\begin{equation}
+  \label{eq:7}
+  \nu = \highlight{ \frac{1}{2} B \left( \epsilon_{\nu} + \gamma \right)^{(1 - n) / (2n)} },\\
+\end{equation}
+
+\subsection{Basal shear stress}
+\label{sec:beta}
+
+The basal shear stress is defined by
+\begin{equation}
+  \label{eq:9}
+  \taub =  - \betaU \boldsymbol{u},
+\end{equation}
+
+where $\beta = \betaU$ is a scalar-valued drag coefficient related to the yield stress.
+
+In PISM, $\betaU$ is defined as follows (see \cite{SchoofHindmarsh}):
+\begin{equation}
+  \label{eq:10}
+  \betaU = \highlight{ \frac{\tau_c}{u_{\text{threshold}}^q}\cdot (\epsilon_{\beta} + |\boldsymbol{u}|^2)^{(q - 1) / 2} }
+\end{equation}
+
+
+\section{The weak form of the SSA}
+
+Multiplying (\ref{eq:12}) by a test function $\psi$ and integrating by parts, we get the weak form:
+
+\begin{align}
+ - \nabla \cdot (\M) & = \taud + \taub,\notag \\
+ - \I \psi \nabla \cdot (\M) & = \I \psi (\taud + \taub),\notag \\
+ - \I \nabla \cdot (\psi\, \M) + \I \nabla \psi \cdot (\M) & = \I \psi (\taud + \taub),\notag \\
+ - \bI (\psi\, \M)\cdot \boldsymbol{n}\, ds + \I \nabla \psi \cdot (\M) & = \I \psi (\taud + \taub)\notag \\
+  \label{eq:11}
+  \I \left[\nabla \psi \cdot (\M) - \psi (\taud + \taub)\right] & = \bI (\psi\, \M) \cdot \boldsymbol{n}\, ds.
+\end{align}
+
+If we ignore the boundary integral (which corresponds to using natural boundary conditions), we can re-write this as follows.
+
+\begin{align}
+  \label{eq:2}
+  \I \diff{\psi}{x} \left( \eta (4 u_x + 2 v_y) \right) + \diff{\psi}{y} \left( \eta (u_y + v_x) \right) - \psi (\taubx + \taudx) & = 0\\
+  \label{eq:1}
+  \I \diff{\psi}{x} \left( \eta (u_y + v_x) \right) + \diff{\psi}{y} \left( \eta (2 u_x + 4 v_y) \right) - \psi (\tauby + \taudy) & = 0
+\end{align}
+
+This is the system considered in the remainder of these notes.
+
+\section{Solving the discretized system}
+\label{sec-3}
+
+In the following subscripts $x$ and $y$ denote partial derivatives, while subscripts $k$, $l$, $m$ denote nodal values of a particular quantity. Also, to simplify notation from here on $u$, $v$, etc stand for finite element approximations of corresponding continuum variables.
+
+To build a Galerkin approximation of the SSA system, let $\phi$ be trial functions and $\psi$ be test functions. Then we have the following basis expansions:
+
+\begin{equation}
+  \label{eq:5}
+  \begin{aligned}
+    u & = \sum_i \phi_i\, u_i, \\
+    v & = \sum_i \phi_i\, v_i,\\
+    \diff{u}{x_j} & = \sum_i \diff{\phi_i}{x_j}\ u_i,\\
+    \diff{v}{x_j} & = \sum_i \diff{\phi_i}{x_j}\ v_i.\\
+  \end{aligned}
+\end{equation}
+
+We use a Newton's method to solve the system resulting from discretizing equations (\ref{eq:2}) and (\ref{eq:1}). This requires computing residuals and the Jacobian matrix.
+
+\subsection{Residual evaluation}
+\label{sec-3-1}
+
+In this and following sections we focus on element contributions to the residual and the Jacobian. Basis functions used here are defined on the reference element, hence the added determinant of the Jacobian of the map from the reference element to a particular physical element $|J_q|$ appearing in all quadratures.
+
+\begin{align}
+  \label{eq:3}
+  F_{k,1} & = \highlight{ \sumQ |J_q| \cdot w_q\cdot \left[ \eta \left( \diff{\psi_k}{x} (4 u_x + 2 v_y) + \diff{\psi_k}{y} (u_y + v_x) \right) - \psi_k (\taubx + \taudx) \right]_{\text{evaluated at } q} }\\
+  \label{eq:4}
+  F_{k,2} & = \highlight{ \sumQ |J_q| \cdot w_q\cdot \left[ \eta \left( \diff{\psi_k}{x} (u_y + v_x) + \diff{\psi_k}{y} (2 u_x + 4 v_y) \right) - \psi_k (\tauby + \taudy) \right]_{\text{evaluated at } q} }
+\end{align}
+
+
+\subsection{Jacobian evaluation}
+\label{sec-3-2}
+
+Equations (\ref{eq:3}) and (\ref{eq:4}) define a map from $\R^{2\times N}$ to $\R^{2\times N}$, where $N$ is the number of nodes in a FEM mesh. To use Newton's method, we need to be able to compute the Jacobian \emph{of this map}.
+
+It is helpful to rewrite equations defining $F_{k,1}$ and $F_{k,2}$ using basis expansions for $u_x$, $u_y$, $v_x$, and $v_y$ (see (\ref{eq:5})), as follows:
+
+\begin{align*}
+  F_{k,1} &= \highlight{
+            \begin{aligned}[t]
+              \sumQ |J_q| \cdot w_q\cdot \Bigg[ &\eta \left(\diff{\psi_k}{x} \left(4 \UX + 2 \VY\right)
+                + \diff{\psi_k}{y} \left(\UY + \VX\right)\right) \\
+              & - \psi_k \left(\taubx + \taudx\right) \Bigg]_{\text{evaluated at } q}\\
+            \end{aligned} }\\
+  F_{k,2} &= \highlight{
+            \begin{aligned}[t]
+              \sumQ |J_q| \cdot w_q\cdot \Bigg[ &\eta \left(\diff{\psi_k}{x} \left(\UY + \VX\right)
+                + \diff{\psi_k}{y} \left(2 \UX + 4 \VY\right) \right) \\
+              & - \psi_k \left(\tauby + \taudy\right) \Bigg]_{\text{evaluated at } q}\\
+            \end{aligned}}
+\end{align*}
+
+The Jacobian has elements
+\begin{align*}
+  J_{k,l,1} & = \diff{F_{k,1}}{u_l}, & J_{k,l,2} & = \diff{F_{k,1}}{v_l},\\
+  J_{k,l,3} & = \diff{F_{k,2}}{u_l}, & J_{k,l,4} & = \diff{F_{k,2}}{v_l}.\\
+\end{align*}
+
+\begin{align}
+  J_{k,l,1} &= \highlight{
+              \begin{aligned}[t]
+                \sumQ |J_q| \cdot w_q\cdot \Bigg[&\diff{\eta}{u_l}\cdot
+                \left( \diff{\psi_k}{x} (4 u_x + 2 v_y) + \diff{\psi_k}{y} (u_y + v_x) \right)\\
+                & + \eta\cdot \left( \diff{\psi_k}{x}\cdot 4 \diff{\phi_l}{x} + \diff{\psi_k}{y}\cdot \diff{\phi_l}{y} \right)
+                - \psi_k\cdot \diff{\taubx}{u_l} \Bigg]_{\text{evaluated at } q}\\
+              \end{aligned} }\\
+  J_{k,l,2} &= \highlight{
+              \begin{aligned}[t]
+                \sumQ |J_q| \cdot w_q\cdot \Bigg[&\diff{\eta}{v_l}\cdot
+                \left( \diff{\psi_k}{x} (4 u_x + 2 v_y) + \diff{\psi_k}{y} (u_y + v_x) \right)\\
+                & + \eta\cdot \left( \diff{\psi_k}{x}\cdot 2 \diff{\phi_l}{y} + \diff{\psi_k}{y}\cdot \diff{\phi_l}{x} \right)
+                - \psi_k\cdot \diff{\taubx}{v_l} \Bigg]_{\text{evaluated at } q}\\
+              \end{aligned} }\\
+  J_{k,l,3} &= \highlight{
+              \begin{aligned}[t]
+                \sumQ |J_q| \cdot w_q\cdot \Bigg[&\diff{\eta}{u_l}\cdot
+                \left( \diff{\psi_k}{x} (u_y + v_x) + \diff{\psi_k}{y} (2 u_x + 4 v_y) \right)\\
+                & + \eta\cdot \left( \diff{\psi_k}{x}\cdot \diff{\phi_l}{y} + \diff{\psi_k}{y}\cdot 2 \diff{\phi_l}{x} \right)
+                - \psi_k\cdot \diff{\tauby}{u_l} \Bigg]_{\text{evaluated at } q}\\
+              \end{aligned} }\\
+  J_{k,l,4} &= \highlight{
+              \begin{aligned}[t]
+                \sumQ |J_q| \cdot w_q\cdot \Bigg[&\diff{\eta}{v_l}\cdot
+                \left( \diff{\psi_k}{x} (u_y + v_x) + \diff{\psi_k}{y} (2 u_x + 4 v_y) \right)\\
+                & + \eta\cdot \left( \diff{\psi_k}{x}\cdot \diff{\phi_l}{x} + \diff{\psi_k}{y}\cdot 4 \diff{\phi_l}{y} \right)
+                - \psi_k\cdot \diff{\tauby}{v_l} \Bigg]_{\text{evaluated at } q}\\
+              \end{aligned} }
+\end{align}
+
+In our case the number of trial functions $N_k$ is $4$ ($Q_1$ elements). Our test functions are the same as trial functions (a Galerkin method), i.e. we also have $4$ test functions per element. Moreover, each combination of test and trial functions corresponds to $4$ values in the Jacobian ($2$ equations, $2$ degrees of freedom). Overall, each element contributes to $4 \times 4 \times 4 = 64$ entries in the Jacobian matrix.
+
+To evaluate $J_{\cdot,\cdot,\cdot}$, we need be able to compute the following:
+\begin{equation*}
+    \taubx, \quad \tauby, \quad \taudx, \quad \taudy, \quad \diff{\eta}{u_l}, \quad \diff{\eta}{v_l}, \quad
+    \diff{\taubx}{u_l}, \quad \diff{\taubx}{v_l}, \quad \diff{\tauby}{u_l}, \quad \diff{\tauby}{v_l}.
+\end{equation*}
+
+Subsections that follow describe related implementation details.
+
+
+\subsubsection{Ice viscosity}
+\label{sec:viscosity-evaluation}
+
+Recall (equation (\ref{eq:13})) that $\eta = \epsilon_{\eta} + \nu H$. We use the chain rule to get
+\begin{align*}
+  \diff{\eta}{u_l} &= \highlight{ H\,\diff{\nu}{\gamma}\cdot \diff{\gamma}{u_l}, } &   \diff{\eta}{v_l} &= \highlight{ H\,\diff{\nu}{\gamma}\cdot \diff{\gamma}{v_l} }.
+\end{align*}
+
+The derivative of $\nu$ with respect to $\gamma$ can be written in terms of $\nu$ itself:
+
+\begin{align*}
+  \diff{\nu}{\gamma} & = \frac{1}{2} B \cdot \frac{1 - n}{2n} \cdot \left(\epsilon_{\nu} + \gamma \right)^{(1 - n) / (2n) - 1}, \\
+      & = \frac{1 - n}{2n} \cdot \frac{1}{2} B \left( \epsilon_{\nu} + \gamma \right)^{(1 - n) / (2n)} \cdot \frac{1}{\epsilon_{\nu} + \gamma}, \\
+      & = \highlight{ \frac{1 - n}{2n} \cdot \frac{\nu}{\epsilon_{\nu} + \gamma} }.
+\end{align*}
+
+To compute $\diff{\gamma}{u_l}$ and $\diff{\gamma}{v_l}$ we need to re-write $\gamma$ (equation (\ref{eq:6})) using the basis expansion (\ref{eq:5}):
+\begin{align*}
+  \gamma &=
+           \begin{aligned}[t]
+             \frac{1}{2}\, \Bigg(&\left(\UX\right)^2 + \left(\VY\right)^2 \\
+             & + \left(\UX + \VY\right)^2 + \frac{1}{2}\, \left(\UY + \VX\right)^2\Bigg). \\
+           \end{aligned}
+\end{align*}
+
+So,
+\begin{align}
+  \diff{\gamma}{u_l} &= u_x \diff{\phi_l}{x} + (u_x + v_y)\diff{\phi_l}{x} + \frac{1}{2} (u_y + v_x)\diff{\phi_l}{y},\notag\\
+                     &= \highlight{ (2 u_x + v_y) \diff{\phi_l}{x} + \frac{1}{2} (u_y + v_x)\diff{\phi_l}{y} },\\
+  \diff{\gamma}{v_l} &= v_y \diff{\phi_l}{y} + (u_x + v_y)\diff{\phi_l}{y} + \frac{1}{2} (u_y + v_x)\diff{\phi_l}{x},\notag\\
+                     &= \highlight{ \frac{1}{2} (u_y + v_x)\diff{\phi_l}{x} + (u_x + 2 v_y)\diff{\phi_l}{y} }.
+\end{align}
+
+
+\subsubsection{Basal drag}
+\label{sec:basal-drag}
+
+The method \texttt{IceBasalResistancePlasticLaw::drag_with_derivative()} computes $\beta$ and the derivative of $\beta$ with respect to $\alpha = \frac12 |\boldsymbol{u}|^2 = \frac12 (u^2 + v^2)$.
+
+Then
+\begin{align*}
+  \diff{\alpha}{u_l} &= u\cdot \diff{u}{u_l} = u\cdot \phi_l,&
+  \diff{\alpha}{v_l} &= v\cdot \diff{v}{v_l} = v\cdot \phi_l.
+\end{align*}
+
+Recall from equation (\ref{eq:9})
+\begin{align*}
+  \taubx &=  \highlight{ - \betaU\cdot u }, &  \tauby &= \highlight{ - \betaU\cdot v }.
+\end{align*}
+
+Using product and chain rules, we get
+\begin{align*}
+  \diff{\taubx}{u_l} &= -\left(\betaU\cdot \diff{u}{u_l} + \diff{\betaU}{u_l}\cdot u\right)\\
+                     &= -\left( \betaU\cdot \phi_l + \diff{\betaU}{\alpha}\cdot \diff{\alpha}{u_l}\cdot u \right)\\
+                     &= \highlight{ -\left( \betaU\cdot \phi_l + \diff{\betaU}{\alpha}\cdot u^2 \phi_l \right) },\\
+  \diff{\taubx}{v_l} &= -\diff{\betaU}{v_l}\cdot u\\
+                     &= -\diff{\betaU}{\alpha}\cdot \diff{\alpha}{v_l}\cdot u\\
+                     &= \highlight{ -\diff{\betaU}{\alpha}\cdot u\cdot v \cdot \phi_l },\\
+  \diff{\tauby}{u_l} &= -\diff{\betaU}{u_l}\cdot v,\\
+                     &= \highlight{ -\diff{\betaU}{\alpha}\cdot u\cdot v \cdot \phi_l },\\
+  \diff{\tauby}{v_l} &= -\left( \betaU\cdot \diff{v}{v_l} + \diff{\betaU}{u_l}\cdot v \right)\\
+                     &= -\left( \betaU\cdot \phi_l + \diff{\betaU}{\alpha}\cdot \diff{\alpha}{v_l}\cdot v \right)\\
+                     &= \highlight{ -\left( \betaU\cdot \phi_l + \diff{\betaU}{\alpha}\cdot v^2 \phi_l \right) }.
+\end{align*}
+
+
+% References
+
+\begin{thebibliography}{1}
+
+\bibitem{Dukowiczetal2010}
+{\sc J.~K. Dukowicz, S.~F. Price, and W.~H. Lipscomb}, {\em Consistent
+  approximations and boundary conditions for ice-sheet dynamics from a
+  principle of least action}, Journal of Glaciology, 56 (2010), pp.~480--496.
+
+\bibitem{GreveBlatter2009}
+{\sc R.~Greve and H.~Blatter}, {\em Dynamics of {I}ce {S}heets and {G}laciers},
+  Advances in Geophysical and Environmental Mechanics and Mathematics,
+  Springer, 2009.
+
+\bibitem{SchoofStream}
+{\sc C.~Schoof}, {\em A variational approach to ice stream flow}, J. Fluid
+  Mech., 556 (2006), pp.~227--251.
+
+\bibitem{SchoofHindmarsh}
+{\sc C.~Schoof and R.~Hindmarsh}, {\em Thin-film flows with wall slip: an
+  asymptotic analysis of higher order glacier flow models}, Quart. J. Mech.
+  Appl. Math., 63 (2010), pp.~73--114.
+
+\end{thebibliography}
+
+% \bibliography{ssa-bib}
+% \bibliographystyle{siam}
+
+\end{document}

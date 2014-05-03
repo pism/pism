@@ -26,8 +26,8 @@ namespace pism {
 
 /** The Q1 finite element SSA solver.
  *
- *  
- * 
+ *
+ *
  */
 SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSA(g, e, c), m_element_index(g) {
@@ -541,21 +541,25 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
         // Symmetric gradient at the quadrature point.
         const double *Duq = Du[q];
 
-        double nuH = 0.0, beta = 0.0;
+        double eta = 0.0, beta = 0.0;
         ierr = PointwiseNuHAndBeta(coefficients[q], u[q], Duq,
-                                   &nuH, NULL, &beta, NULL); CHKERRQ(ierr);
+                                   &eta, NULL, &beta, NULL); CHKERRQ(ierr);
 
         // The next few lines compute the actual residual for the element.
         const Vector2
           tau_b = u[q] * (- beta), // basal shear stress
-          tau_d = coefficients[q].driving_stress, // gravitational driving stress
-          f     = tau_b + tau_d;
+          tau_d = coefficients[q].driving_stress; // gravitational driving stress
+
+        const double
+          U_x          = Duq[0],
+          V_y          = Duq[1],
+          U_y_plus_V_x = 2.0 * Duq[2];
 
         // Loop over test functions.
         for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
           const FEFunctionGerm &psi = test[q][k];
-          residual[k].u += JxW[q]*(nuH*(psi.dx*(4.0*Duq[0] + 2.0*Duq[1]) + psi.dy*2.0*Duq[2]) - psi.val*f.u);
-          residual[k].v += JxW[q]*(nuH*(psi.dy*(4.0*Duq[1] + 2.0*Duq[0]) + psi.dx*2.0*Duq[2]) - psi.val*f.v);
+          residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x) - psi.val * (tau_b.u + tau_d.u));
+          residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y)) - psi.val * (tau_b.v + tau_d.v));
         } // k
       } // q
 
@@ -607,14 +611,14 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   Compute the Jacobian
 
   @f[ J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x, \psi_{ij}) @f]
-  
+
   where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current
 approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 
 */
 PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
                                               const Vector2 **velocity_global, Mat Jac) {
-  PetscErrorCode   ierr;
+  PetscErrorCode ierr;
 
   // Avoid compiler warning.
   (void) info;
@@ -645,18 +649,19 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   double local_bc_mask[FEQuadrature::Nk];
 
   // Loop through all the elements.
-  int xs = m_element_index.xs,
-    xm   = m_element_index.xm,
-    ys   = m_element_index.ys,
-    ym   = m_element_index.ym;
+  int
+    xs = m_element_index.xs,
+    xm = m_element_index.xm,
+    ys = m_element_index.ys,
+    ym = m_element_index.ym;
 
-  for (int i=xs; i<xs+xm; i++) {
-    for (int j=ys; j<ys+ym; j++) {
+  for (int i = xs; i < xs + xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
       // Values of the solution at the nodes of the current element.
       Vector2 velocity[FEQuadrature::Nk];
 
       // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
-      // of freedom per elment, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
+      // of freedom per element, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
       // entries in the local Jacobian.
       double K[(2*FEQuadrature::Nk)*(2*FEQuadrature::Nk)];
 
@@ -690,47 +695,60 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
         const double *Duq = Du[q];
 
         const double jw = JxW[q];
-        double nuH = 0.0, dnuH = 0.0, beta = 0.0, dbeta = 0.0;
+        double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
         ierr = PointwiseNuHAndBeta(coefficients[q], u[q], Duq,
-                                   &nuH, &dnuH, &beta, &dbeta); CHKERRQ(ierr);
+                                   &eta, &deta, &beta, &dbeta); CHKERRQ(ierr);
 
         for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
           for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
 
-            // FIXME (DAM 2/28/11) The following computations could be a little better documented.
-            const FEFunctionGerm &test_qk=test[q][k];
-            const FEFunctionGerm &test_ql=test[q][l];
-
             const double
-              ht  = test_qk.val,
-              h   = test_ql.val,
-              dxt = test_qk.dx,
-              dyt = test_qk.dy,
-              dx  = test_ql.dx,
-              dy  = test_ql.dy,
+              psi          = test[q][k].val,
+              psi_x        = test[q][k].dx,
+              psi_y        = test[q][k].dy,
+              phi          = test[q][l].val,
+              phi_x        = test[q][l].dx,
+              phi_y        = test[q][l].dy,
+              U            = u[q].u,
+              V            = u[q].v,
+              U_x          = Duq[0],
+              V_y          = Duq[1],
+              U_y_plus_V_x = 2.0 * Duq[2]; // u_y + v_x is twice the symmetric gradient
 
-              // Cross terms appearing with beta'
-              bvx = ht*u[q].u,
-              bvy = ht*u[q].v,
-              bux = u[q].u*h,
-              buy = u[q].v*h,
-              // Cross terms appearing with nuH'
-              cvx = dxt*(2*Duq[0]+Duq[1]) + dyt*Duq[2],
-              cvy = dyt*(2*Duq[1]+Duq[0]) + dxt*Duq[2],
-              cux = (2*Duq[0]+Duq[1])*dx + Duq[2]*dy,
-              cuy = (2*Duq[1]+Duq[0])*dy + Duq[2]*dx;
+            // derivatives of gamma with respect to u_k and v_k:
+            const double
+              gamma_u = (2.0 * U_x + V_y) * phi_x + Duq[2] * phi_y,
+              gamma_v = Duq[2] * phi_x + (U_x + 2.0 * V_y) * phi_y;
 
-            if (nuH==0) {
+            // derivatives if eta (nu*H) with respect to u_k and v_k:
+            const double
+              eta_u = deta * gamma_u,
+              eta_v = deta * gamma_v;
+
+            // derivatives of the basal shear stress term:
+            const double
+              taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_k
+              taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_k
+              taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_k
+              taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_k
+
+            if (eta == 0) {
               verbPrintf(1, grid.com, "nuh=0 i %d j %d q %d k %d\n", i, j, q, k);
             }
+
             // u-u coupling
-            K[k*16+l*2]     += jw*(beta*ht*h + dbeta*bvx*bux + (2.0*nuH)*(2*dxt*dx + dyt*0.5*dy) + (2.0*dnuH)*cvx*cux);
+            K[k*16 + l*2]         += jw * (eta_u * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
+                                           + eta * (4 * psi_x * phi_x + psi_y * phi_y) - psi * taub_xu);
             // u-v coupling
-            K[k*16+l*2+1]   += jw*(dbeta*bvx*buy + (2.0*nuH)*(0.5*dyt*dx + dxt*dy) + (2.0*dnuH)*cvx*cuy);
+            K[k*16 + l*2 + 1]     += jw * (eta_v * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
+                                           + eta * (2 * psi_x * phi_y + psi_y * phi_x) - psi * taub_xv);
             // v-u coupling
-            K[k*16+8+l*2]   += jw*(dbeta*bvy*bux + (2.0*nuH)*(0.5*dxt*dy + dyt*dx) + (2.0*dnuH)*cvy*cux);
+            K[k*16 + 8 + l*2]     += jw * (eta_u * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
+                                           + eta * (psi_x * phi_y + 2 * psi_y * phi_x) - psi * taub_yu);
             // v-v coupling
-            K[k*16+8+l*2+1] += jw*(beta*ht*h + dbeta*bvy*buy + (2.0*nuH)*(2*dyt*dy + dxt*0.5*dx) + (2.0*dnuH)*cvy*cuy);
+            K[k*16 + 8 + l*2 + 1] += jw * (eta_v * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
+                                           + eta * (psi_x * phi_x + 4 * psi_y * phi_y) - psi * taub_yv);
+
           } // l
         } // k
       } // q
@@ -743,8 +761,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
   // columns previously, the symmetry of the Jacobian matrix is preserved.
   if (bc_locations && m_vel_bc) {
-    for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
+    for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
+      for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
         if (bc_locations->as_int(i, j) == 1) {
           const double identity[4] = {m_dirichletScale, 0,
                                       0, m_dirichletScale};
