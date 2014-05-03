@@ -28,9 +28,14 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid &g, EnthalpyConverter
                                                    IPDesignVariableParameterization &tp,
                                                    const Config &c)
   : SSAFEM(g, e, c),
-    m_grid(grid), m_zeta(NULL),
+    m_grid(grid),
+    m_zeta(NULL),
     m_fixed_tauc_locations(NULL),
-    m_tauc_param(tp), m_element_index(m_grid), m_rebuild_J_state(true)
+    m_tauc_param(tp),
+    m_element_index(m_grid),
+    m_quadrature(g, 1.0),
+    m_quadrature_vector(g, 1.0),
+    m_rebuild_J_state(true)
 {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
@@ -62,8 +67,6 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);
 
-  m_quadrature.init(m_grid);
-  m_quadrature_vector.init(m_grid);
   return 0;
 }
 

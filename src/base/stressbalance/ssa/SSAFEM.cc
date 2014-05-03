@@ -30,9 +30,7 @@ namespace pism {
  *
  */
 SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c)
-  : SSA(g, e, c), m_element_index(g) {
-  m_quadrature.init(grid);
-  m_quadrature_vector.init(grid);
+  : SSA(g, e, c), m_element_index(g), m_quadrature(grid, 1.0), m_quadrature_vector(grid, 1.0) {
   PetscErrorCode ierr = allocate_fem();
   if (ierr != 0) {
     PetscPrintf(grid.com, "FATAL ERROR: SSAFEM allocation failed.\n");
@@ -251,14 +249,11 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
     *Enth_e[4],
     *Enth_q[4];
 
-  int i, j, q, p;
-  unsigned int k = 0;
-
-  PetscErrorCode   ierr;
+  PetscErrorCode ierr;
 
   double ice_density = config.get("ice_density");
 
-  for (q=0; q<FEQuadrature::Nq; q++)
+  for (unsigned int q=0; q<FEQuadrature::Nq; q++)
   {
     Enth_q[q] = new double[grid.Mz];
   }
@@ -284,8 +279,8 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys   = m_element_index.ys, ym = m_element_index.ym;
 
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
       double hq[FEQuadrature::Nq], hxq[FEQuadrature::Nq], hyq[FEQuadrature::Nq];
       double ds_xq[FEQuadrature::Nq], ds_yq[FEQuadrature::Nq];
       if (driving_stress_explicit) {
@@ -302,7 +297,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
 
       const int ij = m_element_index.flatten(i, j);
       SSACoefficients *coefficients = &m_coefficients[4*ij];
-      for (q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         coefficients[q].H  = Hq[q];
         coefficients[q].b  = bq[q];
         coefficients[q].tauc = taucq[q];
@@ -336,17 +331,17 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
       // using getInternalColumn doesn't make this straightforward.  So we compute the values
       // by hand.
       const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
-      for (k = 0; k < grid.Mz; k++) {
+      for (unsigned int k = 0; k < grid.Mz; k++) {
         Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
-        for (q = 0; q < FEQuadrature::Nq; q++) {
-          for (p = 0; p < FEQuadrature::Nk; p++) {
+        for (int q = 0; q < FEQuadrature::Nq; q++) {
+          for (int p = 0; p < FEQuadrature::Nk; p++) {
             Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
           }
         }
       }
 
       // Now, for each column over a quadrature point, find the averaged_hardness.
-      for (q = 0; q < FEQuadrature::Nq; q++) {
+      for (int q = 0; q < FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
                                                         &grid.zlevels[0], Enth_q[q]);
@@ -364,7 +359,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
   ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  for (q = 0; q < FEQuadrature::Nq; q++)
+  for (int q = 0; q < FEQuadrature::Nq; q++)
   {
     delete [] Enth_q[q];
   }
@@ -514,12 +509,12 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
       m_dofmap.reset(i, j, grid);
 
       // Obtain the value of the solution at the nodes adjacent to the element.
-      m_dofmap.extractLocalDOFs(i, j, velocity_global, velocity);
+      m_dofmap.extractLocalDOFs(velocity_global, velocity);
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (bc_locations && m_vel_bc) {
-        m_dofmap.extractLocalDOFs(i, j, *bc_locations, local_bc_mask);
+        m_dofmap.extractLocalDOFs(*bc_locations, local_bc_mask);
         FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, m_dofmap);
       }
 
@@ -674,12 +669,12 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       m_dofmap.reset(i, j, grid);
 
       // Obtain the value of the solution at the adjacent nodes to the element.
-      m_dofmap.extractLocalDOFs(i, j, velocity_global, velocity);
+      m_dofmap.extractLocalDOFs(velocity_global, velocity);
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if (bc_locations && m_vel_bc) {
-        m_dofmap.extractLocalDOFs(i, j, *bc_locations, local_bc_mask);
+        m_dofmap.extractLocalDOFs(*bc_locations, local_bc_mask);
         FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, m_dofmap);
       }
 
@@ -789,9 +784,9 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   PetscBool monitor_jacobian;
   ierr = PetscOptionsHasName(NULL, "-ssa_monitor_jacobian", &monitor_jacobian); CHKERRQ(ierr);
   if (monitor_jacobian) {
-    PetscViewer    viewer;
+    PetscViewer viewer;
 
-    char           file_name[PETSC_MAX_PATH_LEN];
+    char file_name[PETSC_MAX_PATH_LEN];
     int iter;
     ierr = SNESGetIterationNumber(m_snes, &iter);
     snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", iter);

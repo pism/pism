@@ -260,7 +260,8 @@ const int FEDOFMap::kIOffset[4] = {0, 1, 1, 0};
 const int FEDOFMap::kJOffset[4] = {0, 0, 1, 1};
 
 
-FEQuadrature_Scalar::FEQuadrature_Scalar() {
+FEQuadrature_Scalar::FEQuadrature_Scalar(const IceGrid &grid, double L)
+  : FEQuadrature(grid, L) {
   PetscMemzero(m_tmp, Nk*sizeof(double));
 }
 
@@ -273,7 +274,7 @@ void FEQuadrature::getWeightedJacobian(double *jxw) {
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-void FEQuadrature::init(const IceGrid &grid, double L) {
+FEQuadrature::FEQuadrature(const IceGrid &grid, double L) {
   // Since we use uniform cartesian coordinates, the Jacobian is
   // constant and diagonal on every element.
   //
@@ -293,7 +294,8 @@ void FEQuadrature::init(const IceGrid &grid, double L) {
   }
 }
 
-FEQuadrature_Vector::FEQuadrature_Vector() {
+FEQuadrature_Vector::FEQuadrature_Vector(const IceGrid &grid, double L)
+  : FEQuadrature(grid, L) {
   PetscMemzero(m_tmp, Nk*sizeof(Vector2));
 }
 

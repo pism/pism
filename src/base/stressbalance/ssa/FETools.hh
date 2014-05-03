@@ -384,11 +384,11 @@ public:
 class FEQuadrature
 {
 public:
+  FEQuadrature(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
+
   static const int Nq = 4;  //!< Number of quadrature points.
   static const int Nk = 4;  //!< Number of test functions on the element.
   
-  void init(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
-
   // define FEFunctionGermArray, which is an array of FEQuadrature::Nq
   // FEFunctionGerms
   typedef FEFunctionGerm FEFunctionGermArray[FEQuadrature::Nq];
@@ -414,7 +414,7 @@ protected:
 //! This version supports 2D scalar fields.
 class FEQuadrature_Scalar : public FEQuadrature {
 public:
-  FEQuadrature_Scalar();
+  FEQuadrature_Scalar(const IceGrid &grid, double L);
   void computeTrialFunctionValues(const double *x, double *vals);
   void computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy);
 
@@ -434,7 +434,7 @@ private:
 //! This version supports 2D vector fields.
 class FEQuadrature_Vector : public FEQuadrature {
 public:
-  FEQuadrature_Vector();
+  FEQuadrature_Vector(const IceGrid &grid, double L);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);  
   void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);  
