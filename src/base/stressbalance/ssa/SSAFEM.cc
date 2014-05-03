@@ -558,8 +558,10 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
         // Loop over test functions.
         for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
           const FEFunctionGerm &psi = test[q][k];
-          residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x) - psi.val * (tau_b.u + tau_d.u));
-          residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y)) - psi.val * (tau_b.v + tau_d.v));
+          residual[k].u += JxW[q] * (eta * (psi.dx * (4.0 * U_x + 2.0 * V_y) + psi.dy * U_y_plus_V_x)
+                                     - psi.val * (tau_b.u + tau_d.u));
+          residual[k].v += JxW[q] * (eta * (psi.dx * U_y_plus_V_x + psi.dy * (2.0 * U_x + 4.0 * V_y))
+                                     - psi.val * (tau_b.v + tau_d.v));
         } // k
       } // q
 
@@ -690,47 +692,46 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
       for (int q = 0; q < FEQuadrature::Nq; q++) {
+        const double
+          jw           = JxW[q],
+          U            = u[q].u,
+          V            = u[q].v,
+          U_x          = Du[q][0],
+          V_y          = Du[q][1],
+          U_y_plus_V_x = 2.0 * Du[q][2]; // u_y + v_x is twice the symmetric gradient
 
-        // Shorthand for derivatives of the solution at the single quadrature point.
-        const double *Duq = Du[q];
-
-        const double jw = JxW[q];
         double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-        ierr = PointwiseNuHAndBeta(coefficients[q], u[q], Duq,
+        ierr = PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
                                    &eta, &deta, &beta, &dbeta); CHKERRQ(ierr);
 
-        for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
-          for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
+        for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
+          const double
+            phi   = test[q][l].val,
+            phi_x = test[q][l].dx,
+            phi_y = test[q][l].dy;
 
-            const double
-              psi          = test[q][k].val,
-              psi_x        = test[q][k].dx,
-              psi_y        = test[q][k].dy,
-              phi          = test[q][l].val,
-              phi_x        = test[q][l].dx,
-              phi_y        = test[q][l].dy,
-              U            = u[q].u,
-              V            = u[q].v,
-              U_x          = Duq[0],
-              V_y          = Duq[1],
-              U_y_plus_V_x = 2.0 * Duq[2]; // u_y + v_x is twice the symmetric gradient
+          // derivatives of gamma with respect to u_k and v_k:
+          const double
+            gamma_u = (2.0 * U_x + V_y) * phi_x + Du[q][2] * phi_y,
+            gamma_v = Du[q][2] * phi_x + (U_x + 2.0 * V_y) * phi_y;
 
-            // derivatives of gamma with respect to u_k and v_k:
-            const double
-              gamma_u = (2.0 * U_x + V_y) * phi_x + Duq[2] * phi_y,
-              gamma_v = Duq[2] * phi_x + (U_x + 2.0 * V_y) * phi_y;
+          // derivatives if eta (nu*H) with respect to u_k and v_k:
+          const double
+            eta_u = deta * gamma_u,
+            eta_v = deta * gamma_v;
 
-            // derivatives if eta (nu*H) with respect to u_k and v_k:
-            const double
-              eta_u = deta * gamma_u,
-              eta_v = deta * gamma_v;
+          // derivatives of the basal shear stress term:
+          const double
+            taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_k
+            taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_k
+            taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_k
+            taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_k
 
-            // derivatives of the basal shear stress term:
+          for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
             const double
-              taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_k
-              taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_k
-              taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_k
-              taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_k
+              psi   = test[q][k].val,
+              psi_x = test[q][k].dx,
+              psi_y = test[q][k].dy;
 
             if (eta == 0) {
               verbPrintf(1, grid.com, "nuh=0 i %d j %d q %d k %d\n", i, j, q, k);
