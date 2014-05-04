@@ -316,7 +316,7 @@ Run the script like this:
 \begin{verbatim}
 $ ./gridseq.sh &> out.gridseq &
 \end{verbatim}
-The 10 km run takes under one hour, and the 5 km run takes under 3 hours, on the same 2012-era 4 core laptop, which has 8 Gb of memory.
+The 10 km run takes under two hour and the 5 km run takes under four hours.
 
 \begin{figure}[ht]
 \centering
@@ -329,14 +329,14 @@ Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Gr
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.0in,keepaspectratio=true]{ivol-gridseq}
+\includegraphics[width=4.5in,keepaspectratio=true]{ivol-gridseq}
 \caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20 km for 10 ka = \texttt{ts_g20km_10ka_hy.nc}, 10 km for 2 ka = \texttt{ts_g10km_gridseq.nc}, and 5 km for 200 a = \texttt{ts_g20km_10ka_hy.nc}.}
 \label{fig:ivolgridseq}
 \end{figure}
 
 Figure \ref{fig:ivolgridseq}, which shows time series of ice volume, also shows the cost of high resolution, however.  The short 200 a run on the 5 km grid took about 3 wall-clock hours compared to the 10 minutes taken by the 10 ka run on a 20 km grid.  The fact that the time series for ice volume on 10 km and 5 km grids are not very ``steady'' also suggests that these runs should actually be longer.
 
-In this vein, if you have an available supercomputer then a good exercise is to extend our grid sequencing example to 3 km or 2 km resolutions \cite{AschwandenAdalgeirsdottirKhroulev}; these grids are already supported in the script \texttt{spinup.sh}.  Note that the vertical grid generally gets refined as the horizontal grid is refined.
+In this vein, if you have an available supercomputer then a good exercise is to extend our grid sequencing example to 3 km or 2 km resolutions \cite{AschwandenAdalgeirsdottirKhroulev}; these grids are already supported in the script \texttt{spinup.sh}.  Note that the vertical grid also generally gets refined as the horizontal grid is refined.
 
 Going to a 1km grid is possible, but you will start to see the limitations of distributed file systems in writing the enormous NetCDF files in question \cite{DickensMorey2013}.  Notice that a factor-of-five refinement in all three dimensions, e.g.~from 5 km to 1 km in the horizontal, and from 20 m to 4 m in the vertical, generates an output NetCDF file which is 125 times larger.  Since the already-generated 5 km result \texttt{g5km_gridseq.nc} is over 0.5 Gb, the result is a very large file at 1 km.
 
@@ -400,7 +400,7 @@ The reader should inspect a few of these scripts.  They are all very similar, of
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=4.0in,keepaspectratio=true]{ivol-param}
+\includegraphics[width=4.5in,keepaspectratio=true]{ivol-param}
 
 \caption{Time series of ice volume \texttt{ivol} from nine runs in our parameter study example, with parameter choices $(q,e)$ given.}
 \label{fig:ivolparamstudy}
@@ -442,7 +442,7 @@ On the same old 2012-era 4 core laptop, \texttt{runsequential.sh} took a total o
 
 On a supercomputer, the \texttt{runparallel.sh} script generally should be modified to submit jobs to the scheduler.  See example scripts \texttt{advanced/paramspawn.sh} and \texttt{advanced/paramsubmit.sh} for a parameter study that does this.  (But see your system administrator if you don't know what a ``job scheduler'' is!)  Of course, if you have a supercomputer then you can redo this parameter study on a 5 km grid.
 
-Results from these runs are seen in Figures \ref{fig:ivolparamstudy} and \ref{fig:paramstudy}.  In the former we see that the $(0.5,3)$ run simply continues the previous initialization run.  In other graphs we see abrupt initial changes, caused by abrupt parameter change, e.g.~when the basal sliding becomes much more plastic ($q=0.1$).  In all cases with $e=1$ the flow slows and the sheet grows in volume as discharge decreases, while in all cases with $e=6$ the flow accelerates and the sheet shrinks in volume as discharge increases.
+Results from these runs are seen in Figures \ref{fig:ivolparamstudy} and \ref{fig:paramstudy}.  In the former we see that the $(0.5,3)$ run simply continues the previous initialization run.  In some other graphs we see abrupt initial changes, caused by abrupt parameter change, e.g.~when the basal sliding becomes much more plastic ($q=0.1$).  In all cases with $e=1$ the flow slows and the sheet grows in volume as discharge decreases, while in all cases with $e=6$ the flow accelerates and the sheet shrinks in volume as discharge increases.
 
 In Figure \ref{fig:paramstudy} we can compare the surface speed model results to observations.  Roughly speaking, the ice softness parameter $e$ has effects seen most-clearly by comparing the interior of the ice sheet; scan left-to-right for the $e=1,3,6$ subfigures.  The basal sliding exponent $q$ has effects seen most-clearly by comparing flow along the very steep margin, especially in the southern half of the ice sheet; scan top-to-bottom for $q=0.1,0.5,1.0$, going from nearly-plastic at top to linear at bottom.
 
