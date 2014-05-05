@@ -399,7 +399,7 @@ PetscErrorCode PSTemperatureIndex_Old::ice_surface_temperature(IceModelVec2S &re
   return 0;
 }
 
-void PSTemperatureIndex_Old::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PSTemperatureIndex_Old::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert(mass_balance_name);
     result.insert(temperature_name);
@@ -414,7 +414,7 @@ void PSTemperatureIndex_Old::add_vars_to_output(std::string keyword, std::set<st
   atmosphere->add_vars_to_output(keyword, result);
 }
 
-PetscErrorCode PSTemperatureIndex_Old::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode PSTemperatureIndex_Old::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -442,7 +442,8 @@ PetscErrorCode PSTemperatureIndex_Old::define_variables(std::set<std::string> va
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex_Old::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSTemperatureIndex_Old::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, temperature_name)) {

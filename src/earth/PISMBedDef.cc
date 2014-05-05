@@ -54,11 +54,11 @@ PetscErrorCode BedDef::pismbeddef_allocate() {
   return 0;
 }
 
-void BedDef::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void BedDef::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("topg_initial");
 }
 
-PetscErrorCode BedDef::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode BedDef::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -69,7 +69,7 @@ PetscErrorCode BedDef::define_variables(std::set<std::string> vars, const PIO &n
   return 0;
 }
 
-PetscErrorCode BedDef::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "topg_initial")) {

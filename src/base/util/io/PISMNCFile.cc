@@ -45,7 +45,7 @@ std::string NCFile::get_filename() const {
   return m_filename;
 }
 
-int NCFile::put_att_double(std::string variable_name, std::string att_name, IO_Type nctype, double value) const {
+int NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type nctype, double value) const {
   std::vector<double> tmp(1);
   tmp[0] = value;
   return put_att_double(variable_name, att_name, nctype, tmp);
@@ -59,7 +59,7 @@ void NCFile::check(int return_code) const {
 }
 
 void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
-                                  unsigned int ys, unsigned int ym) const {
+                              unsigned int ys, unsigned int ym) const {
   m_xs = xs;
   m_xm = xm;
   m_ys = ys;
@@ -70,7 +70,7 @@ void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
 /*!
  * Note: only processor 0 does the renaming.
  */
-int NCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
+int NCFile::move_if_exists(const std::string &file_to_move, int rank_to_use) {
   int stat, rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -110,7 +110,7 @@ int NCFile::move_if_exists(std::string file_to_move, int rank_to_use) {
 /*!
  * Note: only processor 0 does the job.
  */
-int NCFile::remove_if_exists(std::string file_to_remove, int rank_to_use) {
+int NCFile::remove_if_exists(const std::string &file_to_remove, int rank_to_use) {
   int stat, rank = 0;
   MPI_Comm_rank(com, &rank);
 

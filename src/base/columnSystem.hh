@@ -76,7 +76,7 @@ namespace pism {
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(unsigned int my_nmax, std::string my_prefix);
+  columnSystemCtx(unsigned int my_nmax, const std::string &my_prefix);
   virtual ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(int i, int j, int ks);  

@@ -40,10 +40,10 @@ public:
   virtual ~IceModelVec3Custom();
 
   virtual PetscErrorCode create(IceGrid &mygrid,
-                                std::string short_name,
-                                std::string z_name,
-                                std::vector<double> my_zlevels,
-                                std::map<std::string, std::string> z_attrs);
+                                const std::string &short_name,
+                                const std::string &z_name,
+                                const std::vector<double> &my_zlevels,
+                                const std::map<std::string, std::string> &z_attrs);
 };
 
 } // end of namespace pism

@@ -177,13 +177,13 @@ PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
 }
 
 
-void RoutingHydrology::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void RoutingHydrology::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   Hydrology::add_vars_to_output(keyword, result);
   result.insert("bwat");
 }
 
 
-PetscErrorCode RoutingHydrology::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode RoutingHydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
   PetscErrorCode ierr;
   ierr = Hydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -194,7 +194,7 @@ PetscErrorCode RoutingHydrology::define_variables(std::set<std::string> vars, co
 }
 
 
-PetscErrorCode RoutingHydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode RoutingHydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
   ierr = Hydrology::write_variables(vars, nc); CHKERRQ(ierr);
   if (set_contains(vars, "bwat")) {

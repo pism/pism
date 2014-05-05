@@ -59,7 +59,7 @@ UnitSystem::Ptr UnitSystem::get() const {
  *
  * Please avoid using in computationally-intensive code.
  */
-double UnitSystem::convert(double input, std::string spec1, std::string spec2) const {
+double UnitSystem::convert(double input, const std::string &spec1, const std::string &spec2) const {
   Unit unit1(*this), unit2(*this);
 
   if (unit1.parse(spec1) != 0) {
@@ -91,7 +91,7 @@ double UnitSystem::convert(double input, std::string spec1, std::string spec2) c
   return result;
 }
 
-Unit::Unit(UnitSystem system)
+Unit::Unit(const UnitSystem &system)
   : m_unit(NULL), m_system(system) {
   this->parse("1");
 }
@@ -128,7 +128,7 @@ Unit::~Unit() {
   reset();
 }
 
-int Unit::parse(std::string spec) {
+int Unit::parse(const std::string &spec) {
   reset();
   m_unit = ut_parse(m_system.get().get(), spec.c_str(), UT_ASCII);
   m_unit_string = spec;
@@ -138,7 +138,7 @@ int Unit::parse(std::string spec) {
     return 0;
 }
 
-cv_converter* Unit::get_converter_from(Unit from) const {
+cv_converter* Unit::get_converter_from(const Unit &from) const {
   return ut_get_converter(from.get(), this->get());
 }
 

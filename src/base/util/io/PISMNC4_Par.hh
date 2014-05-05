@@ -31,9 +31,9 @@ public:
   virtual ~NC4_Par() {}
 
   // open/create/close
-  virtual int open(std::string filename, IO_Mode mode);
+  virtual int open(const std::string &filename, IO_Mode mode);
 
-  virtual int create(std::string filename);
+  virtual int create(const std::string &filename);
 
 protected:
   virtual int integer_open_mode(IO_Mode input) const;

@@ -47,7 +47,7 @@ namespace pism {
   // initialization:
   char filename[] = "climate_inputs.nc";
   IceModelVec2T v;
-  v.set_n_records(config.get("climate_forcing_buffer_size"));
+  v.set_n_records(config.get("climate_forcing_buffer_size"))));
   ierr = v.create(grid, "snowtemp", false); CHKERRQ(ierr);
   ierr = v.set_attrs("climate_forcing", "snow surface temperature", "K", ""); CHKERRQ(ierr);
   ierr = v.init(filename); CHKERRQ(ierr);
@@ -104,9 +104,9 @@ public:
   virtual void set_n_evaluations_per_year(unsigned int N);
   virtual unsigned int get_n_records();
   using IceModelVec2S::create;
-  virtual PetscErrorCode create(IceGrid &mygrid, std::string my_short_name,
+  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name,
                                 bool local, int width = 1);
-  virtual PetscErrorCode init(std::string filename, unsigned int period, double reference_time);
+  virtual PetscErrorCode init(const std::string &filename, unsigned int period, double reference_time);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);

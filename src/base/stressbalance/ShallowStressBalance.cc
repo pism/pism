@@ -96,17 +96,17 @@ ZeroSliding::~ZeroSliding() {
   delete flow_law;
 }
 
-void ZeroSliding::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
+void ZeroSliding::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
 {
   // empty
 }
 
-PetscErrorCode ZeroSliding::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+PetscErrorCode ZeroSliding::define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                              IO_Type /*nctype*/) {
   return 0;
 }
 
-PetscErrorCode ZeroSliding::write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/) {
+PetscErrorCode ZeroSliding::write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
   return 0;
 }
 

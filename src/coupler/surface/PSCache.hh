@@ -38,8 +38,8 @@ public:
   virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
 protected:

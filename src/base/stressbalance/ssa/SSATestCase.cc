@@ -178,7 +178,7 @@ PetscErrorCode SSATestCase::run()
 }
 
 //! Report on the generated solution
-PetscErrorCode SSATestCase::report(std::string testname) {
+PetscErrorCode SSATestCase::report(const std::string &testname) {
   PetscErrorCode  ierr;
     
   std::string ssa_stdout;
@@ -265,7 +265,7 @@ PetscErrorCode SSATestCase::report(std::string testname) {
   return 0;
 }
 
-PetscErrorCode SSATestCase::report_netcdf(std::string testname,
+PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
                                           double max_vector,
                                           double rel_vector,
                                           double max_u,

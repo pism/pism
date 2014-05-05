@@ -23,7 +23,7 @@
 
 namespace pism {
 
-Config::Config(MPI_Comm com, std::string name, UnitSystem unit_system)
+Config::Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_system)
   : m_com(com),
     m_unit_system(unit_system),
     m_data(name, unit_system) {
@@ -36,19 +36,19 @@ Config::~Config() {
   warn_about_unused_parameters();
 }
 
-void Config::set_string(std::string name, std::string value) {
+void Config::set_string(const std::string &name, const std::string &value) {
   m_data.set_string(name, value);
 }
 
-void Config::set_double(std::string name, double value) {
+void Config::set_double(const std::string &name, double value) {
   m_data.set_double(name, value);
 }
 
-bool Config::is_set(std::string name) const {
+bool Config::is_set(const std::string &name) const {
   return m_data.has_attribute(name);
 }
 
-PetscErrorCode Config::read(std::string filename) {
+PetscErrorCode Config::read(const std::string &filename) {
   PetscErrorCode ierr;
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
@@ -62,7 +62,7 @@ PetscErrorCode Config::read(std::string filename) {
   return 0;
 }
 
-PetscErrorCode Config::write(std::string filename, bool append) const {
+PetscErrorCode Config::write(const std::string &filename, bool append) const {
   PetscErrorCode ierr;
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
@@ -115,7 +115,7 @@ PetscErrorCode Config::write(const PIO &nc) const {
   return 0;
 }
 
-double Config::get_quiet(std::string name) const {
+double Config::get_quiet(const std::string &name) const {
   const NCVariable::DoubleAttrs& doubles = m_data.get_all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_double(name);
@@ -128,7 +128,7 @@ double Config::get_quiet(std::string name) const {
   return 0;                     // can't happen
 }
 
-std::string Config::get_string_quiet(std::string name) const {
+std::string Config::get_string_quiet(const std::string &name) const {
   const NCVariable::StringAttrs& strings = m_data.get_all_strings();
   if (strings.find(name) != strings.end())
     return m_data.get_string(name);
@@ -142,7 +142,7 @@ std::string Config::get_string_quiet(std::string name) const {
   return std::string();         // will never happen
 }
 
-bool Config::get_flag_quiet(std::string name) const {
+bool Config::get_flag_quiet(const std::string &name) const {
   const NCVariable::StringAttrs& strings = m_data.get_all_strings();
   NCVariable::StringAttrs::const_iterator j = strings.find(name);
   if (j != strings.end()) {
@@ -176,14 +176,14 @@ bool Config::get_flag_quiet(std::string name) const {
 
 
 //! Returns a `double` parameter. Stops if it was not found.
-double Config::get(std::string name) const {
+double Config::get(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
   return this->get_quiet(name);
 }
 
-double Config::get(std::string name, std::string u1, std::string u2) const {
+double Config::get(const std::string & name, const std::string & u1, const std::string & u2) const {
   // always use get() (*not* _quiet) here
   return m_unit_system.convert(this->get(name),  u1.c_str(),  u2.c_str());
 }
@@ -195,7 +195,7 @@ double Config::get(std::string name, std::string u1, std::string u2) const {
 
   Any other string produces an error.
 */
-bool Config::get_flag(std::string name) const {
+bool Config::get_flag(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
@@ -203,7 +203,7 @@ bool Config::get_flag(std::string name) const {
 }
 
 //! \brief Get a string attribute by name.
-std::string Config::get_string(std::string name) const {
+std::string Config::get_string(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
@@ -211,7 +211,7 @@ std::string Config::get_string(std::string name) const {
 }
 
 //! Set a value of a boolean flag.
-void Config::set_flag(std::string name, bool value) {
+void Config::set_flag(const std::string &name, bool value) {
   if (value)
     m_data.set_string(name, "true");
   else
@@ -231,7 +231,7 @@ void Config::set_flag(std::string name, bool value) {
   \li if none, does nothing.
 
 */
-PetscErrorCode Config::flag_from_option(std::string name, std::string flag) {
+PetscErrorCode Config::flag_from_option(const std::string &name, const std::string &flag) {
   PetscErrorCode ierr;
   bool foo = false,
     no_foo = false;
@@ -264,7 +264,7 @@ PetscErrorCode Config::flag_from_option(std::string name, std::string flag) {
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-PetscErrorCode Config::scalar_from_option(std::string name, std::string parameter) {
+PetscErrorCode Config::scalar_from_option(const std::string &name, const std::string &parameter) {
   PetscErrorCode ierr;
   double value = get_quiet(parameter);
   bool flag;
@@ -279,7 +279,7 @@ PetscErrorCode Config::scalar_from_option(std::string name, std::string paramete
   return 0;
 }
 
-PetscErrorCode Config::string_from_option(std::string name, std::string parameter) {
+PetscErrorCode Config::string_from_option(const std::string &name, const std::string &parameter) {
   PetscErrorCode ierr;
   std::string value = get_string_quiet(parameter);
   bool flag;
@@ -300,9 +300,9 @@ PetscErrorCode Config::string_from_option(std::string name, std::string paramete
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-PetscErrorCode Config::keyword_from_option(std::string name,
-                                               std::string parameter,
-                                               std::string choices_list) {
+PetscErrorCode Config::keyword_from_option(const std::string &name,
+                                               const std::string &parameter,
+                                               const std::string &choices_list) {
   PetscErrorCode ierr;
   std::istringstream arg(choices_list);
   std::set<std::string> choices;
@@ -325,7 +325,7 @@ PetscErrorCode Config::keyword_from_option(std::string name,
   return 0;
 }
 
-PetscErrorCode Config::set_flag_from_option(std::string name, bool value) {
+PetscErrorCode Config::set_flag_from_option(const std::string &name, bool value) {
 
   m_parameters_set.insert(name);
 
@@ -334,7 +334,7 @@ PetscErrorCode Config::set_flag_from_option(std::string name, bool value) {
   return 0;
 }
 
-PetscErrorCode Config::set_scalar_from_option(std::string name, double value) {
+PetscErrorCode Config::set_scalar_from_option(const std::string &name, double value) {
 
   m_parameters_set.insert(name);
 
@@ -343,7 +343,7 @@ PetscErrorCode Config::set_scalar_from_option(std::string name, double value) {
   return 0;
 }
 
-PetscErrorCode Config::set_string_from_option(std::string name, std::string value) {
+PetscErrorCode Config::set_string_from_option(const std::string &name, const std::string &value) {
 
   m_parameters_set.insert(name);
 
@@ -352,7 +352,7 @@ PetscErrorCode Config::set_string_from_option(std::string name, std::string valu
   return 0;
 }
 
-PetscErrorCode Config::set_keyword_from_option(std::string name, std::string value) {
+PetscErrorCode Config::set_keyword_from_option(const std::string &name, const std::string &value) {
 
   this->set_string_from_option(name, value);
 

@@ -422,7 +422,7 @@ PetscErrorCode IceGrid::allocate() {
 }
 
 //! Sets grid vertical levels; sets Mz and Lz from input.  Checks input for consistency.
-PetscErrorCode IceGrid::set_vertical_levels(std::vector<double> new_zlevels) {
+PetscErrorCode IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   PetscErrorCode ierr;
 
   if (new_zlevels.size() < 2) {
@@ -674,7 +674,7 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
 }
 
 //! Creates a run-time diagnostic viewer.
-PetscErrorCode IceGrid::create_viewer(int viewer_size, std::string title, PetscViewer &viewer) {
+PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer) {
   PetscErrorCode ierr;
   int X, Y;
 

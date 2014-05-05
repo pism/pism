@@ -38,9 +38,9 @@ public:
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
 protected:
   IceModelVec2S m_shelf_base_temperature, m_shelf_base_mass_flux,

@@ -71,18 +71,18 @@ PetscErrorCode FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
   return 0;
 }
 
-void FloatKill::add_vars_to_output(std::string /*keyword*/,
+void FloatKill::add_vars_to_output(const std::string &/*keyword*/,
                                        std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode FloatKill::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+PetscErrorCode FloatKill::define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                                IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode FloatKill::write_variables(std::set<std::string> /*vars*/, const PIO& /*nc*/) {
+PetscErrorCode FloatKill::write_variables(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
   // empty
   return 0;
 }

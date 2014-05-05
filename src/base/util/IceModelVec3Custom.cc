@@ -45,10 +45,10 @@ IceModelVec3Custom::~IceModelVec3Custom()
  */
 
 PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
-                                          std::string short_name,
-                                          std::string z_name,
-                                          std::vector<double> my_zlevels,
-                                          std::map<std::string, std::string> z_attrs) {
+                                          const std::string &short_name,
+                                          const std::string &z_name,
+                                          const std::vector<double> &my_zlevels,
+                                          const std::map<std::string, std::string> &z_attrs) {
   PetscErrorCode ierr;
   assert(v == NULL);
 

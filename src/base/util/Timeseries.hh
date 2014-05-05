@@ -73,9 +73,9 @@ class IceGrid;
 */
 class Timeseries {
 public:
-  Timeseries(IceGrid * g, std::string name, std::string dimension_name);
-  Timeseries(MPI_Comm com, UnitSystem units_system,
-             std::string name, std::string dimension_name);
+  Timeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
+  Timeseries(MPI_Comm com, const UnitSystem &units_system,
+             const std::string &name, const std::string &dimension_name);
   
   PetscErrorCode read(const PIO &nc, Time *time);
   PetscErrorCode write(const PIO &nc);
@@ -84,11 +84,11 @@ public:
   double average(double t, double dt, unsigned int N);
   PetscErrorCode append(double value, double a, double b);
   int length();
-  PetscErrorCode set_attr(std::string name, double value);
-  PetscErrorCode set_attr(std::string name, std::string value);
-  PetscErrorCode set_units(std::string units, std::string glaciological_units);
-  PetscErrorCode set_dimension_units(std::string units, std::string glaciological_units);
-  std::string get_string(std::string name);
+  PetscErrorCode set_attr(const std::string &name, double value);
+  PetscErrorCode set_attr(const std::string &name, const std::string &value);
+  PetscErrorCode set_units(const std::string &units, const std::string &glaciological_units);
+  PetscErrorCode set_dimension_units(const std::string &units, const std::string &glaciological_units);
+  std::string get_string(const std::string &name);
 
   void scale(double scaling_factor);
 
@@ -103,7 +103,7 @@ protected:
   std::vector<double> values;
   std::vector<double> time_bounds;
 private:
-  void private_constructor(MPI_Comm com, std::string name, std::string dimension_name);
+  void private_constructor(MPI_Comm com, const std::string &name, const std::string &dimension_name);
   PetscErrorCode report_range();
 };
 
@@ -163,10 +163,10 @@ private:
 */
 class DiagnosticTimeseries : public Timeseries {
 public:
-  DiagnosticTimeseries(IceGrid * g, std::string name, std::string dimension_name);
+  DiagnosticTimeseries(IceGrid * g, const std::string &name, const std::string &dimension_name);
   ~DiagnosticTimeseries();
 
-  PetscErrorCode init(std::string filename);
+  PetscErrorCode init(const std::string &filename);
   PetscErrorCode append(double V, double a, double b);
   PetscErrorCode interp(double a, double b);
   void reset();

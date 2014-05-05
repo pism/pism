@@ -28,7 +28,7 @@ enthSystemCtx::enthSystemCtx(const Config &config,
                              IceModelVec3 &my_Enth3,
                              double my_dx,  double my_dy,
                              double my_dt,  double my_dz,
-                             int my_Mz, std::string my_prefix,
+                             int my_Mz, const std::string &my_prefix,
                              EnthalpyConverter *my_EC)
   : columnSystemCtx(my_Mz, my_prefix), EC(my_EC) {  // <- critical: sets size of sys
   Mz = my_Mz;

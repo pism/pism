@@ -247,14 +247,14 @@ PetscErrorCode BedThermalUnit::init(Vars &vars) {
 }
 
 
-void BedThermalUnit::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void BedThermalUnit::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   if (temp.was_created()) {
     result.insert(temp.metadata().get_string("short_name"));
   }
 }
 
-PetscErrorCode BedThermalUnit::define_variables(
-                         std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode BedThermalUnit::define_variables(const std::set<std::string> &vars,
+                                                const PIO &nc, IO_Type nctype) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.metadata().get_string("short_name"))) {
@@ -264,7 +264,7 @@ PetscErrorCode BedThermalUnit::define_variables(
   return 0;
 }
 
-PetscErrorCode BedThermalUnit::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode BedThermalUnit::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.metadata().get_string("short_name"))) {

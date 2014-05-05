@@ -94,9 +94,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 }
 
 //! Assembles a list of variables corresponding to an output file size.
-PetscErrorCode IceModel::set_output_size(std::string option,
-                                         std::string description,
-                                         std::string default_value,
+PetscErrorCode IceModel::set_output_size(const std::string &option,
+                                         const std::string &description,
+                                         const std::string &default_value,
                                          std::set<std::string> &result) {
   PetscErrorCode ierr;
   std::set<std::string> choices;
@@ -208,7 +208,7 @@ PetscErrorCode IceModel::set_output_size(std::string option,
 
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
-std::string IceModel::get_output_size(std::string option) {
+std::string IceModel::get_output_size(const std::string &option) {
   std::set<std::string> choices;
   std::string keyword;
   bool flag;

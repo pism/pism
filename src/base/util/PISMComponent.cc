@@ -32,10 +32,7 @@ namespace pism {
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
 */
-PetscErrorCode Component::find_pism_input(std::string &filename, //!< name of the file found
-                                              bool &do_regrid, //!< specifies whether regridding is necessary
-                                              int &start    //!< "start" to use when reading from filename
-                                              ) {
+PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
   PetscErrorCode ierr;
   PetscBool i_set, boot_file_set;
 
@@ -92,7 +89,7 @@ PetscErrorCode Component::find_pism_input(std::string &filename, //!< name of th
  *
  * @return 0 on success
  */
-PetscErrorCode Component::regrid(std::string module_name, IceModelVec *variable,
+PetscErrorCode Component::regrid(const std::string &module_name, IceModelVec *variable,
                                      RegriddingFlag flag) {
   PetscErrorCode ierr;
   bool file_set, vars_set;

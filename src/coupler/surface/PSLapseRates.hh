@@ -35,9 +35,9 @@ public:
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 protected:
   double smb_lapse_rate;
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;

@@ -189,12 +189,12 @@ void Hydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
 }
 
 
-void Hydrology::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void Hydrology::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("tillwat");
 }
 
 
-PetscErrorCode Hydrology::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode Hydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                IO_Type nctype) {
   PetscErrorCode ierr;
   if (set_contains(vars, "tillwat")) {
@@ -204,7 +204,7 @@ PetscErrorCode Hydrology::define_variables(std::set<std::string> vars, const PIO
 }
 
 
-PetscErrorCode Hydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode Hydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
   if (set_contains(vars, "tillwat")) {
     ierr = Wtil.write(nc); CHKERRQ(ierr);

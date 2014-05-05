@@ -103,7 +103,7 @@ PetscErrorCode SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &re
   return 0;
 }
 
-PetscErrorCode SurfaceModel::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode SurfaceModel::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
@@ -113,7 +113,7 @@ PetscErrorCode SurfaceModel::define_variables(std::set<std::string> vars, const 
   return 0;
 }
 
-PetscErrorCode SurfaceModel::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode SurfaceModel::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
@@ -136,7 +136,7 @@ PetscErrorCode SurfaceModel::max_timestep(double my_t, double &my_dt, bool &rest
   return 0;
 }
 
-void SurfaceModel::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void SurfaceModel::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   if (atmosphere != NULL) {
     atmosphere->add_vars_to_output(keyword, result);
   }

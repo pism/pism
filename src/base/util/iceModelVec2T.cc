@@ -59,7 +59,7 @@ unsigned int IceModelVec2T::get_n_records() {
   return n_records;
 }
 
-PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, std::string my_short_name,
+PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const std::string &my_short_name,
                                      bool local, int width) {
   PetscErrorCode ierr;
 
@@ -121,7 +121,7 @@ PetscErrorCode IceModelVec2T::end_access() {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, double reference_time) {
+PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period, double reference_time) {
   PetscErrorCode ierr;
 
   filename         = fname;

@@ -225,7 +225,7 @@ public:
 
   //! Callback from TaoBasicProblem to form the starting iterate for the minimization.  See also
   //  setInitialGuess.
-  virtual PetscErrorCode formInitialGuess(Vec *v, TerminationReason::Ptr & reason) {
+  virtual PetscErrorCode formInitialGuess(Vec *v, TerminationReason::Ptr &reason) {
     *v = m_dGlobal.get_vec();
     reason = GenericTerminationReason::success();
     return 0;

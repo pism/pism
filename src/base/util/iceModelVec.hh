@@ -185,23 +185,23 @@ public:
   PetscErrorCode copy_from(IceModelVec &source);
   virtual Vec get_vec();
   virtual PetscErrorCode  has_nan();
-  virtual PetscErrorCode  set_name(std::string name, int component = 0);
+  virtual PetscErrorCode  set_name(const std::string &name, int component = 0);
   virtual std::string name() const;
-  virtual PetscErrorCode  set_glaciological_units(std::string units);
-  virtual PetscErrorCode  set_attrs(std::string my_pism_intent, std::string my_long_name,
-                                    std::string my_units, std::string my_standard_name, int component = 0);
-  virtual PetscErrorCode  rename(std::string short_name, std::string long_name,
-                                 std::string standard_name, int component = 0);
-  virtual PetscErrorCode  read_attributes(std::string filename, int component = 0);
+  virtual PetscErrorCode  set_glaciological_units(const std::string &units);
+  virtual PetscErrorCode  set_attrs(const std::string &my_pism_intent, const std::string &my_long_name,
+                                    const std::string &my_units, const std::string &my_standard_name, int component = 0);
+  virtual PetscErrorCode  rename(const std::string &short_name, const std::string &long_name,
+                                 const std::string &standard_name, int component = 0);
+  virtual PetscErrorCode  read_attributes(const std::string &filename, int component = 0);
   virtual PetscErrorCode  define(const PIO &nc, IO_Type output_datatype);
 
-  PetscErrorCode read(std::string filename, unsigned int time);
+  PetscErrorCode read(const std::string &filename, unsigned int time);
   PetscErrorCode read(const PIO &nc, unsigned int time);
 
-  PetscErrorCode  write(std::string filename, IO_Type nctype = PISM_DOUBLE);
+  PetscErrorCode  write(const std::string &filename, IO_Type nctype = PISM_DOUBLE);
   PetscErrorCode  write(const PIO &nc, IO_Type nctype = PISM_DOUBLE);
 
-  PetscErrorCode  regrid(std::string filename, RegriddingFlag flag,
+  PetscErrorCode  regrid(const std::string &filename, RegriddingFlag flag,
                          double default_value = 0.0);
   PetscErrorCode  regrid(const PIO &nc, RegriddingFlag flag,
                          double default_value = 0.0);
@@ -322,7 +322,7 @@ public:
 #endif
     return static_cast<double***>(array)[i][j][k];
   }
-  virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name,
+  virtual PetscErrorCode create(IceGrid &my_grid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
   virtual PetscErrorCode read_impl(const PIO &nc, const unsigned int time);
@@ -342,7 +342,7 @@ public:
   IceModelVec2S() { begin_end_access_use_dof = false; }
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  virtual PetscErrorCode  create(IceGrid &my_grid, std::string my_name,
+  virtual PetscErrorCode  create(IceGrid &my_grid, const std::string &my_name,
                                  IceModelVecKind ghostedp, int width = 1);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
@@ -510,7 +510,7 @@ public:
   ~IceModelVec2V() {}
 
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name,
+  virtual PetscErrorCode create(IceGrid &my_grid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);
   virtual PetscErrorCode copy_to(IceModelVec &destination);
   virtual PetscErrorCode add(double alpha, IceModelVec &x);
@@ -546,11 +546,12 @@ public:
   }
 
   // Metadata, etc:
-  virtual PetscErrorCode set_name(std::string name, int component = 0);
-  virtual PetscErrorCode rename(std::string short_name, std::string long_name,
-                                std::string standard_name, int component = 0);
-  virtual PetscErrorCode rename(std::string short_name, std::vector<std::string> long_names,
-                                std::string standard_name);
+  virtual PetscErrorCode set_name(const std::string &name, int component = 0);
+  virtual PetscErrorCode rename(const std::string &short_name, const std::string &long_name,
+                                const std::string &standard_name, int component = 0);
+  virtual PetscErrorCode rename(const std::string &short_name,
+                                const std::vector<std::string> &long_names,
+                                const std::string &standard_name);
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
@@ -563,7 +564,7 @@ public:
     begin_end_access_use_dof = true;
   }
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
+  virtual PetscErrorCode create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                 unsigned int stencil_width = 1);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);
@@ -617,8 +618,8 @@ public:
   }
 
 protected:
-  virtual PetscErrorCode allocate(IceGrid &mygrid, std::string my_short_name,
-                                  IceModelVecKind ghostedp, std::vector<double> levels,
+  virtual PetscErrorCode allocate(IceGrid &mygrid, const std::string &my_short_name,
+                                  IceModelVecKind ghostedp, const std::vector<double> &levels,
                                   unsigned int stencil_width = 1);
   virtual PetscErrorCode has_nan();
 };
@@ -630,7 +631,7 @@ public:
   IceModelVec3() {}
   virtual ~IceModelVec3() {}
 
-  virtual PetscErrorCode create(IceGrid &mygrid, std::string my_short_name,
+  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name,
                                 IceModelVecKind ghostedp,
                                 unsigned int stencil_width = 1);
 

@@ -87,15 +87,16 @@ PetscErrorCode PO_delta_MBP::melange_back_pressure_fraction(IceModelVec2S &resul
   return 0;
 }
 
-void PO_delta_MBP::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PO_delta_MBP::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode PO_delta_MBP::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode PO_delta_MBP::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
                                               IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {
@@ -113,7 +114,8 @@ PetscErrorCode PO_delta_MBP::define_variables(std::set<std::string> vars, const 
   return 0;
 }
 
-PetscErrorCode PO_delta_MBP::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PO_delta_MBP::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 

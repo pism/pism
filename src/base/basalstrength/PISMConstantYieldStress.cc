@@ -63,12 +63,12 @@ PetscErrorCode ConstantYieldStress::init(Vars &/*vars*/) {
 }
 
 
-void ConstantYieldStress::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void ConstantYieldStress::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("tauc");
 }
 
 
-PetscErrorCode ConstantYieldStress::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode ConstantYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                          IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.define(nc, nctype); CHKERRQ(ierr);
@@ -77,7 +77,7 @@ PetscErrorCode ConstantYieldStress::define_variables(std::set<std::string> vars,
 }
 
 
-PetscErrorCode ConstantYieldStress::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode ConstantYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.write(nc); CHKERRQ(ierr);
   }

@@ -170,7 +170,7 @@ PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode PALapseRates::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -186,7 +186,8 @@ PetscErrorCode PALapseRates::define_variables(std::set<std::string> vars, const 
   return 0;
 }
 
-PetscErrorCode PALapseRates::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PALapseRates::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -218,7 +219,7 @@ PetscErrorCode PALapseRates::write_variables(std::set<std::string> vars, const P
   return 0;
 }
 
-void PALapseRates::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PALapseRates::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {

@@ -387,12 +387,12 @@ PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void SSA::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("vel_ssa");
 }
 
 
-PetscErrorCode SSA::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode SSA::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
@@ -403,7 +403,7 @@ PetscErrorCode SSA::define_variables(std::set<std::string> vars, const PIO &nc, 
 }
 
 
-PetscErrorCode SSA::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode SSA::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {

@@ -50,8 +50,8 @@ static inline std::string string_strip(std::string input) {
   for more details about supported calendars.
  */
 Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
-                                     std::string calendar_string,
-                                     UnitSystem units_system)
+                             const std::string &calendar_string,
+                             const UnitSystem &units_system)
   : Time(c, conf, calendar_string, units_system) {
 
   // init_calendar() was called by the constructor of Time.
@@ -168,7 +168,7 @@ PetscErrorCode Time_Calendar::init() {
 /*!
  * This allows running PISM for the duration of the available forcing.
  */
-PetscErrorCode Time_Calendar::init_from_file(std::string filename) {
+PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   PetscErrorCode ierr;
   int rank = 0;
   std::vector<double> time, time_bounds;
@@ -384,12 +384,12 @@ double Time_Calendar::increment_date(double T, int years) {
  *
  * @return 0 on success, 1 otherwise
  */
-PetscErrorCode Time_Calendar::parse_date(std::string spec, double *result) {
+PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *result) {
   int errcode, dummy;
   calcalcs_cal *cal = NULL;
   std::vector<int> numbers;
   bool year_is_negative = false;
-  std::string tmp;
+  std::string tmp, spec = input;
 
   spec = string_strip(spec);
 
@@ -459,7 +459,7 @@ PetscErrorCode Time_Calendar::parse_date(std::string spec, double *result) {
   return 1;
 }
 
-int Time_Calendar::parse_interval_length(std::string spec, std::string &keyword, double *result) {
+int Time_Calendar::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
 
   int ierr;
 
@@ -559,7 +559,7 @@ PetscErrorCode Time_Calendar::compute_times_yearly(std::vector<double> &result) 
 }
 
 PetscErrorCode Time_Calendar::compute_times(double time_start, double delta, double time_end,
-                                                std::string keyword,
+                                                const std::string &keyword,
                                                 std::vector<double> &result) {
   if (keyword == "simple") {
     return compute_times_simple(time_start, delta, time_end, result);

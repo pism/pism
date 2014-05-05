@@ -61,26 +61,26 @@ public:
 
   UnitSystem::Ptr get() const;
 
-  double convert(double input, std::string spec1, std::string spec2) const;
+  double convert(double input, const std::string &spec1, const std::string &spec2) const;
 private:
   UnitSystem::Ptr m_system;
 };
 
 class Unit {
 public:
-  Unit(UnitSystem system);
+  Unit(const UnitSystem &system);
   Unit(const Unit &other);
   ~Unit();
 
   void reset();
 
   Unit& operator=(const Unit& other);
-  int parse(std::string spec);
+  int parse(const std::string &spec);
   std::string format() const;
 
   ut_unit* get() const;
   UnitSystem get_system() const;
-  cv_converter* get_converter_from(Unit from) const;
+  cv_converter* get_converter_from(const Unit &from) const;
 
   bool is_valid() const;
 private:

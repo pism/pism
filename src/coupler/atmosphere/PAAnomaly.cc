@@ -189,7 +189,7 @@ PetscErrorCode PAAnomaly::precip_time_series(int i, int j, double *result) {
   return 0;
 }
 
-void PAAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PAAnomaly::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -199,8 +199,9 @@ void PAAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &r
 }
 
 
-PetscErrorCode PAAnomaly::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode PAAnomaly::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
                                            IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -219,7 +220,8 @@ PetscErrorCode PAAnomaly::define_variables(std::set<std::string> vars, const PIO
 }
 
 
-PetscErrorCode PAAnomaly::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PAAnomaly::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

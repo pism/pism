@@ -313,12 +313,12 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
 }
 
 
-void MohrCoulombYieldStress::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void MohrCoulombYieldStress::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("tillphi");
 }
 
 
-PetscErrorCode MohrCoulombYieldStress::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode MohrCoulombYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = m_till_phi.define(nc, nctype); CHKERRQ(ierr);
@@ -327,7 +327,7 @@ PetscErrorCode MohrCoulombYieldStress::define_variables(std::set<std::string> va
 }
 
 
-PetscErrorCode MohrCoulombYieldStress::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode MohrCoulombYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tillphi")) {
     PetscErrorCode ierr = m_till_phi.write(nc); CHKERRQ(ierr);
   }

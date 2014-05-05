@@ -51,7 +51,7 @@ int PNCFile::integer_open_mode(IO_Mode input) const {
   }
 }
 
-int PNCFile::open(std::string fname, IO_Mode mode) {
+int PNCFile::open(const std::string &fname, IO_Mode mode) {
   int stat;
 
   init_hints();
@@ -67,7 +67,7 @@ int PNCFile::open(std::string fname, IO_Mode mode) {
 }
 
 
-int PNCFile::create(std::string fname) {
+int PNCFile::create(const std::string &fname) {
   int stat;
 
   init_hints();
@@ -119,7 +119,7 @@ int PNCFile::redef() const {
 }
 
 
-int PNCFile::def_dim(std::string name, size_t length) const {
+int PNCFile::def_dim(const std::string &name, size_t length) const {
   int dimid = 0, stat;
 
   stat = ncmpi_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
@@ -128,7 +128,7 @@ int PNCFile::def_dim(std::string name, size_t length) const {
 }
 
 
-int PNCFile::inq_dimid(std::string dimension_name, bool &exists) const {
+int PNCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
   int tmp, stat;
 
   stat = ncmpi_inq_dimid(ncid, dimension_name.c_str(), &tmp);
@@ -143,7 +143,7 @@ int PNCFile::inq_dimid(std::string dimension_name, bool &exists) const {
 }
 
 
-int PNCFile::inq_dimlen(std::string dimension_name, unsigned int &result) const {
+int PNCFile::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
   int stat, dimid = -1;
   MPI_Offset len;
 
@@ -195,11 +195,11 @@ int PNCFile::inq_ndims(int &result) const {
   return stat;
 }
 
-int PNCFile::def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const {
+int PNCFile::def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat, varid;
 
-  std::vector<std::string>::iterator j;
+  std::vector<std::string>::const_iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
     int dimid = -1;
     stat = ncmpi_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
@@ -224,9 +224,9 @@ int PNCFile::def_var(std::string name, IO_Type nctype, std::vector<std::string> 
 }
 
 
-int PNCFile::get_vara_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
+int PNCFile::get_vara_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
                                  double *ip) const {
   std::vector<unsigned int> dummy;
   return this->get_var_double(variable_name,
@@ -234,9 +234,9 @@ int PNCFile::get_vara_double(std::string variable_name,
 }
 
 
-int PNCFile::put_vara_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
+int PNCFile::put_vara_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
                                  const double *op) const {
   std::vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
@@ -244,20 +244,20 @@ int PNCFile::put_vara_double(std::string variable_name,
 }
 
 
-int PNCFile::get_varm_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap,
+int PNCFile::get_varm_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap,
                                  double *ip) const {
   return this->get_var_double(variable_name,
                               start, count, imap, ip, true);
 }
 
 
-int PNCFile::put_varm_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap,
+int PNCFile::put_varm_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap,
                                  const double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
@@ -273,7 +273,7 @@ int PNCFile::inq_nvars(int &result) const {
 }
 
 
-int PNCFile::inq_vardimid(std::string variable_name, std::vector<std::string> &result) const {
+int PNCFile::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
@@ -304,7 +304,7 @@ int PNCFile::inq_vardimid(std::string variable_name, std::vector<std::string> &r
 }
 
 
-int PNCFile::inq_varnatts(std::string variable_name, int &result) const {
+int PNCFile::inq_varnatts(const std::string &variable_name, int &result) const {
   int stat, varid = -1;
 
   if (variable_name == "PISM_GLOBAL") {
@@ -319,7 +319,7 @@ int PNCFile::inq_varnatts(std::string variable_name, int &result) const {
 }
 
 
-int PNCFile::inq_varid(std::string variable_name, bool &exists) const {
+int PNCFile::inq_varid(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &flag);
@@ -347,7 +347,7 @@ int PNCFile::inq_varname(unsigned int j, std::string &result) const {
   return stat;
 }
 
-int PNCFile::inq_vartype(std::string variable_name, IO_Type &result) const {
+int PNCFile::inq_vartype(const std::string &variable_name, IO_Type &result) const {
   int stat, varid;
   nc_type var_type;
 
@@ -361,7 +361,7 @@ int PNCFile::inq_vartype(std::string variable_name, IO_Type &result) const {
 }
 
 
-int PNCFile::get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const {
+int PNCFile::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
   int stat, len, varid = -1;
   MPI_Offset attlen;
 
@@ -403,7 +403,7 @@ int PNCFile::get_att_double(std::string variable_name, std::string att_name, std
 }
 
 
-int PNCFile::get_att_text(std::string variable_name, std::string att_name, std::string &result) const {
+int PNCFile::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
   char *str = NULL;
   int stat, len, varid = -1;
 
@@ -450,7 +450,7 @@ int PNCFile::get_att_text(std::string variable_name, std::string att_name, std::
 }
 
 
-int PNCFile::put_att_double(std::string variable_name, std::string att_name, IO_Type nctype, const std::vector<double> &data) const {
+int PNCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
   int stat = 0;
 
   stat = redef(); check(stat);
@@ -470,7 +470,7 @@ int PNCFile::put_att_double(std::string variable_name, std::string att_name, IO_
 }
 
 
-int PNCFile::put_att_text(std::string variable_name, std::string att_name, std::string value) const {
+int PNCFile::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0, varid = -1;
 
   stat = redef(); check(stat);
@@ -487,7 +487,7 @@ int PNCFile::put_att_text(std::string variable_name, std::string att_name, std::
 }
 
 
-int PNCFile::inq_attname(std::string variable_name, unsigned int n, std::string &result) const {
+int PNCFile::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
@@ -508,7 +508,7 @@ int PNCFile::inq_attname(std::string variable_name, unsigned int n, std::string 
 }
 
 
-int PNCFile::inq_atttype(std::string variable_name, std::string att_name, IO_Type &result) const {
+int PNCFile::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
   int stat, varid = -1;
   nc_type tmp;
 
@@ -540,11 +540,12 @@ int PNCFile::set_fill(int fillmode, int &old_modep) const {
 }
 
 
-int PNCFile::get_var_double(std::string variable_name,
-                                std::vector<unsigned int> start,
-                                std::vector<unsigned int> count,
-                                std::vector<unsigned int> imap, double *ip,
-                                bool mapped) const {
+int PNCFile::get_var_double(const std::string &variable_name,
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count,
+                            const std::vector<unsigned int> &imap_input, double *ip,
+                            bool mapped) const {
+  std::vector<unsigned int> imap = imap_input;
   int stat, varid, ndims = static_cast<int>(start.size());
 
 #if (PISM_DEBUG==1)
@@ -591,13 +592,13 @@ int PNCFile::get_var_double(std::string variable_name,
 }
 
 
-int PNCFile::put_var_double(std::string variable_name,
-                                std::vector<unsigned int> start,
-                                std::vector<unsigned int> count,
-                                std::vector<unsigned int> imap, const double *op,
+int PNCFile::put_var_double(const std::string &variable_name,
+                                const std::vector<unsigned int> &start,
+                                const std::vector<unsigned int> &count,
+                                const std::vector<unsigned int> &imap_input, const double *op,
                                 bool mapped) const {
   int stat, varid, ndims = static_cast<int>(start.size());
-
+  std::vector<unsigned int> imap = imap_input;
 #if (PISM_DEBUG==1)
   if (mapped) {
     if (start.size() != count.size() ||

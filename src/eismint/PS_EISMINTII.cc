@@ -191,14 +191,14 @@ PetscErrorCode PS_EISMINTII::update(PetscReal t, PetscReal dt) {
   return 0;
 }
 
-void PS_EISMINTII::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PS_EISMINTII::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   (void) keyword;
 
   result.insert(m_climatic_mass_balance.metadata().get_name());
   result.insert(m_ice_surface_temp.metadata().get_name());
 }
 
-PetscErrorCode PS_EISMINTII::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode PS_EISMINTII::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                              IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -213,7 +213,7 @@ PetscErrorCode PS_EISMINTII::define_variables(std::set<std::string> vars, const 
   return 0;
 }
 
-PetscErrorCode PS_EISMINTII::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PS_EISMINTII::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {

@@ -35,7 +35,7 @@ int NC4_Serial::integer_open_mode(IO_Mode input) const {
   }
 }
 
-int NC4_Serial::open(std::string fname, IO_Mode mode) {
+int NC4_Serial::open(const std::string &fname, IO_Mode mode) {
   int stat;
 
   m_filename = fname;
@@ -48,7 +48,7 @@ int NC4_Serial::open(std::string fname, IO_Mode mode) {
   return stat;
 }
 
-int NC4_Serial::create(std::string fname) {
+int NC4_Serial::create(const std::string &fname) {
   int stat;
 
   m_filename = fname;

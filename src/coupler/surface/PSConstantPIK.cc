@@ -147,13 +147,13 @@ PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSConstantPIK::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void PSConstantPIK::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("climatic_mass_balance");
   result.insert("ice_surface_temp");
   // does not call atmosphere->add_vars_to_output().
 }
 
-PetscErrorCode PSConstantPIK::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode PSConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -169,7 +169,7 @@ PetscErrorCode PSConstantPIK::define_variables(std::set<std::string> vars, const
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

@@ -35,7 +35,7 @@ namespace pism {
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, std::string my_name, IceModelVecKind ghostedp, int width) {
+PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
   assert(v == NULL);
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, ghostedp, width, m_dof); CHKERRQ(ierr);
   return 0;
@@ -615,7 +615,7 @@ PetscErrorCode IceModelVec2::set_component(unsigned int n, IceModelVec2S &source
   return 0;
 }
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, std::string my_name, IceModelVecKind ghostedp,
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const std::string & my_name, IceModelVecKind ghostedp,
                                      unsigned int stencil_width, int my_dof) {
   PetscErrorCode ierr;
 
@@ -673,7 +673,7 @@ PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) {
 }
 
 // IceModelVec2Stag
-PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
+PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                         unsigned int stencil_width) {
   PetscErrorCode ierr;
 

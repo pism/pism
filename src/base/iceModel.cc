@@ -622,7 +622,7 @@ PetscErrorCode IceModel::createVecs() {
   return 0;
 }
 
-PetscErrorCode IceModel::setExecName(std::string my_executable_short_name) {
+PetscErrorCode IceModel::setExecName(const std::string &my_executable_short_name) {
   executable_short_name = my_executable_short_name;
   return 0;
 }

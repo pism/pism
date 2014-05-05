@@ -372,7 +372,7 @@ PetscErrorCode PSForceThickness::max_timestep(double my_t, double &my_dt, bool &
 }
 
 //! Adds variables to output files.
-void PSForceThickness::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PSForceThickness::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   if (input_model != NULL)
     input_model->add_vars_to_output(keyword, result);
 
@@ -386,7 +386,7 @@ void PSForceThickness::add_vars_to_output(std::string keyword, std::set<std::str
   result.insert("ftt_target_thk");
 }
 
-PetscErrorCode PSForceThickness::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode PSForceThickness::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ftt_mask")) {
@@ -414,7 +414,8 @@ PetscErrorCode PSForceThickness::define_variables(std::set<std::string> vars, co
   return 0;
 }
 
-PetscErrorCode PSForceThickness::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSForceThickness::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ftt_mask")) {
