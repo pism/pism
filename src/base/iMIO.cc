@@ -53,15 +53,13 @@ PetscErrorCode  IceModel::writeFiles(const std::string &default_filename) {
   PetscErrorCode ierr;
   std::string filename = default_filename,
     config_out;
-  bool o_set, dump_config;
+  bool o_set;
 
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
   {
     ierr = OptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
-    ierr = OptionsString("-dump_config", "File to write the config to",
-                             config_out, dump_config); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -77,13 +75,6 @@ PetscErrorCode  IceModel::writeFiles(const std::string &default_filename) {
     ierr = dumpToFile(filename); CHKERRQ(ierr);
   }
 
-  // save the config file
-  if (dump_config) {
-    // Here "false" means "do not append"; creates a new file and moves
-    // the old one aside
-    ierr = config.write(config_out, false); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -97,7 +88,8 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     ierr = nc.inq_var(mapping.get_name(), mapping_exists); CHKERRQ(ierr);
     if (mapping_exists == false) {
       ierr = nc.redef(); CHKERRQ(ierr);
-      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE,
+                        std::vector<std::string>()); CHKERRQ(ierr);
     }
     ierr = nc.write_attributes(mapping, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
@@ -108,7 +100,8 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     ierr = nc.inq_var(run_stats.get_name(), run_stats_exists); CHKERRQ(ierr);
     if (run_stats_exists == false) {
       ierr = nc.redef(); CHKERRQ(ierr);
-      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE,
+                        std::vector<std::string>()); CHKERRQ(ierr);
     }
     ierr = nc.write_attributes(run_stats, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
@@ -121,6 +114,9 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     overrides.update_from(config);
     ierr = overrides.write(nc); CHKERRQ(ierr);
   }
+
+  // write configuration parameters to the file:
+  ierr = config.write(nc); CHKERRQ(ierr);
 
   return 0;
 }
