@@ -1,10 +1,10 @@
-all: new_notes.pdf
+all: ssafd_cfbc_notes.pdf ssafem_notes.pdf
 
-new_notes.pdf: new_notes.tex
-	pdflatex new_notes.tex
-	bibtex new_notes
-	pdflatex new_notes.tex
-	pdflatex new_notes.tex
+%.pdf: %.tex
+	pdflatex $^
+	bibtex $(^:.tex=)
+	pdflatex $^
+	pdflatex $^
 
 clean:
-	rm -f *~ *.aux *.log *.rel *.out *.blg *.bbl *.synctex.gz
+	rm -f *~ *.aux *.log *.rel *.out *.blg *.bbl *.synctex.gz *.toc
