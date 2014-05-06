@@ -478,8 +478,7 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   }
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Storage for the current solution at quadrature points.
   Vector2 u[FEQuadrature::Nq];
@@ -630,8 +629,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   }
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Storage for the current solution at quadrature points.
   Vector2 u[FEQuadrature::Nq];
@@ -700,36 +698,40 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
                                    &eta, &deta, &beta, &dbeta); CHKERRQ(ierr);
 
         for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
+
+          // Current trial function and its derivatives:
           const double
             phi   = test[q][l].val,
             phi_x = test[q][l].dx,
             phi_y = test[q][l].dy;
 
-          // derivatives of gamma with respect to u_k and v_k:
+          // Derivatives of \gamma with respect to u_l and v_l:
           const double
             gamma_u = (2.0 * U_x + V_y) * phi_x + Du[q][2] * phi_y,
             gamma_v = Du[q][2] * phi_x + (U_x + 2.0 * V_y) * phi_y;
 
-          // derivatives if eta (nu*H) with respect to u_k and v_k:
+          // Derivatives if \eta (\nu*H) with respect to u_l and v_l:
           const double
             eta_u = deta * gamma_u,
             eta_v = deta * gamma_v;
 
-          // derivatives of the basal shear stress term:
+          // Derivatives of the basal shear stress term (\tau_b):
           const double
-            taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_k
-            taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_k
-            taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_k
-            taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_k
+            taub_xu = -dbeta * U * U * phi - beta * phi, // x-component, derivative with respect to u_l
+            taub_xv = -dbeta * U * V * phi,              // x-component, derivative with respect to u_l
+            taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_l
+            taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_l
 
           for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
+
+            // Current test function and its derivatives:
             const double
               psi   = test[q][k].val,
               psi_x = test[q][k].dx,
               psi_y = test[q][k].dy;
 
             if (eta == 0) {
-              verbPrintf(1, grid.com, "nuh=0 i %d j %d q %d k %d\n", i, j, q, k);
+              PetscPrintf(PETSC_COMM_SELF, "eta=0 i %d j %d q %d k %d\n", i, j, q, k);
             }
 
             // u-u coupling

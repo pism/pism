@@ -213,7 +213,7 @@ public:
   typedef void (*ShapeFunctionSpec)(double,double,FEFunctionGerm*);
   static const ShapeFunctionSpec shapeFunction[Nk];
   
-  //! Evaluate shape function \a k at (\a x,\a y) with values returned in \a germ.
+  //! Evaluate shape function `k` at (`x`,`y`) with values returned in `germ`.
   virtual void eval(int k, double x, double y,FEFunctionGerm*germ) {
     shapeFunction[k](x,y,germ);
   }
@@ -330,8 +330,8 @@ public:
     return xm*ym;
   }
   
-  /*!\brief Convert an element index (\a i,\a j) into a flattened (1-d) array index, with the first
-    element (\a i, \a j) to be iterated over corresponding to flattened index 0. */
+  /*!\brief Convert an element index (`i`,`j`) into a flattened (1-d) array index, with the first
+    element (`i`, `j`) to be iterated over corresponding to flattened index 0. */
   int flatten(int i, int j)
   {
     return (i-xs)*ym+(j-ys);
@@ -395,9 +395,9 @@ public:
 
   const FEFunctionGermArray* testFunctionValues();
   const FEFunctionGerm* testFunctionValues(int q);
-  const FEFunctionGerm* testFunctionValues(int q,int k);
+  const FEFunctionGerm* testFunctionValues(int q, int k);
   
-  void getWeightedJacobian(double *jxw);
+  const double* getWeightedJacobian();
 
   //! The coordinates of the quadrature points on the reference element.
   static const double quadPoints[Nq][2];
@@ -407,7 +407,11 @@ public:
 protected:
   //! The determinant of the Jacobian of the map from the reference element to the physical element.
   double m_jacobianDet;
-  //! Trial function values (for each of \a Nq quadrature points, and each of \a Nk trial function).
+  // Determinant of the Jacobian of the map from the reference element
+  // to the physical element, evaluated at quadrature points and
+  // multiplied by corresponding quadrature weights.
+  double m_JxW[Nq];
+  //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
   FEFunctionGerm m_germs[Nq][Nk];
 };
 

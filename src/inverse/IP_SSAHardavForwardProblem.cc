@@ -293,8 +293,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   ierr = fixedZeta.init(m_fixed_design_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all elements.
   int xs = m_element_index.xs,
@@ -465,8 +464,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
                           m_dirichletWeight); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
   for (int i = grid.xs; i < grid.xs + grid.xm; i++) {

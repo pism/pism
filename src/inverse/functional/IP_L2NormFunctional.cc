@@ -32,12 +32,11 @@ PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
   ierr = x.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all LOCAL elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
-           ys = m_element_index.lys, ym = m_element_index.lym;
+    ys = m_element_index.lys, ym = m_element_index.lym;
   for (int i=xs; i<xs+xm; i++) {
     for (int j=ys; j<ys+ym; j++) {
 
@@ -73,8 +72,7 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   ierr = b.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all LOCAL elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
@@ -116,8 +114,7 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -164,8 +161,7 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
   ierr = x.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all local and ghosted elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
@@ -205,8 +201,7 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
   ierr = b.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all LOCAL elements.
   int xs = m_element_index.lxs, xm = m_element_index.lxm,
@@ -248,8 +243,7 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all local and ghosted elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,

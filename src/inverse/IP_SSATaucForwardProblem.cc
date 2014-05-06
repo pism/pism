@@ -291,8 +291,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   ierr = fixedZeta.init(m_fixed_tauc_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Mask (query?) for determining where ice is grounded.
   Mask M;
@@ -448,8 +447,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
                           m_dirichletWeight); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Mask query for determining where ice is grounded.
   Mask M;

@@ -39,8 +39,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
   ierr = x.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
@@ -90,8 +89,7 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);

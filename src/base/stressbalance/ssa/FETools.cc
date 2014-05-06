@@ -266,11 +266,8 @@ FEQuadrature_Scalar::FEQuadrature_Scalar(const IceGrid &grid, double L)
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
-void FEQuadrature::getWeightedJacobian(double *jxw) {
-  for (int q=0; q<Nq; q++)
-    {
-      jxw[q] = m_jacobianDet * quadWeights[q];
-    }
+const double* FEQuadrature::getWeightedJacobian() {
+  return m_JxW;
 }
 
 //! Obtain the weights @f$ w_q @f$ for quadrature.
@@ -291,6 +288,10 @@ FEQuadrature::FEQuadrature(const IceGrid &grid, double L) {
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
     }
+  }
+
+  for (int q = 0; q < Nq; q++) {
+    m_JxW[q] = m_jacobianDet * quadWeights[q];
   }
 }
 
