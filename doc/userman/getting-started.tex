@@ -276,7 +276,7 @@ The previous sections were not very ambitious.  We were just getting started!  N
 
 One can of course do the longest model runs using a coarse grid, like the 20 km grid used first.  It is, however, only possible to pick up detail from high quality data, for instance bed elevation and/or high-resolution climate data, using high grid resolution.
 
-Also, a 20 or 10 km grid is inadequate for resolving the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs, for example, at Jakobshavn Isbrae in the west Greenland ice sheet \cite{Joughinetal08}, an important outlet glacier which both flows fast and drains a large fraction of the ice sheet.  One possibility is to set up an even higher-resolution PISM regional model covering only one outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.  (See section \ref{sec:jako}.)  But let's work on high resolution for the whole ice sheet and all outlet glaciers.
+A 20 or 10 km grid is inadequate for resolving the flow of the ice sheet through the kind of fjord-like, few-kilometer-wide topographical confinement which occurs, for example, at Jakobshavn Isbrae in the west Greenland ice sheet \cite{Joughinetal08}, an important outlet glacier which both flows fast and drains a large fraction of the ice sheet.  One possibility is to set up an even higher-resolution PISM regional model covering only one outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.  (See section \ref{sec:jako}.)  But here we will work on high resolution for the whole ice sheet, and thus all outlet glaciers.
 
 Consider the following command; compare it to the one on page \pageref{firstcommand}:
 \begin{verbatim}
@@ -290,7 +290,7 @@ This technique could be called ``grid sequencing''.\footnote{It is not quite ``m
 
 Generally the fine grid run duration in grid sequencing should be at least $t = \Delta x / v_{\text{min}}$ where $\Delta x$ is the fine grid resolution and $v_{\text{min}}$ is the lowest ice flow speed that we expect to be relevant to our modeling purposes.  That is, the duration should be such that slow ice at least has a chance to cross one grid cell.  In this case, if $\Delta x = 5$ km and $v_{\text{min}} = 25$ m/a then we get $t=200$ a.  Though we use this as the duration, it is a bit short, and the reader might compare $t=500$ results (i.e.~using $v_{\text{min}} = 10$ m/a).
 
-Of course there is no reason to jump from $20\,\text{km}$ to $5\,\text{km}$ in one step!  Instead we will do it in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$, with durations of 10 ka, 2 ka, and 200 a, respectively.  The 20 km coarse grid run is already done; the result is in \texttt{g20km_10ka_hy.nc}.  So we run the following script which is \texttt{gridseq.sh} in \texttt{examples/std-greenland/}.  It calls \texttt{spinup.sh} to collect all the right PISM options:
+Actually we will demonstrate how to go from $20\,\text{km}$ to $5\,\text{km}$ in two steps, $20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}$, with durations of 10 ka, 2 ka, and 200 a, respectively.  The 20 km coarse grid run is already done; the result is in \texttt{g20km_10ka_hy.nc}.  So we run the following script which is \texttt{gridseq.sh} in \texttt{examples/std-greenland/}.  It calls \texttt{spinup.sh} to collect all the right PISM options:
 \begin{scriptvrb}
 #!/bin/bash
 NN=4
@@ -330,7 +330,7 @@ Figure \ref{fig:gridseqdetail}, showing only a detail of the western coast of Gr
 \begin{figure}[ht]
 \centering
 \includegraphics[width=4.5in,keepaspectratio=true]{ivol-gridseq}
-\caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20 km for 10 ka = \texttt{ts_g20km_10ka_hy.nc}, 10 km for 2 ka = \texttt{ts_g10km_gridseq.nc}, and 5 km for 200 a = \texttt{ts_g20km_10ka_hy.nc}.}
+\caption{Time series of ice volume \texttt{ivol} from the three runs in our grid sequencing example: 20 km for 10 ka = \texttt{ts_g20km_10ka_hy.nc}, 10 km for 2 ka = \texttt{ts_g10km_gridseq.nc}, and 5 km for 200 a = \texttt{ts_g5km_gridseq.nc}.}
 \label{fig:ivolgridseq}
 \end{figure}
 
