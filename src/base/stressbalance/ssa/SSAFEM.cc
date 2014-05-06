@@ -660,7 +660,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       // Element-local Jacobian matrix (there are FEQuadrature::Nk vector valued degrees
       // of freedom per element, for a total of (2*FEQuadrature::Nk)*(2*FEQuadrature::Nk) = 16
       // entries in the local Jacobian.
-      double K[(2*FEQuadrature::Nk)*(2*FEQuadrature::Nk)];
+      double K[2*FEQuadrature::Nk][2*FEQuadrature::Nk];
 
       // Index into the coefficient storage array.
       const int ij = m_element_index.flatten(i, j);
@@ -733,22 +733,22 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
             }
 
             // u-u coupling
-            K[k*16 + l*2]         += jw * (eta_u * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
-                                           + eta * (4 * psi_x * phi_x + psi_y * phi_y) - psi * taub_xu);
+            K[k*2 + 0][l*2 + 0] += jw * (eta_u * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
+                                         + eta * (4 * psi_x * phi_x + psi_y * phi_y) - psi * taub_xu);
             // u-v coupling
-            K[k*16 + l*2 + 1]     += jw * (eta_v * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
-                                           + eta * (2 * psi_x * phi_y + psi_y * phi_x) - psi * taub_xv);
+            K[k*2 + 0][l*2 + 1] += jw * (eta_v * (psi_x * (4 * U_x + 2 * V_y) + psi_y * U_y_plus_V_x)
+                                         + eta * (2 * psi_x * phi_y + psi_y * phi_x) - psi * taub_xv);
             // v-u coupling
-            K[k*16 + 8 + l*2]     += jw * (eta_u * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
-                                           + eta * (psi_x * phi_y + 2 * psi_y * phi_x) - psi * taub_yu);
+            K[k*2 + 1][l*2 + 0] += jw * (eta_u * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
+                                         + eta * (psi_x * phi_y + 2 * psi_y * phi_x) - psi * taub_yu);
             // v-v coupling
-            K[k*16 + 8 + l*2 + 1] += jw * (eta_v * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
-                                           + eta * (psi_x * phi_x + 4 * psi_y * phi_y) - psi * taub_yv);
+            K[k*2 + 1][l*2 + 1] += jw * (eta_v * (psi_x * U_y_plus_V_x + psi_y * (2 * U_x + 4 * V_y))
+                                         + eta * (psi_x * phi_x + 4 * psi_y * phi_y) - psi * taub_yv);
 
           } // l
         } // k
       } // q
-      ierr = m_dofmap.addLocalJacobianBlock(K, Jac);
+      ierr = m_dofmap.addLocalJacobianBlock(&K[0][0], Jac);
     } // j
   } // i
 
