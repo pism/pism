@@ -462,13 +462,13 @@ PetscErrorCode BlatterStressBalance::compute_volumetric_strain_heating() {
   return 0;
 }
 
-void BlatterStressBalance::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void BlatterStressBalance::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("u_sigma");
   result.insert("v_sigma");
 }
 
 //! Defines requested couplings fields.
-PetscErrorCode BlatterStressBalance::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode BlatterStressBalance::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                       IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -484,7 +484,7 @@ PetscErrorCode BlatterStressBalance::define_variables(std::set<std::string> vars
 }
 
 //! Writes requested couplings fields to file.
-PetscErrorCode BlatterStressBalance::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode BlatterStressBalance::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "u_sigma") || set_contains(vars, "v_sigma")) {

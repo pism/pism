@@ -116,12 +116,12 @@ public:
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
 
-  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result);
+  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                           IO_Type /*nctype*/);
 
-  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/);
 
 protected: 
   PetscErrorCode allocate_blatter();
