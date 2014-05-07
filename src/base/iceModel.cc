@@ -496,7 +496,7 @@ PetscErrorCode IceModel::createVecs() {
                         "climate_from_SurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
                         "kg m-2 s-1",
-                        "land_ice_surface_specific_mass_balance");  // CF standard_name
+                        "land_ice_surface_specific_mass_balance_flux");  // CF standard_name
   CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
