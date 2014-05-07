@@ -867,8 +867,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
    Currently it is used to adjust the basal drag near the grounding
    line in the SSAFD stress balance model and the basal melt rate
-   computation in the temperature-based energy balance code
-   (IceModel::temperatureStep() and IceModel::enthalpyAndDrainageStep()).
+   computation in the energy balance code (IceModel::temperatureStep()
+   and IceModel::enthalpyAndDrainageStep()).
 
    We use the 1D (flow line) parameterization of the sub-grid
    grounding line position due to [@ref Gladstoneetal2010], (section
