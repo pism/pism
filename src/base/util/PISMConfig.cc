@@ -23,32 +23,32 @@
 
 namespace pism {
 
-PISMConfig::PISMConfig(MPI_Comm com, std::string name, PISMUnitSystem unit_system)
+Config::Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_system)
   : m_com(com),
     m_unit_system(unit_system),
     m_data(name, unit_system) {
   m_options_left_set = false;
-  PISMOptionsIsSet("-options_left", m_options_left_set);
+  OptionsIsSet("-options_left", m_options_left_set);
   m_unit_system = unit_system;
 }
 
-PISMConfig::~PISMConfig() {
+Config::~Config() {
   warn_about_unused_parameters();
 }
 
-void PISMConfig::set_string(const std::string &name, const std::string &value) {
+void Config::set_string(const std::string &name, const std::string &value) {
   m_data.set_string(name, value);
 }
 
-void PISMConfig::set_double(const std::string &name, double value) {
+void Config::set_double(const std::string &name, double value) {
   m_data.set_double(name, value);
 }
 
-bool PISMConfig::is_set(const std::string &name) const {
+bool Config::is_set(const std::string &name) const {
   return m_data.has_attribute(name);
 }
 
-PetscErrorCode PISMConfig::read(std::string filename) {
+PetscErrorCode Config::read(const std::string &filename) {
   PetscErrorCode ierr;
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
@@ -62,12 +62,12 @@ PetscErrorCode PISMConfig::read(std::string filename) {
   return 0;
 }
 
-PetscErrorCode PISMConfig::write(std::string filename, bool append) const {
+PetscErrorCode Config::write(const std::string &filename, bool append) const {
   PetscErrorCode ierr;
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
-  PISM_IO_Mode mode = PISM_READWRITE;
+  IO_Mode mode = PISM_READWRITE;
   if (append == false) {
     mode = PISM_READWRITE_MOVE;
   }
@@ -85,7 +85,7 @@ PetscErrorCode PISMConfig::write(std::string filename, bool append) const {
 /*!
   Erases all the present parameters before reading.
 */
-PetscErrorCode PISMConfig::read(const PIO &nc) {
+PetscErrorCode Config::read(const PIO &nc) {
 
   PetscErrorCode ierr = nc.read_attributes(m_data.get_name(), m_data); CHKERRQ(ierr);
 
@@ -95,7 +95,7 @@ PetscErrorCode PISMConfig::read(const PIO &nc) {
 }
 
 //! Write a config variable to a file (with all its attributes).
-PetscErrorCode PISMConfig::write(const PIO &nc) const {
+PetscErrorCode Config::write(const PIO &nc) const {
   PetscErrorCode ierr;
   bool variable_exists;
 
@@ -115,7 +115,7 @@ PetscErrorCode PISMConfig::write(const PIO &nc) const {
   return 0;
 }
 
-double PISMConfig::get_quiet(std::string name) const {
+double Config::get_quiet(const std::string &name) const {
   const NCVariable::DoubleAttrs& doubles = m_data.get_all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_double(name);
@@ -128,7 +128,7 @@ double PISMConfig::get_quiet(std::string name) const {
   return 0;                     // can't happen
 }
 
-std::string PISMConfig::get_string_quiet(std::string name) const {
+std::string Config::get_string_quiet(const std::string &name) const {
   const NCVariable::StringAttrs& strings = m_data.get_all_strings();
   if (strings.find(name) != strings.end())
     return m_data.get_string(name);
@@ -142,7 +142,7 @@ std::string PISMConfig::get_string_quiet(std::string name) const {
   return std::string();         // will never happen
 }
 
-bool PISMConfig::get_flag_quiet(std::string name) const {
+bool Config::get_flag_quiet(const std::string &name) const {
   const NCVariable::StringAttrs& strings = m_data.get_all_strings();
   NCVariable::StringAttrs::const_iterator j = strings.find(name);
   if (j != strings.end()) {
@@ -176,14 +176,14 @@ bool PISMConfig::get_flag_quiet(std::string name) const {
 
 
 //! Returns a `double` parameter. Stops if it was not found.
-double PISMConfig::get(const std::string &name) const {
+double Config::get(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
   return this->get_quiet(name);
 }
 
-double PISMConfig::get(std::string name, std::string u1, std::string u2) const {
+double Config::get(const std::string & name, const std::string & u1, const std::string & u2) const {
   // always use get() (*not* _quiet) here
   return m_unit_system.convert(this->get(name),  u1.c_str(),  u2.c_str());
 }
@@ -195,7 +195,7 @@ double PISMConfig::get(std::string name, std::string u1, std::string u2) const {
 
   Any other string produces an error.
 */
-bool PISMConfig::get_flag(const std::string &name) const {
+bool Config::get_flag(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
@@ -203,7 +203,7 @@ bool PISMConfig::get_flag(const std::string &name) const {
 }
 
 //! \brief Get a string attribute by name.
-std::string PISMConfig::get_string(const std::string &name) const {
+std::string Config::get_string(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
@@ -211,7 +211,7 @@ std::string PISMConfig::get_string(const std::string &name) const {
 }
 
 //! Set a value of a boolean flag.
-void PISMConfig::set_flag(const std::string &name, bool value) {
+void Config::set_flag(const std::string &name, bool value) {
   if (value)
     m_data.set_string(name, "true");
   else
@@ -231,13 +231,13 @@ void PISMConfig::set_flag(const std::string &name, bool value) {
   \li if none, does nothing.
 
 */
-PetscErrorCode PISMConfig::flag_from_option(std::string name, std::string flag) {
+PetscErrorCode Config::flag_from_option(const std::string &name, const std::string &flag) {
   PetscErrorCode ierr;
   bool foo = false,
     no_foo = false;
 
-  ierr = PISMOptionsIsSet("-" + name, get_string_quiet(flag + "_doc"), foo); CHKERRQ(ierr);
-  ierr = PISMOptionsIsSet("-no_" + name, no_foo); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-" + name, get_string_quiet(flag + "_doc"), foo); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-no_" + name, no_foo); CHKERRQ(ierr);
 
   if (foo && no_foo) {
     PetscPrintf(m_com, "PISM ERROR: Inconsistent command-line options: both -%s and -no_%s are set.\n",
@@ -264,12 +264,12 @@ PetscErrorCode PISMConfig::flag_from_option(std::string name, std::string flag) 
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-PetscErrorCode PISMConfig::scalar_from_option(std::string name, std::string parameter) {
+PetscErrorCode Config::scalar_from_option(const std::string &name, const std::string &parameter) {
   PetscErrorCode ierr;
   double value = get_quiet(parameter);
   bool flag;
 
-  ierr = PISMOptionsReal("-" + name,
+  ierr = OptionsReal("-" + name,
                          get_string_quiet(parameter + "_doc"),
                          value, flag); CHKERRQ(ierr);
   if (flag) {
@@ -279,12 +279,12 @@ PetscErrorCode PISMConfig::scalar_from_option(std::string name, std::string para
   return 0;
 }
 
-PetscErrorCode PISMConfig::string_from_option(std::string name, std::string parameter) {
+PetscErrorCode Config::string_from_option(const std::string &name, const std::string &parameter) {
   PetscErrorCode ierr;
   std::string value = get_string_quiet(parameter);
   bool flag;
 
-  ierr = PISMOptionsString("-" + name,
+  ierr = OptionsString("-" + name,
                            get_string_quiet(parameter + "_doc"),
                            value, flag); CHKERRQ(ierr);
   if (flag) {
@@ -300,9 +300,9 @@ PetscErrorCode PISMConfig::string_from_option(std::string name, std::string para
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-PetscErrorCode PISMConfig::keyword_from_option(std::string name,
-                                               std::string parameter,
-                                               std::string choices_list) {
+PetscErrorCode Config::keyword_from_option(const std::string &name,
+                                               const std::string &parameter,
+                                               const std::string &choices_list) {
   PetscErrorCode ierr;
   std::istringstream arg(choices_list);
   std::set<std::string> choices;
@@ -313,7 +313,7 @@ PetscErrorCode PISMConfig::keyword_from_option(std::string name,
   while (getline(arg, tmp, ','))
     choices.insert(tmp);
 
-  ierr = PISMOptionsList(m_com, "-" + name,
+  ierr = OptionsList(m_com, "-" + name,
                          get_string_quiet(parameter + "_doc"),
                          choices,
                          get_string_quiet(parameter), keyword, flag); CHKERRQ(ierr);
@@ -325,7 +325,7 @@ PetscErrorCode PISMConfig::keyword_from_option(std::string name,
   return 0;
 }
 
-PetscErrorCode PISMConfig::set_flag_from_option(std::string name, bool value) {
+PetscErrorCode Config::set_flag_from_option(const std::string &name, bool value) {
 
   m_parameters_set.insert(name);
 
@@ -334,7 +334,7 @@ PetscErrorCode PISMConfig::set_flag_from_option(std::string name, bool value) {
   return 0;
 }
 
-PetscErrorCode PISMConfig::set_scalar_from_option(std::string name, double value) {
+PetscErrorCode Config::set_scalar_from_option(const std::string &name, double value) {
 
   m_parameters_set.insert(name);
 
@@ -343,7 +343,7 @@ PetscErrorCode PISMConfig::set_scalar_from_option(std::string name, double value
   return 0;
 }
 
-PetscErrorCode PISMConfig::set_string_from_option(std::string name, std::string value) {
+PetscErrorCode Config::set_string_from_option(const std::string &name, const std::string &value) {
 
   m_parameters_set.insert(name);
 
@@ -352,7 +352,7 @@ PetscErrorCode PISMConfig::set_string_from_option(std::string name, std::string 
   return 0;
 }
 
-PetscErrorCode PISMConfig::set_keyword_from_option(std::string name, std::string value) {
+PetscErrorCode Config::set_keyword_from_option(const std::string &name, const std::string &value) {
 
   this->set_string_from_option(name, value);
 
@@ -361,7 +361,7 @@ PetscErrorCode PISMConfig::set_keyword_from_option(std::string name, std::string
 
 
 //! Print all the attributes of a configuration variable.
-PetscErrorCode PISMConfig::print_to_stdout(int vt) const {
+PetscErrorCode Config::print_to_stdout(int vt) const {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(vt, m_com, "PISM parameters read from %s:\n",
@@ -392,20 +392,20 @@ PetscErrorCode PISMConfig::print_to_stdout(int vt) const {
 }
 
 //! \brief Returns the name of the file used to initialize the database.
-std::string PISMConfig::get_config_filename() const {
+std::string Config::get_config_filename() const {
   return m_config_filename;
 }
 
-PISMUnitSystem PISMConfig::get_unit_system() const {
+UnitSystem Config::get_unit_system() const {
   return m_unit_system;
 }
 
-const NCVariable& PISMConfig::get_data() const {
+const NCVariable& Config::get_data() const {
   return m_data;
 }
 
 //! Imports values from the other config variable, silently overwriting present values.
-void PISMConfig::import_from(const PISMConfig &other) {
+void Config::import_from(const Config &other) {
   const NCVariable::DoubleAttrs &other_doubles = other.get_data().get_all_doubles();
   NCVariable::DoubleAttrs::const_iterator j;
   for (j = other_doubles.begin(); j != other_doubles.end(); ++j) {
@@ -422,7 +422,7 @@ void PISMConfig::import_from(const PISMConfig &other) {
 }
 
 //! Update values from the other config variable, overwriting present values but avoiding adding new ones.
-void PISMConfig::update_from(const PISMConfig &other) {
+void Config::update_from(const Config &other) {
   const NCVariable::DoubleAttrs &doubles = m_data.get_all_doubles();
   const NCVariable::DoubleAttrs &other_doubles = other.get_data().get_all_doubles();
   NCVariable::DoubleAttrs::const_iterator i, j;
@@ -446,7 +446,7 @@ void PISMConfig::update_from(const PISMConfig &other) {
   }
 }
 
-PetscErrorCode PISMConfig::warn_about_unused_parameters() const {
+PetscErrorCode Config::warn_about_unused_parameters() const {
   PetscErrorCode ierr;
 
   if (m_options_left_set == false)

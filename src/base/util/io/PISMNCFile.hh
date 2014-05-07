@@ -26,7 +26,7 @@
 namespace pism {
 
 // This is a subset of NetCDF data-types.
-enum PISM_IO_Type {
+enum IO_Type {
   PISM_NAT    = 0,              /* NAT = 'Not A Type' (c.f. NaN) */
   PISM_BYTE   = 1,              /* signed 1 byte integer */
   PISM_CHAR   = 2,              /* ISO/ASCII character */
@@ -39,21 +39,21 @@ enum PISM_IO_Type {
 // This is a subset of NetCDF file modes. Use values that don't match
 // NetCDF flags so that we can detect errors caused by passing these
 // straight to NetCDF.
-enum PISM_IO_Mode {
-  PISM_READONLY          = 7,
-  PISM_READWRITE         = 8,
-  PISM_READWRITE_CLOBBER = 9,
-  PISM_READWRITE_MOVE    = 10
+enum IO_Mode {
+  PISM_READONLY          = 7,   //!< open an existing file for reading only
+  PISM_READWRITE         = 8,   //!< open an existing file for reading and writing
+  PISM_READWRITE_CLOBBER = 9,   //!< create a file for writing, overwrite if present
+  PISM_READWRITE_MOVE    = 10   //!< create a file for writing, move foo.nc to foo.nc~ if present
 };
 
 // This is the special value corresponding to the "unlimited" dimension length.
 // Gets cast to "int", so it should match the value used by NetCDF.
-enum PISM_Dim_Length {
+enum Dim_Length {
   PISM_UNLIMITED = 0
 };
 
 // "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
-enum PISM_Fill_Mode {
+enum Fill_Mode {
   PISM_FILL   = 0,
   PISM_NOFILL = 0x100
 };
@@ -77,16 +77,16 @@ enum PISM_Fill_Mode {
  * - Methods of this class should do what corresponding NetCDF C API calls do,
  *   no more and no less.
  */
-class PISMNCFile
+class NCFile
 {
 public:
-  PISMNCFile(MPI_Comm com);
-  virtual ~PISMNCFile();
+  NCFile(MPI_Comm com);
+  virtual ~NCFile();
 
   // open/create/close
-  virtual int open(std::string filename, PISM_IO_Mode mode) = 0;
+  virtual int open(const std::string &filename, IO_Mode mode) = 0;
 
-  virtual int create(std::string filename) = 0;
+  virtual int create(const std::string &filename) = 0;
 
   virtual int close() = 0;
 
@@ -96,11 +96,11 @@ public:
   virtual int redef() const = 0;
 
   // dim
-  virtual int def_dim(std::string name, size_t length) const = 0;
+  virtual int def_dim(const std::string &name, size_t length) const = 0;
 
-  virtual int inq_dimid(std::string dimension_name, bool &exists) const = 0;
+  virtual int inq_dimid(const std::string &dimension_name, bool &exists) const = 0;
 
-  virtual int inq_dimlen(std::string dimension_name, unsigned int &result) const = 0;
+  virtual int inq_dimlen(const std::string &dimension_name, unsigned int &result) const = 0;
 
   virtual int inq_unlimdim(std::string &result) const = 0;
 
@@ -109,56 +109,56 @@ public:
   virtual int inq_ndims(int &result) const = 0;
 
   // var
-  virtual int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const = 0;
+  virtual int def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const = 0;
 
-  virtual int get_vara_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
+  virtual int get_vara_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
                               double *ip) const = 0;
 
-  virtual int put_vara_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
+  virtual int put_vara_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
                               const double *op) const = 0;
 
-  virtual int get_varm_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
-                              std::vector<unsigned int> imap,
+  virtual int get_varm_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
+                              const std::vector<unsigned int> &imap,
                               double *ip) const = 0;
 
-  virtual int put_varm_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
-                              std::vector<unsigned int> imap,
+  virtual int put_varm_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
+                              const std::vector<unsigned int> &imap,
                               const double *op) const = 0;
 
   virtual int inq_nvars(int &result) const = 0;
 
-  virtual int inq_vardimid(std::string variable_name, std::vector<std::string> &result) const = 0;
+  virtual int inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const = 0;
 
-  virtual int inq_varnatts(std::string variable_name, int &result) const = 0;
+  virtual int inq_varnatts(const std::string &variable_name, int &result) const = 0;
 
-  virtual int inq_varid(std::string variable_name, bool &exists) const = 0;
+  virtual int inq_varid(const std::string &variable_name, bool &exists) const = 0;
 
   virtual int inq_varname(unsigned int j, std::string &result) const = 0;
 
-  virtual int inq_vartype(std::string variable_name, PISM_IO_Type &result) const = 0;
+  virtual int inq_vartype(const std::string &variable_name, IO_Type &result) const = 0;
 
   // att
-  virtual int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const = 0;
+  virtual int get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;
 
-  virtual int get_att_text(std::string variable_name, std::string att_name, std::string &result) const = 0;
+  virtual int get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
 
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const = 0;
+  virtual int put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
 
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, double value) const;
+  virtual int put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const;
 
-  virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const = 0;
+  virtual int put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
 
-  virtual int inq_attname(std::string variable_name, unsigned int n, std::string &result) const = 0;
+  virtual int inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const = 0;
 
-  virtual int inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const = 0;
+  virtual int inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const = 0;
 
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const = 0;
@@ -170,11 +170,11 @@ public:
   void set_local_extent(unsigned int xs, unsigned int xm,
                         unsigned int ys, unsigned int ym) const;
 
-  virtual int move_if_exists(std::string filename, int rank_to_use = 0);
-  virtual int remove_if_exists(std::string filename, int rank_to_use = 0);
+  virtual int move_if_exists(const std::string &filename, int rank_to_use = 0);
+  virtual int remove_if_exists(const std::string &filename, int rank_to_use = 0);
 
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const = 0;
+  virtual int integer_open_mode(IO_Mode input) const = 0;
   virtual void check(int return_code) const;
 
   MPI_Comm com;

@@ -27,11 +27,11 @@ class ConfigI;
 
 //! Converts between specific enthalpy and temperature or liquid content.
 /*!
-  Use this way, for example within IceModel with ConfigI config member:
+  Use this way, for example within IceModel with Config config member:
   \code
   #include "enthalpyConverter.hh"
 
-  EnthalpyConverter EC(&config);  // runs constructor; do after initialization of ConfigI config
+  EnthalpyConverter EC(&config);  // runs constructor; do after initialization of Config config
   ...
   for (...) {
   ...

@@ -27,12 +27,12 @@ namespace pism {
 //! \brief A class implementing a constant (in terms of the ocean inputs) ocean
 //! model. Uses configuration parameters for the sea level elevation and
 //! sub-shelf heat flux.
-class POConstant : public PISMOceanModel {
+class POConstant : public OceanModel {
 public:
-  POConstant(IceGrid &g, const PISMConfig &conf);
+  POConstant(IceGrid &g, const Config &conf);
   virtual ~POConstant() {}
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode update(double my_t, double my_dt)
   { m_t = my_t; m_dt = my_dt; return 0; } // do nothing
@@ -41,10 +41,10 @@ public:
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
   IceModelVec2S *ice_thickness; // is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;

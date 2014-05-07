@@ -26,7 +26,7 @@
 
 namespace pism {
 
-IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
+IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c), m_unit_system(config.get_unit_system()) {
 
   MPI_Comm_rank(com, &rank);
@@ -100,9 +100,9 @@ IceGrid::IceGrid(MPI_Comm c, const PISMConfig &conf)
   }
 
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
-    time = new PISMTime(com, config, calendar, m_unit_system);
+    time = new Time(com, config, calendar, m_unit_system);
   } else {
-    time = new PISMTime_Calendar(com, config, calendar, m_unit_system);
+    time = new Time_Calendar(com, config, calendar, m_unit_system);
   }
   // time->init() will be called later (in IceModel::set_grid_defaults() or
   // PIO::get_grid()).
@@ -128,7 +128,7 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
   // "calendar" attribute is found.
   std::string time_file_name;
   bool time_file_set;
-  ierr = PISMOptionsString("-time_file", "name of the file specifying the run duration",
+  ierr = OptionsString("-time_file", "name of the file specifying the run duration",
                            time_file_name, time_file_set); CHKERRQ(ierr);
   if (time_file_set) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
@@ -175,8 +175,8 @@ which may not even be a grid created by this routine).
   - When `vertical_spacing` == QUADRATIC, the spacing is a quadratic function.  The intent
     is that the spacing is smaller near the base than near the top.  In particular, if
     \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *
-    ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
-    * \f$\zeta_k\f$) )` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
+    ((\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
+    * \f$\zeta_k\f$))` where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
     indicates the slope of the quadratic function as it leaves the base.
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
@@ -210,7 +210,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < Mz - 1; k++) {
       const double zeta = ((double) k) / ((double) Mz - 1);
-      zlevels[k] = Lz * ( (zeta / lambda) * (1.0 + (lambda - 1.0) * zeta) );
+      zlevels[k] = Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
@@ -422,14 +422,14 @@ PetscErrorCode IceGrid::allocate() {
 }
 
 //! Sets grid vertical levels; sets Mz and Lz from input.  Checks input for consistency.
-PetscErrorCode IceGrid::set_vertical_levels(std::vector<double> new_zlevels) {
+PetscErrorCode IceGrid::set_vertical_levels(const std::vector<double> &new_zlevels) {
   PetscErrorCode ierr;
 
   if (new_zlevels.size() < 2) {
     SETERRQ(com, 1, "IceGrid::set_vertical_levels(): Mz has to be at least 2.");
   }
 
-  if ( (!is_increasing(new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10) ) {
+  if ((!is_increasing(new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10)) {
     SETERRQ(com, 3, "IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 
@@ -660,10 +660,10 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
 
   // if either dimension is larger than twice the target, shrink appropriately
   if (X > 2 * target_size) {
-    Y = (int) ( (double)(Y) * (2.0 * (double)target_size / (double)(X)) );
+    Y = (int) ((double)(Y) * (2.0 * (double)target_size / (double)(X)));
     X = 2 * target_size;
   } else if (Y > 2 * target_size) {
-    X = (int) ( (double)(X) * (2.0 * (double)target_size / (double)(Y)) );
+    X = (int) ((double)(X) * (2.0 * (double)target_size / (double)(Y)));
     Y = 2 * target_size;
   }
 
@@ -674,7 +674,7 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
 }
 
 //! Creates a run-time diagnostic viewer.
-PetscErrorCode IceGrid::create_viewer(int viewer_size, std::string title, PetscViewer &viewer) {
+PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer) {
   PetscErrorCode ierr;
   int X, Y;
 
@@ -821,7 +821,7 @@ PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, DM &result) {
   return 0;
 }
 
-PISMUnitSystem IceGrid::get_unit_system() const {
+UnitSystem IceGrid::get_unit_system() const {
   return m_unit_system;
 }
 

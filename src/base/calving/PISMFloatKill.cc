@@ -23,16 +23,16 @@
 
 namespace pism {
 
-PISMFloatKill::PISMFloatKill(IceGrid &g, const PISMConfig &conf)
-  : PISMComponent(g, conf) {
+FloatKill::FloatKill(IceGrid &g, const Config &conf)
+  : Component(g, conf) {
   // empty
 }
 
-PISMFloatKill::~PISMFloatKill() {
+FloatKill::~FloatKill() {
   // empty
 }
 
-PetscErrorCode PISMFloatKill::init(PISMVars &/*vars*/) {
+PetscErrorCode FloatKill::init(Vars &/*vars*/) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the 'calving at the grounding line' mechanism...\n");
@@ -49,7 +49,7 @@ PetscErrorCode PISMFloatKill::init(PISMVars &/*vars*/) {
  *
  * @return 0 on success
  */
-PetscErrorCode PISMFloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
+PetscErrorCode FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
   MaskQuery M(pism_mask);
 
@@ -71,18 +71,18 @@ PetscErrorCode PISMFloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &
   return 0;
 }
 
-void PISMFloatKill::add_vars_to_output(std::string /*keyword*/,
+void FloatKill::add_vars_to_output(const std::string &/*keyword*/,
                                        std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode PISMFloatKill::define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                               PISM_IO_Type /*nctype*/) {
+PetscErrorCode FloatKill::define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+                                               IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMFloatKill::write_variables(std::set<std::string> /*vars*/, const PIO& /*nc*/) {
+PetscErrorCode FloatKill::write_variables(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
   // empty
   return 0;
 }

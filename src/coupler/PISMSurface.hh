@@ -29,20 +29,20 @@
 
 namespace pism {
 
-class PISMAtmosphereModel;
+class AtmosphereModel;
 class IceModelVec2S;
 
 //! \brief The interface of PISM's surface models.
-class PISMSurfaceModel : public PISMComponent_TS {
+class SurfaceModel : public Component_TS {
 public:
   enum BCType {DIRICHLET, NEUMANN};
-  PISMSurfaceModel(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMSurfaceModel();
+  SurfaceModel(IceGrid &g, const Config &conf);
+  virtual ~SurfaceModel();
 
   // the interface:
   /** Most surface models impose a Dirichlet boundary condition for energy. */
   virtual BCType get_conduction_bc_type() { return DIRICHLET; }
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
+  virtual void attach_atmosphere_model(AtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
@@ -51,15 +51,15 @@ public:
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 
   // provide default re-implementations of these parent's methods:
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode init(Vars &vars);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
 protected:
-  PISMAtmosphereModel *atmosphere;
+  AtmosphereModel *atmosphere;
 };
 
 } // end of namespace pism

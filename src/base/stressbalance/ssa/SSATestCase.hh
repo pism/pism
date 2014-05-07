@@ -59,7 +59,7 @@ PetscErrorCode init_shallow_grid(IceGrid &grid,
 class SSATestCase
 {
 public:
-  SSATestCase(MPI_Comm com, PISMConfig &c);
+  SSATestCase(MPI_Comm com, Config &c);
 
   virtual ~SSATestCase();
 
@@ -67,7 +67,7 @@ public:
 
   virtual PetscErrorCode run();
 
-  virtual PetscErrorCode report(std::string testname);
+  virtual PetscErrorCode report(const std::string &testname);
 
   virtual PetscErrorCode write(const std::string &filename);
 
@@ -88,23 +88,23 @@ protected:
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
   virtual PetscErrorCode exactSolution(int i, int j,
-                                       double x, double y, double *u, double *v );
+                                       double x, double y, double *u, double *v);
 
-  PetscErrorCode report_netcdf(std::string testname,
+  PetscErrorCode report_netcdf(const std::string &testname,
                                double max_vector,
                                double rel_vector,
                                double max_u,
                                double max_v,
                                double avg_u,
                                double avg_v);
-  PISMConfig &config;
+  Config &config;
   IceGrid grid;
 
   // SSA model variables.
   EnthalpyConverter *enthalpyconverter;
 
   // SSA coefficient variables.
-  PISMVars vars;
+  Vars vars;
   IceModelVec2S  surface, thickness, bed, tauc, melange_back_pressure;
   IceModelVec3 enthalpy;
   IceModelVec2V vel_bc;

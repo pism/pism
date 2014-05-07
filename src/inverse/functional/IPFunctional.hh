@@ -37,9 +37,12 @@ template<class IMVecType>
 class IPFunctional {
 
 public:
-  IPFunctional(IceGrid &grid) : m_grid(grid), m_element_index(m_grid) {
-    m_quadrature.init(m_grid);
-    m_quadrature_vector.init(m_grid);
+  IPFunctional(IceGrid &grid)
+    : m_grid(grid),
+      m_element_index(m_grid),
+      m_quadrature(grid, 1.0),
+      m_quadrature_vector(grid, 1.0)
+  {
   }
 
   virtual ~IPFunctional() {};

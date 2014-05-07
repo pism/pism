@@ -23,16 +23,16 @@
 
 namespace pism {
 
-class PISMNC3File : public PISMNCFile
+class NC3File : public NCFile
 {
 public:
-  PISMNC3File(MPI_Comm com);
-  virtual ~PISMNC3File();
+  NC3File(MPI_Comm com);
+  virtual ~NC3File();
 
   // open/create/close
-  int open(std::string filename, PISM_IO_Mode mode);
+  int open(const std::string &filename, IO_Mode mode);
 
-  int create(std::string filename);
+  int create(const std::string &filename);
 
   int close();
 
@@ -42,11 +42,11 @@ public:
   int redef() const;
 
   // dim
-  int def_dim(std::string name, size_t length) const;
+  int def_dim(const std::string &name, size_t length) const;
 
-  int inq_dimid(std::string dimension_name, bool &exists) const;
+  int inq_dimid(const std::string &dimension_name, bool &exists) const;
 
-  int inq_dimlen(std::string dimension_name, unsigned int &result) const;
+  int inq_dimlen(const std::string &dimension_name, unsigned int &result) const;
 
   int inq_unlimdim(std::string &result) const;
 
@@ -55,73 +55,73 @@ public:
   int inq_ndims(int &result) const;
 
   // var
-  int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
+  int def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
 
-  int get_vara_double(std::string variable_name,
-                      std::vector<unsigned int> start,
-                      std::vector<unsigned int> count,
+  int get_vara_double(const std::string &variable_name,
+                      const std::vector<unsigned int> &start,
+                      const std::vector<unsigned int> &count,
                       double *ip) const;
 
-  int put_vara_double(std::string variable_name,
-                      std::vector<unsigned int> start,
-                      std::vector<unsigned int> count,
+  int put_vara_double(const std::string &variable_name,
+                      const std::vector<unsigned int> &start,
+                      const std::vector<unsigned int> &count,
                       const double *op) const;
 
-  int get_varm_double(std::string variable_name,
-                      std::vector<unsigned int> start,
-                      std::vector<unsigned int> count,
-                      std::vector<unsigned int> imap,
+  int get_varm_double(const std::string &variable_name,
+                      const std::vector<unsigned int> &start,
+                      const std::vector<unsigned int> &count,
+                      const std::vector<unsigned int> &imap,
                       double *ip) const;
 
-  int put_varm_double(std::string variable_name,
-                      std::vector<unsigned int> start,
-                      std::vector<unsigned int> count,
-                      std::vector<unsigned int> imap,
+  int put_varm_double(const std::string &variable_name,
+                      const std::vector<unsigned int> &start,
+                      const std::vector<unsigned int> &count,
+                      const std::vector<unsigned int> &imap,
                       const double *op) const;
 
   int inq_nvars(int &result) const;
 
-  int inq_vardimid(std::string variable_name, std::vector<std::string> &result) const;
+  int inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const;
 
-  int inq_varnatts(std::string variable_name, int &result) const;
+  int inq_varnatts(const std::string &variable_name, int &result) const;
 
-  int inq_varid(std::string variable_name, bool &exists) const;
+  int inq_varid(const std::string &variable_name, bool &exists) const;
 
   int inq_varname(unsigned int j, std::string &result) const;
 
-  int inq_vartype(std::string variable_name, PISM_IO_Type &result) const;
+  int inq_vartype(const std::string &variable_name, IO_Type &result) const;
   // att
-  int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const;
+  int get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const;
 
-  int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
+  int get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const;
 
-  using PISMNCFile::put_att_double;
-  int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const;
+  using NCFile::put_att_double;
+  int put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
 
-  int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
+  int put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
 
-  int inq_attname(std::string variable_name, unsigned int n, std::string &result) const;
+  int inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const;
 
-  int inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const;
+  int inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
 
   // misc
   int set_fill(int fillmode, int &old_modep) const;
 
   virtual std::string get_format() const;
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const;
+  virtual int integer_open_mode(IO_Mode input) const;
 private:
   int m_rank;
-  int get_var_double(std::string variable_name,
-                     std::vector<unsigned int> start,
-                     std::vector<unsigned int> count,
-                     std::vector<unsigned int> imap, double *ip,
+  int get_var_double(const std::string &variable_name,
+                     const std::vector<unsigned int> &start,
+                     const std::vector<unsigned int> &count,
+                     const std::vector<unsigned int> &imap, double *ip,
                      bool mapped) const;
 
-  int put_var_double(std::string variable_name,
-                     std::vector<unsigned int> start,
-                     std::vector<unsigned int> count,
-                     std::vector<unsigned int> imap, const double *op,
+  int put_var_double(const std::string &variable_name,
+                     const std::vector<unsigned int> &start,
+                     const std::vector<unsigned int> &count,
+                     const std::vector<unsigned int> &imap, const double *op,
                      bool mapped) const;
 };
 

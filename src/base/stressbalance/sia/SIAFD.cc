@@ -61,7 +61,7 @@ PetscErrorCode SIAFD::allocate() {
   ierr = work_3d[1].create(grid, "work_3d_1", WITH_GHOSTS); CHKERRQ(ierr);
 
   // bed smoother
-  bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
+  bed_smoother = new BedSmoother(grid, config, WIDE_STENCIL);
 
   second_to_kiloyear = grid.convert(1, "second", "1000 years");
 
@@ -78,7 +78,7 @@ PetscErrorCode SIAFD::allocate() {
 }
 
 //! \brief Initialize the SIA module.
-PetscErrorCode SIAFD::init(PISMVars &vars) {
+PetscErrorCode SIAFD::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
@@ -122,7 +122,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
   IceModelVec2Stag &h_x = work_2d_stag[0], &h_y = work_2d_stag[1];
 
-  // Check if the smoothed bed computed by PISMBedSmoother is out of date and
+  // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
     ierr = bed_smoother->preprocess_bed(*bed); CHKERRQ(ierr);
@@ -601,7 +601,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         const int oi = 1 - o, oj = o;
 
         const double
-          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
         // zero thickness case:
         if (thk == 0.0) {
@@ -624,7 +624,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         const int      ks = grid.kBelowHeight(thk);
         const double   alpha =
           sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
-        const double theta_local = 0.5 * ( theta(i,j) + theta(i+oi,j+oj) );
+        const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
 
         double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
         for (int k = 0; k <= ks; ++k) {
@@ -701,7 +701,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     ierr = delta[0].end_access(); CHKERRQ(ierr);
   }
 
-  ierr = PISMGlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
 
   delete [] delta_ij;
 
@@ -759,7 +759,7 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
 
         const double
-          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
         if (thk == 0) {
           D_stag(i,j,o) = 0.0;
@@ -842,7 +842,7 @@ PetscErrorCode SIAFD::compute_I() {
       for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         const int oi = 1-o, oj=o;
         const double
-          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
         ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
@@ -935,10 +935,10 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
         vel_input_v = (*vel_input)(i, j).v;
 
       for (unsigned int k = 0; k < grid.Mz; ++k) {
-        u_ij[k] = - 0.25 * ( IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
-                             INORTH[k] * h_x_n + ISOUTH[k] * h_x_s );
-        v_ij[k] = - 0.25 * ( IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
-                             INORTH[k] * h_y_n + ISOUTH[k] * h_y_s );
+        u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
+                             INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
+        v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
+                             INORTH[k] * h_y_n + ISOUTH[k] * h_y_s);
 
         // Add the "SSA" velocity:
         u_ij[k] += vel_input_u;

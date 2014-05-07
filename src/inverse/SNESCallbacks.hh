@@ -34,7 +34,7 @@ public:
   
   PetscErrorCode connect(SNES snes, Problem &p, DM dm, Vec r, Mat J, Mat Jpc=NULL) {
     PetscErrorCode ierr;
-    if(m_cbData.dm != NULL) {
+    if (m_cbData.dm != NULL) {
       MPI_Comm comm;
       ierr = PetscObjectGetComm((PetscObject)snes,&comm); CHKERRQ(ierr);
       SETERRQ(comm,1,"SNESDMCallbacks already connected");
@@ -46,7 +46,7 @@ public:
     ierr = DMDASetLocalJacobian(dm,(DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formJacobianCallback); CHKERRQ(ierr);
     ierr = SNESSetDM(snes, dm); CHKERRQ(ierr);
     ierr = SNESSetFunction(snes, r, SNESDAFormFunction, &m_cbData); CHKERRQ(ierr);
-    if(Jpc==NULL) Jpc = J;
+    if (Jpc==NULL) Jpc = J;
     ierr = SNESSetJacobian(snes, J, Jpc, SNESDAComputeJacobian, &m_cbData); CHKERRQ(ierr);
     return 0;
   }
@@ -89,13 +89,13 @@ public:
     PetscErrorCode ierr;
     
     ierr = SNESSetFunction(snes,r,SNESCallbacks<Problem>::formFunctionCallback,&p); CHKERRQ(ierr);
-    if(Jpc==NULL) Jpc = J;
+    if (Jpc==NULL) Jpc = J;
     ierr = SNESSetJacobian(snes,J,Jpc,SNESCallbacks<Problem>::formJacobianCallback,&p); CHKERRQ(ierr);
     return 0;
   }
 
 protected:
-  static PetscErrorCode formFunctionCallback(SNES snes,Vec x,Vec f, void*ctx){
+  static PetscErrorCode formFunctionCallback(SNES snes,Vec x,Vec f, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->assembleFunction(x,f); CHKERRQ(ierr);

@@ -122,7 +122,7 @@ PetscErrorCode IceModel::update_run_stats() {
   // timing stats
   PetscLogDouble current_time, my_current_time;
   double wall_clock_hours, proc_hours, mypph;
-  ierr = PISMGetTime(&my_current_time); CHKERRQ(ierr);
+  ierr = GetTime(&my_current_time); CHKERRQ(ierr);
   MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
   wall_clock_hours = (current_time - start_time) / 3600.0;
@@ -182,7 +182,7 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 
 
 //! Get time and user/host name and add it to the given string.
-PetscErrorCode  IceModel::stampHistory(std::string str) {
+PetscErrorCode  IceModel::stampHistory(const std::string &str) {
 
   std::string history = pism_username_prefix(grid.com) + (str + "\n");
 
@@ -257,7 +257,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // Done with the grid. Now we need to extend IceModelVec3s.
 
   // We use surface temperatures to extend T3. We get them from the
-  // PISMSurfaceModel.
+  // SurfaceModel.
 
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
@@ -303,7 +303,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   
   ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
 
-  if (save_snapshots && (!split_snapshots) ) {
+  if (save_snapshots && (!split_snapshots)) {
     char tmp[20];
     snprintf(tmp, 20, "%d", grid.Mz);
     

@@ -35,7 +35,7 @@ namespace pism {
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, std::string my_name, IceModelVecKind ghostedp, int width) {
+PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp, int width) {
   assert(v == NULL);
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, ghostedp, width, m_dof); CHKERRQ(ierr);
   return 0;
@@ -124,7 +124,7 @@ PetscErrorCode IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S
   ierr = get_array(mag); CHKERRQ(ierr);
   for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      mag[i][j] = sqrt( PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)) );
+      mag[i][j] = sqrt(PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)));
     }
   }
   ierr = v_x.end_access(); CHKERRQ(ierr);
@@ -152,7 +152,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::write_impl(const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   assert(v != NULL);
@@ -396,40 +396,40 @@ PetscErrorCode IceModelVec2S::has_nan() {
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
 double IceModelVec2S::diff_x(int i, int j) {
-  return ( (*this)(i + 1,j) - (*this)(i - 1,j) ) / (2 * grid->dx);
+  return ((*this)(i + 1,j) - (*this)(i - 1,j)) / (2 * grid->dx);
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences.
 double IceModelVec2S::diff_y(int i, int j) {
-  return ( (*this)(i,j + 1) - (*this)(i,j - 1) ) / (2 * grid->dy);
+  return ((*this)(i,j + 1) - (*this)(i,j - 1)) / (2 * grid->dy);
 }
 
 
 //! \brief Returns the x-derivative at East staggered point i+1/2,j approximated 
 //! using centered (obvious) finite differences.
 double IceModelVec2S::diff_x_stagE(int i, int j) {
-  return ( (*this)(i+1,j) - (*this)(i,j) ) / (grid->dx);
+  return ((*this)(i+1,j) - (*this)(i,j)) / (grid->dx);
 }
 
 //! \brief Returns the y-derivative at East staggered point i+1/2,j approximated 
 //! using centered finite differences.
 double IceModelVec2S::diff_y_stagE(int i, int j) {
-  return (   (*this)(i+1,j+1) + (*this)(i,j+1)
-           - (*this)(i+1,j-1) - (*this)(i,j-1) ) / ( 4* grid->dy);
+  return ((*this)(i+1,j+1) + (*this)(i,j+1)
+           - (*this)(i+1,j-1) - (*this)(i,j-1)) / (4* grid->dy);
 }
 
 //! \brief Returns the x-derivative at North staggered point i,j+1/2 approximated 
 //! using centered finite differences.
 double IceModelVec2S::diff_x_stagN(int i, int j) {
-  return (   (*this)(i+1,j+1) + (*this)(i+1,j)
-           - (*this)(i-1,j+1) - (*this)(i-1,j) ) / ( 4* grid->dx);
+  return ((*this)(i+1,j+1) + (*this)(i+1,j)
+           - (*this)(i-1,j+1) - (*this)(i-1,j)) / (4* grid->dx);
 }
 
 //! \brief Returns the y-derivative at North staggered point i,j+1/2 approximated 
 //! using centered (obvious) finite differences.
 double IceModelVec2S::diff_y_stagN(int i, int j) {
-  return ( (*this)(i,j+1) - (*this)(i,j) ) / (grid->dy);
+  return ((*this)(i,j+1) - (*this)(i,j)) / (grid->dy);
 }
 
 
@@ -441,9 +441,9 @@ double IceModelVec2S::diff_x_p(int i, int j) {
     return diff_x(i,j);
   
   if (i == 0)
-    return ( (*this)(i + 1,j) - (*this)(i,j) ) / (grid->dx);
+    return ((*this)(i + 1,j) - (*this)(i,j)) / (grid->dx);
   else if (i == grid->Mx - 1)
-    return ( (*this)(i,j) - (*this)(i - 1,j) ) / (grid->dx);
+    return ((*this)(i,j) - (*this)(i - 1,j)) / (grid->dx);
   else
     return diff_x(i,j);
 }
@@ -456,9 +456,9 @@ double IceModelVec2S::diff_y_p(int i, int j) {
     return diff_y(i,j);
   
   if (j == 0)
-    return ( (*this)(i,j + 1) - (*this)(i,j) ) / (grid->dy);
+    return ((*this)(i,j + 1) - (*this)(i,j)) / (grid->dy);
   else if (j == grid->My - 1)
-    return ( (*this)(i,j) - (*this)(i,j - 1) ) / (grid->dy);
+    return ((*this)(i,j) - (*this)(i,j - 1)) / (grid->dy);
   else
     return diff_y(i,j);
 }
@@ -480,7 +480,7 @@ PetscErrorCode IceModelVec2S::sum(double &result) {
   ierr = end_access(); CHKERRQ(ierr);
 
   // find the global sum:
-  ierr = PISMGlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
 
   return 0;
 }
@@ -497,7 +497,7 @@ PetscErrorCode IceModelVec2S::max(double &result) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -513,7 +513,7 @@ PetscErrorCode IceModelVec2S::absmax(double &result) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -529,7 +529,7 @@ PetscErrorCode IceModelVec2S::min(double &result) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMin(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMin(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -615,7 +615,7 @@ PetscErrorCode IceModelVec2::set_component(unsigned int n, IceModelVec2S &source
   return 0;
 }
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, std::string my_name, IceModelVecKind ghostedp,
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const std::string & my_name, IceModelVecKind ghostedp,
                                      unsigned int stencil_width, int my_dof) {
   PetscErrorCode ierr;
 
@@ -673,7 +673,7 @@ PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) {
 }
 
 // IceModelVec2Stag
-PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
+PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                         unsigned int stencil_width) {
   PetscErrorCode ierr;
 
@@ -693,8 +693,8 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
   ierr = begin_access(); CHKERRQ(ierr);
   for (int i = grid->xs; i < grid->xs+grid->xm; ++i) {
     for (int j = grid->ys; j < grid->ys+grid->ym; ++j) {
-      result(i,j) = 0.25 * (  (*this)(i,j,0) + (*this)(i,j,1)
-                              + (*this)(i,j-1,1) + (*this)(i-1,j,0) );
+      result(i,j) = 0.25 * ((*this)(i,j,0) + (*this)(i,j,1)
+                              + (*this)(i,j-1,1) + (*this)(i-1,j,0));
     } // j
   }   // i
   ierr = end_access(); CHKERRQ(ierr);
@@ -741,8 +741,8 @@ PetscErrorCode IceModelVec2Stag::absmaxcomponents(double* z) {
     }
   }
   ierr = end_access(); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&(my_z[0]), &(z[0]), grid->com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&(my_z[0]), &(z[0]), grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
   return 0;
 }
 

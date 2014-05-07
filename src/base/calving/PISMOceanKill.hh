@@ -32,18 +32,18 @@ namespace pism {
  * FIXME: the ice extent computation should depend on the current sea
  * level elevation (I suppose).
  */
-class PISMOceanKill : public PISMComponent {
+class OceanKill : public Component {
 public:
-  PISMOceanKill(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMOceanKill();
+  OceanKill(IceGrid &g, const Config &conf);
+  virtual ~OceanKill();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
 
 protected:
   IceModelVec2Int m_ocean_kill_mask;

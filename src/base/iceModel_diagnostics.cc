@@ -38,7 +38,7 @@ namespace pism {
 PetscErrorCode IceModel::init_diagnostics() {
   bool print_list_and_stop = false;
 
-  PetscErrorCode ierr = PISMOptionsIsSet("-list_diagnostics",
+  PetscErrorCode ierr = OptionsIsSet("-list_diagnostics",
                                          "List available diagnostic quantities and stop",
                                          print_list_and_stop); CHKERRQ(ierr);
 
@@ -234,9 +234,9 @@ PetscErrorCode IceModel::list_diagnostics() {
                 "======== Available %dD diagnostic quantities ========\n",
                 d);
 
-    std::map<std::string, PISMDiagnostic*>::iterator j = diagnostics.begin();
+    std::map<std::string, Diagnostic*>::iterator j = diagnostics.begin();
     while (j != diagnostics.end()) {
-      PISMDiagnostic *diag = j->second;
+      Diagnostic *diag = j->second;
 
       std::string name           = j->first,
         units               = diag->get_metadata().get_string("units"),
@@ -268,9 +268,9 @@ PetscErrorCode IceModel::list_diagnostics() {
   // scalar time-series
   PetscPrintf(grid.com, "======== Available time-series ========\n");
 
-  std::map<std::string, PISMTSDiagnostic*>::iterator j = ts_diagnostics.begin();
+  std::map<std::string, TSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
-    PISMTSDiagnostic *diag = j->second;
+    TSDiagnostic *diag = j->second;
 
     std::string name = j->first,
       long_name = diag->get_string("long_name"),
@@ -292,8 +292,8 @@ PetscErrorCode IceModel::list_diagnostics() {
 }
 
 
-IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("hardav", grid);
@@ -356,8 +356,8 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
 }
 
 
-IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("rank", grid);
@@ -384,8 +384,8 @@ PetscErrorCode IceModel_rank::compute(IceModelVec* &output) {
 }
 
 
-IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("cts", grid, g.zlevels);
@@ -410,8 +410,8 @@ PetscErrorCode IceModel_cts::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("proc_ice_area", grid);
@@ -463,8 +463,8 @@ PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
 }
 
 
-IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("temp", grid, g.zlevels);
@@ -523,8 +523,8 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
 }
 
 
-IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("temp_pa", grid, g.zlevels);
@@ -576,7 +576,7 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
 
         if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
           // is 273.15
-          if ( model->EC->isTemperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
+          if (model->EC->isTemperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
             Tij[k] = melting_point_temp;
           }
         }
@@ -594,8 +594,8 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("temppabase", grid);
@@ -644,7 +644,7 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
 
       if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
         // is 273.15
-        if ( model->EC->isTemperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
+        if (model->EC->isTemperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
           (*result)(i,j) = melting_point_temp;
         }
       }
@@ -660,8 +660,8 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("enthalpysurf", grid);
@@ -708,8 +708,8 @@ PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("enthalpybase", grid);
@@ -735,8 +735,8 @@ PetscErrorCode IceModel_enthalpybase::compute(IceModelVec* &output) {
 }
 
 
-IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("tempbase", grid);
@@ -793,8 +793,8 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("tempsurf", grid);
@@ -847,8 +847,8 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
 }
 
 
-IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("liqfrac", grid, g.zlevels);
@@ -881,8 +881,8 @@ PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("tempicethk", grid);
@@ -944,8 +944,8 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("tempicethk_basal", grid);
@@ -1044,8 +1044,8 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_flux_divergence::IceModel_flux_divergence(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("flux_divergence", grid);
@@ -1067,8 +1067,8 @@ PetscErrorCode IceModel_flux_divergence::compute(IceModelVec* &output) {
   return 0;
 }
 
-IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_climatic_mass_balance_cumulative::IceModel_climatic_mass_balance_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("climatic_mass_balance_cumulative", grid);
@@ -1091,8 +1091,8 @@ PetscErrorCode IceModel_climatic_mass_balance_cumulative::compute(IceModelVec* &
   return 0;
 }
 
-IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivol", time_dimension_name);
@@ -1115,8 +1115,8 @@ PetscErrorCode IceModel_ivol::update(double a, double b) {
   return 0;
 }
 
-IceModel_slvol::IceModel_slvol(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_slvol::IceModel_slvol(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "slvol", time_dimension_name);
@@ -1139,8 +1139,8 @@ PetscErrorCode IceModel_slvol::update(double a, double b) {
   return 0;
 }
 
-IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "divoldt", time_dimension_name);
@@ -1165,8 +1165,8 @@ PetscErrorCode IceModel_divoldt::update(double a, double b) {
 }
 
 
-IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iarea", time_dimension_name);
@@ -1188,8 +1188,8 @@ PetscErrorCode IceModel_iarea::update(double a, double b) {
   return 0;
 }
 
-IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "imass", time_dimension_name);
@@ -1212,8 +1212,8 @@ PetscErrorCode IceModel_imass::update(double a, double b) {
 }
 
 
-IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "dimassdt", time_dimension_name);
@@ -1237,8 +1237,8 @@ PetscErrorCode IceModel_dimassdt::update(double a, double b) {
 }
 
 
-IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivoltemp", time_dimension_name);
@@ -1261,8 +1261,8 @@ PetscErrorCode IceModel_ivoltemp::update(double a, double b) {
 }
 
 
-IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolcold", time_dimension_name);
@@ -1284,8 +1284,8 @@ PetscErrorCode IceModel_ivolcold::update(double a, double b) {
   return 0;
 }
 
-IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareatemp", time_dimension_name);
@@ -1307,8 +1307,8 @@ PetscErrorCode IceModel_iareatemp::update(double a, double b) {
   return 0;
 }
 
-IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareacold", time_dimension_name);
@@ -1330,8 +1330,8 @@ PetscErrorCode IceModel_iareacold::update(double a, double b) {
   return 0;
 }
 
-IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ienthalpy", time_dimension_name);
@@ -1353,8 +1353,8 @@ PetscErrorCode IceModel_ienthalpy::update(double a, double b) {
   return 0;
 }
 
-IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareag", time_dimension_name);
@@ -1375,8 +1375,8 @@ PetscErrorCode IceModel_iareag::update(double a, double b) {
   return 0;
 }
 
-IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareaf", time_dimension_name);
@@ -1397,8 +1397,8 @@ PetscErrorCode IceModel_iareaf::update(double a, double b) {
   return 0;
 }
 
-IceModel_dt::IceModel_dt(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_dt::IceModel_dt(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "dt", time_dimension_name);
@@ -1416,8 +1416,8 @@ PetscErrorCode IceModel_dt::update(double a, double b) {
   return 0;
 }
 
-IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "max_diffusivity", time_dimension_name);
@@ -1438,8 +1438,8 @@ PetscErrorCode IceModel_max_diffusivity::update(double a, double b) {
   return 0;
 }
 
-IceModel_surface_flux::IceModel_surface_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_surface_flux::IceModel_surface_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "surface_ice_flux", time_dimension_name);
@@ -1461,8 +1461,8 @@ PetscErrorCode IceModel_surface_flux::update(double a, double b) {
   return 0;
 }
 
-IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "surface_ice_flux_cumulative", time_dimension_name);
@@ -1483,8 +1483,8 @@ PetscErrorCode IceModel_surface_flux_cumulative::update(double a, double b) {
   return 0;
 }
 
-IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "grounded_basal_ice_flux", time_dimension_name);
@@ -1506,8 +1506,8 @@ PetscErrorCode IceModel_grounded_basal_flux::update(double a, double b) {
   return 0;
 }
 
-IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "grounded_basal_ice_flux_cumulative", time_dimension_name);
@@ -1528,8 +1528,8 @@ PetscErrorCode IceModel_grounded_basal_flux_cumulative::update(double a, double 
   return 0;
 }
 
-IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", time_dimension_name);
@@ -1551,8 +1551,8 @@ PetscErrorCode IceModel_sub_shelf_flux::update(double a, double b) {
   return 0;
 }
 
-IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux_cumulative", time_dimension_name);
@@ -1573,8 +1573,8 @@ PetscErrorCode IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
   return 0;
 }
 
-IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "nonneg_flux", time_dimension_name);
@@ -1596,8 +1596,8 @@ PetscErrorCode IceModel_nonneg_flux::update(double a, double b) {
   return 0;
 }
 
-IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "nonneg_flux_cumulative", time_dimension_name);
@@ -1618,8 +1618,8 @@ PetscErrorCode IceModel_nonneg_flux_cumulative::update(double a, double b) {
   return 0;
 }
 
-IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "discharge_flux", time_dimension_name);
@@ -1639,8 +1639,8 @@ PetscErrorCode IceModel_discharge_flux::update(double a, double b) {
   return 0;
 }
 
-IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "discharge_flux_cumulative", time_dimension_name);
@@ -1659,8 +1659,8 @@ PetscErrorCode IceModel_discharge_flux_cumulative::update(double a, double b) {
   return 0;
 }
 
-IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_dHdt::IceModel_dHdt(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("dHdt", grid);
@@ -1736,8 +1736,8 @@ PetscErrorCode IceModel_dHdt::update_cumulative() {
   return 0;
 }
 
-IceModel_ivolg::IceModel_ivolg(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivolg::IceModel_ivolg(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolg", time_dimension_name);
@@ -1766,15 +1766,15 @@ PetscErrorCode IceModel_ivolg::update(double a, double b) {
   ierr = model->vMask.end_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
   return 0;
 }
 
-IceModel_ivolf::IceModel_ivolf(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_ivolf::IceModel_ivolf(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolf", time_dimension_name);
@@ -1803,7 +1803,7 @@ PetscErrorCode IceModel_ivolf::update(double a, double b) {
   ierr = model->vMask.end_access(); CHKERRQ(ierr);
   ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1821,8 +1821,8 @@ PetscErrorCode IceModel_ivolf::update(double a, double b) {
  * reporting time. (It is not the "average over the reporting interval computed using
  * differencing in time", as other rate-of-change diagnostics.)
  */
-IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "max_hor_vel", time_dimension_name);
@@ -1842,8 +1842,8 @@ PetscErrorCode IceModel_max_hor_vel::update(double a, double b) {
   return 0;
 }
 
-IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "H_to_Href_flux", time_dimension_name);
 
@@ -1862,8 +1862,8 @@ PetscErrorCode IceModel_H_to_Href_flux::update(double a, double b) {
 }
 
 
-IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "Href_to_H_flux", time_dimension_name);
 
@@ -1883,8 +1883,8 @@ PetscErrorCode IceModel_Href_to_H_flux::update(double a, double b) {
 
 
 
-IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMTSDiag<IceModel>(m, g, my_vars) {
+IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, Vars &my_vars)
+  : TSDiag<IceModel>(m, g, my_vars) {
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sum_divQ_flux", time_dimension_name);
 
@@ -1904,8 +1904,8 @@ PetscErrorCode IceModel_sum_divQ_flux::update(double a, double b) {
 }
 
 
-IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_nonneg_flux_2D_cumulative::IceModel_nonneg_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("nonneg_flux_cumulative", grid);
@@ -1929,8 +1929,8 @@ PetscErrorCode IceModel_nonneg_flux_2D_cumulative::compute(IceModelVec* &output)
   return 0;
 }
 
-IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_grounded_basal_flux_2D_cumulative::IceModel_grounded_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("grounded_basal_flux_cumulative", grid);
@@ -1954,8 +1954,8 @@ PetscErrorCode IceModel_grounded_basal_flux_2D_cumulative::compute(IceModelVec* 
   return 0;
 }
 
-IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_floating_basal_flux_2D_cumulative::IceModel_floating_basal_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("floating_basal_flux_cumulative", grid);
@@ -1980,8 +1980,8 @@ PetscErrorCode IceModel_floating_basal_flux_2D_cumulative::compute(IceModelVec* 
 }
 
 
-IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
+IceModel_discharge_flux_2D_cumulative::IceModel_discharge_flux_2D_cumulative(IceModel *m, IceGrid &g, Vars &my_vars)
+  : Diag<IceModel>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("discharge_flux_cumulative", grid);
@@ -2006,9 +2006,9 @@ PetscErrorCode IceModel_discharge_flux_2D_cumulative::compute(IceModelVec* &outp
 }
 
 #if (PISM_USE_PROJ4==1)
-IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, PISMVars &my_vars,
+IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &my_vars,
                                                  std::string var_name, std::string proj_string)
-  :PISMDiag<IceModel>(m, g, my_vars) {
+  :Diag<IceModel>(m, g, my_vars) {
   assert(var_name == "lat" || var_name == "lon");
   m_var_name = var_name;
 

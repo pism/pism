@@ -29,19 +29,19 @@ namespace pism {
  * Scalar melange back-pressure fraction forcing.
  * 
  */
-class PO_delta_MBP : public PScalarForcing<PISMOceanModel,POModifier>
+class PO_delta_MBP : public PScalarForcing<OceanModel,POModifier>
 {
 public:
-  PO_delta_MBP(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in);
+  PO_delta_MBP(IceGrid &g, const Config &conf, OceanModel* in);
   virtual ~PO_delta_MBP();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:

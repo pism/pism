@@ -22,7 +22,7 @@
 
 namespace pism {
 
-PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
+PetscErrorCode ConstantYieldStress::init(Vars &/*vars*/) {
   PetscErrorCode ierr;
   bool i_set, bootstrap, tauc_set;
   double constant_tauc = config.get("default_tauc");
@@ -31,12 +31,12 @@ PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
 
   ierr = verbPrintf(2, grid.com, "* Initializing the constant basal yield stress model...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "PISMConstantYieldStress options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "ConstantYieldStress options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+    ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-tauc", "set basal yield stress to a constant (units of Pa)",
+    ierr = OptionsReal("-tauc", "set basal yield stress to a constant (units of Pa)",
                            constant_tauc, tauc_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -57,19 +57,19 @@ PetscErrorCode PISMConstantYieldStress::init(PISMVars &/*vars*/) {
     ierr = tauc.set(config.get("default_tauc")); CHKERRQ(ierr);
   }
 
-  ierr = regrid("PISMConstantYieldStress", &tauc); CHKERRQ(ierr);
+  ierr = regrid("ConstantYieldStress", &tauc); CHKERRQ(ierr);
 
   return 0;
 }
 
 
-void PISMConstantYieldStress::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void ConstantYieldStress::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("tauc");
 }
 
 
-PetscErrorCode PISMConstantYieldStress::define_variables(std::set<std::string> vars, const PIO &nc,
-                                                         PISM_IO_Type nctype) {
+PetscErrorCode ConstantYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                                         IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.define(nc, nctype); CHKERRQ(ierr);
   }
@@ -77,7 +77,7 @@ PetscErrorCode PISMConstantYieldStress::define_variables(std::set<std::string> v
 }
 
 
-PetscErrorCode PISMConstantYieldStress::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode ConstantYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tauc")) {
     PetscErrorCode ierr = tauc.write(nc); CHKERRQ(ierr);
   }
@@ -85,18 +85,18 @@ PetscErrorCode PISMConstantYieldStress::write_variables(std::set<std::string> va
 }
 
 
-PetscErrorCode PISMConstantYieldStress::update(double my_t, double my_dt) {
+PetscErrorCode ConstantYieldStress::update(double my_t, double my_dt) {
   m_t = my_t; m_dt = my_dt;
   return 0;
 }
 
 
-PetscErrorCode PISMConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
+PetscErrorCode ConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
   PetscErrorCode ierr = tauc.copy_to(result); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PISMConstantYieldStress::allocate() {
+PetscErrorCode ConstantYieldStress::allocate() {
   PetscErrorCode ierr;
 
   ierr = tauc.create(grid, "tauc", WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);

@@ -25,15 +25,15 @@
 namespace pism {
 
 ///// Elevation-dependent temperature and surface mass balance.
-PSElevation::PSElevation(IceGrid &g, const PISMConfig &conf)
-  : PISMSurfaceModel(g, conf),
+PSElevation::PSElevation(IceGrid &g, const Config &conf)
+  : SurfaceModel(g, conf),
     climatic_mass_balance(g.get_unit_system()),
     ice_surface_temp(g.get_unit_system())
 {
   // empty
 }
 
-PetscErrorCode PSElevation::init(PISMVars &vars) {
+PetscErrorCode PSElevation::init(Vars &vars) {
   PetscErrorCode ierr;
   PetscBool T_is_set, m_is_set, m_limits_set;
 
@@ -161,13 +161,13 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   return 0;
 }
 
-void PSElevation::attach_atmosphere_model(PISMAtmosphereModel *input)
+void PSElevation::attach_atmosphere_model(AtmosphereModel *input)
 {
   delete input;
 }
 
-void PSElevation::get_diagnostics(std::map<std::string, PISMDiagnostic*> &/*dict*/,
-                                  std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void PSElevation::get_diagnostics(std::map<std::string, Diagnostic*> &/*dict*/,
+                                  std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // empty
 }
 
@@ -249,17 +249,17 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSElevation::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PSElevation::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");
     result.insert("climatic_mass_balance");
   }
 }
 
-PetscErrorCode PSElevation::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSElevation::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
-  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "ice_surface_temp")) {
     ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
@@ -272,7 +272,7 @@ PetscErrorCode PSElevation::define_variables(std::set<std::string> vars, const P
   return 0;
 }
 
-PetscErrorCode PSElevation::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSElevation::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

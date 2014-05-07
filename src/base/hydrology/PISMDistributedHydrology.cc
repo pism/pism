@@ -25,26 +25,26 @@
 
 namespace pism {
 
-PISMDistributedHydrology::PISMDistributedHydrology(IceGrid &g, const PISMConfig &conf,
-                                                   PISMStressBalance *sb)
-    : PISMRoutingHydrology(g, conf)
+DistributedHydrology::DistributedHydrology(IceGrid &g, const Config &conf,
+                                                   StressBalance *sb)
+    : RoutingHydrology(g, conf)
 {
     stressbalance = sb;
     if (allocate_pressure() != 0) {
       PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in PISMDistributedHydrology constructor (pressure).\n");
+        "PISM ERROR: memory allocation failed in DistributedHydrology constructor (pressure).\n");
       PISMEnd();
     }
 }
 
-PISMDistributedHydrology::~PISMDistributedHydrology() {
+DistributedHydrology::~DistributedHydrology() {
   // empty
 }
 
-PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
+PetscErrorCode DistributedHydrology::allocate_pressure() {
   PetscErrorCode ierr;
 
-  // additional variables beyond PISMRoutingHydrology::allocate()
+  // additional variables beyond RoutingHydrology::allocate()
   ierr = P.create(grid, "bwp", WITH_GHOSTS, 1); CHKERRQ(ierr);
   ierr = P.set_attrs("model_state",
                      "pressure of transportable water in subglacial layer",
@@ -68,7 +68,7 @@ PetscErrorCode PISMDistributedHydrology::allocate_pressure() {
 }
 
 
-PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
+PetscErrorCode DistributedHydrology::init(Vars &vars) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
     "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
@@ -78,27 +78,27 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-report_mass_accounting",
+    ierr = OptionsIsSet("-report_mass_accounting",
       "Report to stdout on mass accounting in hydrology models",
                             report_mass_accounting); CHKERRQ(ierr);
 
     stripwidth = grid.convert(stripwidth, "m", "km");
-    ierr = PISMOptionsReal("-hydrology_null_strip",
+    ierr = OptionsReal("-hydrology_null_strip",
                            "set the width, in km, of the strip around the edge "
                            "of the computational domain in which hydrology is inactivated",
                            stripwidth, strip_set); CHKERRQ(ierr);
     if (strip_set == true) {
       stripwidth = grid.convert(stripwidth, "km", "m");
     }
-    ierr = PISMOptionsIsSet("-init_P_from_steady",
+    ierr = OptionsIsSet("-init_P_from_steady",
                             "initialize P from formula P(W) which applies in steady state",
                             init_P_from_steady); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  ierr = PISMHydrology::init(vars); CHKERRQ(ierr);
+  ierr = Hydrology::init(vars); CHKERRQ(ierr);
 
-  ierr = PISMRoutingHydrology::init_bwat(vars); CHKERRQ(ierr);
+  ierr = RoutingHydrology::init_bwat(vars); CHKERRQ(ierr);
 
   ierr = init_bwp(vars); CHKERRQ(ierr);
 
@@ -113,7 +113,7 @@ PetscErrorCode PISMDistributedHydrology::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
+PetscErrorCode DistributedHydrology::init_bwp(Vars &vars) {
   PetscErrorCode ierr;
 
   // initialize water layer thickness from the context if present,
@@ -122,8 +122,8 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "",
             "Options for initializing bwp in the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_file", "PISM bootstrapping file",
+    ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -161,21 +161,21 @@ PetscErrorCode PISMDistributedHydrology::init_bwp(PISMVars &vars) {
     ierr = P.set(bwp_default); CHKERRQ(ierr);
   }
 
-  ierr = regrid("PISMDistributedHydrology", &P); CHKERRQ(ierr); //  we could be asked to regrid from file
+  ierr = regrid("DistributedHydrology", &P); CHKERRQ(ierr); //  we could be asked to regrid from file
   return 0;
 }
 
 
-void PISMDistributedHydrology::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
-  PISMRoutingHydrology::add_vars_to_output(keyword, result);
+void DistributedHydrology::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+  RoutingHydrology::add_vars_to_output(keyword, result);
   result.insert("bwp");
 }
 
 
-PetscErrorCode PISMDistributedHydrology::define_variables(std::set<std::string> vars, const PIO &nc,
-                                                 PISM_IO_Type nctype) {
+PetscErrorCode DistributedHydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                                 IO_Type nctype) {
   PetscErrorCode ierr;
-  ierr = PISMRoutingHydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = RoutingHydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
   if (set_contains(vars, "bwp")) {
     ierr = P.define(nc, nctype); CHKERRQ(ierr);
   }
@@ -183,9 +183,9 @@ PetscErrorCode PISMDistributedHydrology::define_variables(std::set<std::string> 
 }
 
 
-PetscErrorCode PISMDistributedHydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode DistributedHydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
-  ierr = PISMRoutingHydrology::write_variables(vars, nc); CHKERRQ(ierr);
+  ierr = RoutingHydrology::write_variables(vars, nc); CHKERRQ(ierr);
   if (set_contains(vars, "bwp")) {
     ierr = P.write(nc); CHKERRQ(ierr);
   }
@@ -193,20 +193,20 @@ PetscErrorCode PISMDistributedHydrology::write_variables(std::set<std::string> v
 }
 
 
-void PISMDistributedHydrology::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                                               std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   // bwat is state
   // bwp is state
-  dict["bwprel"] = new PISMHydrology_bwprel(this, grid, *variables);
-  dict["effbwp"] = new PISMHydrology_effbwp(this, grid, *variables);
-  dict["hydroinput"] = new PISMHydrology_hydroinput(this, grid, *variables);
-  dict["wallmelt"] = new PISMHydrology_wallmelt(this, grid, *variables);
-  dict["bwatvel"] = new PISMRoutingHydrology_bwatvel(this, grid, *variables);
+  dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
+  dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
+  dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
+  dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
+  dict["bwatvel"] = new RoutingHydrology_bwatvel(this, grid, *variables);
 }
 
 
 //! Copies the P state variable which is the modeled water pressure.
-PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+PetscErrorCode DistributedHydrology::subglacial_water_pressure(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = P.copy_to(result); CHKERRQ(ierr);
   return 0;
@@ -217,7 +217,7 @@ PetscErrorCode PISMDistributedHydrology::subglacial_water_pressure(IceModelVec2S
 /*!
 The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
  */
-PetscErrorCode PISMDistributedHydrology::check_P_bounds(bool enforce_upper) {
+PetscErrorCode DistributedHydrology::check_P_bounds(bool enforce_upper) {
   PetscErrorCode ierr;
 
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
@@ -259,7 +259,7 @@ This will be used in initialization when P is otherwise unknown, and
 in verification and/or reporting.  It is not used during time-dependent
 model runs.  To be more complete, \f$P=P(W,P_o,|v_b|)\f$.
  */
-PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
+PetscErrorCode DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
   double CC = config.get("hydrology_cavitation_opening_coefficient") /
                     (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
@@ -301,10 +301,10 @@ PetscErrorCode PISMDistributedHydrology::P_from_W_steady(IceModelVec2S &result) 
 
 //! Update the the sliding speed |v_b| from ice quantities.
 /*!
-Calls a PISMStressBalance method to get the vector basal velocity of the ice,
+Calls a StressBalance method to get the vector basal velocity of the ice,
 and then computes the magnitude of that.
  */
-PetscErrorCode PISMDistributedHydrology::update_velbase_mag(IceModelVec2S &result_velbase_mag) {
+PetscErrorCode DistributedHydrology::update_velbase_mag(IceModelVec2S &result_velbase_mag) {
   PetscErrorCode ierr;
   IceModelVec2V* Ubase; // ice sliding velocity
   // velbase_mag = |v_b|
@@ -315,7 +315,7 @@ PetscErrorCode PISMDistributedHydrology::update_velbase_mag(IceModelVec2S &resul
 
 
 //! Computes the adaptive time step for this (W,P) state space model.
-PetscErrorCode PISMDistributedHydrology::adaptive_for_WandP_evolution(
+PetscErrorCode DistributedHydrology::adaptive_for_WandP_evolution(
                   double t_current, double t_end, double maxKW,
                   double &dt_result,
                   double &maxV_result, double &maxD_result,
@@ -355,7 +355,7 @@ Runs the hydrology model from time icet to time icet + icedt.  Here [icet,icedt]
 is generally on the order of months to years.  This hydrology model will take its
 own shorter time steps, perhaps hours to weeks.
  */
-PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
+PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
   PetscErrorCode ierr;
 
   // if asked for the identical time interval versus last time, then
@@ -363,7 +363,7 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
   //   interval on which we are solving
   if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12))
     return 0;
-  // update PISMComponent times: t = current time, t+dt = target time
+  // update Component times: t = current time, t+dt = target time
   m_t = icet;
   m_dt = icedt;
 
@@ -480,13 +480,13 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
                            Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
                            Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
                            Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
-          diffW =   wux * (  De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)) )
-                  + wuy * (  Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)) );
+          diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
+                  + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
           divflux = - divadflux + diffW;
 
           // pressure update equation
           ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
-          Pnew(i,j) = P(i,j) + CC * ( divflux + ZZ );
+          Pnew(i,j) = P(i,j) + CC * (divflux + ZZ);
           // projection to enforce  0 <= P <= P_o
           Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
         }
@@ -505,7 +505,7 @@ PetscErrorCode PISMDistributedHydrology::update(double icet, double icedt) {
     ierr = Qstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
-    // FIXME: following chunk is code duplication with PISMRoutingHydrology::update()
+    // FIXME: following chunk is code duplication with RoutingHydrology::update()
 
     // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);

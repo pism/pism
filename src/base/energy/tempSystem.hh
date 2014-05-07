@@ -23,6 +23,7 @@
 
 #include "columnSystem.hh"
 #include "pism_const.hh"
+#include "Mask.hh"
 
 namespace pism {
 
@@ -52,10 +53,9 @@ class IceModelVec3;
 class tempSystemCtx : public columnSystemCtx {
 
 public:
-  tempSystemCtx(int my_Mz, std::string my_prefix);
+  tempSystemCtx(int my_Mz, const std::string &my_prefix);
   PetscErrorCode initAllColumns();
-  PetscErrorCode setSchemeParamsThisColumn(
-                                           PismMask my_mask, bool my_isMarginal, double my_lambda);  
+  PetscErrorCode setSchemeParamsThisColumn(MaskValue my_mask, bool my_isMarginal, double my_lambda);  
   PetscErrorCode setSurfaceBoundaryValuesThisColumn(double my_Ts);
   PetscErrorCode setBasalBoundaryValuesThisColumn(
                                                   double my_G0, double my_Tshelfbase, double my_Rb);
@@ -82,7 +82,7 @@ public:
 protected: // used internally
   int    Mz;
   double lambda, Ts, G0, Tshelfbase, Rb;
-  PismMask    mask;
+  MaskValue    mask;
   bool        isMarginal;
   double nuEQ,
     rho_c_I,

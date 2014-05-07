@@ -104,7 +104,7 @@ if smbpos==0:
   sys.exit(1)
 else:
   print "  input flux > 0 at %d cells ..." % smbpos
-smb = (flux / (rho * smbpos * dx**2) ) * smb
+smb = (flux / (rho * smbpos * dx**2)) * smb
 # convert to [kg m-2 s-1]
 smb = smb * rho
 

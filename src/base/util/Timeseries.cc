@@ -29,7 +29,7 @@
 
 namespace pism {
 
-Timeseries::Timeseries(IceGrid *g, std::string name, std::string dimension_name)
+Timeseries::Timeseries(IceGrid *g, const std::string &name, const std::string &dimension_name)
   : m_unit_system(g->get_unit_system()),
     dimension(dimension_name, dimension_name, m_unit_system),
     var(name, dimension_name, m_unit_system),
@@ -38,8 +38,8 @@ Timeseries::Timeseries(IceGrid *g, std::string name, std::string dimension_name)
   private_constructor(g->com, name, dimension_name);
 }
 
-Timeseries::Timeseries(MPI_Comm c, PISMUnitSystem unit_system,
-                       std::string name, std::string dimension_name)
+Timeseries::Timeseries(MPI_Comm c, const UnitSystem &unit_system,
+                       const std::string & name, const std::string & dimension_name)
   : m_unit_system(unit_system),
     dimension(dimension_name, dimension_name, m_unit_system),
     var(name, dimension_name, m_unit_system),
@@ -48,7 +48,7 @@ Timeseries::Timeseries(MPI_Comm c, PISMUnitSystem unit_system,
   private_constructor(c, name, dimension_name);
 }
 
-void Timeseries::private_constructor(MPI_Comm c, std::string name, std::string dimension_name) {
+void Timeseries::private_constructor(MPI_Comm c, const std::string &name, const std::string &dimension_name) {
   com = c;
   dimension.set_string("bounds", dimension_name + "_bounds");
 
@@ -58,7 +58,7 @@ void Timeseries::private_constructor(MPI_Comm c, std::string name, std::string d
 
 
 //! Read timeseries data from a NetCDF file `filename`.
-PetscErrorCode Timeseries::read(const PIO &nc, PISMTime *time_manager) {
+PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
   PetscErrorCode ierr;
 
   bool exists, found_by_standard_name;
@@ -294,7 +294,7 @@ PetscErrorCode Timeseries::append(double v, double a, double b) {
 
 
 //! Set the internal units for the values of a time-series.
-PetscErrorCode Timeseries::set_units(std::string units, std::string glaciological_units) {
+PetscErrorCode Timeseries::set_units(const std::string &units, const std::string &glaciological_units) {
   if (!units.empty())
     var.set_units(units);
   if (!glaciological_units.empty())
@@ -303,7 +303,7 @@ PetscErrorCode Timeseries::set_units(std::string units, std::string glaciologica
 }
 
 //! Set the internal units for the dimension variable of a time-series.
-PetscErrorCode Timeseries::set_dimension_units(std::string units, std::string glaciological_units) {
+PetscErrorCode Timeseries::set_dimension_units(const std::string &units, const std::string &glaciological_units) {
   if (!units.empty()) {
     dimension.set_units(units);
     bounds.set_units(units);
@@ -316,18 +316,18 @@ PetscErrorCode Timeseries::set_dimension_units(std::string units, std::string gl
 }
 
 //! Set a string attribute.
-PetscErrorCode Timeseries::set_attr(std::string name, std::string value) {
+PetscErrorCode Timeseries::set_attr(const std::string &name, const std::string &value) {
   var.set_string(name, value);
   return 0;
 }
 
 //! Get a string attribute.
-std::string Timeseries::get_string(std::string name) {
+std::string Timeseries::get_string(const std::string &name) {
   return var.get_string(name);
 }
 
 //! Set a single-valued scalar attribute.
-PetscErrorCode Timeseries::set_attr(std::string name, double value) {
+PetscErrorCode Timeseries::set_attr(const std::string & name, double value) {
   var.set_double(name, value);
   return 0;
 }
@@ -343,7 +343,7 @@ int Timeseries::length() {
 
 //----- DiagnosticTimeseries
 
-DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, std::string name, std::string dimension_name)
+DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, const std::string &name, const std::string &dimension_name)
   : Timeseries(g, name, dimension_name) {
 
   buffer_size = (size_t)g->config.get("timeseries_buffer_size");
@@ -434,7 +434,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
 
   return 0;
 }
-PetscErrorCode DiagnosticTimeseries::init(std::string filename) {
+PetscErrorCode DiagnosticTimeseries::init(const std::string &filename) {
   PetscErrorCode ierr;
   PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;

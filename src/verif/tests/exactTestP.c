@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2012-2013 Ed Bueler
+   Copyright (C) 2012-2014 Ed Bueler
 
    This file is part of PISM.
 
@@ -54,7 +54,7 @@ int getsb(double r, double *sb, double *dsbdr) {
     *sb    = 0.0;
     *dsbdr = 0.0;
   } else {
-    CC     = pow( (c1 * v0) / (c2 * Aglen * pow((TESTP_L - R1),5.0)) , (1.0/3.0) );
+    CC     = pow((c1 * v0) / (c2 * Aglen * pow((TESTP_L - R1),5.0)) , (1.0/3.0));
     *sb    = CC * pow(r - R1, (5.0/3.0));
     *dsbdr = (5.0/3.0) * CC * pow(r - R1, (2.0/3.0));
   }
@@ -98,7 +98,7 @@ int funcP(double r, const double W[], double f[], void *params) {
     dPo   = - (2.0 * rhoi * g * h0 / (TESTP_R0*TESTP_R0)) * r;
     tmp1  = pow(W[0],4.0/3.0) * pow(Wr - W[0],2.0/3.0);
     numer = dsb * W[0] * (Wr - W[0]);
-    numer = numer - ( omega0 * r / W[0] + dPo ) * tmp1;
+    numer = numer - (omega0 * r / W[0] + dPo) * tmp1;
     denom = (1.0/3.0) * sb * Wr + rhow * g * tmp1;
     f[0] = numer / denom;
     return GSL_SUCCESS;
@@ -111,7 +111,7 @@ double initialconditionW() {
   double hL, PoL, sbL;
   hL  = h0 * (1.0 - (TESTP_L/TESTP_R0) * (TESTP_L/TESTP_R0));
   PoL = rhoi * g * hL;
-  sbL = pow( c1 * v0 / (c2 * Aglen), 1.0/3.0);
+  sbL = pow(c1 * v0 / (c2 * Aglen), 1.0/3.0);
   return (pow(sbL,3.0) / (pow(sbL,3.0) + pow(PoL,3.0))) * Wr;
 }
 

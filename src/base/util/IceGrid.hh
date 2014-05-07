@@ -27,9 +27,9 @@
 
 namespace pism {
 
-class PISMTime;
-class PISMProf;
-class PISMConfig;
+class Time;
+class Prof;
+class Config;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -102,13 +102,13 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
 */
 class IceGrid {
 public:
-  IceGrid(MPI_Comm c, const PISMConfig &config);
+  IceGrid(MPI_Comm c, const Config &config);
   ~IceGrid();
 
   PetscErrorCode report_parameters();
 
   PetscErrorCode allocate();  // destructor checks if DA was created, and destroys
-  PetscErrorCode set_vertical_levels(std::vector<double> z_levels);
+  PetscErrorCode set_vertical_levels(const std::vector<double> &z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
   void compute_point_neighbors(double x, double y,
@@ -123,13 +123,13 @@ public:
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
   unsigned int kBelowHeight(double height);
-  PetscErrorCode create_viewer(int viewer_size, std::string title, PetscViewer &viewer);
+  PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
   double      radius(int i, int j);
   PetscErrorCode get_dm(int dm_dof, int stencil_width, DM &result);
   double convert(double, const char*, const char*) const;
-  PISMUnitSystem get_unit_system() const;
+  UnitSystem get_unit_system() const;
 
-  const PISMConfig &config;
+  const Config &config;
   MPI_Comm    com;
   int rank, size;
   int    xs,               //!< starting x-index of a processor sub-domain
@@ -185,7 +185,7 @@ public:
   unsigned int max_stencil_width;
   //!< maximum stencil width supported by the DA in this IceGrid object
 
-  PISMTime *time;               //!< The time management object (hides calendar computations)
+  Time *time;               //!< The time management object (hides calendar computations)
 
   //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
   //! meters around the edge of the computational domain.
@@ -199,7 +199,7 @@ public:
 protected:
   std::map<int,DM> dms;
   double lambda;         //!< quadratic vertical spacing parameter
-  PISMUnitSystem m_unit_system;
+  UnitSystem m_unit_system;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_horizontal_coordinates();

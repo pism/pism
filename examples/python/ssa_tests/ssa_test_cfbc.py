@@ -99,7 +99,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
       for (i,j) in grid.points():
         x = grid.x[i]
         if x <= 0:
-          thickness[i,j] = H_exact( x + self.grid.Lx )
+          thickness[i,j] = H_exact(x + self.grid.Lx)
           ice_mask[i,j]  = PISM.MASK_FLOATING
         else:
           thickness[i,j] = 0

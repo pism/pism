@@ -16,29 +16,29 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNC4_Serial_H_
-#define _PISMNC4_Serial_H_
+#ifndef _NC4_Serial_H_
+#define _NC4_Serial_H_
 
 #include "PISMNC4File.hh"
 
 namespace pism {
 
-class PISMNC4_Serial : public PISMNC4File
+class NC4_Serial : public NC4File
 {
 public:
-  PISMNC4_Serial(MPI_Comm c, unsigned int compression_level)
-    : PISMNC4File(c, compression_level) {}
-  virtual ~PISMNC4_Serial() {}
+  NC4_Serial(MPI_Comm c, unsigned int compression_level)
+    : NC4File(c, compression_level) {}
+  virtual ~NC4_Serial() {}
 
   // open/create/close
-  virtual int open(std::string filename, PISM_IO_Mode mode);
+  virtual int open(const std::string &filename, IO_Mode mode);
 
-  virtual int create(std::string filename);
+  virtual int create(const std::string &filename);
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const;
+  virtual int integer_open_mode(IO_Mode input) const;
 };
 
 
 } // end of namespace pism
 
-#endif /* _PISMNC4_Serial_H_ */
+#endif /* _NC4_Serial_H_ */

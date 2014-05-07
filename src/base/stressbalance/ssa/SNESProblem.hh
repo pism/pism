@@ -21,7 +21,7 @@
 #define _SNESPROBLEM_H_
 
 #include "IceGrid.hh"           // inline implementation in the header uses IceGrid
-#include "iceModelVec.hh"       // to get PISMVector2
+#include "iceModelVec.hh"       // to get Vector2
 
 namespace pism {
 
@@ -76,7 +76,7 @@ private:
 };
 
 typedef SNESProblem<1,double> SNESScalarProblem;
-typedef SNESProblem<2,PISMVector2> SNESVectorProblem;
+typedef SNESProblem<2,Vector2> SNESVectorProblem;
 
 
 
@@ -136,18 +136,18 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 
   ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
 
-  ierr = SNESCreate(m_grid.com, &m_snes);CHKERRQ(ierr);
+  ierr = SNESCreate(m_grid.com, &m_snes); CHKERRQ(ierr);
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
   m_callbackData.da = m_DA;
   m_callbackData.solver = this;
 #if PETSC_VERSION_LT(3,4,0)  
-  ierr = DMDASetLocalFunction(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalFunction);CHKERRQ(ierr);
-  ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
+  ierr = DMDASetLocalFunction(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalFunction); CHKERRQ(ierr);
+  ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian); CHKERRQ(ierr);
 #else
-  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES, (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,&m_callbackData);CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,&m_callbackData);CHKERRQ(ierr);
+  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES, (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,&m_callbackData); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,&m_callbackData); CHKERRQ(ierr);
 #endif
 
   ierr = DMSetMatType(m_DA, "baij"); CHKERRQ(ierr);
@@ -155,7 +155,7 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 
   ierr = SNESSetDM(m_snes, m_DA); CHKERRQ(ierr);
 
-  ierr = SNESSetFromOptions(m_snes);CHKERRQ(ierr);
+  ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
 
   return 0;
 }
@@ -165,7 +165,7 @@ template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::finalize() {
   PetscErrorCode ierr;
 
-  ierr = SNESDestroy(&m_snes);CHKERRQ(ierr);
+  ierr = SNESDestroy(&m_snes); CHKERRQ(ierr);
   ierr = VecDestroy(&m_X); CHKERRQ(ierr);
 
   return 0;
@@ -183,12 +183,12 @@ PetscErrorCode SNESProblem<DOF,U>::solve()
   PetscErrorCode ierr;
 
   // Solve:
-  ierr = SNESSolve(m_snes,NULL,m_X);CHKERRQ(ierr);
+  ierr = SNESSolve(m_snes,NULL,m_X); CHKERRQ(ierr);
 
   // See if it worked.
   SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason( m_snes, &reason); CHKERRQ(ierr);
-  if(reason < 0)
+  ierr = SNESGetConvergedReason(m_snes, &reason); CHKERRQ(ierr);
+  if (reason < 0)
     {
       SETERRQ2(m_grid.com, 1,
                "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name(), SNESConvergedReasons[reason]);

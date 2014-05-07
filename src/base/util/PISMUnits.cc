@@ -36,7 +36,7 @@ public:
 /** Initialize the unit system by reading from an XML unit
  * definition file.
  */
-PISMUnitSystem::PISMUnitSystem(const char *path) {
+UnitSystem::UnitSystem(const char *path) {
   ut_system *tmp;
   ut_set_error_message_handler(ut_ignore);
   tmp = ut_read_xml(path);
@@ -46,10 +46,10 @@ PISMUnitSystem::PISMUnitSystem(const char *path) {
   }
   ut_set_error_message_handler(ut_write_to_stderr);
 
-  m_system = PISMUnitSystem::Ptr(tmp, ut_system_deleter());
+  m_system = UnitSystem::Ptr(tmp, ut_system_deleter());
 }
 
-PISMUnitSystem::Ptr PISMUnitSystem::get() const {
+UnitSystem::Ptr UnitSystem::get() const {
   return m_system;
 }
 
@@ -59,19 +59,19 @@ PISMUnitSystem::Ptr PISMUnitSystem::get() const {
  *
  * Please avoid using in computationally-intensive code.
  */
-double PISMUnitSystem::convert(double input, std::string spec1, std::string spec2) const {
-  PISMUnit unit1(*this), unit2(*this);
+double UnitSystem::convert(double input, const std::string &spec1, const std::string &spec2) const {
+  Unit unit1(*this), unit2(*this);
 
   if (unit1.parse(spec1) != 0) {
 #if (PISM_DEBUG==1)
-    fprintf(stderr, "PISMUnitSystem::convert() failed trying to parse %s\n", spec1.c_str());
+    fprintf(stderr, "UnitSystem::convert() failed trying to parse %s\n", spec1.c_str());
 #endif
     return GSL_NAN;
   }
 
   if (unit2.parse(spec2) != 0) {
 #if (PISM_DEBUG==1)
-    fprintf(stderr, "PISMUnitSystem::convert() failed trying to parse %s\n", spec2.c_str());
+    fprintf(stderr, "UnitSystem::convert() failed trying to parse %s\n", spec2.c_str());
 #endif
     return GSL_NAN;
   }
@@ -79,7 +79,7 @@ double PISMUnitSystem::convert(double input, std::string spec1, std::string spec
   cv_converter *c = unit2.get_converter_from(unit1);
   if (c == NULL) {
 #if (PISM_DEBUG==1)
-    fprintf(stderr, "PISMUnitSystem::convert() failed trying to convert %s to %s\n",
+    fprintf(stderr, "UnitSystem::convert() failed trying to convert %s to %s\n",
             spec1.c_str(), spec2.c_str());
 #endif
     return GSL_NAN;
@@ -91,12 +91,12 @@ double PISMUnitSystem::convert(double input, std::string spec1, std::string spec
   return result;
 }
 
-PISMUnit::PISMUnit(PISMUnitSystem system)
+Unit::Unit(const UnitSystem &system)
   : m_unit(NULL), m_system(system) {
   this->parse("1");
 }
 
-PISMUnit::PISMUnit(const PISMUnit &other)
+Unit::Unit(const Unit &other)
   : m_system(other.m_system) {
   if (other.m_unit == NULL)
     m_unit = NULL;
@@ -107,7 +107,7 @@ PISMUnit::PISMUnit(const PISMUnit &other)
   m_unit_string = other.m_unit_string;
 }
 
-PISMUnit& PISMUnit::operator=(const PISMUnit& other) {
+Unit& Unit::operator=(const Unit& other) {
   if (this == &other)
     return *this;
 
@@ -124,11 +124,11 @@ PISMUnit& PISMUnit::operator=(const PISMUnit& other) {
   return *this;
 }
 
-PISMUnit::~PISMUnit() {
+Unit::~Unit() {
   reset();
 }
 
-int PISMUnit::parse(std::string spec) {
+int Unit::parse(const std::string &spec) {
   reset();
   m_unit = ut_parse(m_system.get().get(), spec.c_str(), UT_ASCII);
   m_unit_string = spec;
@@ -138,34 +138,34 @@ int PISMUnit::parse(std::string spec) {
     return 0;
 }
 
-cv_converter* PISMUnit::get_converter_from(PISMUnit from) const {
+cv_converter* Unit::get_converter_from(const Unit &from) const {
   return ut_get_converter(from.get(), this->get());
 }
 
 
-std::string PISMUnit::format() const {
+std::string Unit::format() const {
   return m_unit_string;
 }
 
-void PISMUnit::reset() {
+void Unit::reset() {
   ut_free(m_unit);
   m_unit = NULL;
 }
 
-ut_unit* PISMUnit::get() const {
+ut_unit* Unit::get() const {
   return m_unit;
 }
 
-PISMUnitSystem PISMUnit::get_system() const {
+UnitSystem Unit::get_system() const {
   return m_system;
 }
 
-bool units_are_convertible(PISMUnit from, PISMUnit to) {
+bool units_are_convertible(Unit from, Unit to) {
   return ut_are_convertible(from.get(), to.get()) != 0;
 }
 
 //! Check if provided units are convertible and terminate PISM if they are not.
-PetscErrorCode units_check(std::string name, PISMUnit from, PISMUnit to) {
+PetscErrorCode units_check(std::string name, Unit from, Unit to) {
 
   if (units_are_convertible(from, to) == false) {              // can't convert
     PetscPrintf(PETSC_COMM_SELF,
@@ -176,11 +176,11 @@ PetscErrorCode units_check(std::string name, PISMUnit from, PISMUnit to) {
   return 0;
 }
 
-bool PISMUnit::is_valid() const {
+bool Unit::is_valid() const {
   return m_unit != NULL;
 }
 
-PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to) {
+PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {
   PetscErrorCode ierr;
 
   int data_size = 0;
@@ -194,7 +194,7 @@ PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to) {
   return 0;
 }
 
-PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMUnit to) {
+PetscErrorCode convert_doubles(double *data, size_t length, Unit from, Unit to) {
   std::string from_name, to_name;
 
   // Get string representations of units:

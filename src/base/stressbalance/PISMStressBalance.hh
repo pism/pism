@@ -19,15 +19,15 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
-#include "PISMComponent.hh"     // derives from PISMComponent
+#include "PISMComponent.hh"     // derives from Component
 #include "iceModelVec.hh"
 
 namespace pism {
 
 class ShallowStressBalance;
 class SSB_Modifier;
-class PISMDiagnostic;
-class PISMOceanModel;
+class Diagnostic;
+class OceanModel;
 
 //! The class defining PISM's interface to the shallow stress balance code.
 /*!
@@ -36,34 +36,34 @@ class PISMOceanModel;
   diagram shows where these results are generally used in the rest of PISM.  (It 
   does not show the call graph, as would doxygen.)
 
-  \image html stressbalance-out.png "\b Methods of PISMStressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the PISMStressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
+  \image html stressbalance-out.png "\b Methods of StressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the StressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
 
   this command fails: \dotfile stressbalance-out.dot
 */
-class PISMStressBalance : public PISMComponent
+class StressBalance : public Component
 {
 public:
-  PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                    const PISMConfig &config);
-  virtual ~PISMStressBalance();
+  StressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
+                    const Config &config);
+  virtual ~StressBalance();
 
-  //! \brief Initialize the PISMStressBalance object.
-  virtual PetscErrorCode init(PISMVars &vars);
+  //! \brief Initialize the StressBalance object.
+  virtual PetscErrorCode init(Vars &vars);
 
   //! \brief Adds more variable names to result (to respect -o_size and
   //! -save_size).
   /*!
     Keyword can be one of "small", "medium" or "big".
   */
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   //! Defines requested fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+                                          IO_Type /*nctype*/);
 
   //! Writes requested fields to a file.
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   //! \brief Set the vertically-averaged ice velocity boundary condition.
   /*!
@@ -114,8 +114,8 @@ public:
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(int old_Mz);
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 
   //! \brief Returns a pointer to a stress balance solver implementation.
   virtual ShallowStressBalance* get_stressbalance()
@@ -130,7 +130,7 @@ protected:
                                                    IceModelVec2S *bmr, IceModelVec3 &result);
   virtual PetscErrorCode compute_volumetric_strain_heating();
 
-  PISMVars *m_variables;
+  Vars *m_variables;
 
   IceModelVec3 m_w, m_strain_heating;
   IceModelVec2S *m_basal_melt_rate;

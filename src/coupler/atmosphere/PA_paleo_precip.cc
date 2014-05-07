@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PA_paleo_precip::PA_paleo_precip(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
+PA_paleo_precip::PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel* in)
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
 {
@@ -64,7 +64,7 @@ PA_paleo_precip::~PA_paleo_precip()
   // empty
 }
 
-PetscErrorCode PA_paleo_precip::init(PISMVars &vars) {
+PetscErrorCode PA_paleo_precip::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -86,14 +86,14 @@ PetscErrorCode PA_paleo_precip::init_timeseries(double *ts, unsigned int N) {
 
   m_scaling_values.resize(N);
   for (unsigned int k = 0; k < N; ++k)
-    m_scaling_values[k] = exp( m_precipexpfactor * (*offset)(m_ts_times[k]));
+    m_scaling_values[k] = exp(m_precipexpfactor * (*offset)(m_ts_times[k]));
 
   return 0;
 }
 
 PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_precipitation(result);
-  ierr = result.scale(exp( m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt) )); CHKERRQ(ierr);
+  ierr = result.scale(exp(m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt))); CHKERRQ(ierr);
   return 0;
 }
 
@@ -106,7 +106,7 @@ PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, double *result)
   return 0;
 }
 
-void PA_paleo_precip::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PA_paleo_precip::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -116,8 +116,9 @@ void PA_paleo_precip::add_vars_to_output(std::string keyword, std::set<std::stri
 }
 
 
-PetscErrorCode PA_paleo_precip::define_variables(std::set<std::string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+PetscErrorCode PA_paleo_precip::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+                                            IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -136,7 +137,8 @@ PetscErrorCode PA_paleo_precip::define_variables(std::set<std::string> vars, con
 }
 
 
-PetscErrorCode PA_paleo_precip::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PA_paleo_precip::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

@@ -25,7 +25,7 @@
 
 namespace pism {
 
-tempSystemCtx::tempSystemCtx(int my_Mz, std::string my_prefix)
+tempSystemCtx::tempSystemCtx(int my_Mz, const std::string &my_prefix)
   : columnSystemCtx(my_Mz, my_prefix), Mz(my_Mz) {
 
   // set flags to indicate nothing yet set
@@ -79,7 +79,7 @@ PetscErrorCode tempSystemCtx::initAllColumns() {
 }
 
 
-PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(PismMask my_mask,
+PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(MaskValue my_mask,
                                                         bool my_isMarginal, double my_lambda) {
   assert(initAllDone == true);
   // allow setting scheme parameters only once:
@@ -134,7 +134,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
     U[0] = 0.0;
     // if floating and no ice then worry only about bedrock temps
     if (M.ocean(mask)) {
-      // essentially no ice but floating ... ask PISMOceanCoupler
+      // essentially no ice but floating ... ask OceanCoupler
       rhs[0] = Tshelfbase;
     } else { // top of bedrock sees atmosphere
       rhs[0] = Ts; 
@@ -146,7 +146,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
       // note L[0] not allocated 
       D[0] = 1.0;
       U[0] = 0.0;
-      rhs[0] = Tshelfbase; // set by PISMOceanCoupler
+      rhs[0] = Tshelfbase; // set by OceanCoupler
     } else { 
       // there is *grounded* ice; from FV across interface
       rhs[0] = T[0] + dtTemp * (Rb / (rho_c_I * dzEQ));

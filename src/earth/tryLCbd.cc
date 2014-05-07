@@ -62,8 +62,8 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
       ierr = VecGetArray2d(H, Mx, My, 0, 0, &HH); CHKERRQ(ierr);
       for (int i=0; i<Mx; i++) {
         for (int j=0; j<My; j++) {
-          const double r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
+          const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
           if (r < R0) {
             HH[i][j] = H0;
           } else {
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
         ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
         for (int i=0; i<Mx; i++) {
           for (int j=0; j<My; j++) {
-            const double r = sqrt( PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)) );
+            const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
             if (r < 1.5 * R0) {
               upl[i][j] = peak_up * (cos(M_PI * (r / (1.5 * R0))) + 1.0) / 2.0; 
             } else {

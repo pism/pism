@@ -59,7 +59,7 @@ namespace pism {
   \f]
   usually using Newton's method. Let
   \f[
-  \mathcal{R}(u, \zeta) = \mathcal{R}_{SSA}(u;g(\pi(\zeta)), \text{other parameters}).
+  \mathcal{R}(u, \zeta) = \mathcal{R}_{SSA}(u; g(\pi(\zeta)), \text{other parameters}).
   \f]
 
   The derivative of \f$\mathcal{R}\f$ with respect to \f$ u\f$ is called the state Jacobian,
@@ -107,7 +107,7 @@ public:
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConverter &e,
                              IPDesignVariableParameterization &tp,
-                             const PISMConfig &c);
+                             const Config &c);
 
   virtual ~IP_SSAHardavForwardProblem();
 
@@ -138,9 +138,9 @@ public:
     return m_design_param;
   }
 
-  virtual PetscErrorCode set_design( IceModelVec2S &zeta);
+  virtual PetscErrorCode set_design(IceModelVec2S &zeta);
 
-  virtual PetscErrorCode linearize_at( IceModelVec2S &zeta, TerminationReason::Ptr &reason);
+  virtual PetscErrorCode linearize_at(IceModelVec2S &zeta, TerminationReason::Ptr &reason);
 
   virtual PetscErrorCode assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
   virtual PetscErrorCode assemble_residual(IceModelVec2V &u, Vec R);
@@ -149,7 +149,7 @@ public:
 
   virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du);
   virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du);
-  virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, PISMVector2 **du_a);
+  virtual PetscErrorCode apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vector2 **du_a);
 
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta);
   virtual PetscErrorCode apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta);

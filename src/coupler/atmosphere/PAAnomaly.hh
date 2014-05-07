@@ -25,13 +25,13 @@
 namespace pism {
 
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
-class PAAnomaly : public PGivenClimate<PAModifier,PISMAtmosphereModel>
+class PAAnomaly : public PGivenClimate<PAModifier,AtmosphereModel>
 {
 public:
-  PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
+  PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in);
   virtual ~PAAnomaly();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
@@ -44,12 +44,12 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, double *values);
   virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 
 protected:
   std::vector<double> ts_mod, ts_values;

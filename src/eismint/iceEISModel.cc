@@ -28,7 +28,7 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid &g, PISMConfig &conf, PISMConfig &conf_overrides)
+IceEISModel::IceEISModel(IceGrid &g, Config &conf, Config &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
   m_experiment = 'A';
 
@@ -76,7 +76,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
     std::string name = "A";
     char temp = m_experiment;
     bool EISIIchosen;
-    ierr = PISMOptionsString("-eisII", "EISMINT II experiment name",
+    ierr = OptionsString("-eisII", "EISMINT II experiment name",
                              name, EISIIchosen);
     CHKERRQ(ierr);
     if (EISIIchosen == PETSC_TRUE) {
@@ -116,8 +116,8 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
       my_stress_balance = new ZeroSliding(grid, *EC, config);
     }
   
-    // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
-    stress_balance = new PISMStressBalance(grid, my_stress_balance,
+    // ~StressBalance() will de-allocate my_stress_balance and modifier.
+    stress_balance = new StressBalance(grid, my_stress_balance,
                                            modifier, config);
 
     // Note that in PISM stress balance computations are diagnostic, i.e. do not

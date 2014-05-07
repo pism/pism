@@ -24,11 +24,11 @@
 
 namespace pism {
 
-enthSystemCtx::enthSystemCtx(const PISMConfig &config,
+enthSystemCtx::enthSystemCtx(const Config &config,
                              IceModelVec3 &my_Enth3,
                              double my_dx,  double my_dy,
                              double my_dt,  double my_dz,
-                             int my_Mz, std::string my_prefix,
+                             int my_Mz, const std::string &my_prefix,
                              EnthalpyConverter *my_EC)
   : columnSystemCtx(my_Mz, my_prefix), EC(my_EC) {  // <- critical: sets size of sys
   Mz = my_Mz;
@@ -418,7 +418,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
   // generic ice segment in k location (if any; only runs if ks >= 2)
   for (int k = 1; k < m_ks; k++) {
     const double
-        Rminus = 0.5 * (R[k-1] + R[k]  ),
+        Rminus = 0.5 * (R[k-1] + R[k]),
         Rplus  = 0.5 * (R[k]   + R[k+1]);
     L[k] = - Rminus;
     D[k] = 1.0 + Rminus + Rplus;

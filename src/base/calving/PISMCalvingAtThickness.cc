@@ -22,24 +22,24 @@
 
 namespace pism {
 
-PISMCalvingAtThickness::PISMCalvingAtThickness(IceGrid &g, const PISMConfig &conf)
-  : PISMComponent(g, conf) {
+CalvingAtThickness::CalvingAtThickness(IceGrid &g, const Config &conf)
+  : Component(g, conf) {
   m_calving_threshold = config.get("thickness_calving_threshold");
 
   PetscErrorCode ierr = m_old_mask.create(grid, "old_mask", WITH_GHOSTS, 1);
   if (ierr != 0) {
     PetscPrintf(grid.com,
-                "PISM ERROR: memory allocation failed (PISMCalvingAtThickness constructor.\n");
+                "PISM ERROR: memory allocation failed (CalvingAtThickness constructor.\n");
     PISMEnd();
   }
 }
 
-PISMCalvingAtThickness::~PISMCalvingAtThickness() {
+CalvingAtThickness::~CalvingAtThickness() {
   // empty
 }
 
 
-PetscErrorCode PISMCalvingAtThickness::init(PISMVars &/*vars*/) {
+PetscErrorCode CalvingAtThickness::init(Vars &/*vars*/) {
   PetscErrorCode ierr;
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the 'calving at a threshold thickness' mechanism...\n"
@@ -58,7 +58,7 @@ PetscErrorCode PISMCalvingAtThickness::init(PISMVars &/*vars*/) {
  *
  * @return 0 on success
  */
-PetscErrorCode PISMCalvingAtThickness::update(IceModelVec2Int &pism_mask,
+PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
                                               IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
   MaskQuery M(m_old_mask);
@@ -92,19 +92,19 @@ PetscErrorCode PISMCalvingAtThickness::update(IceModelVec2Int &pism_mask,
 }
 
 
-void PISMCalvingAtThickness::add_vars_to_output(std::string /*keyword*/,
+void CalvingAtThickness::add_vars_to_output(const std::string &/*keyword*/,
                                                 std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode PISMCalvingAtThickness::define_variables(std::set<std::string> /*vars*/,
+PetscErrorCode CalvingAtThickness::define_variables(const std::set<std::string> &/*vars*/,
                                                         const PIO &/*nc*/,
-                                                        PISM_IO_Type /*nctype*/) {
+                                                        IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMCalvingAtThickness::write_variables(std::set<std::string> /*vars*/,
+PetscErrorCode CalvingAtThickness::write_variables(const std::set<std::string> &/*vars*/,
                                                        const PIO& /*nc*/) {
   // empty
   return 0;

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2014 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -56,7 +56,7 @@ int exactH(const double f, const double tIN, const double r,
   if (r < Rmargin)
     *H = H0 * pow(t / t0, -alpha)
             * pow(1.0 - pow(pow(t / t0, -beta) * (r / R0), (n + 1.0) / n),
-                  n / (2.0 * n + 1.0) );
+                  n / (2.0 * n + 1.0));
   else
     *H = 0.0;
 

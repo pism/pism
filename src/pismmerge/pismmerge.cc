@@ -27,7 +27,7 @@ static char help[] =
 
 int process_one_variable(std::string var_name, std::string input_file, std::string output_file,
                          unsigned int compression_level) {
-  PISMNC4_Serial input(MPI_COMM_SELF, 0),
+  NC4_Serial input(MPI_COMM_SELF, 0),
     output(MPI_COMM_SELF, compression_level);
   bool exists;
   int ierr;
@@ -101,7 +101,7 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
 int process_all_variables(std::string input_file, std::string output_file,
                           unsigned int compression_level) {
   int ierr, n_vars;
-  PISMNC4_Serial input(MPI_COMM_SELF, 0),
+  NC4_Serial input(MPI_COMM_SELF, 0),
     output(MPI_COMM_SELF, compression_level);
 
   fprintf(stderr, "Merging all variables from %s into %s, compression level %d...\n",
@@ -163,13 +163,13 @@ int main(int argc, char *argv[])
     bool i_set, o_set, var_name_set, compression_level_set;
     std::string i_name, o_name, var_name;
     int compression_level = 0;
-    ierr = PISMOptionsString("-i", "Input file name",
+    ierr = OptionsString("-i", "Input file name",
                              i_name, i_set); CHKERRQ(ierr);
-    ierr = PISMOptionsString("-o", "Output file name",
+    ierr = OptionsString("-o", "Output file name",
                              o_name, o_set); CHKERRQ(ierr);
-    ierr = PISMOptionsString("-v", "Name of the variable to merge",
+    ierr = OptionsString("-v", "Name of the variable to merge",
                              var_name, var_name_set); CHKERRQ(ierr);
-    ierr = PISMOptionsInt("-L", "Output compression level",
+    ierr = OptionsInt("-L", "Output compression level",
                           compression_level, compression_level_set); CHKERRQ(ierr);
     std::string usage =
       "  Merges output file created using '-o_format quilt'.\n\n"

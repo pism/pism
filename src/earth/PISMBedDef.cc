@@ -23,8 +23,8 @@
 
 namespace pism {
 
-PISMBedDef::PISMBedDef(IceGrid &g, const PISMConfig &conf)
-  : PISMComponent_TS(g, conf) {
+BedDef::BedDef(IceGrid &g, const Config &conf)
+  : Component_TS(g, conf) {
 
   thk    = NULL;
   topg   = NULL;
@@ -34,12 +34,12 @@ PISMBedDef::PISMBedDef(IceGrid &g, const PISMConfig &conf)
 
   PetscErrorCode ierr = pismbeddef_allocate();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISMBedDef::PISMBedDef(...): pismbeddef_allocate() failed\n");
+    PetscPrintf(grid.com, "BedDef::BedDef(...): pismbeddef_allocate() failed\n");
     PISMEnd();
   }
 }
 
-PetscErrorCode PISMBedDef::pismbeddef_allocate() {
+PetscErrorCode BedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
   int WIDE_STENCIL = grid.max_stencil_width;
 
@@ -54,12 +54,12 @@ PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   return 0;
 }
 
-void PISMBedDef::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void BedDef::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("topg_initial");
 }
 
-PetscErrorCode PISMBedDef::define_variables(std::set<std::string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+PetscErrorCode BedDef::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                            IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "topg_initial")) {
@@ -69,7 +69,7 @@ PetscErrorCode PISMBedDef::define_variables(std::set<std::string> vars, const PI
   return 0;
 }
 
-PetscErrorCode PISMBedDef::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "topg_initial")) {
@@ -79,7 +79,7 @@ PetscErrorCode PISMBedDef::write_variables(std::set<std::string> vars, const PIO
   return 0;
 }
 
-PetscErrorCode PISMBedDef::init(PISMVars &vars) {
+PetscErrorCode BedDef::init(Vars &vars) {
   PetscErrorCode ierr;
 
   t_beddef_last = grid.time->start();
@@ -100,7 +100,7 @@ PetscErrorCode PISMBedDef::init(PISMVars &vars) {
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).
-PetscErrorCode PISMBedDef::compute_uplift(double dt_beddef) {
+PetscErrorCode BedDef::compute_uplift(double dt_beddef) {
   PetscErrorCode ierr;
 
   ierr = topg->add(-1, topg_last, *uplift); CHKERRQ(ierr);

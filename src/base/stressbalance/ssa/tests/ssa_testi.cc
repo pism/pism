@@ -40,7 +40,7 @@ using namespace pism;
 class SSATestCaseI: public SSATestCase
 {
 public:
-  SSATestCaseI(MPI_Comm com, PISMConfig &c): 
+  SSATestCaseI(MPI_Comm com, Config &c): 
                  SSATestCase(com,c)
   { };
 
@@ -52,7 +52,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j, 
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
 };
 
@@ -67,7 +67,7 @@ const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 PetscErrorCode SSATestCaseI::initializeGrid(int Mx,int My)
 {
   double Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
+  double Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)));
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
   return 0;
 }
@@ -128,7 +128,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
       exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
       surface(i,j) = bed(i,j) + H0_schoof;
 
-      bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
+      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
       if (edge) {
         bc_mask(i,j) = 1;
         vel_bc(i,j).u = myu;
@@ -178,8 +178,8 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
@@ -210,16 +210,16 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction", 
+      ierr = OptionsInt("-Mx", "Number of grid points in the X direction", 
                                                       Mx, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-My", "Number of grid points in the Y direction", 
+      ierr = OptionsInt("-My", "Number of grid points in the Y direction", 
                                                       My, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
+      ierr = OptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
                              ssa_choices, driver, driver, flag); CHKERRQ(ierr);
              
-      ierr = PISMOptionsString("-o", "Set the output file name", 
+      ierr = OptionsString("-o", "Set the output file name", 
                                               output_file, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-verbose", "Verbosity level",
+      ierr = OptionsInt("-verbose", "Verbosity level",
                             my_verbosity_level, flag); CHKERRQ(ierr);
       if (flag) setVerbosityLevel(my_verbosity_level);
     }
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if(driver == "fem") ssafactory = SSAFEMFactory;
-    else if(driver == "fd") ssafactory = SSAFDFactory;
+    if (driver == "fem") ssafactory = SSAFEMFactory;
+    else if (driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
     SSATestCaseI testcase(com, config);

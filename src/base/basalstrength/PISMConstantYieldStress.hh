@@ -25,27 +25,27 @@
 
 namespace pism {
 
-class PISMConstantYieldStress : public PISMYieldStress
+class ConstantYieldStress : public YieldStress
 {
 public:
-  PISMConstantYieldStress(IceGrid &g, const PISMConfig &conf)
-    : PISMYieldStress(g, conf)
+  ConstantYieldStress(IceGrid &g, const Config &conf)
+    : YieldStress(g, conf)
   {
     if (allocate() != 0) {
-      PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMConstantYieldStress constructor.\n");
+      PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in ConstantYieldStress constructor.\n");
       PISMEnd();
     }
   }
-  virtual ~PISMConstantYieldStress() {}
+  virtual ~ConstantYieldStress() {}
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual PetscErrorCode update(double my_t, double my_dt);
 

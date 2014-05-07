@@ -32,7 +32,7 @@ def FF(x,alpha,r):
 qual = []  # quality information goes here
 def GG(alpha, r):
   # heuristic: guess is about 1/7 th of solution to a nearby problem
-  guess = 0.15 * (  (Q/r)**3 - alpha[0]/r  )
+  guess = 0.15 * ((Q/r)**3 - alpha[0]/r)
   result = fsolve(FF,guess,args=(alpha[0],r))
   qual.append([r,guess,result,abs(guess-result)/abs(result)])
   return [result]

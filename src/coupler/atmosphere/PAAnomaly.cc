@@ -23,8 +23,8 @@
 
 namespace pism {
 
-PAAnomaly::PAAnomaly(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-  : PGivenClimate<PAModifier,PISMAtmosphereModel>(g, conf, in),
+PAAnomaly::PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in)
+  : PGivenClimate<PAModifier,AtmosphereModel>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
 {
@@ -82,7 +82,7 @@ PAAnomaly::~PAAnomaly()
   // empty
 }
 
-PetscErrorCode PAAnomaly::init(PISMVars &vars) {
+PetscErrorCode PAAnomaly::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -189,7 +189,7 @@ PetscErrorCode PAAnomaly::precip_time_series(int i, int j, double *result) {
   return 0;
 }
 
-void PAAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PAAnomaly::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -199,8 +199,9 @@ void PAAnomaly::add_vars_to_output(std::string keyword, std::set<std::string> &r
 }
 
 
-PetscErrorCode PAAnomaly::define_variables(std::set<std::string> vars, const PIO &nc,
-                                           PISM_IO_Type nctype) {
+PetscErrorCode PAAnomaly::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+                                           IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -219,7 +220,8 @@ PetscErrorCode PAAnomaly::define_variables(std::set<std::string> vars, const PIO
 }
 
 
-PetscErrorCode PAAnomaly::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PAAnomaly::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

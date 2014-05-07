@@ -31,7 +31,7 @@ template <class Model, class Input>
 class PGivenClimate : public Model
 {
 public:
-  PGivenClimate(IceGrid &g, const PISMConfig &conf, Input *in)
+  PGivenClimate(IceGrid &g, const Config &conf, Input *in)
     : Model(g, conf, in) {}
 
   virtual ~PGivenClimate() {
@@ -42,7 +42,7 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result)
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result)
   {
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
@@ -56,8 +56,9 @@ public:
 
   }
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype)
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype)
   {
+    std::set<std::string> vars = vars_input;
     PetscErrorCode ierr;
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
@@ -76,7 +77,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc)
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc)
   {
     PetscErrorCode ierr;
 
@@ -117,13 +118,13 @@ protected:
 
     ierr = PetscOptionsBegin(Model::grid.com, "", "Climate forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString(option_prefix + "_file",
+      ierr = OptionsString(option_prefix + "_file",
                                "Specifies a file with boundary conditions",
                                filename, bc_file_set); CHKERRQ(ierr);
-      ierr = PISMOptionsInt(option_prefix + "_period",
+      ierr = OptionsInt(option_prefix + "_period",
                             "Specifies the length of the climate data period (in years)",
                             bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = PISMOptionsInt(option_prefix + "_reference_year",
+      ierr = OptionsInt(option_prefix + "_reference_year",
                             "Boundary condition reference year",
                             bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     }

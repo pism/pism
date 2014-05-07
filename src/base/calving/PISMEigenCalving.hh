@@ -24,16 +24,16 @@
 
 namespace pism {
 
-class PISMStressBalance;
+class StressBalance;
 
-class PISMEigenCalving : public PISMComponent
+class EigenCalving : public Component
 {
 public:
-  PISMEigenCalving(IceGrid &g, const PISMConfig &conf,
-                   PISMStressBalance *stress_balance);
-  virtual ~PISMEigenCalving();
+  EigenCalving(IceGrid &g, const Config &conf,
+                   StressBalance *stress_balance);
+  virtual ~EigenCalving();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double dt,
                                 IceModelVec2Int &pism_mask,
                                 IceModelVec2S &Href,
@@ -42,16 +42,16 @@ public:
   virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
 
   // empty methods that we're required to implement:
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
 protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;
   const int m_stencil_width;
   IceModelVec2Int *m_mask;
-  PISMStressBalance *m_stress_balance;
+  StressBalance *m_stress_balance;
   double m_K;
   bool m_restrict_timestep;
 

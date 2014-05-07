@@ -22,8 +22,8 @@
 
 namespace pism {
 
-PAConstantPIK::PAConstantPIK(IceGrid &g, const PISMConfig &conf)
-  : PISMAtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
+PAConstantPIK::PAConstantPIK(IceGrid &g, const Config &conf)
+  : AtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
@@ -35,7 +35,7 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
   // create mean annual ice equivalent precipitation rate (before separating
-  // rain, and before melt, etc. in PISMSurfaceModel)
+  // rain, and before melt, etc. in SurfaceModel)
   ierr = precipitation.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = precipitation.set_attrs("climate_state",
                                  "mean annual ice-equivalent precipitation rate",
@@ -108,7 +108,7 @@ PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-void PAConstantPIK::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PAConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
   result.insert("air_temp");
 
@@ -117,8 +117,8 @@ void PAConstantPIK::add_vars_to_output(std::string keyword, std::set<std::string
   }
 }
 
-PetscErrorCode PAConstantPIK::define_variables(std::set<std::string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+PetscErrorCode PAConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                            IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
@@ -136,7 +136,7 @@ PetscErrorCode PAConstantPIK::define_variables(std::set<std::string> vars, const
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PAConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
@@ -160,7 +160,7 @@ PetscErrorCode PAConstantPIK::write_variables(std::set<std::string> vars, const 
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::init(PISMVars &vars) {
+PetscErrorCode PAConstantPIK::init(Vars &vars) {
   PetscErrorCode ierr;
   bool do_regrid = false;
   int start = -1;

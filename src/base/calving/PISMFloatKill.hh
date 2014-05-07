@@ -28,19 +28,19 @@ class IceModelVec2Int;
 class IceModelVec2S;
 
 /*! \brief Calving mechanism removing floating ice. */
-class PISMFloatKill : public PISMComponent
+class FloatKill : public Component
 {
 public:
-  PISMFloatKill(IceGrid &g, const PISMConfig &conf);
-  virtual ~PISMFloatKill();
+  FloatKill(IceGrid &g, const Config &conf);
+  virtual ~FloatKill();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   PetscErrorCode update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
 };
 
 

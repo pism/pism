@@ -40,7 +40,7 @@ tauc_true = ds.variables['tauc_true'][...].squeeze()
 
 tauc_diff = tauc-tauc_true
 
-not_ice = abs(ds.variables['mask'][...].squeeze() -2 ) > 0.01
+not_ice = abs(ds.variables['mask'][...].squeeze() -2) > 0.01
 tauc[not_ice] = 0
 tauc_true[not_ice] = 0
 tauc_diff[not_ice] = 0.
@@ -50,7 +50,7 @@ u_computed = ds.variables['u_computed'][...].squeeze()*secpera
 v_computed = ds.variables['v_computed'][...].squeeze()*secpera
 velbase_mag_computed = np.sqrt(u_computed * u_computed + v_computed * v_computed)
 
-not_sliding = np.logical_and( (abs(u_computed) < 10.) , (abs(v_computed) < 10.) )
+not_sliding = np.logical_and((abs(u_computed) < 10.) , (abs(v_computed) < 10.))
 tauc[not_ice]  = 0
 tauc_true[not_ice] = 0
 tauc_diff[not_sliding] = 0.

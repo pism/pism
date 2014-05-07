@@ -124,7 +124,7 @@ if (Pism_USE_TR1)
 endif ()
 
 add_custom_target (etags
-  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh|py)" | xargs etags
+  COMMAND find . -regextype posix-extended -regex ".*\\.(c|cc|h|hh)" | xargs etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
   VERBATIM
 )

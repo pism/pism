@@ -25,7 +25,7 @@
 
 namespace pism {
 
-PSCache::PSCache(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel* in)
+PSCache::PSCache(IceGrid &g, const Config &conf, SurfaceModel* in)
   : PSModifier(g, conf, in) {
 
   m_next_update_time = grid.time->current();
@@ -74,7 +74,7 @@ PSCache::~PSCache() {
 }
 
 
-PetscErrorCode PSCache::init(PISMVars &vars) {
+PetscErrorCode PSCache::init(Vars &vars) {
   PetscErrorCode ierr;
   int update_interval = m_update_interval_years;
   bool flag;
@@ -86,7 +86,7 @@ PetscErrorCode PSCache::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "-surface ...,cache options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsInt("-surface_cache_update_interval",
+    ierr = OptionsInt("-surface_cache_update_interval",
                           "Interval (in years) between surface model updates",
                           update_interval, flag); CHKERRQ(ierr);
   }
@@ -192,7 +192,8 @@ PetscErrorCode PSCache::surface_layer_thickness(IceModelVec2S &result) {
 }
 
 
-PetscErrorCode PSCache::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSCache::define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
@@ -225,7 +226,8 @@ PetscErrorCode PSCache::define_variables(std::set<std::string> vars, const PIO &
   return 0;
 }
 
-PetscErrorCode PSCache::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSCache::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {

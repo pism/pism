@@ -44,48 +44,48 @@ namespace pism {
  * object contains a pointer to the unit system that was used to create it.
  *
  * We use C++ shared pointers to make sure that the system a
- * PISMUnit instance needs is allocated during the whole life span of
+ * Unit instance needs is allocated during the whole life span of
  * this instance. (De-allocating the unit system too early results in
  * having a "dangling" pointer.)
  */
 
-class PISMUnitSystem {
-  friend class PISMUnit;
+class UnitSystem {
+  friend class Unit;
 public:
-  PISMUnitSystem(const char *path);
+  UnitSystem(const char *path);
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<ut_system> Ptr;
 #else
   typedef std::shared_ptr<ut_system> Ptr;
 #endif
 
-  PISMUnitSystem::Ptr get() const;
+  UnitSystem::Ptr get() const;
 
-  double convert(double input, std::string spec1, std::string spec2) const;
+  double convert(double input, const std::string &spec1, const std::string &spec2) const;
 private:
-  PISMUnitSystem::Ptr m_system;
+  UnitSystem::Ptr m_system;
 };
 
-class PISMUnit {
+class Unit {
 public:
-  PISMUnit(PISMUnitSystem system);
-  PISMUnit(const PISMUnit &other);
-  ~PISMUnit();
+  Unit(const UnitSystem &system);
+  Unit(const Unit &other);
+  ~Unit();
 
   void reset();
 
-  PISMUnit& operator=(const PISMUnit& other);
-  int parse(std::string spec);
+  Unit& operator=(const Unit& other);
+  int parse(const std::string &spec);
   std::string format() const;
 
   ut_unit* get() const;
-  PISMUnitSystem get_system() const;
-  cv_converter* get_converter_from(PISMUnit from) const;
+  UnitSystem get_system() const;
+  cv_converter* get_converter_from(const Unit &from) const;
 
   bool is_valid() const;
 private:
   ut_unit *m_unit;
-  PISMUnitSystem m_system;
+  UnitSystem m_system;
   std::string m_unit_string;
 };
 
@@ -97,9 +97,9 @@ private:
  *
  * @return true if units are convertible, false otherwise
  */
-bool units_are_convertible(PISMUnit from, PISMUnit to);
+bool units_are_convertible(Unit from, Unit to);
 
-PetscErrorCode units_check(std::string name, PISMUnit from, PISMUnit to);
+PetscErrorCode units_check(std::string name, Unit from, Unit to);
 
 /**
  * Convert a PETSc Vec from the units in `from` into units in `to` (in place).
@@ -110,7 +110,7 @@ PetscErrorCode units_check(std::string name, PISMUnit from, PISMUnit to);
  *
  * @return 0 on success
  */
-PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to);
+PetscErrorCode convert_vec(Vec v, Unit from, Unit to);
 
 /**
  * Convert 
@@ -122,7 +122,7 @@ PetscErrorCode convert_vec(Vec v, PISMUnit from, PISMUnit to);
  *
  * @return 0 on success
  */
-PetscErrorCode convert_doubles(double *data, size_t length, PISMUnit from, PISMUnit to);
+PetscErrorCode convert_doubles(double *data, size_t length, Unit from, Unit to);
 
 } // end of namespace pism
 

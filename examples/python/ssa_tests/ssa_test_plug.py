@@ -70,7 +70,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         bed[i,j] = -x*(dhdx);
         surface[i,j] = bed[i,j] + H0;
       
-        edge = ( (j == 0) or (j == grid.My - 1) ) or ( (i==0) or (i==grid.Mx-1) );
+        edge = ((j == 0) or (j == grid.My - 1)) or ((i==0) or (i==grid.Mx-1));
         if edge:
           bc_mask[i,j] = 1;
           [u,v] = self.exactSolution(i,j,x,y);

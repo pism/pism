@@ -21,13 +21,13 @@
 
 namespace pism {
 
-PISMHydrology_bwat::PISMHydrology_bwat(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+Hydrology_bwat::Hydrology_bwat(Hydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<Hydrology>(m, g, my_vars) {
   vars[0].init_2d("bwat", grid);
   set_attrs("thickness of transportable water in subglacial layer", "", "m", "m", 0);
 }
 
-PetscErrorCode PISMHydrology_bwat::compute(IceModelVec* &output) {
+PetscErrorCode Hydrology_bwat::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "bwat", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -38,14 +38,14 @@ PetscErrorCode PISMHydrology_bwat::compute(IceModelVec* &output) {
   return 0;
 }
 
-PISMHydrology_bwp::PISMHydrology_bwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+Hydrology_bwp::Hydrology_bwp(Hydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<Hydrology>(m, g, my_vars) {
   vars[0].init_2d("bwp", grid);
   set_attrs("pressure of transportable water in subglacial layer", "", "Pa", "Pa", 0);
 }
 
 
-PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
+PetscErrorCode Hydrology_bwp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "bwp", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -57,8 +57,8 @@ PetscErrorCode PISMHydrology_bwp::compute(IceModelVec* &output) {
 }
 
 
-PISMHydrology_bwprel::PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+Hydrology_bwprel::Hydrology_bwprel(Hydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<Hydrology>(m, g, my_vars) {
   vars[0].init_2d("bwprel", grid);
   set_attrs("pressure of transportable water in subglacial layer as fraction of the overburden pressure", "",
             "", "", 0);
@@ -66,7 +66,7 @@ PISMHydrology_bwprel::PISMHydrology_bwprel(PISMHydrology *m, IceGrid &g, PISMVar
 }
 
 
-PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
+PetscErrorCode Hydrology_bwprel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   double fill = grid.config.get("fill_value");
   IceModelVec2S *Po     = new IceModelVec2S,
@@ -96,15 +96,15 @@ PetscErrorCode PISMHydrology_bwprel::compute(IceModelVec* &output) {
 }
 
 
-PISMHydrology_effbwp::PISMHydrology_effbwp(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+Hydrology_effbwp::Hydrology_effbwp(Hydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<Hydrology>(m, g, my_vars) {
   vars[0].init_2d("effbwp", grid);
   set_attrs("effective pressure of transportable water in subglacial layer (overburden pressure minus water pressure)",
             "", "Pa", "Pa", 0);
 }
 
 
-PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
+PetscErrorCode Hydrology_effbwp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *P      = new IceModelVec2S,
                 *result = new IceModelVec2S;
@@ -121,15 +121,15 @@ PetscErrorCode PISMHydrology_effbwp::compute(IceModelVec* &output) {
 }
 
 
-PISMHydrology_hydroinput::PISMHydrology_hydroinput(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+Hydrology_hydroinput::Hydrology_hydroinput(Hydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<Hydrology>(m, g, my_vars) {
   vars[0].init_2d("hydroinput", grid);
   set_attrs("total water input into subglacial hydrology layer",
             "", "m s-1", "m/year", 0);
 }
 
 
-PetscErrorCode PISMHydrology_hydroinput::compute(IceModelVec* &output) {
+PetscErrorCode Hydrology_hydroinput::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "hydroinput", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -142,15 +142,15 @@ PetscErrorCode PISMHydrology_hydroinput::compute(IceModelVec* &output) {
 }
 
 
-PISMHydrology_wallmelt::PISMHydrology_wallmelt(PISMHydrology *m, IceGrid &g, PISMVars &my_vars)
-    : PISMDiag<PISMHydrology>(m, g, my_vars) {
+Hydrology_wallmelt::Hydrology_wallmelt(Hydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<Hydrology>(m, g, my_vars) {
   vars[0].init_2d("wallmelt", grid);
   set_attrs("wall melt into subglacial hydrology layer from (turbulent) dissipation of energy in transportable water",
             "", "m s-1", "m/year", 0);
 }
 
 
-PetscErrorCode PISMHydrology_wallmelt::compute(IceModelVec* &output) {
+PetscErrorCode Hydrology_wallmelt::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "wallmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);

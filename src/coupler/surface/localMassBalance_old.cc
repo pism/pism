@@ -29,7 +29,7 @@
 
 namespace pism {
 
-PDDMassBalance_Old::PDDMassBalance_Old(const PISMConfig& myconfig) : LocalMassBalance_Old(myconfig) {
+PDDMassBalance_Old::PDDMassBalance_Old(const Config& myconfig) : LocalMassBalance_Old(myconfig) {
   precip_as_snow = config.get_flag("interpret_precip_as_snow");
   Tmin = config.get("air_temp_all_precip_as_snow");
   Tmax = config.get("air_temp_all_precip_as_rain");
@@ -44,8 +44,7 @@ returned number of times N to be odd.
  */
 PetscErrorCode PDDMassBalance_Old::getNForTemperatureSeries(PetscScalar /* t */,
                                                         PetscScalar dt, PetscInt &N) {
-  PetscInt    NperYear = static_cast<PetscInt>( 
-                           config.get("pdd_max_evals_per_year") );
+  PetscInt    NperYear = static_cast<PetscInt>(config.get("pdd_max_evals_per_year"));
   PetscScalar dt_years = dt / secpera;
   N = (int) ceil((NperYear - 1) * (dt_years) + 1);
   if (N < 3) N = 3;
@@ -87,16 +86,16 @@ PetscScalar PDDMassBalance_Old::getPDDSumFromTemperatureTimeSeries(
                     h_days = dt_series / sperd;
   const PetscInt Nsimp = ((N % 2) == 1) ? N : N-1; // odd N case is pure simpson's
   // Simpson's rule is:
-  //   integral \approx (h/3) * sum( [1 4 2 4 2 4 ... 4 1] .* [f(t_0) f(t_1) ... f(t_N-1)] )
+  //   integral \approx (h/3) * sum([1 4 2 4 2 4 ... 4 1] .* [f(t_0) f(t_1) ... f(t_N-1)])
   for (PetscInt m = 0; m < Nsimp; ++m) {
     PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
-    if ( (m == 0) || (m == (Nsimp-1)) )  coeff = 1.0;
+    if ((m == 0) || (m == (Nsimp-1)))  coeff = 1.0;
     pdd_sum += coeff * CalovGreveIntegrand(pddStdDev,T[m]-pddThresholdTemp);  // pass in temp in K
   }
   pdd_sum = (h_days / 3.0) * pdd_sum;
   if (Nsimp < N) { // add one more subinterval by trapezoid
-    pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(pddStdDev,T[N-2]-pddThresholdTemp)
-                                  + CalovGreveIntegrand(pddStdDev,T[N-1]-pddThresholdTemp) );
+    pdd_sum += (h_days / 2.0) * (CalovGreveIntegrand(pddStdDev,T[N-2]-pddThresholdTemp)
+                                  + CalovGreveIntegrand(pddStdDev,T[N-1]-pddThresholdTemp));
   }
   return pdd_sum;
 }
@@ -256,7 +255,7 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance_Old::PDDrandMassBalance_Old(const PISMConfig& myconfig, bool repeatable)
+PDDrandMassBalance_Old::PDDrandMassBalance_Old(const Config& myconfig, bool repeatable)
     : PDDMassBalance_Old(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
   gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));
@@ -308,7 +307,7 @@ PetscScalar PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(
 }
 
 
-FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(IceGrid &g, const PISMConfig &myconfig)
+FaustoGrevePDDObject_Old::FaustoGrevePDDObject_Old(IceGrid &g, const Config &myconfig)
   : grid(g), config(myconfig) {
 
   beta_ice_w = config.get("pdd_fausto_beta_ice_w");
@@ -351,7 +350,7 @@ PetscErrorCode FaustoGrevePDDObject_Old::setDegreeDayFactors(PetscInt i, PetscIn
       ddf.snow = beta_snow_c;
     } else { // middle case   T_c < T_mj < T_w
       const PetscScalar
-         lam_i = pow( (T_w - T_mj) / (T_w - T_c) , 3.0),
+         lam_i = pow((T_w - T_mj) / (T_w - T_c) , 3.0),
          lam_s = (T_mj - T_c) / (T_w - T_c);
       ddf.ice  = beta_ice_w + (beta_ice_c - beta_ice_w) * lam_i;
       ddf.snow = beta_snow_w + (beta_snow_c - beta_snow_w) * lam_s;

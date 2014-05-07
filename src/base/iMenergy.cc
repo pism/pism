@@ -47,7 +47,7 @@ PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
 
   double  myCFLviolcount = 0.0,   // these are counts but they are type "double"
-               myVertSacrCount = 0.0,  //   because that type works with PISMGlobalSum()
+               myVertSacrCount = 0.0,  //   because that type works with GlobalSum()
                myBulgeCount = 0.0;
   double gVertSacrCount, gBulgeCount;
 
@@ -55,7 +55,7 @@ PetscErrorCode IceModel::energyStep() {
   ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
 
   // operator-splitting occurs here (ice and bedrock energy updates are split):
-  //   tell PISMBedThermalUnit* btu that we have an ice base temp; it will return
+  //   tell BedThermalUnit* btu that we have an ice base temp; it will return
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
   ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
@@ -81,7 +81,7 @@ PetscErrorCode IceModel::energyStep() {
 
     ierr = vWork3d.update_ghosts(Enth3); CHKERRQ(ierr);
 
-    ierr = PISMGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
       ierr = verbPrintf(1,grid.com,
         "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
@@ -93,25 +93,25 @@ PetscErrorCode IceModel::energyStep() {
   // ghosts, which are needed to compute tauc locally
   ierr = basal_melt_rate.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 
-  ierr = PISMGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
-    if (   (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT)
-        && (getVerbosityLevel() > 2)                    ) {
+    if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT &&
+        getVerbosityLevel() > 2) {
       char tempstr[50] = "";
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
       stdout_flags = tempstr + stdout_flags;
     }
   }
 
-  ierr = PISMGlobalSum(&myBulgeCount, &gBulgeCount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&myBulgeCount, &gBulgeCount, grid.com); CHKERRQ(ierr);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";
-    snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)) );
+    snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)));
     stdout_flags = tempstr + stdout_flags;
   }
 

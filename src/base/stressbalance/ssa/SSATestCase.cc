@@ -22,6 +22,7 @@
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
 #include "pism_options.hh"
+#include "Mask.hh"
 
 namespace pism {
 
@@ -122,7 +123,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   return 0;
 }
 
-SSATestCase::SSATestCase(MPI_Comm com, PISMConfig &c)
+SSATestCase::SSATestCase(MPI_Comm com, Config &c)
   : config(c), grid(com, config), enthalpyconverter(0), ssa(0)
 {
   // empty
@@ -177,7 +178,7 @@ PetscErrorCode SSATestCase::run()
 }
 
 //! Report on the generated solution
-PetscErrorCode SSATestCase::report(std::string testname) {
+PetscErrorCode SSATestCase::report(const std::string &testname) {
   PetscErrorCode  ierr;
     
   std::string ssa_stdout;
@@ -228,15 +229,15 @@ PetscErrorCode SSATestCase::report(std::string testname) {
   ierr = vel_ssa->end_access(); CHKERRQ(ierr);
 
 
-  ierr = PISMGlobalMax(&exactvelmax, &gexactvelmax,grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&exactvelmax, &gexactvelmax,grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
   gavuerr = gavuerr/(grid.Mx*grid.My);
-  ierr = PISMGlobalSum(&avverr, &gavverr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avverr, &gavverr, grid.com); CHKERRQ(ierr);
   gavverr = gavverr/(grid.Mx*grid.My);
-  ierr = PISMGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
   ierr = verbPrintf(1,grid.com, 
@@ -264,7 +265,7 @@ PetscErrorCode SSATestCase::report(std::string testname) {
   return 0;
 }
 
-PetscErrorCode SSATestCase::report_netcdf(std::string testname,
+PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
                                           double max_vector,
                                           double rel_vector,
                                           double max_u,
@@ -278,7 +279,7 @@ PetscErrorCode SSATestCase::report_netcdf(std::string testname,
   bool flag, append;
   NCVariable global_attributes("PISM_GLOBAL", grid.get_unit_system());
 
-  ierr = PISMOptionsString("-report_file", "NetCDF error report file",
+  ierr = OptionsString("-report_file", "NetCDF error report file",
                            filename, flag); CHKERRQ(ierr);
 
   if (flag == false)
@@ -289,10 +290,10 @@ PetscErrorCode SSATestCase::report_netcdf(std::string testname,
   ierr = verbPrintf(2, grid.com, "Also writing errors to '%s'...\n", filename.c_str());
   CHKERRQ(ierr);
 
-  ierr = PISMOptionsIsSet("-append", "Append the NetCDF error report",
+  ierr = OptionsIsSet("-append", "Append the NetCDF error report",
                           append); CHKERRQ(ierr);
 
-  PISM_IO_Mode mode = PISM_READWRITE;
+  IO_Mode mode = PISM_READWRITE;
   if (append == false) {
     mode = PISM_READWRITE_MOVE;
   }
@@ -364,7 +365,7 @@ PetscErrorCode SSATestCase::report_netcdf(std::string testname,
 
 PetscErrorCode SSATestCase::exactSolution(int /*i*/, int /*j*/, 
                                           double /*x*/, double /*y*/,
-                                          double *u, double *v )
+                                          double *u, double *v)
 {
   *u=0; *v=0;
   return 0;

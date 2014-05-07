@@ -28,7 +28,7 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   begin_end_access_use_dof = false;
 }
 
-PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
+PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                       unsigned int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, ghostedp,
@@ -42,16 +42,16 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, std::string my_short_nam
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::get_array(PISMVector2** &a) {
+PetscErrorCode IceModelVec2V::get_array(Vector2** &a) {
   PetscErrorCode ierr;
   ierr = begin_access(); CHKERRQ(ierr);
-  a = static_cast<PISMVector2**>(array);
+  a = static_cast<Vector2**>(array);
   return 0;
 }
 
 PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  PISMVector2** a;
+  Vector2** a;
   double **mag;
 
   ierr = result.get_array(mag); CHKERRQ(ierr);
@@ -68,7 +68,7 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::set_name(std::string new_name, int component) {
+PetscErrorCode IceModelVec2V::set_name(const std::string &new_name, int component) {
   (void) component;
 
   std::string tmp = new_name;
@@ -84,12 +84,12 @@ PetscErrorCode IceModelVec2V::set_name(std::string new_name, int component) {
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(std::string short_name, std::string long_name, 
-                                     std::string standard_name, int component)
+PetscErrorCode IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
+                                     const std::string &standard_name, int component)
 {
   (void) component;
 
-  if(!short_name.empty())
+  if (!short_name.empty())
   {
     std::string tmp = short_name;
     m_name = "vel" + tmp;
@@ -114,11 +114,11 @@ PetscErrorCode IceModelVec2V::rename(std::string short_name, std::string long_na
 }  
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(std::string short_name,
-                                     std::vector<std::string> long_names, 
-                                     std::string standard_name)
+PetscErrorCode IceModelVec2V::rename(const std::string & short_name,
+                                     const std::vector<std::string> &long_names, 
+                                     const std::string & standard_name)
 {
-  if(!short_name.empty())
+  if (!short_name.empty())
   {
     std::string tmp = short_name;
 

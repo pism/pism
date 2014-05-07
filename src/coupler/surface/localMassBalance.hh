@@ -64,7 +64,7 @@ struct DegreeDayFactors {
 */
 class LocalMassBalance {
 public:
-  LocalMassBalance(const PISMConfig &myconfig);
+  LocalMassBalance(const Config &myconfig);
   virtual ~LocalMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt) = 0;
@@ -99,8 +99,8 @@ public:
                     double &cumulative_smb) = 0;
 
 protected:
-  const PISMConfig& config;
-  PISMUnitSystem m_unit_system;
+  const Config& config;
+  UnitSystem m_unit_system;
   const double seconds_per_day;
 };
 
@@ -114,7 +114,7 @@ protected:
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(const PISMConfig& myconfig);
+  PDDMassBalance(const Config& myconfig);
   virtual ~PDDMassBalance() {}
 
   virtual unsigned int get_timeseries_length(double dt);
@@ -158,7 +158,7 @@ protected:
 class PDDrandMassBalance : public PDDMassBalance {
 
 public:
-  PDDrandMassBalance(const PISMConfig& myconfig,
+  PDDrandMassBalance(const Config& myconfig,
                      bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
@@ -188,7 +188,7 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(IceGrid &g, const PISMConfig &myconfig);
+  FaustoGrevePDDObject(IceGrid &g, const Config &myconfig);
   virtual ~FaustoGrevePDDObject() {}
 
   virtual PetscErrorCode update_temp_mj(IceModelVec2S *surfelev, IceModelVec2S *lat, IceModelVec2S *lon);
@@ -201,7 +201,7 @@ public:
 
 protected:
   IceGrid &grid;
-  const PISMConfig &config;
+  const Config &config;
   double beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
     fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
   IceModelVec2S temp_mj;

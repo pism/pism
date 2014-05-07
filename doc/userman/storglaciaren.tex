@@ -35,7 +35,7 @@ The first two runs smooth the surface and generate a near-steady enthalpy field.
 At the next stage we attempt to infer the mass balance that has the present day geometry as a steady-state (for now, we ignore the fact that Storglaci{\"a}ren is probably not in a steady-state).  For this purpose we can use PISM's mass balance modifier:
 \begin{quote}\small
 \begin{verbatim}
--surface constant,forcing -force_to_thk psg_flowline_35m_steady.nc -force_to_thk_alpha 0.05
+-surface constant,forcing -force_to_thickness_file psg_flowline_35m_steady.nc -force_to_thickness_alpha 0.05
 \end{verbatim}
 \normalsize\end{quote}
 The result of this run is shown in Figure~\ref{fig:storglaciaren-ftt-result}. Without much parameter fine-tuning, simulated surface velocities are reasonably close to observations, c.f. \cite{AschwandenBlatter}.  We also see that a mass balance of about 4 meters per year at the bergschrund, almost linearly decreasing to -4.5 meters per year at the tongue, is required to maintain the glacier's geometry.  However, observations show that a more realistic present day mass balance decreases lineafly from 2.5 meters per year at the bergschrund to -3 meters per year at the tongue.  We now use the surface processes model which is enabled by \texttt{-surface elevation} and allows to define temperature and surface mass balance as a function of surface elevation (see the \emph{PISM's climate forcing components} document for details).  The next run uses this present day mass balance which is imposed via 

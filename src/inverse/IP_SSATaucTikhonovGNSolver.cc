@@ -23,7 +23,7 @@
 
 namespace pism {
 
-IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver( IP_SSATaucForwardProblem &ssaforward,
+IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward,
 DesignVec &d0, StateVec &u_obs, double eta,
 IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional):
 m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
@@ -100,10 +100,10 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   m_alpha = 1./m_eta;
   m_logalpha = log(m_alpha);
 
-  ierr = PISMOptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-tikhonov_adaptive", m_tikhonov_adaptive); CHKERRQ(ierr);
   
   m_iter_max = 1000; bool flag;
-  ierr = PISMOptionsInt("-inv_gn_iter_max", "", m_iter_max, flag); CHKERRQ(ierr);  
+  ierr = OptionsInt("-inv_gn_iter_max", "", m_iter_max, flag); CHKERRQ(ierr);  
 
   m_tikhonov_atol = grid.config.get("tikhonov_atol");
   m_tikhonov_rtol = grid.config.get("tikhonov_rtol");
@@ -186,7 +186,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
   
   ierr = m_h.copy_from(m_hGlobal); CHKERRQ(ierr);
 
-  reason.reset( new KSPTerminationReason(ksp_reason) );
+  reason.reset(new KSPTerminationReason(ksp_reason));
 
   return 0;
 }
@@ -231,7 +231,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
 
   ierr = verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",designNorm,stateNorm,sumNorm); CHKERRQ(ierr);
   ierr = verbPrintf(2,PETSC_COMM_WORLD,"IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale); CHKERRQ(ierr);
-  if(m_tikhonov_adaptive) {
+  if (m_tikhonov_adaptive) {
     ierr = verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha); CHKERRQ(ierr);
   }
   double relsum = (sumNorm/PetscMax(designNorm,stateNorm));
@@ -239,25 +239,25 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
 
   // If we have an adaptive tikhonov parameter, check if we have met
   // this constraint first.
-  if(m_tikhonov_adaptive) {
-    double disc_ratio = fabs( (sqrt(m_val_state)/m_target_misfit) - 1.);
-    if(disc_ratio > m_tikhonov_ptol) {
+  if (m_tikhonov_adaptive) {
+    double disc_ratio = fabs((sqrt(m_val_state)/m_target_misfit) - 1.);
+    if (disc_ratio > m_tikhonov_ptol) {
       reason = GenericTerminationReason::keep_iterating();
       return 0;
     }
   }
   
-  if(sumNorm < m_tikhonov_atol) {
+  if (sumNorm < m_tikhonov_atol) {
     reason.reset(new GenericTerminationReason(1,"TIKHONOV_ATOL"));
     return 0;
   }
 
-  if( sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm) ) {
+  if (sumNorm < m_tikhonov_rtol*PetscMax(designNorm,stateNorm)) {
     reason.reset(new GenericTerminationReason(1,"TIKHONOV_RTOL"));
     return 0;
   }
 
-  if(m_iter>m_iter_max) {
+  if (m_iter>m_iter_max) {
     reason = GenericTerminationReason::max_iter();
   } else {
     reason = GenericTerminationReason::keep_iterating();
@@ -269,7 +269,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::evaluate_objective_and_gradient(Termi
   PetscErrorCode ierr;
 
   ierr = m_ssaforward.linearize_at(m_d,reason); CHKERRQ(ierr);
-  if(reason->failed()) {
+  if (reason->failed()) {
     return 0;
   }
 
@@ -314,7 +314,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
   ierr = m_tmp_D1Global.copy_from(m_h); CHKERRQ(ierr);
   ierr = VecDot(m_gradient.get_vec(),m_tmp_D1Global.get_vec(),&descent_derivative);
 
-  if(descent_derivative >=0 ) {
+  if (descent_derivative >=0) {
     printf("descent derivative: %g\n",descent_derivative);
     reason.reset(new GenericTerminationReason(-1,"Not descent direction"));
     return 0;
@@ -325,8 +325,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
   while(true) {
     ierr = m_d.add(alpha,m_h); CHKERRQ(ierr);  // Replace with line search.
     ierr = this->evaluate_objective_and_gradient(step_reason); CHKERRQ(ierr);
-    if(step_reason->succeeded()) {
-      if(m_value <= old_value + 1e-3*alpha*descent_derivative) {
+    if (step_reason->succeeded()) {
+      if (m_value <= old_value + 1e-3*alpha*descent_derivative) {
         break;
       }
     }
@@ -334,7 +334,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
       printf("forward solve failed in linsearch.  Shrinking.\n");
     }
     alpha *=.5;
-    if(alpha<1e-20) {
+    if (alpha<1e-20) {
       printf("alpha= %g; derivative = %g\n",alpha,descent_derivative);
       reason.reset(new GenericTerminationReason(-1,"Too many step shrinks."));
       return 0;
@@ -350,7 +350,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   PetscErrorCode ierr;
 
 
-  if(m_target_misfit == 0) {
+  if (m_target_misfit == 0) {
     SETERRQ(m_d0.get_grid()->com,1,"Call set target misfit prior to calling IP_SSATaucTikhonovGNSolver::solve.");
   }
 
@@ -362,7 +362,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   TerminationReason::Ptr step_reason;
 
   this->evaluate_objective_and_gradient(step_reason);
-  if(step_reason->failed()) {
+  if (step_reason->failed()) {
     reason.reset(new GenericTerminationReason(-1,"Forward solve"));
     reason->set_root_cause(step_reason);
     return 0;
@@ -371,33 +371,33 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
   while(true) {
 
     ierr = this->check_convergence(reason); CHKERRQ(ierr);
-    if(reason->done()) {
+    if (reason->done()) {
       return 0;
     }
 
-    if(m_tikhonov_adaptive) {
+    if (m_tikhonov_adaptive) {
       m_logalpha += dlogalpha;
       m_alpha = exp(m_logalpha);
     }
 
     ierr = this->solve_linearized(step_reason); CHKERRQ(ierr);
-    if(step_reason->failed()) {
+    if (step_reason->failed()) {
       reason.reset(new GenericTerminationReason(-1,"Gauss Newton solve"));
       reason->set_root_cause(step_reason);
       return 0;
     }
 
     ierr = this->linesearch(step_reason); CHKERRQ(ierr);
-    if(step_reason->failed()) {
+    if (step_reason->failed()) {
       TerminationReason::Ptr cause = reason;
       reason.reset(new GenericTerminationReason(-1,"Linesearch"));
       reason->set_root_cause(step_reason);
       return 0;
     }
 
-    if(m_tikhonov_adaptive) {
+    if (m_tikhonov_adaptive) {
       ierr = this->compute_dlogalpha(&dlogalpha,step_reason); CHKERRQ(ierr);
-      if(step_reason->failed()) {
+      if (step_reason->failed()) {
         TerminationReason::Ptr cause = reason;
         reason.reset(new GenericTerminationReason(-1,"Tikhonov penalty update"));
         reason->set_root_cause(step_reason);
@@ -427,8 +427,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
 
   KSPConvergedReason ksp_reason;
   ierr = KSPGetConvergedReason(m_ksp,&ksp_reason); CHKERRQ(ierr);
-  if(ksp_reason<0) {
-    reason.reset( new KSPTerminationReason(ksp_reason) );
+  if (ksp_reason<0) {
+    reason.reset(new KSPTerminationReason(ksp_reason));
     return 0;
   }
 
@@ -454,7 +454,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
   ierr = m_designFunctional.dot(m_dh_dalpha,m_d_diff_lin,&ddisc_sq_dalpha);
   ddisc_sq_dalpha *= -2*m_alpha;
 
-  if(ddisc_sq_dalpha <= 0) {
+  if (ddisc_sq_dalpha <= 0) {
     // Try harder.
     
     ierr = verbPrintf(3,PETSC_COMM_WORLD,"Adaptive Tikhonov sanity check failed (dh/dalpha= %g <= 0).  Tighten inv_gn_ksp_rtol?\n",ddisc_sq_dalpha); CHKERRQ(ierr);
@@ -482,12 +482,12 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
   // It's easy to take steps that are too big when we are far from the solution.
   // So we limit the step size.
   double stepmax = 3;
-  if(fabs(*dlogalpha)> stepmax) {
+  if (fabs(*dlogalpha)> stepmax) {
     double sgn = *dlogalpha > 0 ? 1 : -1;
     *dlogalpha = stepmax*sgn;
   }
   
-  if(*dlogalpha<0) {
+  if (*dlogalpha<0) {
     *dlogalpha*=.5;
   }
 

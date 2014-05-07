@@ -147,7 +147,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       double uvel=(*ssa_velocity)(i,j).u;
       double vvel=(*ssa_velocity)(i,j).v;
 
-      if (fd2d_scheme){
+      if (fd2d_scheme) {
 
         if (uvel>=dx*vvel/dy && vvel>=0.0) //1
           tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx + vvel*(vFD(i-1,j)-vFD(i-1,j-1))/dy;
@@ -190,7 +190,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
 
       ///max shear stress criterion (more stringent than von mises)
-      if (max_shear_stress){
+      if (max_shear_stress) {
         double maxshear=PetscAbs(T1);
         maxshear=PetscMax(maxshear,PetscAbs(T2));
         maxshear=PetscMax(maxshear,PetscAbs(T1-T2));
@@ -199,7 +199,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       }
 
       ///lefm mixed-mode criterion
-      if (lefm){
+      if (lefm) {
         double sigmamu = 0.1; //friction coefficient between crack faces
 
         double sigmac = 0.64/M_PI; //initial crack depth 20cm
@@ -232,7 +232,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
           if (Ktwo==0.0)
             sigmatetanull=0.0;
           else //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
-            sigmatetanull=-2.0*atan((sqrt( PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo) ) - Kone )/(4.0*Ktwo));
+            sigmatetanull=-2.0*atan((sqrt(PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo)) - Kone)/(4.0*Ktwo));
 
           KSI = cos(0.5*sigmatetanull)*(Kone*cos(0.5*sigmatetanull)*cos(0.5*sigmatetanull) - 0.5*3.0*Ktwo*sin(sigmatetanull));
           // mode I stress intensity
@@ -252,8 +252,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
       //healing
       double fdheal = gammaheal*(strain_rates(i,j,0)-healThreshold);
-      if (ice_thickness(i,j)>0.0){
-        if (constant_healing){
+      if (ice_thickness(i,j)>0.0) {
+        if (constant_healing) {
           fdheal = gammaheal*(-healThreshold);
           if (fracture_weighted_healing)
             vFDnew(i,j)+= fdheal*dt*(1-vFD(i,j));
@@ -290,8 +290,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         }
 
         // fracture healing rate
-        if (ice_thickness(i,j)>0.0){
-          if (constant_healing || (strain_rates(i,j,0) < healThreshold)){
+        if (ice_thickness(i,j)>0.0) {
+          if (constant_healing || (strain_rates(i,j,0) < healThreshold)) {
             if (fracture_weighted_healing)
               vFH(i,j)=fdheal*(1-vFD(i,j));
             else
@@ -320,7 +320,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
       //boundary condition
       if (dirichlet_bc && !do_fracground) {
-        if (vBCMask.as_int(i,j) == 1){
+        if (vBCMask.as_int(i,j) == 1) {
           if (vBCvel(i,j).u != 0.0 || vBCvel(i,j).v != 0.0)
             vFDnew(i,j)=fdBoundaryValue;
           if (write_fd) {
@@ -333,7 +333,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         }
       }
       // ice free regions and boundary of computational domain
-      if (ice_thickness(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1){
+      if (ice_thickness(i,j)==0.0 || i==0 || j==0 || i==Mx-1 || j==My-1) {
         vFDnew(i,j)=0.0;
         if (write_fd) {
           vFAnew(i,j)=0.0;

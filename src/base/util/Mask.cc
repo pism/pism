@@ -21,7 +21,7 @@
 namespace pism {
 
 void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
-                    IceModelVec2Int &out_mask, IceModelVec2S &out_surface  )
+                    IceModelVec2Int &out_mask, IceModelVec2S &out_surface)
 {
   bed.begin_access();
   thickness.begin_access();

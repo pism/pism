@@ -50,7 +50,7 @@ class BedDeformLC {
 public:
   BedDeformLC();
   ~BedDeformLC();
-  PetscErrorCode settings(const PISMConfig &config,
+  PetscErrorCode settings(const Config &config,
                           bool myinclude_elastic,
                           int myMx, int myMy, double mydx, double mydy,
                           int myZ,

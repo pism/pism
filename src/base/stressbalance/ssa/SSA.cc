@@ -27,7 +27,7 @@
 
 namespace pism {
 
-SSA::SSA(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+SSA::SSA(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : ShallowStressBalance(g, e, c)
 {
   mask = NULL;
@@ -54,7 +54,7 @@ SSA::~SSA() {
 
 
 //! \brief Initialize a generic regular-grid SSA solver.
-PetscErrorCode SSA::init(PISMVars &vars) {
+PetscErrorCode SSA::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
@@ -84,8 +84,8 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   driving_stress_x = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_x"));
   driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
-  if( (driving_stress_x==NULL) || (driving_stress_y==NULL) ) {
-    if(surface == NULL) {
+  if ((driving_stress_x==NULL) || (driving_stress_y==NULL)) {
+    if (surface == NULL) {
       SETERRQ(grid.com, 1,
               "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
     }
@@ -103,7 +103,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
   // and read the initial guess (unless asked not to).
   bool i_set;
   std::string filename;
-  ierr = PISMOptionsString("-i", "PISM input file",
+  ierr = OptionsString("-i", "PISM input file",
                            filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
@@ -111,7 +111,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     unsigned int start;
     PIO nc(grid, "guess_mode");
 
-    ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
+    ierr = OptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
     ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
     ierr = nc.inq_var("u_ssa", u_ssa_found); CHKERRQ(ierr); 
@@ -387,12 +387,12 @@ PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
 }
 
 
-void SSA::add_vars_to_output(std::string /*keyword*/, std::set<std::string> &result) {
+void SSA::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   result.insert("vel_ssa");
 }
 
 
-PetscErrorCode SSA::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode SSA::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
@@ -403,7 +403,7 @@ PetscErrorCode SSA::define_variables(std::set<std::string> vars, const PIO &nc, 
 }
 
 
-PetscErrorCode SSA::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode SSA::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "vel_ssa")) {
@@ -413,8 +413,8 @@ PetscErrorCode SSA::write_variables(std::set<std::string> vars, const PIO &nc) {
   return 0;
 }
 
-void SSA::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                          std::map<std::string, PISMTSDiagnostic*> &ts_dict) {
+void SSA::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                          std::map<std::string, TSDiagnostic*> &ts_dict) {
 
   ShallowStressBalance::get_diagnostics(dict, ts_dict);
 
@@ -429,8 +429,8 @@ void SSA::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
   dict["taud_mag"] = new SSA_taud_mag(this, grid, *variables);
 }
 
-SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SSA>(m, g, my_vars) {
+SSA_taud::SSA_taud(SSA *m, IceGrid &g, Vars &my_vars)
+  : Diag<SSA>(m, g, my_vars) {
 
   dof = 2;
   vars.resize(dof,  NCSpatialVariable(g.get_unit_system()));
@@ -462,8 +462,8 @@ PetscErrorCode SSA_taud::compute(IceModelVec* &output) {
   return 0;
 }
 
-SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SSA>(m, g, my_vars) {
+SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars)
+  : Diag<SSA>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("taud_mag", grid);

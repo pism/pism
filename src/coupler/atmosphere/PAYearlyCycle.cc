@@ -27,15 +27,15 @@
 
 namespace pism {
 
-PAYearlyCycle::PAYearlyCycle(IceGrid &g, const PISMConfig &conf)
-  : PISMAtmosphereModel(g, conf), m_air_temp_snapshot(g.get_unit_system()) {
+PAYearlyCycle::PAYearlyCycle(IceGrid &g, const Config &conf)
+  : AtmosphereModel(g, conf), m_air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
     PISMEnd();
 
 }
 
-PAYearlyCycle::~PAYearlyCycle(){
+PAYearlyCycle::~PAYearlyCycle() {
   // empty
 }
 
@@ -78,7 +78,7 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
 }
 
 //! Allocates memory and reads in the precipitaion data.
-PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
+PetscErrorCode PAYearlyCycle::init(Vars &vars) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   m_variables = &vars;
@@ -93,7 +93,7 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 }
 
 //! Read precipitation data from a given file.
-PetscErrorCode PAYearlyCycle::init_internal(std::string input_filename, bool do_regrid,
+PetscErrorCode PAYearlyCycle::init_internal(const std::string &input_filename, bool do_regrid,
                                             unsigned int start) {
   // read precipitation rate from file
   PetscErrorCode ierr = verbPrintf(2, grid.com,
@@ -109,7 +109,7 @@ PetscErrorCode PAYearlyCycle::init_internal(std::string input_filename, bool do_
   return 0;
 }
 
-void PAYearlyCycle::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PAYearlyCycle::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   result.insert("precipitation");
 
   if (keyword == "big") {
@@ -120,7 +120,7 @@ void PAYearlyCycle::add_vars_to_output(std::string keyword, std::set<std::string
 }
 
 
-PetscErrorCode PAYearlyCycle::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PAYearlyCycle::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {
@@ -143,7 +143,7 @@ PetscErrorCode PAYearlyCycle::define_variables(std::set<std::string> vars, const
 }
 
 
-PetscErrorCode PAYearlyCycle::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PAYearlyCycle::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp_snapshot")) {

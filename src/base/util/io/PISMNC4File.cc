@@ -32,19 +32,19 @@ namespace pism {
 
 #include "pism_type_conversion.hh"
 
-PISMNC4File::PISMNC4File(MPI_Comm c, unsigned int compression_level)
-  : PISMNCFile(c), m_compression_level(compression_level) {
+NC4File::NC4File(MPI_Comm c, unsigned int compression_level)
+  : NCFile(c), m_compression_level(compression_level) {
   // empty
 }
 
-PISMNC4File::~PISMNC4File() {
+NC4File::~NC4File() {
   // empty
 }
 
 // open/create/close
 
 
-int PISMNC4File::close() {
+int NC4File::close() {
   int stat;
 
   stat = nc_close(ncid); check(stat);
@@ -57,7 +57,7 @@ int PISMNC4File::close() {
 }
 
 // redef/enddef
-int PISMNC4File::enddef() const {
+int NC4File::enddef() const {
 
   if (define_mode == false)
     return 0;
@@ -69,7 +69,7 @@ int PISMNC4File::enddef() const {
   return stat;
 }
 
-int PISMNC4File::redef() const {
+int NC4File::redef() const {
 
   if (define_mode == true)
     return 0;
@@ -82,7 +82,7 @@ int PISMNC4File::redef() const {
 }
 
 // dim
-int PISMNC4File::def_dim(std::string name, size_t length) const {
+int NC4File::def_dim(const std::string &name, size_t length) const {
   int dimid = 0, stat;
 
   stat = nc_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
@@ -90,7 +90,7 @@ int PISMNC4File::def_dim(std::string name, size_t length) const {
   return stat;
 }
 
-int PISMNC4File::inq_dimid(std::string dimension_name, bool &exists) const {
+int NC4File::inq_dimid(const std::string &dimension_name, bool &exists) const {
   int tmp, stat;
 
   stat = nc_inq_dimid(ncid, dimension_name.c_str(), &tmp);
@@ -104,7 +104,7 @@ int PISMNC4File::inq_dimid(std::string dimension_name, bool &exists) const {
   return 0;
 }
 
-int PISMNC4File::inq_dimlen(std::string dimension_name, unsigned int &result) const {
+int NC4File::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
   int stat, dimid = -1;
   size_t len;
 
@@ -117,7 +117,7 @@ int PISMNC4File::inq_dimlen(std::string dimension_name, unsigned int &result) co
   return stat;
 }
 
-int PISMNC4File::inq_unlimdim(std::string &result) const {
+int NC4File::inq_unlimdim(std::string &result) const {
   int stat, dimid;
   char dimname[NC_MAX_NAME];
 
@@ -134,7 +134,7 @@ int PISMNC4File::inq_unlimdim(std::string &result) const {
   return stat;
 }
 
-int PISMNC4File::inq_dimname(int j, std::string &result) const {
+int NC4File::inq_dimname(int j, std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
@@ -147,7 +147,7 @@ int PISMNC4File::inq_dimname(int j, std::string &result) const {
 }
 
 
-int PISMNC4File::inq_ndims(int &result) const {
+int NC4File::inq_ndims(int &result) const {
   int stat;
 
   stat = nc_inq_ndims(ncid, &result); check(stat);
@@ -157,11 +157,11 @@ int PISMNC4File::inq_ndims(int &result) const {
 
 
 // var
-int PISMNC4File::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
+int NC4File::def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat, varid;
 
-  std::vector<std::string>::iterator j;
+  std::vector<std::string>::const_iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
     int dimid = -1;
     stat = nc_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
@@ -191,19 +191,19 @@ int PISMNC4File::def_var(std::string name, PISM_IO_Type nctype, std::vector<std:
   return stat;
 }
 
-int PISMNC4File::get_varm_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, double *op) const {
+int NC4File::get_varm_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap, double *op) const {
   return this->get_put_var_double(variable_name,
                                   start, count, imap, op,
                                   true /*get*/,
                                   true /*mapped*/);
 }
 
-int PISMNC4File::get_vara_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
+int NC4File::get_vara_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
                                  double *op) const {
   std::vector<unsigned int> dummy;
   return this->get_put_var_double(variable_name,
@@ -213,19 +213,19 @@ int PISMNC4File::get_vara_double(std::string variable_name,
 }
 
 
-int PISMNC4File::put_varm_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, const double *op) const {
+int NC4File::put_varm_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap, const double *op) const {
   return this->get_put_var_double(variable_name,
                                   start, count, imap, const_cast<double*>(op),
                                   false /*put*/,
                                   true /*mapped*/);
 }
 
-int PISMNC4File::put_vara_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
+int NC4File::put_vara_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
                                  const double *op) const {
   std::vector<unsigned int> dummy;
   return this->get_put_var_double(variable_name,
@@ -235,7 +235,7 @@ int PISMNC4File::put_vara_double(std::string variable_name,
 }
 
 
-int PISMNC4File::inq_nvars(int &result) const {
+int NC4File::inq_nvars(int &result) const {
   int stat;
 
   stat = nc_inq_nvars(ncid, &result); check(stat);
@@ -243,7 +243,7 @@ int PISMNC4File::inq_nvars(int &result) const {
   return stat;
 }
 
-int PISMNC4File::inq_vardimid(std::string variable_name, std::vector<std::string> &result) const {
+int NC4File::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
@@ -273,7 +273,7 @@ int PISMNC4File::inq_vardimid(std::string variable_name, std::vector<std::string
   return 0;
 }
 
-int PISMNC4File::inq_varnatts(std::string variable_name, int &result) const {
+int NC4File::inq_varnatts(const std::string &variable_name, int &result) const {
   int stat, varid = -1;
 
   if (variable_name == "PISM_GLOBAL") {
@@ -287,7 +287,7 @@ int PISMNC4File::inq_varnatts(std::string variable_name, int &result) const {
   return 0;
 }
 
-int PISMNC4File::inq_varid(std::string variable_name, bool &exists) const {
+int NC4File::inq_varid(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   stat = nc_inq_varid(ncid, variable_name.c_str(), &flag);
@@ -302,7 +302,7 @@ int PISMNC4File::inq_varid(std::string variable_name, bool &exists) const {
   return 0;
 }
 
-int PISMNC4File::inq_varname(unsigned int j, std::string &result) const {
+int NC4File::inq_varname(unsigned int j, std::string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
@@ -314,7 +314,7 @@ int PISMNC4File::inq_varname(unsigned int j, std::string &result) const {
   return stat;
 }
 
-int PISMNC4File::inq_vartype(std::string variable_name, PISM_IO_Type &result) const {
+int NC4File::inq_vartype(const std::string &variable_name, IO_Type &result) const {
   int stat, varid;
   nc_type var_type;
 
@@ -330,7 +330,7 @@ int PISMNC4File::inq_vartype(std::string variable_name, PISM_IO_Type &result) co
 
 // att
 
-int PISMNC4File::get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const {
+int NC4File::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
   int stat, len, varid = -1;
   size_t attlen;
 
@@ -372,7 +372,7 @@ int PISMNC4File::get_att_double(std::string variable_name, std::string att_name,
 }
 
 
-int PISMNC4File::get_att_text(std::string variable_name, std::string att_name, std::string &result) const {
+int NC4File::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
   char *str = NULL;
   int stat, len, varid = -1;
 
@@ -418,7 +418,7 @@ int PISMNC4File::get_att_text(std::string variable_name, std::string att_name, s
   return 0;
 }
 
-int PISMNC4File::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const {
+int NC4File::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
   int stat = 0;
 
   stat = redef(); check(stat);
@@ -437,7 +437,7 @@ int PISMNC4File::put_att_double(std::string variable_name, std::string att_name,
   return stat;
 }
 
-int PISMNC4File::put_att_text(std::string variable_name, std::string att_name, std::string value) const {
+int NC4File::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0, varid = -1;
 
   stat = redef(); check(stat);
@@ -453,7 +453,7 @@ int PISMNC4File::put_att_text(std::string variable_name, std::string att_name, s
   return stat;
 }
 
-int PISMNC4File::inq_attname(std::string variable_name, unsigned int n, std::string &result) const {
+int NC4File::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
@@ -473,7 +473,7 @@ int PISMNC4File::inq_attname(std::string variable_name, unsigned int n, std::str
   return stat;
 }
 
-int PISMNC4File::inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const {
+int NC4File::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
   int stat, varid = -1;
   nc_type tmp;
 
@@ -497,7 +497,7 @@ int PISMNC4File::inq_atttype(std::string variable_name, std::string att_name, PI
 
 // misc
 
-int PISMNC4File::set_fill(int fillmode, int &old_modep) const {
+int NC4File::set_fill(int fillmode, int &old_modep) const {
   int stat;
 
   stat = nc_set_fill(ncid, fillmode, &old_modep); check(stat);
@@ -505,18 +505,19 @@ int PISMNC4File::set_fill(int fillmode, int &old_modep) const {
   return stat;
 }
 
-int PISMNC4File::set_access_mode(int, bool) const {
+int NC4File::set_access_mode(int, bool) const {
   return 0;
 }
 
-int PISMNC4File::get_put_var_double(std::string variable_name,
-                                    std::vector<unsigned int> start,
-                                    std::vector<unsigned int> count,
-                                    std::vector<unsigned int> imap,
+int NC4File::get_put_var_double(const std::string &variable_name,
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count,
+                                    const std::vector<unsigned int> &imap_input,
                                     double *op,
                                     bool get,
                                     bool mapped) const {
   int stat, varid, ndims = static_cast<int>(start.size());
+  std::vector<unsigned int> imap = imap_input;
 
 #if (PISM_DEBUG==1)
   if (mapped) {
@@ -579,7 +580,7 @@ int PISMNC4File::get_put_var_double(std::string variable_name,
   return stat;
 }
 
-std::string PISMNC4File::get_format() const {
+std::string NC4File::get_format() const {
   int format, stat;
 
   stat = nc_inq_format(ncid, &format); check(stat);

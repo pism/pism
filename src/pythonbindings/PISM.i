@@ -258,30 +258,30 @@ using namespace pism;
 %Pism_pointer_pointer_is_always_output(pism::IceFlowLaw)
 
 // These methods are called from PISM.options.
-%rename pism::PISMOptionsInt _optionsInt;
-%rename pism::PISMOptionsReal _optionsReal;
-%rename pism::PISMOptionsString _optionsString;
-%rename pism::PISMOptionsIntArray _optionsIntArray;
-%rename pism::PISMOptionsRealArray _optionsRealArray;
-%rename pism::PISMOptionsStringArray _optionsStringArray;
-%rename pism::PISMOptionsList _optionsList;
-%rename pism::PISMOptionsIsSet optionsIsSet;
+%rename pism::OptionsInt _optionsInt;
+%rename pism::OptionsReal _optionsReal;
+%rename pism::OptionsString _optionsString;
+%rename pism::OptionsIntArray _optionsIntArray;
+%rename pism::OptionsRealArray _optionsRealArray;
+%rename pism::OptionsStringArray _optionsStringArray;
+%rename pism::OptionsList _optionsList;
+%rename pism::OptionsIsSet optionsIsSet;
 
 // The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
 // to extend the printf features of verbPrintf to include python's formatting for objects.
 // So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
 %rename verbPrintf _verbPrintf;
 
-%extend pism::PISMVars
+%extend pism::Vars
 {
   %pythoncode
   {
     def __init__(self,*args):
-      this = _cpp.new_PISMVars()
+      this = _cpp.new_Vars()
       try: self.this.append(this)
       except: self.this = this
       if len(args)>1:
-        raise ValueError("PISMVars can only be constructed from nothing, an IceModelVec, or a list of such.")
+        raise ValueError("Vars can only be constructed from nothing, an IceModelVec, or a list of such.")
       if len(args)==1:
         if isinstance(args[0],IceModelVec):
           self.add(args[0])
@@ -346,11 +346,11 @@ using namespace pism;
     }
 };
 
-%rename(__mult__) pism::PISMVector2::operator*;
-%rename(__add__) pism::PISMVector2::operator+;
-%ignore pism::PISMVector2::operator=;
-%ignore operator*(const double &a, const pism::PISMVector2 &v1);
-%extend pism::PISMVector2
+%rename(__mult__) pism::Vector2::operator*;
+%rename(__add__) pism::Vector2::operator+;
+%ignore pism::Vector2::operator=;
+%ignore operator*(const double &a, const pism::Vector2 &v1);
+%extend pism::Vector2
 {
   %pythoncode
   {
@@ -361,12 +361,12 @@ using namespace pism;
 
 %extend pism::IceModelVec2V
 {
-    PISMVector2 &getitem(int i, int j)
+    Vector2 &getitem(int i, int j)
     {
         return (*($self))(i,j);
     }
 
-    void setitem(int i, int j, PISMVector2 val)
+    void setitem(int i, int j, Vector2 val)
     {
         (*($self))(i,j) = val;
     }
@@ -491,20 +491,20 @@ in fact be equal to PETSC_NULL, and this is OK. */
 // is being done to ensure that a python int on input is a valid nc_type, which isn't good.
 // In particular, the allowed values are different in NetCDF4 vs. NetCDF3 (there are more of them.)
 // A constraint check to the minimal set of NetCDF3 types would be the right thing to do. (FIXME)
-%typemap(in) PISM_IO_Type (int tmp){
+%typemap(in) IO_Type (int tmp){
     SWIG_AsVal(int)($input,&tmp);
-    $1 = static_cast<pism::PISM_IO_Type>(tmp);
+    $1 = static_cast<pism::IO_Type>(tmp);
 }
-%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) PISM_IO_Type {
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) IO_Type {
     $1 = PyInt_Check($input);
 }
 
-// same for PISM_IO_Mode
-%typemap(in) PISM_IO_Mode (int tmp){
+// same for IO_Mode
+%typemap(in) IO_Mode (int tmp){
     SWIG_AsVal(int)($input,&tmp);
-    $1 = static_cast<pism::PISM_IO_Mode>(tmp);
+    $1 = static_cast<pism::IO_Mode>(tmp);
 }
-%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) PISM_IO_Mode {
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) IO_Mode {
     $1 = PyInt_Check($input);
 }
 
@@ -514,7 +514,7 @@ in fact be equal to PETSC_NULL, and this is OK. */
 
 %include "stressbalance/ssa/SNESProblem.hh"
 %template(SNESScalarProblem) pism::SNESProblem<1,double>;
-%template(SNESVectorProblem) pism::SNESProblem<2,pism::PISMVector2>;
+%template(SNESVectorProblem) pism::SNESProblem<2,pism::Vector2>;
 
 // Now the header files for the PISM source code we want to wrap.
 // By default, SWIG does not wrap stuff included from an include file,
@@ -524,9 +524,9 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %feature("valuewrapper") pism::NCVariable;
 %feature("valuewrapper") pism::NCSpatialVariable;
 
-%ignore pism::PISMUnit::operator=;
-%feature("valuewrapper") pism::PISMUnitSystem;
-%feature("valuewrapper") pism::PISMUnit;
+%ignore pism::Unit::operator=;
+%feature("valuewrapper") pism::UnitSystem;
+%feature("valuewrapper") pism::Unit;
 
 %include "PISMUnits.hh"
 %include "IceGrid.hh"
@@ -546,10 +546,10 @@ in fact be equal to PETSC_NULL, and this is OK. */
 %include "LocalInterpCtx.hh"
 %include "rheology/flowlaws.hh"
 %include "enthalpyConverter.hh"
-%template(PISMDiag_ShallowStressBalance) pism::PISMDiag<pism::ShallowStressBalance>;
+%template(Diag_ShallowStressBalance) pism::Diag<pism::ShallowStressBalance>;
 %include "stressbalance/ShallowStressBalance.hh"
 %include "SSB_Modifier.hh"
-%template(PISMDiag_SIAFD) pism::PISMDiag<pism::SIAFD>;
+%template(Diag_SIAFD) pism::Diag<pism::SIAFD>;
 %include "stressbalance/sia/SIAFD.hh"
 %include "flowlaw_factory.hh"
 
@@ -557,16 +557,16 @@ in fact be equal to PETSC_NULL, and this is OK. */
 
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
-%template(PISMDiag_SSA) pism::PISMDiag<pism::SSA>;
+%template(Diag_SSA) pism::Diag<pism::SSA>;
 %include "stressbalance/ssa/SSA.hh"
 %ignore pism::SSAFEFunction;
 %ignore pism::SSAFEJacobian;
 %include "stressbalance/ssa/SSAFEM.hh"
-%template(PISMDiag_SSAFD) pism::PISMDiag<pism::SSAFD>;
+%template(Diag_SSAFD) pism::Diag<pism::SSAFD>;
 %include "stressbalance/ssa/SSAFD.hh"
 %include "Mask.hh"
 %include "pism_python.hh"
-%template(PISMDiag_PISMMohrCoulombYieldStress) pism::PISMDiag<pism::PISMMohrCoulombYieldStress>;
+%template(Diag_PISMMohrCoulombYieldStress) pism::Diag<pism::MohrCoulombYieldStress>;
 %include "PISMYieldStress.hh"
 %include "PISMMohrCoulombYieldStress.hh"
 %include "PISMTime.hh"

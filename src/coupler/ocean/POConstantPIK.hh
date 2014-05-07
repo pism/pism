@@ -28,21 +28,21 @@ namespace pism {
 
 //! \brief A class implementing an ocean model.
 //! Parameterization of sub-shelf melting with respect to sub-shelf heat flux like in Beckmann_Goosse 2003
-class POConstantPIK : public PISMOceanModel {
+class POConstantPIK : public OceanModel {
 public:
-  POConstantPIK(IceGrid &g, const PISMConfig &conf);
+  POConstantPIK(IceGrid &g, const Config &conf);
   virtual ~POConstantPIK();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode sea_level_elevation(double &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
-                                          PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                          IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
   IceModelVec2S *ice_thickness; // is not owned by this class
   NCSpatialVariable shelfbmassflux, shelfbtemp;

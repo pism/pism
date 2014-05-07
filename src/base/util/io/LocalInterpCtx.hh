@@ -53,11 +53,11 @@ public:
   int rank;             //!< MPI rank, to allocate a_raw on proc 0 only
 
 public:
-  LocalInterpCtx(grid_info g, const IceGrid &grid, double z_min, double z_max);
+  LocalInterpCtx(const grid_info &g, const IceGrid &grid, double z_min, double z_max);
   ~LocalInterpCtx();
   PetscErrorCode printArray();
 private:
-  void print_grid_info(grid_info g, PISMUnitSystem s, int threshold);
+  void print_grid_info(const grid_info &g, const UnitSystem &s, int threshold);
 };
 
 } // end of namespace pism

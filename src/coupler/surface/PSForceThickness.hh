@@ -29,24 +29,23 @@ namespace pism {
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const PISMConfig &conf, PISMSurfaceModel *input);
+  PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel *input);
 
   virtual ~PSForceThickness();
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
+  virtual PetscErrorCode init(Vars &vars);
+  virtual void attach_atmosphere_model(AtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
-protected:
-  std::string input_file;
-  double alpha;
-  IceModelVec2S *ice_thickness; //!< current ice thickness produced by IceModel.
-  IceModelVec2S target_thickness, ftt_mask;
-  NCSpatialVariable climatic_mass_balance, climatic_mass_balance_original, ice_surface_temp;
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 private:
+  std::string m_input_file;
+  double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
+  IceModelVec2S *m_ice_thickness; //!< current ice thickness produced by IceModel.
+  IceModelVec2S m_target_thickness, m_ftt_mask;
+  NCSpatialVariable m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
   PetscErrorCode allocate_PSForceThickness();
 };
 

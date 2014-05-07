@@ -213,7 +213,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     bulgeEnthMax = config.get("enthalpy_cold_bulge_max"); // J kg-1
 
   bool viewOneColumn = false;
-  ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   DrainageCalculator dc(config);
 
@@ -482,7 +482,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             //
             // after we compute it we make sure there is no refreeze if
             // there is no available basal water
-            basal_melt_rate(i, j) = ( (*Rb)(i, j) + basal_heat_flux(i, j) - hf_up ) / (ice_density * L);
+            basal_melt_rate(i, j) = ((*Rb)(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * L);
 
             if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0)
               basal_melt_rate(i, j) = 0.0;
@@ -511,7 +511,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     } // j-loop
   } // i-loop
 
-  if (sub_gl == true){
+  if (sub_gl == true) {
     ierr = gl_mask.end_access(); CHKERRQ(ierr);
   }
 

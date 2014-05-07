@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PSGivenClimate::PSGivenClimate(IceGrid &g, const PISMConfig &conf)
-  : PGivenClimate<PSModifier,PISMSurfaceModel>(g, conf, NULL)
+PSGivenClimate::PSGivenClimate(IceGrid &g, const Config &conf)
+  : PGivenClimate<PSModifier,SurfaceModel>(g, conf, NULL)
 {
   option_prefix = "-surface_given";
 
@@ -66,12 +66,12 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
   return 0;
 }
 
-void PSGivenClimate::attach_atmosphere_model(PISMAtmosphereModel *input) {
+void PSGivenClimate::attach_atmosphere_model(AtmosphereModel *input) {
   delete input;
   input = NULL;
 }
 
-PetscErrorCode PSGivenClimate::init(PISMVars &) {
+PetscErrorCode PSGivenClimate::init(Vars &) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock

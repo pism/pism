@@ -47,8 +47,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = set_config_from_options(grid.com, config); CHKERRQ(ierr);
 
-  ierr = PISMOptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
-  ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
+  ierr = OptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
+  ierr = OptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -94,9 +94,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 }
 
 //! Assembles a list of variables corresponding to an output file size.
-PetscErrorCode IceModel::set_output_size(std::string option,
-                                         std::string description,
-                                         std::string default_value,
+PetscErrorCode IceModel::set_output_size(const std::string &option,
+                                         const std::string &description,
+                                         const std::string &default_value,
                                          std::set<std::string> &result) {
   PetscErrorCode ierr;
   std::set<std::string> choices;
@@ -113,7 +113,7 @@ PetscErrorCode IceModel::set_output_size(std::string option,
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
-  ierr = PISMOptionsList(grid.com, option,
+  ierr = OptionsList(grid.com, option,
                          description, choices,
                          default_value, keyword, flag); CHKERRQ(ierr);
 
@@ -208,7 +208,7 @@ PetscErrorCode IceModel::set_output_size(std::string option,
 
 
 //! Returns the output size as a keyword, for options "-o_size", "-save_size", "-backup_size", etc.
-std::string IceModel::get_output_size(std::string option) {
+std::string IceModel::get_output_size(const std::string &option) {
   std::set<std::string> choices;
   std::string keyword;
   bool flag;
@@ -216,7 +216,7 @@ std::string IceModel::get_output_size(std::string option) {
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
-  PISMOptionsList(grid.com, option,
+  OptionsList(grid.com, option,
                   "UNKNOWN", choices,
                   "UNKNOWN", keyword, flag);
   return keyword;

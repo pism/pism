@@ -25,54 +25,54 @@
 namespace pism {
 
 //! \brief Computes the vertically-averaged ice velocity.
-class PSB_velbar : public PISMDiag<PISMStressBalance>
+class PSB_velbar : public Diag<StressBalance>
 {
 public:
-  PSB_velbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velbar(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes velbar_mag, the magnitude of vertically-integrated horizontal
 //! velocity of ice and masks out ice-free areas.
-class PSB_velbar_mag : public PISMDiag<PISMStressBalance>
+class PSB_velbar_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velbar_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velbar_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes flux_mag, the magnitude of vertically-integrated horizontal
 //! flux of ice.
-class PSB_flux_mag : public PISMDiag<PISMStressBalance>
+class PSB_flux_mag : public Diag<StressBalance>
 {
 public:
-  PSB_flux_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes velbase_mag, the magnitude of horizontal velocity of ice at base
 //! of ice and masks out ice-free areas.
-class PSB_velbase_mag : public PISMDiag<PISMStressBalance>
+class PSB_velbase_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velbase_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velbase_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes velsurf_mag, the magnitude of horizontal ice velocity at the
 //! surface.
-class PSB_velsurf_mag : public PISMDiag<PISMStressBalance>
+class PSB_velsurf_mag : public Diag<StressBalance>
 {
 public:
-  PSB_velsurf_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velsurf_mag(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes velsurf, the horizontal velocity of ice at ice surface.
-class PSB_velsurf : public PISMDiag<PISMStressBalance>
+class PSB_velsurf : public Diag<StressBalance>
 {
 public:
-  PSB_velsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velsurf(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -88,91 +88,91 @@ public:
 
   This ensures that \f$\tilde w(z_{\text{sea level}}) = 0\f$.
 */
-class PSB_wvel : public PISMDiag<PISMStressBalance>
+class PSB_wvel : public Diag<StressBalance>
 {
 public:
-  PSB_wvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_wvel(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! Computes wvelsurf, the vertical velocity of ice at ice surface.
-class PSB_wvelsurf : public PISMDiag<PISMStressBalance>
+class PSB_wvelsurf : public Diag<StressBalance>
 {
 public:
-  PSB_wvelsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_wvelsurf(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! Computes wvelbase, the vertical velocity of ice at the base of ice.
-class PSB_wvelbase : public PISMDiag<PISMStressBalance>
+class PSB_wvelbase : public Diag<StressBalance>
 {
 public:
-  PSB_wvelbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_wvelbase(StressBalance *m, IceGrid &g, Vars &my_vars);
   PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes horizontal ice velocity at the base of ice.
-class PSB_velbase : public PISMDiag<PISMStressBalance>
+class PSB_velbase : public Diag<StressBalance>
 {
 public:
-  PSB_velbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_velbase(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes basal frictional heating.
-class PSB_bfrict : public PISMDiag<PISMStressBalance>
+class PSB_bfrict : public Diag<StressBalance>
 {
 public:
-  PSB_bfrict(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_bfrict(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes the x-component of the horizontal ice velocity.
-class PSB_uvel : public PISMDiag<PISMStressBalance>
+class PSB_uvel : public Diag<StressBalance>
 {
 public:
-  PSB_uvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_uvel(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes the y-component of the horizontal ice velocity.
-class PSB_vvel : public PISMDiag<PISMStressBalance>
+class PSB_vvel : public Diag<StressBalance>
 {
 public:
-  PSB_vvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_vvel(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes vertical velocity of ice, relative to the bed directly
 //! below.
-class PSB_wvel_rel : public PISMDiag<PISMStressBalance>
+class PSB_wvel_rel : public Diag<StressBalance>
 {
 public:
-  PSB_wvel_rel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_wvel_rel(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Reports the volumetric strain heating.
-class PSB_strainheat : public PISMDiag<PISMStressBalance>
+class PSB_strainheat : public Diag<StressBalance>
 {
 public:
-  PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_strainheat(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Reports the principal strain rates.
-class PSB_strain_rates : public PISMDiag<PISMStressBalance>
+class PSB_strain_rates : public Diag<StressBalance>
 {
 public:
-  PSB_strain_rates(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_strain_rates(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Reports deviatoric stresses.
-class PSB_deviatoric_stresses : public PISMDiag<PISMStressBalance>
+class PSB_deviatoric_stresses : public Diag<StressBalance>
 {
 public:
-  PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PSB_deviatoric_stresses(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

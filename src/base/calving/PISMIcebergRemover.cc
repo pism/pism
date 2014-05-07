@@ -24,25 +24,25 @@
 
 namespace pism {
 
-PISMIcebergRemover::PISMIcebergRemover(IceGrid &g, const PISMConfig &conf)
-  : PISMComponent(g, conf) {
+IcebergRemover::IcebergRemover(IceGrid &g, const Config &conf)
+  : Component(g, conf) {
 
   PetscErrorCode ierr = allocate();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate PISMIcebergRemover.\n");
+    PetscPrintf(grid.com, "PISM ERROR: failed to allocate IcebergRemover.\n");
     PISMEnd();
   }
 }
 
-PISMIcebergRemover::~PISMIcebergRemover() {
+IcebergRemover::~IcebergRemover() {
   PetscErrorCode ierr = deallocate();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to deallocate PISMIcebergRemover.\n");
+    PetscPrintf(grid.com, "PISM ERROR: failed to deallocate IcebergRemover.\n");
     PISMEnd();
   }
 }
 
-PetscErrorCode PISMIcebergRemover::init(PISMVars &vars) {
+PetscErrorCode IcebergRemover::init(Vars &vars) {
   m_bcflag = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
   return 0;
 }
@@ -53,7 +53,7 @@ PetscErrorCode PISMIcebergRemover::init(PISMVars &vars) {
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
+PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
                                           IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
   double **iceberg_mask;
@@ -153,7 +153,7 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
   return 0;
 }
 
-PetscErrorCode PISMIcebergRemover::allocate() {
+PetscErrorCode IcebergRemover::allocate() {
   PetscErrorCode ierr;
 
   ierr = grid.get_dm(1,         // dof
@@ -172,7 +172,7 @@ PetscErrorCode PISMIcebergRemover::allocate() {
   return 0;
 }
 
-PetscErrorCode PISMIcebergRemover::deallocate() {
+PetscErrorCode IcebergRemover::deallocate() {
   PetscErrorCode ierr;
 
   ierr = VecDestroy(&m_g2); CHKERRQ(ierr);
@@ -186,7 +186,7 @@ PetscErrorCode PISMIcebergRemover::deallocate() {
 /**
  * Transfer the m_g2 data member to m_mask_p0 on rank 0.
  */
-PetscErrorCode PISMIcebergRemover::transfer_to_proc0() {
+PetscErrorCode IcebergRemover::transfer_to_proc0() {
   PetscErrorCode ierr;
 
   ierr = DMDAGlobalToNaturalBegin(m_da2, m_g2, INSERT_VALUES, m_g2natural); CHKERRQ(ierr);
@@ -204,7 +204,7 @@ PetscErrorCode PISMIcebergRemover::transfer_to_proc0() {
 /**
  * Transfer the m_mask_p0 data member from rank 0 to m_g2 (distributed).
  */
-PetscErrorCode PISMIcebergRemover::transfer_from_proc0() {
+PetscErrorCode IcebergRemover::transfer_from_proc0() {
   PetscErrorCode ierr;
 
   ierr = VecScatterBegin(m_scatter, m_mask_p0, m_g2natural,
@@ -218,17 +218,17 @@ PetscErrorCode PISMIcebergRemover::transfer_from_proc0() {
   return 0;
 }
 
-void PISMIcebergRemover::add_vars_to_output(std::string, std::set<std::string> &) {
+void IcebergRemover::add_vars_to_output(const std::string &, std::set<std::string> &) {
   // empty
 }
 
-PetscErrorCode PISMIcebergRemover::define_variables(std::set<std::string>, const PIO &,
-                                                    PISM_IO_Type) {
+PetscErrorCode IcebergRemover::define_variables(const std::set<std::string> &, const PIO &,
+                                                    IO_Type) {
   // empty
   return 0;
 }
 
-PetscErrorCode PISMIcebergRemover::write_variables(std::set<std::string>, const PIO& ) {
+PetscErrorCode IcebergRemover::write_variables(const std::set<std::string> &, const PIO&) {
   // empty
   return 0;
 }

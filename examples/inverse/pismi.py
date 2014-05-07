@@ -333,9 +333,9 @@ if __name__ == "__main__":
     vecs.add(design_prior,writing=saving_inv_data)
   else:
     if not PISM.util.fileHasVariable(input_filename,design_var):
-      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var,input_filename) )
+      PISM.verbPrintf(1,com,"Initial guess for design variable is not available as '%s' in %s.\nYou can provide an initial guess in the inverse data file.\n" % (design_var,input_filename))
       exit(1)
-    PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var,design_var) );
+    PISM.logging.logMessage("Reading '%s_prior' from '%s' in input file.\n" % (design_var,design_var));
     design = createDesignVec(grid,design_var)
     design.regrid(input_filename,True)
     design_prior.copy_from(design)
@@ -383,11 +383,11 @@ if __name__ == "__main__":
     if not PISM.util.fileHasVariable(output_filename,'zeta_inv'):
       PISM.verbPrintf(1,com,"Unable to restart computation: file %s is missing variable 'zeta_inv'", output_filename)
       exit(1)
-    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % output_filename )
+    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % output_filename)
     zeta.regrid(output_filename,True)
 
   elif PISM.util.fileHasVariable(inv_data_filename, 'zeta_inv'):
-    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % inv_data_filename )
+    PISM.logging.logMessage("  Inversion starting from 'zeta_inv' found in %s\n" % inv_data_filename)
     zeta.regrid(inv_data_filename,True)    
   else:
     zeta.copy_from(zeta_prior)

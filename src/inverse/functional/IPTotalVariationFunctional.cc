@@ -39,8 +39,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
   ierr = x.begin_access(); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
@@ -54,7 +53,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(x, x_e);
-      if(dirichletBC) dirichletBC.update_homogeneous(m_dofmap, x_e);
+      if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, x_e);
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       for (int q = 0; q < FEQuadrature::Nq; q++) {
@@ -63,7 +62,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
     } // j
   } // i
 
-  ierr = PISMGlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
@@ -90,8 +89,7 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   DirichletData_Scalar dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
@@ -107,20 +105,20 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(i, j, x, x_e);
-      if(dirichletBC) {
+      if (dirichletBC) {
         dirichletBC.constrain(m_dofmap);
         dirichletBC.update_homogeneous(m_dofmap, x_e);
       }
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element - local residual in prep for updating it.
-      for(int k = 0;k < FEQuadrature::Nk;k++){
+      for (int k = 0; k < FEQuadrature::Nk; k++) {
         gradient_e[k] = 0;
       }
 
       for (int q = 0; q < FEQuadrature::Nq; q++) {
         const double &dxdx_qq = dxdx_q[q], &dxdy_qq = dxdy_q[q];
-        for(int k = 0; k < FEQuadrature::Nk; k++ ) {
+        for (int k = 0; k < FEQuadrature::Nk; k++) {
           gradient_e[k] += m_c*JxW[q]*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2 - 1)
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k

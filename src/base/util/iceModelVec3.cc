@@ -43,8 +43,8 @@ IceModelVec3D::~IceModelVec3D() {
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, std::string my_name,
-                                        IceModelVecKind ghostedp, std::vector<double> levels,
+PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_name,
+                                        IceModelVecKind ghostedp, const std::vector<double> &levels,
                                         unsigned int stencil_width) {
   PetscErrorCode ierr;
 
@@ -501,7 +501,7 @@ PetscErrorCode  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {
 }
 
 
-PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, std::string my_name, IceModelVecKind ghostedp,
+PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const std::string &my_name, IceModelVecKind ghostedp,
                                      unsigned int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec3D::allocate(my_grid, my_name, ghostedp,

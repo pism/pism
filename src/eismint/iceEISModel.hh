@@ -33,7 +33,7 @@ namespace pism {
 */
 class IceEISModel : public IceModel {
 public:
-  IceEISModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
+  IceEISModel(IceGrid &g, Config &config, Config &overrides);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode allocate_stressbalance();

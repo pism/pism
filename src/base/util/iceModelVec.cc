@@ -151,9 +151,9 @@ PetscErrorCode IceModelVec::range(double &min, double &max) {
   ierr = VecMax(v, NULL, &my_max); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
-    // needs a reduce operation; use PISMGlobalMax;
-    ierr = PISMGlobalMin(&my_min, &gmin, grid->com); CHKERRQ(ierr);
-    ierr = PISMGlobalMax(&my_max, &gmax, grid->com); CHKERRQ(ierr);
+    // needs a reduce operation; use GlobalMax;
+    ierr = GlobalMin(&my_min, &gmin, grid->com); CHKERRQ(ierr);
+    ierr = GlobalMax(&my_max, &gmax, grid->com); CHKERRQ(ierr);
     min = gmin;
     max = gmax;
   } else {
@@ -203,20 +203,20 @@ PetscErrorCode IceModelVec::norm(int n, double &out) {
   ierr = VecNorm(v, type, &my_norm); CHKERRQ(ierr);
 
   if (m_has_ghosts == true) {
-    // needs a reduce operation; use PISMGlobalMax if NORM_INFINITY,
-    //   otherwise PISMGlobalSum; carefully in NORM_2 case
+    // needs a reduce operation; use GlobalMax if NORM_INFINITY,
+    //   otherwise GlobalSum; carefully in NORM_2 case
     if (n == NORM_1_AND_2) {
       SETERRQ1(grid->com, 1,
          "IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
          m_name.c_str());
     } else if (n == NORM_1) {
-      ierr = PISMGlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
     } else if (n == NORM_2) {
       my_norm = PetscSqr(my_norm);  // undo sqrt in VecNorm before sum
-      ierr = PISMGlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
       gnorm = sqrt(gnorm);
     } else if (n == NORM_INFINITY) {
-      ierr = PISMGlobalMax(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalMax(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
     } else {
       SETERRQ1(grid->com, 2, "IceModelVec::norm(...): unknown norm type (called as %s.norm(...))\n",
          m_name.c_str());
@@ -322,7 +322,7 @@ Vec IceModelVec::get_vec() {
 }
 
 //! Sets the variable name to `name` and resets metadata.
-PetscErrorCode  IceModelVec::set_name(std::string new_name, int N) {
+PetscErrorCode  IceModelVec::set_name(const std::string &new_name, int N) {
   reset_attrs(N);
 
   if (N == 0)
@@ -338,10 +338,10 @@ std::string IceModelVec::name() const {
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec::rename(std::string short_name, std::string long_name,
-                                   std::string standard_name, int N) {
+PetscErrorCode IceModelVec::rename(const std::string &short_name, const std::string &long_name,
+                                   const std::string &standard_name, int N) {
 
-  if(short_name.empty() == false) {
+  if (short_name.empty() == false) {
     if (N == 0) m_name = short_name;
     metadata(N).set_name(short_name);
   }
@@ -363,7 +363,7 @@ This affects NCVariable::report_range() and IceModelVec::write().  In write(),
 if IceModelVec::write_in_glaciological_units == true, then that variable is written
 with a conversion to the glaciological units set here.
  */
-PetscErrorCode  IceModelVec::set_glaciological_units(std::string my_units) {
+PetscErrorCode  IceModelVec::set_glaciological_units(const std::string &my_units) {
 
   PetscErrorCode ierr;
 
@@ -397,10 +397,10 @@ PetscErrorCode IceModelVec::reset_attrs(unsigned int N) {
   If my_units != "", this also resets glaciological_units, so that they match
   internal units.
  */
-PetscErrorCode IceModelVec::set_attrs(std::string my_pism_intent,
-                                      std::string my_long_name,
-                                      std::string my_units,
-                                      std::string my_standard_name,
+PetscErrorCode IceModelVec::set_attrs(const std::string &my_pism_intent,
+                                      const std::string &my_long_name,
+                                      const std::string &my_units,
+                                      const std::string &my_standard_name,
                                       int N) {
 
   metadata(N).set_string("long_name", my_long_name);
@@ -475,7 +475,7 @@ PetscErrorCode IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
-PetscErrorCode IceModelVec::define(const PIO &nc, PISM_IO_Type output_datatype) {
+PetscErrorCode IceModelVec::define(const PIO &nc, IO_Type output_datatype) {
   PetscErrorCode ierr;
 
   for (unsigned int j = 0; j < m_dof; ++j) {
@@ -489,7 +489,7 @@ PetscErrorCode IceModelVec::define(const PIO &nc, PISM_IO_Type output_datatype) 
 /*! Note that unlike read() and regrid(), this method does not use the standard
   name to find the variable to read attributes from.
  */
-PetscErrorCode IceModelVec::read_attributes(std::string filename, int N) {
+PetscErrorCode IceModelVec::read_attributes(const std::string &filename, int N) {
   PIO nc(*grid, "netcdf3");     // OK to use netcdf3
   PetscErrorCode ierr;
 
@@ -511,7 +511,7 @@ NCSpatialVariable& IceModelVec::metadata(unsigned int N) {
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-PetscErrorCode IceModelVec::write_impl(const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -688,7 +688,7 @@ PetscErrorCode IceModelVec::has_nan() {
 
   ierr = norm(NORM_INFINITY, tmp); CHKERRQ(ierr);
 
-  if ( gsl_isnan(tmp) ) {
+  if (gsl_isnan(tmp)) {
     PetscPrintf(grid->com, "IceModelVec %s has uninitialized grid points (or NANs)\n", m_name.c_str());
     return 1;
   }
@@ -765,8 +765,8 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
   ierr = VecStrideNormAll(v, type, norm_result); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
-    // needs a reduce operation; use PISMGlobalMax if NORM_INFINITY,
-    //   otherwise PISMGlobalSum; carefully in NORM_2 case
+    // needs a reduce operation; use GlobalMax if NORM_INFINITY,
+    //   otherwise GlobalSum; carefully in NORM_2 case
     if (n == NORM_1_AND_2) {
       SETERRQ1(grid->com, 1, 
          "IceModelVec::norm_all(...): NORM_1_AND_2 not implemented (called as %s.norm_all(...))\n",
@@ -774,20 +774,20 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
     } else if (n == NORM_1) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
-        ierr = PISMGlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
       }
 
     } else if (n == NORM_2) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
         norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
-        ierr = PISMGlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
         result[k] = sqrt(result[k]);
       }
 
     } else if (n == NORM_INFINITY) {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        ierr = PISMGlobalMax(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalMax(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
       }
     } else {
       SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))\n",
@@ -806,7 +806,7 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::write(std::string filename, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec::write(const std::string &filename, IO_Type nctype) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, grid->config.get_string("output_format"));
@@ -821,7 +821,7 @@ PetscErrorCode IceModelVec::write(std::string filename, PISM_IO_Type nctype) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::read(std::string filename, unsigned int time) {
+PetscErrorCode IceModelVec::read(const std::string &filename, unsigned int time) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, "guess_mode");
@@ -835,7 +835,7 @@ PetscErrorCode IceModelVec::read(std::string filename, unsigned int time) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::regrid(std::string filename, RegriddingFlag flag,
+PetscErrorCode IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
   PetscErrorCode ierr;
 
@@ -863,7 +863,7 @@ PetscErrorCode IceModelVec::read(const PIO &nc, const unsigned int time) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::write(const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode IceModelVec::write(const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
   ierr = write_impl(nc, nctype); CHKERRQ(ierr);
   return 0;

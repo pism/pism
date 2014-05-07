@@ -24,7 +24,7 @@
 #define _FETOOLS_H_
 
 #include <petscmat.h>
-#include "iceModelVec.hh"       // to get PISMVector2
+#include "iceModelVec.hh"       // to get Vector2
 
 namespace pism {
 
@@ -160,7 +160,7 @@ struct FEFunctionGerm
 /*! Germ in meant in the mathematical sense, sort of. */
 struct FEVector2Germ
 {
-  PISMVector2  val,  //!< Function value.
+  Vector2  val,  //!< Function value.
     dx,  //!< Function deriviative with respect to x.
     dy;  //!< Function derivative with respect to y.
 };
@@ -213,8 +213,8 @@ public:
   typedef void (*ShapeFunctionSpec)(double,double,FEFunctionGerm*);
   static const ShapeFunctionSpec shapeFunction[Nk];
   
-  //! Evaluate shape function \a k at (\a x,\a y) with values returned in \a germ.
-  virtual void eval(int k, double x, double y,FEFunctionGerm*germ){
+  //! Evaluate shape function `k` at (`x`,`y`) with values returned in `germ`.
+  virtual void eval(int k, double x, double y,FEFunctionGerm*germ) {
     shapeFunction[k](x,y,germ);
   }
 };
@@ -229,7 +229,7 @@ public:
 
   An FEDOFMap mediates the transfer between element-local and global degrees of freedom.
   In this very concrete implementation, the global degrees of freedom are either
-  scalars (double's) or vectors (PISMVector2's), one per node in the IceGrid, 
+  scalars (double's) or vectors (Vector2's), one per node in the IceGrid, 
   and the local degrees of freedom on the element are FEDOFMap::Nk (%i.e. four) scalars or vectors, one 
   for each vertex of the element.
 
@@ -242,14 +242,8 @@ public:
 class FEDOFMap
 {
 public:
-  FEDOFMap()
-  {
-    m_i = m_j = 0;
-    PetscMemzero(m_row, Nk*sizeof(MatStencil));
-    PetscMemzero(m_col, Nk*sizeof(MatStencil));
-  };
-  
-  ~FEDOFMap() {};
+  FEDOFMap();
+  ~FEDOFMap();
 
   // scalar
   void extractLocalDOFs(IceModelVec2S &x_global, double *x_local) const;
@@ -262,14 +256,14 @@ public:
   void addLocalResidualBlock(const double *y, double **yg);
 
   // vector
-  void extractLocalDOFs(IceModelVec2V &x_global, PISMVector2 *x_local) const;
-  void extractLocalDOFs(PISMVector2 const*const*x_global, PISMVector2 *x_local) const;
+  void extractLocalDOFs(IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void extractLocalDOFs(int i, int j, IceModelVec2V &x_global, PISMVector2 *x_local) const;
-  void extractLocalDOFs(int i, int j, PISMVector2 const*const*x_global, PISMVector2 *x_local) const;
+  void extractLocalDOFs(int i, int j, IceModelVec2V &x_global, Vector2 *x_local) const;
+  void extractLocalDOFs(int i, int j, Vector2 const*const*x_global, Vector2 *x_local) const;
 
-  void addLocalResidualBlock(const PISMVector2 *y, IceModelVec2V &y_global);
-  void addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg);
+  void addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global);
+  void addLocalResidualBlock(const Vector2 *y, Vector2 **yg);
 
   void reset(int i, int j, const IceGrid &g);
   
@@ -279,11 +273,10 @@ public:
   void localToGlobal(int k, int *i, int *j);
 
   PetscErrorCode addLocalJacobianBlock(const double *K, Mat J);
-  PetscErrorCode setJacobianDiag(int i, int j, const double *K, Mat J);
 
   static const int Nk = 4; //<! The number of test functions defined on an element.
   
-protected:
+private:
   static const int kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
   static const int kIOffset[Nk];
   static const int kJOffset[Nk];
@@ -336,8 +329,8 @@ public:
     return xm*ym;
   }
   
-  /*!\brief Convert an element index (\a i,\a j) into a flattened (1-d) array index, with the first
-    element (\a i, \a j) to be iterated over corresponding to flattened index 0. */
+  /*!\brief Convert an element index (`i`,`j`) into a flattened (1-d) array index, with the first
+    element (`i`, `j`) to be iterated over corresponding to flattened index 0. */
   int flatten(int i, int j)
   {
     return (i-xs)*ym+(j-ys);
@@ -390,16 +383,20 @@ public:
 class FEQuadrature
 {
 public:
+  FEQuadrature(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
+
   static const int Nq = 4;  //!< Number of quadrature points.
   static const int Nk = 4;  //!< Number of test functions on the element.
   
-  void init(const IceGrid &g,double L=1.0); // FIXME Allow a length scale to be specified.
+  // define FEFunctionGermArray, which is an array of FEQuadrature::Nq
+  // FEFunctionGerms
+  typedef FEFunctionGerm FEFunctionGermArray[FEQuadrature::Nq];
 
-  const FEFunctionGerm (*testFunctionValues())[Nq];  
-  const FEFunctionGerm *testFunctionValues(int q);
-  const FEFunctionGerm *testFunctionValues(int q,int k);
+  const FEFunctionGermArray* testFunctionValues();
+  const FEFunctionGerm* testFunctionValues(int q);
+  const FEFunctionGerm* testFunctionValues(int q, int k);
   
-  void getWeightedJacobian(double *jxw);
+  const double* getWeightedJacobian();
 
   //! The coordinates of the quadrature points on the reference element.
   static const double quadPoints[Nq][2];
@@ -407,16 +404,20 @@ public:
   static const double quadWeights[Nq];
 
 protected:
-  //! The Jacobian determinant of the map from the reference element to the physical element.
+  //! The determinant of the Jacobian of the map from the reference element to the physical element.
   double m_jacobianDet;
-  //! Shape function values (for each of \a Nq quadrature points, and each of \a Nk shape function)
+  // Determinant of the Jacobian of the map from the reference element
+  // to the physical element, evaluated at quadrature points and
+  // multiplied by corresponding quadrature weights.
+  double m_JxW[Nq];
+  //! Trial function values (for each of `Nq` quadrature points, and each of `Nk` trial function).
   FEFunctionGerm m_germs[Nq][Nk];
 };
 
 //! This version supports 2D scalar fields.
 class FEQuadrature_Scalar : public FEQuadrature {
 public:
-  FEQuadrature_Scalar();
+  FEQuadrature_Scalar(const IceGrid &grid, double L);
   void computeTrialFunctionValues(const double *x, double *vals);
   void computeTrialFunctionValues(const double *x, double *vals, double *dx, double *dy);
 
@@ -436,22 +437,22 @@ private:
 //! This version supports 2D vector fields.
 class FEQuadrature_Vector : public FEQuadrature {
 public:
-  FEQuadrature_Vector();
-  void computeTrialFunctionValues(const PISMVector2 *x,  PISMVector2 *vals);
-  void computeTrialFunctionValues(const PISMVector2 *x,  PISMVector2 *vals, double (*Dv)[3]);  
-  void computeTrialFunctionValues(const PISMVector2 *x,  PISMVector2 *vals, PISMVector2 *dx, PISMVector2 *dy);  
+  FEQuadrature_Vector(const IceGrid &grid, double L);
+  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals);
+  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, double (*Dv)[3]);  
+  void computeTrialFunctionValues(const Vector2 *x,  Vector2 *vals, Vector2 *dx, Vector2 *dy);  
 
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, PISMVector2 const*const*x_global,  
-                                  PISMVector2 *vals);
-  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, PISMVector2 const*const*x_global,  
-                                  PISMVector2 *vals, double (*Dv)[3]);
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, Vector2 const*const*x_global,  
+                                  Vector2 *vals);
+  void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, Vector2 const*const*x_global,  
+                                  Vector2 *vals, double (*Dv)[3]);
 
   void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
-                                  PISMVector2 *vals);
+                                  Vector2 *vals);
   void computeTrialFunctionValues(int i, int j, const FEDOFMap &dof, IceModelVec2V &x_global,  
-                                  PISMVector2 *vals, double (*Dv)[3]);
+                                  Vector2 *vals, double (*Dv)[3]);
 private:
-  PISMVector2 m_tmp[Nk];
+  Vector2 m_tmp[Nk];
 };
 
 //* Parts shared by scalar and 2D vector Dirichlet data classes.
@@ -479,7 +480,7 @@ public:
   PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2S *values, double weight = 1.0);
   void update(FEDOFMap &dofmap, double* x_e);
   void update_homogeneous(FEDOFMap &dofmap, double* x_e);
-  void fix_residual(double **x, double **r);
+  void fix_residual(const double **x, double **r);
   void fix_residual_homogeneous(double **r_global);
   PetscErrorCode fix_jacobian(Mat J);
   PetscErrorCode finish();
@@ -491,10 +492,10 @@ class DirichletData_Vector : public DirichletData {
 public:
   DirichletData_Vector();
   PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2V *values, double weight);
-  void update(FEDOFMap &dofmap, PISMVector2* x_e);
-  void update_homogeneous(FEDOFMap &dofmap, PISMVector2* x_e);
-  void fix_residual(PISMVector2 **x, PISMVector2 **r);
-  void fix_residual_homogeneous(PISMVector2 **r);
+  void update(FEDOFMap &dofmap, Vector2* x_e);
+  void update_homogeneous(FEDOFMap &dofmap, Vector2* x_e);
+  void fix_residual(const Vector2 **x, Vector2 **r);
+  void fix_residual_homogeneous(Vector2 **r);
   PetscErrorCode fix_jacobian(Mat J);
   PetscErrorCode finish();
 protected:

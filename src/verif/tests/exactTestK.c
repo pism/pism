@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007, 2011 Ed Bueler
+   Copyright (C) 2007, 2011, 2014 Ed Bueler
   
    This file is part of PISM.
   
@@ -95,7 +95,7 @@ int exactK(const double t, const double z, double *TT, double *FF, const int bed
     my_gamma = sin(alpha * H0) / cos(beta * B0);
     XkSQR = (rho_BR * c_p_BR * my_gamma * my_gamma * B0 + rho_ICE * c_p_ICE * H0) / 2.0;
     Xk = sqrt(XkSQR);
-    /* theta = ( (z > 0) ? sin(alpha * (H0 - z)) : my_gamma * cos(beta * (B0 + z)) ) / Xk; */
+    /* theta = ((z > 0) ? sin(alpha * (H0 - z)) : my_gamma * cos(beta * (B0 + z))) / Xk; */
     theta = (z > 0) ? sin(alpha * (H0 - z))
                     : my_gamma * cos(beta * (B0 + z)); 
     theta /= Xk;
@@ -115,7 +115,7 @@ int exactK(const double t, const double z, double *TT, double *FF, const int bed
     *TT += Ck * exp(- lambda * t) * theta;
     *FF += - ((z > 0) ? k_ICE : k_BR) * Ck * exp(- lambda * t) * dthetakdz;
     /* DEBUG: printf("          I1 = %10e, I2 = %10e, Ck = %10e, term = %10f\n",
-           I1,I2,Ck, Ck * exp(- lambda * t) * theta ); */
+           I1,I2,Ck, Ck * exp(- lambda * t) * theta); */
   }
   /* P = (z >= 0) ? (z / k_ICE) - (H0 / k_ICE) : (z / k_BR) - (H0 / k_ICE); */
   P = (z / ((z > 0) ? k_ICE : k_BR)) - (H0 / k_ICE);

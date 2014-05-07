@@ -34,18 +34,18 @@ namespace pism {
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
 typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const char[],
-                                           const PISMConfig &, EnthalpyConverter*, IceFlowLaw **);
+                                           const Config &, EnthalpyConverter*, IceFlowLaw **);
 
 class IceFlowLawFactory {
 public:
   IceFlowLawFactory(MPI_Comm, const char prefix[],
-                    const PISMConfig &conf,
+                    const Config &conf,
                     EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
-  PetscErrorCode setType(std::string name);
+  PetscErrorCode setType(const std::string &name);
   PetscErrorCode setFromOptions();
-  PetscErrorCode registerType(std::string name, IceFlowLawCreator);
-  PetscErrorCode removeType(std::string name);
+  PetscErrorCode registerType(const std::string &name, IceFlowLawCreator);
+  PetscErrorCode removeType(const std::string &name);
   PetscErrorCode create(IceFlowLaw **);
 private:
   PetscErrorCode registerAll();
@@ -54,7 +54,7 @@ private:
   char prefix[256];
   std::string type_name;
   std::map<std::string, IceFlowLawCreator> flow_laws;
-  const PISMConfig &config;
+  const Config &config;
   EnthalpyConverter *EC;
 };
 

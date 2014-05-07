@@ -24,7 +24,7 @@
 
 namespace pism {
 
-PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const PISMConfig &conf)
+PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const Config &conf)
   : PAYearlyCycle(g, conf), A(NULL) {
 }
 
@@ -33,7 +33,7 @@ PACosineYearlyCycle::~PACosineYearlyCycle() {
     delete A;
 }
 
-PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
+PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
   PetscErrorCode ierr;
   bool input_file_flag, scaling_flag;
   std::string input_file, scaling_file;
@@ -49,10 +49,10 @@ PetscErrorCode PACosineYearlyCycle::init(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling '-atmosphere yearly_cycle'",
                            ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-atmosphere_yearly_cycle_file",
+    ierr = OptionsString("-atmosphere_yearly_cycle_file",
                              "PACosineYearlyCycle input file name",
                              input_file, input_file_flag); CHKERRQ(ierr);
-    ierr = PISMOptionsString("-atmosphere_yearly_cycle_scaling_file",
+    ierr = OptionsString("-atmosphere_yearly_cycle_scaling_file",
                              "PACosineYearlyCycle amplitude scaling input file name",
                              scaling_file, scaling_flag); CHKERRQ(ierr);
   }

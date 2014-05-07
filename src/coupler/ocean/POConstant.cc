@@ -24,8 +24,8 @@
 
 namespace pism {
 
-POConstant::POConstant(IceGrid &g, const PISMConfig &conf)
-  : PISMOceanModel(g, conf),
+POConstant::POConstant(IceGrid &g, const Config &conf)
+  : OceanModel(g, conf),
     shelfbmassflux(g.get_unit_system()),
     shelfbtemp(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
@@ -54,7 +54,7 @@ PetscErrorCode POConstant::allocate_POConstant() {
   return 0;
 }
 
-PetscErrorCode POConstant::init(PISMVars &vars) {
+PetscErrorCode POConstant::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -65,7 +65,7 @@ PetscErrorCode POConstant::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Ocean model", ""); CHKERRQ(ierr);
 
-  ierr = PISMOptionsReal("-shelf_base_melt_rate",
+  ierr = OptionsReal("-shelf_base_melt_rate",
                           "Specifies a sub shelf ice-equivalent melt rate in meters/year",
                           mymeltrate, meltrate_set); CHKERRQ(ierr);
 
@@ -141,13 +141,13 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   return 0;
 }
 
-void POConstant::add_vars_to_output(std::string, std::set<std::string> &result) {
+void POConstant::add_vars_to_output(const std::string&, std::set<std::string> &result) {
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode POConstant::define_variables(std::set<std::string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+PetscErrorCode POConstant::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                            IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {
@@ -161,7 +161,7 @@ PetscErrorCode POConstant::define_variables(std::set<std::string> vars, const PI
   return 0;
 }
 
-PetscErrorCode POConstant::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode POConstant::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 

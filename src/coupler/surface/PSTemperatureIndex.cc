@@ -32,8 +32,8 @@ namespace pism {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const PISMConfig &conf)
-  : PISMSurfaceModel(g, conf),
+PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const Config &conf)
+  : SurfaceModel(g, conf),
     ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PSTemperatureIndex(); CHKERRCONTINUE(ierr);
@@ -68,22 +68,22 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
                            CHKERRQ(ierr);
   {
-    ierr = PISMOptionsIsSet("-pdd_rand",
+    ierr = OptionsIsSet("-pdd_rand",
                             "Use a PDD implementation based on simulating a random process",
                             randomized); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-pdd_rand_repeatable",
+    ierr = OptionsIsSet("-pdd_rand_repeatable",
                             "Use a PDD implementation based on simulating a repeatable random process",
                             randomized_repeatable); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-pdd_fausto",
+    ierr = OptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
                             fausto_params); CHKERRQ(ierr);
-    ierr = PISMOptionsString("-pdd_sd_file",
+    ierr = OptionsString("-pdd_sd_file",
                              "Read standard deviation from file",
                              filename, sd_file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsInt("-pdd_sd_period",
+    ierr = OptionsInt("-pdd_sd_period",
                           "Length of the standard deviation data period in years",
                           sd_period, sd_period_set); CHKERRQ(ierr);
-    ierr = PISMOptionsInt("-pdd_sd_reference_year",
+    ierr = OptionsInt("-pdd_sd_reference_year",
                           "Standard deviation data reference year",
                           sd_ref_year, sd_ref_year_set); CHKERRQ(ierr);
   }
@@ -194,12 +194,12 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
+PetscErrorCode PSTemperatureIndex::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
+  ierr = SurfaceModel::init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
     "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
@@ -254,9 +254,9 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     ierr = air_temp_sd.init(filename, sd_period, sd_ref_time); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
-                      "  Option -pdd_sd_file is not set. Using a constant value.\n"
-                      ); CHKERRQ(ierr);
-    ierr = air_temp_sd.set(base_pddStdDev); CHKERRQ(ierr);
+                      "  Option -pdd_sd_file is not set. Using a constant value.\n");
+    CHKERRQ(ierr);
+    ierr = air_temp_sd.init_constant(base_pddStdDev); CHKERRQ(ierr);
   }
 
   std::string input_file;
@@ -366,10 +366,10 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
    for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      // the temperature time series from the PISMAtmosphereModel and its modifiers
+      // the temperature time series from the AtmosphereModel and its modifiers
       ierr = atmosphere->temp_time_series(i, j, &T[0]); CHKERRQ(ierr);
 
-      // the precipitation time series from PISMAtmosphereModel and its modifiers
+      // the precipitation time series from AtmosphereModel and its modifiers
       ierr = atmosphere->precip_time_series(i, j, &P[0]); CHKERRQ(ierr);
 
       // interpolate temperature standard deviation time series
@@ -496,9 +496,9 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result
   return 0;
 }
 
-void PSTemperatureIndex::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PSTemperatureIndex::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
 
-  PISMSurfaceModel::add_vars_to_output(keyword, result);
+  SurfaceModel::add_vars_to_output(keyword, result);
 
   result.insert("snow_depth");
 
@@ -515,7 +515,7 @@ void PSTemperatureIndex::add_vars_to_output(std::string keyword, std::set<std::s
   }
 }
 
-PetscErrorCode PSTemperatureIndex::define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype) {
+PetscErrorCode PSTemperatureIndex::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -546,13 +546,14 @@ PetscErrorCode PSTemperatureIndex::define_variables(std::set<std::string> vars, 
     ierr = snow_depth.define(nc, nctype); CHKERRQ(ierr);
   }
 
-  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   return 0;
 
 }
 
-PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSTemperatureIndex::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -597,7 +598,7 @@ PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, c
     vars.erase("snow_depth");
   }
 
-  ierr = PISMSurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
+  ierr = SurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
 
   return 0;
 }

@@ -46,7 +46,7 @@ static std::string patch_filename(std::string input, int mpi_rank) {
   return input;
 }
 
-int PISMNC4_Quilt::integer_open_mode(PISM_IO_Mode input) const {
+int NC4_Quilt::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
     return NC_NOWRITE;
   } else {
@@ -54,7 +54,7 @@ int PISMNC4_Quilt::integer_open_mode(PISM_IO_Mode input) const {
   }
 }
 
-int PISMNC4_Quilt::open(std::string fname, PISM_IO_Mode mode) {
+int NC4_Quilt::open(const std::string &fname, IO_Mode mode) {
   int stat, rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -69,7 +69,7 @@ int PISMNC4_Quilt::open(std::string fname, PISM_IO_Mode mode) {
 }
 
 
-int PISMNC4_Quilt::create(std::string fname) {
+int NC4_Quilt::create(const std::string &fname) {
   int stat = 0, rank = 0;
 
   MPI_Comm_rank(com, &rank);
@@ -82,7 +82,7 @@ int PISMNC4_Quilt::create(std::string fname) {
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::close() {
+int NC4_Quilt::close() {
   int stat;
 
   stat = nc_close(ncid); check(stat);
@@ -94,7 +94,7 @@ int PISMNC4_Quilt::close() {
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::def_dim(std::string name, size_t length) const {
+int NC4_Quilt::def_dim(const std::string &name, size_t length) const {
   int stat;
   size_t length_local = 0;
 
@@ -110,12 +110,14 @@ int PISMNC4_Quilt::def_dim(std::string name, size_t length) const {
     stat = this->def_dim(name + suffix, length_local); check(stat);
   }
 
-  stat = PISMNC4File::def_dim(name, length); check(stat);
+  stat = NC4File::def_dim(name, length); check(stat);
 
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
+int NC4_Quilt::def_var(const std::string &name, IO_Type nctype,
+                       const std::vector<std::string> &dims_input) const {
+  std::vector<std::string> dims = dims_input;
   int stat = 0, rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -139,39 +141,39 @@ int PISMNC4_Quilt::def_var(std::string name, PISM_IO_Type nctype, std::vector<st
       dims[j] = dims[j] + suffix;
   }
 
-  stat = PISMNC4File::def_var(name, nctype, dims); check(stat);
+  stat = NC4File::def_var(name, nctype, dims); check(stat);
 
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::put_att_double(std::string name, std::string att_name,
-                                      PISM_IO_Type xtype, const std::vector<double> &data) const {
+int NC4_Quilt::put_att_double(const std::string &name, const std::string &att_name,
+                                      IO_Type xtype, const std::vector<double> &data) const {
   int stat;
 
   if (name == "x" || name == "y") {
     stat = this->put_att_double(name + suffix, att_name, xtype, data); check(stat);
   }
 
-  stat = PISMNC4File::put_att_double(name, att_name, xtype, data); check(stat);
+  stat = NC4File::put_att_double(name, att_name, xtype, data); check(stat);
 
   return global_stat(stat);
 }
 
 
-int PISMNC4_Quilt::put_att_text(std::string name, std::string att_name, std::string value) const {
+int NC4_Quilt::put_att_text(const std::string &name, const std::string &att_name, const std::string &value) const {
   int stat;
 
   if (name == "x" || name == "y") {
     stat = this->put_att_text(name + suffix, att_name, value); check(stat);
   }
 
-  stat = PISMNC4File::put_att_text(name, att_name, value); check(stat);
+  stat = NC4File::put_att_text(name, att_name, value); check(stat);
 
   return global_stat(stat);
 }
 
 
-void PISMNC4_Quilt::correct_start_and_count(std::string name,
+void NC4_Quilt::correct_start_and_count(const std::string &name,
                                             std::vector<unsigned int> &start,
                                             std::vector<unsigned int> &count) const {
   std::vector<std::string> dim_names;
@@ -194,23 +196,25 @@ void PISMNC4_Quilt::correct_start_and_count(std::string name,
 
 }
 
-int PISMNC4_Quilt::get_put_var_double(std::string name,
-                                      std::vector<unsigned int> start,
-                                      std::vector<unsigned int> count,
-                                      std::vector<unsigned int> imap, double *data,
+int NC4_Quilt::get_put_var_double(const std::string &name,
+                                      const std::vector<unsigned int> &start_input,
+                                      const std::vector<unsigned int> &count_input,
+                                      const std::vector<unsigned int> &imap_input, double *data,
                                       bool get,
                                       bool mapped) const {
   int stat;
-
+  std::vector<unsigned int> start = start_input;
+  std::vector<unsigned int> count = count_input;
+  std::vector<unsigned int> imap = imap_input;
   if (get) {
     if (!(name == "x" || name == "y")) {
       correct_start_and_count(name, start, count);
     }
 
-    stat = PISMNC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(stat);
+    stat = NC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(stat);
   } else {
     if (name == "x" || name == "y") {
-      stat = PISMNC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(stat);
+      stat = NC4File::get_put_var_double(name, start, count, imap, data, get, mapped); check(stat);
 
       double *tmp;
       if (name == "x") {
@@ -225,21 +229,21 @@ int PISMNC4_Quilt::get_put_var_double(std::string name,
         tmp = &data[m_ys];
       }
 
-      stat = PISMNC4File::get_put_var_double(name + suffix, start, count, imap,
+      stat = NC4File::get_put_var_double(name + suffix, start, count, imap,
                                              tmp, get, mapped); check(stat);
       return global_stat(stat);
     }
 
     correct_start_and_count(name, start, count);
 
-    stat = PISMNC4File::get_put_var_double(name, start, count, imap,
+    stat = NC4File::get_put_var_double(name, start, count, imap,
                                            data, get, mapped); check(stat);
   }
 
   return global_stat(stat);
 }
 
-int PISMNC4_Quilt::global_stat(int stat) const {
+int NC4_Quilt::global_stat(int stat) const {
   int tmp;
 
   MPI_Allreduce(&stat, &tmp, 1, MPI_INT, MPI_SUM, com);
@@ -247,11 +251,11 @@ int PISMNC4_Quilt::global_stat(int stat) const {
   return tmp != 0;
 }
 
-int PISMNC4_Quilt::move_if_exists(std::string file, int /*rank_to_use*/) {
+int NC4_Quilt::move_if_exists(const std::string &file, int /*rank_to_use*/) {
   int stat = 0, rank = 0;
   MPI_Comm_rank(com, &rank);
 
-  stat = PISMNCFile::move_if_exists(patch_filename(file, rank), rank);
+  stat = NCFile::move_if_exists(patch_filename(file, rank), rank);
 
   return global_stat(stat);
 }

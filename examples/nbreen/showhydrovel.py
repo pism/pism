@@ -12,8 +12,7 @@ except:
     print "netCDF4 is not installed!"
     sys.exit(1)
 
-parser = argparse.ArgumentParser( \
-    description='show quiver for the subglacial water velocity (or flux) field from a PISM file')
+parser = argparse.ArgumentParser(description='show quiver for the subglacial water velocity (or flux) field from a PISM file')
 parser.add_argument('filename',
                     help='file from which to get  V = bwatvel[2]  (and  W = bwat  for flux)')
 parser.add_argument('-b', type=float, default=-1.0,

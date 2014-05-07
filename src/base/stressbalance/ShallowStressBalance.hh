@@ -29,21 +29,21 @@
 
 namespace pism {
 
-class PISMVars;
+class Vars;
 class IceFlowLaw;
 class EnthalpyConverter;
 class IceBasalResistancePlasticLaw;
 
 //! Shallow stress balance (such as the SSA).
-class ShallowStressBalance : public PISMComponent
+class ShallowStressBalance : public Component
 {
 public:
-  ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const Config &conf);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
 
-  virtual PetscErrorCode init(PISMVars &vars)
+  virtual PetscErrorCode init(Vars &vars)
   { variables = &vars; return 0; }
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
@@ -63,8 +63,8 @@ public:
                                 IceModelVec2S &melange_back_pressure) = 0;
 
   // interface to the data provided by the stress balance object:
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &/*ts_dict*/);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result)
@@ -106,7 +106,7 @@ protected:
   virtual PetscErrorCode allocate();
 
   double sea_level;
-  PISMVars *variables;
+  Vars *variables;
   IceBasalResistancePlasticLaw *basal_sliding_law;
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
@@ -116,44 +116,44 @@ protected:
   IceModelVec2S basal_frictional_heating;
 };
 
-class SSB_beta : public PISMDiag<ShallowStressBalance>
+class SSB_beta : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_beta(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes the gravitational driving stress (diagnostically).
-class SSB_taud : public PISMDiag<ShallowStressBalance>
+class SSB_taud : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes the magnitude of the gravitational driving stress
 //! (diagnostically).
-class SSB_taud_mag : public PISMDiag<ShallowStressBalance>
+class SSB_taud_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! @brief Computes the basal shear stress @f$ \tau_b @f$.
-class SSB_taub : public PISMDiag<ShallowStressBalance>
+class SSB_taub : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 //! \brief Computes the magnitude of the basal shear stress
 //! (diagnostically).
-class SSB_taub_mag : public PISMDiag<ShallowStressBalance>
+class SSB_taub_mag : public Diag<ShallowStressBalance>
 {
 public:
-  SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
@@ -166,29 +166,29 @@ public:
 class ZeroSliding : public ShallowStressBalance
 {
 public:
-  ZeroSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  ZeroSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
   virtual ~ZeroSliding();
   
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
 
-  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/);
+  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/);
 
   //! Defines requested couplings fields and/or asks an attached model
   //! to do so.
-  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
-                                          PISM_IO_Type /*nctype*/);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+                                          IO_Type /*nctype*/);
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/);
 };
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const PISMConfig &conf);
+  PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
   virtual ~PrescribedSliding();
   virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 };
 
 } // end of namespace pism

@@ -30,7 +30,7 @@ namespace pism {
 class ageSystemCtx : public columnSystemCtx {
 
 public:
-  ageSystemCtx(int my_Mz, std::string my_prefix);
+  ageSystemCtx(int my_Mz, const std::string &my_prefix);
   PetscErrorCode initAllColumns();
 
   PetscErrorCode solveThisColumn(double *x);
@@ -53,7 +53,7 @@ protected: // used internally
 };
 
 
-ageSystemCtx::ageSystemCtx(int my_Mz, std::string my_prefix)
+ageSystemCtx::ageSystemCtx(int my_Mz, const std::string &my_prefix)
       : columnSystemCtx(my_Mz, my_prefix) { // size of system is Mz
   initAllDone = false;
   // set values so we can check if init was called on all
@@ -248,7 +248,7 @@ PetscErrorCode IceModel::ageStep() {
   x = new double[fMz]; // space for solution
 
   bool viewOneColumn;
-  ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   ageSystemCtx system(fMz, "age"); // linear system to solve in each column
   system.dx    = grid.dx;

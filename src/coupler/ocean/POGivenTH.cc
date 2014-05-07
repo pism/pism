@@ -26,7 +26,7 @@
 
 namespace pism {
 
-POGivenTH::POGivenTHConstants::POGivenTHConstants(const PISMConfig &config) {
+POGivenTH::POGivenTHConstants::POGivenTHConstants(const Config &config) {
   // coefficients of the in situ melting point temperature
   // parameterization:
   a[0] = -0.0575;
@@ -56,8 +56,8 @@ POGivenTH::POGivenTHConstants::POGivenTHConstants(const PISMConfig &config) {
   limit_salinity_range             = config.get_flag("ocean_three_equation_model_clip_salinity");
 }
 
-POGivenTH::POGivenTH(IceGrid &g, const PISMConfig &conf)
-  : PGivenClimate<POModifier,PISMOceanModel>(g, conf, NULL)
+POGivenTH::POGivenTH(IceGrid &g, const Config &conf)
+  : PGivenClimate<POModifier,OceanModel>(g, conf, NULL)
 {
   PetscErrorCode ierr = allocate_POGivenTH(); CHKERRCONTINUE(ierr);
   if (ierr != 0)
@@ -107,7 +107,7 @@ PetscErrorCode POGivenTH::allocate_POGivenTH() {
   return 0;
 }
 
-PetscErrorCode POGivenTH::init(PISMVars &vars) {
+PetscErrorCode POGivenTH::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock

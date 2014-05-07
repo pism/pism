@@ -22,8 +22,8 @@
 
 namespace pism {
 
-PO_delta_MBP::PO_delta_MBP(IceGrid &g, const PISMConfig &conf, PISMOceanModel* in)
-  : PScalarForcing<PISMOceanModel,POModifier>(g, conf, in),
+PO_delta_MBP::PO_delta_MBP(IceGrid &g, const Config &conf, OceanModel* in)
+  : PScalarForcing<OceanModel,POModifier>(g, conf, in),
     shelfbmassflux(g.get_unit_system()),
     shelfbtemp(g.get_unit_system())
 {
@@ -63,7 +63,7 @@ PetscErrorCode PO_delta_MBP::allocate_PO_delta_MBP() {
   return 0;
 }
 
-PetscErrorCode PO_delta_MBP::init(PISMVars &vars) {
+PetscErrorCode PO_delta_MBP::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -87,15 +87,16 @@ PetscErrorCode PO_delta_MBP::melange_back_pressure_fraction(IceModelVec2S &resul
   return 0;
 }
 
-void PO_delta_MBP::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PO_delta_MBP::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   result.insert("shelfbtemp");
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode PO_delta_MBP::define_variables(std::set<std::string> vars, const PIO &nc,
-                                              PISM_IO_Type nctype) {
+PetscErrorCode PO_delta_MBP::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+                                              IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {
@@ -113,7 +114,8 @@ PetscErrorCode PO_delta_MBP::define_variables(std::set<std::string> vars, const 
   return 0;
 }
 
-PetscErrorCode PO_delta_MBP::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PO_delta_MBP::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 

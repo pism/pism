@@ -64,7 +64,7 @@ PetscErrorCode SSB_Modifier::extend_the_grid(int old_Mz) {
   return 0;
 }
 
-PetscErrorCode ConstantInColumn::init(PISMVars &vars) {
+PetscErrorCode ConstantInColumn::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
@@ -72,7 +72,7 @@ PetscErrorCode ConstantInColumn::init(PISMVars &vars) {
   return 0;
 }
 
-ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSB_Modifier(g, e, c)
 {
   IceFlowLawFactory ice_factory(grid.com, "", config, &EC);

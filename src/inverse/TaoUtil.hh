@@ -44,8 +44,8 @@ private:
 //! Encapsulate TAO's TaoSolverTerminationReason codes as a PISM TerminationReason.
 class TAOTerminationReason: public TerminationReason {
 public:
-  TAOTerminationReason( TaoSolverTerminationReason r);
-  virtual void get_description( std::ostream &desc,int indent_level=0);
+  TAOTerminationReason(TaoSolverTerminationReason r);
+  virtual void get_description(std::ostream &desc,int indent_level=0);
 };
 
 //! \brief An interface for solving an optimization problem with TAO where the
@@ -92,7 +92,7 @@ public:
   TerminationReason::Ptr reason;
   solver.solve(reason);
 
-  if(reason->succeeded()) {
+  if (reason->succeeded()) {
   printf("Success: %s\n",reason->description().c_str());
   } else {
   printf("Failure: %s\n",reason->description().c_str());
@@ -109,7 +109,7 @@ public:
   {
     PetscErrorCode ierr;
     ierr = this->construct(tao_type);
-    if(ierr) {
+    if (ierr) {
       CHKERRCONTINUE(ierr);
       PetscPrintf(m_comm, "FATAL ERROR: TaoBasicProblem allocation failed.\n");
       PISMEnd();
@@ -119,7 +119,7 @@ public:
   virtual ~TaoBasicSolver() {
     PetscErrorCode ierr;
     ierr = this->destruct();
-    if(ierr) {
+    if (ierr) {
       CHKERRCONTINUE(ierr);
       PetscPrintf(m_comm, "FATAL ERROR: TaoBasicProblem deallocation failed.\n");
       PISMEnd();
@@ -133,7 +133,7 @@ public:
     /* Solve the application */ 
     Vec x0;
     ierr = m_problem.formInitialGuess(&x0,reason); CHKERRQ(ierr);
-    if(reason->failed()) {
+    if (reason->failed()) {
       TerminationReason::Ptr root_cause = reason;
       reason.reset(new GenericTerminationReason(-1,"Unable to form initial guess"));
       reason->set_root_cause(root_cause);
@@ -174,7 +174,7 @@ protected:
   //! Finalize the TaoSolver.
   virtual PetscErrorCode destruct() {
     PetscErrorCode ierr;
-    if(m_tao) {
+    if (m_tao) {
       ierr = TaoDestroy(&m_tao); CHKERRQ(ierr);
     }
     return 0; 
@@ -213,14 +213,14 @@ public:
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveRoutine(tao,
                                   TaoObjectiveCallback<Problem>::evaluateObjectiveCallback,
-                                  &p ); CHKERRQ(ierr);
+                                  &p); CHKERRQ(ierr);
     return 0;
   }
 
 protected:
 
   static PetscErrorCode evaluateObjectiveCallback(TaoSolver tao,
-                                                  Vec x, double *value, void *ctx ) {
+                                                  Vec x, double *value, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateObjective(tao,x,value); CHKERRQ(ierr);
@@ -256,13 +256,13 @@ public:
     PetscErrorCode ierr;
     ierr = TaoSetMonitor(tao,
                          TaoMonitorCallback<Problem>::monitorTao,
-                         &p, NULL ); CHKERRQ(ierr);
+                         &p, NULL); CHKERRQ(ierr);
     return 0;
   }
 
 protected:
 
-  static PetscErrorCode monitorTao(TaoSolver tao, void *ctx ) {
+  static PetscErrorCode monitorTao(TaoSolver tao, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->monitorTao(tao); CHKERRQ(ierr);
@@ -303,7 +303,7 @@ public:
 
 protected:
 
-  static PetscErrorCode getVariableBounds(TaoSolver tao, Vec lo, Vec hi, void *ctx ) {
+  static PetscErrorCode getVariableBounds(TaoSolver tao, Vec lo, Vec hi, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->getVariableBounds(tao,lo,hi); CHKERRQ(ierr);
@@ -338,14 +338,14 @@ public:
     PetscErrorCode ierr;
     ierr = TaoSetGradientRoutine(tao,
                                  TaoGradientCallback<Problem>::evaluateGradient,
-                                 &p ); CHKERRQ(ierr);
+                                 &p); CHKERRQ(ierr);
     return 0;
   }
 
 protected:
 
   static PetscErrorCode evaluateGradient(TaoSolver tao,
-                                         Vec x, Vec gradient, void *ctx ) {
+                                         Vec x, Vec gradient, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateGradient(tao,x,gradient); CHKERRQ(ierr);
@@ -380,13 +380,13 @@ public:
     PetscErrorCode ierr;
     ierr = TaoSetConvergenceTest(tao,
                                  TaoConvergenceCallback<Problem>::convergenceTestCallback,
-                                 &p ); CHKERRQ(ierr);
+                                 &p); CHKERRQ(ierr);
     return 0;
   }
 
 protected:
 
-  static PetscErrorCode convergenceTestCallback(TaoSolver tao, void *ctx ) {
+  static PetscErrorCode convergenceTestCallback(TaoSolver tao, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->convergenceTest(tao); CHKERRQ(ierr);
@@ -421,14 +421,14 @@ public:
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveAndGradientRoutine(tao,
                                              TaoObjGradCallback<Problem,Callback>::evaluateObjectiveAndGradientCallback,
-                                             &p ); CHKERRQ(ierr);
+                                             &p); CHKERRQ(ierr);
     return 0;
   }
   
 protected:
 
   static PetscErrorCode evaluateObjectiveAndGradientCallback(TaoSolver tao,
-                                                             Vec x, double *value, Vec gradient, void *ctx ) {
+                                                             Vec x, double *value, Vec gradient, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = (p->*Callback)(tao,x,value,gradient); CHKERRQ(ierr);
@@ -460,20 +460,20 @@ public:
   static PetscErrorCode connect(TaoSolver tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc=NULL, Mat Jcinv=NULL) {
     PetscErrorCode ierr;
     ierr = TaoSetConstraintsRoutine(tao,c,TaoLCLCallbacks<Problem>::evaluateConstraintsCallback,&p); CHKERRQ(ierr);
-    if(Jcpc==NULL) Jcpc = Jc;
+    if (Jcpc==NULL) Jcpc = Jc;
     ierr = TaoSetJacobianStateRoutine(tao,Jc,Jcpc,Jcinv,TaoLCLCallbacks<Problem>::evaluateJacobianStateCallback,&p); CHKERRQ(ierr);
     ierr = TaoSetJacobianDesignRoutine(tao,Jd,TaoLCLCallbacks<Problem>::evaluateJacobianDesignCallback,&p); CHKERRQ(ierr);
     return 0;
   }
 protected:
-  static PetscErrorCode evaluateConstraintsCallback(TaoSolver tao, Vec x,Vec c, void*ctx){
+  static PetscErrorCode evaluateConstraintsCallback(TaoSolver tao, Vec x,Vec c, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateConstraints(tao,x,c); CHKERRQ(ierr);
     return 0;
   }
 
-  static PetscErrorCode evaluateJacobianStateCallback(TaoSolver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure, void*ctx){
+  static PetscErrorCode evaluateJacobianStateCallback(TaoSolver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateConstraintsJacobianState(tao,x,J,Jpc,Jinv,structure);
@@ -481,7 +481,7 @@ protected:
     return 0;
   }
 
-  static PetscErrorCode evaluateJacobianDesignCallback(TaoSolver tao, Vec x, Mat *J, void*ctx){
+  static PetscErrorCode evaluateJacobianDesignCallback(TaoSolver tao, Vec x, Mat *J, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateConstraintsJacobianDesign(tao,x,J); CHKERRQ(ierr);

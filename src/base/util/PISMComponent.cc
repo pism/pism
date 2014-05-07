@@ -32,10 +32,7 @@ namespace pism {
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
 */
-PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name of the file found
-                                              bool &do_regrid, //!< specifies whether regridding is necessary
-                                              int &start    //!< "start" to use when reading from filename
-                                              ) {
+PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
   PetscErrorCode ierr;
   PetscBool i_set, boot_file_set;
 
@@ -48,7 +45,7 @@ PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name o
   if (i_set) {
     if (boot_file_set) {
       ierr = PetscPrintf(grid.com,
-        "PISMClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
+        "ClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
       PISMEnd();
     }
     filename = i_file;
@@ -92,7 +89,7 @@ PetscErrorCode PISMComponent::find_pism_input(std::string &filename, //!< name o
  *
  * @return 0 on success
  */
-PetscErrorCode PISMComponent::regrid(std::string module_name, IceModelVec *variable,
+PetscErrorCode Component::regrid(const std::string &module_name, IceModelVec *variable,
                                      RegriddingFlag flag) {
   PetscErrorCode ierr;
   bool file_set, vars_set;
@@ -103,8 +100,8 @@ PetscErrorCode PISMComponent::regrid(std::string module_name, IceModelVec *varia
 
   ierr = PetscOptionsBegin(grid.com, "", title.c_str(), ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-regrid_file", "regridding file name", file, file_set); CHKERRQ(ierr);
-    ierr = PISMOptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
+    ierr = OptionsString("-regrid_file", "regridding file name", file, file_set); CHKERRQ(ierr);
+    ierr = OptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
                                 "", vars, vars_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);

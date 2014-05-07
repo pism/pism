@@ -24,13 +24,13 @@
 
 namespace pism {
 
-class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
+class PALapseRates : public PLapseRates<AtmosphereModel,PAModifier>
 {
 public:
-  PALapseRates(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in);
+  PALapseRates(IceGrid &g, const Config &conf, AtmosphereModel* in);
   virtual ~PALapseRates();
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
@@ -45,9 +45,9 @@ public:
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 protected:
   double precip_lapse_rate;
   NCSpatialVariable precipitation, air_temp;

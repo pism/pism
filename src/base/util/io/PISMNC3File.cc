@@ -31,16 +31,16 @@ namespace pism {
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
-PISMNC3File::PISMNC3File(MPI_Comm c)
-  : PISMNCFile(c) {
+NC3File::NC3File(MPI_Comm c)
+  : NCFile(c) {
   MPI_Comm_rank(c, &m_rank);
 }
 
-PISMNC3File::~PISMNC3File() {
+NC3File::~NC3File() {
   if (ncid >= 0) {
     if (m_rank == 0) {
       nc_close(ncid);
-      fprintf(stderr, "PISMNC3File::~PISMNC3File: NetCDF file %s is still open\n",
+      fprintf(stderr, "NC3File::~NC3File: NetCDF file %s is still open\n",
               m_filename.c_str());
     }
     ncid = -1;
@@ -48,7 +48,7 @@ PISMNC3File::~PISMNC3File() {
 }
 
 
-int PISMNC3File::integer_open_mode(PISM_IO_Mode input) const {
+int NC3File::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
     return NC_NOWRITE;
   } else {
@@ -57,7 +57,7 @@ int PISMNC3File::integer_open_mode(PISM_IO_Mode input) const {
 }
 
 // open/create/close
-int PISMNC3File::open(std::string fname, PISM_IO_Mode mode) {
+int NC3File::open(const std::string &fname, IO_Mode mode) {
   int stat;
 
   m_filename = fname;
@@ -77,7 +77,7 @@ int PISMNC3File::open(std::string fname, PISM_IO_Mode mode) {
 }
 
 //! \brief Create a NetCDF file.
-int PISMNC3File::create(std::string fname) {
+int NC3File::create(const std::string &fname) {
   int stat;
 
   m_filename = fname;
@@ -96,7 +96,7 @@ int PISMNC3File::create(std::string fname) {
 }
 
 //! \brief Close a NetCDF file.
-int PISMNC3File::close() {
+int NC3File::close() {
   int stat;
 
   if (m_rank == 0) {
@@ -115,7 +115,7 @@ int PISMNC3File::close() {
 
 
 //! \brief Exit define mode.
-int PISMNC3File::enddef() const {
+int NC3File::enddef() const {
   int stat;
 
   if (define_mode == false)
@@ -136,7 +136,7 @@ int PISMNC3File::enddef() const {
 }
 
 //! \brief Enter define mode.
-int PISMNC3File::redef() const {
+int NC3File::redef() const {
   int stat;
 
   if (define_mode == true)
@@ -156,7 +156,7 @@ int PISMNC3File::redef() const {
 
 
 //! \brief Define a dimension.
-int PISMNC3File::def_dim(std::string name, size_t length) const {
+int NC3File::def_dim(const std::string &name, size_t length) const {
   int stat;
 
   if (m_rank == 0) {
@@ -170,7 +170,7 @@ int PISMNC3File::def_dim(std::string name, size_t length) const {
   return stat;
 }
 
-int PISMNC3File::inq_dimid(std::string dimension_name, bool &exists) const {
+int NC3File::inq_dimid(const std::string &dimension_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
@@ -192,7 +192,7 @@ int PISMNC3File::inq_dimid(std::string dimension_name, bool &exists) const {
 
 
 //! \brief Get a dimension length.
-int PISMNC3File::inq_dimlen(std::string dimension_name, unsigned int &result) const {
+int NC3File::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -214,7 +214,7 @@ int PISMNC3File::inq_dimlen(std::string dimension_name, unsigned int &result) co
 }
 
 //! \brief Get an unlimited dimension.
-int PISMNC3File::inq_unlimdim(std::string &result) const {
+int NC3File::inq_unlimdim(std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
@@ -238,7 +238,7 @@ int PISMNC3File::inq_unlimdim(std::string &result) const {
   return stat;
 }
 
-int PISMNC3File::inq_dimname(int j, std::string &result) const {
+int NC3File::inq_dimname(int j, std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
@@ -258,7 +258,7 @@ int PISMNC3File::inq_dimname(int j, std::string &result) const {
 }
 
 
-int PISMNC3File::inq_ndims(int &result) const {
+int NC3File::inq_ndims(int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -274,14 +274,14 @@ int PISMNC3File::inq_ndims(int &result) const {
 
 
 //! \brief Define a variable.
-int PISMNC3File::def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const {
+int NC3File::def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   int stat;
 
   if (m_rank == 0) {
     std::vector<int> dimids;
     int varid;
 
-    std::vector<std::string>::iterator j;
+    std::vector<std::string>::const_iterator j;
     for (j = dims.begin(); j != dims.end(); ++j) {
       int dimid;
       stat = nc_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
@@ -298,17 +298,17 @@ int PISMNC3File::def_var(std::string name, PISM_IO_Type nctype, std::vector<std:
   return stat;
 }
 
-int PISMNC3File::get_varm_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, double *op) const {
+int NC3File::get_varm_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap, double *op) const {
   return this->get_var_double(variable_name,
                               start, count, imap, op, true);
 }
 
-int PISMNC3File::get_vara_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
+int NC3File::get_vara_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
                                  double *op) const {
   std::vector<unsigned int> dummy;
   return this->get_var_double(variable_name,
@@ -316,11 +316,14 @@ int PISMNC3File::get_vara_double(std::string variable_name,
 }
 
 //! \brief Get variable data.
-int PISMNC3File::get_var_double(std::string variable_name,
-                                std::vector<unsigned int> start,
-                                std::vector<unsigned int> count,
-                                std::vector<unsigned int> imap, double *ip,
+int NC3File::get_var_double(const std::string &variable_name,
+                                const std::vector<unsigned int> &start_input,
+                                const std::vector<unsigned int> &count_input,
+                                const std::vector<unsigned int> &imap_input, double *ip,
                                 bool mapped) const {
+  std::vector<unsigned int> start = start_input;
+  std::vector<unsigned int> count = count_input;
+  std::vector<unsigned int> imap = imap_input;
   const int start_tag = 1,
     count_tag = 2,
     data_tag =  3,
@@ -429,17 +432,17 @@ int PISMNC3File::get_var_double(std::string variable_name,
   return stat;
 }
 
-int PISMNC3File::put_varm_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, const double *op) const {
+int NC3File::put_varm_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap, const double *op) const {
   return this->put_var_double(variable_name,
                               start, count, imap, op, true);
 }
 
-int PISMNC3File::put_vara_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
+int NC3File::put_vara_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
                                  const double *op) const {
   std::vector<unsigned int> dummy;
   return this->put_var_double(variable_name,
@@ -448,11 +451,14 @@ int PISMNC3File::put_vara_double(std::string variable_name,
 
 
 //! \brief Put variable data (mapped).
-int PISMNC3File::put_var_double(std::string variable_name,
-                                std::vector<unsigned int> start,
-                                std::vector<unsigned int> count,
-                                std::vector<unsigned int> imap, const double *op,
+int NC3File::put_var_double(const std::string &variable_name,
+                                const std::vector<unsigned int> &start_input,
+                                const std::vector<unsigned int> &count_input,
+                                const std::vector<unsigned int> &imap_input, const double *op,
                                 bool mapped) const {
+  std::vector<unsigned int> start = start_input;
+  std::vector<unsigned int> count = count_input;
+  std::vector<unsigned int> imap = imap_input;
   const int start_tag = 1,
     count_tag = 2,
     data_tag =  3,
@@ -573,7 +579,7 @@ int PISMNC3File::put_var_double(std::string variable_name,
 }
 
 //! \brief Get the number of variables.
-int PISMNC3File::inq_nvars(int &result) const {
+int NC3File::inq_nvars(int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -586,7 +592,7 @@ int PISMNC3File::inq_nvars(int &result) const {
 }
 
 //! \brief Get dimensions a variable depends on.
-int PISMNC3File::inq_vardimid(std::string variable_name, std::vector<std::string> &result) const {
+int NC3File::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
@@ -632,7 +638,7 @@ int PISMNC3File::inq_vardimid(std::string variable_name, std::vector<std::string
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_varnatts(std::string variable_name, int &result) const {
+int NC3File::inq_varnatts(const std::string &variable_name, int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -653,7 +659,7 @@ int PISMNC3File::inq_varnatts(std::string variable_name, int &result) const {
 }
 
 //! \brief Finds a variable and sets the "exists" flag.
-int PISMNC3File::inq_varid(std::string variable_name, bool &exists) const {
+int NC3File::inq_varid(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
@@ -673,7 +679,7 @@ int PISMNC3File::inq_varid(std::string variable_name, bool &exists) const {
   return 0;
 }
 
-int PISMNC3File::inq_varname(unsigned int j, std::string &result) const {
+int NC3File::inq_varname(unsigned int j, std::string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
@@ -692,7 +698,7 @@ int PISMNC3File::inq_varname(unsigned int j, std::string &result) const {
   return stat;
 }
 
-int PISMNC3File::inq_vartype(std::string variable_name, PISM_IO_Type &result) const {
+int NC3File::inq_vartype(const std::string &variable_name, IO_Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
@@ -719,7 +725,7 @@ int PISMNC3File::inq_vartype(std::string variable_name, PISM_IO_Type &result) co
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const {
+int NC3File::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
   int stat, len, varid = -1;
 
   // Read and broadcast the attribute length:
@@ -773,7 +779,7 @@ int PISMNC3File::get_att_double(std::string variable_name, std::string att_name,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::get_att_text(std::string variable_name, std::string att_name, std::string &result) const {
+int NC3File::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
   char *str = NULL;
   int stat, len, varid = -1;
 
@@ -829,8 +835,8 @@ int PISMNC3File::get_att_text(std::string variable_name, std::string att_name, s
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::put_att_double(std::string variable_name, std::string att_name,
-                               PISM_IO_Type nctype, const std::vector<double> &data) const {
+int NC3File::put_att_double(const std::string &variable_name, const std::string &att_name,
+                               IO_Type nctype, const std::vector<double> &data) const {
 
   int stat = 0;
 
@@ -861,7 +867,7 @@ int PISMNC3File::put_att_double(std::string variable_name, std::string att_name,
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::put_att_text(std::string variable_name, std::string att_name, std::string value) const {
+int NC3File::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0;
 
   stat = redef(); check(stat);
@@ -888,7 +894,7 @@ int PISMNC3File::put_att_text(std::string variable_name, std::string att_name, s
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_attname(std::string variable_name, unsigned int n, std::string &result) const {
+int NC3File::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
@@ -917,7 +923,7 @@ int PISMNC3File::inq_attname(std::string variable_name, unsigned int n, std::str
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int PISMNC3File::inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const {
+int NC3File::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
@@ -949,7 +955,7 @@ int PISMNC3File::inq_atttype(std::string variable_name, std::string att_name, PI
 
 
 //! \brief Sets the fill mode.
-int PISMNC3File::set_fill(int fillmode, int &old_modep) const {
+int NC3File::set_fill(int fillmode, int &old_modep) const {
   int stat;
 
   if (m_rank == 0) {
@@ -963,7 +969,7 @@ int PISMNC3File::set_fill(int fillmode, int &old_modep) const {
   return stat;
 }
 
-std::string PISMNC3File::get_format() const {
+std::string NC3File::get_format() const {
   int format;
 
   if (m_rank == 0) {

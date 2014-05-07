@@ -89,11 +89,11 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   ierr = w3->end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
 
   return 0;
 }
@@ -133,7 +133,7 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
   ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = PISMGlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -141,7 +141,7 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
 //! Compute the maximum time step allowed by the diffusive SIA.
 /*!
 If maximum diffusivity is positive (i.e. if there is diffusion going on) then
-updates dt.  Updates skipCountDown if it is zero.
+updates dt.
 
 Note adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio *
 dx^2/maxD (if dx=dy).
@@ -212,7 +212,7 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
   const bool updateAtDepth = (skipCountDown == 0);
   const double time_to_end = grid.time->end() - grid.time->current();
 
-  // FIXME: we should probably create a std::vector<const PISMComponent_TS*>
+  // FIXME: we should probably create a std::vector<const Component_TS*>
   // (or similar) and iterate over that instead.
   bool restrict_dt = false;
   const double current_time = grid.time->current();
@@ -316,19 +316,21 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
   }
 
   // find the smallest of the max. time-steps reported by boundary models:
-  std::map<std::string, double>::const_iterator j = dt_restrictions.begin();
-  if (dt_restrictions["max"] > 0.0) {
-    adaptReasonFlag = "max";
-  } else {
-    adaptReasonFlag = j->first;
-  }
-  dt_result = dt_restrictions[adaptReasonFlag];
-  while (j != dt_restrictions.end()) {
-    if (j->second < dt_result) {
-      dt_result = j->second;
-      adaptReasonFlag = j->first;
+  {
+    std::map<std::string, double>::const_iterator j = dt_restrictions.begin();
+    if (dt_restrictions["max"] > 0.0) {
+      m_adaptive_timestep_reason = "max";
+    } else {
+      m_adaptive_timestep_reason = j->first;
     }
-    ++j;
+    dt_result = dt_restrictions[m_adaptive_timestep_reason];
+    while (j != dt_restrictions.end()) {
+      if (j->second < dt_result) {
+        dt_result = j->second;
+        m_adaptive_timestep_reason = j->first;
+      }
+      ++j;
+    }
   }
 
   // Hit multiples of X years, if requested (this has to go last):
@@ -348,20 +350,45 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
         timestep_hit_multiples_last_time = next_time;
 
         std::stringstream str;
-        str << "(hit multiples of " << timestep_hit_multiples << " years; overrides " << adaptReasonFlag << ")";
-        adaptReasonFlag = str.str();
+        str << "(hit multiples of " << timestep_hit_multiples << " years; overrides " << m_adaptive_timestep_reason << ")";
+        m_adaptive_timestep_reason = str.str();
       }
     }
   }
 
-  skip_counter_result = skip_counter(dt_result, dt_restrictions["diffusivity"]);
+
+  if (dt_restrictions["diffusivity"] > 0.0) {
+    double dt_diffusivity = dt_restrictions["diffusivity"];
+
+    // remove the max. time-step corresponding to the diffusivity
+    // stability criterion and find the smallest one again:
+    dt_restrictions.erase("diffusivity");
+    std::map<std::string, double>::const_iterator j = dt_restrictions.begin();
+    double dt_other = j->second;
+    std::string other_reason = j->first;
+    while (j != dt_restrictions.end()) {
+      if (j->second < dt_other) {
+        dt_other = j->second;
+        other_reason = j->first;
+      }
+      ++j;
+    }
+
+    if (dt_diffusivity < dt_other) {
+      m_adaptive_timestep_reason += " (overrides " + other_reason + ")";
+    }
+
+    if (skip_counter_result == 0) {
+      skip_counter_result = skip_counter(dt_other, dt_diffusivity);
+    }
+  }
 
   // "max", "internal (derived class)", and "end of the run" limit the "big" time-step (in
   // the context of the "skipping" mechanism), so we might need to
   // reset the skip_counter_result to 1.
-  if ((adaptReasonFlag == "max" ||
-       adaptReasonFlag == "internal (derived class)" ||
-       adaptReasonFlag == "end of the run") &&
+  if ((m_adaptive_timestep_reason == "max" ||
+       m_adaptive_timestep_reason == "internal (derived class)" ||
+       m_adaptive_timestep_reason == "end of the run") &&
       skip_counter_result > 1) {
     skip_counter_result = 1;
   }

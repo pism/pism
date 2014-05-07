@@ -25,10 +25,10 @@
 
 namespace pism {
 
-class PAFactory : public PCFactory<PISMAtmosphereModel,PAModifier> {
+class PAFactory : public PCFactory<AtmosphereModel,PAModifier> {
 public:
-  PAFactory(IceGrid& g, const PISMConfig& conf)
-    : PCFactory<PISMAtmosphereModel,PAModifier>(g, conf)
+  PAFactory(IceGrid& g, const Config& conf)
+    : PCFactory<AtmosphereModel,PAModifier>(g, conf)
   {
     add_standard_types();
     option = "atmosphere";

@@ -29,12 +29,12 @@ namespace pism {
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
-class PISMVars {
+class Vars {
 public:
   PetscErrorCode add(IceModelVec &);
-  PetscErrorCode add(IceModelVec &, std::string name);
-  void remove(std::string);
-  IceModelVec* get(std::string) const;
+  PetscErrorCode add(IceModelVec &, const std::string &name);
+  void remove(const std::string &);
+  IceModelVec* get(const std::string &) const;
   std::set<std::string> keys() const;
   PetscErrorCode check_for_nan() const;
 

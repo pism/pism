@@ -26,15 +26,15 @@
 
 namespace pism {
 
-class PSGivenClimate : public PGivenClimate<PSModifier,PISMSurfaceModel>
+class PSGivenClimate : public PGivenClimate<PSModifier,SurfaceModel>
 {
 public:
-  PSGivenClimate(IceGrid &g, const PISMConfig &conf);
+  PSGivenClimate(IceGrid &g, const Config &conf);
   virtual ~PSGivenClimate();
 
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
+  virtual void attach_atmosphere_model(AtmosphereModel *input);
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);

@@ -26,22 +26,22 @@
 namespace pism {
 
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
-class PSElevation : public PISMSurfaceModel {
+class PSElevation : public SurfaceModel {
 public:
-  PSElevation(IceGrid &g, const PISMConfig &conf);
+  PSElevation(IceGrid &g, const Config &conf);
 
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
+  virtual PetscErrorCode init(Vars &vars);
+  virtual void attach_atmosphere_model(AtmosphereModel *input);
 
-  virtual void get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                               std::map<std::string, PISMTSDiagnostic*> &ts_dict);
+  virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                               std::map<std::string, TSDiagnostic*> &ts_dict);
 
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, PISM_IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, ice_surface_temp;
   IceModelVec2S *usurf;

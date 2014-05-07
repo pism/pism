@@ -22,8 +22,8 @@
 
 namespace pism {
 
-void SIAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
-                            std::map<std::string, PISMTSDiagnostic*> &/*ts_dict*/) {
+void SIAFD::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
+                            std::map<std::string, TSDiagnostic*> &/*ts_dict*/) {
   dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);
   dict["diffusivity_staggered"] = new SIAFD_diffusivity_staggered(this, grid, *variables);
   dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, grid, *variables);
@@ -33,8 +33,8 @@ void SIAFD::get_diagnostics(std::map<std::string, PISMDiagnostic*> &dict,
   dict["h_y"] = new SIAFD_h_y(this, grid, *variables);
 }
 
-SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SIAFD>(m, g, my_vars) {
+SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("schoofs_theta", grid);
@@ -64,8 +64,8 @@ PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
 }
 
 
-SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SIAFD>(m, g, my_vars) {
+SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("topgsmooth", grid);
@@ -88,8 +88,8 @@ PetscErrorCode SIAFD_topgsmooth::compute(IceModelVec* &output) {
   return 0;
 }
 
-SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SIAFD>(m, g, my_vars) {
+SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("thksmooth", grid);
@@ -125,8 +125,8 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
 
 
 
-SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SIAFD>(m, g, my_vars) {
+SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_2d("diffusivity", grid);
@@ -149,8 +149,8 @@ PetscErrorCode SIAFD_diffusivity::compute(IceModelVec* &output) {
   return 0;
 }
 
-SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SIAFD>(m, g, my_vars) {
+SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
   dof = 2;
@@ -180,8 +180,8 @@ PetscErrorCode SIAFD_diffusivity_staggered::compute(IceModelVec* &output) {
   return 0;
 }
 
-SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SIAFD>(m, g, my_vars) {
+SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
   dof = 2;
@@ -213,8 +213,8 @@ PetscErrorCode SIAFD_h_x::compute(IceModelVec* &output) {
   return 0;
 }
 
-SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SIAFD>(m, g, my_vars) {
+SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars)
+  : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
   dof = 2;

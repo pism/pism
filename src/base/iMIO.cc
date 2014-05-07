@@ -49,19 +49,17 @@ Optionally allows saving of full velocity field.
 
 Calls dumpToFile() to do the actual work.
  */
-PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
+PetscErrorCode  IceModel::writeFiles(const std::string &default_filename) {
   PetscErrorCode ierr;
   std::string filename = default_filename,
     config_out;
-  bool o_set, dump_config;
+  bool o_set;
 
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
-    ierr = PISMOptionsString("-dump_config", "File to write the config to",
-                             config_out, dump_config); CHKERRQ(ierr);
+    ierr = OptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -77,13 +75,6 @@ PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
     ierr = dumpToFile(filename); CHKERRQ(ierr);
   }
 
-  // save the config file
-  if (dump_config) {
-    // Here "false" means "do not append"; creates a new file and moves
-    // the old one aside
-    ierr = config.write(config_out, false); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -97,7 +88,8 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     ierr = nc.inq_var(mapping.get_name(), mapping_exists); CHKERRQ(ierr);
     if (mapping_exists == false) {
       ierr = nc.redef(); CHKERRQ(ierr);
-      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE,
+                        std::vector<std::string>()); CHKERRQ(ierr);
     }
     ierr = nc.write_attributes(mapping, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
@@ -108,7 +100,8 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     ierr = nc.inq_var(run_stats.get_name(), run_stats_exists); CHKERRQ(ierr);
     if (run_stats_exists == false) {
       ierr = nc.redef(); CHKERRQ(ierr);
-      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE,
+                        std::vector<std::string>()); CHKERRQ(ierr);
     }
     ierr = nc.write_attributes(run_stats, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
@@ -116,17 +109,20 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
   ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);
 
   bool override_used;
-  ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
+  ierr = OptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
   if (override_used) {
     overrides.update_from(config);
     ierr = overrides.write(nc); CHKERRQ(ierr);
   }
 
+  // write configuration parameters to the file:
+  ierr = config.write(nc); CHKERRQ(ierr);
+
   return 0;
 }
 
 
-PetscErrorCode IceModel::dumpToFile(std::string filename) {
+PetscErrorCode IceModel::dumpToFile(const std::string &filename) {
   PetscErrorCode ierr;
   PIO nc(grid, config.get_string("output_format"));
 
@@ -149,8 +145,9 @@ PetscErrorCode IceModel::dumpToFile(std::string filename) {
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> vars,
-                                         PISM_IO_Type nctype) {
+PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_input,
+                                         IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
   IceModelVec *v;
 
@@ -169,7 +166,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
         }
       } else {
         // It might be a diagnostic quantity
-        PISMDiagnostic *diag = diagnostics[*i];
+        Diagnostic *diag = diagnostics[*i];
 
         if (diag != NULL) {
           ierr = diag->define(nc); CHKERRQ(ierr);
@@ -248,7 +245,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
     ierr = beddef->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
-  // Write PISMBedThermalUnit variables:
+  // Write BedThermalUnit variables:
   if (btu != NULL) {
     ierr = btu->write_variables(vars, nc); CHKERRQ(ierr);
   }
@@ -298,7 +295,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> va
 
   // All the remaining names in vars must be of diagnostic quantities.
   for (i = vars.begin(); i != vars.end();) {
-    PISMDiagnostic *diag = diagnostics[*i];
+    Diagnostic *diag = diagnostics[*i];
 
     if (diag == NULL)
       ++i;
@@ -363,7 +360,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
     grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
     box from the same input file.
   */
-PetscErrorCode IceModel::initFromFile(std::string filename) {
+PetscErrorCode IceModel::initFromFile(const std::string &filename) {
   PetscErrorCode  ierr;
   PIO nc(grid, "guess_mode");
 
@@ -481,10 +478,10 @@ PetscErrorCode IceModel::regrid(int dimensions) {
   ierr = PetscOptionsBegin(grid.com, PETSC_NULL, "Options controlling regridding",
                            PETSC_NULL); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
+    ierr = OptionsString("-regrid_file", "Specifies the file to regrid from",
                              filename, regrid_file_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsStringSet("-regrid_vars", "Specifies the list of variables to regrid",
+    ierr = OptionsStringSet("-regrid_vars", "Specifies the list of variables to regrid",
                                 "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -522,7 +519,7 @@ PetscErrorCode IceModel::regrid(int dimensions) {
   return 0;
 }
 
-PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::string> vars, unsigned int ndims) {
+PetscErrorCode IceModel::regrid_variables(const std::string &filename, const std::set<std::string> &vars, unsigned int ndims) {
   PetscErrorCode ierr;
 
   std::set<std::string>::iterator i;
@@ -581,7 +578,7 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
  *
  * @return 0 on success
  */
-PetscErrorCode IceModel::init_enthalpy(std::string filename,
+PetscErrorCode IceModel::init_enthalpy(const std::string &filename,
                                        bool do_regrid, int last_record) {
   PetscErrorCode ierr;
   bool temp_exists  = false,
@@ -657,13 +654,13 @@ PetscErrorCode IceModel::init_snapshots() {
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-save_file", "Specifies a snapshot filename",
+    ierr = OptionsString("-save_file", "Specifies a snapshot filename",
                              snapshots_filename, save_file_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-save_times", "Gives a list or a MATLAB-style range of times to save snapshots at",
+    ierr = OptionsString("-save_times", "Gives a list or a MATLAB-style range of times to save snapshots at",
                              tmp, save_times_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
+    ierr = OptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
                             split); CHKERRQ(ierr);
 
     ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
@@ -734,7 +731,7 @@ PetscErrorCode IceModel::write_snapshot() {
     return 0;
 
   // do we need to save *now*?
-  if ( (grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
+  if ((grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
     saving_after = snapshot_times[current_snapshot];
 
     while ((current_snapshot < snapshot_times.size()) &&
@@ -791,7 +788,7 @@ PetscErrorCode IceModel::write_snapshot() {
     double wall_clock_hours;
     if (grid.rank == 0) {
       PetscLogDouble current_time;
-      ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
+      ierr = GetTime(&current_time); CHKERRQ(ierr);
       wall_clock_hours = (current_time - start_time) / 3600.0;
     }
 
@@ -815,13 +812,13 @@ PetscErrorCode IceModel::init_backups() {
 
   ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
   {
-    ierr = PISMOptionsString("-o", "Output file name", backup_filename, o_set); CHKERRQ(ierr);
+    ierr = OptionsString("-o", "Output file name", backup_filename, o_set); CHKERRQ(ierr);
     if (!o_set)
       backup_filename = executable_short_name + "_backup.nc";
     else
       backup_filename = pism_filename_add_suffix(backup_filename, "_backup", "");
 
-    ierr = PISMOptionsReal("-backup_interval", "Automatic backup interval, hours",
+    ierr = OptionsReal("-backup_interval", "Automatic backup interval, hours",
                            backup_interval, o_set); CHKERRQ(ierr);
 
     ierr = set_output_size("-backup_size", "Sets the 'size' of a backup file.",
@@ -841,7 +838,7 @@ PetscErrorCode IceModel::write_backup() {
 
   if (grid.rank == 0) {
     PetscLogDouble current_time;
-    ierr = PISMGetTime(&current_time); CHKERRQ(ierr);
+    ierr = GetTime(&current_time); CHKERRQ(ierr);
     wall_clock_hours = (current_time - start_time) / 3600.0;
   }
 

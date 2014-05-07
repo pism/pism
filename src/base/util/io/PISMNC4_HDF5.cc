@@ -44,7 +44,7 @@
 namespace pism {
 
 // Convert from a PISM I/O data type to a HDF5 type.
-static hid_t pism_type_to_hdf5_type(PISM_IO_Type xtype) {
+static hid_t pism_type_to_hdf5_type(IO_Type xtype) {
   switch(xtype) {
   case PISM_BYTE:
   case PISM_CHAR:
@@ -153,13 +153,13 @@ static hid_t H5DS_get_REFLIST_type(void)
      used to store ds_list_t structure in the REFERENCE_LIST
      attribute */
 
-  if((ntid_t = H5Tcreate(H5T_COMPOUND, sizeof(ds_list_t))) < 0)
+  if ((ntid_t = H5Tcreate(H5T_COMPOUND, sizeof(ds_list_t))) < 0)
     goto out;
 
-  if(H5Tinsert(ntid_t, "dataset", HOFFSET(ds_list_t,ref), H5T_STD_REF_OBJ) < 0)
+  if (H5Tinsert(ntid_t, "dataset", HOFFSET(ds_list_t,ref), H5T_STD_REF_OBJ) < 0)
     goto out;
 
-  if(H5Tinsert(ntid_t, "dimension", HOFFSET(ds_list_t, dim_idx), H5T_NATIVE_INT) < 0)
+  if (H5Tinsert(ntid_t, "dimension", HOFFSET(ds_list_t, dim_idx), H5T_NATIVE_INT) < 0)
     goto out;
 
   return ntid_t;
@@ -283,7 +283,7 @@ static herr_t inq_dimensions(hid_t dsid, std::vector<std::string> &dims) {
   assert(space_id >= 0);
 
   hvl_t *buf = (hvl_t *)malloc((size_t)rank * sizeof(hvl_t));
-  if(buf == NULL)
+  if (buf == NULL)
     goto out;
 
   stat = H5Aread(attr_id, tid, buf);
@@ -376,7 +376,7 @@ static herr_t extend_dimension(hid_t dim_id, int increment) {
 
   /* try to find the attribute "REFERENCE_LIST" on the dataset */
   int has_reflist = H5LTfind_attribute(dim_id, REFERENCE_LIST);
-  if(has_reflist < 0)
+  if (has_reflist < 0)
     return has_reflist;
 
   if (has_reflist == 0)
@@ -390,25 +390,25 @@ static herr_t extend_dimension(hid_t dim_id, int increment) {
   assert(attr_id >= 0);
 
   hid_t attr_space_id = H5Aget_space(attr_id);
-  if(attr_space_id < 0)
+  if (attr_space_id < 0)
     return -1;
 
   int nelmts = H5Sget_simple_extent_npoints(attr_space_id);
-  if(nelmts < 0)
+  if (nelmts < 0)
     return -1;
 
   ds_list_t *dsbuf = (ds_list_t*) malloc((size_t)nelmts * sizeof(ds_list_t));
-  if(dsbuf == NULL)
+  if (dsbuf == NULL)
     return -1;
 
   hid_t reflist_t = H5DS_get_REFLIST_type();
   assert(reflist_t > 0);
 
   stat = H5Aread(attr_id, reflist_t, dsbuf);
-  if(stat < 0)
+  if (stat < 0)
     goto out;
 
-  for(int ii = 0; ii < nelmts; ii++) {
+  for (int ii = 0; ii < nelmts; ii++) {
 
     hid_t dim_id_i = 0;
 
@@ -435,15 +435,15 @@ static herr_t extend_dimension(hid_t dim_id, int increment) {
   return 0;
 }
 
-PISMNC4_HDF5::PISMNC4_HDF5(MPI_Comm c)
-  : PISMNCFile(c) {
+NC4_HDF5::NC4_HDF5(MPI_Comm c)
+  : NCFile(c) {
   file_id = -1;
 }
 
-PISMNC4_HDF5::~PISMNC4_HDF5() {
+NC4_HDF5::~NC4_HDF5() {
 }
 
-int PISMNC4_HDF5::integer_open_mode(PISM_IO_Mode input) const {
+int NC4_HDF5::integer_open_mode(IO_Mode input) const {
   if (input == PISM_READONLY) {
     return H5F_ACC_RDONLY;
   } else {
@@ -452,7 +452,7 @@ int PISMNC4_HDF5::integer_open_mode(PISM_IO_Mode input) const {
 }
 
 // Open a file. mode should be one of PISM_READONLY and PISM_READWRITE
-int PISMNC4_HDF5::open(std::string filename, PISM_IO_Mode mode) {
+int NC4_HDF5::open(const std::string &filename, IO_Mode mode) {
 
   int rank = 0;
   MPI_Comm_rank(com, &rank);
@@ -480,7 +480,7 @@ int PISMNC4_HDF5::open(std::string filename, PISM_IO_Mode mode) {
 
 
 // Creates a file for writing.
-int PISMNC4_HDF5::create(std::string filename) {
+int NC4_HDF5::create(const std::string &filename) {
 
   MPI_Info info = NULL;
   MPI_Info_create(&info);
@@ -500,7 +500,7 @@ int PISMNC4_HDF5::create(std::string filename) {
 
 
 // Closes a file.
-int PISMNC4_HDF5::close() {
+int NC4_HDF5::close() {
 
   int stat = H5Fclose(file_id);
 
@@ -515,13 +515,13 @@ int PISMNC4_HDF5::close() {
 
 
 // A NetCDF-3 API artifact.
-int PISMNC4_HDF5::enddef() const {
+int NC4_HDF5::enddef() const {
   // A no-op.
   return 0;
 }
 
 // A NetCDF-3 API artifact.
-int PISMNC4_HDF5::redef() const {
+int NC4_HDF5::redef() const {
   // A no-op.
   return 0;
 }
@@ -529,7 +529,7 @@ int PISMNC4_HDF5::redef() const {
 
 //! \brief Defines a dimension and the associated coordinate variable.
 // Use the length of PISM_UNLIMITED for "unlimited" dimensions.
-int PISMNC4_HDF5::def_dim(std::string name, size_t length) const {
+int NC4_HDF5::def_dim(const std::string &name, size_t length) const {
 
   hid_t dataspace_id = 0, dim_id = 0;
 
@@ -576,7 +576,7 @@ int PISMNC4_HDF5::def_dim(std::string name, size_t length) const {
  * checking if a dimension exist is the same as checking if the corresponding
  * variable exists.
  */
-int PISMNC4_HDF5::inq_dimid(std::string dimension_name, bool &exists) const {
+int NC4_HDF5::inq_dimid(const std::string &dimension_name, bool &exists) const {
   int stat = this->inq_varid(dimension_name, exists);
   return stat;
 }
@@ -586,7 +586,7 @@ int PISMNC4_HDF5::inq_dimid(std::string dimension_name, bool &exists) const {
  *
  * We assume that all dimensions are one-dimensional.
  */
-int PISMNC4_HDF5::inq_dimlen(std::string dimension_name, unsigned int &result) const {
+int NC4_HDF5::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
 
   hid_t dim_id = H5Dopen(file_id, dimension_name.c_str(), H5P_DEFAULT); check(dim_id);
 
@@ -609,7 +609,7 @@ int PISMNC4_HDF5::inq_dimlen(std::string dimension_name, unsigned int &result) c
 }
 
 //! \brief Finds the unlimited dimension by iterating over all dimensions.
-int PISMNC4_HDF5::inq_unlimdim(std::string &result) const {
+int NC4_HDF5::inq_unlimdim(std::string &result) const {
   hsize_t idx = 0;
   herr_t stat = H5Literate_by_name(file_id, "/", H5_INDEX_NAME, H5_ITER_INC,
                                    &idx, find_unlimdim, &result, H5P_DEFAULT);
@@ -632,7 +632,7 @@ int PISMNC4_HDF5::inq_unlimdim(std::string &result) const {
  *
  * To work around this we build a list of dimensions and pick from there.
  */
-int PISMNC4_HDF5::inq_dimname(int j, std::string &result) const {
+int NC4_HDF5::inq_dimname(int j, std::string &result) const {
   std::vector<std::string> dim_names;
 
   hsize_t idx = 0;
@@ -651,7 +651,7 @@ int PISMNC4_HDF5::inq_dimname(int j, std::string &result) const {
 /*!
  * Gets the total number of dimensions. See the comment documenting inq_dimname().
  */
-int PISMNC4_HDF5::inq_ndims(int &result) const {
+int NC4_HDF5::inq_ndims(int &result) const {
   // create a list of dimensions, return the length
   std::vector<std::string> dim_names;
 
@@ -672,7 +672,7 @@ int PISMNC4_HDF5::inq_ndims(int &result) const {
  * FIXME: I need to re-think chunking for 3D variables (it should match the
  * in-memory storage order).
  */
-int PISMNC4_HDF5::def_var(std::string name, PISM_IO_Type xtype, std::vector<std::string> dims) const {
+int NC4_HDF5::def_var(const std::string &name, IO_Type xtype, const std::vector<std::string> &dims) const {
   herr_t stat = H5LTfind_dataset(file_id, name.c_str()); check(stat);
 
   // Check if this variable already exists and return if it does.
@@ -685,7 +685,7 @@ int PISMNC4_HDF5::def_var(std::string name, PISM_IO_Type xtype, std::vector<std:
 
   std::vector<hsize_t> extent, max_extent, chunk;
 
-  std::vector<std::string>::iterator j;
+  std::vector<std::string>::const_iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
     hid_t dim_id = H5Dopen(file_id, j->c_str(), H5P_DEFAULT);
     hid_t ds_id = H5Dget_space(dim_id);
@@ -747,9 +747,9 @@ int PISMNC4_HDF5::def_var(std::string name, PISM_IO_Type xtype, std::vector<std:
 
 // Read a variable from a file. Assume that the in-memory and in-file
 // storage orders match.
-int PISMNC4_HDF5::get_vara_double(std::string variable_name,
-                                  std::vector<unsigned int> start,
-                                  std::vector<unsigned int> count,
+int NC4_HDF5::get_vara_double(const std::string &variable_name,
+                                  const std::vector<unsigned int> &start,
+                                  const std::vector<unsigned int> &count,
                                   double *ip) const {
 
   assert(start.size() == count.size());
@@ -797,9 +797,9 @@ int PISMNC4_HDF5::get_vara_double(std::string variable_name,
 
 // Write a variable to a file. Assumes that in-memory and in-file
 // storage orders match.
-int PISMNC4_HDF5::put_vara_double(std::string variable_name,
-                                  std::vector<unsigned int> start,
-                                  std::vector<unsigned int> count,
+int NC4_HDF5::put_vara_double(const std::string &variable_name,
+                                  const std::vector<unsigned int> &start,
+                                  const std::vector<unsigned int> &count,
                                   const double *op) const {
 
   assert(start.size() == count.size());
@@ -834,7 +834,7 @@ int PISMNC4_HDF5::put_vara_double(std::string variable_name,
     }
 
     H5Sclose(space_id);
-  } // end of "if(is_scale > 0)"
+  } // end of "if (is_scale > 0)"
 
   // Enable collective I/O.
   hid_t plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -871,32 +871,44 @@ int PISMNC4_HDF5::put_vara_double(std::string variable_name,
 }
 
 // Read a variable from a file, mapping from one storage order to another.
-int PISMNC4_HDF5::get_varm_double(std::string /*variable_name*/,
-                                  std::vector<unsigned int> /*start*/,
-                                  std::vector<unsigned int> /*count*/,
-                                  std::vector<unsigned int> /*imap*/, double */*ip*/) const {
+int NC4_HDF5::get_varm_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
+                              const std::vector<unsigned int> &imap, double *ip) const {
   // Not implemented.
 
-  // FIXME: we could use PISMNC4_Par as a (private) base
+  (void) variable_name;
+  (void) start;
+  (void) count;
+  (void) imap;
+  (void) ip;
+
+  // FIXME: we could use NC4_Par as a (private) base
   // class and revert to its implementation instead.
   return -1;
 }
 
 // Write a variable to a file, mapping from one storage order to another.
-int PISMNC4_HDF5::put_varm_double(std::string /*variable_name*/,
-                                  std::vector<unsigned int> /*start*/,
-                                  std::vector<unsigned int> /*count*/,
-                                  std::vector<unsigned int> /*imap*/, const double */*op*/) const {
+int NC4_HDF5::put_varm_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
+                              const std::vector<unsigned int> &imap, const double *op) const {
   // Not implemented.
 
-  // FIXME: we could use PISMNC4_Par as a (private) base
+  (void) variable_name;
+  (void) start;
+  (void) count;
+  (void) imap;
+  (void) op;
+
+  // FIXME: we could use NC4_Par as a (private) base
   // class and revert to its implementation instead.
   return -1;
 }
 
 
 // Get the number of variables in a file.
-int PISMNC4_HDF5::inq_nvars(int &result) const {
+int NC4_HDF5::inq_nvars(int &result) const {
   // For now assume that the number of variables is the number of links in the root group.
   H5G_info_t group_info;
   herr_t stat = H5Gget_info_by_name(file_id, "/", &group_info, H5P_DEFAULT); check(stat);
@@ -907,7 +919,7 @@ int PISMNC4_HDF5::inq_nvars(int &result) const {
 }
 
 // Get names of dimensions a variable depends on.
-int PISMNC4_HDF5::inq_vardimid(std::string variable_name, std::vector<std::string> &result) const {
+int NC4_HDF5::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
 
   hid_t var_id = H5Dopen(file_id, variable_name.c_str(), H5P_DEFAULT); check(var_id);
 
@@ -922,7 +934,7 @@ int PISMNC4_HDF5::inq_vardimid(std::string variable_name, std::vector<std::strin
 }
 
 // Get the number of attributes a variable has.
-int PISMNC4_HDF5::inq_varnatts(std::string variable_name, int &result) const {
+int NC4_HDF5::inq_varnatts(const std::string &variable_name, int &result) const {
   H5O_info_t info;
   herr_t stat = H5Oget_info_by_name(file_id, variable_name.c_str(), &info, H5P_DEFAULT); check(stat);
 
@@ -933,7 +945,7 @@ int PISMNC4_HDF5::inq_varnatts(std::string variable_name, int &result) const {
 
 
 // Check if a variable exists.
-int PISMNC4_HDF5::inq_varid(std::string variable_name, bool &exists) const {
+int NC4_HDF5::inq_varid(const std::string &variable_name, bool &exists) const {
   herr_t stat = H5LTfind_dataset(file_id, variable_name.c_str()); check(stat);
 
   if (stat > 0)
@@ -945,7 +957,7 @@ int PISMNC4_HDF5::inq_varid(std::string variable_name, bool &exists) const {
 }
 
 // Get the name of the j-th variable.
-int PISMNC4_HDF5::inq_varname(unsigned int j, std::string &result) const {
+int NC4_HDF5::inq_varname(unsigned int j, std::string &result) const {
 
   size_t len = H5Lget_name_by_idx(file_id, "/", H5_INDEX_NAME, H5_ITER_INC, j, NULL, 1, H5P_DEFAULT);
   result.resize(len + 2);
@@ -958,7 +970,7 @@ int PISMNC4_HDF5::inq_varname(unsigned int j, std::string &result) const {
 
 // Get the type of a variable.
 // We just need to be able to tell strings from arrays of floating point numbers.
-int PISMNC4_HDF5::inq_vartype(std::string variable_name, PISM_IO_Type &result) const {
+int NC4_HDF5::inq_vartype(const std::string &variable_name, IO_Type &result) const {
   hid_t var_id = H5Dopen(file_id, variable_name.c_str(), H5P_DEFAULT); check(var_id);
 
   hid_t type_id = H5Dget_type(var_id); check(type_id);
@@ -986,13 +998,17 @@ int PISMNC4_HDF5::inq_vartype(std::string variable_name, PISM_IO_Type &result) c
 
 // att
 // Get a scalar (or vector<double>) attribute.
-int PISMNC4_HDF5::get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const {
+int NC4_HDF5::get_att_double(const std::string &variable_name, const std::string &att_name,
+                             std::vector<double> &result) const {
 
-  if (variable_name == "PISM_GLOBAL")
-    variable_name = "/";
-
-  hid_t attr_id = H5Aopen_by_name(file_id, variable_name.c_str(), att_name.c_str(),
-                                  H5P_DEFAULT, H5P_DEFAULT); check(attr_id);
+  hid_t attr_id;
+  if (variable_name == "PISM_GLOBAL") {
+    attr_id = H5Aopen_by_name(file_id, "/", att_name.c_str(),
+                              H5P_DEFAULT, H5P_DEFAULT); check(attr_id);
+  } else {
+    attr_id = H5Aopen_by_name(file_id, variable_name.c_str(), att_name.c_str(),
+                              H5P_DEFAULT, H5P_DEFAULT); check(attr_id);
+  }
   hid_t space_id = H5Aget_space(attr_id); check(space_id);
 
   size_t len = H5Sget_simple_extent_npoints(space_id); check(len);
@@ -1013,13 +1029,17 @@ int PISMNC4_HDF5::get_att_double(std::string variable_name, std::string att_name
  * String attributes are weird: they are considered "scalar" datasets using a
  * datatype which has strlen(str) characters.
  */
-int PISMNC4_HDF5::get_att_text(std::string variable_name, std::string att_name, std::string &result) const {
+int NC4_HDF5::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
 
-  if (variable_name == "PISM_GLOBAL")
-    variable_name = "/";
+  herr_t stat;
+  if (variable_name == "PISM_GLOBAL") {
+    stat = H5Aexists_by_name(file_id, "/", att_name.c_str(),
+                             H5P_DEFAULT); check(stat);
+  } else {
+    stat = H5Aexists_by_name(file_id, variable_name.c_str(), att_name.c_str(),
+                             H5P_DEFAULT); check(stat);
+  }
 
-  herr_t stat = H5Aexists_by_name(file_id, variable_name.c_str(), att_name.c_str(),
-                           H5P_DEFAULT); check(stat);
   if (stat == 0) {
     result.clear();
     return 0;
@@ -1045,8 +1065,11 @@ int PISMNC4_HDF5::get_att_text(std::string variable_name, std::string att_name, 
 }
 
 // Write a vector<double> attribute.
-int PISMNC4_HDF5::put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype,
-				 const std::vector<double> &data) const {
+int NC4_HDF5::put_att_double(const std::string &variable_name_input,
+                             const std::string &att_name, IO_Type xtype,
+                             const std::vector<double> &data) const {
+
+  std::string variable_name = variable_name_input;
 
   if (variable_name == "PISM_GLOBAL")
     variable_name = "/";
@@ -1078,7 +1101,9 @@ int PISMNC4_HDF5::put_att_double(std::string variable_name, std::string att_name
 }
 
 // Write a string attribute.
-int PISMNC4_HDF5::put_att_text(std::string variable_name, std::string att_name, std::string value) const {
+int NC4_HDF5::put_att_text(const std::string &variable_name_input,
+                           const std::string &att_name, const std::string &value) const {
+  std::string variable_name = variable_name_input;
 
   if (variable_name == "PISM_GLOBAL")
     variable_name = "/";
@@ -1091,7 +1116,7 @@ int PISMNC4_HDF5::put_att_text(std::string variable_name, std::string att_name, 
 
 
 // Get the name of the n-th attribute.
-int PISMNC4_HDF5::inq_attname(std::string variable_name, unsigned int n, std::string &result) const {
+int NC4_HDF5::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
   size_t len = H5Aget_name_by_idx(file_id, variable_name.c_str(),
                                   H5_INDEX_NAME, H5_ITER_INC,
                                   n, NULL, 0, H5P_DEFAULT);
@@ -1105,7 +1130,7 @@ int PISMNC4_HDF5::inq_attname(std::string variable_name, unsigned int n, std::st
 }
 
 // Get the type of an attribute.
-int PISMNC4_HDF5::inq_atttype(std::string variable_name, std::string att_name, PISM_IO_Type &result) const {
+int NC4_HDF5::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
 
   hid_t att_id = H5Aopen_by_name(file_id,
                                  variable_name.c_str(),
@@ -1143,21 +1168,21 @@ int PISMNC4_HDF5::inq_atttype(std::string variable_name, std::string att_name, P
 
 
 // misc
-int PISMNC4_HDF5::set_fill(int /*fillmode*/, int &/*old_modep*/) const {
+int NC4_HDF5::set_fill(int /*fillmode*/, int &/*old_modep*/) const {
   // A no-op. Pre-filling is disabled by default and there is no reason to
   // enable it.
   return 0;
 }
 
 
-void PISMNC4_HDF5::check(int return_code) const {
+void NC4_HDF5::check(int return_code) const {
   if (return_code < 0) {
     H5Eprint(H5E_DEFAULT, stderr);
     H5Eclear(H5E_DEFAULT);
   }
 }
 
-std::string PISMNC4_HDF5::get_format() const {
+std::string NC4_HDF5::get_format() const {
   return "netcdf4";
 }
 

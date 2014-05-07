@@ -24,10 +24,10 @@
 
 namespace pism {
 
-class POFactory : public PCFactory<PISMOceanModel,POModifier> {
+class POFactory : public PCFactory<OceanModel,POModifier> {
 public:
-  POFactory(IceGrid& g, const PISMConfig& conf)
-    : PCFactory<PISMOceanModel,POModifier>(g, conf)
+  POFactory(IceGrid& g, const Config& conf)
+    : PCFactory<OceanModel,POModifier>(g, conf)
   {
     add_standard_types();
     option = "ocean";

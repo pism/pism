@@ -51,20 +51,20 @@ namespace pism {
 // forward declarations
 class IceGrid;
 class EnthalpyConverter;
-class PISMHydrology;
-class PISMYieldStress;
-class PISMStressBalance;
-class PISMSurfaceModel;
-class PISMOceanModel;
-class PISMBedDef;
-class PISMBedThermalUnit;
-class PISMDiagnostic;
-class PISMTSDiagnostic;
-class PISMIcebergRemover;
-class PISMOceanKill;
-class PISMFloatKill;
-class PISMCalvingAtThickness;
-class PISMEigenCalving;
+class Hydrology;
+class YieldStress;
+class StressBalance;
+class SurfaceModel;
+class OceanModel;
+class BedDef;
+class BedThermalUnit;
+class Diagnostic;
+class TSDiagnostic;
+class IcebergRemover;
+class OceanKill;
+class FloatKill;
+class CalvingAtThickness;
+class EigenCalving;
 
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
@@ -127,59 +127,63 @@ class IceModel {
   friend class IceModel_Href_to_H_flux;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g, PISMConfig &config, PISMConfig &overrides);
+  IceModel(IceGrid &g, Config &config, Config &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // -----------------------------------------------
   /** Initialization proceeds through a hierarchical set of virtual
-  function calls.  The hierarchy of what calls what is shown below via
-  indentation of declarations.  This hierarchy is not complete, see
+  function calls.  The hierarchy and order of what calls what is
+  shown below.  This hierarchy is not complete, see
   the code for more details.
   @see iMinit.cc */
   PetscErrorCode init();
 
-    //! 1) Initialize the computational grid:
-    virtual PetscErrorCode grid_setup();
-      virtual PetscErrorCode set_grid_defaults();
-      virtual PetscErrorCode set_grid_from_options();
+  //! 1) Initialize the computational grid:
+  virtual PetscErrorCode grid_setup();
+  // Part (1) calls:
+  virtual PetscErrorCode set_grid_defaults();
+  virtual PetscErrorCode set_grid_from_options();
 
-    //! 2) Process the options:
-    // virtual PetscErrorCode setFromOptions();
+  //! 2) Process the options:
+  // virtual PetscErrorCode setFromOptions();
 
-    //! 3) Memory allocation:
-    virtual PetscErrorCode createVecs();
+  //! 3) Memory allocation:
+  virtual PetscErrorCode createVecs();
 
-    //! 4) Allocate PISM components modeling some physical processes.
-    virtual PetscErrorCode allocate_submodels();
-      virtual PetscErrorCode allocate_enthalpy_converter();
-      virtual PetscErrorCode allocate_iceberg_remover();
-      virtual PetscErrorCode allocate_stressbalance();
-      virtual PetscErrorCode allocate_subglacial_hydrology();
-      virtual PetscErrorCode allocate_basal_yield_stress();
-      virtual PetscErrorCode allocate_bedrock_thermal_unit();
-      virtual PetscErrorCode allocate_bed_deformation();
-      virtual PetscErrorCode allocate_couplers();
+  //! 4) Allocate PISM components modeling some physical processes.
+  virtual PetscErrorCode allocate_submodels();
+  // Part (4) calls:
+  virtual PetscErrorCode allocate_enthalpy_converter();
+  virtual PetscErrorCode allocate_iceberg_remover();
+  virtual PetscErrorCode allocate_stressbalance();
+  virtual PetscErrorCode allocate_subglacial_hydrology();
+  virtual PetscErrorCode allocate_basal_yield_stress();
+  virtual PetscErrorCode allocate_bedrock_thermal_unit();
+  virtual PetscErrorCode allocate_bed_deformation();
+  virtual PetscErrorCode allocate_couplers();
 
-    //! 5) Allocate work vectors:
-    virtual PetscErrorCode allocate_internal_objects();
+  //! 5) Allocate work vectors:
+  virtual PetscErrorCode allocate_internal_objects();
 
-    //! 6) Initialize coupler models and fill the model state variables
-    //! (from a PISM output file, from a bootstrapping file using some
-    //! modeling choices or using formulas). Calls IceModel::regrid()
-    virtual PetscErrorCode model_state_setup();
-      virtual PetscErrorCode init_couplers();
-      virtual PetscErrorCode init_step_couplers();
-      virtual PetscErrorCode set_vars_from_options();
+  //! 6) Initialize coupler models and fill the model state variables
+  //! (from a PISM output file, from a bootstrapping file using some
+  //! modeling choices or using formulas). Calls IceModel::regrid()
+  virtual PetscErrorCode model_state_setup();
+  // Part (6) calls:
+  virtual PetscErrorCode init_couplers();
+  virtual PetscErrorCode init_step_couplers();
+  virtual PetscErrorCode set_vars_from_options();
 
-    //! 7) Report grid parameters:
-    // ierr = grid.report_parameters(); CHKERRQ(ierr);
+  //! 7) Report grid parameters:
+  // ierr = grid.report_parameters(); CHKERRQ(ierr);
 
-    //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
-    //! basal till model, initialize snapshots. This has to happen *after*
-    //! regridding.
-    virtual PetscErrorCode misc_setup();
-      virtual PetscErrorCode init_calving();
-      virtual PetscErrorCode init_diagnostics();
+  //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
+  //! basal till model, initialize snapshots. This has to happen *after*
+  //! regridding.
+  virtual PetscErrorCode misc_setup();
+  // Part (8) calls:
+  virtual PetscErrorCode init_calving();
+  virtual PetscErrorCode init_diagnostics();
   // -----------------------------------------------
 
 
@@ -190,20 +194,20 @@ public:
   /** Advance the current PISM run to a specific time */
   virtual PetscErrorCode run_to(double time);
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual PetscErrorCode setExecName(std::string my_executable_short_name);
+  virtual PetscErrorCode setExecName(const std::string &my_executable_short_name);
   virtual void reset_counters();
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile(std::string fname);
-  virtual PetscErrorCode bootstrap_2d(std::string fname);
+  virtual PetscErrorCode bootstrapFromFile(const std::string &fname);
+  virtual PetscErrorCode bootstrap_2d(const std::string &fname);
   virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_output_size(std::string option, std::string description,
-                                         std::string default_value, std::set<std::string> &result);
-  virtual std::string         get_output_size(std::string option);
+  virtual PetscErrorCode set_output_size(const std::string &option, const std::string &description,
+                                         const std::string &default_value, std::set<std::string> &result);
+  virtual std::string         get_output_size(const std::string &option);
 
   // see iMutil.cc
   virtual PetscErrorCode additionalAtStartTimestep();
@@ -211,45 +215,45 @@ public:
   virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual PetscErrorCode initFromFile(std::string);
-  virtual PetscErrorCode writeFiles(std::string default_filename);
+  virtual PetscErrorCode initFromFile(const std::string &name);
+  virtual PetscErrorCode writeFiles(const std::string &default_filename);
   virtual PetscErrorCode write_model_state(const PIO &nc);
   virtual PetscErrorCode write_metadata(const PIO &nc,
                                         bool write_mapping,
                                         bool write_run_stats);
-  virtual PetscErrorCode write_variables(const PIO &nc, std::set<std::string> vars,
-                                         PISM_IO_Type nctype);
+  virtual PetscErrorCode write_variables(const PIO &nc, const std::set<std::string> &vars,
+                                         IO_Type nctype);
 protected:
 
   IceGrid &grid;
 
-  PISMConfig &config,           //!< configuration flags and parameters
+  Config &config,           //!< configuration flags and parameters
     &overrides;                 //!< flags and parameters overriding config, see -config_override
 
   NCVariable global_attributes, //!< stores global attributes saved in a PISM output file
     mapping,                    //!< grid projection (mapping) parameters
     run_stats;                  //!< run statistics
 
-  PISMHydrology   *subglacial_hydrology;
-  PISMYieldStress *basal_yield_stress_model;
+  Hydrology   *subglacial_hydrology;
+  YieldStress *basal_yield_stress_model;
 
   EnthalpyConverter *EC;
-  PISMBedThermalUnit *btu;
+  BedThermalUnit *btu;
 
-  PISMIcebergRemover     *iceberg_remover;
-  PISMOceanKill          *ocean_kill_calving;
-  PISMFloatKill          *float_kill_calving;
-  PISMCalvingAtThickness *thickness_threshold_calving;
-  PISMEigenCalving       *eigen_calving;
+  IcebergRemover     *iceberg_remover;
+  OceanKill          *ocean_kill_calving;
+  FloatKill          *float_kill_calving;
+  CalvingAtThickness *thickness_threshold_calving;
+  EigenCalving       *eigen_calving;
 
-  PISMSurfaceModel *surface;
-  PISMOceanModel   *ocean;
-  PISMBedDef       *beddef;
+  SurfaceModel *surface;
+  OceanModel   *ocean;
+  BedDef       *beddef;
   bool external_surface_model, external_ocean_model;
 
   //! \brief A dictionary with pointers to IceModelVecs below, for passing them
   //! from the IceModel core to other components (such as surface and ocean models)
-  PISMVars variables;
+  Vars variables;
 
   // state variables and some diagnostics/internals
   IceModelVec2S ice_surface_elevation,          //!< ice surface elevation; ghosted
@@ -313,12 +317,12 @@ protected:
 
   // parameters
   double   dt,     //!< mass continuity time step, s
-              t_TempAge,  //!< time of last update for enthalpy/temperature
-              dt_TempAge,  //!< enthalpy/temperature and age time-steps
-              maxdt_temporary, dt_force,
-              CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
-              dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
-              gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
+    t_TempAge,  //!< time of last update for enthalpy/temperature
+    dt_TempAge,  //!< enthalpy/temperature and age time-steps
+    maxdt_temporary, dt_force,
+    CFLviolcount,    //!< really is just a count, but PISMGlobalSum requires this type
+    dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+    gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
     grounded_basal_ice_flux_cumulative,
     nonneg_rule_flux_cumulative,
     sub_shelf_ice_flux_cumulative,
@@ -332,7 +336,7 @@ protected:
   unsigned int skipCountDown;
 
   // flags
-  std::string adaptReasonFlag;
+  std::string m_adaptive_timestep_reason;
 
   std::string stdout_flags;
 
@@ -383,7 +387,7 @@ protected:
                                                   IceModelVec2S &result);
   virtual void cell_interface_fluxes(bool dirichlet_bc,
                                      int i, int j,
-                                     planeStar<PISMVector2> input_velocity,
+                                     planeStar<Vector2> input_velocity,
                                      planeStar<double> input_flux,
                                      planeStar<double> &output_velocity,
                                      planeStar<double> &output_flux);
@@ -401,10 +405,10 @@ protected:
 
 
   // see iMIO.cc
-  virtual PetscErrorCode dumpToFile(std::string filename);
+  virtual PetscErrorCode dumpToFile(const std::string &filename);
   virtual PetscErrorCode regrid(int dimensions);
-  virtual PetscErrorCode regrid_variables(std::string filename, std::set<std::string> regrid_vars, unsigned int ndims);
-  virtual PetscErrorCode init_enthalpy(std::string filename, bool regrid, int last_record);
+  virtual PetscErrorCode regrid_variables(const std::string &filename, const std::set<std::string> &regrid_vars, unsigned int ndims);
+  virtual PetscErrorCode init_enthalpy(const std::string &filename, bool regrid, int last_record);
 
   // see iMfractures.cc
   virtual PetscErrorCode calculateFractureDensity();
@@ -419,10 +423,7 @@ protected:
   virtual PetscErrorCode residual_redistribution_iteration(IceModelVec2S &residual, bool &done);
 
   // see iMreport.cc
-  virtual PetscErrorCode volumeArea(
-                       double& gvolume,double& garea);
-  virtual PetscErrorCode energyStats(
-                       double iarea,double &gmeltfrac);
+  virtual PetscErrorCode energyStats(double iarea,double &gmeltfrac);
   virtual PetscErrorCode ageStats(double ivol, double &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(PetscBool printPrototype, bool tempAndAge,
@@ -444,17 +445,16 @@ protected:
   virtual PetscErrorCode compute_ice_enthalpy(double &result);
 
   // see iMtemp.cc
-  virtual PetscErrorCode excessToFromBasalMeltLayer(
-                      const double rho, const double c, const double L,
-                      const double z, const double dz,
-                      double *Texcess, double *bwat);
+  virtual PetscErrorCode excessToFromBasalMeltLayer(const double rho, const double c, const double L,
+                                                    const double z, const double dz,
+                                                    double *Texcess, double *bwat);
   virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
 
   // see iMutil.cc
   virtual int            endOfTimeStepHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
-  virtual PetscErrorCode stampHistory(std::string);
+  virtual PetscErrorCode stampHistory(const std::string &);
   virtual PetscErrorCode update_run_stats();
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
@@ -468,10 +468,12 @@ protected:
   // 3D working space
   IceModelVec3 vWork3d;
 
-  PISMStressBalance *stress_balance;
+public:
+  StressBalance* get_stress_balance();
+protected:
 
-  std::map<std::string,PISMDiagnostic*> diagnostics;
-  std::map<std::string,PISMTSDiagnostic*> ts_diagnostics;
+  std::map<std::string,Diagnostic*> diagnostics;
+  std::map<std::string,TSDiagnostic*> ts_diagnostics;
 
   // Set of variables to put in the output file:
   std::set<std::string> output_vars;

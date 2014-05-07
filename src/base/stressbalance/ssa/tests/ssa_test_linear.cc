@@ -49,10 +49,10 @@ using namespace pism;
 class SSATestCaseExp: public SSATestCase
 {
 public:
-  SSATestCaseExp(MPI_Comm com, PISMConfig &c)
+  SSATestCaseExp(MPI_Comm com, Config &c)
     : SSATestCase(com, c)
   {
-    PISMUnitSystem s = c.get_unit_system();
+    UnitSystem s = c.get_unit_system();
 
     L     = s.convert(50, "km", "m"); // 50km half-width
     H0    = 500;                      // meters
@@ -69,7 +69,7 @@ protected:
   virtual PetscErrorCode initializeSSACoefficients();
 
   virtual PetscErrorCode exactSolution(int i, int j, 
-    double x, double y, double *u, double *v );
+    double x, double y, double *u, double *v);
 
   double L, H0, dhdx, nu0, tauc0;
 };
@@ -125,7 +125,7 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
       double myu, myv;
       const double myx = grid.x[i], myy=grid.y[j];
       
-      bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
+      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
       if (edge) {
         bc_mask(i,j) = 1;
         exactSolution(i,j,myx,myy,&myu,&myv);
@@ -157,8 +157,8 @@ PetscErrorCode SSATestCaseExp::exactSolution(int /*i*/, int /*j*/,
                                                    "m/year", "m/second");
   double v0 = grid.convert(100.0, "m/year", "m/second");
   // double alpha=log(2.)/(2*L);
-  double alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
-  *u = v0*exp( -alpha*(x-L));
+  double alpha = sqrt((tauc0/tauc_threshold_velocity) / (4*nu0*H0));
+  *u = v0*exp(-alpha*(x-L));
   *v = 0;
   return 0;
 }
@@ -175,8 +175,8 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
 
@@ -207,17 +207,17 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction", 
+      ierr = OptionsInt("-Mx", "Number of grid points in the X direction", 
                                                       Mx, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-My", "Number of grid points in the Y direction", 
+      ierr = OptionsInt("-My", "Number of grid points in the Y direction", 
                                                       My, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
+      ierr = OptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
                              ssa_choices, driver, driver, flag); CHKERRQ(ierr);
              
-      ierr = PISMOptionsString("-o", "Set the output file name", 
+      ierr = OptionsString("-o", "Set the output file name", 
                                               output_file, flag); CHKERRQ(ierr);
 
-      ierr = PISMOptionsInt("-verbose", "Verbosity level",
+      ierr = OptionsInt("-verbose", "Verbosity level",
                             my_verbosity_level, flag); CHKERRQ(ierr);
       if (flag) setVerbosityLevel(my_verbosity_level);
     }
@@ -225,8 +225,8 @@ int main(int argc, char *argv[]) {
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if(driver == "fem") ssafactory = SSAFEMFactory;
-    else if(driver == "fd") ssafactory = SSAFDFactory;
+    if (driver == "fem") ssafactory = SSAFEMFactory;
+    else if (driver == "fd") ssafactory = SSAFDFactory;
     else { /* can't happen */ }
 
     SSATestCaseExp testcase(com,config);

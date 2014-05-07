@@ -21,8 +21,8 @@
 
 namespace pism {
 
-PA_delta_P::PA_delta_P(IceGrid &g, const PISMConfig &conf, PISMAtmosphereModel* in)
-  : PScalarForcing<PISMAtmosphereModel,PAModifier>(g, conf, in),
+PA_delta_P::PA_delta_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
+  : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
     air_temp(g.get_unit_system()),
     precipitation(g.get_unit_system())
 {
@@ -62,7 +62,7 @@ PA_delta_P::~PA_delta_P()
   // empty
 }
 
-PetscErrorCode PA_delta_P::init(PISMVars &vars) {
+PetscErrorCode PA_delta_P::init(Vars &vars) {
   PetscErrorCode ierr;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
@@ -106,7 +106,7 @@ PetscErrorCode PA_delta_P::precip_time_series(int i, int j, double *result) {
   return 0;
 }
 
-void PA_delta_P::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PA_delta_P::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -116,8 +116,9 @@ void PA_delta_P::add_vars_to_output(std::string keyword, std::set<std::string> &
 }
 
 
-PetscErrorCode PA_delta_P::define_variables(std::set<std::string> vars, const PIO &nc,
-                                            PISM_IO_Type nctype) {
+PetscErrorCode PA_delta_P::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+                                            IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -136,7 +137,8 @@ PetscErrorCode PA_delta_P::define_variables(std::set<std::string> vars, const PI
 }
 
 
-PetscErrorCode PA_delta_P::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PA_delta_P::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010 Ed Bueler
+   Copyright (C) 2010, 2014 Ed Bueler
   
    This file is part of PISM.
   
@@ -77,7 +77,7 @@ int exactN(double x, double *H, double *hx, double *u, double *M, double *B, dou
   
   *M = a * ((*H) - Hela);                 /* page 6 in Bodvardsson, just before eqn (23) */
 
-  *B = Tc / ( 2.0 * (*H) * pow(fabs(ux),q) * ux ); /* Bueler interpretation */
+  *B = Tc / (2.0 * (*H) * pow(fabs(ux),q) * ux); /* Bueler interpretation */
 
   *beta = k * rho * g * (*H);
 

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Tests PISMBedThermalUnit using Test K.  Sans IceModel.\n\n";
+  "Tests BedThermalUnit using Test K.  Sans IceModel.\n\n";
 
 #include "pism_options.hh"
 #include "IceGrid.hh"
@@ -32,11 +32,11 @@ static char help[] =
 
 using namespace pism;
 
-class BTU_Test : public PISMBedThermalUnit
+class BTU_Test : public BedThermalUnit
 {
 public:
-  BTU_Test(IceGrid &g, const PISMConfig &conf)
-    : PISMBedThermalUnit(g, conf) {}
+  BTU_Test(IceGrid &g, const Config &conf)
+    : BedThermalUnit(g, conf) {}
   virtual ~BTU_Test() {}
 protected:
   /** Initialize the bedrock temperature field at the beginning of the run. */
@@ -69,7 +69,7 @@ PetscErrorCode BTU_Test::bootstrap() {
 }
 
 
-static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
+static PetscErrorCode createVecs(IceGrid &grid, Vars &variables) {
 
   PetscErrorCode ierr;
   IceModelVec2S *bedtoptemp = new IceModelVec2S,
@@ -92,7 +92,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 }
 
 
-static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
+static PetscErrorCode doneWithIceInfo(Vars &variables) {
   // Get the names of all the variables allocated earlier:
   std::set<std::string> vars = variables.keys();
   std::set<std::string>::iterator i = vars.begin();
@@ -114,12 +114,12 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    PISMUnitSystem unit_system(NULL);
-    PISMConfig config(com, "pism_config", unit_system),
+    UnitSystem unit_system(NULL);
+    Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "BTUTEST %s (test program for PISMBedThermalUnit)\n",
+    ierr = verbPrintf(2,com, "BTUTEST %s (test program for BedThermalUnit)\n",
                       PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     required.push_back("-Mbz");
     ierr = show_usage_check_req_opts(com, "btutest", required,
       "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
-      "where these are required because they are used in PISMBedThermalUnit:\n"
+      "where these are required because they are used in BedThermalUnit:\n"
       "  -Mbz           number of bedrock thermal layer levels to use\n"
       "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
       "and these are allowed:\n"
@@ -137,11 +137,10 @@ int main(int argc, char *argv[]) {
       "  -ye            end year in using Test K\n"
       "  -dt            time step B (= positive float) in years\n"
       "  -Mz            number of ice levels to use\n"
-      "  -Lz            height of ice/atmospher box\n"
-      ); CHKERRQ(ierr);
+      "  -Lz            height of ice/atmospher box\n"); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com,
-        "btutest tests PISMBedThermalUnit and IceModelVec3BTU\n"); CHKERRQ(ierr);
+        "btutest tests BedThermalUnit and IceModelVec3BTU\n"); CHKERRQ(ierr);
 
     // read the config option database:
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
@@ -162,7 +161,7 @@ int main(int argc, char *argv[]) {
     grid.Lx = 1500e3;
     grid.Ly = grid.Lx;
 
-    // Mbz and Lbz are used by the PISMBedThermalUnit, not by IceGrid
+    // Mbz and Lbz are used by the BedThermalUnit, not by IceGrid
     config.set_double("grid_Mbz", 11); 
     config.set_double("grid_Lbz", 1000); 
 
@@ -174,10 +173,10 @@ int main(int argc, char *argv[]) {
     int tmp = grid.Mz;
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-Mz", "number of vertical layers in ice", tmp, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
+      ierr = OptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
+      ierr = OptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
+      ierr = OptionsInt("-Mz", "number of vertical layers in ice", tmp, flag); CHKERRQ(ierr);
+      ierr = OptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -197,10 +196,10 @@ int main(int argc, char *argv[]) {
     ierr = grid.allocate(); CHKERRQ(ierr);
 
     // allocate tools and IceModelVecs
-    PISMVars variables;
+    Vars variables;
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
-    // these vars are owned by this driver, outside of PISMBedThermalUnit
+    // these vars are owned by this driver, outside of BedThermalUnit
     IceModelVec2S *bedtoptemp, *ghf;
 
     // top of bedrock layer temperature; filled from Test K exact values
@@ -230,7 +229,7 @@ int main(int argc, char *argv[]) {
     bool restrict_dt;
     ierr = btu.max_timestep(0.0, max_dt, restrict_dt); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
-        "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
+        "  BedThermalUnit reports max timestep of %.4f years ...\n",
                       unit_system.convert(max_dt, "seconds", "years")); CHKERRQ(ierr);
 
 

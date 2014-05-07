@@ -21,7 +21,7 @@
 
 namespace pism {
 
-PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
+PetscErrorCode SIAFD_Regional::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = SIAFD::init(vars); CHKERRQ(ierr);
@@ -74,7 +74,7 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
           h_x(i, j, 1) = 0.0;
         else
           h_x(i, j, 1) = ( + hst(i + 1, j + 1) + hst(i + 1, j)
-                           - hst(i - 1, j + 1) - hst(i - 1, j) ) / (4.0 * dx);
+                           - hst(i - 1, j + 1) - hst(i - 1, j)) / (4.0 * dx);
 
       }
 
@@ -85,7 +85,7 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
           h_y(i, j, 0) = 0.0;
         else
           h_y(i, j, 0) = ( + hst(i + 1, j + 1) + hst(i, j + 1)
-                           - hst(i + 1, j - 1) - hst(i, j - 1) ) / (4.0 * dy);
+                           - hst(i + 1, j - 1) - hst(i, j - 1)) / (4.0 * dy);
       }
 
       // y-component, j-offset
@@ -107,7 +107,7 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   return 0;
 }
 
-SSAFD_Regional::SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
+SSAFD_Regional::SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSAFD(g, e, c) {
   // empty
 }
@@ -116,7 +116,7 @@ SSAFD_Regional::~SSAFD_Regional() {
   // empty
 }
 
-PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
+PetscErrorCode SSAFD_Regional::init(Vars &vars) {
   PetscErrorCode ierr;
 
   ierr = SSAFD::init(vars); CHKERRQ(ierr);
@@ -179,11 +179,11 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   return 0;
 }
 
-PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
+PetscErrorCode RegionalDefaultYieldStress::init(Vars &vars) {
   PetscErrorCode ierr;
   int v = getVerbosityLevel(); // turn off second, redundant init message
   ierr = setVerbosityLevel(1); CHKERRQ(ierr);
-  ierr = PISMMohrCoulombYieldStress::init(vars); CHKERRQ(ierr);
+  ierr = MohrCoulombYieldStress::init(vars); CHKERRQ(ierr);
   ierr = setVerbosityLevel(v); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
     "  using the regional version with strong till in no_model_mask==1 area ...\n");
@@ -194,11 +194,11 @@ PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
 }
 
 
-PetscErrorCode PISMRegionalDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
+PetscErrorCode RegionalDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
   PetscErrorCode ierr;
   
   // do whatever you normally do
-  ierr = PISMMohrCoulombYieldStress::basal_material_yield_stress(result); CHKERRQ(ierr);
+  ierr = MohrCoulombYieldStress::basal_material_yield_stress(result); CHKERRQ(ierr);
 
   // now set result=tauc to a big value in no_model_strip
   ierr = no_model_mask->begin_access(); CHKERRQ(ierr);

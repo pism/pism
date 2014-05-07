@@ -23,45 +23,45 @@
 
 namespace pism {
 
-class PISMNC4_Quilt : public PISMNC4File
+class NC4_Quilt : public NC4File
 {
 public:
-  PISMNC4_Quilt(MPI_Comm c, unsigned int compression_level)
-    : PISMNC4File(c, compression_level), suffix("_patch")
+  NC4_Quilt(MPI_Comm c, unsigned int compression_level)
+    : NC4File(c, compression_level), suffix("_patch")
   {
   }
-  virtual ~PISMNC4_Quilt() {}
+  virtual ~NC4_Quilt() {}
 
   // open/create/close
-  virtual int open(std::string filename, PISM_IO_Mode mode);
+  virtual int open(const std::string &filename, IO_Mode mode);
 
-  virtual int create(std::string filename);
+  virtual int create(const std::string &filename);
 
   virtual int close();
 
   // dim
-  virtual int def_dim(std::string name, size_t length) const;
+  virtual int def_dim(const std::string &name, size_t length) const;
 
   // var
-  virtual int def_var(std::string name, PISM_IO_Type nctype, std::vector<std::string> dims) const;
+  virtual int def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   // att
-  using PISMNCFile::put_att_double;
-  virtual int put_att_double(std::string variable_name, std::string att_name, PISM_IO_Type xtype, const std::vector<double> &data) const;
+  using NCFile::put_att_double;
+  virtual int put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
 
-  virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
+  virtual int put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
 
-  virtual int move_if_exists(std::string filename, int rank_to_use = 0);
+  virtual int move_if_exists(const std::string &filename, int rank_to_use = 0);
 protected:
-  virtual int integer_open_mode(PISM_IO_Mode input) const;
+  virtual int integer_open_mode(IO_Mode input) const;
 private:
-  virtual int get_put_var_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, double *ip,
+  virtual int get_put_var_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap, double *ip,
                                  bool get,
                                  bool mapped) const;
   
-  void correct_start_and_count(std::string name,
+  void correct_start_and_count(const std::string &name,
                                std::vector<unsigned int> &start,
                                std::vector<unsigned int> &count) const;
   int global_stat(int stat) const;

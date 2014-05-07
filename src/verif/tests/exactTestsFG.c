@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2008 Ed Bueler and Jed Brown
+   Copyright (C) 2004-2008, 2014 Ed Bueler and Jed Brown
   
    This file is part of PISM.
   
@@ -83,7 +83,7 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
     return -9999;
   }
   
-  if ( (r<=0) || (r>=L) ) {
+  if ((r<=0) || (r>=L)) {
     fprintf(stderr, "\nERROR bothexact(): code and derivation assume 0<r<L  !\n\n");
     return 1;
   }
@@ -94,7 +94,7 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   s = r/L;
   lamhat = (1+1/n)*s - (1/n) + pow(1-s,1+1/n) - pow(s,1+1/n);
   if ((r>0.3*L) && (r<0.9*L))
-    f = pow( cos(pi*(r-0.6*L)/(0.6*L)) ,2.0);
+    f = pow(cos(pi*(r-0.6*L)/(0.6*L)) ,2.0);
   else
     f = 0.0;
   goft = Cp*sin(2.0*pi*t/Tp);
@@ -102,8 +102,8 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
 
   /* compute TT = temperature */
   Ts = Tmin+ST*r;
-  nusqrt = sqrt( 1 + (4.0*H*Ggeo)/(k*Ts) );
-  nu = ( k*Ts/(2.0*Ggeo) )*( 1 + nusqrt );
+  nusqrt = sqrt(1 + (4.0*H*Ggeo)/(k*Ts));
+  nu = (k*Ts/(2.0*Ggeo))*(1 + nusqrt);
   for (i=0; i<Mz; i++) {
     if (z[i] < H) {
       TT[i] = Ts * (nu+H) / (nu+z[i]);
@@ -114,13 +114,13 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   }
 
   /* compute surface slope and horizontal velocity */
-  lamhatr = ((1+1/n)/L)*( 1 - pow(1-s,1/n) - pow(s,1/n) );
-  if ( (r>0.3*L) && (r<0.9*L) )
+  lamhatr = ((1+1/n)/L)*(1 - pow(1-s,1/n) - pow(s,1/n));
+  if ((r>0.3*L) && (r<0.9*L))
     fr = -(pi/(0.6*L)) * sin(2.0*pi*(r-0.6*L)/(0.6*L));
   else
     fr = 0.0;
   Hr = Hconst * power * pow(lamhat,power-1) * lamhatr + goft*fr;   /* chain rule */
-  if ( Hr>0 ) {
+  if (Hr>0) {
     fprintf(stderr, "\nERROR bothexact(): assumes H_r negative for all 0<r<L !\n\n");
     return 2;
   }
@@ -142,15 +142,15 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   for (i=0; i<Mz; i++) {
     if (z[i] < H) {
       Sigmu = -(Q*(nu+z[i])) / (Rgas*Ts*(nu+H));
-      Sig[i] = (Uconst*g/cpheat) * exp(Sigmu) * pow( fabs(Hr)*( H -z[i]) ,n+1);
+      Sig[i] = (Uconst*g/cpheat) * exp(Sigmu) * pow(fabs(Hr)*(H -z[i]) ,n+1);
     } else {
       Sig[i] = 0.0;
     }
   }
 
   /* compute vertical velocity */
-  lamhatrr = ((1+1/n) / (n*L*L)) * ( pow(1-s,(1/n)-1) - pow(s,(1/n)-1) );
-  if ( (r>0.3*L) && (r<0.9*L) )
+  lamhatrr = ((1+1/n) / (n*L*L)) * (pow(1-s,(1/n)-1) - pow(s,(1/n)-1));
+  if ((r>0.3*L) && (r<0.9*L))
     frr = -(2.0*pi*pi/(0.36*L*L)) * cos(2.0*pi*(r-0.6*L)/(0.6*L));
   else
     frr = 0.0;
@@ -159,7 +159,7 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   Tsr = ST;
   nur = (k*Tsr/(2.0*Ggeo)) * (1 + nusqrt) +
     (1/Ts) * (Hr*Ts-H*Tsr) / nusqrt;
-  mur = ( -Q/(Rgas*Ts*Ts*pow(nu+H,2.0)) ) * ( Tsr*(nu+H)+Ts*(nur+Hr) );
+  mur = (-Q/(Rgas*Ts*Ts*pow(nu+H,2.0))) * (Tsr*(nu+H)+Ts*(nur+Hr));
   phi = 1/r + n*Hrr/Hr + Q*Tsr/(Rgas*Ts*Ts) - (n+1)*mur/mu;   /* division by r */
   gam = pow(mu,n) * exp(mu*H) * (mur*H+mu*Hr) * pow(H,n);
   for (i=0; i<Mz; i++) {
