@@ -582,20 +582,20 @@ netcdf pism_config {
     pism_config:Schoof_regularizing_velocity = 1.0;
     pism_config:Schoof_regularizing_velocity_doc = "m/year; Regularizing velocity (Schoof definition)";
 
-    pism_config:Paterson-Budd_A_cold = 3.61e-13;
-    pism_config:Paterson-Budd_A_cold_doc = "Pa^-3 / s; Paterson-Budd A_cold, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_A_cold = 3.61e-13;
+    pism_config:Paterson_Budd_A_cold_doc = "Pa^-3 / s; Paterson-Budd A_cold, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_A_warm = 1.73e3;
-    pism_config:Paterson-Budd_A_warm_doc = "Pa^-3 / s; Paterson-Budd A_warm, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_A_warm = 1.73e3;
+    pism_config:Paterson_Budd_A_warm_doc = "Pa^-3 / s; Paterson-Budd A_warm, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_Q_cold = 6.0e4;
-    pism_config:Paterson-Budd_Q_cold_doc = "J/mol; Paterson-Budd Q_cold, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_Q_cold = 6.0e4;
+    pism_config:Paterson_Budd_Q_cold_doc = "J/mol; Paterson-Budd Q_cold, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_Q_warm = 13.9e4;
-    pism_config:Paterson-Budd_Q_warm_doc = "J/mol; Paterson-Budd Q_warm, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_Q_warm = 13.9e4;
+    pism_config:Paterson_Budd_Q_warm_doc = "J/mol; Paterson-Budd Q_warm, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_critical_temperature = 263.15;
-    pism_config:Paterson-Budd_critical_temperature_doc = "Kelvin; Paterson-Budd critical temperature, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_critical_temperature = 263.15;
+    pism_config:Paterson_Budd_critical_temperature_doc = "Kelvin; Paterson-Budd critical temperature, see [@ref PatersonBudd]";
 
     pism_config:sia_sliding_verification_mode = "no";
     pism_config:sia_sliding_verification_mode_doc = "; Enable 'verification mode' of the SIA sliding code.";

@@ -69,11 +69,11 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const Config &config,
   if (strlen(prefix) > 0)
     e = config.get(std::string(prefix) + "enhancement_factor");
 
-  A_cold = config.get("Paterson-Budd_A_cold");
-  A_warm = config.get("Paterson-Budd_A_warm");
-  Q_cold = config.get("Paterson-Budd_Q_cold");
-  Q_warm = config.get("Paterson-Budd_Q_warm");
-  crit_temp = config.get("Paterson-Budd_critical_temperature");
+  A_cold = config.get("Paterson_Budd_A_cold");
+  A_warm = config.get("Paterson_Budd_A_warm");
+  Q_cold = config.get("Paterson_Budd_Q_cold");
+  Q_warm = config.get("Paterson_Budd_Q_warm");
+  crit_temp = config.get("Paterson_Budd_critical_temperature");
   schoofLen = config.get("Schoof_regularizing_length", "km", "m"); // convert to meters
   schoofVel = config.get("Schoof_regularizing_velocity", "m/year", "m/s"); // convert to m/s
   schoofReg = PetscSqr(schoofVel/schoofLen);
