@@ -39,9 +39,6 @@ public:
   virtual ~SurfaceModel();
 
   enum BCType {DIRICHLET, NEUMANN};
-  // the interface:
-  /** Most surface models impose a Dirichlet boundary condition for energy. */
-  virtual BCType get_conduction_bc_type() { return DIRICHLET; }
 
   // the interface:
   /** Most surface models impose a Dirichlet boundary condition for energy. */
