@@ -21,7 +21,7 @@
 namespace pism {
 
 //! \brief Add an IceModelVec v using the name `name`.
-PetscErrorCode Vars::add(IceModelVec &v, std::string name) {
+PetscErrorCode Vars::add(IceModelVec &v, const std::string &name) {
 
   variables[name] = &v;
 
@@ -60,7 +60,7 @@ PetscErrorCode Vars::add(IceModelVec &v) {
 }
 
 //! Removes a variable with the key `name` from the dictionary.
-void Vars::remove(std::string name) {
+void Vars::remove(const std::string &name) {
   IceModelVec *v = variables[name];
   NCSpatialVariable &m = v->metadata();
 
@@ -89,7 +89,7 @@ void Vars::remove(std::string name) {
 /*!
  * Checks standard_name first, then short name
  */
-IceModelVec* Vars::get(std::string name) const {
+IceModelVec* Vars::get(const std::string &name) const {
   std::map<std::string, IceModelVec* >::const_iterator j = standard_names.find(name);
   if (j != standard_names.end())
     return (j->second);

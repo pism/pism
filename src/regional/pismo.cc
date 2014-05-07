@@ -65,8 +65,8 @@ public:
      : IceModel(g,c,o) {};
 protected:
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode bootstrap_2d(std::string filename);
-  virtual PetscErrorCode initFromFile(std::string filename);
+  virtual PetscErrorCode bootstrap_2d(const std::string &filename);
+  virtual PetscErrorCode initFromFile(const std::string &filename);
   virtual PetscErrorCode model_state_setup();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode allocate_stressbalance();
@@ -273,7 +273,7 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
 }
 
 
-PetscErrorCode IceRegionalModel::bootstrap_2d(std::string filename) {
+PetscErrorCode IceRegionalModel::bootstrap_2d(const std::string &filename) {
   PetscErrorCode ierr;
 
   ierr = IceModel::bootstrap_2d(filename); CHKERRQ(ierr);
@@ -285,7 +285,7 @@ PetscErrorCode IceRegionalModel::bootstrap_2d(std::string filename) {
 }
 
 
-PetscErrorCode IceRegionalModel::initFromFile(std::string filename) {
+PetscErrorCode IceRegionalModel::initFromFile(const std::string &filename) {
   PetscErrorCode  ierr;
   PIO nc(grid, "guess_mode");
 

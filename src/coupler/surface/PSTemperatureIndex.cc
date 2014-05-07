@@ -256,7 +256,7 @@ PetscErrorCode PSTemperatureIndex::init(Vars &vars) {
     ierr = verbPrintf(2, grid.com,
                       "  Option -pdd_sd_file is not set. Using a constant value.\n");
     CHKERRQ(ierr);
-    ierr = air_temp_sd.set(base_pddStdDev); CHKERRQ(ierr);
+    ierr = air_temp_sd.init_constant(base_pddStdDev); CHKERRQ(ierr);
   }
 
   std::string input_file;
@@ -496,7 +496,7 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result
   return 0;
 }
 
-void PSTemperatureIndex::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PSTemperatureIndex::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
 
   SurfaceModel::add_vars_to_output(keyword, result);
 
@@ -515,7 +515,7 @@ void PSTemperatureIndex::add_vars_to_output(std::string keyword, std::set<std::s
   }
 }
 
-PetscErrorCode PSTemperatureIndex::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode PSTemperatureIndex::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -552,7 +552,8 @@ PetscErrorCode PSTemperatureIndex::define_variables(std::set<std::string> vars, 
 
 }
 
-PetscErrorCode PSTemperatureIndex::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSTemperatureIndex::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

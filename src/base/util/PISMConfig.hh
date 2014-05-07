@@ -30,41 +30,41 @@ namespace pism {
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class Config {
 public:
-  Config(MPI_Comm com, std::string name, UnitSystem unit_system);
+  Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_system);
   ~Config();
 
-  void set_double(std::string name, double value);
-  void set_string(std::string name, std::string value);
+  void set_double(const std::string &name, double value);
+  void set_string(const std::string &name, const std::string &value);
 
-  bool is_set(std::string name) const;
+  bool is_set(const std::string &name) const;
 
   PetscErrorCode print_to_stdout(int verbosity_threshhold = 4) const;
   PetscErrorCode warn_about_unused_parameters() const;
   PetscErrorCode read(const PIO &nc);
   PetscErrorCode write(const PIO &nc) const;
 
-  PetscErrorCode read(std::string filename);
-  PetscErrorCode write(std::string filename, bool append = true) const;
+  PetscErrorCode read(const std::string &filename);
+  PetscErrorCode write(const std::string &filename, bool append = true) const;
 
   std::string get_config_filename() const;
   UnitSystem get_unit_system() const;
-  double get(std::string) const;
-  double get(std::string name, std::string u1, std::string u2) const;
-  bool   get_flag(std::string) const;
-  std::string get_string(std::string name) const;
+  double get(const std::string &) const;
+  double get(const std::string &name, const std::string &u1, const std::string &u2) const;
+  bool   get_flag(const std::string&) const;
+  std::string get_string(const std::string &name) const;
   // Set a flag (overriding the default in pism_config.cdl). Should not be used
   // in pismr code.
-  void   set_flag(std::string, bool);
+  void   set_flag(const std::string&, bool);
   // Set parameters and remember that they were set using a command-line option
-  PetscErrorCode set_flag_from_option(std::string name, bool value);
-  PetscErrorCode set_scalar_from_option(std::string name, double value);
-  PetscErrorCode set_string_from_option(std::string name, std::string value);
-  PetscErrorCode set_keyword_from_option(std::string name, std::string value);
+  PetscErrorCode set_flag_from_option(const std::string &name, bool value);
+  PetscErrorCode set_scalar_from_option(const std::string &name, double value);
+  PetscErrorCode set_string_from_option(const std::string &name, const std::string &value);
+  PetscErrorCode set_keyword_from_option(const std::string &name, const std::string &value);
   // Set parameters by ptocessing a command-line option
-  PetscErrorCode flag_from_option(std::string, std::string);
-  PetscErrorCode scalar_from_option(std::string, std::string);
-  PetscErrorCode string_from_option(std::string, std::string);
-  PetscErrorCode keyword_from_option(std::string, std::string, std::string);
+  PetscErrorCode flag_from_option(const std::string &, const std::string &);
+  PetscErrorCode scalar_from_option(const std::string &, const std::string &);
+  PetscErrorCode string_from_option(const std::string &, const std::string &);
+  PetscErrorCode keyword_from_option(const std::string &, const std::string &, const std::string &);
   // Import settings from an override file
   void import_from(const Config &other);
   void update_from(const Config &other);
@@ -75,9 +75,9 @@ private:
   NCVariable m_data;
   std::string m_config_filename;
   //!< \brief the name of the file this config database was initialized from 
-  double get_quiet(std::string name) const;
-  std::string get_string_quiet(std::string name) const;
-  bool   get_flag_quiet(std::string name) const;
+  double get_quiet(const std::string &name) const;
+  std::string get_string_quiet(const std::string &name) const;
+  bool   get_flag_quiet(const std::string &name) const;
   const NCVariable& get_data() const;
 
   std::set<std::string> m_parameters_set;

@@ -53,7 +53,7 @@ class IceModelVec3;
 class tempSystemCtx : public columnSystemCtx {
 
 public:
-  tempSystemCtx(int my_Mz, std::string my_prefix);
+  tempSystemCtx(int my_Mz, const std::string &my_prefix);
   PetscErrorCode initAllColumns();
   PetscErrorCode setSchemeParamsThisColumn(MaskValue my_mask, bool my_isMarginal, double my_lambda);  
   PetscErrorCode setSurfaceBoundaryValuesThisColumn(double my_Ts);

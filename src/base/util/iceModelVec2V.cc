@@ -28,7 +28,7 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   begin_end_access_use_dof = false;
 }
 
-PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, std::string my_short_name, IceModelVecKind ghostedp,
+PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const std::string &my_short_name, IceModelVecKind ghostedp,
                                       unsigned int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, ghostedp,
@@ -68,7 +68,7 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::set_name(std::string new_name, int component) {
+PetscErrorCode IceModelVec2V::set_name(const std::string &new_name, int component) {
   (void) component;
 
   std::string tmp = new_name;
@@ -84,8 +84,8 @@ PetscErrorCode IceModelVec2V::set_name(std::string new_name, int component) {
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(std::string short_name, std::string long_name, 
-                                     std::string standard_name, int component)
+PetscErrorCode IceModelVec2V::rename(const std::string &short_name, const std::string &long_name, 
+                                     const std::string &standard_name, int component)
 {
   (void) component;
 
@@ -114,9 +114,9 @@ PetscErrorCode IceModelVec2V::rename(std::string short_name, std::string long_na
 }  
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec2V::rename(std::string short_name,
-                                     std::vector<std::string> long_names, 
-                                     std::string standard_name)
+PetscErrorCode IceModelVec2V::rename(const std::string & short_name,
+                                     const std::vector<std::string> &long_names, 
+                                     const std::string & standard_name)
 {
   if (!short_name.empty())
   {

@@ -107,7 +107,7 @@ PetscErrorCode PA_delta_T::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-void PA_delta_T::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PA_delta_T::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -117,8 +117,9 @@ void PA_delta_T::add_vars_to_output(std::string keyword, std::set<std::string> &
 }
 
 
-PetscErrorCode PA_delta_T::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode PA_delta_T::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -137,7 +138,8 @@ PetscErrorCode PA_delta_T::define_variables(std::set<std::string> vars, const PI
 }
 
 
-PetscErrorCode PA_delta_T::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PA_delta_T::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

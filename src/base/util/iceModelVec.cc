@@ -322,7 +322,7 @@ Vec IceModelVec::get_vec() {
 }
 
 //! Sets the variable name to `name` and resets metadata.
-PetscErrorCode  IceModelVec::set_name(std::string new_name, int N) {
+PetscErrorCode  IceModelVec::set_name(const std::string &new_name, int N) {
   reset_attrs(N);
 
   if (N == 0)
@@ -338,8 +338,8 @@ std::string IceModelVec::name() const {
 }
 
 //! Sets the variable's various names without changing any other metadata
-PetscErrorCode IceModelVec::rename(std::string short_name, std::string long_name,
-                                   std::string standard_name, int N) {
+PetscErrorCode IceModelVec::rename(const std::string &short_name, const std::string &long_name,
+                                   const std::string &standard_name, int N) {
 
   if (short_name.empty() == false) {
     if (N == 0) m_name = short_name;
@@ -363,7 +363,7 @@ This affects NCVariable::report_range() and IceModelVec::write().  In write(),
 if IceModelVec::write_in_glaciological_units == true, then that variable is written
 with a conversion to the glaciological units set here.
  */
-PetscErrorCode  IceModelVec::set_glaciological_units(std::string my_units) {
+PetscErrorCode  IceModelVec::set_glaciological_units(const std::string &my_units) {
 
   PetscErrorCode ierr;
 
@@ -397,10 +397,10 @@ PetscErrorCode IceModelVec::reset_attrs(unsigned int N) {
   If my_units != "", this also resets glaciological_units, so that they match
   internal units.
  */
-PetscErrorCode IceModelVec::set_attrs(std::string my_pism_intent,
-                                      std::string my_long_name,
-                                      std::string my_units,
-                                      std::string my_standard_name,
+PetscErrorCode IceModelVec::set_attrs(const std::string &my_pism_intent,
+                                      const std::string &my_long_name,
+                                      const std::string &my_units,
+                                      const std::string &my_standard_name,
                                       int N) {
 
   metadata(N).set_string("long_name", my_long_name);
@@ -489,7 +489,7 @@ PetscErrorCode IceModelVec::define(const PIO &nc, IO_Type output_datatype) {
 /*! Note that unlike read() and regrid(), this method does not use the standard
   name to find the variable to read attributes from.
  */
-PetscErrorCode IceModelVec::read_attributes(std::string filename, int N) {
+PetscErrorCode IceModelVec::read_attributes(const std::string &filename, int N) {
   PIO nc(*grid, "netcdf3");     // OK to use netcdf3
   PetscErrorCode ierr;
 
@@ -806,7 +806,7 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::write(std::string filename, IO_Type nctype) {
+PetscErrorCode IceModelVec::write(const std::string &filename, IO_Type nctype) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, grid->config.get_string("output_format"));
@@ -821,7 +821,7 @@ PetscErrorCode IceModelVec::write(std::string filename, IO_Type nctype) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::read(std::string filename, unsigned int time) {
+PetscErrorCode IceModelVec::read(const std::string &filename, unsigned int time) {
   PetscErrorCode ierr;
 
   PIO nc(*grid, "guess_mode");
@@ -835,7 +835,7 @@ PetscErrorCode IceModelVec::read(std::string filename, unsigned int time) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::regrid(std::string filename, RegriddingFlag flag,
+PetscErrorCode IceModelVec::regrid(const std::string &filename, RegriddingFlag flag,
                                    double default_value) {
   PetscErrorCode ierr;
 

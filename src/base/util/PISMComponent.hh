@@ -103,16 +103,16 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
   */
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result) = 0;
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result) = 0;
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc) = 0;
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -132,7 +132,7 @@ protected:
       `-regrid_vars`.
   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
-  virtual PetscErrorCode regrid(std::string module_name, IceModelVec *variable,
+  virtual PetscErrorCode regrid(const std::string &module_name, IceModelVec *variable,
                                 RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 };
 
@@ -228,14 +228,14 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result)
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result)
   {
     if (input_model != NULL) {
       input_model->add_vars_to_output(keyword, result);
     }
   }
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype)
   {
     if (input_model != NULL) {
@@ -244,7 +244,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc)
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);

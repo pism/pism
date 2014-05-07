@@ -60,8 +60,9 @@ inline bool pism_is_valid_calendar_name(std::string name) {
 class Time
 {
 public:
-  Time(MPI_Comm c, const Config &conf, std::string calendar,
-           UnitSystem units_system);
+  Time(MPI_Comm c, const Config &conf,
+       const std::string &calendar,
+       const UnitSystem &units_system);
   virtual ~Time();
 
   //! \brief Sets the current time (in seconds since the reference time).
@@ -92,9 +93,9 @@ public:
   //! \brief Intialize using command-line options.
   virtual PetscErrorCode init();
 
-  void init_calendar(std::string calendar);
+  void init_calendar(const std::string &calendar);
 
-  PetscErrorCode parse_times(std::string spec, std::vector<double> &result);
+  PetscErrorCode parse_times(const std::string &spec, std::vector<double> &result);
 
   //! \brief Returns the CF- (and UDUNITS) compliant units string.
   /*!
@@ -110,7 +111,7 @@ public:
    */
   virtual std::string units_string();
 
-  virtual std::string CF_units_to_PISM_units(std::string input);
+  virtual std::string CF_units_to_PISM_units(const std::string &input);
 
   //! \brief Returns time since the origin modulo period.
   virtual double mod(double time, unsigned int period_years);
@@ -151,27 +152,27 @@ public:
 
   //! @brief Convert time interval from seconds to given units. Handle
   //! 'years' using the year length corresponding to the calendar.
-  virtual double convert_time_interval(double T, std::string units);
+  virtual double convert_time_interval(double T, const std::string &units);
 
 protected:
-  PetscErrorCode parse_list(std::string spec, std::vector<double> &result);
+  PetscErrorCode parse_list(const std::string &spec, std::vector<double> &result);
 
   virtual PetscErrorCode process_ys(double &result, bool &flag);
   virtual PetscErrorCode process_y(double &result, bool &flag);
   virtual PetscErrorCode process_ye(double &result, bool &flag);
 
   virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       std::string keyword,
+                                       const std::string &keyword,
                                        std::vector<double> &result);
 
   PetscErrorCode compute_times_simple(double time_start, double delta, double time_end,
                                       std::vector<double> &result);
 
-  virtual PetscErrorCode parse_range(std::string spec, std::vector<double> &result);
+  virtual PetscErrorCode parse_range(const std::string &spec, std::vector<double> &result);
 
-  virtual PetscErrorCode parse_date(std::string spec, double *result);
+  virtual PetscErrorCode parse_date(const std::string &spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(std::string spec, std::string &keyword,
+  virtual PetscErrorCode parse_interval_length(const std::string &spec, std::string &keyword,
                                                double *result);
 
   double years_to_seconds(double input);

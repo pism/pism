@@ -218,17 +218,17 @@ PetscErrorCode IcebergRemover::transfer_from_proc0() {
   return 0;
 }
 
-void IcebergRemover::add_vars_to_output(std::string, std::set<std::string> &) {
+void IcebergRemover::add_vars_to_output(const std::string &, std::set<std::string> &) {
   // empty
 }
 
-PetscErrorCode IcebergRemover::define_variables(std::set<std::string>, const PIO &,
+PetscErrorCode IcebergRemover::define_variables(const std::set<std::string> &, const PIO &,
                                                     IO_Type) {
   // empty
   return 0;
 }
 
-PetscErrorCode IcebergRemover::write_variables(std::set<std::string>, const PIO&) {
+PetscErrorCode IcebergRemover::write_variables(const std::set<std::string> &, const PIO&) {
   // empty
   return 0;
 }

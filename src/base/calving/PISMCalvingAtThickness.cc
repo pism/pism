@@ -92,19 +92,19 @@ PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
 }
 
 
-void CalvingAtThickness::add_vars_to_output(std::string /*keyword*/,
+void CalvingAtThickness::add_vars_to_output(const std::string &/*keyword*/,
                                                 std::set<std::string> &/*result*/) {
   // empty
 }
 
-PetscErrorCode CalvingAtThickness::define_variables(std::set<std::string> /*vars*/,
+PetscErrorCode CalvingAtThickness::define_variables(const std::set<std::string> &/*vars*/,
                                                         const PIO &/*nc*/,
                                                         IO_Type /*nctype*/) {
   // empty
   return 0;
 }
 
-PetscErrorCode CalvingAtThickness::write_variables(std::set<std::string> /*vars*/,
+PetscErrorCode CalvingAtThickness::write_variables(const std::set<std::string> &/*vars*/,
                                                        const PIO& /*nc*/) {
   // empty
   return 0;

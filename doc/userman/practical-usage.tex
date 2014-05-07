@@ -589,7 +589,7 @@ The file \texttt{my_config.nc} has to contain \emph{all} of the flags and parame
 
 The list of parameters is too long to include here; please see the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser} for an automatically-generated table describing them.
 
-Some command-line options \emph{set} configuration parameters; some PISM executables have special parameter defaults.  To see the configuration used in a PISM run, use the option \fileopt{dump_config}.  The resulting file will have the values which were used, no matter \emph{how} they were set.
+Some command-line options \emph{set} configuration parameters; some PISM executables have special parameter defaults. To examine what parameters were used in a particular run, look at the attributes of the \texttt{pism_config} variable in a PISM output file.
 
 \subsubsection*{Managing parameter studies}
 \label{sec:parameter-studies}

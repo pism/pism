@@ -42,10 +42,10 @@ public:
                     const Config &conf,
                     EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
-  PetscErrorCode setType(std::string name);
+  PetscErrorCode setType(const std::string &name);
   PetscErrorCode setFromOptions();
-  PetscErrorCode registerType(std::string name, IceFlowLawCreator);
-  PetscErrorCode removeType(std::string name);
+  PetscErrorCode registerType(const std::string &name, IceFlowLawCreator);
+  PetscErrorCode removeType(const std::string &name);
   PetscErrorCode create(IceFlowLaw **);
 private:
   PetscErrorCode registerAll();

@@ -49,19 +49,17 @@ Optionally allows saving of full velocity field.
 
 Calls dumpToFile() to do the actual work.
  */
-PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
+PetscErrorCode  IceModel::writeFiles(const std::string &default_filename) {
   PetscErrorCode ierr;
   std::string filename = default_filename,
     config_out;
-  bool o_set, dump_config;
+  bool o_set;
 
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
   {
     ierr = OptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
-    ierr = OptionsString("-dump_config", "File to write the config to",
-                             config_out, dump_config); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -77,13 +75,6 @@ PetscErrorCode  IceModel::writeFiles(std::string default_filename) {
     ierr = dumpToFile(filename); CHKERRQ(ierr);
   }
 
-  // save the config file
-  if (dump_config) {
-    // Here "false" means "do not append"; creates a new file and moves
-    // the old one aside
-    ierr = config.write(config_out, false); CHKERRQ(ierr);
-  }
-
   return 0;
 }
 
@@ -97,7 +88,8 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     ierr = nc.inq_var(mapping.get_name(), mapping_exists); CHKERRQ(ierr);
     if (mapping_exists == false) {
       ierr = nc.redef(); CHKERRQ(ierr);
-      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+      ierr = nc.def_var(mapping.get_name(), PISM_DOUBLE,
+                        std::vector<std::string>()); CHKERRQ(ierr);
     }
     ierr = nc.write_attributes(mapping, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
@@ -108,7 +100,8 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     ierr = nc.inq_var(run_stats.get_name(), run_stats_exists); CHKERRQ(ierr);
     if (run_stats_exists == false) {
       ierr = nc.redef(); CHKERRQ(ierr);
-      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE, std::vector<std::string>()); CHKERRQ(ierr);
+      ierr = nc.def_var(run_stats.get_name(), PISM_DOUBLE,
+                        std::vector<std::string>()); CHKERRQ(ierr);
     }
     ierr = nc.write_attributes(run_stats, PISM_DOUBLE, false); CHKERRQ(ierr);
   }
@@ -122,11 +115,14 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
     ierr = overrides.write(nc); CHKERRQ(ierr);
   }
 
+  // write configuration parameters to the file:
+  ierr = config.write(nc); CHKERRQ(ierr);
+
   return 0;
 }
 
 
-PetscErrorCode IceModel::dumpToFile(std::string filename) {
+PetscErrorCode IceModel::dumpToFile(const std::string &filename) {
   PetscErrorCode ierr;
   PIO nc(grid, config.get_string("output_format"));
 
@@ -149,8 +145,9 @@ PetscErrorCode IceModel::dumpToFile(std::string filename) {
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated IceModelVecs.
-PetscErrorCode IceModel::write_variables(const PIO &nc, std::set<std::string> vars,
+PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::string> &vars_input,
                                          IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
   IceModelVec *v;
 
@@ -363,7 +360,7 @@ PetscErrorCode IceModel::write_model_state(const PIO &nc) {
     grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
     box from the same input file.
   */
-PetscErrorCode IceModel::initFromFile(std::string filename) {
+PetscErrorCode IceModel::initFromFile(const std::string &filename) {
   PetscErrorCode  ierr;
   PIO nc(grid, "guess_mode");
 
@@ -522,7 +519,7 @@ PetscErrorCode IceModel::regrid(int dimensions) {
   return 0;
 }
 
-PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::string> vars, unsigned int ndims) {
+PetscErrorCode IceModel::regrid_variables(const std::string &filename, const std::set<std::string> &vars, unsigned int ndims) {
   PetscErrorCode ierr;
 
   std::set<std::string>::iterator i;
@@ -581,7 +578,7 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
  *
  * @return 0 on success
  */
-PetscErrorCode IceModel::init_enthalpy(std::string filename,
+PetscErrorCode IceModel::init_enthalpy(const std::string &filename,
                                        bool do_regrid, int last_record) {
   PetscErrorCode ierr;
   bool temp_exists  = false,

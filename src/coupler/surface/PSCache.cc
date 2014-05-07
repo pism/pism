@@ -192,7 +192,8 @@ PetscErrorCode PSCache::surface_layer_thickness(IceModelVec2S &result) {
 }
 
 
-PetscErrorCode PSCache::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode PSCache::define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
@@ -225,7 +226,8 @@ PetscErrorCode PSCache::define_variables(std::set<std::string> vars, const PIO &
   return 0;
 }
 
-PetscErrorCode PSCache::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSCache::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {

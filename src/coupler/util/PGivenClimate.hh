@@ -42,7 +42,7 @@ public:
     }
   }
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result)
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result)
   {
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
@@ -56,8 +56,9 @@ public:
 
   }
 
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype)
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype)
   {
+    std::set<std::string> vars = vars_input;
     PetscErrorCode ierr;
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
@@ -76,7 +77,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc)
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc)
   {
     PetscErrorCode ierr;
 

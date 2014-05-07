@@ -54,7 +54,7 @@ int NC4_Quilt::integer_open_mode(IO_Mode input) const {
   }
 }
 
-int NC4_Quilt::open(std::string fname, IO_Mode mode) {
+int NC4_Quilt::open(const std::string &fname, IO_Mode mode) {
   int stat, rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -69,7 +69,7 @@ int NC4_Quilt::open(std::string fname, IO_Mode mode) {
 }
 
 
-int NC4_Quilt::create(std::string fname) {
+int NC4_Quilt::create(const std::string &fname) {
   int stat = 0, rank = 0;
 
   MPI_Comm_rank(com, &rank);
@@ -94,7 +94,7 @@ int NC4_Quilt::close() {
   return global_stat(stat);
 }
 
-int NC4_Quilt::def_dim(std::string name, size_t length) const {
+int NC4_Quilt::def_dim(const std::string &name, size_t length) const {
   int stat;
   size_t length_local = 0;
 
@@ -115,7 +115,9 @@ int NC4_Quilt::def_dim(std::string name, size_t length) const {
   return global_stat(stat);
 }
 
-int NC4_Quilt::def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const {
+int NC4_Quilt::def_var(const std::string &name, IO_Type nctype,
+                       const std::vector<std::string> &dims_input) const {
+  std::vector<std::string> dims = dims_input;
   int stat = 0, rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -144,7 +146,7 @@ int NC4_Quilt::def_var(std::string name, IO_Type nctype, std::vector<std::string
   return global_stat(stat);
 }
 
-int NC4_Quilt::put_att_double(std::string name, std::string att_name,
+int NC4_Quilt::put_att_double(const std::string &name, const std::string &att_name,
                                       IO_Type xtype, const std::vector<double> &data) const {
   int stat;
 
@@ -158,7 +160,7 @@ int NC4_Quilt::put_att_double(std::string name, std::string att_name,
 }
 
 
-int NC4_Quilt::put_att_text(std::string name, std::string att_name, std::string value) const {
+int NC4_Quilt::put_att_text(const std::string &name, const std::string &att_name, const std::string &value) const {
   int stat;
 
   if (name == "x" || name == "y") {
@@ -171,7 +173,7 @@ int NC4_Quilt::put_att_text(std::string name, std::string att_name, std::string 
 }
 
 
-void NC4_Quilt::correct_start_and_count(std::string name,
+void NC4_Quilt::correct_start_and_count(const std::string &name,
                                             std::vector<unsigned int> &start,
                                             std::vector<unsigned int> &count) const {
   std::vector<std::string> dim_names;
@@ -194,14 +196,16 @@ void NC4_Quilt::correct_start_and_count(std::string name,
 
 }
 
-int NC4_Quilt::get_put_var_double(std::string name,
-                                      std::vector<unsigned int> start,
-                                      std::vector<unsigned int> count,
-                                      std::vector<unsigned int> imap, double *data,
+int NC4_Quilt::get_put_var_double(const std::string &name,
+                                      const std::vector<unsigned int> &start_input,
+                                      const std::vector<unsigned int> &count_input,
+                                      const std::vector<unsigned int> &imap_input, double *data,
                                       bool get,
                                       bool mapped) const {
   int stat;
-
+  std::vector<unsigned int> start = start_input;
+  std::vector<unsigned int> count = count_input;
+  std::vector<unsigned int> imap = imap_input;
   if (get) {
     if (!(name == "x" || name == "y")) {
       correct_start_and_count(name, start, count);
@@ -247,7 +251,7 @@ int NC4_Quilt::global_stat(int stat) const {
   return tmp != 0;
 }
 
-int NC4_Quilt::move_if_exists(std::string file, int /*rank_to_use*/) {
+int NC4_Quilt::move_if_exists(const std::string &file, int /*rank_to_use*/) {
   int stat = 0, rank = 0;
   MPI_Comm_rank(com, &rank);
 

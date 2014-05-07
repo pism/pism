@@ -31,7 +31,10 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid &g, EnthalpyConve
   : SSAFEM(g, e, c),
     m_grid(grid), m_zeta(NULL),
     m_fixed_design_locations(NULL),
-    m_design_param(tp), m_element_index(m_grid), m_rebuild_J_state(true) {
+    m_design_param(tp),
+    m_element_index(m_grid),
+    m_quadrature(grid, 1.0),
+    m_rebuild_J_state(true) {
   PetscErrorCode ierr = this->construct();
   CHKERRCONTINUE(ierr);
   assert(ierr == 0);
@@ -63,8 +66,6 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);
 
-  m_quadrature.init(m_grid);
-  m_quadrature_vector.init(m_grid);
   return 0;
 }
 
@@ -292,8 +293,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   ierr = fixedZeta.init(m_fixed_design_locations, NULL);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Loop through all elements.
   int xs = m_element_index.xs,
@@ -464,8 +464,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
                           m_dirichletWeight); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
-  double JxW[FEQuadrature::Nq];
-  m_quadrature.getWeightedJacobian(JxW);
+  const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
   for (int i = grid.xs; i < grid.xs + grid.xm; i++) {

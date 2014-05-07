@@ -62,7 +62,7 @@ public:
     C  = 2.45e-18;
   };
 
-  virtual PetscErrorCode write_nuH(std::string filename);
+  virtual PetscErrorCode write_nuH(const std::string &filename);
 
 protected:
   virtual PetscErrorCode initializeGrid(int Mx, int My);
@@ -79,7 +79,7 @@ protected:
     C;       //!< "typical constant ice parameter"
 };
 
-PetscErrorCode SSATestCaseCFBC::write_nuH(std::string filename) {
+PetscErrorCode SSATestCaseCFBC::write_nuH(const std::string &filename) {
   PetscErrorCode ierr;
 
   SSAFD *ssafd = dynamic_cast<SSAFD*>(ssa);

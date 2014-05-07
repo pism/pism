@@ -106,7 +106,7 @@ PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, double *result)
   return 0;
 }
 
-void PA_paleo_precip::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PA_paleo_precip::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -116,8 +116,9 @@ void PA_paleo_precip::add_vars_to_output(std::string keyword, std::set<std::stri
 }
 
 
-PetscErrorCode PA_paleo_precip::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode PA_paleo_precip::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
@@ -136,7 +137,8 @@ PetscErrorCode PA_paleo_precip::define_variables(std::set<std::string> vars, con
 }
 
 
-PetscErrorCode PA_paleo_precip::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PA_paleo_precip::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {

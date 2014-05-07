@@ -166,13 +166,13 @@ PetscErrorCode DistributedHydrology::init_bwp(Vars &vars) {
 }
 
 
-void DistributedHydrology::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void DistributedHydrology::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   RoutingHydrology::add_vars_to_output(keyword, result);
   result.insert("bwp");
 }
 
 
-PetscErrorCode DistributedHydrology::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode DistributedHydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
   PetscErrorCode ierr;
   ierr = RoutingHydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
@@ -183,7 +183,7 @@ PetscErrorCode DistributedHydrology::define_variables(std::set<std::string> vars
 }
 
 
-PetscErrorCode DistributedHydrology::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode DistributedHydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
   ierr = RoutingHydrology::write_variables(vars, nc); CHKERRQ(ierr);
   if (set_contains(vars, "bwp")) {

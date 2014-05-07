@@ -28,13 +28,13 @@ class Time_Calendar : public Time
 {
 public:
   Time_Calendar(MPI_Comm c, const Config &conf,
-                    std::string calendar,
-                    UnitSystem units_system);
+                const std::string &calendar,
+                const UnitSystem &units_system);
   virtual ~Time_Calendar();
 
   virtual PetscErrorCode init();
 
-  virtual PetscErrorCode init_from_file(std::string filename);
+  virtual PetscErrorCode init_from_file(const std::string &filename);
 
   virtual double mod(double time, unsigned int);
 
@@ -56,7 +56,7 @@ public:
     return m_time_units.format();
   }
 
-  virtual std::string CF_units_to_PISM_units(std::string input) {
+  virtual std::string CF_units_to_PISM_units(const std::string &input) {
     return input;               // return unchanged CF units
   }
 
@@ -69,16 +69,17 @@ public:
 
 protected:
   virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       std::string keyword,
+                                       const std::string &keyword,
                                        std::vector<double> &result);
 
   virtual PetscErrorCode process_ys(double &result, bool &flag);
   virtual PetscErrorCode process_y(double &result, bool &flag);
   virtual PetscErrorCode process_ye(double &result, bool &flag);
 
-  virtual PetscErrorCode parse_date(std::string spec, double *result);
+  virtual PetscErrorCode parse_date(const std::string &spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(std::string spec, std::string &keyword, double *result);
+  virtual PetscErrorCode parse_interval_length(const std::string &spec,
+                                               std::string &keyword, double *result);
 
   PetscErrorCode compute_times_monthly(std::vector<double> &result);
 

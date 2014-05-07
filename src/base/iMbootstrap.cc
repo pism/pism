@@ -36,7 +36,7 @@ This procedure is called by the base class when option `-boot_file` is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
-PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
+PetscErrorCode IceModel::bootstrapFromFile(const std::string &filename) {
   PetscErrorCode  ierr;
 
   // Bootstrap 2D fields:
@@ -68,7 +68,7 @@ PetscErrorCode IceModel::bootstrapFromFile(std::string filename) {
   return 0;
 }
 
-PetscErrorCode IceModel::bootstrap_2d(std::string filename) {
+PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   PetscErrorCode ierr;
 
   PIO nc(grid, "guess_mode");

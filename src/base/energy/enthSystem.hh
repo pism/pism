@@ -41,7 +41,7 @@ public:
                 IceModelVec3 &my_Enth3,
                 double my_dx,  double my_dy,
                 double my_dt,  double my_dz,
-                int my_Mz, std::string my_prefix,
+                int my_Mz, const std::string &my_prefix,
                 EnthalpyConverter *my_EC);
   virtual ~enthSystemCtx();
 

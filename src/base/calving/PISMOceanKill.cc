@@ -130,12 +130,12 @@ PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
   return 0;
 }
 
-void OceanKill::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void OceanKill::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   if (keyword == "medium" || keyword == "big")
     result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
 }
 
-PetscErrorCode OceanKill::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode OceanKill::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -146,7 +146,7 @@ PetscErrorCode OceanKill::define_variables(std::set<std::string> vars, const PIO
   return 0;
 }
 
-PetscErrorCode OceanKill::write_variables(std::set<std::string> vars, const PIO& nc) {
+PetscErrorCode OceanKill::write_variables(const std::set<std::string> &vars, const PIO& nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_ocean_kill_mask.metadata().get_string("short_name"))) {

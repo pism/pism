@@ -38,11 +38,11 @@ public:
   virtual int redef() const;
 
   // dim
-  virtual int def_dim(std::string name, size_t length) const;
+  virtual int def_dim(const std::string &name, size_t length) const;
 
-  virtual int inq_dimid(std::string dimension_name, bool &exists) const;
+  virtual int inq_dimid(const std::string &dimension_name, bool &exists) const;
 
-  virtual int inq_dimlen(std::string dimension_name, unsigned int &result) const;
+  virtual int inq_dimlen(const std::string &dimension_name, unsigned int &result) const;
 
   virtual int inq_unlimdim(std::string &result) const;
 
@@ -51,53 +51,53 @@ public:
   virtual int inq_ndims(int &result) const;
 
   // var
-  virtual int def_var(std::string name, IO_Type nctype, std::vector<std::string> dims) const;
+  virtual int def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
 
-  virtual int get_vara_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
+  virtual int get_vara_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
                               double *ip) const;
 
-  virtual int put_vara_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
+  virtual int put_vara_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
                               const double *op) const;
 
-  virtual int get_varm_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
-                              std::vector<unsigned int> imap, double *ip) const;
+  virtual int get_varm_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
+                              const std::vector<unsigned int> &imap, double *ip) const;
 
-  virtual int put_varm_double(std::string variable_name,
-                              std::vector<unsigned int> start,
-                              std::vector<unsigned int> count,
-                              std::vector<unsigned int> imap, const double *op) const;
+  virtual int put_varm_double(const std::string &variable_name,
+                              const std::vector<unsigned int> &start,
+                              const std::vector<unsigned int> &count,
+                              const std::vector<unsigned int> &imap, const double *op) const;
 
   virtual int inq_nvars(int &result) const;
 
-  virtual int inq_vardimid(std::string variable_name, std::vector<std::string> &result) const;
+  virtual int inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const;
 
-  virtual int inq_varnatts(std::string variable_name, int &result) const;
+  virtual int inq_varnatts(const std::string &variable_name, int &result) const;
 
-  virtual int inq_varid(std::string variable_name, bool &exists) const;
+  virtual int inq_varid(const std::string &variable_name, bool &exists) const;
 
   virtual int inq_varname(unsigned int j, std::string &result) const;
 
-  int inq_vartype(std::string variable_name, IO_Type &result) const;
+  int inq_vartype(const std::string &variable_name, IO_Type &result) const;
 
   // att
-  virtual int get_att_double(std::string variable_name, std::string att_name, std::vector<double> &result) const;
+  virtual int get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const;
 
-  virtual int get_att_text(std::string variable_name, std::string att_name, std::string &result) const;
+  virtual int get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const;
 
   using NCFile::put_att_double;
-  virtual int put_att_double(std::string variable_name, std::string att_name, IO_Type xtype, const std::vector<double> &data) const;
+  virtual int put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
 
-  virtual int put_att_text(std::string variable_name, std::string att_name, std::string value) const;
+  virtual int put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
 
-  virtual int inq_attname(std::string variable_name, unsigned int n, std::string &result) const;
+  virtual int inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const;
 
-  virtual int inq_atttype(std::string variable_name, std::string att_name, IO_Type &result) const;
+  virtual int inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
 
   // misc
   virtual int set_fill(int fillmode, int &old_modep) const;
@@ -105,10 +105,10 @@ public:
   virtual std::string get_format() const;
 protected:
   virtual int set_access_mode(int varid, bool mapped) const;
-  virtual int get_put_var_double(std::string variable_name,
-                                 std::vector<unsigned int> start,
-                                 std::vector<unsigned int> count,
-                                 std::vector<unsigned int> imap, double *ip,
+  virtual int get_put_var_double(const std::string &variable_name,
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count,
+                                 const std::vector<unsigned int> &imap, double *ip,
                                  bool get,
                                  bool mapped) const;
   unsigned int m_compression_level;

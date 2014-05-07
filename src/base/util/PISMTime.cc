@@ -42,9 +42,9 @@ double Time::seconds_to_years(double input) {
 
 
 Time::Time(MPI_Comm c,
-                   const Config &conf,
-                   std::string calendar_string,
-                   UnitSystem unit_system)
+           const Config &conf,
+           const std::string &calendar_string,
+           const UnitSystem &unit_system)
   : m_com(c), m_config(conf), m_unit_system(unit_system),
     m_time_units(m_unit_system) {
 
@@ -61,7 +61,7 @@ Time::Time(MPI_Comm c,
 Time::~Time() {
 }
 
-void Time::init_calendar(std::string calendar_string) {
+void Time::init_calendar(const std::string &calendar_string) {
   m_calendar_string = calendar_string;
 
   double seconds_per_day = m_unit_system.convert(1.0, "day", "seconds");
@@ -125,8 +125,9 @@ std::string Time::units_string() {
 }
 
 
-std::string Time::CF_units_to_PISM_units(std::string input) {
-  size_t n = input.find("since");
+std::string Time::CF_units_to_PISM_units(const std::string &input) {
+  std::string units = input;
+  size_t n = units.find("since");
 
   /*!
     \note This code finds the string "since" in the units_string and
@@ -135,13 +136,13 @@ std::string Time::CF_units_to_PISM_units(std::string input) {
     reference date specification always starts with this word).
   */
   if (n != std::string::npos)
-    input.resize(n);
+    units.resize(n);
 
   // strip trailing spaces
-  while (ends_with(input, " ") && input.empty() == false)
-    input.resize(input.size() - 1); // this would fail on empty strings
+  while (ends_with(units, " ") && units.empty() == false)
+    units.resize(units.size() - 1); // this would fail on empty strings
 
-  return input;
+  return units;
 }
 
 PetscErrorCode Time::process_ys(double &result, bool &flag) {
@@ -288,7 +289,7 @@ double Time::increment_date(double T, int years) {
   return T + years_to_seconds(years);
 }
 
-PetscErrorCode Time::parse_times(std::string spec,
+PetscErrorCode Time::parse_times(const std::string &spec,
                                      std::vector<double> &result) {
 
   if (spec.find(',') != std::string::npos) {
@@ -305,7 +306,7 @@ PetscErrorCode Time::parse_times(std::string spec,
   return 0;
 }
 
-PetscErrorCode Time::parse_list(std::string spec, std::vector<double> &result) {
+PetscErrorCode Time::parse_list(const std::string &spec, std::vector<double> &result) {
   std::vector<std::string> parts;
   std::istringstream arg(spec);
   std::string tmp;
@@ -337,7 +338,7 @@ PetscErrorCode Time::parse_list(std::string spec, std::vector<double> &result) {
  *
  * @return 0 on success, 1 otherwise
  */
-int Time::parse_interval_length(std::string spec, std::string &keyword, double *result) {
+int Time::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
 
   // check if it is a keyword
   if (spec == "hourly") {
@@ -415,7 +416,7 @@ int Time::parse_interval_length(std::string spec, std::string &keyword, double *
 }
 
 
-PetscErrorCode Time::parse_range(std::string spec, std::vector<double> &result) {
+PetscErrorCode Time::parse_range(const std::string &spec, std::vector<double> &result) {
   double
     time_start   = m_run_start,
     time_end     = m_run_end,
@@ -468,7 +469,7 @@ PetscErrorCode Time::parse_range(std::string spec, std::vector<double> &result) 
 }
 
 
-PetscErrorCode Time::parse_date(std::string spec, double *result) {
+PetscErrorCode Time::parse_date(const std::string &spec, double *result) {
   PetscErrorCode ierr;
   double d;
   char *endptr;
@@ -534,7 +535,7 @@ PetscErrorCode Time::compute_times_simple(double time_start, double delta, doubl
 }
 
 PetscErrorCode Time::compute_times(double time_start, double delta, double time_end,
-                                       std::string keyword,
+                                       const std::string &keyword,
                                        std::vector<double> &result) {
   if (keyword == "yearly") {
     delta = years_to_seconds(1.0);
@@ -549,7 +550,7 @@ PetscErrorCode Time::compute_times(double time_start, double delta, double time_
   return compute_times_simple(time_start, delta, time_end, result);
 }
 
-double Time::convert_time_interval(double T, std::string units) {
+double Time::convert_time_interval(double T, const std::string &units) {
   if (units == "year" || units == "years" || units == "yr" || units == "a") {
     return this->seconds_to_years(T); // uses year length here
   }

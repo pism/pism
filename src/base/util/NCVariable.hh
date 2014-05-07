@@ -68,17 +68,17 @@ class Time;
 
 class NCVariable {
 public:
-  NCVariable(std::string name, UnitSystem system, unsigned int ndims = 0);
+  NCVariable(const std::string &name, const UnitSystem &system, unsigned int ndims = 0);
   virtual ~NCVariable();
 
   // setters
-  PetscErrorCode set_units(std::string unit_spec);
-  PetscErrorCode set_glaciological_units(std::string unit_spec);
+  PetscErrorCode set_units(const std::string &unit_spec);
+  PetscErrorCode set_glaciological_units(const std::string &unit_spec);
 
-  void set_double(std::string name, double value);
-  void set_doubles(std::string name, std::vector<double> values);
-  void set_name(std::string name);
-  void set_string(std::string name, std::string value);
+  void set_double(const std::string &name, double value);
+  void set_doubles(const std::string &name, const std::vector<double> &values);
+  void set_name(const std::string &name);
+  void set_string(const std::string &name, const std::string &value);
 
   void clear_all_doubles();
   void clear_all_strings();
@@ -87,14 +87,14 @@ public:
   Unit get_units() const;
   Unit get_glaciological_units() const;
 
-  double get_double(std::string name) const;
-  std::vector<double> get_doubles(std::string name) const;
+  double get_double(const std::string &name) const;
+  std::vector<double> get_doubles(const std::string &name) const;
   std::string get_name() const;
-  std::string get_string(std::string name) const;
+  std::string get_string(const std::string &name) const;
 
   unsigned int get_n_spatial_dimensions() const;
 
-  bool has_attribute(std::string name) const;
+  bool has_attribute(const std::string &name) const;
 
   typedef std::map<std::string,std::string> StringAttrs;
   const StringAttrs& get_all_strings() const;
@@ -124,11 +124,11 @@ enum RegriddingFlag {OPTIONAL, CRITICAL};
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {
 public:
-  NCSpatialVariable(UnitSystem system);
+  NCSpatialVariable(const UnitSystem &system);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
-  void init_2d(std::string name, IceGrid &g);
-  void init_3d(std::string name, IceGrid &g, std::vector<double> &zlevels);
+  void init_2d(const std::string &name, IceGrid &g);
+  void init_3d(const std::string &name, IceGrid &g, std::vector<double> &zlevels);
   void set_levels(const std::vector<double> &levels);
 
   void set_time_independent(bool flag);
@@ -162,14 +162,15 @@ private:
   std::vector<double> m_zlevels;
   IceGrid *m_grid;
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
-  PetscErrorCode check_range(std::string filename, Vec v);
+  PetscErrorCode check_range(const std::string &filename, Vec v);
   PetscErrorCode define_dimensions(const PIO &nc);
 };
 
 //! An internal class for reading, writing and converting time-series.
 class NCTimeseries : public NCVariable {
 public:
-  NCTimeseries(std::string name, std::string dimension_name, UnitSystem system);
+  NCTimeseries(const std::string &name, const std::string &dimension_name,
+               const UnitSystem &system);
   virtual ~NCTimeseries();
 
   std::string get_dimension_name() const;
@@ -182,7 +183,8 @@ private:
 class NCTimeBounds : public NCTimeseries
 {
 public:
-  NCTimeBounds(std::string name, std::string dimension_name, UnitSystem system);
+  NCTimeBounds(const std::string &name, const std::string &dimension_name,
+               const UnitSystem &system);
   virtual ~NCTimeBounds();
   virtual PetscErrorCode define(const PIO &nc, IO_Type nctype, bool) const;
 private:

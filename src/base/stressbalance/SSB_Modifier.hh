@@ -87,18 +87,18 @@ public:
   virtual PetscErrorCode init(Vars &vars);
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
-  virtual void add_vars_to_output(std::string /*keyword*/, std::set<std::string> &/*result*/)
+  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
   { }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/,
+  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                           IO_Type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(std::set<std::string> /*vars*/, const PIO &/*nc*/)
+  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/)
   { return 0; }
 
 };

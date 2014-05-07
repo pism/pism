@@ -45,7 +45,7 @@ namespace pism {
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
-LocalInterpCtx::LocalInterpCtx(grid_info input, const IceGrid &grid,
+LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
                                double z_min, double z_max) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
 
@@ -219,7 +219,7 @@ PetscErrorCode LocalInterpCtx::printArray() {
   return 0;
 }
 
-void LocalInterpCtx::print_grid_info(grid_info g, UnitSystem s, int threshold) {
+void LocalInterpCtx::print_grid_info(const grid_info &g, const UnitSystem &s, int threshold) {
 
   verbPrintf(threshold, com,
              "\nRegridding file grid info:\n");

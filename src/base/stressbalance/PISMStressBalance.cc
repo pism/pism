@@ -509,7 +509,7 @@ PetscErrorCode StressBalance::stdout_report(std::string &result) {
   return 0;
 }
 
-PetscErrorCode StressBalance::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode StressBalance::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                    IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -520,7 +520,7 @@ PetscErrorCode StressBalance::define_variables(std::set<std::string> vars, const
 }
 
 
-PetscErrorCode StressBalance::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode StressBalance::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   ierr = m_stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
@@ -529,7 +529,7 @@ PetscErrorCode StressBalance::write_variables(std::set<std::string> vars, const 
   return 0;
 }
 
-void StressBalance::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void StressBalance::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
 
   m_stress_balance->add_vars_to_output(keyword, result);
   m_modifier->add_vars_to_output(keyword, result);

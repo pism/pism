@@ -41,10 +41,10 @@ public:
   PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   PetscErrorCode update(PetscReal t, PetscReal dt);
-  void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+  void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype);
-  PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 private:
   IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
   PetscErrorCode allocate();

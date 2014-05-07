@@ -57,7 +57,7 @@
 
 \begin{document}
 
-\title{SSA FEM notes}
+\title{SSA FEM implementation notes}
 \author{Constantine Khroulev}
 \maketitle
 \tableofcontents
@@ -67,7 +67,7 @@
 \label{sec-1}
 
 \begin{center}
-\begin{tabular}{ll}
+\begin{tabular}{lp{0.5\textwidth}}
 Symbol & Meaning\\
 \hline
 $B$ & vertically-averaged ice hardness\\
@@ -78,6 +78,8 @@ $n$ & Glen flow law exponent\\
 $N_k$ & number of trial functions per element\\
 $N_q$ & number of quadrature points per element\\
 $q$ & sliding power law exponent\\
+$w_q$ & weight corresponding to a quadrature point $q$\\
+$J_q$ & Jacobian of the map from the reference element to the physical element, evaluated at a quadrature point $q$\\
 $\boldsymbol{u} = (u,v)$ & horizontal ice velocity\\
 $\epsilon_{\beta}$, $\epsilon_{\nu}$, $\epsilon_{\eta}$ & regularization parameters for $\betaU$, $\nu$, $\eta$\\
 $\nu$ & effective viscosity of ice\\
@@ -294,8 +296,8 @@ In our case the number of trial functions $N_k$ is $4$ ($Q_1$ elements). Our tes
 
 To evaluate $J_{\cdot,\cdot,\cdot}$, we need be able to compute the following:
 \begin{equation*}
-    \taubx, \quad \tauby, \quad \taudx, \quad \taudy, \quad \diff{\eta}{u_l}, \quad \diff{\eta}{v_l}, \quad
-    \diff{\taubx}{u_l}, \quad \diff{\taubx}{v_l}, \quad \diff{\tauby}{u_l}, \quad \diff{\tauby}{v_l}.
+  \diff{\eta}{u_l}, \quad \diff{\eta}{v_l}, \quad \diff{\taubx}{u_l},
+  \quad \diff{\taubx}{v_l}, \quad \diff{\tauby}{u_l}, \quad \diff{\tauby}{v_l}.
 \end{equation*}
 
 Subsections that follow describe related implementation details.
@@ -304,12 +306,12 @@ Subsections that follow describe related implementation details.
 \subsubsection{Ice viscosity}
 \label{sec:viscosity-evaluation}
 
-Recall (equation (\ref{eq:13})) that $\eta = \epsilon_{\eta} + \nu H$. We use the chain rule to get
+Recall (equation (\ref{eq:13})) that $\eta = \epsilon_{\eta} + \nu H$. We use chain rule to get
 \begin{align*}
   \diff{\eta}{u_l} &= \highlight{ H\,\diff{\nu}{\gamma}\cdot \diff{\gamma}{u_l}, } &   \diff{\eta}{v_l} &= \highlight{ H\,\diff{\nu}{\gamma}\cdot \diff{\gamma}{v_l} }.
 \end{align*}
 
-The derivative of $\nu$ with respect to $\gamma$ can be written in terms of $\nu$ itself:
+The derivative of $\nu$ with respect to $\gamma$ (equation (\ref{eq:6})) can be written in terms of $\nu$ itself:
 
 \begin{align*}
   \diff{\nu}{\gamma} & = \frac{1}{2} B \cdot \frac{1 - n}{2n} \cdot \left(\epsilon_{\nu} + \gamma \right)^{(1 - n) / (2n) - 1}, \\
@@ -340,7 +342,7 @@ So,
 
 The method \texttt{IceBasalResistancePlasticLaw::drag_with_derivative()} computes $\beta$ and the derivative of $\beta$ with respect to $\alpha = \frac12 |\boldsymbol{u}|^2 = \frac12 (u^2 + v^2)$.
 
-Then
+So,
 \begin{align*}
   \diff{\alpha}{u_l} &= u\cdot \diff{u}{u_l} = u\cdot \phi_l,&
   \diff{\alpha}{v_l} &= v\cdot \diff{v}{v_l} = v\cdot \phi_l.

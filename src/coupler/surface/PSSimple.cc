@@ -100,7 +100,7 @@ PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
   return 0;
 }
 
-void PSSimple::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PSSimple::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   SurfaceModel::add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -109,7 +109,7 @@ void PSSimple::add_vars_to_output(std::string keyword, std::set<std::string> &re
   }
 }
 
-PetscErrorCode PSSimple::define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype) {
+PetscErrorCode PSSimple::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
@@ -125,7 +125,8 @@ PetscErrorCode PSSimple::define_variables(std::set<std::string> vars, const PIO 
   return 0;
 }
 
-PetscErrorCode PSSimple::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSSimple::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+  std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {

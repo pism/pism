@@ -34,9 +34,9 @@ public:
   virtual ~PAYearlyCycle();
 
   virtual PetscErrorCode init(Vars &vars);
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(double my_t, double my_dt) = 0;
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
@@ -49,7 +49,7 @@ public:
   virtual PetscErrorCode temp_time_series(int i, int j, double *values);
   virtual PetscErrorCode precip_time_series(int i, int j, double *values);
 protected:
-  PetscErrorCode init_internal(std::string input_filename, bool regrid,
+  PetscErrorCode init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);
   Vars *m_variables;
   double m_snow_temp_july_day;

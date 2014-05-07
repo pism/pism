@@ -35,9 +35,9 @@ public:
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, double *values);
   virtual PetscErrorCode precip_time_series(int i, int j, double *values);
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
   virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
 protected:

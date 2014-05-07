@@ -102,10 +102,10 @@ public:
   friend class Hydrology_hydroinput;
 
   // in the base class these only add/define/write tillwat
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   // all Hydrology models have a Wtil state variable, which this returns
   virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
@@ -241,10 +241,10 @@ public:
 
   virtual PetscErrorCode init(Vars &vars);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
@@ -326,12 +326,12 @@ public:
 
   virtual PetscErrorCode init(Vars &vars);
 
-  virtual void add_vars_to_output(std::string keyword, std::set<std::string> &result);
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
-  virtual PetscErrorCode define_variables(std::set<std::string> vars, const PIO &nc,
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO &nc);
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual PetscErrorCode update(double icet, double icedt);
 

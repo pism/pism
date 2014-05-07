@@ -165,20 +165,20 @@ public:
   /** Advance the current PISM run to a specific time */
   virtual PetscErrorCode run_to(double time);
   virtual PetscErrorCode step(bool do_mass_continuity, bool do_energy, bool do_age, bool do_skip);
-  virtual PetscErrorCode setExecName(std::string my_executable_short_name);
+  virtual PetscErrorCode setExecName(const std::string &my_executable_short_name);
   virtual void reset_counters();
 
   // see iMbootstrap.cc 
-  virtual PetscErrorCode bootstrapFromFile(std::string fname);
-  virtual PetscErrorCode bootstrap_2d(std::string fname);
+  virtual PetscErrorCode bootstrapFromFile(const std::string &fname);
+  virtual PetscErrorCode bootstrap_2d(const std::string &fname);
   virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_output_size(std::string option, std::string description,
-                                         std::string default_value, std::set<std::string> &result);
-  virtual std::string         get_output_size(std::string option);
+  virtual PetscErrorCode set_output_size(const std::string &option, const std::string &description,
+                                         const std::string &default_value, std::set<std::string> &result);
+  virtual std::string         get_output_size(const std::string &option);
 
   // see iMutil.cc
   virtual PetscErrorCode additionalAtStartTimestep();
@@ -186,13 +186,13 @@ public:
   virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
-  virtual PetscErrorCode initFromFile(std::string);
-  virtual PetscErrorCode writeFiles(std::string default_filename);
+  virtual PetscErrorCode initFromFile(const std::string &name);
+  virtual PetscErrorCode writeFiles(const std::string &default_filename);
   virtual PetscErrorCode write_model_state(const PIO &nc);
   virtual PetscErrorCode write_metadata(const PIO &nc,
                                         bool write_mapping,
                                         bool write_run_stats);
-  virtual PetscErrorCode write_variables(const PIO &nc, std::set<std::string> vars,
+  virtual PetscErrorCode write_variables(const PIO &nc, const std::set<std::string> &vars,
                                          IO_Type nctype);
 protected:
 
@@ -366,10 +366,10 @@ protected:
 
 
   // see iMIO.cc
-  virtual PetscErrorCode dumpToFile(std::string filename);
+  virtual PetscErrorCode dumpToFile(const std::string &filename);
   virtual PetscErrorCode regrid(int dimensions);
-  virtual PetscErrorCode regrid_variables(std::string filename, std::set<std::string> regrid_vars, unsigned int ndims);
-  virtual PetscErrorCode init_enthalpy(std::string filename, bool regrid, int last_record);
+  virtual PetscErrorCode regrid_variables(const std::string &filename, const std::set<std::string> &regrid_vars, unsigned int ndims);
+  virtual PetscErrorCode init_enthalpy(const std::string &filename, bool regrid, int last_record);
 
   // see iMfractures.cc
   virtual PetscErrorCode calculateFractureDensity();
@@ -415,7 +415,7 @@ protected:
   virtual int            endOfTimeStepHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
-  virtual PetscErrorCode stampHistory(std::string);
+  virtual PetscErrorCode stampHistory(const std::string &);
   virtual PetscErrorCode update_run_stats();
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);

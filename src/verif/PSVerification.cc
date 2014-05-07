@@ -100,14 +100,14 @@ PetscErrorCode PSVerification::ice_surface_temperature(IceModelVec2S &result) {
 }
 
 
-void PSVerification::add_vars_to_output(std::string keyword, std::set<std::string> &result) {
+void PSVerification::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   (void) keyword;
 
   result.insert(m_climatic_mass_balance.metadata().get_name());
   result.insert(m_ice_surface_temp.metadata().get_name());
 }
 
-PetscErrorCode PSVerification::define_variables(std::set<std::string> vars, const PIO &nc,
+PetscErrorCode PSVerification::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                 IO_Type nctype) {
   PetscErrorCode ierr;
 
@@ -122,7 +122,7 @@ PetscErrorCode PSVerification::define_variables(std::set<std::string> vars, cons
   return 0;
 }
 
-PetscErrorCode PSVerification::write_variables(std::set<std::string> vars, const PIO &nc) {
+PetscErrorCode PSVerification::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {

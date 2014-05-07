@@ -87,9 +87,6 @@ protected:
                                              const Vector2 &, const double[],
                                              double *,double *,double *,double *);
 
-  void FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
-                          Vector2 x[], FEDOFMap &my_dofmap);
-
   virtual PetscErrorCode allocate_fem();
 
   virtual PetscErrorCode deallocate_fem();
@@ -122,6 +119,11 @@ protected:
   FEQuadrature_Scalar m_quadrature;
   FEQuadrature_Vector m_quadrature_vector;
   FEDOFMap m_dofmap;
+
+private:
+  PetscErrorCode monitor_jacobian(Mat Jac);
+  PetscErrorCode monitor_function(const Vector2 **velocity_global,
+                                  Vector2 **residual_global);
 };
 
 

@@ -108,7 +108,7 @@ public:
   PetscErrorCode report_parameters();
 
   PetscErrorCode allocate();  // destructor checks if DA was created, and destroys
-  PetscErrorCode set_vertical_levels(std::vector<double> z_levels);
+  PetscErrorCode set_vertical_levels(const std::vector<double> &z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
   void compute_point_neighbors(double x, double y,
@@ -123,7 +123,7 @@ public:
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
   unsigned int kBelowHeight(double height);
-  PetscErrorCode create_viewer(int viewer_size, std::string title, PetscViewer &viewer);
+  PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
   double      radius(int i, int j);
   PetscErrorCode get_dm(int dm_dof, int stencil_width, DM &result);
   double convert(double, const char*, const char*) const;

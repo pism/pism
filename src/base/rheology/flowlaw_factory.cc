@@ -48,13 +48,13 @@ IceFlowLawFactory::~IceFlowLawFactory()
 {
 }
 
-PetscErrorCode IceFlowLawFactory::registerType(std::string name, IceFlowLawCreator icreate)
+PetscErrorCode IceFlowLawFactory::registerType(const std::string &name, IceFlowLawCreator icreate)
 {
   flow_laws[name] = icreate;
   return 0;
 }
 
-PetscErrorCode IceFlowLawFactory::removeType(std::string name) {
+PetscErrorCode IceFlowLawFactory::removeType(const std::string &name) {
   flow_laws.erase(name);
   return 0;
 }
@@ -111,7 +111,7 @@ PetscErrorCode IceFlowLawFactory::registerAll()
   return 0;
 }
 
-PetscErrorCode IceFlowLawFactory::setType(std::string type)
+PetscErrorCode IceFlowLawFactory::setType(const std::string &type)
 {
   IceFlowLawCreator r;
   PetscErrorCode ierr;

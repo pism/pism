@@ -20,6 +20,10 @@
 # crop out western Greenland with command like this (uses ImageMagick):
 #   $ ./basemapfigs.py g20km_10ka_hy velsurf_mag 500
 #   $ convert -crop 600x800+400+800 +repage g20km_10ka_hy-velsurf_mag.png g20km-detail.png
+#
+# batch generate figures from a parameter study like this:
+#   $ for QQ in 0.1 0.5 1.0; do for EE in 1 3 6; do ../basemapfigs.py p10km_q${QQ}_e${EE} velsurf_mag 100; done; done
+#   $ for QQ in 0.1 0.5 1.0; do for EE in 1 3 6; do convert -crop 274x486+50+6 +repage p10km_q${QQ}_e${EE}-velsurf_mag.png p10km-${QQ}-${EE}-csurf.png; done; done
 
 from mpl_toolkits.basemap import Basemap
 
@@ -81,7 +85,7 @@ elif field == 'mask':
   fill       = -1.0
   logscale   = False
   contour100 = False
-  myvmin     = 1.0
+  myvmin     = 0.0
   myvmax     = 4.0
   ticklist   = [0, 1, 2, 3, 4]
 else:
