@@ -236,10 +236,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   // Now get map-plane coupler fields: Dirichlet upper surface
   // boundary and mass balance lower boundary under shelves
   assert(surface != NULL);
-  PISMSurfaceModel::BCType conduction_bc_type = surface->get_conduction_bc_type();
+  SurfaceModel::BCType conduction_bc_type = surface->get_conduction_bc_type();
   ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
   ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
-  if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+  if (conduction_bc_type == SurfaceModel::NEUMANN) {
       ierr = surface->ice_surface_hflux(ice_surface_hflux); CHKERRQ(ierr);
   }
 
@@ -260,7 +260,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   ierr = subglacial_hydrology->till_water_thickness(till_water_thickness); CHKERRQ(ierr);
 
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+  if (conduction_bc_type == SurfaceModel::NEUMANN) {
     ierr = ice_surface_hflux.begin_access(); CHKERRQ(ierr);
   }
 
@@ -336,7 +336,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
       // set boundary conditions and update enthalpy
       {
-        if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+        if (conduction_bc_type == SurfaceModel::NEUMANN) {
           ierr = esys.setHeatFluxBC(enthSystemCtx::SURFACE, ice_surface_hflux(i,j)); CHKERRQ(ierr);
         } else {
           ierr = esys.setDirichletBC(enthSystemCtx::SURFACE, Enth_ks); CHKERRQ(ierr);
@@ -516,7 +516,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   }
 
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  if (conduction_bc_type == PISMSurfaceModel::NEUMANN) {
+  if (conduction_bc_type == SurfaceModel::NEUMANN) {
     ierr = ice_surface_hflux.end_access(); CHKERRQ(ierr);
   }
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);

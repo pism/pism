@@ -35,9 +35,13 @@ class IceModelVec2S;
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component_TS {
 public:
-  enum BCType {DIRICHLET, NEUMANN};
   SurfaceModel(IceGrid &g, const Config &conf);
   virtual ~SurfaceModel();
+
+  enum BCType {DIRICHLET, NEUMANN};
+  // the interface:
+  /** Most surface models impose a Dirichlet boundary condition for energy. */
+  virtual BCType get_conduction_bc_type() { return DIRICHLET; }
 
   // the interface:
   /** Most surface models impose a Dirichlet boundary condition for energy. */
