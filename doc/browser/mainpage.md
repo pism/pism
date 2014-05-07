@@ -22,32 +22,32 @@ derived from pism::IceModel and re-implementing one or more of its methods.
 See these classes, as well as *the ones derived from these*. (This is
 a summary.)
 
-- pism::PISMStressBalance, pism::ShallowStressBalance, pism::SSB_Modifier (stress
+- pism::StressBalance, pism::ShallowStressBalance, pism::SSB_Modifier (stress
   balance models)
-- pism::PISMHydrology (sub-glacial hydrology models)
-- pism::PISMBedDef (bed deformation models)
-- pism::PISMYieldStress, pism::IceBasalResistancePlasticLaw (basal strength)
-- pism::PISMCalvingAtThickness, pism::PISMEigenCalving, pism::PISMFloatKill,
-  pism::PISMOceanKill, pism::PISMIcebergRemover (calving and "iceberg removal")
+- pism::Hydrology (sub-glacial hydrology models)
+- pism::BedDef (bed deformation models)
+- pism::YieldStress, pism::IceBasalResistancePlasticLaw (basal strength)
+- pism::CalvingAtThickness, pism::EigenCalving, pism::FloatKill,
+  pism::OceanKill, pism::IcebergRemover (calving and "iceberg removal")
 - pism::IceFlowLaw (rheology)
 
 #### Climatic inputs
 
-- pism::PISMSurfaceModel ("surface" models, i.e. melt and snow processes)
-- pism::PISMAtmosphereModel ("atmosphere", provides inputs to a pism::PISMSurfaceModel)
-- pism::PISMOceanModel ("ocean" model, provides sub-shelf boundary
+- pism::SurfaceModel ("surface" models, i.e. melt and snow processes)
+- pism::AtmosphereModel ("atmosphere", provides inputs to a pism::SurfaceModel)
+- pism::OceanModel ("ocean" model, provides sub-shelf boundary
   conditions, melange back-pressure, and sea level elevation)
 
 ### Infrastructure (utility) classes
 
 - pism::IceGrid (computational grid)
-- pism::PISMComponent and pism::PISMComponent_TS (interface shared by most sub-models)
+- pism::Component and pism::Component_TS (interface shared by most sub-models)
 - pism::IceModelVec2S, pism::IceModelVec2Stag, pism::IceModelVec2V, and pism::IceModelVec3 (storage)
 - pism::Timeseries (scalar forcing)
 - pism::IceModelVec2T (2D time-dependent forcing)
 - pism::NCVariable (variable metadata such as physical units)
-- pism::PISMConfig (configuration parameter database)
-- pism::PISMTime (time management, including calendars)
+- pism::Config (configuration parameter database)
+- pism::Time (time management, including calendars)
 - pism::PIO (file I/O)
 
 ### Some important infrastructure concepts and techniques:
