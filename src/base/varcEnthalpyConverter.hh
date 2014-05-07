@@ -34,7 +34,7 @@ namespace pism {
 */
 class varcEnthalpyConverter : public EnthalpyConverter {
 public:
-  varcEnthalpyConverter(const PISMConfig &config)
+  varcEnthalpyConverter(const ConfigI &config)
     : EnthalpyConverter(config),
       T_r(256.81786846822),
       c_gradient(7.253)

@@ -19,11 +19,11 @@
 #include <petsc.h>  // for PetscErrorPrintf, etc.
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
-#include "PISMConfig.hh"
+#include "ConfigI.hh"
 
 namespace pism {
 
-EnthalpyConverter::EnthalpyConverter(const PISMConfig &config) {
+EnthalpyConverter::EnthalpyConverter(const ConfigI &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
   c_w   = config.get("water_specific_heat_capacity");            // J kg-1 K-1

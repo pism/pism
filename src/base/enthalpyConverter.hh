@@ -23,15 +23,15 @@
 
 namespace pism {
 
-class PISMConfig;
+class ConfigI;
 
 //! Converts between specific enthalpy and temperature or liquid content.
 /*!
-  Use this way, for example within IceModel with PISMConfig config member:
+  Use this way, for example within IceModel with ConfigI config member:
   \code
   #include "enthalpyConverter.hh"
 
-  EnthalpyConverter EC(&config);  // runs constructor; do after initialization of PISMConfig config
+  EnthalpyConverter EC(&config);  // runs constructor; do after initialization of ConfigI config
   ...
   for (...) {
   ...
@@ -59,7 +59,7 @@ class PISMConfig;
 */
 class EnthalpyConverter {
 public:
-  EnthalpyConverter(const PISMConfig &config);
+  EnthalpyConverter(const ConfigI &config);
   virtual ~EnthalpyConverter() {}
 
   virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
@@ -88,7 +88,7 @@ public:
   virtual double L_from_Tm(double T_m) const
   { return L + (c_w - c_i) * (T_m - 273.15); }
 
-  virtual double L_from_p(double p)
+  virtual double L_from_p(double p) const
   { return L_from_Tm(getMeltingTemp(p)); }
 
 protected:
@@ -110,7 +110,7 @@ protected:
 */
 class ICMEnthalpyConverter : public EnthalpyConverter {
 public:
-  ICMEnthalpyConverter(const PISMConfig &config) : EnthalpyConverter(config) {
+  ICMEnthalpyConverter(const ConfigI &config) : EnthalpyConverter(config) {
     do_cold_ice_methods = true;
   }
 

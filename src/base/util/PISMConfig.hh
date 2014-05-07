@@ -22,21 +22,22 @@
 
 #include "NCVariable.hh"
 #include "PISMUnits.hh"
+#include "ConfigI.hh"
 #include <string>
 #include <set>
 
 namespace pism {
 
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
-class PISMConfig {
+class PISMConfig : public ConfigI {
 public:
   PISMConfig(MPI_Comm com, std::string name, PISMUnitSystem unit_system);
   ~PISMConfig();
 
-  void set_double(std::string name, double value);
-  void set_string(std::string name, std::string value);
+  void set_double(const std::string &name, double value);
+  void set_string(const std::string &name, const std::string &value);
 
-  bool is_set(std::string name) const;
+  bool is_set(const std::string &name) const;
 
   PetscErrorCode print_to_stdout(int verbosity_threshhold = 4) const;
   PetscErrorCode warn_about_unused_parameters() const;
@@ -48,13 +49,13 @@ public:
 
   std::string get_config_filename() const;
   PISMUnitSystem get_unit_system() const;
-  double get(std::string) const;
+  double get(const std::string &) const;
   double get(std::string name, std::string u1, std::string u2) const;
-  bool   get_flag(std::string) const;
-  std::string get_string(std::string name) const;
+  bool   get_flag(const std::string &) const;
+  std::string get_string(const std::string &name) const;
   // Set a flag (overriding the default in pism_config.cdl). Should not be used
   // in pismr code.
-  void   set_flag(std::string, bool);
+  void   set_flag(const std::string &, bool);
   // Set parameters and remember that they were set using a command-line option
   PetscErrorCode set_flag_from_option(std::string name, bool value);
   PetscErrorCode set_scalar_from_option(std::string name, double value);

@@ -36,15 +36,15 @@ PISMConfig::~PISMConfig() {
   warn_about_unused_parameters();
 }
 
-void PISMConfig::set_string(std::string name, std::string value) {
+void PISMConfig::set_string(const std::string &name, const std::string &value) {
   m_data.set_string(name, value);
 }
 
-void PISMConfig::set_double(std::string name, double value) {
+void PISMConfig::set_double(const std::string &name, double value) {
   m_data.set_double(name, value);
 }
 
-bool PISMConfig::is_set(std::string name) const {
+bool PISMConfig::is_set(const std::string &name) const {
   return m_data.has_attribute(name);
 }
 
@@ -176,7 +176,7 @@ bool PISMConfig::get_flag_quiet(std::string name) const {
 
 
 //! Returns a `double` parameter. Stops if it was not found.
-double PISMConfig::get(std::string name) const {
+double PISMConfig::get(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
@@ -195,7 +195,7 @@ double PISMConfig::get(std::string name, std::string u1, std::string u2) const {
 
   Any other string produces an error.
 */
-bool PISMConfig::get_flag(std::string name) const {
+bool PISMConfig::get_flag(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
@@ -203,7 +203,7 @@ bool PISMConfig::get_flag(std::string name) const {
 }
 
 //! \brief Get a string attribute by name.
-std::string PISMConfig::get_string(std::string name) const {
+std::string PISMConfig::get_string(const std::string &name) const {
   if (m_options_left_set)
     m_parameters_used.insert(name);
 
@@ -211,7 +211,7 @@ std::string PISMConfig::get_string(std::string name) const {
 }
 
 //! Set a value of a boolean flag.
-void PISMConfig::set_flag(std::string name, bool value) {
+void PISMConfig::set_flag(const std::string &name, bool value) {
   if (value)
     m_data.set_string(name, "true");
   else
