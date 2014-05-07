@@ -771,4 +771,7 @@ netcdf pism_config {
 
    pism_config:fill_value = -2e9;
    pism_config:fill_value_doc = "_FillValue used when saving diagnostic quantities";
+
+   pism_config:long_name = "PISM configuration flags and parameters.";
+   pism_config:long_name_doc = "The 'long_name' attribute is required by CF conventions. It is not used by PISM itself.";
 }
