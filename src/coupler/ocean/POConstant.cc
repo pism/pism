@@ -21,6 +21,7 @@
 #include "PISMConfig.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "iceModelVec.hh"
 
 namespace pism {
 

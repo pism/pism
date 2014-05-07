@@ -22,10 +22,11 @@
 #include <map>
 #include <set>
 #include <string>
-#include "iceModelVec.hh"
+#include <petscsys.h>
 
 namespace pism {
 
+class IceModelVec;
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
