@@ -105,6 +105,7 @@ public:
   virtual PetscErrorCode create(IceGrid &mygrid, std::string my_short_name,
                                 bool local, int width = 1);
   virtual PetscErrorCode init(std::string filename, unsigned int period, double reference_time);
+  virtual PetscErrorCode init_constant(double value);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
