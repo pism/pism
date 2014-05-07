@@ -488,9 +488,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         // Use the fractional floatation mask to adjust the basal melt
         // rate near the grounding line:
         if (sub_gl == true) {
-          double lambda  = gl_mask(i,j),
-            M_grounded   = basal_melt_rate(i,j),
-            M_shelf_base = shelfbmassflux(i,j);
+          const double lambda = gl_mask(i,j),
+            M_grounded        = basal_melt_rate(i,j),
+            M_shelf_base      = shelfbmassflux(i,j);
           basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
         }
       } // end of the basal melt rate computation

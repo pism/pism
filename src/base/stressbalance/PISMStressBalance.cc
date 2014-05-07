@@ -29,9 +29,9 @@
 namespace pism {
 
 StressBalance::StressBalance(IceGrid &g,
-                                     ShallowStressBalance *sb,
-                                     SSB_Modifier *ssb_mod,
-                                     const Config &conf)
+                             ShallowStressBalance *sb,
+                             SSB_Modifier *ssb_mod,
+                             const Config &conf)
   : Component(g, conf), m_stress_balance(sb), m_modifier(ssb_mod) {
 
   m_basal_melt_rate = NULL;
@@ -77,7 +77,7 @@ PetscErrorCode StressBalance::init(Vars &vars) {
 }
 
 PetscErrorCode StressBalance::set_boundary_conditions(IceModelVec2Int &locations,
-                                                          IceModelVec2V &velocities) {
+                                                      IceModelVec2V &velocities) {
   PetscErrorCode ierr;
   ierr = m_stress_balance->set_boundary_conditions(locations, velocities); CHKERRQ(ierr);
   return 0;
@@ -92,7 +92,7 @@ PetscErrorCode StressBalance::set_basal_melt_rate(IceModelVec2S *bmr_input) {
 
 //! \brief Performs the shallow stress balance computation.
 PetscErrorCode StressBalance::update(bool fast, double sea_level,
-                                         IceModelVec2S &melange_back_pressure) {
+                                     IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
   IceModelVec2V *velocity_2d;
   IceModelVec3  *u, *v;
@@ -157,15 +157,17 @@ PetscErrorCode StressBalance::get_volumetric_strain_heating(IceModelVec3* &resul
   return 0;
 }
 
-PetscErrorCode StressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                                                    IceModelVec2 &result) {
+PetscErrorCode StressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity,
+                                                                IceModelVec2Int &mask,
+                                                                IceModelVec2 &result) {
   PetscErrorCode ierr;
   ierr = m_stress_balance->compute_2D_principal_strain_rates(velocity, mask, result); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode StressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                                      IceModelVec2 &result) {
+PetscErrorCode StressBalance::compute_2D_stresses(IceModelVec2V &velocity,
+                                                  IceModelVec2Int &mask,
+                                                  IceModelVec2 &result) {
   PetscErrorCode ierr;
   ierr = m_stress_balance->compute_2D_stresses(velocity, mask, result); CHKERRQ(ierr);
   return 0;
@@ -216,8 +218,8 @@ according to the value of the flag `include_bmr_in_continuity`.
 The vertical integral is computed by the trapezoid rule.
  */
 PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
-                                                            IceModelVec2S *bmr,
-                                                            IceModelVec3 &result) {
+                                                        IceModelVec2S *basal_melt_rate,
+                                                        IceModelVec3 &result) {
   PetscErrorCode ierr;
   IceModelVec2Int *mask;
 
@@ -231,8 +233,8 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
 
-  if (bmr) {
-    ierr = bmr->begin_access(); CHKERRQ(ierr);
+  if (basal_melt_rate) {
+    ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
   }
 
   double *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
@@ -284,8 +286,8 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
       }
 
       // at the base: include the basal melt rate
-      if (bmr) {
-        w_ij[0] = - (*bmr)(i,j);
+      if (basal_melt_rate) {
+        w_ij[0] = - (*basal_melt_rate)(i,j);
       } else {
         w_ij[0] = 0.0;
       }
@@ -310,8 +312,8 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
     } // j-loop
   }   // i-loop
 
-  if (bmr) {
-    ierr = bmr->end_access(); CHKERRQ(ierr);
+  if (basal_melt_rate) {
+    ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
   }
 
   ierr = mask->end_access(); CHKERRQ(ierr);
@@ -432,8 +434,8 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
 
   for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double H  = (*thickness)(i,j);
-      int         ks = grid.kBelowHeight(H);
+      double H = (*thickness)(i,j);
+      int ks = grid.kBelowHeight(H);
       double
         *u_ij, *u_w, *u_n, *u_e, *u_s,
         *v_ij, *v_w, *v_n, *v_e, *v_s;
@@ -510,7 +512,7 @@ PetscErrorCode StressBalance::stdout_report(std::string &result) {
 }
 
 PetscErrorCode StressBalance::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                                   IO_Type nctype) {
+                                               IO_Type nctype) {
   PetscErrorCode ierr;
 
   ierr = m_stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
