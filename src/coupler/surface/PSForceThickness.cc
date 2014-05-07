@@ -69,7 +69,7 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   m_climatic_mass_balance.set_string("long_name",
                                    "surface mass balance (accumulation/ablation) rate");
   m_climatic_mass_balance.set_string("standard_name",
-                                   "land_ice_surface_specific_mass_balance");
+                                   "land_ice_surface_specific_mass_balance_flux");
   ierr = m_climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 

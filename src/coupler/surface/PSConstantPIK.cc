@@ -48,7 +48,7 @@ PetscErrorCode PSConstantPIK::allocate_PSConstantPIK() {
   ierr = climatic_mass_balance.set_attrs("climate_state",
                                          "constant-in-time surface mass balance (accumulation/ablation) rate",
                                          "kg m-2 s-1",
-                                         "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+                                         "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
 
