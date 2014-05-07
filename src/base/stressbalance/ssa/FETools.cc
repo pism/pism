@@ -237,28 +237,23 @@ void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
 }
 
 //! Add the contributions of an element-local Jacobian to the global Jacobian vector.
-/*! The element-local Jacobian should be givnen as a row-major array of Nk*Nk values in the
-  scalar case or (2Nk)*(2Nk) values in the vector valued case. */
+/*! The element-local Jacobian should be given as a row-major array of
+ *  Nk*Nk values in the scalar case or (2Nk)*(2Nk) values in the
+ *  vector valued case.
+ *
+ *  Note that MatSetValuesBlockedStencil ignores negative indexes, so
+ *  values in K corresponding to locations marked using
+ *  markRowInvalid() and markColInvalid() are ignored. (Just as they
+ *  should be.)
+ */
 PetscErrorCode FEDOFMap::addLocalJacobianBlock(const double *K, Mat J) {
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row, Nk, m_col, K, ADD_VALUES); CHKERRQ(ierr);
-  return 0;
-}
-
-//! Set a diagonal entry for global degree of freedom (`i` ,`j`) in a Jacobian matrix
-/*! This is an unhappy hack for supporting Dirichlet constrained degrees of freedom.
-  In the scalar valued case, `K` should point to a single value, and in the vector case,
-  it should point to 4 (=2x2) values for the (2x2) block correspoinding to to u-u, u-v, v-u, and v-v
-  interactions at grid point (`i`, `j`).  Sheesh.*/
-PetscErrorCode FEDOFMap::setJacobianDiag(int i, int j, const double*K, Mat J) {
-  MatStencil row;
-  row.i = j; row.j = i;
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, K, INSERT_VALUES); CHKERRQ(ierr);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, Nk, m_row,
+                                                   Nk, m_col, K, ADD_VALUES); CHKERRQ(ierr);
   return 0;
 }
 
 const int FEDOFMap::kIOffset[4] = {0, 1, 1, 0};
 const int FEDOFMap::kJOffset[4] = {0, 0, 1, 1};
-
 
 FEQuadrature_Scalar::FEQuadrature_Scalar(const IceGrid &grid, double L)
   : FEQuadrature(grid, L) {
@@ -572,7 +567,7 @@ DirichletData_Scalar::DirichletData_Scalar()
 
 PetscErrorCode DirichletData_Scalar::init(IceModelVec2Int *indices, IceModelVec2S *values,
                                           double weight) {
-  m_values  = values;
+  m_values = values;
   PetscErrorCode ierr = init_impl(indices, m_values, weight); CHKERRQ(ierr);
 
   return 0;
@@ -600,7 +595,7 @@ void DirichletData_Scalar::update_homogeneous(FEDOFMap &dofmap, double* x_local)
   }
 }
 
-void DirichletData_Scalar::fix_residual(double **x_global, double **r_global) {
+void DirichletData_Scalar::fix_residual(const double **x_global, double **r_global) {
   assert(m_values != NULL);
 
   IceGrid &grid = *m_indices->get_grid();
@@ -699,7 +694,7 @@ void DirichletData_Vector::update_homogeneous(FEDOFMap &dofmap, Vector2* x_local
   }
 }
 
-void DirichletData_Vector::fix_residual(Vector2 **x_global, Vector2 **r_global) {
+void DirichletData_Vector::fix_residual(const Vector2 **x_global, Vector2 **r_global) {
   assert(m_values != NULL);
 
   IceGrid *grid = m_indices->get_grid();

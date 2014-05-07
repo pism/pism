@@ -21,6 +21,7 @@
 #include "Mask.hh"
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
+#include "pism_options.hh"
 
 namespace pism {
 
@@ -424,30 +425,6 @@ PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
   return 0;
 }
 
-//! \brief Sets Dirichlet boundary conditions. Called from SSAFEFunction and
-//! SSAFEJacobian.
-/*! If for some vertex \a local_bc_mask indicates that it
-is an explicit Dirichlet node, the values of x for that node is set from the Dirichlet
-data BC_vel. The row and column in the \a dofmap are set as invalid.
-This last step ensures that the residual and Jacobian entries
-corresponding to a Dirichlet unknown are not set in the main loops of
-SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
-*/
-void SSAFEM::FixDirichletValues(double local_bc_mask[], IceModelVec2V &BC_vel,
-                                Vector2 x[], FEDOFMap &my_dofmap) {
-  for (int k = 0; k < FEQuadrature::Nk; k++) {
-    if (local_bc_mask[k] > 0.5) { // Dirichlet node
-      int ii, jj;
-      my_dofmap.localToGlobal(k, &ii, &jj);
-      x[k].u = BC_vel(ii, jj).u;
-      x[k].v = BC_vel(ii, jj).v;
-      // Mark any kind of Dirichlet node as not to be touched
-      my_dofmap.markRowInvalid(k);
-      my_dofmap.markColInvalid(k);
-    }
-  }
-}
-
 //! Implements the callback for computing the SNES local function.
 /*!
  * Compute the residual \f[r_{ij}= G(x, \psi_{ij}) \f] where \f$G\f$
@@ -472,10 +449,9 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   }
 
   // Start access of Dirichlet data, if present.
-  if (bc_locations && m_vel_bc) {
-    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
-    ierr = m_vel_bc->begin_access(); CHKERRQ(ierr);
-  }
+  // Start access to Dirichlet data if present.
+  DirichletData_Vector dirichlet_data;
+  ierr = dirichlet_data.init(bc_locations, m_vel_bc, m_dirichletScale); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -487,10 +463,6 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
 
-  // Flags for each vertex in an element that determine if explicit Dirichlet data has
-  // been set.
-  double local_bc_mask[FEQuadrature::Nk];
-
   // Iterate over the elements.
   int xs = m_element_index.xs,
     xm   = m_element_index.xm,
@@ -501,8 +473,12 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
     for (int j = ys; j < ys + ym; j++) {
       // Storage for element-local solution and residuals.
       Vector2 velocity[FEQuadrature::Nk], residual[FEQuadrature::Nk];
+
       // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
+
+      // Coefficients and weights for this quadrature point.
+      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
 
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, grid);
@@ -512,9 +488,9 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
-      if (bc_locations && m_vel_bc) {
-        m_dofmap.extractLocalDOFs(*bc_locations, local_bc_mask);
-        FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, m_dofmap);
+      if (dirichlet_data) {
+        dirichlet_data.update(m_dofmap, velocity);
+        dirichlet_data.constrain(m_dofmap);
       }
 
       // Zero out the element-local residual in prep for updating it.
@@ -525,9 +501,6 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
 
       // Compute the solution values and symmetric gradient at the quadrature points.
       m_quadrature_vector.computeTrialFunctionValues(velocity, u, Du);
-
-      // Coefficients and weights for this quadrature point.
-      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
 
       // loop over quadrature points on this element:
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
@@ -565,41 +538,42 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
 
   // Until now we have not touched rows in the residual corresponding to Dirichlet data.
   // We fix this now.
-  if (bc_locations && m_vel_bc) {
-    // Enforce Dirichlet conditions strongly
-    for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-      for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-        if ((*bc_locations)(i, j) > 0.5) {
-          // Enforce explicit dirichlet data.
-          residual_global[i][j].u = m_dirichletScale * (velocity_global[i][j].u - (*m_vel_bc)(i, j).u);
-          residual_global[i][j].v = m_dirichletScale * (velocity_global[i][j].v - (*m_vel_bc)(i, j).v);
-        }
-      }
-    }
-    ierr = bc_locations->end_access(); CHKERRQ(ierr);
-    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
+  if (dirichlet_data) {
+    dirichlet_data.fix_residual(velocity_global, residual_global);
   }
 
-  PetscBool monitorFunction;
-  ierr = PetscOptionsHasName(NULL, "-ssa_monitor_function", &monitorFunction); CHKERRQ(ierr);
-  if (monitorFunction) {
-    ierr = PetscPrintf(grid.com, "SSA Solution and Function values (pointwise residuals)\n"); CHKERRQ(ierr);
-    for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-      for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-        ierr = PetscSynchronizedPrintf(grid.com,
-                                       "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
-                                       i, j,
-                                       velocity_global[i][j].u, velocity_global[i][j].v,
-                                       residual_global[i][j].u, residual_global[i][j].v);
-        CHKERRQ(ierr);
-      }
-    }
-    ierr = PetscSynchronizedFlush(grid.com); CHKERRQ(ierr);
-  }
+  ierr = dirichlet_data.finish(); CHKERRQ(ierr);
+
+  ierr = monitor_function(velocity_global, residual_global); CHKERRQ(ierr);
 
   return 0;
 }
 
+PetscErrorCode SSAFEM::monitor_function(const Vector2 **velocity_global,
+                                        Vector2 **residual_global) {
+  bool monitorFunction = false;
+  PetscErrorCode ierr = OptionsIsSet("-ssa_monitor_function", monitorFunction); CHKERRQ(ierr);
+  if (monitorFunction == false) {
+    return 0;
+  }
+
+  ierr = PetscPrintf(grid.com,
+                     "SSA Solution and Function values (pointwise residuals)\n"); CHKERRQ(ierr);
+
+  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
+    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
+      ierr = PetscSynchronizedPrintf(grid.com,
+                                     "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
+                                     i, j,
+                                     velocity_global[i][j].u, velocity_global[i][j].v,
+                                     residual_global[i][j].u, residual_global[i][j].v);
+      CHKERRQ(ierr);
+    }
+  }
+  ierr = PetscSynchronizedFlush(grid.com); CHKERRQ(ierr);
+
+  return 0;
+}
 
 
 //! Implements the callback for computing the SNES local Jacobian.
@@ -623,10 +597,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   ierr = MatZeroEntries(Jac); CHKERRQ(ierr);
 
   // Start access to Dirichlet data if present.
-  if (bc_locations && m_vel_bc) {
-    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
-    ierr = m_vel_bc->begin_access(); CHKERRQ(ierr);
-  }
+  DirichletData_Vector dirichlet_data;
+  ierr = dirichlet_data.init(bc_locations, m_vel_bc, m_dirichletScale); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -638,10 +610,6 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
-
-  // Flags for each vertex in an element that determine if explicit Dirichlet data has
-  // been set.
-  double local_bc_mask[FEQuadrature::Nk];
 
   // Loop through all the elements.
   int
@@ -663,6 +631,9 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
       // Index into the coefficient storage array.
       const int ij = m_element_index.flatten(i, j);
 
+      // Coefficients at quadrature points in the current element:
+      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
+
       // Initialize the map from global to local degrees of freedom for this element.
       m_dofmap.reset(i, j, grid);
 
@@ -671,16 +642,13 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
-      if (bc_locations && m_vel_bc) {
-        m_dofmap.extractLocalDOFs(*bc_locations, local_bc_mask);
-        FixDirichletValues(local_bc_mask, *m_vel_bc, velocity, m_dofmap);
+      if (dirichlet_data) {
+        dirichlet_data.update(m_dofmap, velocity);
+        dirichlet_data.constrain(m_dofmap);
       }
 
       // Compute the values of the solution at the quadrature points.
       m_quadrature_vector.computeTrialFunctionValues(velocity, u, Du);
-
-      // Coefficients at quadrature points in the current element:
-      const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
@@ -754,61 +722,57 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
     } // j
   } // i
 
-
-  // Until now, the rows and columns correspoinding to Dirichlet data have not been set.  We now
-  // put an identity block in for these unknowns.  Note that because we have takes steps to not touching these
-  // columns previously, the symmetry of the Jacobian matrix is preserved.
-  if (bc_locations && m_vel_bc) {
-    for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-      for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-        if (bc_locations->as_int(i, j) == 1) {
-          const double identity[4] = {m_dirichletScale, 0,
-                                      0, m_dirichletScale};
-          MatStencil row;
-          // FIXME: Transpose shows up here!
-          row.j = i; row.i = j;
-          ierr = MatSetValuesBlockedStencil(Jac, 1, &row, 1, &row, identity, ADD_VALUES); CHKERRQ(ierr);
-        }
-      }
-    }
+  // Until now, the rows and columns correspoinding to Dirichlet data
+  // have not been set. We now put an identity block in for these
+  // unknowns. Note that because we have takes steps to not touching
+  // these columns previously, the symmetry of the Jacobian matrix is
+  // preserved.
+  if (dirichlet_data) {
+    dirichlet_data.fix_jacobian(Jac);
   }
 
-  if (bc_locations) {
-    ierr = bc_locations->end_access(); CHKERRQ(ierr);
-  }
-  if (m_vel_bc) {
-    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
-  }
+  ierr = dirichlet_data.finish(); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(Jac, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Jac, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  PetscBool monitor_jacobian;
-  ierr = PetscOptionsHasName(NULL, "-ssa_monitor_jacobian", &monitor_jacobian); CHKERRQ(ierr);
-  if (monitor_jacobian) {
-    PetscViewer viewer;
-
-    char file_name[PETSC_MAX_PATH_LEN];
-    int iter;
-    ierr = SNESGetIterationNumber(m_snes, &iter);
-    snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", iter);
-
-      ierr = verbPrintf(2, grid.com,
-                 "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
-                 file_name); CHKERRQ(ierr);
-      ierr = PetscViewerCreate(grid.com, &viewer); CHKERRQ(ierr);
-      ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
-      ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-      ierr = PetscViewerFileSetName(viewer, file_name); CHKERRQ(ierr);
-
-      ierr = PetscObjectSetName((PetscObject) Jac, "A"); CHKERRQ(ierr);
-      ierr = MatView(Jac, viewer); CHKERRQ(ierr);
-  }
-
   ierr = MatSetOption(Jac, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE); CHKERRQ(ierr);
   ierr = MatSetOption(Jac, MAT_SYMMETRIC, PETSC_TRUE); CHKERRQ(ierr);
 
-  PetscFunctionReturn(0);
+  ierr = monitor_jacobian(Jac); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode SSAFEM::monitor_jacobian(Mat Jac) {
+  bool monitor_jacobian = false;
+  PetscErrorCode ierr = OptionsIsSet("-ssa_monitor_jacobian", monitor_jacobian); CHKERRQ(ierr);
+
+  if (monitor_jacobian == false) {
+    return 0;
+  }
+
+  PetscViewer viewer;
+
+  char file_name[PETSC_MAX_PATH_LEN];
+  int iter = 0;
+  ierr = SNESGetIterationNumber(m_snes, &iter);
+
+  snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", iter);
+
+  ierr = verbPrintf(2, grid.com,
+                    "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
+                    file_name); CHKERRQ(ierr);
+
+  ierr = PetscViewerCreate(grid.com, &viewer); CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name); CHKERRQ(ierr);
+
+  ierr = PetscObjectSetName((PetscObject) Jac, "A"); CHKERRQ(ierr);
+  ierr = MatView(Jac, viewer); CHKERRQ(ierr);
+
+  return 0;
 }
 
 //!

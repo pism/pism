@@ -273,7 +273,6 @@ public:
   void localToGlobal(int k, int *i, int *j);
 
   PetscErrorCode addLocalJacobianBlock(const double *K, Mat J);
-  PetscErrorCode setJacobianDiag(int i, int j, const double *K, Mat J);
 
   static const int Nk = 4; //<! The number of test functions defined on an element.
   
@@ -481,7 +480,7 @@ public:
   PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2S *values, double weight = 1.0);
   void update(FEDOFMap &dofmap, double* x_e);
   void update_homogeneous(FEDOFMap &dofmap, double* x_e);
-  void fix_residual(double **x, double **r);
+  void fix_residual(const double **x, double **r);
   void fix_residual_homogeneous(double **r_global);
   PetscErrorCode fix_jacobian(Mat J);
   PetscErrorCode finish();
@@ -495,7 +494,7 @@ public:
   PetscErrorCode init(IceModelVec2Int *indices, IceModelVec2V *values, double weight);
   void update(FEDOFMap &dofmap, Vector2* x_e);
   void update_homogeneous(FEDOFMap &dofmap, Vector2* x_e);
-  void fix_residual(Vector2 **x, Vector2 **r);
+  void fix_residual(const Vector2 **x, Vector2 **r);
   void fix_residual_homogeneous(Vector2 **r);
   PetscErrorCode fix_jacobian(Mat J);
   PetscErrorCode finish();
