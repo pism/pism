@@ -120,8 +120,6 @@ PetscErrorCode IceModel::output_size_from_option(const std::string &option,
 //! Assembles a list of variables corresponding to an output file size.
 PetscErrorCode IceModel::set_output_size(const std::string &keyword,
                                          std::set<std::string> &result) {
-  PetscErrorCode ierr;
-
   result.clear();
 
   if (keyword == "none") {
