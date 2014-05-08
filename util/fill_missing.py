@@ -311,7 +311,18 @@ if __name__ == "__main__":
                     t0 = time()
                     laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
                     var[t,:,:] = data
-            
+
+                    # now REMOVE missing_value and _FillValue attributes
+                    try:
+                        delattr(var, '_FillValue')
+                    except:
+                        pass
+                    try:
+                        delattr(var, 'missing_value')
+                    except:
+                        pass
+                    print "This took %5f seconds." % (time() - t0)
+
             elif (var.ndim == 2):
 
                 data = asarray(squeeze(var[:]))
@@ -365,24 +376,24 @@ if __name__ == "__main__":
                 laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
                 var[:] = data
 
+                # now REMOVE missing_value and _FillValue attributes
+                try:
+                    delattr(var, '_FillValue')
+                except:
+                    pass
+                try:
+                    delattr(var, 'missing_value')
+                except:
+                    pass
+                print "This took %5f seconds." % (time() - t0)
             else:
                 print('wrong shape')
 
-            # now REMOVE missing_value and _FillValue attributes
-            try:
-                delattr(var, '_FillValue')
-            except:
-                pass
-            try:
-                delattr(var, 'missing_value')
-            except:
-                pass
-
-            print "This took %5f seconds." % (time() - t0)
         except Exception, message:
             print "ERROR:", message
             print "Note: %s was not modified." % output_filename
             exit(-1)
+
 
     print "Processing all the variables took %5f seconds." % (time() - t_zero)
     nc.close()
