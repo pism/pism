@@ -34,6 +34,7 @@
 #include "PASeariseGreenland.hh"
 #include "PA_delta_T.hh"
 #include "PA_delta_P.hh"
+#include "PA_frac_P.hh"
 #include "PA_paleo_precip.hh"
 #include "PAConstantPIK.hh"
 #include "PAAnomaly.hh"
@@ -99,6 +100,11 @@ static void create_pa_delta_P(IceGrid& g, const Config& conf,
   result = new PA_delta_P(g, conf, input);
 }
 
+static void create_pa_frac_P(IceGrid& g, const Config& conf,
+                              AtmosphereModel *input, PAModifier* &result) {
+  result = new PA_frac_P(g, conf, input);
+}
+
 static void create_pa_paleo_precip(IceGrid& g, const Config& conf,
                                    AtmosphereModel *input, PAModifier* &result) {
   result = new PA_paleo_precip(g, conf, input);
@@ -119,6 +125,7 @@ void PAFactory::add_standard_types() {
   add_modifier("anomaly",      &create_pa_anomaly);
   add_modifier("delta_T",      &create_pa_delta_T);
   add_modifier("delta_P",      &create_pa_delta_P);
+  add_modifier("frac_P",       &create_pa_frac_P);
   add_modifier("paleo_precip", &create_pa_paleo_precip);
   add_modifier("lapse_rate",   &create_pa_lapse_rates);
 }
