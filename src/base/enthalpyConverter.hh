@@ -55,6 +55,13 @@ class ConfigI;
   namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict
   about error checking.  They call SETERRQ() if their arguments are invalid.
 
+  EnthalpyConverter is used as follows:
+  At the beginning of the run we take in observables and generate an enthalpy
+  state variable.  (Only for restart do we read enthalpy.)  During the run we only
+  use parameterized physical processes which see temperature and water fraction
+  computed through the same EnthalpyConverter.  At the end of the run we write
+  temperature and water fraction for all coupling and diagnostic purposes.
+
   This class is documented by [\ref AschwandenBuelerKhroulevBlatter].
 */
 class EnthalpyConverter {

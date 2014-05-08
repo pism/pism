@@ -296,6 +296,14 @@ Computes:
          \end{cases} \f]
 but ensures \f$0\le \omega \le 1\f$ in second case.  Calls getEnth() for
 \f$E(T,\omega,p)\f$.
+
+Note that things like getEnthPermissive() are present because it is
+possible to provide an inconsistent initial state to PISM, e.g. with
+T=250K as a temp where omega=0.01 (and p is not so extreme that that
+is consistent).  A run which initializes with such data, which is
+inconsistent with the local thermodynamic equilibrium assumption, is a
+run we cannot guarantee invertibility of the EnthalpyConverter, and
+thus we cannot have conservation as a goal.
  */
 PetscErrorCode EnthalpyConverter::getEnthPermissive(
                   double T, double omega, double p, double &E) const {
