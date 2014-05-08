@@ -28,9 +28,9 @@ PA_frac_P::PA_frac_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
 {
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_frac_P(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
+  if (ierr != 0) {
     PISMEnd();
-
+  }
 }
 
 PetscErrorCode PA_frac_P::allocate_PA_frac_P() {
@@ -59,7 +59,7 @@ PetscErrorCode PA_frac_P::allocate_PA_frac_P() {
 
 PA_frac_P::~PA_frac_P()
 {
-  // empty
+  // empty; "offset" is deleted by ~PScalarForcing().
 }
 
 PetscErrorCode PA_frac_P::init(Vars &vars) {
@@ -83,14 +83,12 @@ PetscErrorCode PA_frac_P::init_timeseries(double *ts, unsigned int N) {
   ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
 
   m_offset_values.resize(m_ts_times.size());
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     m_offset_values[k] = (*offset)(m_ts_times[k]);
+  }
 
   return 0;
 }
-
-
 
 PetscErrorCode PA_frac_P::mean_precipitation(IceModelVec2S &result) {
   PetscErrorCode ierr = input_model->mean_precipitation(result);
@@ -101,12 +99,14 @@ PetscErrorCode PA_frac_P::mean_precipitation(IceModelVec2S &result) {
 PetscErrorCode PA_frac_P::precip_time_series(int i, int j, double *result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] *= m_offset_values[k];
+  }
   return 0;
 }
 
-void PA_frac_P::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+void PA_frac_P::add_vars_to_output(const std::string &keyword,
+                                   std::set<std::string> &result) {
   input_model->add_vars_to_output(keyword, result);
 
   if (keyword == "medium" || keyword == "big") {
@@ -115,9 +115,8 @@ void PA_frac_P::add_vars_to_output(const std::string &keyword, std::set<std::str
   }
 }
 
-
-PetscErrorCode PA_frac_P::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
-                                            IO_Type nctype) {
+PetscErrorCode PA_frac_P::define_variables(const std::set<std::string> &vars_input,
+                                           const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
@@ -136,8 +135,8 @@ PetscErrorCode PA_frac_P::define_variables(const std::set<std::string> &vars_inp
   return 0;
 }
 
-
-PetscErrorCode PA_frac_P::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+PetscErrorCode PA_frac_P::write_variables(const std::set<std::string> &vars_input,
+                                          const PIO &nc) {
   std::set<std::string> vars = vars_input;
   PetscErrorCode ierr;
 
