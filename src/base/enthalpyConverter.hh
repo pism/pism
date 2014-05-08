@@ -85,14 +85,8 @@ public:
   virtual double c_from_T(double /*T*/) const
   { return c_i; }
 
-  virtual double L_from_Tm(double T_m) const
-  { return L + (c_w - c_i) * (T_m - 273.15); }
-
-  virtual double L_from_p(double p) const
-  { return L_from_Tm(getMeltingTemp(p)); }
-
 protected:
-  double T_melting, L, c_i, c_w, rho_i, g, p_air, beta, T_tol;
+  double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;
   double T_0;
   bool   do_cold_ice_methods;
 };

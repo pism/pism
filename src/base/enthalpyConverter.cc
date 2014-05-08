@@ -26,7 +26,6 @@ namespace pism {
 EnthalpyConverter::EnthalpyConverter(const ConfigI &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
-  c_w   = config.get("water_specific_heat_capacity");            // J kg-1 K-1
   g     = config.get("standard_gravity");                        // m s-2
   L     = config.get("water_latent_heat_fusion");                // J kg-1
   p_air = config.get("surface_pressure");                        // Pa
@@ -56,8 +55,6 @@ PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
       "   beta  = %12.5e (K Pa-1)\n",    beta); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
       "   c_i   = %12.5f (J kg-1 K-1)\n",c_i); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   c_w   = %12.5f (J kg-1 K-1)\n",c_w); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
       "   g     = %12.5f (m s-2)\n",     g); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -123,7 +120,7 @@ double EnthalpyConverter::getEnthalpyCTS(double p) const {
 PetscErrorCode EnthalpyConverter::getEnthalpyInterval(
                        double p, double &E_s, double &E_l) const {
   E_s = getEnthalpyCTS(p);
-  E_l = E_s + L_from_p(p);
+  E_l = E_s + L;
   return 0;
 }
 
@@ -225,7 +222,7 @@ PetscErrorCode EnthalpyConverter::getWaterFraction(double E, double p, double &o
   if (E <= E_s) {
     omega = 0.0;
   } else {
-    omega = (E - E_s) / L_from_p(p);
+    omega = (E - E_s) / L;
   }
   return 0;
 }
@@ -274,7 +271,7 @@ PetscErrorCode EnthalpyConverter::getEnth(
   if (T < T_m) {
     E = c_i * (T - T_0);
   } else {
-    E = getEnthalpyCTS(p) + omega * L_from_Tm(T_m);
+    E = getEnthalpyCTS(p) + omega * L;
   }
   return 0;
 }
@@ -338,7 +335,7 @@ PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
     SETERRQ1(PETSC_COMM_SELF, 2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
   }
 #endif
-  E = getEnthalpyCTS(p) + omega * L_from_p(p);
+  E = getEnthalpyCTS(p) + omega * L;
   return 0;
 }
 
