@@ -327,6 +327,8 @@ protected:
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
   virtual bool checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold);
 
+  virtual PetscErrorCode combine_basal_melt_rate();
+
   // see iMenthalpy.cc
   virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
   virtual PetscErrorCode compute_enthalpy(IceModelVec3 &temperature, IceModelVec3 &liquid_water_fraction,

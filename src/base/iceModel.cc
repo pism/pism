@@ -336,7 +336,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(bed_uplift_rate); CHKERRQ(ierr);
 
   // basal melt rate
-  ierr = basal_melt_rate.create(grid, "bmelt", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = basal_melt_rate.create(grid, "bmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
   // ghosted to allow the "redundant" computation of tauc
   ierr = basal_melt_rate.set_attrs("model_state",
                                    "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",

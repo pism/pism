@@ -89,6 +89,9 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
+  // Combine basal melt rate in grounded and floating areas.
+  ierr = combine_basal_melt_rate(); CHKERRQ(ierr);
+
   // Both cases above update the basal melt rate field; here we update its
   // ghosts, which are needed to compute tauc locally
   ierr = basal_melt_rate.update_ghosts(); CHKERRQ(ierr);
@@ -118,77 +121,137 @@ PetscErrorCode IceModel::energyStep() {
   return 0;
 }
 
-
-//! \brief Extract from enthalpy field (Enth3) the temperature which the top of
-//! the bedrock thermal layer will see.
-PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
-  PetscErrorCode  ierr;
-  double sea_level = 0,
-    T0 = config.get("water_melting_point_temperature"),
-    beta_CC_grad_sea_water = (config.get("beta_CC") * config.get("sea_water_density") *
-                              config.get("standard_gravity")); // K m-1
-
-  // will need coupler fields in ice-free land and
-  assert(surface != NULL);
-  ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
+//! @brief Combine basal melt rate in grounded and floating areas.
+/**
+ * Grounded basal melt rate is computed as a part of the energy
+ * (enthalpy or temperature) step; floating basal melt rate is
+ * provided by an ocean model.
+ *
+ * This method updates IceModel::basal_melt_rate (in meters per second
+ * ice-equivalent).
+ *
+ * The sub shelf mass flux provided by an ocean model is in [kg m-2
+ * s-1], so we divide by the ice density to convert to [m/s].
+ */
+PetscErrorCode IceModel::combine_basal_melt_rate() {
+  PetscErrorCode ierr;
 
   assert(ocean != NULL);
-  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
 
-  // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
-  ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+  const bool sub_gl = config.get_flag("sub_groundingline");
+  if (sub_gl == true) {
+    ierr = gl_mask.begin_access(); CHKERRQ(ierr);
+  }
 
   MaskQuery mask(vMask);
 
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  double ice_density = config.get("ice_density");
+
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
+
+  for (int i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask.grounded(i,j)) {
-        if (mask.ice_free(i,j)) { // no ice: sees air temp
-          result(i,j) = ice_surface_temp(i,j);
-        } else { // ice: sees temp of base of ice
-          const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
-          double temp;
-          // ignore return code when getting temperature: we are committed to
-          //   this enthalpy field; getAbsTemp() only returns temperatures at or
-          //   below pressure melting
-          EC->getAbsTemp(result(i,j), pressure, temp);
-          result(i,j) = temp;
-        }
-      } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
+      double lambda = 1.0;      // 1.0 corresponds to the grounded case
+      // Note: here we convert shelf base mass flux from [kg m-2 s-1] to [m s-1]:
+      const double
+        M_grounded   = basal_melt_rate(i,j),
+        M_shelf_base = shelfbmassflux(i,j) / ice_density;
+
+      // Use the fractional floatation mask to adjust the basal melt
+      // rate near the grounding line:
+      if (sub_gl == true) {
+        lambda = gl_mask(i,j);
+      } else if (mask.ocean(i,j)) {
+        lambda = 0.0;
       }
+      basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
+  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
+
+  if (sub_gl == true) {
+    ierr = gl_mask.end_access(); CHKERRQ(ierr);
+  }
 
   return 0;
 }
 
+  //! \brief Extract from enthalpy field (Enth3) the temperature which the top of
+  //! the bedrock thermal layer will see.
+  PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
+    PetscErrorCode  ierr;
+    double sea_level = 0,
+      T0 = config.get("water_melting_point_temperature"),
+      beta_CC_grad_sea_water = (config.get("beta_CC") * config.get("sea_water_density") *
+                                config.get("standard_gravity")); // K m-1
 
-//! \brief Is one of my neighbors below a critical thickness to apply advection
-//! in enthalpy or temperature equation?
-bool IceModel::checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold) {
-  const double
-    N  = thickness(i, j + 1),
-    E  = thickness(i + 1, j),
-    S  = thickness(i, j - 1),
-    W  = thickness(i - 1, j),
-    NW = thickness(i - 1, j + 1),
-    SW = thickness(i - 1, j - 1),
-    NE = thickness(i + 1, j + 1),
-    SE = thickness(i + 1, j - 1);
+    // will need coupler fields in ice-free land and
+    assert(surface != NULL);
+    ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
 
-  return ((E < threshold) || (NE < threshold) || (N < threshold) || (NW < threshold) ||
-          (W < threshold) || (SW < threshold) || (S < threshold) || (SE < threshold));
-}
+    assert(ocean != NULL);
+    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+
+    // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
+    ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+
+    MaskQuery mask(vMask);
+
+    ierr = bed_topography.begin_access(); CHKERRQ(ierr);
+    ierr = result.begin_access(); CHKERRQ(ierr);
+    ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+    ierr = vMask.begin_access(); CHKERRQ(ierr);
+    ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
+    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        if (mask.grounded(i,j)) {
+          if (mask.ice_free(i,j)) { // no ice: sees air temp
+            result(i,j) = ice_surface_temp(i,j);
+          } else { // ice: sees temp of base of ice
+            const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
+            double temp;
+            // ignore return code when getting temperature: we are committed to
+            //   this enthalpy field; getAbsTemp() only returns temperatures at or
+            //   below pressure melting
+            EC->getAbsTemp(result(i,j), pressure, temp);
+            result(i,j) = temp;
+          }
+        } else { // floating: apply pressure melting temp as top of bedrock temp
+          result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
+        }
+      }
+    }
+    ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+    ierr = result.end_access(); CHKERRQ(ierr);
+    ierr = vMask.end_access(); CHKERRQ(ierr);
+    ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
+    ierr = bed_topography.end_access(); CHKERRQ(ierr);
+
+    return 0;
+  }
+
+
+  //! \brief Is one of my neighbors below a critical thickness to apply advection
+  //! in enthalpy or temperature equation?
+  bool IceModel::checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold) {
+    const double
+      N  = thickness(i, j + 1),
+      E  = thickness(i + 1, j),
+      S  = thickness(i, j - 1),
+      W  = thickness(i - 1, j),
+      NW = thickness(i - 1, j + 1),
+      SW = thickness(i - 1, j - 1),
+      NE = thickness(i + 1, j + 1),
+      SE = thickness(i + 1, j - 1);
+
+    return ((E < threshold) || (NE < threshold) || (N < threshold) || (NW < threshold) ||
+            (W < threshold) || (SW < threshold) || (S < threshold) || (SE < threshold));
+  }
 
 } // end of namespace pism

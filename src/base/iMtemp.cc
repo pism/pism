@@ -133,8 +133,8 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     PetscErrorCode  ierr;
 
     // set up fine grid in ice
-    int    fMz    = grid.Mz_fine;
-    double fdz    = grid.dz_fine;
+    unsigned int fMz = grid.Mz_fine;
+    double       fdz = grid.dz_fine;
     std::vector<double> &fzlev = grid.zlevels_fine;
 
     ierr = verbPrintf(5,grid.com,
@@ -190,7 +190,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
 
     assert(ocean != NULL);
-    ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
     ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
 
     IceModelVec2S &G0 = vWork2d[0];
@@ -208,7 +207,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
 
     ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-    ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
     ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
     ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
@@ -233,11 +231,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
     ierr = T3.begin_access(); CHKERRQ(ierr);
     ierr = vWork3d.begin_access(); CHKERRQ(ierr);
-
-    const bool sub_gl = config.get_flag("sub_groundingline");
-    if (sub_gl == true) {
-      ierr = gl_mask.begin_access(); CHKERRQ(ierr);
-    }
 
     // counts unreasonably low temperature values; deprecated?
     int myLowTempCount = 0;
@@ -358,44 +351,28 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         }
 
         // set to air temp above ice
-        for (int k=ks; k<fMz; k++) {
+        for (unsigned int k = ks; k < fMz; k++) {
           Tnew[k] = ice_surface_temp(i,j);
         }
 
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
-        // convert from [kg m-2 s-1] to [m s-1]:
-        double sub_shelf_flux = shelfbmassflux(i,j) / ice_density;
-
         // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
         if (mask.ocean(i,j)) {
-          if (mask.icy(i,j)) {
-            basal_melt_rate(i,j) = sub_shelf_flux;
-          } else {
-            basal_melt_rate(i,j) = 0.0;
-          }
+          basal_melt_rate(i,j) = 0.0;
         } else {
           // basalMeltRate is rate of change of bwat;  can be negative
           //   (subglacial water freezes-on); note this rate is calculated
           //   *before* limiting or other nontrivial modelling of bwat,
           //   which is Hydrology's job
           basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
-        }
-
-        if (sub_gl == true) {
-          basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
-        }
-
-    }
-  }
+        } // end of the grounded case
+    } // j-loop
+  } // i-loop
 
   if (myLowTempCount > maxLowTempCount) {
     SETERRQ(grid.com, 1,"too many low temps");
-  }
-
-  if (sub_gl == true) {
-    ierr = gl_mask.end_access(); CHKERRQ(ierr);
   }
 
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
@@ -407,7 +384,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
 
-  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
   ierr = u3->end_access(); CHKERRQ(ierr);

@@ -494,7 +494,7 @@ earlier. (CK)
 */
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
-  
+
   double
     // totals over the processor's domain:
     proc_H_to_Href_flux           = 0,
@@ -530,9 +530,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   assert(surface != NULL);
   ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
 
-  assert(ocean != NULL);
-  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
-
   IceModelVec2S &vHnew = vWork2d[0];
   ierr = ice_thickness.copy_to(vHnew); CHKERRQ(ierr);
 
@@ -552,7 +549,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = Qdiff->begin_access();                CHKERRQ(ierr);
   ierr = vel_advective->begin_access();        CHKERRQ(ierr);
   ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.begin_access();        CHKERRQ(ierr);
   ierr = vMask.begin_access();                 CHKERRQ(ierr);
   ierr = vHnew.begin_access();                 CHKERRQ(ierr);
 
@@ -616,18 +612,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // Note: here we convert surface mass balance from [kg m-2 s-1] to [m s-1]:
       double
         surface_mass_balance = climatic_mass_balance(i, j) / ice_density, // units: [m s-1]
-        meltrate_grounded    = 0.0, // units: [m s-1]
-        meltrate_floating    = 0.0, // units: [m s-1]
+        my_basal_melt_rate   = 0.0, // units: [m s-1]
         H_to_Href_flux       = 0.0, // units: [m]
         Href_to_H_flux       = 0.0, // units: [m]
         nonneg_rule_flux     = 0.0; // units: [m]
 
       if (include_bmr_in_continuity) {
-        // convert from [kg m-2 s-1] to [m s-1]:
-        meltrate_floating = shelfbmassflux(i, j) / ice_density;
-        // basal melt rate is computed by PISM itself and has units of
-        // [m s-1] already
-        meltrate_grounded = basal_melt_rate(i, j);
+        my_basal_melt_rate = basal_melt_rate(i, j);
       }
 
       planeStar<double> Q, v;
@@ -650,13 +641,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       // Set source terms
-
-      // Basal melt:
-      if (mask.grounded(i,j)) {
-        meltrate_floating = 0.0;
-      } else {
-        meltrate_grounded = 0.0;
-      }
 
       if (mask.ice_free_ocean(i, j)) {
         // Decide whether to apply Albrecht et al 2011 subgrid-scale
@@ -698,7 +682,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
           } else {
             // An empty of partially-filled cell experiences neither.
             surface_mass_balance = 0.0;
-            meltrate_floating    = 0.0;
+            my_basal_melt_rate   = 0.0;
           }
 
           // In this case the SSA flux goes into the Href variable and does not
@@ -711,15 +695,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
           // Standard ice-free ocean case:
           surface_mass_balance = 0.0;
-          meltrate_floating    = 0.0;
+          my_basal_melt_rate   = 0.0;
         }
       } // end of "if (ice_free_ocean)"
 
       // Dirichlet BC case (should go last to override previous settings):
       if (dirichlet_bc && vBCMask.as_int(i,j) == 1) {
         surface_mass_balance = 0.0;
-        meltrate_grounded    = 0.0;
-        meltrate_floating    = 0.0;
+        my_basal_melt_rate   = 0.0;
         Href_to_H_flux       = 0.0;
         divQ_SIA             = 0.0;
         divQ_SSA             = 0.0;
@@ -730,8 +713,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       vHnew(i, j) += (dt * (surface_mass_balance // accumulation/ablation
-                            - meltrate_grounded // basal melt rate (grounded)
-                            - meltrate_floating // sub-shelf melt rate
+                            - my_basal_melt_rate // basal melt rate (grounded or floating)
                             - (divQ_SIA + divQ_SSA)) // flux divergence
                       + Href_to_H_flux); // corresponds to a cell becoming "full"
 
@@ -753,21 +735,25 @@ PetscErrorCode IceModel::massContExplicitStep() {
         climatic_mass_balance_cumulative(i, j) += surface_mass_balance * meter_per_s_to_kg_per_m2;
       }
 
-      if (compute_cumulative_grounded_basal_flux) {
-        // meltrate_grounded has the units of [m s-1]; convert to [kg m-2]
-        grounded_basal_flux_2D_cumulative(i, j) += -meltrate_grounded * meter_per_s_to_kg_per_m2;
+      if (compute_cumulative_grounded_basal_flux && mask.grounded(i, j)) {
+        // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
+        grounded_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
       }
 
-      if (compute_cumulative_floating_basal_flux) {
-        // meltrate_floating has the units of [m s-1]; convert to [kg m-2]
-        floating_basal_flux_2D_cumulative(i, j) += -meltrate_floating * meter_per_s_to_kg_per_m2;
+      if (compute_cumulative_floating_basal_flux && mask.ocean(i, j)) {
+        // my_basal_melt_rate has the units of [m s-1]; convert to [kg m-2]
+        floating_basal_flux_2D_cumulative(i, j) += -my_basal_melt_rate * meter_per_s_to_kg_per_m2;
       }
 
       // time-series accounting:
       {
         // all these are in units of [kg]
-        proc_grounded_basal_ice_flux += - meltrate_grounded    * meter_per_s_to_kg;
-        proc_sub_shelf_ice_flux      += - meltrate_floating    * meter_per_s_to_kg;
+        if (mask.grounded(i,j)) {
+          proc_grounded_basal_ice_flux += - my_basal_melt_rate * meter_per_s_to_kg;
+        } else {
+          proc_sub_shelf_ice_flux      += - my_basal_melt_rate * meter_per_s_to_kg;
+        }
+
         proc_surface_ice_flux        +=   surface_mass_balance * meter_per_s_to_kg;
         proc_sum_divQ_SIA            += - divQ_SIA             * meter_per_s_to_kg;
         proc_sum_divQ_SSA            += - divQ_SSA             * meter_per_s_to_kg;
@@ -784,7 +770,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = Qdiff->end_access();                CHKERRQ(ierr);
   ierr = vel_advective->end_access();        CHKERRQ(ierr);
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.end_access();        CHKERRQ(ierr);
   ierr = bed_topography.end_access();        CHKERRQ(ierr);
   ierr = ice_surface_elevation.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access();         CHKERRQ(ierr);

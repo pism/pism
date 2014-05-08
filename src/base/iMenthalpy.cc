@@ -240,7 +240,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
 
   assert(ocean != NULL);
-  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
   ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
 
   IceModelVec2S &basal_heat_flux = vWork2d[0];
@@ -257,7 +256,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
 
-  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
   // get other map-plane fields
@@ -276,11 +274,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
-
-  const bool sub_gl = config.get_flag("sub_groundingline");
-  if (sub_gl == true) {
-    ierr = gl_mask.begin_access(); CHKERRQ(ierr);
-  }
 
   unsigned int liquifiedCount = 0;
 
@@ -310,13 +303,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       // deal completely with columns with no ice; enthalpy and basal_melt_rate need setting
       if (ice_free_column) {
         ierr = vWork3d.setColumn(i, j, Enth_ks); CHKERRQ(ierr);
-        if (mask.floating_ice(i, j)) {
-          // convert from [kg m-2 s-1] to [m s-1]:
-          basal_melt_rate(i, j) = shelfbmassflux(i, j) / ice_density;
-        } else {
-          // no basal melt rate on ice free land and ice free ocean
-          basal_melt_rate(i, j) = 0.0;
-        }
+        // The floating basal melt rate will be set later; cover this
+        // case and set to zero for now. Also, there is no basal melt
+        // rate on ice free land and ice free ocean
+        basal_melt_rate(i, j) = 0.0;
         continue;
       } // end of if (ice_free_column)
 
@@ -438,9 +428,12 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         // Determine melt rate, but only preliminarily because of
         // drainage, from heat flux out of bedrock, heat flux into
         // ice, and frictional heating
-        if (is_floating) {
-          // convert from [kg m-2 s-1] to [m s-1]:
-          basal_melt_rate(i, j) = shelfbmassflux(i, j) / ice_density;
+        if (is_floating == true) {
+          // The floating basal melt rate will be set later; cover
+          // this case and set to zero for now. Note that
+          // Hdrainedtotal is discarded (the ocean model determines
+          // the basal melt).
+          basal_melt_rate(i, j) = 0.0;
         } else {
           if (base_is_cold) {
             basal_melt_rate(i, j) = 0.0;  // zero melt rate if cold base
@@ -476,23 +469,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
             if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0)
               basal_melt_rate(i, j) = 0.0;
           }
-        }
 
-        // in grounded case, add drained water from the column to
-        // basal melt rate; if floating, Hdrainedtotal is discarded
-        // because ocean determines basal melt rate
-        if (is_floating == false) {
+          // Add drained water from the column to basal melt rate.
           basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt_TempAge;
-        }
-
-        // Use the fractional floatation mask to adjust the basal melt
-        // rate near the grounding line:
-        if (sub_gl == true) {
-          const double lambda = gl_mask(i,j),
-            M_grounded        = basal_melt_rate(i,j),
-            M_shelf_base      = shelfbmassflux(i,j);
-          basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
-        }
+        } // end of the grounded case
       } // end of the basal melt rate computation
 
       ierr = vWork3d.setValColumnPL(i, j, &Enthnew[0]); CHKERRQ(ierr);
@@ -500,12 +480,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     } // j-loop
   } // i-loop
 
-  if (sub_gl == true) {
-    ierr = gl_mask.end_access(); CHKERRQ(ierr);
-  }
-
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
