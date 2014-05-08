@@ -448,7 +448,6 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
     }
   }
 
-  // Start access of Dirichlet data, if present.
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
   ierr = dirichlet_data.init(bc_locations, m_vel_bc, m_dirichletScale); CHKERRQ(ierr);
