@@ -139,10 +139,10 @@ PetscErrorCode ageSystemCtx::solveThisColumn(double *x) {
   if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
      "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
 
-  // set up system: 0 <= k < ks
-  for (int k = 0; k < ks; k++) {
+  // set up system: 0 <= k < m_ks
+  for (unsigned int k = 0; k < m_ks; k++) {
     planeStar<double> ss;  // note ss.ij = tau[k]
-    ierr = tau3->getPlaneStar_fine(i,j,k,&ss); CHKERRQ(ierr);
+    ierr = tau3->getPlaneStar_fine(m_i,m_j,k,&ss); CHKERRQ(ierr);
     // do lowest-order upwinding, explicitly for horizontal
     rhs[k] =  (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx
                          : u[k] * (ss.ij  - ss.w) / dx;
@@ -177,23 +177,23 @@ PetscErrorCode ageSystemCtx::solveThisColumn(double *x) {
         // keep rhs[0] as is
       }
     }
-  }  // done "set up system: 0 <= k < ks"
+  }  // done "set up system: 0 <= k < m_ks"
       
-  // surface b.c. at ks
-  if (ks>0) {
-    L[ks] = 0;
-    D[ks] = 1.0;   // ignore U[ks]
-    rhs[ks] = 0.0;  // age zero at surface
+  // surface b.c. at m_ks
+  if (m_ks>0) {
+    L[m_ks] = 0;
+    D[m_ks] = 1.0;   // ignore U[m_ks]
+    rhs[m_ks] = 0.0;  // age zero at surface
   }
 
   // solve it
-  int pivoterr = solveTridiagonalSystem(ks+1,x);
+  int pivoterr = solveTridiagonalSystem(m_ks+1,x);
 
   if (pivoterr != 0) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "\n\ntridiagonal solve of ageSystemCtx in ageStep() FAILED at (%d,%d)\n"
                        " with zero pivot position %d; viewing system to m-file ... \n",
-                       i, j, pivoterr); CHKERRQ(ierr);
+                       m_i, m_j, pivoterr); CHKERRQ(ierr);
     ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in ageStep()\n");
   }
@@ -226,7 +226,7 @@ is upward (\f$w>0\f$) then we also apply a zero age boundary condition,
 either grounded basal ice freezing on stored water in till, or marine basal ice.
 (Note that the water that is frozen-on as ice might be quite "old" in the sense
 that its most recent time in the atmosphere was long ago; this comment is
-relevant to any analysis which relates isotope ratios to PISM's modeled age.)
+relevant to any analysis which relates isotope ratios to modeled age.)
 
 The numerical method is a conservative form of first-order upwinding, but the
 vertical advection term is computed implicitly.  Thus there is no CFL-type
@@ -287,7 +287,8 @@ PetscErrorCode IceModel::ageStep() {
         ierr = v3->getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
         ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
 
-        ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
+        // this call will validate ks
+        ierr = system.setIndicesAndClearThisColumn(i,j, ice_thickness(i,j), fdz, fMz); CHKERRQ(ierr);
 
         // solve the system for this column; call checks that params set
         ierr = system.solveThisColumn(x); CHKERRQ(ierr);

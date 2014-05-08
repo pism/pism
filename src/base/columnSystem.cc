@@ -42,15 +42,15 @@ Thus the index into the arrays L, D, U is always the row number.
 Note L[0] is not allocated and U[N-1] is not allocated.
  */
 columnSystemCtx::columnSystemCtx(unsigned int my_nmax, const std::string &my_prefix)
-  : nmax(my_nmax), prefix(my_prefix) {
-  assert(nmax >= 1 && nmax < 1e6);
+  : m_nmax(my_nmax), prefix(my_prefix) {
+  assert(m_nmax >= 1 && m_nmax < 1e6);
 
-  Lp   = new double[nmax-1];
+  Lp   = new double[m_nmax-1];
   L    = Lp-1; // ptr arithmetic; note L[0]=Lp[-1] not allocated
-  D    = new double[nmax];
-  U    = new double[nmax-1];
-  rhs  = new double[nmax];
-  work = new double[nmax];
+  D    = new double[m_nmax];
+  U    = new double[m_nmax-1];
+  rhs  = new double[m_nmax];
+  work = new double[m_nmax];
 
   resetColumn();
 
@@ -66,16 +66,19 @@ columnSystemCtx::~columnSystemCtx() {
   delete [] work;
 }
 
+unsigned int columnSystemCtx::ks() const {
+  return m_ks;
+}
 
 //! Zero all entries.
 PetscErrorCode columnSystemCtx::resetColumn() {
   PetscErrorCode ierr;
 #if PISM_DEBUG==1
-  ierr = PetscMemzero(Lp,   (nmax-1)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(U,    (nmax-1)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(D,    (nmax)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(rhs,  (nmax)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(work, (nmax)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(Lp,   (m_nmax-1)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(U,    (m_nmax-1)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(D,    (m_nmax)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(rhs,  (m_nmax)*sizeof(double)); CHKERRQ(ierr);
+  ierr = PetscMemzero(work, (m_nmax)*sizeof(double)); CHKERRQ(ierr);
 #endif
   return 0;
 }
@@ -83,7 +86,7 @@ PetscErrorCode columnSystemCtx::resetColumn() {
 
 //! Compute 1-norm, which is max sum of absolute values of columns.
 double columnSystemCtx::norm1(unsigned int n) const {
-  if (n > nmax) {
+  if (n > m_nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1()\n");
     PISMEnd();
   }
@@ -111,7 +114,7 @@ We return -1.0 if the absolute value of any diagonal element is less than
 1e-12 of the 1-norm of the matrix.
  */
 double columnSystemCtx::ddratio(unsigned int n) const {
-  if (n > nmax) {
+  if (n > m_nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::ddratio()\n");
     PISMEnd();
   }
@@ -134,16 +137,34 @@ double columnSystemCtx::ddratio(unsigned int n) const {
 
 
 PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
-                                                             int my_ks) {
+                                                             double ice_thickness,
+                                                             double dz,
+                                                             unsigned int Mz) {
 #if PISM_DEBUG==1
-  if (indicesValid && i == my_i && j == my_j) {
+  if (indicesValid && m_i == my_i && m_j == my_j) {
     SETERRQ(PETSC_COMM_SELF, 3, "setIndicesAndClearThisColumn() called twice in same column");
   }
 #endif
 
-  i  = my_i;
-  j  = my_j;
-  ks = my_ks;
+  m_i  = my_i;
+  m_j  = my_j;
+  m_ks = static_cast<unsigned int>(floor(ice_thickness / dz));
+
+#if (PISM_DEBUG==1)
+  // check if m_ks is valid
+  if (m_ks >= Mz) {
+    PetscPrintf(PETSC_COMM_SELF,
+                "ERROR: ks = %d computed at i = %d, j = %d is invalid,"
+                " possibly because of invalid ice thickness (%f meters) or dz (%f meters).\n",
+                m_ks, m_i, m_j, ice_thickness, dz);
+    SETERRQ(PETSC_COMM_SELF, 1, "invalid ks");
+  }
+#endif
+
+  // Force m_ks to be in the allowed range.
+  if (m_ks >= Mz) {
+    m_ks = Mz - 1;
+  }
 
   resetColumn();
 
@@ -213,38 +234,38 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
   assert(D != NULL);
   assert(U != NULL);
 
-  if (nmax < 2) {
+  if (m_nmax < 2) {
     ierr = PetscViewerASCIIPrintf(viewer,
       "\n\n<nmax >= 2 required to view columnSystemCtx tridiagonal matrix '%s' ... skipping view\n",info);
     CHKERRQ(ierr);
     return 0;
   }
 
-  if (nmax > 500) {
+  if (m_nmax > 500) {
     ierr = PetscViewerASCIIPrintf(viewer,
       "\n\n<nmax > 500: columnSystemCtx matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
     char vinfo[PETSC_MAX_PATH_LEN];
     snprintf(vinfo,PETSC_MAX_PATH_LEN, "%s_super_diagonal_U", info);
-    ierr = viewVectorValues(viewer,U,nmax-1,vinfo); CHKERRQ(ierr);
+    ierr = viewVectorValues(viewer,U,m_nmax-1,vinfo); CHKERRQ(ierr);
     snprintf(vinfo,PETSC_MAX_PATH_LEN, "%s_diagonal_D", info);
-    ierr = viewVectorValues(viewer,D,nmax,vinfo); CHKERRQ(ierr);
+    ierr = viewVectorValues(viewer,D,m_nmax,vinfo); CHKERRQ(ierr);
     snprintf(vinfo,PETSC_MAX_PATH_LEN, "%s_sub_diagonal_L", info);
-    ierr = viewVectorValues(viewer,Lp,nmax-1,vinfo); CHKERRQ(ierr);
+    ierr = viewVectorValues(viewer,Lp,m_nmax-1,vinfo); CHKERRQ(ierr);
   } else {
     ierr = PetscViewerASCIIPrintf(viewer,
         "\n%s = [...\n",info); CHKERRQ(ierr);
-    for (unsigned int k=0; k<nmax; k++) {    // k+1 is row  (while j+1 is column)
+    for (unsigned int k=0; k<m_nmax; k++) {    // k+1 is row  (while j+1 is column)
       if (k == 0) {              // viewing first row
         ierr = PetscViewerASCIIPrintf(viewer,"%.12f %.12f ",D[k],U[k]); CHKERRQ(ierr);
-        for (unsigned int n=2; n<nmax; n++) {
+        for (unsigned int n=2; n<m_nmax; n++) {
           ierr = PetscViewerASCIIPrintf(viewer,"%3.1f ",0.0); CHKERRQ(ierr);
         }
-      } else if (k < nmax-1) {   // viewing generic row
+      } else if (k < m_nmax-1) {   // viewing generic row
         for (unsigned int n=0; n<k-1; n++) {
           ierr = PetscViewerASCIIPrintf(viewer,"%3.1f ",0.0); CHKERRQ(ierr);
         }
         ierr = PetscViewerASCIIPrintf(viewer,"%.12f %.12f %.12f ",L[k],D[k],U[k]); CHKERRQ(ierr);
-        for (unsigned int n=k+2; n<nmax; n++) {
+        for (unsigned int n=k+2; n<m_nmax; n++) {
           ierr = PetscViewerASCIIPrintf(viewer,"%3.1f ",0.0); CHKERRQ(ierr);
         }
       } else {                   // viewing last row
@@ -254,7 +275,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
         ierr = PetscViewerASCIIPrintf(viewer,"%.12f %.12f ",L[k],D[k]); CHKERRQ(ierr);
       }
 
-      if (k == nmax-1) {
+      if (k == m_nmax-1) {
         ierr = PetscViewerASCIIPrintf(viewer,"];\n\n"); CHKERRQ(ierr);  // end final row
       } else {
         ierr = PetscViewerASCIIPrintf(viewer,";\n"); CHKERRQ(ierr);  // end of generic row
@@ -273,7 +294,7 @@ PetscErrorCode columnSystemCtx::viewSystem(PetscViewer viewer) const {
   snprintf(info,PETSC_MAX_PATH_LEN, "%s_A", prefix.c_str());
   ierr = viewMatrix(viewer,info); CHKERRQ(ierr);
   snprintf(info,PETSC_MAX_PATH_LEN, "%s_rhs", prefix.c_str());
-  ierr = viewVectorValues(viewer,rhs,nmax,info); CHKERRQ(ierr);
+  ierr = viewVectorValues(viewer,rhs,m_nmax,info); CHKERRQ(ierr);
   return 0;
 }
 
@@ -282,7 +303,7 @@ PetscErrorCode columnSystemCtx::viewSystem(PetscViewer viewer) const {
 /*!
 This is modified slightly from a Numerical Recipes version.
 
-Input size n is size of instance.  Requires n <= columnSystemCtx::nmax.
+Input size n is size of instance.  Requires n <= columnSystemCtx::m_nmax.
 
 Solution of system in x.
 
@@ -293,7 +314,7 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, double *x
   assert(x != NULL);
   assert(indicesValid == true);
   assert(n >= 1);
-  assert(n <= nmax);
+  assert(n <= m_nmax);
 
   if (D[0] == 0.0)
     return 1;
@@ -325,7 +346,7 @@ PetscErrorCode columnSystemCtx::reportColumnZeroPivotErrorMFile(const PetscError
   PetscErrorCode ierr;
   char fname[PETSC_MAX_PATH_LEN];
   snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d_ZERO_PIVOT_ERROR_%d.m",
-           prefix.c_str(),i,j,errindex);
+           prefix.c_str(),m_i,m_j,errindex);
   ierr = viewColumnInfoMFile(fname, NULL, 0); CHKERRQ(ierr);
   return 0;
 }
@@ -367,9 +388,9 @@ PetscErrorCode columnSystemCtx::viewColumnInfoMFile(double *x, unsigned int n) {
   ierr = PetscPrintf(PETSC_COMM_SELF,
                      "\n\n"
                      "saving %s column system at (i,j)=(%d,%d) to m-file...\n\n",
-                     prefix.c_str(), i, j); CHKERRQ(ierr);
+                     prefix.c_str(), m_i, m_j); CHKERRQ(ierr);
 
-  snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d.m", prefix.c_str(), i,j);
+  snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d.m", prefix.c_str(), m_i,m_j);
   ierr = viewColumnInfoMFile(fname, x, n); CHKERRQ(ierr);
   return 0;
 }

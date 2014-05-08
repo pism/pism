@@ -115,29 +115,17 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
   ice_thickness = my_ice_thickness;
   ismarginal    = my_ismarginal;
 
-  m_ks = static_cast<int>(floor(ice_thickness/dz));
-  ierr = setIndicesAndClearThisColumn(my_i, my_j, m_ks); CHKERRQ(ierr);
-
-#if (PISM_DEBUG==1)
-  // check if ks is valid
-  if ((m_ks < 0) || (m_ks >= Mz)) {
-    PetscPrintf(PETSC_COMM_SELF,
-                "ERROR: ks = %d computed at i = %d, j = %d is invalid,"
-                " possibly because of invalid ice thickness (%f meters) or dz (%f meters).\n",
-                m_ks, i, j, ice_thickness, dz);
-    SETERRQ(PETSC_COMM_SELF, 1, "invalid ks");
-  }
-#endif
+  ierr = setIndicesAndClearThisColumn(my_i, my_j, ice_thickness, dz, Mz); CHKERRQ(ierr);
 
   if (m_ks == 0)
     return 0;
 
-  ierr = u3->getValColumn(i, j, m_ks, u); CHKERRQ(ierr);
-  ierr = v3->getValColumn(i, j, m_ks, v); CHKERRQ(ierr);
-  ierr = w3->getValColumn(i, j, m_ks, w); CHKERRQ(ierr);
-  ierr = strain_heating3->getValColumn(i, j, m_ks, strain_heating); CHKERRQ(ierr);
+  ierr = u3->getValColumn(m_i, m_j, m_ks, u); CHKERRQ(ierr);
+  ierr = v3->getValColumn(m_i, m_j, m_ks, v); CHKERRQ(ierr);
+  ierr = w3->getValColumn(m_i, m_j, m_ks, w); CHKERRQ(ierr);
+  ierr = strain_heating3->getValColumn(m_i, m_j, m_ks, strain_heating); CHKERRQ(ierr);
 
-  ierr = Enth3->getValColumn(i, j, m_ks, Enth); CHKERRQ(ierr);
+  ierr = Enth3->getValColumn(m_i, m_j, m_ks, Enth); CHKERRQ(ierr);
   ierr = compute_enthalpy_CTS(); CHKERRQ(ierr);
 
   m_lambda = compute_lambda();
@@ -153,7 +141,7 @@ temperature at the corresponding z level.
  */
 PetscErrorCode enthSystemCtx::compute_enthalpy_CTS() {
 
-  for (int k = 0; k <= m_ks; k++) {
+  for (unsigned int k = 0; k <= m_ks; k++) {
     const double
       depth = ice_thickness - k * dz,
       p = EC->getPressureFromDepth(depth); // FIXME issue #15
@@ -161,7 +149,7 @@ PetscErrorCode enthSystemCtx::compute_enthalpy_CTS() {
   }
 
   const double Es_air = EC->getEnthalpyCTS(p_air);
-  for (int k = m_ks+1; k < Mz; k++) {
+  for (unsigned int k = m_ks+1; k < Mz; k++) {
     Enth_s[k] = Es_air;
   }
   return 0;
@@ -175,7 +163,7 @@ double enthSystemCtx::compute_lambda() {
   double result = 1.0; // start with centered implicit for more accuracy
   const double epsilon = 1e-6 / 3.15569259747e7;
 
-  for (int k = 0; k <= m_ks; k++) {
+  for (unsigned int k = 0; k <= m_ks; k++) {
     if (Enth[k] > Enth_s[k]) { // lambda = 0 if temperate ice present in column
       result = 0.0;
     } else {
@@ -230,7 +218,7 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer, bool show_col_de
     ierr = PetscViewerASCIIPrintf(viewer,
                      "for THIS column:\n"
                      "  i,j,ks = %d,%d,%d\n",
-                     i,j,m_ks); CHKERRQ(ierr);
+                     m_i,m_j,m_ks); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
                      "  ismarginal,lambda = %d,%10.3f\n",
                      (int)ismarginal,m_lambda); CHKERRQ(ierr);
@@ -327,7 +315,7 @@ PetscErrorCode enthSystemCtx::setBasalHeatFlux(double hf) {
   b = Enth[0] + Rminus * X;   // = rhs[0]
   if (!ismarginal) {
     planeStar<double> ss;
-    ierr = Enth3->getPlaneStar_fine(i,j,0,&ss); CHKERRQ(ierr);
+    ierr = Enth3->getPlaneStar_fine(m_i,m_j,0,&ss); CHKERRQ(ierr);
     const double UpEnthu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
                                              u[0] * (ss.ij  - ss.w) / dx;
     const double UpEnthv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
@@ -357,12 +345,12 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 
   if (k_depends_on_T == false && c_depends_on_T == false) {
 
-    for (int k = 0; k <= m_ks; k++)
+    for (unsigned int k = 0; k <= m_ks; k++)
       R[k] = (Enth[k] < Enth_s[k]) ? R_cold : R_temp;
 
   } else {
 
-    for (int k = 0; k <= m_ks; k++) {
+    for (unsigned int k = 0; k <= m_ks; k++) {
       if (Enth[k] < Enth_s[k]) {
         // cold case
         const double depth = ice_thickness - k * dz;
@@ -379,9 +367,9 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 
   }
 
-  // R[k] for k > ks are never used
+  // R[k] for k > m_ks are never used
 #if (PISM_DEBUG==1)
-  for (int k = m_ks + 1; k < Mz; ++k)
+  for (unsigned int k = m_ks + 1; k < Mz; ++k)
     R[k] = GSL_NAN;
 #endif
 
@@ -408,8 +396,8 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
   U[0]   = a1;
   rhs[0] = b;
 
-  // generic ice segment in k location (if any; only runs if ks >= 2)
-  for (int k = 1; k < m_ks; k++) {
+  // generic ice segment in k location (if any; only runs if m_ks >= 2)
+  for (unsigned int k = 1; k < m_ks; k++) {
     const double
         Rminus = 0.5 * (R[k-1] + R[k]),
         Rplus  = 0.5 * (R[k]   + R[k+1]);
@@ -429,7 +417,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
     rhs[k] = Enth[k];
     if (!ismarginal) {
       planeStar<double> ss;
-      ierr = Enth3->getPlaneStar_fine(i,j,k,&ss); CHKERRQ(ierr);
+      ierr = Enth3->getPlaneStar_fine(m_i,m_j,k,&ss); CHKERRQ(ierr);
       const double UpEnthu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
                                                u[k] * (ss.ij  - ss.w) / dx;
       const double UpEnthv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
@@ -451,13 +439,13 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "\n\ntridiagonal solve of enthSystemCtx in enthalpyAndDrainageStep() FAILED at (%d,%d)\n"
                        " with zero pivot position %d; viewing system to m-file ... \n",
-                       i, j, pivoterr); CHKERRQ(ierr);
+                       m_i, m_j, pivoterr); CHKERRQ(ierr);
     ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in enthalpyDrainageStep()\n");
   }
 
   // air above
-  for (int k = m_ks+1; k < Mz; k++) {
+  for (unsigned int k = m_ks+1; k < Mz; k++) {
     x[k] = Enth_ks;
   }
 
@@ -480,7 +468,7 @@ PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer) const {
   info = prefix + "_A";
   ierr = viewMatrix(viewer,info.c_str()); CHKERRQ(ierr);
   info = prefix + "_rhs";
-  ierr = viewVectorValues(viewer,rhs,nmax,info.c_str()); CHKERRQ(ierr);
+  ierr = viewVectorValues(viewer,rhs,m_nmax,info.c_str()); CHKERRQ(ierr);
   info = prefix + "_R";
   ierr = viewVectorValues(viewer,&R[0],Mz,info.c_str()); CHKERRQ(ierr);
   return 0;

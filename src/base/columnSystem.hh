@@ -79,7 +79,9 @@ public:
   columnSystemCtx(unsigned int my_nmax, const std::string &my_prefix);
   virtual ~columnSystemCtx();
 
-  PetscErrorCode setIndicesAndClearThisColumn(int i, int j, int ks);  
+  PetscErrorCode setIndicesAndClearThisColumn(int my_i, int my_j,
+                                              double ice_thickness, double dz,
+                                              unsigned int Mz);  
 
   double    norm1(unsigned int n) const;
   double    ddratio(unsigned int n) const;
@@ -93,16 +95,18 @@ public:
   PetscErrorCode viewColumnInfoMFile(double *x, unsigned int n);
   PetscErrorCode viewColumnInfoMFile(char *filename, double *x, unsigned int n);
 
+  unsigned int ks() const;
 protected:
-  unsigned int nmax;
+  unsigned int m_nmax;
   double *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
 
-  int    i, j, ks;
+  int m_i, m_j;
+  unsigned int m_ks;
 
   // deliberately protected so only derived classes can use
   PetscErrorCode solveTridiagonalSystem(unsigned int n, double *x);
   
-  std::string      prefix;
+  std::string prefix;
 private:
   bool        indicesValid;
   PetscErrorCode resetColumn();

@@ -55,10 +55,11 @@ class tempSystemCtx : public columnSystemCtx {
 public:
   tempSystemCtx(int my_Mz, const std::string &my_prefix);
   PetscErrorCode initAllColumns();
-  PetscErrorCode setSchemeParamsThisColumn(MaskValue my_mask, bool my_isMarginal, double my_lambda);  
+  PetscErrorCode setSchemeParamsThisColumn(MaskValue my_mask, bool my_isMarginal,
+                                           double my_lambda);
   PetscErrorCode setSurfaceBoundaryValuesThisColumn(double my_Ts);
-  PetscErrorCode setBasalBoundaryValuesThisColumn(
-                                                  double my_G0, double my_Tshelfbase, double my_Rb);
+  PetscErrorCode setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
+                                                  double my_Rb);
 
   PetscErrorCode solveThisColumn(double *x);  
 

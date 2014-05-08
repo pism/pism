@@ -63,9 +63,6 @@ public:
 
   PetscErrorCode solveThisColumn(double *x);
 
-  int ks()
-  { return m_ks; }
-
   double lambda()
   { return m_lambda; }
 public:
@@ -75,7 +72,7 @@ public:
 protected:
   double *u, *v, *w, *strain_heating;
 
-  int Mz, m_ks;
+  unsigned int Mz;
 
   double ice_rho, ice_c, ice_k, ice_K, ice_K0, p_air,
     dx, dy, dz, dt, nu, R_cold, R_temp, R_factor;

@@ -128,7 +128,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
   Mask M;
 
   // bottom of ice; k=0 eqn
-  if (ks == 0) { // no ice; set T[0] to surface temp if grounded
+  if (m_ks == 0) { // no ice; set T[0] to surface temp if grounded
     // note L[0] not allocated 
     D[0] = 1.0;
     U[0] = 0.0;
@@ -139,7 +139,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
     } else { // top of bedrock sees atmosphere
       rhs[0] = Ts; 
     }
-  } else { // ks > 0; there is ice
+  } else { // m_ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
     if (M.ocean(mask)) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
@@ -153,7 +153,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
       if (!isMarginal) {
         rhs[0] += dtTemp * 0.5 * strain_heating[0]/ rho_c_I;
         planeStar<double> ss;
-        T3->getPlaneStar(i,j,0,&ss);
+        T3->getPlaneStar(m_i,m_j,0,&ss);
         const double UpTu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
                                               u[0] * (ss.ij  - ss.w) / dx;
         const double UpTv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
@@ -174,10 +174,10 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
     }
   }
 
-  // generic ice segment; build 1:ks-1 eqns
-  for (int k = 1; k < ks; k++) {
+  // generic ice segment; build 1:m_ks-1 eqns
+  for (unsigned int k = 1; k < m_ks; k++) {
     planeStar<double> ss;
-    T3->getPlaneStar_fine(i,j,k,&ss);
+    T3->getPlaneStar_fine(m_i,m_j,k,&ss);
     const double UpTu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
                                           u[k] * (ss.ij  - ss.w) / dx;
     const double UpTv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
@@ -199,11 +199,11 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
   }
       
   // surface b.c.
-  if (ks>0) {
-    L[ks] = 0.0;
-    D[ks] = 1.0;
-    // ignore U[ks]
-    rhs[ks] = Ts;
+  if (m_ks>0) {
+    L[m_ks] = 0.0;
+    D[m_ks] = 1.0;
+    // ignore U[m_ks]
+    rhs[m_ks] = Ts;
   }
 
   // mark column as done
@@ -212,13 +212,13 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
   basalBCsValid = false;
 
   // solve it; note melting not addressed yet
-  int pivoterr = solveTridiagonalSystem(ks+1,x);
+  int pivoterr = solveTridiagonalSystem(m_ks+1,x);
 
   if (pivoterr != 0) {
     PetscErrorCode ierr = PetscPrintf(PETSC_COMM_SELF,
                        "\n\ntridiagonal solve of tempSystemCtx in temperatureStep() FAILED at (%d,%d)\n"
                        " with zero pivot position %d; viewing system to m-file ... \n",
-                       i, j, pivoterr); CHKERRQ(ierr);
+                       m_i, m_j, pivoterr); CHKERRQ(ierr);
     ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in temperatureStep()\n");
   }

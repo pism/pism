@@ -245,10 +245,12 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
       for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
         // this should *not* be replaced by call to grid.kBelowHeight():
-        const int  ks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
+        const int ks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
 
         if (ks>0) { // if there are enough points in ice to bother ...
-          ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
+          // this call will validate ks
+          ierr = system.setIndicesAndClearThisColumn(i, j,
+                                                     ice_thickness(i,j), fdz, fMz); CHKERRQ(ierr);
 
           ierr = u3->getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
           ierr = v3->getValColumn(i,j,ks,system.v); CHKERRQ(ierr);

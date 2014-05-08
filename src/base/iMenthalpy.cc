@@ -353,7 +353,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       {
         // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
         //   using DrainageCalculator dc
-        for (int k=0; k < esys.ks(); k++) {
+        for (unsigned int k=0; k < esys.ks(); k++) {
           if (Enthnew[k] > esys.Enth_s[k]) { // avoid doing any more work if cold
             if (Enthnew[k] >= esys.Enth_s[k] + 0.5 * L) {
               liquifiedCount++; // count these rare events...
@@ -375,7 +375,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
         // apply bulge limiter
         const double lowerEnthLimit = Enth_ks - bulgeEnthMax;
-        for (int k=0; k < esys.ks(); k++) {
+        for (unsigned int k=0; k < esys.ks(); k++) {
           if (Enthnew[k] < lowerEnthLimit) {
             *bulgeCount += 1;      // count the columns which have very large cold
             Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
