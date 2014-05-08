@@ -176,9 +176,13 @@ public:
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_output_size(const std::string &option, const std::string &description,
-                                         const std::string &default_value, std::set<std::string> &result);
-  virtual std::string         get_output_size(const std::string &option);
+  virtual PetscErrorCode output_size_from_option(const std::string &option,
+                                                 const std::string &description,
+                                                 const std::string &default_value,
+                                                 std::set<std::string> &result);
+  virtual PetscErrorCode set_output_size(const std::string &keyword,
+                                         std::set<std::string> &result);
+  virtual std::string get_output_size(const std::string &option);
 
   // see iMutil.cc
   virtual PetscErrorCode additionalAtStartTimestep();

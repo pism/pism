@@ -1002,8 +1002,8 @@ PetscErrorCode IceModel::misc_setup() {
 
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
-  ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
-                         "medium", output_vars); CHKERRQ(ierr);
+  ierr = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
+                                 "medium", output_vars); CHKERRQ(ierr);
 
   // Quietly re-initialize couplers (they might have done one
   // time-step during initialization)

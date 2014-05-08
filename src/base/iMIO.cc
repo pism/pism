@@ -663,8 +663,8 @@ PetscErrorCode IceModel::init_snapshots() {
     ierr = OptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
                             split); CHKERRQ(ierr);
 
-    ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
-                           "small", snapshot_vars); CHKERRQ(ierr);
+    ierr = output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
+                                   "small", snapshot_vars); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -821,8 +821,8 @@ PetscErrorCode IceModel::init_backups() {
     ierr = OptionsReal("-backup_interval", "Automatic backup interval, hours",
                            backup_interval, o_set); CHKERRQ(ierr);
 
-    ierr = set_output_size("-backup_size", "Sets the 'size' of a backup file.",
-                           "small", backup_vars); CHKERRQ(ierr);
+    ierr = output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
+                                   "small", backup_vars); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
