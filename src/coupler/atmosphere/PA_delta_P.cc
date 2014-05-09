@@ -39,9 +39,12 @@ PetscErrorCode PA_delta_P::allocate_PA_delta_P() {
   option_prefix = "-atmosphere_delta_P";
   offset_name = "delta_P";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("m / second", "m / year");
-  offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "precipitation offsets, units of ice-equivalent thickness");
+  offset->get_metadata().set_units("m / second");
+  offset->get_metadata().set_glaciological_units("m / year");
+  offset->get_metadata().set_string("long_name",
+                                    "precipitation offsets, units of ice-equivalent thickness");
+  offset->get_dimension_metadata().set_units(grid.time->units_string());
+
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");

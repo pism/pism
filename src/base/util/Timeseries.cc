@@ -56,6 +56,12 @@ void Timeseries::private_constructor(MPI_Comm c, const std::string &name, const 
   use_bounds = true;
 }
 
+//! Ensure that time bounds have the same units as the dimension.
+void Timeseries::set_bounds_units() {
+  bounds.set_units(dimension.get_string("units"));
+  bounds.set_glaciological_units(dimension.get_string("glaciological_units"));
+}
+
 
 //! Read timeseries data from a NetCDF file `filename`.
 PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
@@ -115,6 +121,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
   if (!time_bounds_name.empty()) {
     use_bounds = true;
 
+    set_bounds_units();
     NCTimeBounds tmp_bounds = bounds;
     tmp_bounds.set_name(time_bounds_name);
 
@@ -177,6 +184,7 @@ PetscErrorCode Timeseries::write(const PIO &nc) {
   ierr = nc.write_timeseries(var, 0, values); CHKERRQ(ierr);
 
   if (use_bounds) {
+    set_bounds_units();
     ierr = nc.write_time_bounds(bounds, 0, time_bounds); CHKERRQ(ierr);
   }
 
@@ -292,44 +300,12 @@ PetscErrorCode Timeseries::append(double v, double a, double b) {
   return 0;
 }
 
-
-//! Set the internal units for the values of a time-series.
-PetscErrorCode Timeseries::set_units(const std::string &units, const std::string &glaciological_units) {
-  if (!units.empty())
-    var.set_units(units);
-  if (!glaciological_units.empty())
-    var.set_glaciological_units(glaciological_units);
-  return 0;
+NCTimeseries& Timeseries::get_metadata() {
+  return var;
 }
 
-//! Set the internal units for the dimension variable of a time-series.
-PetscErrorCode Timeseries::set_dimension_units(const std::string &units, const std::string &glaciological_units) {
-  if (!units.empty()) {
-    dimension.set_units(units);
-    bounds.set_units(units);
-  }
-  if (!glaciological_units.empty()) {
-    dimension.set_glaciological_units(glaciological_units);
-    bounds.set_glaciological_units(glaciological_units);
-  }
-  return 0;
-}
-
-//! Set a string attribute.
-PetscErrorCode Timeseries::set_attr(const std::string &name, const std::string &value) {
-  var.set_string(name, value);
-  return 0;
-}
-
-//! Get a string attribute.
-std::string Timeseries::get_string(const std::string &name) {
-  return var.get_string(name);
-}
-
-//! Set a single-valued scalar attribute.
-PetscErrorCode Timeseries::set_attr(const std::string & name, double value) {
-  var.set_double(name, value);
-  return 0;
+NCTimeseries& Timeseries::get_dimension_metadata() {
+  return dimension;
 }
 
 //! Returns the length of the time-series stored.
@@ -339,7 +315,6 @@ PetscErrorCode Timeseries::set_attr(const std::string & name, double value) {
 int Timeseries::length() {
   return (int)values.size();
 }
-
 
 //----- DiagnosticTimeseries
 
@@ -497,6 +472,8 @@ PetscErrorCode DiagnosticTimeseries::flush() {
 
   if (len == (unsigned int)start) {
     ierr = nc.write_timeseries(dimension, start, time);   CHKERRQ(ierr);
+
+    set_bounds_units();
     ierr = nc.write_time_bounds(bounds, start, time_bounds);   CHKERRQ(ierr);
   }
   ierr = nc.write_timeseries(var, start, values); CHKERRQ(ierr);

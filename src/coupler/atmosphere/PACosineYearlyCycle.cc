@@ -78,9 +78,9 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
     if (A == NULL) {
       A = new Timeseries(&grid, "amplitude_scaling",
                          config.get_string("time_dimension_name"));
-      A->set_units("1", "1");
-      A->set_dimension_units(grid.time->units_string(), "");
-      A->set_attr("long_name", "cosine yearly cycle amplitude scaling");
+      A->get_metadata().set_units("1");
+      A->get_metadata().set_string("long_name", "cosine yearly cycle amplitude scaling");
+      A->get_dimension_metadata().set_units(grid.time->units_string());
     }
 
     ierr = verbPrintf(2, grid.com,

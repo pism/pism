@@ -82,7 +82,6 @@ PetscErrorCode NCVariable::set_units(const std::string &new_units) {
   and for standard out reports.
  */
 PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units) {
-  std::string units = new_units;
   // Save the human-friendly version of the string; this is to avoid getting
   // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
   // (and thus violating the CF conventions).
@@ -90,19 +89,9 @@ PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units)
   // Do not use NCVariable::set_string here, because it is written in
   // a way that forces users to use set_glaciological_units() to set
   // "glaciological" units.
-  m_strings["glaciological_units"] = units;
+  m_strings["glaciological_units"] = new_units;
 
-  /*!
-    \note This method finds the string "since" in the units_string and
-    terminates it on the first 's' of "since", if this sub-string was found.
-    This is done to ignore the reference date in the time units string (the
-    reference date specification always starts with this word).
-  */
-  size_t n = units.find("since");
-  if (n != std::string::npos)
-    units.resize(n);
-
-  int errcode = m_glaciological_units.parse(units);
+  int errcode = m_glaciological_units.parse(new_units);
 
   assert(errcode == 0 && "invalid units specification");
 

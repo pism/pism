@@ -1097,11 +1097,11 @@ IceModel_ivol::IceModel_ivol(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivol", time_dimension_name);
 
-  ts->set_units("m3", "");
-  ts->set_dimension_units(time_units, "");
+  ts->get_metadata().set_units("m3");
+  ts->get_dimension_metadata().set_units(time_units);
 
-  ts->set_attr("long_name", "total ice volume");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_string("long_name", "total ice volume");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_ivol::update(double a, double b) {
@@ -1121,11 +1121,11 @@ IceModel_slvol::IceModel_slvol(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "slvol", time_dimension_name);
 
-  ts->set_units("m", "");
-  ts->set_dimension_units(time_units, "");
+  ts->get_metadata().set_units("m");
+  ts->get_dimension_metadata().set_units(time_units);
 
-  ts->set_attr("long_name", "total sea-level relevant ice IN SEA-LEVEL EQUIVALENT");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_string("long_name", "total sea-level relevant ice IN SEA-LEVEL EQUIVALENT");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_slvol::update(double a, double b) {
@@ -1145,11 +1145,11 @@ IceModel_divoldt::IceModel_divoldt(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "divoldt", time_dimension_name);
 
-  ts->set_units("m3 s-1", "");
-  ts->set_dimension_units(time_units, "");
+  ts->get_metadata().set_units("m3 s-1");
+  ts->get_dimension_metadata().set_units(time_units);
   ts->rate_of_change = true;
 
-  ts->set_attr("long_name", "total ice volume rate of change");
+  ts->get_metadata().set_string("long_name", "total ice volume rate of change");
 }
 
 PetscErrorCode IceModel_divoldt::update(double a, double b) {
@@ -1171,10 +1171,10 @@ IceModel_iarea::IceModel_iarea(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iarea", time_dimension_name);
 
-  ts->set_units("m2", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total ice area");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_units("m2");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total ice area");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_iarea::update(double a, double b) {
@@ -1194,10 +1194,10 @@ IceModel_imass::IceModel_imass(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "imass", time_dimension_name);
 
-  ts->set_units("kg", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total ice mass");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total ice mass");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_imass::update(double a, double b) {
@@ -1218,9 +1218,9 @@ IceModel_dimassdt::IceModel_dimassdt(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "dimassdt", time_dimension_name);
 
-  ts->set_units("kg s-1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total ice mass rate of change");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total ice mass rate of change");
 
   ts->rate_of_change = true;
 }
@@ -1243,10 +1243,10 @@ IceModel_ivoltemp::IceModel_ivoltemp(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivoltemp", time_dimension_name);
 
-  ts->set_units("m3", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total volume of temperate ice");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_units("m3");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total volume of temperate ice");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_ivoltemp::update(double a, double b) {
@@ -1267,10 +1267,10 @@ IceModel_ivolcold::IceModel_ivolcold(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolcold", time_dimension_name);
 
-  ts->set_units("m3", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total volume of cold ice");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_units("m3");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total volume of cold ice");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_ivolcold::update(double a, double b) {
@@ -1290,10 +1290,10 @@ IceModel_iareatemp::IceModel_iareatemp(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareatemp", time_dimension_name);
 
-  ts->set_units("m2", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "ice-covered area where basal ice is temperate");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_units("m2");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "ice-covered area where basal ice is temperate");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_iareatemp::update(double a, double b) {
@@ -1313,10 +1313,10 @@ IceModel_iareacold::IceModel_iareacold(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareacold", time_dimension_name);
 
-  ts->set_units("m2", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "ice-covered area where basal ice is cold");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_units("m2");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "ice-covered area where basal ice is cold");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_iareacold::update(double a, double b) {
@@ -1336,10 +1336,10 @@ IceModel_ienthalpy::IceModel_ienthalpy(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ienthalpy", time_dimension_name);
 
-  ts->set_units("J", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total ice enthalpy");
-  ts->set_attr("valid_min", 0.0);
+  ts->get_metadata().set_units("J");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total ice enthalpy");
+  ts->get_metadata().set_double("valid_min", 0.0);
 }
 
 PetscErrorCode IceModel_ienthalpy::update(double a, double b) {
@@ -1359,9 +1359,9 @@ IceModel_iareag::IceModel_iareag(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareag", time_dimension_name);
 
-  ts->set_units("m2", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total grounded ice area");
+  ts->get_metadata().set_units("m2");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total grounded ice area");
 }
 
 PetscErrorCode IceModel_iareag::update(double a, double b) {
@@ -1381,9 +1381,9 @@ IceModel_iareaf::IceModel_iareaf(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "iareaf", time_dimension_name);
 
-  ts->set_units("m2", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total floating ice area");
+  ts->get_metadata().set_units("m2");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total floating ice area");
 }
 
 PetscErrorCode IceModel_iareaf::update(double a, double b) {
@@ -1403,9 +1403,10 @@ IceModel_dt::IceModel_dt(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "dt", time_dimension_name);
 
-  ts->set_units("second", "year");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "mass continuity time step");
+  ts->get_metadata().set_units("second");
+  ts->get_metadata().set_glaciological_units("year");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "mass continuity time step");
 }
 
 PetscErrorCode IceModel_dt::update(double a, double b) {
@@ -1422,9 +1423,9 @@ IceModel_max_diffusivity::IceModel_max_diffusivity(IceModel *m, IceGrid &g, Vars
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "max_diffusivity", time_dimension_name);
 
-  ts->set_units("m2 s-1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "maximum diffusivity");
+  ts->get_metadata().set_units("m2 s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "maximum diffusivity");
 }
 
 PetscErrorCode IceModel_max_diffusivity::update(double a, double b) {
@@ -1444,9 +1445,9 @@ IceModel_surface_flux::IceModel_surface_flux(IceModel *m, IceGrid &g, Vars &my_v
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "surface_ice_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total over ice domain of top surface ice mass flux");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total over ice domain of top surface ice mass flux");
   ts->rate_of_change = true;
 }
 
@@ -1467,9 +1468,9 @@ IceModel_surface_flux_cumulative::IceModel_surface_flux_cumulative(IceModel *m, 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "surface_ice_flux_cumulative", time_dimension_name);
 
-  ts->set_units("kg", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "cumulative total over ice domain of top surface ice mass flux");
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "cumulative total over ice domain of top surface ice mass flux");
 }
 
 PetscErrorCode IceModel_surface_flux_cumulative::update(double a, double b) {
@@ -1489,9 +1490,9 @@ IceModel_grounded_basal_flux::IceModel_grounded_basal_flux(IceModel *m, IceGrid 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "grounded_basal_ice_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total over grounded ice domain of basal mass flux");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total over grounded ice domain of basal mass flux");
   ts->rate_of_change = true;
 }
 
@@ -1512,9 +1513,9 @@ IceModel_grounded_basal_flux_cumulative::IceModel_grounded_basal_flux_cumulative
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "grounded_basal_ice_flux_cumulative", time_dimension_name);
 
-  ts->set_units("kg", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "cumulative total grounded basal mass flux");
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "cumulative total grounded basal mass flux");
 }
 
 PetscErrorCode IceModel_grounded_basal_flux_cumulative::update(double a, double b) {
@@ -1534,9 +1535,9 @@ IceModel_sub_shelf_flux::IceModel_sub_shelf_flux(IceModel *m, IceGrid &g, Vars &
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total sub-shelf ice flux");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total sub-shelf ice flux");
   ts->rate_of_change = true;
 }
 
@@ -1557,9 +1558,9 @@ IceModel_sub_shelf_flux_cumulative::IceModel_sub_shelf_flux_cumulative(IceModel 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux_cumulative", time_dimension_name);
 
-  ts->set_units("kg", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "cumulative total sub-shelf ice flux");
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "cumulative total sub-shelf ice flux");
 }
 
 PetscErrorCode IceModel_sub_shelf_flux_cumulative::update(double a, double b) {
@@ -1579,9 +1580,9 @@ IceModel_nonneg_flux::IceModel_nonneg_flux(IceModel *m, IceGrid &g, Vars &my_var
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "nonneg_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
   ts->rate_of_change = true;
 }
 
@@ -1602,9 +1603,9 @@ IceModel_nonneg_flux_cumulative::IceModel_nonneg_flux_cumulative(IceModel *m, Ic
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "nonneg_flux_cumulative", time_dimension_name);
 
-  ts->set_units("kg", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "cumulative 'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "cumulative 'numerical' ice flux resulting from enforcing the 'thk >= 0' rule");
 }
 
 PetscErrorCode IceModel_nonneg_flux_cumulative::update(double a, double b) {
@@ -1624,9 +1625,9 @@ IceModel_discharge_flux::IceModel_discharge_flux(IceModel *m, IceGrid &g, Vars &
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "discharge_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "discharge (calving & icebergs) flux");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "discharge (calving & icebergs) flux");
   ts->rate_of_change = true;
 }
 
@@ -1645,9 +1646,9 @@ IceModel_discharge_flux_cumulative::IceModel_discharge_flux_cumulative(IceModel 
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "discharge_flux_cumulative", time_dimension_name);
 
-  ts->set_units("kg", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "cumulative discharge (calving etc.) flux");
+  ts->get_metadata().set_units("kg");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "cumulative discharge (calving etc.) flux");
 }
 
 PetscErrorCode IceModel_discharge_flux_cumulative::update(double a, double b) {
@@ -1742,9 +1743,9 @@ IceModel_ivolg::IceModel_ivolg(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolg", time_dimension_name);
 
-  ts->set_units("m3", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total grounded ice volume");
+  ts->get_metadata().set_units("m3");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total grounded ice volume");
 }
 
 PetscErrorCode IceModel_ivolg::update(double a, double b) {
@@ -1779,9 +1780,9 @@ IceModel_ivolf::IceModel_ivolf(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "ivolf", time_dimension_name);
 
-  ts->set_units("m3", "");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "total floating ice volume");
+  ts->get_metadata().set_units("m3");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "total floating ice volume");
 }
 
 PetscErrorCode IceModel_ivolf::update(double a, double b) {
@@ -1827,9 +1828,12 @@ IceModel_max_hor_vel::IceModel_max_hor_vel(IceModel *m, IceGrid &g, Vars &my_var
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "max_hor_vel", time_dimension_name);
 
-  ts->set_units("m/second", "m/year");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval");
+  ts->get_metadata().set_units("m/second");
+  ts->get_metadata().set_glaciological_units("m/year");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name",
+                                "maximum abs component of horizontal ice velocity"
+                                " over grid in last time step during time-series reporting interval");
 }
 
 PetscErrorCode IceModel_max_hor_vel::update(double a, double b) {
@@ -1847,9 +1851,9 @@ IceModel_H_to_Href_flux::IceModel_H_to_Href_flux(IceModel *m, IceGrid &g, Vars &
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "H_to_Href_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "kg s-1");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "mass flux from thk to Href");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "mass flux from thk to Href");
   ts->rate_of_change = true;
 }
 
@@ -1867,9 +1871,9 @@ IceModel_Href_to_H_flux::IceModel_Href_to_H_flux(IceModel *m, IceGrid &g, Vars &
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "Href_to_H_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "kg s-1");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "mass flux from Href to thk");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "mass flux from Href to thk");
   ts->rate_of_change = true;
 }
 
@@ -1888,9 +1892,9 @@ IceModel_sum_divQ_flux::IceModel_sum_divQ_flux(IceModel *m, IceGrid &g, Vars &my
   // set metadata:
   ts = new DiagnosticTimeseries(&grid, "sum_divQ_flux", time_dimension_name);
 
-  ts->set_units("kg s-1", "kg s-1");
-  ts->set_dimension_units(time_units, "");
-  ts->set_attr("long_name", "sum(divQ)");
+  ts->get_metadata().set_units("kg s-1");
+  ts->get_dimension_metadata().set_units(time_units);
+  ts->get_metadata().set_string("long_name", "sum(divQ)");
   ts->rate_of_change = true;
 }
 
