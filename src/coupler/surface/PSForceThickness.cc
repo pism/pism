@@ -21,6 +21,7 @@
 #include "PISMVars.hh"
 #include "PIO.hh"
 #include "PISMConfig.hh"
+#include "Mask.hh"
 
 #include "pism_options.hh"
 
@@ -130,6 +131,9 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
 
   m_ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!m_ice_thickness) SETERRQ(grid.com, 1, "ERROR: land_ice_thickness is not available");
+
+  m_pism_mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
+  if (!m_pism_mask) SETERRQ(grid.com, 1, "ERROR: mask is not available");
 
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
@@ -311,13 +315,16 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
 
   double ice_density = config.get("ice_density");
 
+  MaskQuery m(*m_pism_mask);
+
+  ierr = m_pism_mask->begin_access(); CHKERRQ(ierr);
   ierr = m_ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = m_target_thickness.begin_access(); CHKERRQ(ierr);
   ierr = m_ftt_mask.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (m_ftt_mask(i,j) > 0.5) {
+      if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
         if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
           result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
         } else {
@@ -330,6 +337,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = m_target_thickness.end_access(); CHKERRQ(ierr);
   ierr = m_ftt_mask.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = m_pism_mask->end_access(); CHKERRQ(ierr);
   // no communication needed
 
   return 0;
