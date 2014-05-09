@@ -445,7 +445,7 @@ netcdf pism_config {
     // PISMOceanModel constants
 
     pism_config:ocean_sub_shelf_heat_flux_into_ice = 0.5;
-    pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/PISMOcean.cc";
+    pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in @ref pism::POConstant::shelf_base_mass_flux().";
 
     // SSA inversion constants
     

@@ -372,9 +372,9 @@ double Time_Calendar::increment_date(double T, int years) {
 }
 
 /**
- * Parses the date string `spec`.
+ * Parses the date string `input`.
  *
- * @param[in] spec date string of the form "Y-M-D", where year, month,
+ * @param[in] input date string of the form "Y-M-D", where year, month,
  *                 and day can use as many digits as necessary
  * @param[out] result
  *
