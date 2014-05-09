@@ -89,9 +89,6 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  // Combine basal melt rate in grounded and floating areas.
-  ierr = combine_basal_melt_rate(); CHKERRQ(ierr);
-
   // Both cases above update the basal melt rate field; here we update its
   // ghosts, which are needed to compute tauc locally
   ierr = basal_melt_rate.update_ghosts(); CHKERRQ(ierr);

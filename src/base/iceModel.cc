@@ -732,6 +732,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
+  // Combine basal melt rate in grounded (computed during the energy
+  // step) and floating (provided by an ocean model) areas.
+  ierr = combine_basal_melt_rate(); CHKERRQ(ierr);
+
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
   ierr = subglacial_hydrology->update(grid.time->current(), dt); CHKERRQ(ierr);
