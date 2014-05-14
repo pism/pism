@@ -320,9 +320,7 @@ def add_history(nc):
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
-    from shutil import copy, move
-    import os
-    from tempfile import mkstemp
+    import os, os.path, tempfile, shutil
     from time import time, asctime
 
     try:
@@ -367,9 +365,14 @@ if __name__ == "__main__":
     PETSc.Sys.Print("Creating the temporary file...")
     if rank == 0:
         try:
-            (handle, tmp_filename) = mkstemp()
+            # find the name of the directory with the output file:
+            dirname = os.path.dirname(os.path.abspath(output_filename))
+            (handle, tmp_filename) = tempfile.mkstemp(prefix="fill_missing_",
+                                                      suffix=".nc",
+                                                      dir=dirname)
+
             os.close(handle) # mkstemp returns a file handle (which we don't need)
-            copy(input_filename, tmp_filename)
+            shutil.copy(input_filename, tmp_filename)
         except IOError:
             PETSc.Sys.Print("ERROR: Can't create %s, Exiting..." % tmp_filename)
 
@@ -395,7 +398,7 @@ if __name__ == "__main__":
     nc.close()
     try:
         if rank == 0:
-            move(tmp_filename, output_filename)
+            shutil.move(tmp_filename, output_filename)
     except:
         PETSc.Sys.Print("Error moving %s to %s. Exiting..." % (tmp_filename,
                                                                output_filename))
