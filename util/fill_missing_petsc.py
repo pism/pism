@@ -362,9 +362,11 @@ if __name__ == "__main__":
 
     t0 = time()
 
-    PETSc.Sys.Print("Creating the temporary file...")
+    PETSc.Sys.Print("Filling missing values in %s and saving results to %s..." % (input_filename,
+                                                                                  output_filename))
     if rank == 0:
         try:
+            PETSc.Sys.Print("Creating a temporary file...")
             # find the name of the directory with the output file:
             dirname = os.path.dirname(os.path.abspath(output_filename))
             (handle, tmp_filename) = tempfile.mkstemp(prefix="fill_missing_",
@@ -372,9 +374,15 @@ if __name__ == "__main__":
                                                       dir=dirname)
 
             os.close(handle) # mkstemp returns a file handle (which we don't need)
-            shutil.copy(input_filename, tmp_filename)
         except IOError:
             PETSc.Sys.Print("ERROR: Can't create %s, Exiting..." % tmp_filename)
+
+        try:
+            PETSc.Sys.Print("Copying input file %s to %s..." % (input_filename,
+                                                                tmp_filename))
+            shutil.copy(input_filename, tmp_filename)
+        except IOError:
+            PETSc.Sys.Print("ERROR: Can't copy %s, Exiting..." % input_filename)
 
     try:
         if rank == 0:
@@ -396,6 +404,7 @@ if __name__ == "__main__":
             PETSc.Sys.Print("Note: %s was not modified." % output_filename)
             sys.exit(-1)
     nc.close()
+
     try:
         if rank == 0:
             shutil.move(tmp_filename, output_filename)
