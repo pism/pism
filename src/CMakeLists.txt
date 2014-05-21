@@ -27,6 +27,8 @@ set(PISM_PARALLEL_IO_FLAGS "")
 
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
+  base/util/PetscInitializer.cc
+  base/util/error_handling.cc
   base/enthalpyConverter.cc
   base/util/IceGrid.cc
   base/util/IceGrid.cc
