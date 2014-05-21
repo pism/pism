@@ -1,0 +1,1528 @@
+{
+    "doc" : "PISM's options and parameters",
+    "constants" : {
+        "doc" : "Assorted physical constants",
+        "standard_gravity" : {
+            "value" : 9.81,
+            "units": "m/s2",
+            "doc" : "acceleration due to gravity",
+            "type" : "number"
+        },
+        "ideal_gas_constant" : {
+            "value" : 8.31441,
+            "units" : "J mol-1 K-1",
+            "doc" : "ideal gas constant",
+            "type" : "number"
+        },
+        "beta_CC" : {
+            "doc" : "Clausius-Clapeyron constant",
+            "reference" : "Luethi2002",
+            "units" : "K Pa-1",
+            "value" : 7.9e-8,
+            "type" : "number"
+        },
+        "surface_pressure" : {
+            "doc" : "atmospheric pressure, i.e. pressure at ice surface",
+            "units" : "Pa",
+            "value" : 0.0,
+            "type" : "number"
+        },
+        "fresh_water" : {
+            "doc" : "fresh-water-related constants",
+            "density" : {
+                "doc" : "fresh water density",
+                "value" : 1000.0,
+                "units" : "kg m-3",
+                "type" : "number"
+            },
+            "latent_heat_of_fusion" : {
+                "doc" : "latent heat of fusion for water [\\ref AschwandenBlatter]",
+                "units" : "J kg-1",
+                "value" : 3.34e5,
+                "type" : "number"
+            },
+            "melting_point_temperature" : {
+                "doc" : "melting point of pure water",
+                "units" : "Kelvin",
+                "value" : 273.15,
+                "type" : "number"
+            },
+            "specific_heat_capacity" : {
+                "doc" : "water specific heat capacity at melting point",
+                "reference" : "AschwandenBlatter",
+                "units" : "J kg-1 K-1",
+                "value" : 4170.0,
+                "type" : "number"
+            }
+        },
+        "sea_water" : {
+            "doc" : "sea-water-related constants",
+            "density" : {
+                "doc" : "sea water density",
+                "value" : 1028.0,
+                "units" : "kg m-3",
+                "type" : "number"
+            }
+        },
+        "ice" : {
+            "doc" : "ice-related constants",
+            "density" : {
+                "doc" : "ice density",
+                "units" : "kg m-3",
+                "value" : 910.0,
+                "type" : "number"
+            },
+            "thermal_conductivity" : {
+                "doc" : "ice thermal conductivity",
+                "units" : "W m-1 K-1",
+                "value" : 2.10,
+                "type" : "number"
+            },
+            "specific_heat_capacity" : {
+                "doc" : "ice specific heat capacity",
+                "units" : "J kg-1 K-1",
+                "value" : 2009.0,
+                "type" : "number"
+            }
+        }
+    },
+    "grid" : {
+        "doc" : "computational grid",
+        "lambda" : {
+            "doc" : "uneven vertical grid spacing parameter",
+            "units" : "FIXME",
+            "value" : 4.0,
+            "type" : "number"
+        },
+        "Mx" : {
+            "doc" : "Number of grid points in the x direction",
+            "units" : "count",
+            "value" : 61,
+            "type" : "integer"
+        },
+        "My" : {
+            "doc" : "Number of grid points in the y direction",
+            "units" : "count",
+            "value" : 61,
+            "type" : "integer"
+        },
+        "Mz" : {
+            "doc" : "Number of grid points in the vertical direction (in the ice)",
+            "units" : "count",
+            "value" : 31,
+            "type" : "integer"
+        },
+        "Mbz" : {
+            "doc" : "Number of grid points in the vertical direction (in the bedrock thermal layer)",
+            "units" : "count",
+            "value" : 1,
+            "type" : "integer"
+        },
+        "Lbz" : {
+            "doc" : "thickness of the bedrock thermal layer",
+            "units" : "m",
+            "value" : 0,
+            "type" : "integer"
+        },
+        "Lx" : {
+            "doc" : "half-width of the computational domain in the x direction",
+            "units" : "m",
+            "value" : 1500e3,
+            "type" : "number"
+        },
+        "Ly" : {
+            "doc" : "half-width of the computational domain in the y direction",
+            "units" : "m",
+            "value" : 1500e3,
+            "type" : "number"
+        },
+        "Lz" : {
+            "doc" : "height of the computational domain (i.e. maximum ice thickness)",
+            "units" : "m",
+            "value" : 4000.0,
+            "type" : "number"
+        },
+        "vertical_spacing" : {
+            "doc" : "vertical spacing type",
+            "value" : "quadratic",
+            "choices" : ["equal", "quadratic"],
+            "type" : "string"
+        },
+        "periodicity" : {
+            "doc" : "grid periodicity; affects the computation of the grid spacing",
+            "value" : "none",
+            "choices" : ["none", "x", "y", "xy"],
+            "type" : "string"
+        }
+    },
+    "flow_law" : {
+        "doc" : "flow laws and their parameters",
+        "Schoof_regularizing_velocity" : {
+            "doc" : "Regularizing velocity (Schoof definition) in the effective viscosity computation",
+            "units" : "m/year",
+            "value" : 1.0,
+            "type" : "number"
+        },
+        "Schoof_regularizing_length" : {
+            "doc" : "Regularizing length (Schoof definition) in the effective viscosity computation",
+            "units" : "km",
+            "value" : 1000.0,
+            "type" : "number"
+        },
+        "gpbld" : {
+            "doc" : "Glen-Paterson-Budd-Lliboutry-Duval flow law",
+            "water_fraction_observed_limit" : {
+                "doc" : "maximum value of liquid water fraction omega for which softness values are parameterized by [\\ref LliboutryDuval1985]; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare [\\ref AschwandenBuelerKhroulevBlatter]",
+                "units" : "m",
+                "value" : 0.01,
+                "type" : "number"
+            },
+            "water_fraction_coefficient" : {
+                "doc" : "coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref GreveBlatter2009, \\ref LliboutryDuval1985]",
+                "units" : "1",
+                "value" : 181.25,
+                "type" : "number"
+            }
+        },
+        "pb" : {
+            "doc" : "Paterson-Budd flow law",
+            "reference" : "PatersonBudd",
+            "critical_temperature" : {
+                "doc" : "critical temperature",
+                "units" : "Kelvin",
+                "value" : 263.15,
+                "type" : "number"
+            },
+            "Q_warm" : {
+                "doc" : "Q_warm",
+                "units" : "J / mol",
+                "value" : 13.9e4,
+                "type" : "number"
+            },
+            "Q_cold" : {
+                "doc" : "Q_cold",
+                "units" : "J / mol",
+                "value" : 6.0e4,
+                "type" : "number"
+            },
+            "A_warm" : {
+                "doc" : "A_warm",
+                "units" : "Pa-3 / s",
+                "value" : 1.73e3,
+                "type" : "number"
+            },
+            "A_cold" : {
+                "doc" : "A_cold",
+                "units" : "Pa-3 / s",
+                "value" : 3.61e-13,
+                "type" : "number"
+            }
+        },
+        "hooke" : {
+            "doc" : "Hooke flow law",
+            "reference" : "Hooke",
+            "Q" : {
+                "doc" : "Activation energy",
+                "units" : "J / mol",
+                "value" : 7.88e4,
+                "type" : "number"
+            },
+            "k" : {
+                "doc" : "exponent",
+                "value" : 1.17,
+                "units" : "FIXME",
+                "type" : "number"
+            },
+            "C" : {
+                "doc" : "has units of Kelvin^k",
+                "value" : 0.16612,
+                "units" : "FIXME",
+                "type" : "number"
+            },
+            "Tr" : {
+                "doc" : "FIXME",
+                "units" : "Kelvin",
+                "value" : 273.39,
+                "type" : "number"
+            },
+            "A" : {
+                "doc" : "A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa",
+                "units" : "s-1 Pa-3",
+                "value" : 4.42165e-9,
+                "type" : "number"
+            }
+        },
+        "isothermal_glen" : {
+            "doc" : "isothermal Glen ice flow law",
+            "exponent" : {
+                "comment" : "FIXME: I'm not sure this belongs here",
+                "doc" : "Glen flow law exponent",
+                "value" : 3.0,
+                "units" : "FIXME",
+                "type" : "number"
+            },
+            "softness" : {
+                "doc" : "typical ice softness",
+                "units" : "Pa-3 s-1",
+                "value" : 4e-25,
+                "type" : "number"
+            }
+        },
+        "gk" : {
+            "doc" : "Goldsby-Kohlstedt flow law",
+            "ice_grain_size" : {
+                "doc" : "Default constant ice grain size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law",
+                "units" : "mm",
+                "value" : 1.0,
+                "type" : "number"
+            },
+            "compute_grain_size_using_age" : {
+                "doc" : "Use age of the ice to compute grain size",
+                "value" : false,
+                "type" : "boolean"
+            }
+        }
+    },
+    "yield_stress" : {
+        "doc" : "yield stress model",
+        "model" : {
+            "value" : "purely_plastic",
+            "doc" : "Selects a basal till model",
+            "choices" : ["purely_plastic", "pseudo_plastic"],
+            "type" : "string"
+        },
+        "pseudo_plastic" : {
+            "doc" : "The pseudo-plastic till model.",
+            "uthreshold" : {
+                "doc" : "threshold velocity",
+                "units" : "m/year",
+                "value" : 100.0,
+                "type" : "number"
+            },
+            "q" : {
+                "doc" : "The exponent of the pseudo-plastic basal resistance model",
+                "value" : 0.25,
+                "units" : "FIXME",
+                "type" : "number"
+            }
+        },
+        "plastic_regularization" : {
+            "doc" : "this is the second \\f$\\epsilon\\f$ in formula (4.1) in [\\ref SchoofStream]",
+            "units" : "Set the value of \\f$\\epsilon\\f$ regularization of plastic till",
+            "value" : 0.01,
+            "type" : "number"
+        },
+        "mohr-coulomb" : {
+            "doc" : "Mohr-Coulomb criterion parameters",
+            "till_c_0" : {
+                "doc" : "cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'",
+                "units" : "kPa",
+                "value" : 0.0,
+                "type" : "number"
+            },
+            "default_till_phi" : {
+                "doc" : "fill value for till friction angle",
+                "units" : "degrees",
+                "value" : 30.0,
+                "type" : "number"
+            }
+        },
+        "high_tauc" : {
+            "doc" : "the 'high' yield stress value used in two cases: 1) (default): in grounded ice-free areas and 2) in \\b all grounded areas if -ssa_floating_only is set.",
+            "units" : "Pa",
+            "value" : 1e6,
+            "type" : "number"
+        },
+        "default_tauc" : {
+            "doc" : "fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default",
+            "units" : "Pa",
+            "value" : 2e5,
+            "type" : "number"
+        }
+    },
+    "stress_balance" : {
+        "doc" : "Stress balance models",
+        "model" : {
+            "doc" : "Selected stress balance model",
+            "value" : "sia",
+            "choices" : ["none", "sia", "ssa", "ssa+sia", "prescribed_sliding", "prescribed_sliding+sia"],
+            "comment" : "add sia_sliding, sia_sliding+sia, blatter",
+            "type" : "string"
+        },
+        "sia_sliding" : {
+            "doc" : "SIA sliding mechanism (not recommended)",
+            "minimum_temperature" : {
+                "doc" : "This is less than water melting point temperature. If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.",
+                "units" : "K",
+                "value" : 273.0,
+                "type" : "number"
+            },
+            "mu_sliding" : {
+                "doc" : "The sliding law parameter in SIA sliding paradigm. *This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.*  See Appendix B of [\\ref BBssasliding] for the dangers in this mechanism.",
+                "value" : 0.0,
+                "units" : "FIXME",
+                "type" : "number"
+            },
+            "test_E_mode" : {
+                "doc" : "Sliding parameters for the verification test E",
+                "value" : false,
+                "type" : "boolean"
+            }
+        },
+
+        "ssa" : {
+            "doc" : "SSA (shallow shelf) stress balance approximation",
+            "strength_extension" : {
+                "doc" : "strength extension used to preserve the ellipticity of the SSA system",
+                "constant_nuH" : {
+                    "doc" : "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [\\ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa yr in [\\ref Ritzetal2001].",
+                    "units" : "Pa s",
+                    "value" : 9.48680701906572e+14,
+                    "type" : "number"
+                },
+                "min_thickness" : {
+                    "doc" : "The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  At ice thicknesses below this value the product nu*H switches from the normal vertical integral to a constant value.  The geometry itself is not affected by this value.",
+                    "units" : "m",
+                    "value" : 50.0,
+                    "type" : "number"
+                }
+            },
+            "nuH_regularization" : {
+                "doc" : "Initial amount of regularization in computation of product of effective viscosity and thickness (nu * H).  This default value for nu * H comes e.g. from a hardness for the Ross ice shelf (bar B) = 1.9e8 Pa s^(1/3) [\\ref MacAyealetal] and a typical strain rate of 0.001 year-1 for the Ross ice shelf, giving nu = (bar B) / (2 * 0.001^(2/3)) = 9.49e+14 Pa s ~~ 30 MPa yr, the value in [\\ref Ritzetal2001], but with a tiny thickness H of about 1 cm.",
+                "units" : "Pa s m",
+                "value" : 1.0e13,
+                "type" : "number"
+            },
+            "enhancement_factor" : {
+                "doc" : "Flow enhancement factor for SSA",
+                "value" : 1.0,
+                "units" : "1",
+                "type" : "number"
+            },
+            "flow_law" : {
+                "doc" : "The flow law used by the SSA stress balance model.",
+                "choices" : ["pb", "isothermal_glen", "gpbld", "hooke", "arr", "arrwarm"],
+                "value" : "gpbld",
+                "type" : "string"
+            },
+            "method" : {
+                "doc" : "Algorithm for computing the SSA solution.",
+                "value" : "fd",
+                "choices" : ["fd", "fem"],
+                "type" : "string"
+            },
+
+            "use_when_grounded" : {
+                "doc" : "use SSA as a sliding law for grounded ice",
+                "reference" : "BBssasliding",
+                "value" : false,
+                "type" : "boolean"
+            },
+
+            "fd" : {
+                "doc" : "Finite-difference SSA solver",
+                "brutal_scaling" : {
+                    "doc" : "Enhance sliding speed brutally.",
+                    "enabled" : {
+                        "doc" : "Use brutal sliding speed enhancement",
+                        "value" : false,
+                        "type" : "boolean"
+                    },
+                    "factor" : {
+                        "doc" : "Brutal SSA Sliding Scale",
+                        "value" : 1.0,
+                        "units" : "1",
+                        "type" : "number"
+                    }
+                },
+                "max_iterations" : {
+                    "doc" : "Maximum number of iterations for the ice viscosity computation, in the SSAFD object",
+                    "value" : 300,
+                    "units" : "count",
+                    "type" : "integer"
+                },
+                "relative_convergence" : {
+                    "doc" : "Relative change tolerance for the effective viscosity in the SSAFD object",
+                    "value" : 1.0e-4,
+                    "units" : "1",
+                    "type" : "number"
+                },
+                "calving_front_stress_boundary_condition" : {
+                    "doc" : "Apply CFBC condition as in [\\ref Albrechtetal2011, \\ref Winkelmannetal2011].  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in [\\ref BBssasliding].",
+                    "value" : false,
+                    "type" : "boolean"
+                },
+                "write_system_to_matlab" : {
+                    "doc" : "write the SSAFD system to a MATLAB file",
+                    "value" : false,
+                    "type" : "boolean"
+                },
+                "use_constant_nuH" : {
+                    "doc" : "Compute velocities in ice shelves and streams with a constant value for the product of viscosity \\f$\\nu\\f$ and thickness \\f$H\\f$, obtained from the shelf extension",
+                    "value" : false,
+                    "type" : "boolean"
+                },
+                "dirichlet_bc" : {
+                    "doc" : "apply SSA velocity Dirichlet boundary condition",
+                    "value" : false,
+                    "type" : "boolean"
+                }
+            },
+
+            "fem" : {
+                "doc" : "Finite-element SSA solver",
+                "comment" : "FIXME"
+            }
+        },
+
+        "blatter" : {
+            "doc" : "Blatter-Pattyn stress balance model",
+            "Mz" : {
+                "doc" : "number of vertical levels to use in the Blatter model",
+                "units" : "count",
+                "value" : 5,
+                "type" : "integer"
+            },
+            "enhancement_factor" : {
+                "doc" : "Flow enhancement factor for the Blatter stress balance flow law",
+                "value" : 1.0,
+                "units" : "1",
+                "type" : "number"
+            },
+            "flow_law" : {
+                "doc" : "The flow law used by the Blatter-Pattyn stress balance model.",
+                "choices" : ["pb", "isothermal_glen", "gpbld", "hooke", "arr", "arrwarm"],
+                "value" : "gpbld",
+                "type" : "string"
+            }
+        },
+        "sia" : {
+            "doc" : "SIA (shallow ice) stress balance approximation",
+            "bed_smoother" : {
+                "doc" : "bed smoother (for the bed roughness parameterization)",
+                "range" : {
+                    "doc" : "half-width of smoothing domain for PISMBedSmoother, in implementing [\\ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism",
+                    "units" : "m",
+                    "value" : 5.0e3,
+                    "type" : "number"
+                }
+            },
+            "enhancement_factor" : {
+                "doc" : "Flow enhancement factor for SIA",
+                "value" : 1.0,
+                "units" : "FIXME",
+                "type" : "number"
+            },
+            "e_age_coupling" : {
+                "doc" : "Couple the SIA enhancement factor to age as in [\\ref Greve].",
+                "value" : false,
+                "type" : "boolean"
+            },
+            "flow_law" : {
+                "doc" : "The flow law used by the SIA stress balance model (modifier).",
+                "choices" : ["pb", "isothermal_glen", "gpbld", "hooke", "arr", "arrwarm", "gk"],
+                "value" : "gpbld",
+                "type" : "string"
+            }
+        }
+    },
+    "bed_deformation" : {
+        "doc" : "bed deformation model",
+        "reference" : "LingleClark",
+        "model" : {
+            "doc" : "selected bed deformation model",
+            "value" : "none",
+            "choices" : ["none", "iso", "lc"],
+            "type" : "string"
+        },
+        "update_interval" : {
+            "doc" : "Interval between bed deformation updates",
+            "units" : "years",
+            "value" : 10.0,
+            "type" : "number"
+        },
+        "mantle_viscosity" : {
+            "doc" : "half-space (mantle) viscosity used by the bed deformation model. See [\\ref LingleClark, \\ref BLKfastearth]",
+            "units" : "Pa s",
+            "value" : 1.0e21,
+            "type" : "number"
+        },
+        "lithosphere_flexural_rigidity" : {
+            "doc" : "lithosphere flexural rigidity used by the bed deformation model. See [\\ref LingleClark, \\ref BLKfastearth]",
+            "units" : "N m",
+            "value" : 5.0e24,
+            "type" : "number"
+        },
+        "lithosphere_density" : {
+            "doc" : "lithosphere density used by the bed deformation model. See [\\ref LingleClark, \\ref BLKfastearth]",
+            "units" : "kg m-3",
+            "value" : 3300.0,
+            "type" : "number"
+        }
+    },
+    "calving" : {
+        "doc" : "Calving models and their parameters",
+        "method" : {
+            "doc" : "Selected calving method",
+            "comment" : "FIXME: allow selecting several methods",
+            "choices" : ["none", "eigen_calving", "thickness", "ocean_kill", "floating_ice_killed"],
+            "value" : "none",
+            "type" : "string"
+        },
+        "eigen_calving" : {
+            "doc" : "Eigen-calving model",
+            "reference" : "FIXME AlbrechtLevermann-year",
+            "K" : {
+                "doc" : "Proportionality constant to determine calving rate from strain rates.  Note references [\ref Levermannetal2012, \ref Martinetal2011] use K in range 10^9 to 3 x 10^11 m a, that is, 3 x 10^16 to 10^19 m s",
+                "value" : 0.0,
+                "units" : "m s",
+                "type" : "number"
+            },
+            "CFL" : {
+                "doc" : "apply CFL criterion for eigen-calving rate front retreat",
+                "value" : false,
+                "type" : "boolean"
+            }
+        },
+        "thickness" : {
+            "doc" : "ad hoc calving at certain threshold for terminal ice thickness",
+            "threshold" : {
+                "doc" : "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off",
+                "units" : "m",
+                "value" : 50.0,
+                "type" : "number"
+            }
+        },
+        "ocean_kill" : {
+            "value" : false,
+            "doc" : "If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.",
+            "type" : "boolean"
+        },
+        "floating_ice_killed" : {
+            "doc" : "If ice is (or becomes) floating then it is set to thickness zero. This is calving at the grounding line.",
+            "value" : false,
+            "type" : "boolean"
+        }
+    },
+    "basal_drag" : {
+        "doc" : "basal drag parameterization",
+        "till" : {
+            "doc" : "till model parameters",
+            "mohr-coulomb" : {
+                "doc" : "FIXME"
+            },
+            "phi" : {
+                "doc" : "default till friction angle",
+                "units" : "degrees",
+                "value" : 30.0,
+                "type" : "number"
+            },
+            "c_0" : {
+                "doc" : "till cohesion",
+                "units" : "FIXME",
+                "value" : 0.0,
+                "type" : "number"
+            }
+        }
+    },
+    "hydrology" : {
+        "doc" : "subglacial hydrology models and parameters",
+        "null_strip_width" : {
+            "doc" : "if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by PISMRoutingHydrology and PISMDistributedHydrology",
+            "units" : "m",
+            "value" : -1.0,
+            "type" : "number"
+        },
+        "maximum_time_step" : {
+            "doc" : "maximum allowed time step length used by PISMRoutingHydrology and PISMDistributedHydrology",
+            "units" : "years",
+            "value" : 1.0,
+            "type" : "number"
+        },
+        "regularizing_porosity" : {
+            "doc" : "phi_0 in notes; added to hydrology_englacial_porosity in pressure equation time derivative term",
+            "units" : "[pure]",
+            "value" : 0.01,
+            "type" : "number"
+        },
+        "englacial_porosity" : {
+            "doc" : "phi in notes; macroporosity of englacial system, following [\\ref Bartholomausetal2011]",
+            "units" : "[pure]",
+            "value" : 0.001,
+            "type" : "number"
+        },
+        "lower_bound_creep_regularization" : {
+            "doc" : "Y_0 in notes; creep closure term in evolution of layer thickness remains positive (active) even at zero water if this is positive; in PISMDistributedHydrology",
+            "units" : "m",
+            "value" : 0.001,
+            "type" : "number"
+        },
+        "creep_closure_coefficient" : {
+            "doc" : "c_2 in notes; coefficient of creep closure term in evolution of layer thickness in PISMDistributedHydrology",
+            "units" : "[pure]",
+            "value" : 0.04,
+            "type" : "number"
+        },
+        "cavitation_opening_coefficient" : {
+            "doc" : "c_1 in notes; coefficient of cavitation opening term in evolution of layer thickness in PISMDistributedHydrology",
+            "units" : "m-1",
+            "value" : 0.5,
+            "type" : "number"
+        },
+        "roughness_scale" : {
+            "doc" : "W_r in notes; roughness scale determining maximum amount of cavitation opening in PISMDistributedHydrology",
+            "units" : "m",
+            "value" : 1.0,
+            "type" : "number"
+        },
+        "potential_gradient_power_in_flux" : {
+            "doc" : "= beta in notes; power beta in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology",
+            "units" : "",
+            "value" : 2.0,
+            "type" : "number"
+        },
+        "thickness_power_in_flux" : {
+            "doc" : "= alpha in notes; power alpha in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology",
+            "units" : "",
+            "value" : 1.0,
+            "type" : "number"
+        },
+        "hydraulic_conductivity" : {
+            "doc" : "= k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology_thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by PISMRoutingHydrology and PISMDistributedHydrology",
+            "units" : "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}",
+            "value" : 1.0e-2,
+            "type" : "number"
+        },
+        "bwat_diffusion_time" : {
+            "doc" : "diffusion time for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology",
+            "units" : "years",
+            "value" : 1000.0,
+            "type" : "number"
+        },
+        "bwat_diffusion_distance" : {
+            "doc" : "diffusion distance for melt water thickness; only used by hydrology model 'diffuseonly'=PISMDiffuseOnlyHydrology",
+            "units" : "m",
+            "value" : 2e4,
+            "type" : "number"
+        },
+        "bwat_decay_rate" : {
+            "doc" : "= 1 m per 1000 years; rate at which bwat is reduced to zero, in absence of other effects like basal melt rate and/or diffusion; used by PISMTillCanHydrology and derived models; not used by some hydrology models",
+            "units" : "m s-1",
+            "value" : 3.16887646154128e-11,
+            "type" : "number"
+        },
+        "bwat_max" : {
+            "doc" : "maximum thickness of the basal melt water layer; used by PISMTillCanHydrology and derived models; not used by some hydrology models",
+            "units" : "m",
+            "value" : 2.0,
+            "type" : "number"
+        },
+        "pressure_fraction" : {
+            "doc" : "water pressure is this fraction of overburden in PISMTillCanHydrology and derived models; water pressure is scaled by this fraction in PISMRoutingHydrology",
+            "units" : "pure number",
+            "value" : 0.95,
+            "type" : "number"
+        },
+        "const_bmelt" : {
+            "doc" : "= 1 cm per year of melt; only used if hydrology_use_const_bmelt = 'yes'",
+            "units" : "m s-1",
+            "value" : 3.168876461e-10,
+            "type" : "number"
+        },
+        "use_const_bmelt" : {
+            "doc" : "if 'yes', subglacial hydrology model sees basal melt rate which is constant and given by hydrology_const_bmelt",
+            "value" : false,
+            "type" : "boolean"
+        },
+        "model" : {
+            "doc" : "Choose the hydrology sub-model from 'tillcan', 'diffuseonly', 'routing', 'distributed'.  These models determine the evolution of the subglacial water layer thickness (bwat) and pressure (bwp).  Normally bwat affects the basal values of the internal energy (enthalpy or temperature) field, and bwat, bwp determine the strength of the subglacial layer (the basal shearstress).  The 'tillcan' model (default) does not move water laterally; roughly it is the undrained plastic till model of [\\ref Tulaczyketal2000b].  The 'diffuseonly' model is documented in [\\ref BBssasliding]; see equation (11).  Neither 'tillcan' nor 'diffuseonly' are mass-conserving.  The 'routing' model is a mass-conserving, minimal distributed subglacial hydrology model that directs water along the steepest descent route of the hydraulic potential, and where the pressure is a fixed fraction of overburden; this model is suitable for identifying locations of subglacial lakes.  The 'distributed' model is a mass-conserving, distributed subglacial hydrology model that models the physical opening and closing of linked cavities on an area averaged basis; pressure evolves nontrivially.  The 'routing' and 'distributed' models may make PISM run pretty slowly because of the fast time-scale for liquid water movement.",
+            "value" : "tillcan",
+            "type" : "string",
+            "choices" : ["tillcan", "FIXME"]
+        }
+    },
+
+    "climate" : {
+        "doc" : "climate models and couplers",
+        "surface" : {
+            "doc" : "Surface layer models",
+            "pdd" : {
+                "doc" : "Positive degree day model",
+                "interpret_precip_as_snow" : {
+                    "value" : false,
+                    "doc" : "Interpret all precipitation as snowfall",
+                    "type" : "boolean"
+                },
+                "air_temp_all_precip_as_rain" : {
+                    "doc" : "threshold temperature above which all precipitation is rain; must exceed air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator",
+                    "units" : "Kelvin",
+                    "value" : 275.15,
+                    "type" : "number"
+                },
+                "air_temp_all_precip_as_snow" : {
+                    "doc" : "threshold temperature below which all precipitation is snow",
+                    "units" : "Kelvin",
+                    "value" : 273.15,
+                    "type" : "number"
+                },
+                "refreeze_ice_melt" : {
+                    "doc" : "If set, refreeze pdd_refreeze fraction of melted ice, otherwise all of the melted ice runs off.",
+                    "value" : true,
+                    "type" : "boolean"
+                },
+                "balance_year_start_day" : {
+                    "doc" : "day of year for October 1st, beginning of the balance year in northern latitudes.",
+                    "units" : "day",
+                    "value" : 274,
+                    "type" : "integer"
+                },
+                "fausto_T_c" : {
+                    "doc" : "= -1 + 273.15; for formula (6) in [\\ref Faustoetal2009] ",
+                    "units" : "Kelvin",
+                    "value" : 272.15,
+                    "type" : "number"
+                },
+                "fausto_T_w" : {
+                    "doc" : "= 10 + 273.15; for formula (6) in [\\ref Faustoetal2009] ",
+                    "units" : "Kelvin",
+                    "value" : 283.15,
+                    "type" : "number"
+                },
+                "fausto_beta_snow_c" : {
+                    "doc" : "water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ",
+                    "units" : "m day-1 K-1",
+                    "value" : 0.003,
+                    "type" : "number"
+                },
+                "fausto_beta_ice_c" : {
+                    "doc" : "water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ",
+                    "units" : "m day-1 K-1",
+                    "value" : 0.015,
+                    "type" : "number"
+                },
+                "fausto_beta_snow_w" : {
+                    "doc" : "water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ",
+                    "units" : "m day-1 K-1",
+                    "value" : 0.003,
+                    "type" : "number"
+                },
+                "fausto_beta_ice_w" : {
+                    "doc" : "water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ",
+                    "units" : "m day-1 K-1",
+                    "value" : 0.007,
+                    "type" : "number"
+                },
+                "fausto_latitude_beta_w" : {
+                    "doc" : "latitude below which to use warm case, in formula (6) in [\\ref Faustoetal2009] ",
+                    "units" : "degrees N",
+                    "value" : 72.0,
+                    "type" : "number"
+                },
+                "std_dev_lapse_lat_rate" : {
+                    "doc" : "std_dev is a function of latitude, with rate of change with respect to latitude given by this constant ",
+                    "units" : "K degrees_north-1",
+                    "value" : 0.0,
+                    "type" : "number"
+                },
+                "std_dev_lapse_lat_base" : {
+                    "doc" : "std_dev is a function of latitude, with value pdd_std_dev at this latitude; this value only active if pdd_std_dev_lapse_lat_rate is nonzero ",
+                    "units" : "degrees_north",
+                    "value" : 72.0,
+                    "type" : "number"
+                },
+                "std_dev" : {
+                    "doc" : "std dev of daily temp variation; = EISMINT-Greenland value [\\ref RitzEISMINT] ",
+                    "units" : "K",
+                    "value" : 5.0,
+                    "type" : "number"
+                },
+                "refreeze" : {
+                    "doc" : "EISMINT-Greenland value [\\ref RitzEISMINT] ",
+                    "units" : "pure fraction",
+                    "value" : 0.6,
+                    "type" : "number"
+                },
+                "factor_ice" : {
+                    "doc" : "EISMINT-Greenland value [\\ref RitzEISMINT] ; = (8 mm liquid-water-equivalent) / (pos degree day)",
+                    "units" : "m K-1 day-1",
+                    "value" : 0.00879120879120879,
+                    "type" : "number"
+                },
+                "factor_snow" : {
+                    "doc" : "EISMINT-Greenland value [\\ref RitzEISMINT] ; = (3 mm liquid-water-equivalent) / (pos degree day)",
+                    "units" : "m K-1 day-1",
+                    "value" : 0.0032967032967033,
+                    "type" : "number"
+                },
+                "positive_threshold_temp" : {
+                    "doc" : "temperature used to determine meaning of 'positive' degree day",
+                    "units" : "K",
+                    "value" : 273.15,
+                    "type" : "number"
+                },
+                "max_evals_per_year" : {
+                    "doc" : "maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also pdd_std_dev",
+                    "units" : "count",
+                    "value" : 52,
+                    "type" : "integer"
+                }
+            }
+        },
+        "atmosphere" : {
+            "doc" : "atmosphere models",
+            "yearly_cycle_july_day" : {
+                "doc" : "day of year for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ",
+                "units" : "day",
+                "value" : 196,
+                "type" : "integer"
+            },
+            "paleo_precip_correction" : {
+                "doc" : "Paleo-precipication correction",
+                "precip_exponential_factor_for_temperature" : {
+                    "doc" : "= 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ",
+                    "units" : "Kelvin-1",
+                    "value" : 0.07041666667,
+                    "type" : "number"
+                }
+            },
+            "searise_greenland" : {
+                "doc" : "SeaRISE-Greenland atmosphere model",
+                "fausto" : {
+                    "doc" : "Near-surface air temperature parameterization after Fausto et al",
+                    "reference" : "FIXME Fausto",
+                    "kappa_mj" : {
+                        "doc" : "longitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ",
+                        "units" : "Kelvin (degW)-1",
+                        "value" : 0.0518,
+                        "type" : "number"
+                    },
+                    "c_mj" : {
+                        "doc" : "latitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ",
+                        "units" : "Kelvin (degN)-1",
+                        "value" : -0.1585,
+                        "type" : "number"
+                    },
+                    "gamma_mj" : {
+                        "doc" : "= -5.426 / 1km; mean slope lapse rate for formula (2) in [\\ref Faustoetal2009] ",
+                        "units" : "Kelvin m-1",
+                        "value" : -0.005426,
+                        "type" : "number"
+                    },
+                    "d_mj" : {
+                        "doc" : "= 14.70+273.15; base temperature for formula (2) in [\\ref Faustoetal2009] ",
+                        "units" : "Kelvin",
+                        "value" : 287.85,
+                        "type" : "number"
+                    },
+                    "kappa_ma" : {
+                        "doc" : "longitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ",
+                        "units" : "Kelvin (degW)-1",
+                        "value" : 0.0672,
+                        "type" : "number"
+                    },
+                    "c_ma" : {
+                        "doc" : "latitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ",
+                        "units" : "Kelvin (degN)-1",
+                        "value" : -0.7189,
+                        "type" : "number"
+                    },
+                    "gamma_ma" : {
+                        "doc" : "= -6.309 / 1km; mean slope lapse rate for formula (1) in [\\ref Faustoetal2009] ",
+                        "units" : "Kelvin m-1",
+                        "value" : -0.006309,
+                        "type" : "number"
+                    },
+                    "d_ma" : {
+                        "doc" : "= 41.83+273.15; base temperature for formula (1) in [\\ref Faustoetal2009] ",
+                        "units" : "K",
+                        "value" : 314.98,
+                        "type" : "number"
+                    }
+                }
+            }
+        },
+        "buffer_size" : {
+            "value" : 60,
+            "units" : "count",
+            "doc" : "number of 2D climate forcing records to keep in memory; = 5 years of monthly records",
+            "type" : "integer"
+        },
+        "evaluations_per_year" : {
+            "value" : 52,
+            "units" : "count",
+            "doc" : "length of the time-series used to compute temporal averages of forcing data (such as mean annual temperature)",
+            "type" : "number"
+        },
+        "ocean" : {
+            "doc" : "ocean models",
+            "ocean_sub_shelf_heat_flux_into_ice" : {
+                "doc" : "= J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/PISMOcean.cc",
+                "units" : "W m-2",
+                "value" : 0.5,
+                "type" : "number"
+            }
+        }
+    },
+    "energy" : {
+        "doc" : "Energy conservation model",
+        "model" : {
+            "doc" : "The energy balance model choice",
+            "value" : "enthalpy",
+            "type" : "string",
+            "choices" : ["none", "enthalpy", "cold"]
+        },
+        "max_low_temp_count" : {
+            "doc" : "Maximum number of grid points with ice temperature below global_min_allowed_temp.",
+            "value" : 10,
+            "units" : "count",
+            "type" : "integer"
+        },
+        "global_min_allowed_temp" : {
+            "doc" : "Minimum allowed ice temperature",
+            "units" : "Kelvin",
+            "value" : 200.0,
+            "type" : "number"
+        },
+        "linear_in_temperature_heat_capacity" : {
+            "doc" : "If yes, use varcEnthalpyConverter class to convert (internally) temperature to/from enthalpy.  It is based on equation (4.39) in [\\ref GreveBlatter2009].  Otherwise use default class EnthalpyConverter which has temperature-independent (i.e. constant) specific heat capacity, set by constant ice_specific_heat_capacity.",
+            "value" : false,
+            "type" : "boolean"
+        },
+        "temperature_dependent_thermal_conductivity" : {
+            "doc" : "If yes, use varkenthSystemCtx class in the energy step. It is base on formula (4.37) in [\\ref GreveBlatter2009]. Otherwise use enthSystemCtx, which has temperature-independent thermal conductivity set by constant ice_thermal_conductivity.",
+            "value" : false,
+            "type" : "boolean"
+        },
+        "cold_mode" : {
+            "doc" : "Cold-mode energy conservation model.",
+            "temperate_ice_tolerance" : {
+                "doc" : "tolerance to use when deciding if ice is temperate",
+                "units" : "Kelvin",
+                "value" : 0.001,
+                "type" : "number"
+            }
+        },
+        "enthalpy" : {
+            "doc" : "enthalpy-based energy conservation model",
+            "reference_temperature" : {
+                "doc" : "reference temperature in the definition of enthalpy",
+                "reference" : "AschwandenBuelerKhroulevBlatter",
+                "units" : "Kelvin",
+                "value" : 223.15,
+                "type" : "number"
+            },
+            "cold_bulge_max" : {
+                "doc" : "= (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value",
+                "units" : "J kg-1",
+                "value" : 60270.0,
+                "type" : "number"
+            },
+            "temperate_conductivity_ratio" : {
+                "doc" : "K in cold ice is multiplied by this fraction to give K0 in [\\ref AschwandenBuelerKhroulevBlatter]",
+                "units" : "1",
+                "value" : 0.1,
+                "type" : "number"
+            }
+        },
+        "bedrock_thermal_layer" : {
+            "doc" : "model of the bedrock thermal layer",
+            "reference" : "RitzEISMINT",
+            "specific_heat_capacity" : {
+                "doc" : "for bedrock used in thermal model",
+                "units" : "J kg-1 K-1",
+                "value" : 1000.0,
+                "type" : "number"
+            },
+            "thermal_conductivity" : {
+                "doc" : "for bedrock used in thermal model",
+                "units" : "W m-1 K-1",
+                "value" : 3.0,
+                "type" : "number"
+            },
+            "density" : {
+                "doc" : "density of the thermal bedrock layer",
+                "units" : "kg m-3",
+                "value" : 3300.0,
+                "type" : "number"
+            }
+        }
+    },
+    "drainage" : {
+        "doc" : "englacial grainage parameters",
+        "target_water_fraction" : {
+            "doc" : "liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [\\ref AschwandenBuelerKhroulevBlatter]",
+            "units" : "1",
+            "value" : 0.01,
+            "type" : "number"
+        },
+        "max_rate" : {
+            "doc" : "= 0.05 year-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [\\ref AschwandenBuelerKhroulevBlatter]",
+            "units" : "s-1",
+            "value" : 1.58443823077064e-09,
+            "type" : "number"
+        }
+    },
+    "bootstrapping" : {
+        "doc" : "parameters controlling bootstrapping heuristics",
+        "defaults" : {
+            "doc" : "values to use when the corresponding NetCDF variable is not found",
+            "ice_thickness" : {
+                "doc" : "ice thickness (land_ice_thickness)",
+                "units" : "m",
+                "value" : 0,
+                "type" : "number"
+            },
+            "bedrock_topography" : {
+                "doc" : "bedrock topography (bedrock_altitude)",
+                "units" : "m",
+                "value" : 0,
+                "type" : "number"
+            },
+            "tillphi" : {
+                "doc" : "till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip",
+                "units" : "degrees",
+                "value" : 15.0,
+                "type" : "number"
+            },
+            "bmelt" : {
+                "doc" : "basal melt rate value to use if variable bmelt is absent in bootstrapping file",
+                "units" : "m s-1",
+                "value" : 0.0,
+                "type" : "number"
+            },
+            "bwp" : {
+                "doc" : "basal water pressure value to use if variable bwp is absent in bootstrapping file; most hydrology models do not use this value because bwp is diagnostic",
+                "units" : "Pa",
+                "value" : 0.0,
+                "type" : "number"
+            },
+            "enwat" : {
+                "doc" : "effective englacial water thickness value to use if variable enwat is absent in bootstrapping file",
+                "units" : "m",
+                "value" : 0.0,
+                "type" : "number"
+            },
+            "bwat" : {
+                "doc" : "basal water thickness value to use if variable bwat is absent in bootstrapping file",
+                "units" : "m",
+                "value" : 0.0,
+                "type" : "number"
+            },
+            "uplift" : {
+                "doc" : "uplift value to use if dbdt variable is absent in bootstrapping file",
+                "units" : "m s-1",
+                "value" : 0.0,
+                "type" : "number"
+            },
+            "geothermal_flux" : {
+                "doc" : "geothermal flux value to use if bheatflx variable is absent in bootstrapping file",
+                "units" : "W m-2",
+                "value" : 0.042,
+                "type" : "number"
+            }
+        }
+    },
+    "mass_continuity_model" : {
+        "doc" : "Solve the mass continuity equation",
+        "value" : "default",
+        "choices" : ["none", "default"],
+        "type" : "string"
+    },
+    "output" : {
+        "doc" : "output and reporting parameters",
+        "medium" : {
+            "doc" : "list of variables to save with -o_size medium",
+            "value" : "acab bwp cbar cbase csurf cflx climatic_mass_balance diffusivity ice_surface_temp mask schoofs_theta tauc taud_mag thksmooth topgsmooth usurf wvelsurf temp_pa liqfrac enthalpy IcebergMask edot_1 edot_2",
+            "type" : "string"
+        },
+        "big" : {
+            "doc" : "list of variables to save with -o_size medium",
+            "value" : "acab age bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx climatic_mass_balance csurf dbdt diffusivity enthalpy enthalpybase enthalpysurf flux_divergence hardav ice_surface_temp lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf nuH",
+            "type" : "string"
+        },
+        "format" : {
+            "doc" : "output file format to use",
+            "value" : "netcdf3",
+            "choices" : ["netcdf3", "netcdf4_parallel", "pnetcdf"],
+            "type" : "string"
+        },
+        "variable_order" : {
+            "doc" : "storage order to use for spatial variables",
+            "value" : "xyz",
+            "choices" : ["xyz", "yxz", "zyx"],
+            "type" : "string"
+        },
+        "fill_value" : {
+            "value" : -2e9,
+            "units" : "none",
+            "doc" : "The value to use as a filler in ice-free areas.",
+            "type" : "number"
+        },
+        "correct_cell_areas" : {
+            "value" : true,
+            "doc" : "Use the WGS84 datum to compute cell areas. Used to report volumes and areas",
+            "type" : "boolean"
+        },
+        "extras" : {
+            "doc" : "2D and 3D time-series",
+            "force_output_times" : {
+                "value" : true,
+                "doc" : "Modify the time-stepping mechanism to hit times requested using -extra_times.",
+                "type" : "boolean"
+            }
+        },
+        "timeseries" : {
+            "doc" : "scalar time-series",
+            "force_output_times" : {
+                "value" : false,
+                "doc" : "Modify the time-stepping mechanism to hit times requested using -ts_times.",
+                "type" : "boolean"
+            },
+            "buffer_size" : {
+                "value" : 10000,
+                "units" : "count",
+                "doc" : "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.",
+                "type" : "integer"
+            }
+        },
+        "runtime" : {
+            "doc" : "options controlling run-time reporting",
+            "viewer_size" : {
+                "doc" : "run-time viewer size, in pixels",
+                "units" : "count",
+                "value" : 320,
+                "type" : "integer"
+            },
+            "summary_time_units" : {
+                "doc" : "time units to use in stdout reporting",
+                "value" : "year",
+                "choices" : ["year", "month", "day", "hour", "minute", "second"],
+                "type" : "string"
+            },
+            "log10_scaling_factor" : {
+                "doc" : "log10 std output scaling",
+                "area" : {
+                    "value" : 6,
+                    "units" : "FIXME",
+                    "doc" : "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout",
+                    "type" : "integer"
+                },
+                "volume" : {
+                    "value" : 6,
+                    "units" : "FIXME",
+                    "doc" : "an integer; log base 10 of scale factor to use for volume (in km^3) in summary line to stdout",
+                    "type" : "integer"
+                }
+            }
+        }
+    },
+    "time" : {
+        "doc" : "model time",
+        "run_length" : {
+            "doc" : "Default run length",
+            "units" : "years",
+            "value" : 1000,
+            "type" : "number"
+        },
+        "start_year" : {
+            "doc" : "Start year.",
+            "units" : "years",
+            "value" : 0,
+            "type" : "number"
+        },
+        "dimension_name" : {
+            "doc" : "name of the time NetCDF variable in input and output files",
+            "value" : "time",
+            "type" : "string"
+        },
+        "calendar" : {
+            "doc" : "Calendar to use",
+            "choices" : ["standard", "gregorian", "proleptic_gregorian",
+                         "noleap", "365_day", "360_day", "julian"],
+            "value" : "365_day",
+            "type" : "string"
+        },
+        "reference_date" : {
+            "doc" : "reference date to use in output PISM files",
+            "value" : "1-1-1",
+            "type" : "string"
+        }
+    },
+
+    "run_info" : {
+        "doc" : "information about the current run",
+        "title" : {
+            "doc" : "Run title",
+            "value" : "",
+            "type" : "string"
+        },
+        "institution" : {
+            "doc" : "Institution",
+            "value" : "",
+            "type" : "string"
+        }
+    },
+    "geometry" : {
+        "doc" : "Parameters related to geometric computations",
+        "part_redist" : {
+            "doc" : "for partially filled grid cell scheme, redistribute residuals Hresidual",
+            "value" : false,
+            "type" : "boolean"
+        },
+        "part_grid" : {
+            "doc" : "apply partially filled grid cell scheme",
+            "value" : false,
+            "type" : "boolean"
+        },
+        "kill_icebergs" : {
+            "doc" : "identify and kill detached ice-shelf areas",
+            "value" : false,
+            "type" : "boolean"
+        },
+        "surface_gradient_method" : {
+            "doc" : "surface gradient computation method used by the SIA stress balance model",
+            "value" : "haseloff",
+            "choices" : ["mahaffy", "eta", "haseloff"],
+            "type" : "string"
+        },
+        "mask" : {
+            "doc" : "parameters related to the cell type mask",
+            "dry_simulation" : {
+                "doc" : "If set the ice is always considered grounded",
+                "value" : false,
+                "type" : "boolean"
+            },
+            "floating_thickness_standard" : {
+                "value" : 1.0,
+                "units" : "m",
+                "doc" : "If flotation criterion is different by more than this amount then mask is set to MASK_ICE_FREE_OCEAN or MASK_FLOATING.",
+                "type" : "number"
+            },
+            "ice_free_thickness_standard" : {
+                "value" : 0.01,
+                "units" : "m",
+                "doc" : "If ice is thinner than this standard then the mask is set to MASK_ICE_FREE_BEDROCK or MASK_ICE_FREE_OCEAN.",
+                "type" : "number"
+            }
+        }
+    },
+    "backup" : {
+        "doc" : "Automatic backup parameters",
+        "interval" : {
+            "doc" : "time interval between automatic backups",
+            "value" : 1.0,
+            "units" : "hours",
+            "type" : "number"
+        }
+    },
+    "time_stepping" : {
+        "doc" : "time-stepping parameters",
+        "maximum_time_step" : {
+            "doc" : "Maximum allowed time step length",
+            "units" : "years",
+            "value" : 60.0,
+            "type" : "number"
+        },
+        "adaptive_timestepping_ratio" : {
+            "doc" : "Adaptive time stepping ratio for the explicit scheme for the mass balance equation; \\ref BBL, inequality (25)",
+            "units" : "1",
+            "value" : 0.12,
+            "type" : "number"
+        },
+        "skip" : {
+            "doc" : "Use the temperature, age, and SSA stress balance computation skipping mechanism.",
+            "enabled" : {
+                "doc" : "enable the time-step skipping mechanism",
+                "value" : false,
+                "type" : "boolean"
+            },
+            "max" : {
+                "doc" : "Number of mass-balance steps, including SIA diffusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done",
+                "value" : 10,
+                "units" : "count",
+                "type" : "integer"
+            }
+        },
+        "count" : {
+            "value" : false,
+            "doc" : "If enabled, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.",
+            "type" : "boolean"
+        }
+    },
+    "age" : {
+        "doc" : "Ice age model",
+        "model" : {
+            "doc" : "Selects an ice age model",
+            "choices" : ["none", "default"],
+            "value" : "none",
+            "type" : "string"
+        },
+        "initial_value" : {
+            "doc" : "Initial age of ice",
+            "units" : "years",
+            "value" : 0.0,
+            "type" : "number"
+        }
+    },
+    "ssa_inversion" : {
+        "doc" : "SSA inversion parameters",
+        "tikhonov" : {
+            "doc" : "Parameters for the Tikhonov minimization problem",
+            "penalty_weight" : {
+                "doc" : "penalty parameter for Tikhonov inversion",
+                "value" : 1,
+                "units" : "FIXME",
+                "type" : "number"
+            },
+            "ptol" : {
+                "doc" : "threshold for reaching desired misfit for adaptive Tikhonov algorithms",
+                "value" : 0.1,
+                "units" : "FIXME",
+                "type" : "number"
+            },
+            "rtol" : {
+                "doc" : "relative threshold for Tikhonov stopping criterion",
+                "value" : 5e-2,
+                "units" : "1",
+                "type" : "number"
+            },
+            "atol" : {
+                "doc" : "absolute threshold for Tikhonov stopping criterion",
+                "units" : "m/year",
+                "value" : 1e-10,
+                "type" : "number"
+            }
+        },
+        "target_misfit" : {
+            "doc" : "desired root misfit for SSA inversions",
+            "units" : "m/year",
+            "value" : 100,
+            "type" : "number"
+        },
+        "hardav_max" : {
+            "doc" : "Maximum allowed value of hardav for inversions with bound constraints",
+            "units" : "Pa s^(1/3)",
+            "value" : 1e10,
+            "type" : "number"
+        },
+        "hardav_min" : {
+            "doc" : "Minimum allowed value of hardav for inversions with bound constraints",
+            "units" : "Pa s^(1/3)",
+            "value" : 0,
+            "type" : "number"
+        },
+        "tauc_max" : {
+            "doc" : "Maximum allowed value of tauc for inversions with bound constraints",
+            "units" : "Pa",
+            "value" : 5e7,
+            "type" : "number"
+        },
+        "tauc_min" : {
+            "doc" : "Minimum allowed value of tauc for inversions with bound constraints",
+            "units" : "Pa",
+            "value" : 0,
+            "type" : "number"
+        },
+        "length_scale" : {
+            "doc" : "typical length scale for rescaling derivative norms",
+            "units" : "m",
+            "value" : 50e3,
+            "type" : "number"
+        },
+        "velocity_eps" : {
+            "doc" : "tiny size of ice velocities during inversion",
+            "units" : "m/year",
+            "value" : 0.1,
+            "type" : "number"
+        },
+        "velocity_scale" : {
+            "doc" : "typical size of ice velocities expected during inversion",
+            "units" : "m/year",
+            "value" : 100,
+            "type" : "number"
+        },
+        "log_ratio_scale" : {
+            "doc" : "Reference scale for log-ratio functionals",
+            "value" : 10,
+            "units" : "FIXME",
+            "type" : "number"
+        },
+        "tv_exponent" : {
+            "doc" : "Lebesgue exponent for pseudo-TV norm",
+            "value" : 1.2,
+            "units" : "FIXME",
+            "type" : "number"
+        },
+        "design_cH1" : {
+            "doc" : "weight of derivative part of an H1 norm for inversion design variables",
+            "value" : 0,
+            "units" : "FIXME",
+            "type" : "number"
+        },
+        "design_cL2" : {
+            "doc" : "weight of derivative-free part of an H1 norm for inversion design variables",
+            "value" : 1,
+            "units" : "FIXME",
+            "type" : "number"
+        },
+        "design_func" : {
+            "doc" : "functional used for inversion design variables",
+            "value" : "sobolevH1",
+            "type" : "string"
+        },
+        "state_func" : {
+            "doc" : "functional used for inversion design variables",
+            "value" : "meansquare",
+            "type" : "string"
+        },
+        "design_param" : {
+            "doc" : "Parameters of design variables used during inversion",
+            "design_param" : {
+                "doc" : "parameterization of design variables used during inversion",
+                "value" : "exp",
+                "type" : "string"
+            },
+            "trunc_hardav0" : {
+                "doc" : "transition point of change to linear behaviour for design variable parameterization type 'trunc'",
+                "units" : "Pa s^(1/3)",
+                "value" : 1e6,
+                "type" : "number"
+            },
+            "hardav_eps" : {
+                "doc" : "tiny hardav used as a substitute for 0 in some tauc parameterizations",
+                "units" : "Pa  s^(1/3)",
+                "value" : 1e4,
+                "type" : "number"
+            },
+            "hardav_scale" : {
+                "doc" : "typical size of ice hardness",
+                "units" : "Pa s^(1/3)",
+                "value" : 1e8,
+                "type" : "number"
+            },
+            "trunc_tauc0" : {
+                "doc" : "transition point of change to linear behaviour for design variable parameterization type 'trunc'",
+                "units" : "Pa",
+                "value" : 1000,
+                "type" : "number"
+            },
+            "tauc_eps" : {
+                "doc" : "tiny yield stress used as a substitute for 0 in some tauc parameterizations",
+                "units" : "Pa",
+                "value" : 100,
+                "type" : "number"
+            },
+            "tauc_scale" : {
+                "doc" : "typical size of yield stresses",
+                "units" : "Pa",
+                "value" : 100000,
+                "type" : "number"
+            }
+        },
+        "method" : {
+            "doc" : "algorithm to use for SSA inversions",
+            "value" : "tikhonov_lmvm",
+            "type" : "string"
+        }
+    }
+}
