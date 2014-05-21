@@ -20,7 +20,8 @@
 #include "PISMTime.hh"
 #include "pism_options.hh"
 #include <sstream>
-#include <assert.h>
+#include <cassert>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -46,14 +47,12 @@ Time::Time(MPI_Comm c,
            const std::string &calendar_string,
            const UnitSystem &unit_system)
   : m_com(c), m_config(conf), m_unit_system(unit_system),
-    m_time_units(m_unit_system) {
+    m_time_units(m_unit_system, "seconds") {
 
   init_calendar(calendar_string);
 
   m_run_start = years_to_seconds(m_config.get("start_year"));
   m_run_end   = increment_date(m_run_start, (int)m_config.get("run_length_years"));
-
-  m_time_units.parse("seconds");
 
   m_time_in_seconds = m_run_start;
 }
@@ -362,50 +361,42 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
     return 0;
   }
 
-  Unit tmp(m_time_units.get_system()),
-    seconds(m_time_units.get_system()),
-    one(m_time_units.get_system());
+  Unit seconds(m_time_units.get_system(), "seconds"),
+    one(m_time_units.get_system(), "1"),
+    tmp = one;
 
-  int errcode;
-  errcode = seconds.parse("seconds");
-  assert(errcode == 0);
-  errcode = one.parse("1");
-  assert(errcode == 0);
-
-  // check if the interval spec is a valid unit spec:
-  if (tmp.parse(spec) != 0) {
-    PetscPrintf(m_com, "PISM ERROR: invalid interval length: '%s'\n",
-                spec.c_str());
-    return 1;
+  try {
+    tmp = Unit(m_time_units.get_system(), spec);
+  }
+  catch (RuntimeError &e) {
+    std::string message = "processing interval length " + spec;
+    e.add_context(message);
+    throw;
   }
 
   // Check if these units are compatible with "seconds" or "1". The
   // latter allows intervals of the form "0.5", which stands for "half
   // of a model year". This also discards interval specs such as "days
   // since 1-1-1", even though "days" is compatible with "seconds".
-  if (units_are_convertible(tmp, seconds) == true) {
-    cv_converter *c = seconds.get_converter_from(tmp);
-    assert(c != NULL);
+  if (UnitConverter::are_convertible(tmp, seconds) == true) {
+    UnitConverter c(tmp, seconds);
 
-    if (result)
-      *result = cv_convert_double(c, 1.0);
+    if (result) {
+      *result = c(1.0);
+    }
 
-    cv_free(c);
-
-  } else if (units_are_convertible(tmp, one) == true) {
-    cv_converter *c = one.get_converter_from(tmp);
-    assert(c != NULL);
+  } else if (UnitConverter::are_convertible(tmp, one) == true) {
+    UnitConverter c(tmp, one);
 
     if (result) {
       // this is a rather convoluted way of turning a string into a
       // floating point number:
-      *result = cv_convert_double(c, 1.0);
+      *result = c(1.0);
       // convert from years to seconds without using UDUNITS-2 (this
       // way we handle 360-day and 365-day years correctly)
       *result = years_to_seconds(*result);
     }
 
-    cv_free(c);
   } else {
     PetscPrintf(m_com, "PISM ERROR: invalid interval length: '%s'\n",
                 spec.c_str());

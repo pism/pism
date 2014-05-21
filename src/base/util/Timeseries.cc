@@ -157,11 +157,10 @@ PetscErrorCode Timeseries::report_range() {
   min = *std::min_element(values.begin(), values.end());
   max = *std::max_element(values.begin(), values.end());
 
-  cv_converter *c = var.get_glaciological_units().get_converter_from(var.get_units());
-  assert(c != NULL);
-  min = cv_convert_double(c, min);
-  max = cv_convert_double(c, max);
-  cv_free(c);
+  assert(UnitConverter::are_convertible(var.get_units(), var.get_glaciological_units()) == true);
+  UnitConverter c(var.get_units(), var.get_glaciological_units());
+  min = c(min);
+  max = c(max);
 
   std::string spacer(var.get_name().size(), ' ');
 

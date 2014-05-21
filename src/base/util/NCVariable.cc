@@ -33,10 +33,10 @@
 namespace pism {
 
 NCVariable::NCVariable(const std::string &name, const UnitSystem &system, unsigned int ndims)
-  : m_n_spatial_dims(ndims), m_units(system), m_glaciological_units(system), m_short_name(name) {
-
-  m_units.reset();
-  m_glaciological_units.reset();
+  : m_n_spatial_dims(ndims),
+    m_units(system, "1"),
+    m_glaciological_units(system, "1"),
+    m_short_name(name) {
 
   clear_all_strings();
   clear_all_doubles();
@@ -67,9 +67,7 @@ PetscErrorCode NCVariable::set_units(const std::string &new_units) {
   m_strings["units"] = new_units;
   m_strings["glaciological_units"] = new_units;
 
-  int errcode = m_units.parse(new_units);
-
-  assert(errcode == 0 && "invalid units specification");
+  m_units = Unit(m_units.get_system(), new_units);
 
   // Set the glaciological units too (ensures internal consistency):
   m_glaciological_units = m_units;
@@ -91,11 +89,9 @@ PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units)
   // "glaciological" units.
   m_strings["glaciological_units"] = new_units;
 
-  int errcode = m_glaciological_units.parse(new_units);
+  m_glaciological_units = Unit(m_units.get_system(), new_units);
 
-  assert(errcode == 0 && "invalid units specification");
-
-  assert(units_are_convertible(m_units, m_glaciological_units) == true);
+  assert(UnitConverter::are_convertible(m_units, m_glaciological_units) == true);
 
   return 0;
 }
@@ -269,7 +265,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   ierr = nc.get_vec(m_grid, name_found, nlevels, time, v); CHKERRQ(ierr);
 
   bool input_has_units;
-  Unit input_units(get_units().get_system());
+  Unit input_units(get_units().get_system(), "1");
 
   ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
@@ -285,7 +281,6 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   }
 
   // Convert data:
-  ierr = units_check(get_name(), input_units, get_units()); CHKERRQ(ierr);
   ierr = convert_vec(v, input_units, get_units()); CHKERRQ(ierr);
 
   return 0;
@@ -366,7 +361,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     // units.
 
     bool input_has_units;
-    Unit input_units(get_units().get_system());
+    Unit input_units(get_units().get_system(), "1");
 
     ierr = nc.inq_units(name_found, input_has_units, input_units); CHKERRQ(ierr);
 
@@ -383,7 +378,6 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     }
 
     // Convert data:
-    ierr = units_check(get_name(), input_units, get_units()); CHKERRQ(ierr);
     ierr = convert_vec(v, input_units, get_units()); CHKERRQ(ierr);
 
     // Read the valid range info:
@@ -407,10 +401,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
     }
 
     // If it is optional, fill with the provided default value.
-    cv_converter *c = get_glaciological_units().get_converter_from(get_units());
-    assert(c != NULL);
-    double tmp = cv_convert_double(c, default_value);
-    cv_free(c);
+    assert(UnitConverter::are_convertible(get_units(), get_glaciological_units()) == true);
+    UnitConverter c(this->get_units(), this->get_glaciological_units());
 
     std::string spacer(get_name().size(), ' ');
     ierr = verbPrintf(2, m_com,
@@ -418,7 +410,7 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                       "         %s \\ not found; using default constant %7.2f (%s)\n",
                       get_name().c_str(),
                       get_string("long_name").c_str(),
-                      spacer.c_str(), tmp,
+                      spacer.c_str(), c(default_value),
                       get_string("glaciological_units").c_str());
     CHKERRQ(ierr);
     ierr = VecSet(v, default_value); CHKERRQ(ierr);
@@ -436,11 +428,10 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
   ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
 
-  cv_converter *c = get_glaciological_units().get_converter_from(get_units());
-  assert(c != NULL);
-  min = cv_convert_double(c, min);
-  max = cv_convert_double(c, max);
-  cv_free(c);
+  assert(UnitConverter::are_convertible(get_units(), get_glaciological_units()) == true);
+  UnitConverter c(this->get_units(), this->get_glaciological_units());
+  min = c(min);
+  max = c(max);
 
   std::string spacer(get_name().size(), ' ');
 

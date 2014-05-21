@@ -16,9 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <assert.h>
+#include <cassert>
 #include <sstream>
-#include <stdlib.h>
+#include <cstdlib>
+
+#include "error_handling.hh"
 
 #include "PISMTime_Calendar.hh"
 #include "pism_options.hh"
@@ -69,12 +71,13 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
     PISMEnd();
   }
 
-  std::string tmp = "seconds since " + ref_date;
-  errcode = m_time_units.parse(tmp);
-  if (errcode != 0) {
-    PetscPrintf(m_com, "PISM ERROR: time units '%s' are invalid.\n",
-                tmp.c_str());
-    PISMEnd();
+  try {
+    m_time_units = Unit(m_time_units.get_system(), "seconds since " + ref_date);
+  }
+  catch (RuntimeError &e) {
+    std::string message = "setting time units";
+    e.add_context(message);
+    throw;
   }
 
   m_run_start = increment_date(0, (int)m_config.get("start_year"));
@@ -226,14 +229,13 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
       PISMEnd();
     }
 
-    std::string tmp = "seconds " + time_units.substr(position);
-    ierr = m_time_units.parse(tmp);
-    if (ierr != 0) {
-      PetscPrintf(m_com,
-                  "PISM ERROR: units specification '%s' is invalid (processing -time_file).\n",
-                  tmp.c_str());
-      PISMEnd();
-
+    try {
+      m_time_units = Unit(m_time_units.get_system(), "seconds " + time_units.substr(position));
+    }
+    catch (RuntimeError &e) {
+      std::string message = "processing -time_file";
+      e.add_context(message);
+      throw;
     }
   }
 

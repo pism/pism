@@ -41,6 +41,16 @@
 #include "PISMNC4_HDF5.hh"
 #endif
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::shared_ptr;
+#else
+#include <memory>
+using std::shared_ptr;
+#endif
+
+#include "error_handling.hh"
+
 namespace pism {
 
 static NCFile* create_backend(MPI_Comm com, std::string mode) {
@@ -443,7 +453,7 @@ PetscErrorCode PIO::inq_dimlen(const std::string &name, unsigned int &result) co
 PetscErrorCode PIO::inq_dimtype(const std::string &name, AxisType &result) const {
   PetscErrorCode ierr;
   std::string axis, standard_name, units;
-  Unit tmp_units(m_unit_system);
+  Unit tmp_units(m_unit_system, "1");
   bool exists;
 
   ierr = nc->inq_varid(name, exists); CHKERRQ(ierr);
@@ -459,16 +469,17 @@ PetscErrorCode PIO::inq_dimtype(const std::string &name, AxisType &result) const
 
   // check if it has units compatible with "seconds":
 
-  if (tmp_units.parse(units) != 0) {
-    ierr = PetscPrintf(m_com, "ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
-                       units.c_str(), name.c_str());
-    PISMEnd();
+  try {
+    tmp_units = Unit(m_unit_system, units);
+  }
+  catch (RuntimeError &e) {
+    std::string message = "processing variable " + name + " in " + this->inq_filename();
+    e.add_context(message);
+    throw;
   }
 
-  Unit seconds(m_unit_system);
-  int errcode = seconds.parse("seconds");
-  assert(errcode == 0);
-  if (units_are_convertible(tmp_units, seconds)) {
+  Unit seconds(m_unit_system, "seconds");
+  if (UnitConverter::are_convertible(tmp_units, seconds)) {
     result = T_AXIS;
     return 0;
   }
@@ -622,7 +633,7 @@ PetscErrorCode PIO::inq_units(const std::string &name, bool &has_units, Unit &un
   // If a variables does not have the units attribute, set the flag and return:
   if (units_string.empty()) {
     has_units = false;
-    units.reset();
+    units = Unit(units.get_system(), "1");
     return 0;
   }
 
@@ -630,10 +641,13 @@ PetscErrorCode PIO::inq_units(const std::string &name, bool &has_units, Unit &un
   while (ends_with(units_string, " "))
     units_string.resize(units_string.size() - 1);
   
-  if (units.parse(units_string) != 0) {
-    ierr = PetscPrintf(m_com, "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
-                       units_string.c_str(), name.c_str());
-    PISMEnd();
+  try {
+    units = Unit(units.get_system(), units_string);
+  }
+  catch (RuntimeError &e) {
+    std::string message = "processing variable " + name + " in " + this->inq_filename();
+    e.add_context(message);
+    throw;
   }
 
   has_units = true;
@@ -1435,14 +1449,13 @@ PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
   // matching the ones in the output.
   if (write_in_glaciological_units) {
 
-    cv_converter *c = var.get_glaciological_units().get_converter_from(var.get_units());
-    assert(c != NULL);
+    assert(UnitConverter::are_convertible(var.get_units(),
+                                          var.get_glaciological_units()) == true);
+    UnitConverter c(var.get_units(), var.get_glaciological_units());
 
-    bounds[0]  = cv_convert_double(c, var.get_double("valid_min"));
-    bounds[1]  = cv_convert_double(c, var.get_double("valid_max"));
-    fill_value = cv_convert_double(c, fill_value);
-
-    cv_free(c);
+    bounds[0]  = c(var.get_double("valid_min"));
+    bounds[1]  = c(var.get_double("valid_max"));
+    fill_value = c(fill_value);
   } else {
     bounds[0] = var.get_double("valid_min");
     bounds[1] = var.get_double("valid_max");
@@ -1526,7 +1539,6 @@ PetscErrorCode PIO::write_global_attributes(const NCVariable &var) const {
  */
 PetscErrorCode PIO::read_valid_range(const std::string &name, NCVariable &variable) const {
   std::string input_units_string;
-  Unit input_units(variable.get_units().get_system());
   std::vector<double> bounds;
   int ierr;
 
@@ -1540,31 +1552,36 @@ PetscErrorCode PIO::read_valid_range(const std::string &name, NCVariable &variab
   // internal units.
   ierr = this->get_att_text(name, "units", input_units_string); CHKERRQ(ierr);
 
-  if (input_units.parse(input_units_string) != 0)
+  UnitSystem sys = variable.get_units().get_system();
+  Unit input_units = Unit(sys, "1");
+  try {
+    input_units = Unit(sys, input_units_string);
+  }
+  catch (...) {
+    // ignore the failure above (WHY? -- CK)
     input_units = variable.get_units();
+  }
 
-  cv_converter *c = variable.get_units().get_converter_from(input_units);
-  if (c == NULL) {
-    c = cv_get_trivial();
+  shared_ptr<UnitConverter> c(new UnitConverter());
+  if (UnitConverter::are_convertible(input_units, variable.get_units()) == true) {
+    c.reset(new UnitConverter(input_units, variable.get_units()));
   }
 
   ierr = this->get_att_double(name, "valid_range", bounds); CHKERRQ(ierr);
   if (bounds.size() == 2) {             // valid_range is present
-    variable.set_double("valid_min", cv_convert_double(c, bounds[0]));
-    variable.set_double("valid_max", cv_convert_double(c, bounds[1]));
+    variable.set_double("valid_min", (*c)(bounds[0]));
+    variable.set_double("valid_max", (*c)(bounds[1]));
   } else {                      // valid_range has the wrong length or is missing
     ierr = this->get_att_double(name, "valid_min", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {           // valid_min is present
-      variable.set_double("valid_min", cv_convert_double(c, bounds[0]));
+      variable.set_double("valid_min", (*c)(bounds[0]));
     }
 
     ierr = this->get_att_double(name, "valid_max", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {           // valid_max is present
-      variable.set_double("valid_max", cv_convert_double(c, bounds[0]));
+      variable.set_double("valid_max", (*c)(bounds[0]));
     }
   }
-
-  cv_free(c);
 
   return 0;
 }
@@ -1626,7 +1643,7 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
   bool input_has_units;
   std::string input_units_string;
   Unit internal_units = metadata.get_units(),
-    input_units(internal_units.get_system());
+    input_units(internal_units.get_system(), "1");
 
   ierr = this->get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
 
@@ -1635,11 +1652,13 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
   } else {
     input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
-    if (input_units.parse(input_units_string) != 0) {
-      ierr = PetscPrintf(m_com,
-                         "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
-                         input_units_string.c_str(), name.c_str());
-      PISMEnd();
+    try {
+      input_units = Unit(internal_units.get_system(), input_units_string);
+    }
+    catch (RuntimeError &e) {
+      std::string message = "processing variable " + name + " in " + this->inq_filename();
+      e.add_context(message);
+      throw;
     }
     input_has_units = true;
   }
@@ -1654,7 +1673,6 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
     input_units = internal_units;
   }
 
-  ierr = units_check(name, input_units, internal_units); CHKERRQ(ierr);
   ierr = convert_doubles(&data[0], data.size(),
                          input_units, internal_units); CHKERRQ(ierr);
 
@@ -1789,7 +1807,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
 
   bool input_has_units = false;
   std::string input_units_string;
-  Unit input_units(internal_units.get_system());
+  Unit input_units(internal_units.get_system(), "1");
 
   ierr = this->get_att_text(dimension_name, "units", input_units_string); CHKERRQ(ierr);
   input_units_string = time->CF_units_to_PISM_units(input_units_string);
@@ -1797,11 +1815,13 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
   if (input_units_string.empty() == true) {
     input_has_units = false;
   } else {
-    if (input_units.parse(input_units_string) != 0) {
-      ierr = PetscPrintf(m_com,
-                         "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
-                         input_units_string.c_str(), name.c_str());
-      PISMEnd();
+    try {
+      input_units = Unit(internal_units.get_system(), input_units_string);
+    }
+    catch (RuntimeError &e) {
+      std::string message = "processing variable " + name + " in " + this->inq_filename();
+      e.add_context(message);
+      throw;
     }
     input_has_units = true;
   }
@@ -1816,7 +1836,6 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
     input_units = internal_units;
   }
 
-  ierr = units_check(name, input_units, internal_units); CHKERRQ(ierr);
   ierr = convert_doubles(&data[0], data.size(), input_units, internal_units); CHKERRQ(ierr);
 
   // FIXME: check that time intervals described by the time bounds
