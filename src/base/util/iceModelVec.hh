@@ -26,6 +26,8 @@
 #include "NCVariable.hh"
 #include "pism_const.hh"
 
+#include "IceGrid.hh"
+
 namespace pism {
 
 class PIO;
@@ -242,7 +244,7 @@ protected:
   unsigned int m_dof;                     //!< number of "degrees of freedom" per grid point
   unsigned int m_da_stencil_width;      //!< stencil width supported by the DA
   bool m_has_ghosts;            //!< m_has_ghosts == true means "has ghosts"
-  DM   m_da;                    //!< DM; this IceModelVec does not own it!
+  PISMDM::Ptr m_da;          //!< distributed mesh manager (DM)
 
   bool begin_end_access_use_dof;
 

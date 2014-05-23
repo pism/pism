@@ -160,7 +160,7 @@ public:
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
   virtual PetscErrorCode get_da(DM *da) {
-    *da = SSADA;
+    *da = SSADA->get();
     return 0;
   }
 

@@ -219,19 +219,19 @@ using namespace pism;
      }
 }
 
-%typemap(in, numinputs=0, noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> & OUTPUT(pism::TerminationReason::Ptr temp) {
+%typemap(in, numinputs=0, noblock=1) pism::TerminationReason::Ptr & OUTPUT(pism::TerminationReason::Ptr temp) {
   $1 = &temp;
 }
 
-%typemap(argout,noblock=1) SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> & OUTPUT
+%typemap(argout,noblock=1) pism::TerminationReason::Ptr & OUTPUT
 {
   {
-    SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  pism::TerminationReason > *smartresult = new SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<  pism::TerminationReason >(*$1);
+    pism::TerminationReason::Ptr *smartresult = new pism::TerminationReason::Ptr(*$1);
     %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
   }
 };
 
-%apply SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> & OUTPUT { SWIG_SHARED_PTR_QNAMESPACE::shared_ptr<pism::TerminationReason> &reason };
+%apply pism::TerminationReason::Ptr & OUTPUT { pism::TerminationReason::Ptr &reason };
 
 %shared_ptr(pism::TerminationReason)
 %shared_ptr(pism::KSPTerminationReason)
@@ -454,16 +454,21 @@ using namespace pism;
 }
 
 /* This is needed to wrap IceGrid::get_dm() */
-%apply DM &OUTPUT {DM &result};
-/* The following overrides petsc4py's argument checking
-for DM & types. For some reason, petsc4py does not allow
-a DM=PETSC_NULL to be passed in by reference.  But if pointer variables
-are being automatically set to zero, then an output argument might 
-in fact be equal to PETSC_NULL, and this is OK. */
-%typemap(check,noblock=1) DM& {
-  if ($1 == NULL)
-    %argument_nullref("$type", $symname, $argnum);
+%shared_ptr(pism::PISMDM)
+
+%typemap(in, numinputs=0, noblock=1) pism::PISMDM::Ptr & OUTPUT (pism::PISMDM::Ptr temp) {
+  $1 = &temp;
 }
+
+%typemap(argout,noblock=1) pism::PISMDM::Ptr & OUTPUT
+{
+  {
+    pism::PISMDM::Ptr *smartresult = new pism::PISMDM::Ptr(*$1);
+    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
+  }
+};
+
+%apply pism::PISMDM::Ptr & OUTPUT { pism::PISMDM::Ptr &result };
 
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The

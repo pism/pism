@@ -178,7 +178,7 @@ protected:
   std::string stdout_ssa;
 
   // objects used by the SSA solver (internally)
-  DM  SSADA;                    // dof=2 DA (grid.da2 has dof=1)
+  PISMDM::Ptr  SSADA;                    // dof=2 DA (grid.da2 has dof=1)
   Vec SSAX;  // global vector for solution
 
   // profiling

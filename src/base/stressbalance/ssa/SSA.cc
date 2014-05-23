@@ -168,7 +168,7 @@ PetscErrorCode SSA::allocate() {
   int dof=2, stencil_width=1;
   ierr = grid.get_dm(dof, stencil_width, SSADA); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(SSADA->get(), &SSAX); CHKERRQ(ierr);
 
   {
     IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
