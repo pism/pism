@@ -124,7 +124,7 @@ PetscErrorCode Hydrology_effbwp::compute(IceModelVec* &output) {
 Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m, IceGrid &g, Vars &my_vars)
     : Diag<Hydrology>(m, g, my_vars) {
   vars[0].init_2d("hydrobmelt", grid);
-  set_attrs("the version of bmelt used in the hydrology model",
+  set_attrs("the version of bmelt seen by the hydrology model",
             "", "m s-1", "m/year", 0);
 }
 

@@ -330,8 +330,11 @@ public:
   virtual PetscErrorCode init(Vars &vars);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
+  friend class DistributedHydrology_hydrovelbase_mag;
+
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
@@ -347,6 +350,7 @@ protected:
   IceModelVec2S psi,    //!< hydraulic potential
     velbase_mag,  //!< sliding speed of overlying ice
     Pnew;   //!< pressure during update
+  bool hold_velbase_mag;
 
   // need to get basal sliding velocity (thus speed):
   StressBalance* stressbalance;

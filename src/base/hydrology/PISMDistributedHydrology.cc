@@ -30,6 +30,7 @@ DistributedHydrology::DistributedHydrology(IceGrid &g, const Config &conf,
     : RoutingHydrology(g, conf)
 {
     stressbalance = sb;
+    hold_velbase_mag = false;
     if (allocate_pressure() != 0) {
       PetscPrintf(grid.com,
         "PISM ERROR: memory allocation failed in DistributedHydrology constructor (pressure).\n");
@@ -50,7 +51,7 @@ PetscErrorCode DistributedHydrology::allocate_pressure() {
                      "pressure of transportable water in subglacial layer",
                      "Pa", ""); CHKERRQ(ierr);
   P.metadata().set_double("valid_min", 0.0);
-  ierr = velbase_mag.create(grid, "ice_sliding_speed", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  ierr = velbase_mag.create(grid, "velbase_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = velbase_mag.set_attrs("internal",
                          "ice sliding speed seen by subglacial hydrology",
                          "m s-1", ""); CHKERRQ(ierr);
@@ -74,7 +75,8 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
     "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");
     CHKERRQ(ierr);
 
-  bool init_P_from_steady = false, strip_set = false;
+  std::string filename;
+  bool init_P_from_steady = false, strip_set = false, hold_flag = false;
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
@@ -93,6 +95,10 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
     ierr = OptionsIsSet("-init_P_from_steady",
                             "initialize P from formula P(W) which applies in steady state",
                             init_P_from_steady); CHKERRQ(ierr);
+
+    ierr = OptionsString("-hydrology_velbase_mag_file",
+                            "Specifies a file to get velbase_mag from, for 'distributed' hydrology model",
+                            filename, hold_flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -107,6 +113,13 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
             "  option -init_P_from_steady seen ...\n"
             "  initializing P from P(W) formula which applies in steady state\n"); CHKERRQ(ierr);
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
+  }
+
+  if (hold_flag) {
+    ierr = verbPrintf(2, grid.com,
+       "  reading velbase_mag for 'distributed' hydrology from '%s'.\n", filename.c_str()); CHKERRQ(ierr);
+    ierr = velbase_mag.regrid(filename, CRITICAL); CHKERRQ(ierr);
+    hold_velbase_mag = true;
   }
 
   return 0;
@@ -199,9 +212,11 @@ void DistributedHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &d
   // bwp is state
   dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, grid, *variables);
   dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
   dict["bwatvel"] = new RoutingHydrology_bwatvel(this, grid, *variables);
+  dict["hydrovelbase_mag"] = new DistributedHydrology_hydrovelbase_mag(this, grid, *variables);
 }
 
 
@@ -372,7 +387,9 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
   ierr = P.update_ghosts(); CHKERRQ(ierr);
 
   // from current ice geometry/velocity variables, initialize Po and velbase_mag
-  ierr = update_velbase_mag(velbase_mag); CHKERRQ(ierr);
+  if (!hold_velbase_mag) {
+    ierr = update_velbase_mag(velbase_mag); CHKERRQ(ierr);
+  }
 
   const double
             rg    = config.get("fresh_water_density") * config.get("standard_gravity"),
@@ -538,5 +555,27 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
   }
   return 0;
 }
+
+
+DistributedHydrology_hydrovelbase_mag::DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<DistributedHydrology>(m, g, my_vars) {
+  vars[0].init_2d("hydrovelbase_mag", grid);
+  set_attrs("the version of velbase_mag seen by the 'distributed' hydrology model",
+            "", "m s-1", "m/year", 0);
+}
+
+
+PetscErrorCode DistributedHydrology_hydrovelbase_mag::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "hydrovelbase_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->write_in_glaciological_units = true;
+  // the value reported diagnostically is merely the last value filled
+  ierr = (model->velbase_mag).copy_to(*result); CHKERRQ(ierr);
+  output = result;
+  return 0;
+}
+
 
 } // end of namespace pism
