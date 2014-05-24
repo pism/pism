@@ -76,6 +76,15 @@ public:
 };
 
 
+//! \brief Reports the version of bmelt used in the Hydrology model.
+class Hydrology_hydrobmelt : public Diag<Hydrology>
+{
+public:
+  Hydrology_hydrobmelt(Hydrology *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 //! \brief Reports the total input rate of water into the subglacial layer.
 class Hydrology_hydroinput : public Diag<Hydrology>
 {

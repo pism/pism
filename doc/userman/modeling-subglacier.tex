@@ -168,9 +168,11 @@ FIXME:  THIS IS DOC ON EVOLVING CODE:  If the \texttt{tauc_add_transportable_wat
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
 \optsection{Subglacial hydrology}
 
-At the present time, two simple subglacial hydrology models are implemented and documented in PISM, namely \texttt{-hydrology null} and \texttt{-hydrology routing}.  The water source for both of these models is the energy conservation model which computes the basal melt rate \texttt{bmelt}, but see also option \texttt{-hydrology_input_to_bed_file} (Table \ref{tab:hydrology}) for a mechanism to add water directly into the subglacial layer.  Some of the water put into the subglacial layer is stored locally in a layer of subglacial till by the hydrology model.  Depending on the hydrology model, some water is transported horizontally according to the gradient of the modeled hydraulic potential.
+At the present time, two simple subglacial hydrology models are implemented \emph{and documented} in PISM, namely \texttt{-hydrology null} and \texttt{-hydrology routing}.  Some of the water in the subglacial layer is stored locally in a layer of subglacial till by the hydrology model.  Depending on the hydrology model, water is conserved by transporting a portion of it horizontally according to the gradient of the modeled hydraulic potential.
 
 In both hydrology models a state variable \texttt{tillwat} records the effective thickness of the layer of liquid water in the till, and it is used to compute the effective pressure on the till (see the previous subsection).  The pressure of the transportable water \texttt{bwat} in the \texttt{routing} model does not relate directly to the effective pressure on the till.
+
+The primary water source for both of these models is the energy conservation model which computes the basal melt rate \texttt{bmelt}.  There is, however, also option \intextoption{-hydrology_input_to_bed_file} (see Table \ref{tab:hydrology}) which allows the user to \emph{add} water directly into the subglacial layer, in addition to the computed \texttt{bmelt} values.  Also option \intextoption{-hydrology_bmelt_file} allows the user to replace the computed \texttt{bmelt} rate by values read from a file.
 
 \begin{table}
   \centering
@@ -178,15 +180,16 @@ In both hydrology models a state variable \texttt{tillwat} records the effective
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \txtopt{hydrology_tillwat_max}{(m)} & Maximum effective thickness for water stored in till. \\
-    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy computed basal melt rate \texttt{bmelt} with a constant. \\
+    \fileopt{hydrology_bmelt_file} & Specifies a NetCDF file which contains a time-independent field \texttt{bmelt} which has units of water thickness per time.  This rate \emph{replaces} the conservation-of-energy computed \texttt{bmelt} rate. \\
     \txtopt{hydrology_const_bmelt}{(m/a)} & If \texttt{-hydrology_use_const_bmelt} is set then use this to set the constant the rate (as water thickness per time). \\
-    \fileopt{hydrology_input_to_bed_file} & Specifies a NetCDF file which contains a time-dependent field \texttt{inputtobed} which has units of water thickness per time.  This rate is added to the \texttt{bmelt} rate. \\
+    \fileopt{hydrology_input_to_bed_file} & Specifies a NetCDF file which contains a time-dependent field \texttt{inputtobed} which has units of water thickness per time.  This rate is \emph{added to} the \texttt{bmelt} rate. \\
     \txtopt{hydrology_input_to_bed_period}{(a)} & The period, in years, of \texttt{-hydrology_input_to_bed_file} data. \\
     \txtopt{hydrology_input_to_bed_reference_year}{(a)} & The reference year for periodizing the \texttt{-hydrology_input_to_bed_file} data. \\
+    \txtopt{hydrology_tillwat_max}{(m)} & Maximum effective thickness for water stored in till. \\
+    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy computed basal melt rate \texttt{bmelt} with a constant. \\
     \bottomrule
   \end{tabular}
-\caption{Subglacial hydrology command-line options for all hydrology models.}
+\caption{Subglacial hydrology command-line options which apply to all hydrology models.}
 \label{tab:hydrology}
 \end{table}
 
