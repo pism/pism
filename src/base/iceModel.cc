@@ -220,11 +220,16 @@ PetscErrorCode IceModel::createVecs() {
   if (config.get_flag("do_cold_ice_methods")) {
     // ice temperature
     ierr = T3.create(grid, "temp", WITH_GHOSTS); CHKERRQ(ierr);
-    ierr = T3.set_attrs("model_state", "ice temperature", "K", "land_ice_temperature"); CHKERRQ(ierr);
+    ierr = T3.set_attrs("model_state",
+                        "ice temperature", "K", "land_ice_temperature"); CHKERRQ(ierr);
     T3.metadata().set_double("valid_min", 0.0);
     ierr = variables.add(T3); CHKERRQ(ierr);
 
-    Enth3.metadata().set_string("pism_intent", "diagnostic");
+    if (config.get_flag("do_energy") == true) {
+      Enth3.metadata().set_string("pism_intent", "diagnostic");
+    } else {
+      T3.metadata().set_string("pism_intent", "diagnostic");
+    }
   }
 
   // age of ice but only if age will be computed
