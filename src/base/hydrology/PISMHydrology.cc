@@ -76,14 +76,14 @@ PetscErrorCode Hydrology::init(Vars &vars) {
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the base class Hydrology", ""); CHKERRQ(ierr);
   {
-    ierr = OptionsString("-input_to_bed_file",
+    ierr = OptionsString("-hydrology_input_to_bed_file",
       "A time- and space-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given location at the given time",
       itbfilename, itbfile_set); CHKERRQ(ierr);
-    ierr = OptionsReal("-input_to_bed_period",
-      "The period (i.e. duration before repeat), in years, of -input_to_bed_file data",
+    ierr = OptionsReal("-hydrology_input_to_bed_period",
+      "The period (i.e. duration before repeat), in years, of -hydrology_input_to_bed_file data",
       itbperiod_years, itbperiod_set); CHKERRQ(ierr);
-    ierr = OptionsReal("-input_to_bed_reference_year",
-      "The reference year for periodizing the -input_to_bed_file data",
+    ierr = OptionsReal("-hydrology_input_to_bed_reference_year",
+      "The reference year for periodizing the -hydrology_input_to_bed_file data",
       itbreference_year, itbreference_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
@@ -133,13 +133,13 @@ PetscErrorCode Hydrology::init(Vars &vars) {
     }
 
     if (n_records == 0) {
-      PetscPrintf(grid.com, "PISM ERROR: can't find 'inputtobed' in -input_to_bed file with name '%s'.\n",
+      PetscPrintf(grid.com, "PISM ERROR: can't find 'inputtobed' in -hydrology_input_to_bed file with name '%s'.\n",
                   itbfilename.c_str());
       PISMEnd();
     }
 
     ierr = verbPrintf(2,grid.com,
-      "    option -input_to_bed_file seen ... creating 'inputtobed' variable ...\n"); CHKERRQ(ierr);
+      "    option -hydrology_input_to_bed_file seen ... creating 'inputtobed' variable ...\n"); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
       "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records); CHKERRQ(ierr);
     inputtobed = new IceModelVec2T;
@@ -275,7 +275,7 @@ PetscErrorCode Hydrology::check_Wtil_bounds() {
 //! Compute the total water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input from a file.
 /*!
 The user can specify the total of en- and supra-glacial drainage contributions
-to subglacial hydrology in a time-dependent input file using option -input_to_bed.
+to subglacial hydrology in a time-dependent input file using option -hydrology_input_to_bed.
 This method includes that possible input along with `bmelt` to get the total water
 input into the subglacial hydrology.
 
