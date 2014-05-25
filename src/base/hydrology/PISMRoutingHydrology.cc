@@ -672,43 +672,36 @@ PetscErrorCode RoutingHydrology::adaptive_for_W_evolution(
 
 //! The computation of Wtilnew, called by update().
 /*!
-Does an implicit (backward Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\omega W,W_{til}^{max}\} - W_{til}\right)\f]
-where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\omega=\f$`hydrology_tillwat_transfer_proportion`,
-and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  There is no time-step restriction.
-The solution satisfies the inequalities
-  \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
+Does a step of the trivial integration
+  \f[ \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C\f]
+where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
+\f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
+`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
+
+Compare NullTransportHydrology::update().  The current code is not quite "code
+duplication" because the code here: (1) computes `Wtilnew` instead of updating
+`Wtil` in place; (2) uses time steps determined by the rest of the
+RoutingHydrology model; (3) does not check mask because the boundary_mass_changes()
+call addresses that.  Otherwise this is the same physical model with the
+same configurable parameters.
  */
 PetscErrorCode RoutingHydrology::raw_update_Wtil(double hdt) {
-    PetscErrorCode ierr;
-    double tmpmin;
-
-    const double
-      tillwat_max = config.get("hydrology_tillwat_max"),
-      mu          = config.get("hydrology_tillwat_rate"),
-      omega       = config.get("hydrology_tillwat_transfer_proportion"),
-      denom       = 1.0 + mu * hdt;
-
-    if ((tillwat_max < 0.0) || (mu < 0.0) || (omega < 0.0)) {
-      PetscPrintf(grid.com,
-         "RoutingHydrology ERROR: scalar config parameter is negative in raw_update_Wtil();\n"
-         "            this is not allowed ... ENDING ... \n\n");
-      PISMEnd();
+  PetscErrorCode ierr;
+  const double tillwat_max = config.get("hydrology_tillwat_max"),
+               C           = config.get("hydrology_tillwat_decay_rate");
+  ierr = Wtil.begin_access(); CHKERRQ(ierr);
+  ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
+  ierr = total_input.begin_access(); CHKERRQ(ierr);
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
+      Wtilnew(i,j) = PetscMin(PetscMax(0.0, Wtilnew(i,j)), tillwat_max);
     }
-    ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = Wtil.begin_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        tmpmin = PetscMin(omega * W(i,j), tillwat_max);
-        Wtilnew(i,j) = (Wtil(i,j) + mu * hdt * tmpmin) / denom;
-      }
-    }
-    ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = Wtil.end_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
-
-    return 0;
+  }
+  ierr = Wtil.end_access(); CHKERRQ(ierr);
+  ierr = Wtilnew.end_access(); CHKERRQ(ierr);
+  ierr = total_input.end_access(); CHKERRQ(ierr);
+  return 0;
 }
 
 
@@ -777,6 +770,13 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
   m_t = icet;
   m_dt = icedt;
 
+  if (config.get("hydrology_tillwat_max") < 0.0) {
+    PetscPrintf(grid.com,
+       "RoutingHydrology ERROR: hydrology_tillwat_max is negative\n"
+       "            this is not allowed ... ENDING ... \n\n");
+    PISMEnd();
+  }
+
   // make sure W has valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
 
@@ -794,15 +794,6 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
     ierr = check_water_thickness_nonnegative(W); CHKERRQ(ierr);
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
-
-    // update Wtilnew (the actual step) from W and Wtil
-    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
@@ -823,7 +814,16 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 
-    // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
+    // update Wtilnew from Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
+
+    // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
     ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);

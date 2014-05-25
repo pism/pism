@@ -168,11 +168,23 @@ FIXME:  THIS IS DOC ON EVOLVING CODE:  If the \texttt{tauc_add_transportable_wat
 \subsection{Subglacial hydrology}  \label{subsect:subhydro}
 \optsection{Subglacial hydrology}
 
-At the present time, two simple subglacial hydrology models are implemented \emph{and documented} in PISM, namely \texttt{-hydrology null} and \texttt{-hydrology routing}.  Some of the water in the subglacial layer is stored locally in a layer of subglacial till by the hydrology model.  Depending on the hydrology model, water is conserved by transporting a portion of it horizontally according to the gradient of the modeled hydraulic potential.
+At the present time, two simple subglacial hydrology models are implemented \emph{and documented} in PISM, namely \texttt{-hydrology null} and \texttt{-hydrology routing}; see Table \ref{tab:hydrologychoice}.  In both models, some of the water in the subglacial layer is stored locally in a layer of subglacial till by the hydrology model.  In the  \texttt{routing} model water is conserved by horizontally-transporting the excess water (namely \texttt{bwat}) according to the gradient of the modeled hydraulic potential.  In both hydrology models a state variable \texttt{tillwat} is the effective thickness of the layer of liquid water in the till; it is used to compute the effective pressure on the till (see the previous subsection).  The pressure of the transportable water \texttt{bwat} in the \texttt{routing} model does not relate directly to the effective pressure on the till.
 
-In both hydrology models a state variable \texttt{tillwat} records the effective thickness of the layer of liquid water in the till, and it is used to compute the effective pressure on the till (see the previous subsection).  The pressure of the transportable water \texttt{bwat} in the \texttt{routing} model does not relate directly to the effective pressure on the till.
+\begin{table}
+  \centering
+ \begin{tabular}{lp{0.55\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{hydrology null} & The default model with only a layer of water stored in till.  Not mass conserving in the map-plane but much faster than \texttt{-hydrology routing}.  Based on ``undrained plastic bed'' model of \cite{Tulaczyketal2000b}.  The only state variable is \texttt{tillwat}.  \\
+    \intextoption{hydrology routing} &  A mass-conserving horizontal transport model in which the pressure of transportable water is equal to overburden pressure.  The till layer remains in the model, so this is a ``drained and conserved plastic bed'' model.  The state variables are \texttt{bwat} and \texttt{tillwat}. \\
+    \bottomrule
+  \end{tabular}
+\caption{Command-line options to choose the hydrology model.}
+\label{tab:hydrologychoice}
+\end{table}
 
-The primary water source for both of these models is the energy conservation model which computes the basal melt rate \texttt{bmelt}.  There is, however, also option \intextoption{-hydrology_input_to_bed_file} (see Table \ref{tab:hydrology}) which allows the user to \emph{add} water directly into the subglacial layer, in addition to the computed \texttt{bmelt} values.  Also option \intextoption{-hydrology_bmelt_file} allows the user to replace the computed \texttt{bmelt} rate by values read from a file.
+See Table \ref{tab:hydrology} for options which apply to all hydrology models.  Note that the primary water source for these models is the energy conservation model which computes the basal melt rate \texttt{bmelt}.  There is, however, also option \intextoption{hydrology_input_to_bed_file} which allows the user to \emph{add} water directly into the subglacial layer, in addition to the computed \texttt{bmelt} values.  Thus \texttt{-hydrology_input_to_bed_file} allows the user to model drainage directly to the bed from surface runoff, for example.  Also option \intextoption{hydrology_bmelt_file} allows the user to replace the computed \texttt{bmelt} rate by values read from a file, thereby effectively decoupling the hydrology model from the ice dynamics (esp.~conservation of energy).
 
 \begin{table}
   \centering
@@ -181,44 +193,32 @@ The primary water source for both of these models is the energy conservation mod
     \textbf{Option} & \textbf{Description}
     \\\midrule
     \fileopt{hydrology_bmelt_file} & Specifies a NetCDF file which contains a time-independent field \texttt{bmelt} which has units of water thickness per time.  This rate \emph{replaces} the conservation-of-energy computed \texttt{bmelt} rate. \\
-    \txtopt{hydrology_const_bmelt}{(m/a)} & If \texttt{-hydrology_use_const_bmelt} is set then use this to set the constant the rate (as water thickness per time). \\
+    \txtopt{hydrology_const_bmelt}{(m/a)} & If \texttt{-hydrology_use_const_bmelt} is set then use this to set the constant rate (water thickness per time). \\
     \fileopt{hydrology_input_to_bed_file} & Specifies a NetCDF file which contains a time-dependent field \texttt{inputtobed} which has units of water thickness per time.  This rate is \emph{added to} the \texttt{bmelt} rate. \\
     \txtopt{hydrology_input_to_bed_period}{(a)} & The period, in years, of \texttt{-hydrology_input_to_bed_file} data. \\
     \txtopt{hydrology_input_to_bed_reference_year}{(a)} & The reference year for periodizing the \texttt{-hydrology_input_to_bed_file} data. \\
-    \txtopt{hydrology_tillwat_max}{(m)} & Maximum effective thickness for water stored in till. \\
-    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy computed basal melt rate \texttt{bmelt} with a constant. \\
+    \txtopt{hydrology_tillwat_max}{(m)} &  Maximum effective thickness for water stored in till. \\
+    \txtopt{hydrology_tillwat_decay_rate}{(m/a)} &  Water accumulates in the till at the basal melt rate \texttt{bmelt}, minus this rate. \\
+    \intextoption{hydrology_use_const_bmelt} & Replace the conservation-of-energy basal melt rate \texttt{bmelt} with a constant. \\
     \bottomrule
   \end{tabular}
 \caption{Subglacial hydrology command-line options which apply to all hydrology models.}
 \label{tab:hydrology}
 \end{table}
 
-\subsubsection*{The default model \texttt{-hydrology null} model}  In this model the water is \emph{not} conserved but it is stored locally in the till up to a specified amount; option \intextoption{hydrology_tillwat_max} sets that amount.  The water is not conserved in the sense that water above the \texttt{hydrology_tillwat_max} level is lost permanently.  This model is based on the ``undrained plastic bed'' concept of \cite{Tulaczyketal2000b}; see also \cite{BBssasliding}.  See Table \ref{tab:hydrologynull}.
+\subsubsection*{The default model \texttt{-hydrology null} model}  In this model the water is \emph{not} conserved but it is stored locally in the till up to a specified amount; option \intextoption{hydrology_tillwat_max} sets that amount.  The water is not conserved in the sense that water above the \texttt{hydrology_tillwat_max} level is lost permanently.  This model is based on the ``undrained plastic bed'' concept of \cite{Tulaczyketal2000b}; see also \cite{BBssasliding}.
 
-This non-conserving \texttt{-hydrology null} model has been extensively used, in combination with the Mohr-Coulomb till described in subsection \ref{subsect:basestrength} above, in modelling ice streaming \cite[among others]{AschwandenAdalgeirsdottirKhroulev,BBssasliding}.  Many other combinations of the basal strength models and hydrology models in PISM have not been significantly tested.
-
-\begin{table}
-  \centering
- \begin{tabular}{lp{0.55\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
-    \intextoption{hydrology null} & The default model.  Not mass conserving in the map-plane but much faster than \texttt{-hydrology routing}.  Based on ``undrained plastic bed'' model of \cite{Tulaczyketal2000b}. \\
-    \small\txtopt{hydrology_tillwat_decay_rate_null}{(m/a)}\normalsize &  Applies only to \texttt{-hydrology null}.  Water stored in till accumulates at the computed basal melt rate minus this rate. \\    \bottomrule
-  \end{tabular}
-\caption{Subglacial hydrology command-line options for the \texttt{-hydrology null} model}
-\label{tab:hydrologynull}
-\end{table}
-
-\subsubsection*{The mass-conserving \texttt{-hydrology routing} model}  In this model the water \emph{is} conserved in the map-plane.  Some water still gets put into the till, with the same maximum value \texttt{hydrology_tillwat_max}, but excess water is horizontally-transported.  An additional state variable \texttt{bwat} is used by \texttt{routing} for the effective thickness of the layer of transportable water.  This transportable water will flow in the direction of the negative of the gradient of the modeled hydraulic potential.  In the \texttt{routing} model this potential is calculated by assuming that the transportable subglacial water is at the overburden pressure \cite{Siegertetal2009}.  Ultimately the transportable water will reach the ice sheet grounding line or ice-free-land margin, at which point it will be lost.  The amount that is lost this way is reported to the user.
-
-In this model there is an additional equation for transfer of water between the till (\texttt{tillwat}) and the transport system (\texttt{bwat}).  This transfer is governed by the differential equation
-\begin{equation}  \label{eq:hydrologytransfer}
-  \frac{\partial W_{til}}{\partial t} = \mu \left(\min\left\{\omega W,W_{til}^{max}\right\} - W_{til}\right)
+In particular, denoting \texttt{tillwat} by $W_{til}$, the till-stored water layer effective thickness evolves by the simple equation
+\begin{equation}  \label{eq:tillwatevolve}
+  \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C
 \end{equation}
-where $W_{til}=$ \texttt{tillwat} is the effective thickness of water in the till, $W=$ \texttt{bwat} is the effective thickness of water in the transport system, $\mu$ is the rate coefficient for the transfer, and $\omega$ is the proportion of $W$ that $W_{til}$ tends toward.  At all times $0 \le W_{til} \le W_{til}^{max}$ in this model.  Table \ref{tab:hydrologyrouting} describes how these parameters are set.
+where $m=$\texttt{bmelt} (kg $\text{m}^{-2}\,\text{s}^{-1}$), $\rho_w$ is the density of fresh water, and $C=$\texttt{hydrology_tillwat_decay_rate}.  At all times bounds $0 \le W_{til} \le W_{til}^{max}$ are satisfied.
 
-Several parameters are used in determining how water flows in the \texttt{routing} model.  Specifically, the horizontal subglacial water flux is determined by a generalized Darcy flux relation \cite{Clarke05,Schoofetal2012}
+This \texttt{-hydrology null} model has been extensively tested in combination with the Mohr-Coulomb till (subsection \ref{subsect:basestrength} above) for modelling ice streaming \cite[among others]{AschwandenAdalgeirsdottirKhroulev,BBssasliding}.
+
+\subsubsection*{The mass-conserving \texttt{-hydrology routing} model}  In this model the water \emph{is} conserved in the map-plane.  Water does get put into the till, with the same maximum value \texttt{hydrology_tillwat_max}, but excess water is horizontally-transported.  An additional state variable \texttt{bwat}, the effective thickness of the layer of transportable water, is used by \texttt{routing}.  This transportable water will flow in the direction of the negative of the gradient of the modeled hydraulic potential.  In the \texttt{routing} model this potential is calculated by assuming that the transportable subglacial water is at the overburden pressure \cite{Siegertetal2009}.  Ultimately the transportable water will reach the ice sheet grounding line or ice-free-land margin, at which point it will be lost.  The amount that is lost this way is reported to the user.
+
+In this model \texttt{tillwat} also evolves by equation \eqref{eq:tillwatevolve}, but several additional parameters are used in determining how the transportable water \texttt{bwat} flows in the model; see Table \ref{tab:hydrologyrouting}.  Specifically, the horizontal subglacial water flux is determined by a generalized Darcy flux relation \cite{Clarke05,Schoofetal2012}
 \begin{equation}  \label{eq:flux}
 \bq = - k\, W^\alpha\, |\grad \psi|^{\beta-2} \grad \psi
 \end{equation}
@@ -230,7 +230,7 @@ In the \texttt{routing} model the hydraulic potential $\psi$ is determined by
 \end{equation}
 where $P_o=\rho_i g H$ is the ice overburden pressure, $g$ is gravity, $\rho_i$ is ice density, $\rho_w$ is fresh water density, $H$ is ice thickness, and $b$ is the bedrock elevation.
 
-For most choices of the relevant parameters and most grid spacings, the \texttt{routing} model is at least two orders of magnitude more expensive computationally than is the \texttt{null} model.  This follows directly from the CFL-type time-step restriction on lateral flow of a fluid with velocity on the order of centimeters to meters per second (i.e.~the subglacial liquid water \texttt{bwat}) compared to the much slower velocity of the flowing ice above.  Therefore the user should start with short runs of order a few model years, use option \intextoption{report_mass_accounting} to see the time-stepping behavior at \texttt{stdout}, and use \texttt{daily} or even \texttt{hourly} reporting for scalar and spatially-distributed time-series to see hydrology model behavior.
+For most choices of the relevant parameters and most grid spacings, the \texttt{routing} model is at least two orders of magnitude more expensive computationally than the \texttt{null} model.  This follows directly from the CFL-type time-step restriction on lateral flow of a fluid with velocity on the order of centimeters to meters per second (i.e.~the subglacial liquid water \texttt{bwat}).  (By comparison, much of PISM ice dynamics time-stepping is controlled by the much slower velocity of the flowing ice.)  Therefore the user should start with short runs of order a few model years.  The option \intextoption{report_mass_accounting} is also recommended, so as to see the time-stepping behavior at \texttt{stdout}.  Finally, \texttt{daily} or even \texttt{hourly} reporting for scalar and spatially-distributed time-series to see hydrology model behavior, especially on fine grids (e.g.~$< 1$ km).
 
 \begin{table}
   \centering
@@ -238,19 +238,18 @@ For most choices of the relevant parameters and most grid spacings, the \texttt{
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{hydrology routing} & Choose the mass-conserving horizontal transport model in which the pressure of transportable water is equal to overburden pressure. \\
     \txtopt{hydrology_hydraulic_conductivity}{$k$} &  $=k$ in formula \eqref{eq:flux}.  \\
-    \txtopt{hydrology_null_strip}{(km)} &  In the boundary strip water is removed and this is reported.  This option simply specifies the width of this strip, which should typically be one or two grid cells. \\
+    \txtopt{hydrology_null_strip}{(km)} &  In the boundary strip water is removed and this is reported.  This option specifies the width of this strip, which should typically be one or two grid cells. \\
     \txtopt{hydrology_gradient_power_in_flux}{$\beta$} &  $=\beta$ in formula \eqref{eq:flux}.  \\
     \txtopt{hydrology_thickness_power_in_flux}{$\alpha$} &  $=\alpha$ in formula \eqref{eq:flux}.  \\
-    \intextoption{report_mass_accounting} &  At each major model time-step the amount of subglacial water lost to ice-free land, to the ocean, and into the ``null strip'' is reported. \\
-    \txtopt{hydrology_tillwat_rate}{($\text{s}^{-1}$)} & $=\mu$ in equation \eqref{eq:hydrologytransfer}.  Rate coefficient for $W \leftrightarrow W_{til}$ transfer mechanism.  Defaults to $10^{-6} \text{s}^{-1}$. \\
-    \intextoption{hydrology_tillwat_transfer_proportion} & $=\omega$ in equation \eqref{eq:hydrologytransfer}; dimensionless.  In $W \leftrightarrow W_{til}$ transfer mechanism, $W_{til}$ will be comparable to this multiple of $W$.  Defaults to $100$. \\    \bottomrule
+    \intextoption{report_mass_accounting} &  At each major (ice dynamics) time-step, the duration of hydrology time steps is reported, along with the amount of subglacial water lost to ice-free land, to the ocean, and into the ``null strip''. \\
+    \bottomrule
   \end{tabular}
 \caption{Command-line options specific to hydrology model \texttt{routing}.}
 \label{tab:hydrologyrouting}
 \end{table}
 
+%\subsubsection*{The mass-conserving \texttt{-hydrology distributed} model}
 % FIXME  -hydrology distributed is not documented; controlled by options
 % hydrology_roughness_scale, hydrology_cavitation_opening_coefficient,
 % hydrology_creep_closure_coefficient, hydrology_regularizing_porosity

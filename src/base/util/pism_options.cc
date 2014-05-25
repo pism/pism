@@ -645,14 +645,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
                                    "hydrology_const_bmelt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_tillwat_max",
                                    "hydrology_tillwat_max"); CHKERRQ(ierr);
-  // this only applies to NullTransportHydrology:
-  ierr = config.scalar_from_option("hydrology_tillwat_decay_rate_null",
-                                   "hydrology_tillwat_decay_rate_null"); CHKERRQ(ierr);
-  // these only apply to RoutingHydrology:
-  ierr = config.scalar_from_option("hydrology_tillwat_rate",
-                                   "hydrology_tillwat_rate"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_tillwat_transfer_proportion",
-                                   "hydrology_tillwat_transfer_proportion"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_tillwat_decay_rate",
+                                   "hydrology_tillwat_decay_rate"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
                                    "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_thickness_power_in_flux",

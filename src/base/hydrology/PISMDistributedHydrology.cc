@@ -419,15 +419,6 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
 
-    // update Wtilnew (the actual step) from W and Wtil
-    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
-
     // note that ice dynamics can change overburden pressure, so we can only check P
     //   bounds if thk has not changed; if thk could have just changed, such as in the
     //   first time through the current loop, we enforce them
@@ -451,6 +442,15 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     if ((inputtobed != NULL) || (hydrocount==1)) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
+
+    // update Wtilnew from Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
 
     // update Pnew from time step
     const double  CC = (rg * hdt) / phi0,
@@ -526,7 +526,7 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
 
     // FIXME: following chunk is code duplication with RoutingHydrology::update()
 
-    // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
+    // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
     ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
