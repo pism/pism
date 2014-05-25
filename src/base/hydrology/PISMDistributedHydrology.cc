@@ -55,7 +55,6 @@ PetscErrorCode DistributedHydrology::allocate_pressure() {
   ierr = velbase_mag.set_attrs("internal",
                          "ice sliding speed seen by subglacial hydrology",
                          "m s-1", ""); CHKERRQ(ierr);
-  velbase_mag.metadata().set_double("valid_min", 0.0);
   ierr = Pnew.create(grid, "Pnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = Pnew.set_attrs("internal",
                      "new transportable subglacial water pressure during update",
@@ -115,12 +114,15 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
+  velbase_mag.metadata().set_double("valid_min", -9.99e200);  // set valid_min below diagnostic fill value: FIXME!
   if (hold_flag) {
     ierr = verbPrintf(2, grid.com,
        "  reading velbase_mag for 'distributed' hydrology from '%s'.\n", filename.c_str()); CHKERRQ(ierr);
     ierr = velbase_mag.regrid(filename, CRITICAL); CHKERRQ(ierr);
+    ierr = velbase_mag.mask_by(velbase_mag,0.0); CHKERRQ(ierr);  // attempt replace any negative fill with zero
     hold_velbase_mag = true;
   }
+  velbase_mag.metadata().set_double("valid_min", 0.0);  // set valid_min
 
   return 0;
 }
