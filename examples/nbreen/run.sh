@@ -63,7 +63,7 @@ if [ "$4" = "dist" ]; then
 
   # distributed run
   oname=nbreen_y${YY}_${dx}m_dist.nc
-  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -stress_balance ssa+sia -ssa_dirichlet_bc"
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -stress_balance ssa+sia -ssa_dirichlet_bc -yield_stress constant"
 
 elif [ "$4" = "event" ]; then
 
