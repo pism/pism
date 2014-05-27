@@ -65,17 +65,30 @@ def generate_config():
 
   nc.close()
 
-def report_drift(file1, file2):
+
+def report_drift(name, file1, file2, xx, yy, doshow=False):
   "Report on the difference between two files."
   nc1 = PISMDataset(file1)
   nc2 = PISMDataset(file2)
 
-  for name in ("bwat", "bwp"):
-    var1 = nc1.variables[name]
-    var2 = nc2.variables[name]
-    diff = np.abs(np.squeeze(var1[:]) - np.squeeze(var2[:]))
+  var1 = nc1.variables[name]
+  var2 = nc2.variables[name]
+  diff = np.abs(np.squeeze(var1[:]) - np.squeeze(var2[:]))
 
-    stderr.write("Drift in %s: average = %f, max = %f [%s]" % (name, np.average(diff), np.max(diff), var1.units) + "\n")
+  rr = np.sqrt(xx**2 + yy**2)
+  diff[rr>=0.89 * 25000.0] = 0.0
+
+  if (doshow):
+      import matplotlib.pyplot as plt
+      plt.pcolormesh(xx,yy,diff)
+      plt.axis('equal')
+      plt.axis('tight')
+      plt.colorbar()
+      plt.show()
+
+  #stderr.write("Drift in %s: average = %f, max = %f [%s]" % (name, np.average(diff), np.max(diff), var1.units) + "\n")
+  return np.average(diff), np.max(diff)
+
 
 def create_grid(Mx):
   Lx = 25.0e3  # outside L = 22.5 km
@@ -232,7 +245,11 @@ if __name__ == "__main__":
 
   run_pism(opts)
 
-  report_drift("inputforP.nc", "end.nc")
+  (bwatav, bwatmax) = report_drift("bwat", "inputforP.nc", "end.nc", xx, yy, doshow=False)
+  (bwpav,  bwpmax)  = report_drift("bwp",  "inputforP.nc", "end.nc", xx, yy, doshow=False)
+
+  print "NUMERICAL ERRORS:"
+  print "%d  %f  %f  %f  %f\n" % (opts.Mx, bwatav, bwatmax, bwpav, bwpmax)
 
   #cleanup:
   if opts.keep == False:
