@@ -327,7 +327,10 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
 
 //! \brief Regrid from a NetCDF file into a \b global Vec `v`.
 /*!
-  - if `flag` is `CRITICAL`, stops if the variable was not found in the input file
+  - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
+    variable was not found in the input file
+  - if `flag` is one of `CRITICAL_FILL_MISSING` and
+    `OPTIONAL_FILL_MISSING`, replace _FillValue with `default_value`.
   - sets `v` to `default_value` if `flag` is `OPTIONAL` and the
     variable was not found in the input file
   - uses the last record in the file
@@ -359,7 +362,20 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (exists == true) {                      // the variable was found successfully
-    ierr = nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, v); CHKERRQ(ierr);
+
+    if (flag == OPTIONAL_FILL_MISSING ||
+        flag == CRITICAL_FILL_MISSING) {
+      ierr = verbPrintf(2, m_com,
+                        "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+                        default_value, get_string("units").c_str(), get_name().c_str(),
+                        nc.inq_filename().c_str()); CHKERRQ(ierr);
+
+      ierr = nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
+                                        t_start, default_value,
+                                        v); CHKERRQ(ierr);
+    } else {
+      ierr = nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, v); CHKERRQ(ierr);
+    }
 
     // Now we need to get the units string from the file and convert the units,
     // because check_range and report_range expect the data to be in PISM (MKS)
@@ -398,7 +414,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
       ierr = this->report_range(v, found_by_standard_name); CHKERRQ(ierr);
     }
   } else {                // couldn't find the variable
-    if (flag == CRITICAL) {             // if it's critical, print an error message and stop
+    if (flag == CRITICAL ||
+        flag == CRITICAL_FILL_MISSING) { // if it's critical, print an error message and stop
       ierr = PetscPrintf(m_com,
                          "PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
                          get_name().c_str(), nc.inq_filename().c_str());

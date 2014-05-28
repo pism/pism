@@ -258,7 +258,7 @@ PetscErrorCode LocalInterpCtx::printArray() {
 
   ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printArray():  rank = %d, a_len = %d\n",
              rank, a_len); CHKERRQ(ierr);
-  for (int k = 0; k < a_len; k++) {
+  for (unsigned int k = 0; k < a_len; k++) {
     ierr = PetscSynchronizedPrintf(com," %5.4f,",a[k]); CHKERRQ(ierr);
   }
   ierr = PetscSynchronizedFlush(com); CHKERRQ(ierr);

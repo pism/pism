@@ -1086,7 +1086,68 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const std::string &var_name,
   // file came from.
   ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
 
-  ierr = regrid(grid, zlevels_out, lic, g);
+  ierr = regrid(grid, zlevels_out, lic, g); CHKERRQ(ierr);
+
+  delete lic;
+
+  return 0;
+}
+
+/** Regrid `var_name` from a file, replacing missing values with `default_value`.
+ *
+ * @param grid computational grid; used to initialize interpolation
+ * @param var_name variable to regrid
+ * @param zlevels_out vertical levels of the resulting grid
+ * @param t_start time index of the record to regrid
+ * @param default_value default value to replace `_FillValue` with
+ * @param[out] g resulting interpolated field
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const std::string &var_name,
+                                            const std::vector<double> &zlevels_out,
+                                            unsigned int t_start,
+                                            double default_value,
+                                            Vec g) const {
+  PetscErrorCode ierr;
+  const int X = 1, Y = 2, Z = 3; // indices, just for clarity
+  std::vector<unsigned int> start, count, imap;
+
+  LocalInterpCtx *lic = NULL;
+
+  ierr = get_interp_context(var_name, *grid, zlevels_out, lic); CHKERRQ(ierr);
+
+  assert(lic != NULL);
+
+  ierr = compute_start_and_count(var_name, t_start,
+                                 lic->start[X], lic->count[X],
+                                 lic->start[Y], lic->count[Y],
+                                 lic->start[Z], lic->count[Z],
+                                 start, count, imap); CHKERRQ(ierr);
+
+  ierr = nc->enddef(); CHKERRQ(ierr);
+
+  // We always use "mapped" I/O here, because we don't know where the input
+  // file came from.
+  ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+
+  // Replace missing values if the _FillValue attribute is present,
+  // and if we have missing values to replace.
+  {
+    std::vector<double> attribute;
+    ierr = nc->get_att_double(var_name, "_FillValue", attribute); CHKERRQ(ierr);
+    if (attribute.size() == 1) {
+      const double fill_value = attribute[0],
+        epsilon = 1e-12;
+      for (unsigned int i = 0; i < lic->a_len; ++i) {
+        if (fabs(lic->a[i] - fill_value) < epsilon) {
+          lic->a[i] = default_value;
+        }
+      }
+    }
+  }
+
+  ierr = regrid(grid, zlevels_out, lic, g); CHKERRQ(ierr);
 
   delete lic;
 

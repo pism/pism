@@ -119,7 +119,7 @@ private:
 class LocalInterpCtx;
 class IceGrid;
 
-enum RegriddingFlag {OPTIONAL, CRITICAL};
+enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING};
 
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {

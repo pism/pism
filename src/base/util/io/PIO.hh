@@ -136,6 +136,12 @@ public:
                             const std::vector<double> &zlevels_out,
                             unsigned int t_start, Vec g) const;
 
+  PetscErrorCode regrid_vec_fill_missing(IceGrid *grid, const std::string &var_name,
+                                         const std::vector<double> &zlevels_out,
+                                         unsigned int t_start,
+                                         double default_value,
+                                         Vec g) const ;
+
   PetscErrorCode get_vara_double(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
