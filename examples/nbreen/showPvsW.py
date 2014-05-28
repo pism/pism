@@ -47,7 +47,7 @@ if args.d >= 0:
    if np.shape(bwat)[0] <= args.d:
        print "ERROR: frame %d not available in variable bwat" % args.d
        sys.exit(5)
-   print "  reading frame %d of %d frames" % (args.d, shape(bwat)[0])
+   print "  reading frame %d of %d frames" % (args.d, np.shape(bwat)[0])
 else:
    args.d = -1
    print "  reading last frame of %d frames" % (np.shape(bwat)[0])

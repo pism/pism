@@ -1,7 +1,7 @@
 #!/bin/bash
 
 GRIDLIST="{500, 250, 125, 62}"
-TYPELIST="{dist, event, routing}"
+TYPELIST="{dist, event, routing, disttill}"
 
 if [ $# -lt 4 ] ; then
   echo "run.sh ERROR: needs five arguments ... ENDING NOW"
