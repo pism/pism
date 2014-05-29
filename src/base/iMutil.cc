@@ -305,7 +305,9 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // Now update z levels used for diagnostic quantities:
   std::map<std::string,PISMDiagnostic*>::iterator j = diagnostics.begin();
   while (j != diagnostics.end()) {
-    (j->second)->set_zlevels(grid.zlevels);
+    if (j->second != NULL) {
+      (j->second)->set_zlevels(grid.zlevels);
+    }
     ++j;
   }
 
