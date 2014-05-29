@@ -125,7 +125,7 @@ std::string PISMTime::units_string() {
 
 std::string PISMTime::CF_units_to_PISM_units(std::string input) {
   size_t n = input.find("since");
-  
+
   /*!
     \note This code finds the string "since" in the units_string and
     terminates it on the first 's' of "since", if this sub-string was found.
@@ -136,8 +136,8 @@ std::string PISMTime::CF_units_to_PISM_units(std::string input) {
     input.resize(n);
 
   // strip trailing spaces
-  while (ends_with(input, " "))
-    input.resize(input.size() - 1);
+  while (ends_with(input, " ") && input.empty() == false)
+    input.resize(input.size() - 1); // this would fail on empty strings
 
   return input;
 }
@@ -524,7 +524,7 @@ PetscErrorCode PISMTime::compute_times_simple(double time_start, double delta, d
     result.push_back(t);
     k += 1;
     t = time_start + k * delta;
-  } while (t < time_end);
+  } while (t <= time_end);
 
   return 0;
 }

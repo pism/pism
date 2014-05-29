@@ -740,7 +740,7 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
   \begin{tabular}{rp{0.5\linewidth}}
     \toprule
     Command-line option: & \texttt{-surface~pdd} \index[options]{SA@\surface!\texttt{pdd}} \\
-    NetCDF variables: & \variable{snow_depth} \\
+    NetCDF variables: & \variable{air_temp_sd}, \variable{snow_depth} \\
     C++ class: & \class{PSTemperatureIndex}\\
     \bottomrule
   \end{tabular}
@@ -808,7 +808,7 @@ Note: this surface model \emph{ignores} the atmosphere model selection made usin
 
 The default PDD model used by PISM, turned on by option
 \texttt{-surface pdd}, is based on~\cite{CalovGreve05} and
-EISMINT-Greenland inter-comparison (see~\cite{RitzEISMINT}).
+EISMINT-Greenland intercomparison (see~\cite{RitzEISMINT}).
 
 Our model computes the solid (snow) precipitation rate using the air
 temperature threshold with a linear transition. All precipitation
@@ -818,7 +818,8 @@ interpreted as rain; all precipitation during periods with air
 temperatures below \config{air_temp_all_precip_as_snow} (default of
 $0^\circ C$) is interpreted as snow.
 
-A PDD model generally adds ``white noise'' to the seasonal cycle to simulate
+For long-term simulations, a PDD model generally uses an idealized
+seasonal temperature cycle. ``White noise'' is added to this cycle to simulate
 additional daily variability associated to the vagaries of weather. This
 additional random variation is quite significant, as the seasonal cycle may
 never reach the melting point but that point may be reached with some
@@ -826,8 +827,27 @@ probability, in the presence of the daily variability, and thus melt may occur.
 Concretely, a normally-distributed, mean zero random temperature increment is
 added to the seasonal cycle. There is no assumed spatial correlation of daily
 variability. The standard deviation of the daily variability is controlled by
-the \texttt{pdd_std_dev} configuration parameter. The default value is $5.0$ degrees
-\cite{RitzEISMINT}.
+command-line options:
+
+\begin{itemize}
+\item \fileopt{pdd_sd_file}, which prescribes an input file.
+\item \txtopt{pdd_sd_period}{\emph{years}}, which interprets its data
+  as periodic; see section~\ref{sec:periodic-forcing}.
+\item \intextoption{pdd_sd_reference_year}, which sets the reference model year;
+  see section~\ref{sec:periodic-forcing}.
+\end{itemize}
+
+A file \texttt{foo.nc} used with \texttt{-surface pdd -pdd_sd_file foo.nc}
+should contain standard deviation of near-surface air temperature in variable
+\variable{air_temp_sd}, and the corresponding time coordinate in variable
+\variable{time}. If \texttt{-pdd_sd_file} is not set, PISM uses a constant
+value for standard deviation, which is set by the \texttt{pdd_std_dev}
+configuration parameter. The default value is $5.0$ degrees \cite{RitzEISMINT}.
+However, this approach is not recommended as it induces significant errors in
+modeled surface mass balance in both ice-covered and ice-free regions
+\cite{RogozhinaRau2014, Seguinot2013}.
+
+Over ice-covered grid cells, daily variability can also be parameterized as a linear function of near-surface air temperature $\sigma = a*T + b$ using the \config{pdd_std_dev_use_param} configuration flag, and the corresponding parameters \config{pdd_std_dev_param_a} and \config{pdd_std_dev_param_b}. This parametrization replaces prescribed standard deviation values over glacierized grid cells as defined by the \variable{mask} variable (see \config{mask_icefree_thickness_standard}). Default values for the slope $a$ and intercept $b$ were derived from the ERA-40 reanalysis over the Greenland ice sheet \cite{SeguinotRogozhina2014}.
 
 The number of positive degree days is computed as the magnitude of the
 temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the
@@ -873,6 +893,12 @@ factors using formulas (6) and (7) in~\cite{Faustoetal2009}; set
 daily variability (\intextoption{pdd_std_dev} option) is 2.53 degrees under the
 \intextoption{pdd_fausto} option~\cite{Faustoetal2009}. See also configuration
 parameters with the \texttt{pdd_fausto} prefix.
+
+Note that when used with periodic climate data (air temperature and
+precipitation) that is read from a file (see section
+\ref{sec:atmosphere-given}), use of \texttt{-timestep_hit_multiplies
+  X} is recommended. (Here \texttt{X} is the length of the climate
+data period in years.)
 
 \subsection{PIK}
 \label{sec:surface-pik}
@@ -1436,6 +1462,42 @@ It takes one command-line option:
 \item \intextoption{meltfactor_pik}: a melt factor $F_{\mathrm{melt}}$ in sub-shelf-melting parameterization, see equation~(5) in~\cite{Martinetal2011}.
 \end{itemize}
 
+\subsection{Basal melt rate and temperature from thermodynamics in boundary layer}
+\label{sec:ocean-th}
+\optsection{OA@\ocean!\texttt{th}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-ocean~th} \index[options]{OA@\ocean!\texttt{th}} \\
+    NetCDF variables: & \variable{theta_ocean} (absolute potential ocean temperature), [Kelvin], \variable{salinity_ocean} (salinity of the adjacent ocean), [g/kg] \\
+    C++ class: & \class{POGivenTH}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This ocean model~component derives basal melt rate and basal temperature from thermodynamics in a boundary layer at the base of the ice shelf.
+It uses a set of three equations describing
+\begin{enumerate}
+\item the energy flux balance,
+\item the salt flux balance,
+\item the pressure and salinity dependent freezing point in the boundary layer.
+\end{enumerate}
+This model is described in \cite{HollandJenkins1999} and \cite{Hellmeretal1998}.
+
+Inputs are potential temperature (variable \variable{theta_ocean}) and salinity (variable \variable{salinity_ocean}) read from a file.
+
+No ocean circulation is modeled, so melt water computed by this model is not fed back into the surrounding ocean.
+
+This implementation uses different approximations of the temperature gradient at the base of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on, or neither (see \cite{HollandJenkins1999} for details).
+
+It takes two command-line option:
+\begin{itemize}
+\item \fileopt{ocean_th_file}: specifies the NetCDF file providing potential temperature and salinity fields.
+\item \intextoption{clip_shelf_base_salinity}: if this is set (which is the default), the sub-shelf salinity is clipped so that it stays in the $[4, 40]$ psu range. This is done to ensure that we stay in the range of applicability of the melting point temperature parameterization; see \cite{HollandJenkins1999}. To disable salinity clipping, use the \intextoption{no_clip_shelf_base_salinity} option or set the \config{ocean_three_equation_model_clip_salinity} configuration parameter to ``no''.
+\end{itemize}
+
+
 \newcommand{\oceanmods}{Ocean modifiers}
 \subsection{Modifier: Scalar sea level offsets}
 \label{sec:delta-sea-level}
@@ -1511,7 +1573,7 @@ It takes the following command-line options:
 \end{itemize}
 
 \subsection{Modifier: Scalar melange back pressure fraction offsets}
-\label{sec:delta-subshelf-smb}
+\label{sec:delta-melange}
 \optsection{OB@\oceanmods!\texttt{delta_MBP}}
 
 \begin{center}

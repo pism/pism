@@ -1570,7 +1570,7 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
 
   bool found_by_standard_name;
   ierr = this->inq_var(name, standard_name,
-                    variable_exists, name_found, found_by_standard_name); CHKERRQ(ierr);
+                       variable_exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (!variable_exists) {
     ierr = PetscPrintf(m_com,
@@ -1614,11 +1614,12 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
     input_units(internal_units.get_system());
 
   ierr = this->get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
-  input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
   if (input_units_string.empty() == true) {
     input_has_units = false;
   } else {
+    input_units_string = time->CF_units_to_PISM_units(input_units_string);
+
     if (input_units.parse(input_units_string) != 0) {
       ierr = PetscPrintf(m_com,
                          "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",

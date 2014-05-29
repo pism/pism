@@ -28,41 +28,6 @@
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 
-//!  Computes volume and area of ice sheet, for reporting purposes.
-/*!
-  Communication done for global max and global sum.
-
-  Returns area in units of m^2 and volume in m^3.
- */
-PetscErrorCode IceModel::volumeArea(double& gvolume, double& garea) {
-
-  PetscErrorCode  ierr;
-  double     volume=0.0, area=0.0;
-
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  MaskQuery mask(vMask);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j)) {
-        area += cell_area(i,j);
-        const double dv = cell_area(i,j) * ice_thickness(i,j);
-        volume += dv;
-      }
-    }
-  }
-
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-
-  ierr = PISMGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
-  ierr = PISMGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
-  return 0;
-}
-
-
 /*!
   Computes fraction of the base which is melted.
 
@@ -177,7 +142,8 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   double     max_diffusivity;
 
   // get volumes in m^3 and areas in m^2
-  ierr = volumeArea(gvolume, garea); CHKERRQ(ierr);
+  ierr = compute_ice_volume(gvolume); CHKERRQ(ierr);
+  ierr = compute_ice_area(garea); CHKERRQ(ierr);
 
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
     ierr = energyStats(garea, meltfrac); CHKERRQ(ierr);

@@ -228,11 +228,41 @@ PetscErrorCode IceModelVec2T::init(std::string fname, unsigned int period, doubl
   return 0;
 }
 
+//! Initialize as constant in time and space
+PetscErrorCode IceModelVec2T::init_constant(double value) {
+  PetscErrorCode ierr;
+
+  // set constant value everywhere
+  ierr = set(value); CHKERRQ(ierr);
+
+  // set the time to zero
+  time.resize(1);
+  time[0] = 0;
+  //N = 1 ;
+
+  // set fake time bounds:
+  time_bounds.resize(2);
+  time_bounds[0] = -1;
+  time_bounds[1] =  1;
+
+  return 0;
+}
+
 //! Read some data to make sure that the interval (my_t, my_t + my_dt) is covered.
 PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
   std::vector<double>::iterator i, j;
   unsigned int m, n, last;
+
+  if (time_bounds.size() == 0) {
+    ierr = update(0); CHKERRQ(ierr);
+    return 0;
+  }
+
+  if (m_period != 0) {
+    // we read all data in IceModelVec2T::init() (see above)
+    return 0;
+  }
 
   if (N > 0) {
     last = first + (N - 1);
@@ -456,6 +486,11 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   double **a2;
   double dt_years = grid->convert(my_dt, "seconds", "years"); // *not* time->year(my_dt)
 
+  // if only one record, nothing to do
+  if (time.size() == 1) {
+    return 0;
+  }
+
   // Determine the number of small time-steps to use for averaging:
   int M = (int) ceil(n_evaluations_per_year * (dt_years));
   if (M < 1)
@@ -503,6 +538,12 @@ PetscErrorCode IceModelVec2T::init_interpolation(const double *ts, unsigned int 
   }
 
   m_interp_indices.resize(ts_length);
+
+  if (time_bounds.size() == 0) {
+    for (unsigned int k = 0; k < ts_length; ++k) {
+      m_interp_indices[k] = 0;
+    }
+  }
 
   for (unsigned int k = 0; k < ts_length; ++k) {
 

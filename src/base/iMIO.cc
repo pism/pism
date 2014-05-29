@@ -398,9 +398,9 @@ PetscErrorCode IceModel::initFromFile(std::string filename) {
     }
   }
 
-  if (config.get_flag("do_cold_ice_methods")) {
-    ierr = verbPrintf(3,grid.com,"  setting enthalpy from temperature...\n");
-    CHKERRQ(ierr);
+  if (config.get_flag("do_energy") && config.get_flag("do_cold_ice_methods")) {
+    ierr = verbPrintf(3, grid.com,
+                      "  setting enthalpy from temperature...\n"); CHKERRQ(ierr);
     ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
   }
 
@@ -546,6 +546,23 @@ PetscErrorCode IceModel::regrid_variables(std::string filename, std::set<std::st
     }
 
     ierr = v->regrid(filename, CRITICAL); CHKERRQ(ierr);
+
+    // Check if the current variable is the same as
+    // IceModel::ice_thickess, then check the range of the ice
+    // thickness
+    if (v == &this->ice_thickness) {
+      double thk_min = 0.0, thk_max = 0.0;
+      ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
+
+      if (thk_max >= grid.Lz + 1e-6) {
+        PetscPrintf(grid.com,
+                    "PISM ERROR: Maximum ice thickness (%f meters)\n"
+                    "            exceeds the height of the computational domain (%f meters).\n"
+                    "            Stopping...\n", thk_max, grid.Lz);
+        PISMEnd();
+      }
+    }
+
   }
 
   return 0;

@@ -33,6 +33,8 @@ PISMRoutingHydrology::PISMRoutingHydrology(IceGrid &g, const PISMConfig &conf)
   }
 }
 
+PISMRoutingHydrology::~PISMRoutingHydrology() {
+}
 
 PetscErrorCode PISMRoutingHydrology::allocate() {
   PetscErrorCode ierr;
@@ -102,11 +104,17 @@ PetscErrorCode PISMRoutingHydrology::init(PISMVars &vars) {
             "Options controlling the 'routing' subglacial hydrology model", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-report_mass_accounting",
-      "Report to stdout on mass accounting in hydrology models", report_mass_accounting); CHKERRQ(ierr);
+      "Report to stdout on mass accounting in hydrology models",
+                            report_mass_accounting); CHKERRQ(ierr);
+
+    stripwidth = grid.convert(stripwidth, "m", "km");
     ierr = PISMOptionsReal("-hydrology_null_strip",
-                           "set the width, in km, of the strip around the edge of the computational domain in which hydrology is inactivated",
-                           stripwidth,stripset); CHKERRQ(ierr);
-    if (stripset) stripwidth *= 1.0e3;
+                           "set the width, in km, of the strip around the edge"
+                           " of the computational domain in which hydrology is inactivated",
+                           stripwidth, stripset); CHKERRQ(ierr);
+    if (stripset) {
+      stripwidth = grid.convert(stripwidth, "km", "m");
+    }
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -132,6 +140,7 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
+  const PetscReal bwatdefault = config.get("bootstrapping_bwat_value_no_var");
   IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
   if (W_input != NULL) { // a variable called "bwat" is already in context
     ierr = W.copy_from(*W_input); CHKERRQ(ierr);
@@ -140,13 +149,25 @@ PetscErrorCode PISMRoutingHydrology::init_bwat(PISMVars &vars) {
     int start;
     ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
     if (i) {
-      ierr = W.read(filename, start); CHKERRQ(ierr);
+      bool bwat_exists = false;
+      PIO nc(grid, "guess_mode");
+      ierr = nc.open(filename, PISM_NOWRITE); CHKERRQ(ierr);
+      ierr = nc.inq_var("bwat", bwat_exists); CHKERRQ(ierr);
+      if (bwat_exists == true) {
+        ierr = W.read(filename, start); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2, grid.com,
+            "PISM WARNING: bwat for hydrology model not found in '%s'."
+            "  Setting it to %.2f ...\n",
+            filename.c_str(),bwatdefault); CHKERRQ(ierr);
+        ierr = W.set(bwatdefault); CHKERRQ(ierr);
+      }
+      ierr = nc.close(); CHKERRQ(ierr);
     } else {
-      ierr = W.regrid(filename, OPTIONAL,
-                          config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+      ierr = W.regrid(filename, OPTIONAL, bwatdefault); CHKERRQ(ierr);
     }
-  } else {
-    ierr = W.set(config.get("bootstrapping_bwat_value_no_var")); CHKERRQ(ierr);
+  } else { // not sure if this case can be reached, but ...
+    ierr = W.set(bwatdefault); CHKERRQ(ierr);
   }
 
   // however we initialized it, we could be asked to regrid from file
@@ -277,7 +298,7 @@ PetscErrorCode PISMRoutingHydrology::boundary_mass_changes(
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (in_null_strip(i,j)) {
+      if (grid.in_null_strip(i, j, stripwidth)) {
         my_nullstriplost += newthk(i,j) * dmassdz;
         newthk(i,j) = 0.0;
       }
@@ -582,9 +603,9 @@ PetscErrorCode PISMRoutingHydrology::velocity_staggered(IceModelVec2Stag &result
         result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
       } else
         result(i,j,1) = 0.0;
-      if (in_null_strip(i,j) || in_null_strip(i+1,j))
+      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth))
         result(i,j,0) = 0.0;
-      if (in_null_strip(i,j) || in_null_strip(i,j+1))
+      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth))
         result(i,j,1) = 0.0;
     }
   }

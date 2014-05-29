@@ -66,17 +66,23 @@ $  pismr -i foo.nc -Mz 201 -y 100
 
 \noindent will give a warning that ``\texttt{PISM WARNING: ignoring command-line option '-Mz'}''.
 
+
 \subsubsection{Parallel domain distribution}
 \label{sec:domain-dstribution}
 \optsection{Grid!domain distribution}
 
-When running PISM in parallel with \texttt{mpiexec -n N}, the horizontal grid is distributed across $N$ processes\footnote{In most cases one process corresponds to one ``core'' of your computer.}. PISM divides the grid into $N_x$ parts in the $x$ direction and $N_y$ parts in the $y$ direction so that $N_x\times N_y = N$ and $N_x$ is as close to $N_y$ as possible. To specify $N_x$ and $N_y$, use the \intextoption{Nx} and \intextoption{Ny} command-line options.
+When running PISM in parallel with \texttt{mpiexec -n N}, the horizontal grid is distributed across $N$ processes\footnote{In most cases one process corresponds to one ``core'' of your computer.}.  PISM divides the grid into $N_x$ parts in the $x$ direction and $N_y$ parts in the $y$ direction.  By default this is done automatically, with the goal that $N_x\times N_y = N$ and $N_x$ is as close to $N_y$ as possible.  Note that $N$ should, therefore, be a composite (not prime) number.
+
+Users seeking to override this default can specify $N_x$ and $N_y$ using the \intextoption{Nx} and \intextoption{Ny} command-line options.
 
 Once $N_x$ and $N_y$ are computed, PISM computes sizes of sub-domains $M_{x,i}$ so that $\sum_{i=1}^{N_x}M_{x,i} = \mathrm{Mx}$ and $M_{x,i} - \left\lfloor \mathrm{Mx} / N_x \right\rfloor < 1$. To specify strip widths $M_{x,i}$ and $M_{y,i}$, use command-line options \intextoption{procs_x} and \intextoption{procs_y}. Each option takes a comma-separated list of numbers as its argument. For example,
 \begin{verbatim}
 $ mpiexec -n 3 pisms -Mx 101 -My 101 -Nx 1 -Ny 3 -procs_x 101 -procs_y 20,61,20
 \end{verbatim}%$
 splits a $101 \times 101$ grid into 3 strips along the $x$ axis.
+
+To see the parallel domain decomposition from a completed run, see the \texttt{rank} variable in the output file, e.g.~using \texttt{-o_size big}.  The same \texttt{rank} variable is available as a spatial diagnostic field (subsection \ref{sec:saving-spat-vari}).
+
 
 \subsection{Model time}
 \label{sec:time}

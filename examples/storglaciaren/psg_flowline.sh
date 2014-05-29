@@ -63,7 +63,7 @@ echo
 PCONFIG=psg_config.nc
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -cts -config_override $PCONFIG -o_order zyx"
+PISM="${PISM_PREFIX}${PISM_EXEC} -config_override $PCONFIG -o_order zyx"
 
 
 DATANAME=storglaciaren_flowline.nc
