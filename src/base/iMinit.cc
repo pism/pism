@@ -108,7 +108,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     }
 
     if (grid_info_found) {
-      ierr = nc.inq_grid_info(names[i], input); CHKERRQ(ierr);
+      ierr = nc.inq_grid_info(names[i], grid.periodicity, input); CHKERRQ(ierr);
       break;
     }
   }
@@ -135,10 +135,10 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Set the grid center and horizontal extent:
-  grid.x0 = (input.x_max + input.x_min) / 2.0;
-  grid.y0 = (input.y_max + input.y_min) / 2.0;
-  grid.Lx = (input.x_max - input.x_min) / 2.0;
-  grid.Ly = (input.y_max - input.y_min) / 2.0;
+  grid.x0 = input.x0;
+  grid.y0 = input.y0;
+  grid.Lx = input.Lx;
+  grid.Ly = input.Ly;
 
   // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys_set;
@@ -186,21 +186,21 @@ PetscErrorCode IceModel::set_grid_from_options() {
 
   // Read -Lx and -Ly.
   ierr = OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
-                         y_scale,  Ly_set); CHKERRQ(ierr);
+                     y_scale,  Ly_set); CHKERRQ(ierr);
   ierr = OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
-                         x_scale,  Lx_set); CHKERRQ(ierr);
+                     x_scale,  Lx_set); CHKERRQ(ierr);
   // Vertical extent (in the ice):
   ierr = OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-                         z_scale,  Lz_set); CHKERRQ(ierr);
+                     z_scale,  Lz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz.
   int tmp_Mx = grid.Mx, tmp_My = grid.My, tmp_Mz = grid.Mz;
   ierr = OptionsInt("-My", "Number of grid points in the X direction",
-                        tmp_My, My_set); CHKERRQ(ierr);
+                    tmp_My, My_set); CHKERRQ(ierr);
   ierr = OptionsInt("-Mx", "Number of grid points in the Y direction",
-                        tmp_Mx, Mx_set); CHKERRQ(ierr);
+                    tmp_Mx, Mx_set); CHKERRQ(ierr);
   ierr = OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-                        tmp_Mz, Mz_set); CHKERRQ(ierr);
+                    tmp_Mz, Mz_set); CHKERRQ(ierr);
 
 
   if (tmp_Mx > 0 && tmp_My > 0 && tmp_Mz > 0) {
@@ -217,9 +217,9 @@ PetscErrorCode IceModel::set_grid_from_options() {
   std::vector<double> x_range, y_range;
   bool x_range_set, y_range_set;
   ierr = OptionsRealArray("-x_range", "min,max x coordinate values",
-                              x_range, x_range_set); CHKERRQ(ierr);
+                          x_range, x_range_set); CHKERRQ(ierr);
   ierr = OptionsRealArray("-y_range", "min,max y coordinate values",
-                              y_range, y_range_set); CHKERRQ(ierr);
+                          y_range, y_range_set); CHKERRQ(ierr);
 
   std::string keyword;
   std::set<std::string> z_spacing_choices;
@@ -361,7 +361,7 @@ PetscErrorCode IceModel::grid_setup() {
       ierr = nc.inq_var(names[i], var_exists); CHKERRQ(ierr);
 
       if (var_exists == true) {
-        ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC); CHKERRQ(ierr);
+        ierr = nc.inq_grid(names[i], &grid, grid.periodicity); CHKERRQ(ierr);
         break;
       }
     }
@@ -387,7 +387,6 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = ignore_option(grid.com, "-Ly");    CHKERRQ(ierr);
     ierr = ignore_option(grid.com, "-Lz");    CHKERRQ(ierr);
     ierr = ignore_option(grid.com, "-z_spacing"); CHKERRQ(ierr);
-    ierr = ignore_option(grid.com, "-zb_spacing"); CHKERRQ(ierr);
   } else {
     ierr = set_grid_defaults(); CHKERRQ(ierr);
     ierr = set_grid_from_options(); CHKERRQ(ierr);

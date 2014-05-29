@@ -153,7 +153,7 @@ PetscErrorCode BedThermalUnit::allocate() {
     ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
 
     if (exists) {
-      ierr = nc.inq_grid_info("litho_temp", g); CHKERRQ(ierr);
+      ierr = nc.inq_grid_info("litho_temp", grid.periodicity, g); CHKERRQ(ierr);
 
       Mbz = g.z_len;
       Lbz = -g.z_min;

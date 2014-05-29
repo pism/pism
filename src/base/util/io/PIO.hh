@@ -86,7 +86,8 @@ public:
 
   PetscErrorCode inq_units(const std::string &name, bool &has_units, Unit &units) const;
 
-  PetscErrorCode inq_grid_info(const std::string &name, grid_info &g) const;
+  PetscErrorCode inq_grid_info(const std::string &name, Periodicity p,
+                               grid_info &g) const;
 
   PetscErrorCode def_dim(unsigned long int length, const NCVariable &metadata) const;
 
@@ -134,6 +135,12 @@ public:
   PetscErrorCode regrid_vec(IceGrid *grid, const std::string &var_name,
                             const std::vector<double> &zlevels_out,
                             unsigned int t_start, Vec g) const;
+
+  PetscErrorCode regrid_vec_fill_missing(IceGrid *grid, const std::string &var_name,
+                                         const std::vector<double> &zlevels_out,
+                                         unsigned int t_start,
+                                         double default_value,
+                                         Vec g) const ;
 
   PetscErrorCode get_vara_double(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
@@ -223,10 +230,10 @@ public:
   // dimension lengths
   unsigned int t_len, x_len, y_len, z_len;
   double time,                  //!< current time (seconds)
-    x_min,                      //!< [x_min, x_max] is the X extent of the grid
-    x_max,                      //!< [x_min, x_max] is the X extent of the grid
-    y_min,                      //!< [y_min, y_max] is the Y extent of the grid
-    y_max,                      //!< [y_min, y_max] is the Y extent of the grid
+    x0,                         //!< x-coordinate of the domain center
+    y0,                         //!< y-coordinate of the domain center
+    Lx,                         //!< domain half-width
+    Ly,                         //!< domain half-height
     z_min,                      //!< minimal value of the z dimension
     z_max;                      //!< maximal value of the z dimension
   std::vector<double> x, y, z;       //!< coordinates

@@ -13,9 +13,9 @@ OPTS="-y 0"
 set -e -x
 
 # Create a file to regrid from:
-$PISM_PATH/pisms -energy enthalpy -Mx 11 -My 11 -Mz 11 -y 6000 -max_dt 300.0 -o coarse1-08.nc 
+$PISM_PATH/pisms -energy enthalpy -Mx 10 -My 10 -Mz 11 -y 6000 -max_dt 300.0 -o coarse1-08.nc
 # Create another file with a finer grid:
-$PISM_PATH/pisms -energy enthalpy -Mx 11 -My 11 -Mz 21 -y 6000 -max_dt 300.0 -o fine1-08.nc 
+$PISM_PATH/pisms -energy enthalpy -Mx 10 -My 10 -Mz 21 -y 6000 -max_dt 300.0 -o fine1-08.nc
 
 # Coarse -> fine:
 $PISM_PATH/pismr -i fine1-08.nc -regrid_file coarse1-08.nc -regrid_vars enthalpy $OPTS -o fine2-08.nc

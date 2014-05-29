@@ -850,6 +850,31 @@ PetscErrorCode IceModelVec::regrid(const std::string &filename, RegriddingFlag f
   return 0;
 }
 
+/** Read a field from a file, interpolating onto the current grid.
+ *
+ * When `flag` is set to `CRITICAL`, stop if could not find the variable
+ * in the provided input file; `default_value` is ignored.
+ *
+ * When `flag` is set to `OPTIONAL`, fill this IceModelVec with
+ * `default_value` if could not find the variable in the provided
+ * input file.
+ *
+ * When `flag` is set to `CRITICAL_FILL_MISSING`, replace missing
+ * values matching the `_FillValue` attribute with `default_value`,
+ * stop if could not find the variable.
+ *
+ * When `flag` is set to `OPTIONAL_FILL_MISSING`, replace missing
+ * values matching the `_FillValue` attribute with `default_value`;
+ * fill the whole IceModelVec with `default_value` if could not find
+ * the variable.
+ *
+ * @param nc input file
+ * @param flag regridding mode, see above
+ * @param default_value default value, meaning depends on the
+ *        regridding mode flag
+ *
+ * @return 0 on success
+ */
 PetscErrorCode IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
                                    double default_value) {
   PetscErrorCode ierr;
