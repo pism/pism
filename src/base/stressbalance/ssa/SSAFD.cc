@@ -127,7 +127,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   // note SSADA and SSAX are allocated in SSA::allocate()
   ierr = VecDuplicate(SSAX, &m_b); CHKERRQ(ierr);
 
-  ierr = DMCreateMatrix(SSADA, MATAIJ, &m_A); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA->get(), MATAIJ, &m_A); CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
   ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_"); CHKERRQ(ierr);
@@ -287,7 +287,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   ierr = compute_driving_stress(taud); CHKERRQ(ierr);
 
   ierr = taud.begin_access(); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(SSADA, rhs, &rhs_uv); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(SSADA->get(), rhs, &rhs_uv); CHKERRQ(ierr);
 
   bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc"); // FIXME: bedrock_boundary is a misleading name
 
@@ -414,7 +414,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   }
 
   ierr = taud.end_access(); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(SSADA, rhs, &rhs_uv); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(SSADA->get(), rhs, &rhs_uv); CHKERRQ(ierr);
 
   return 0;
 }

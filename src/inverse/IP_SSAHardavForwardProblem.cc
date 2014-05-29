@@ -56,7 +56,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   ierr = m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencilWidth); CHKERRQ(ierr);
   ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
 
-  ierr = DMCreateMatrix(SSADA, "baij", &m_J_state); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA->get(), "baij", &m_J_state); CHKERRQ(ierr);
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
   double ksp_rtol = 1e-12;
@@ -159,12 +159,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, V
   Vector2 **u_a, **rhs_a;
 
   ierr = u.get_array(u_a); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(SSADA, RHS, &rhs_a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(SSADA->get(), RHS, &rhs_a); CHKERRQ(ierr);
 
   DMDALocalInfo *info = NULL;
   ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
 
-  ierr = DMDAVecRestoreArray(SSADA, RHS, &rhs_a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(SSADA->get(), RHS, &rhs_a); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
 
   return 0;
@@ -212,9 +212,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du) {
   PetscErrorCode ierr;
   Vector2 **du_a;
-  ierr = DMDAVecGetArray(SSADA, du, &du_a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(SSADA->get(), du, &du_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design(u, dzeta, du_a);
-  ierr = DMDAVecRestoreArray(SSADA, du, &du_a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(SSADA->get(), du, &du_a); CHKERRQ(ierr);
   return 0;
 }
 
@@ -394,12 +394,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
                                                                            Vec dzeta) {
   PetscErrorCode ierr;
   double **dzeta_a;
-  DM da2;
+  PISMDM::Ptr da2;
   ierr = m_grid.get_dm(1, m_grid.max_stencil_width, da2); CHKERRQ(ierr);
 
-  ierr = DMDAVecGetArray(da2, dzeta, &dzeta_a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(da2->get(), dzeta, &dzeta_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design_transpose(u, du, dzeta_a); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArray(da2, dzeta, &dzeta_a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(da2->get(), dzeta, &dzeta_a); CHKERRQ(ierr);
   return 0;
 }
 

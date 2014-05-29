@@ -46,8 +46,8 @@ public:
   std::vector<int> x_left, x_right, y_left, y_right; // neighbors
   std::vector<double> x_alpha, y_alpha;
   double *a;                       //!< temporary buffer
-  int a_len;                       //!< the size of the buffer
-  std::vector<double> zlevels;          //!< input z levels
+  unsigned int a_len;              //!< the size of the buffer
+  std::vector<double> zlevels;     //!< input z levels
   bool report_range;
   MPI_Comm com;                 //!< MPI Communicator (for printing, mostly)
   int rank;             //!< MPI rank, to allocate a_raw on proc 0 only

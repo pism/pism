@@ -713,7 +713,7 @@ netcdf pism_config {
    pism_config:surface_gradient_method = "haseloff";
    pism_config:surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points; possible values are 'mahaffy', 'eta', 'haseloff' (lowercase)";
 
-   pism_config:grid_periodicity = "none";
+   pism_config:grid_periodicity = "xy";
    pism_config:grid_periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
 
    pism_config:grid_ice_vertical_spacing = "quadratic";

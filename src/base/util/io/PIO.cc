@@ -557,7 +557,7 @@ PetscErrorCode PIO::inq_grid(const std::string &var_name, IceGrid *grid, Periodi
   grid_info input;
 
   // The following call may fail because var_name does not exist. (And this is fatal!)
-  ierr = this->inq_grid_info(var_name, input); CHKERRQ(ierr);
+  ierr = this->inq_grid_info(var_name, periodicity, input); CHKERRQ(ierr);
 
   // if we have no vertical grid information, create a fake 2-level vertical grid.
   if (input.z.size() < 2) {
@@ -577,25 +577,10 @@ PetscErrorCode PIO::inq_grid(const std::string &var_name, IceGrid *grid, Periodi
 
   grid->periodicity = periodicity;
 
-  // The grid dimensions Lx/Ly are computed differently depending on the grid's
-  // periodicity. For x-periodic grids, e.g., the length Lx is a little longer
-  // than the difference between the maximum and minimum x-coordinates.
-  double x_max = input.x_max, x_min = input.x_min;
-  if (periodicity & X_PERIODIC) {
-    double dx = (x_max-x_min)/(grid->Mx-1);
-    x_max += dx;
-  }
-
-  double y_max = input.y_max, y_min = input.y_min;
-  if (periodicity & Y_PERIODIC) {
-    double dy = (y_max-y_min)/(grid->My-1);
-    y_max += dy;
-  }
-
-  grid->x0 = (x_max + x_min) / 2.0;
-  grid->y0 = (y_max + y_min) / 2.0;
-  grid->Lx = (x_max - x_min) / 2.0;
-  grid->Ly = (y_max - y_min) / 2.0;
+  grid->x0 = input.x0;
+  grid->y0 = input.y0;
+  grid->Lx = input.Lx;
+  grid->Ly = input.Ly;
 
   grid->time->set_start(input.time);
   ierr = grid->time->init(); CHKERRQ(ierr); // re-initialize to take the new start time into account
@@ -629,7 +614,7 @@ PetscErrorCode PIO::inq_units(const std::string &name, bool &has_units, Unit &un
   // strip trailing spaces
   while (ends_with(units_string, " "))
     units_string.resize(units_string.size() - 1);
-  
+
   if (units.parse(units_string) != 0) {
     ierr = PetscPrintf(m_com, "PISM ERROR: units specification '%s' is unknown or invalid (processing variable '%s').\n",
                        units_string.c_str(), name.c_str());
@@ -642,7 +627,8 @@ PetscErrorCode PIO::inq_units(const std::string &name, bool &has_units, Unit &un
 }
 
 
-PetscErrorCode PIO::inq_grid_info(const std::string &name, grid_info &g) const {
+PetscErrorCode PIO::inq_grid_info(const std::string &name, Periodicity p,
+                                  grid_info &g) const {
   PetscErrorCode ierr;
 
   std::vector<std::string> dims;
@@ -679,15 +665,29 @@ PetscErrorCode PIO::inq_grid_info(const std::string &name, grid_info &g) const {
     case X_AXIS:
       {
         ierr = nc->inq_dimlen(dimname, g.x_len); CHKERRQ(ierr);
-        ierr = this->inq_dim_limits(dimname, &g.x_min, &g.x_max); CHKERRQ(ierr);
+        double x_min = 0.0, x_max = 0.0;
+        ierr = this->inq_dim_limits(dimname, &x_min, &x_max); CHKERRQ(ierr);
         ierr = this->get_dim(dimname, g.x); CHKERRQ(ierr);
+        g.x0 = 0.5 * (x_min + x_max);
+        g.Lx = 0.5 * (x_max - x_min);
+        if (p & X_PERIODIC) {
+          const double dx = g.x[1] - g.x[0];
+          g.Lx += 0.5 * dx;
+        }
         break;
       }
     case Y_AXIS:
       {
         ierr = nc->inq_dimlen(dimname, g.y_len); CHKERRQ(ierr);
-        ierr = this->inq_dim_limits(dimname, &g.y_min, &g.y_max); CHKERRQ(ierr);
+        double y_min = 0.0, y_max = 0.0;
+        ierr = this->inq_dim_limits(dimname, &y_min, &y_max); CHKERRQ(ierr);
         ierr = this->get_dim(dimname, g.y); CHKERRQ(ierr);
+        g.y0 = 0.5 * (y_min + y_max);
+        g.Ly = 0.5 * (y_max - y_min);
+        if (p & Y_PERIODIC) {
+          const double dy = g.y[1] - g.y[0];
+          g.Ly += 0.5 * dy;
+        }
         break;
       }
     case Z_AXIS:
@@ -1051,7 +1051,7 @@ PetscErrorCode PIO::get_interp_context(const std::string &name,
   } else {
     grid_info gi;
 
-    ierr = this->inq_grid_info(name, gi); CHKERRQ(ierr);
+    ierr = this->inq_grid_info(name, grid.periodicity, gi); CHKERRQ(ierr);
 
     lic = new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
   }
@@ -1086,7 +1086,68 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const std::string &var_name,
   // file came from.
   ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
 
-  ierr = regrid(grid, zlevels_out, lic, g);
+  ierr = regrid(grid, zlevels_out, lic, g); CHKERRQ(ierr);
+
+  delete lic;
+
+  return 0;
+}
+
+/** Regrid `var_name` from a file, replacing missing values with `default_value`.
+ *
+ * @param grid computational grid; used to initialize interpolation
+ * @param var_name variable to regrid
+ * @param zlevels_out vertical levels of the resulting grid
+ * @param t_start time index of the record to regrid
+ * @param default_value default value to replace `_FillValue` with
+ * @param[out] g resulting interpolated field
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const std::string &var_name,
+                                            const std::vector<double> &zlevels_out,
+                                            unsigned int t_start,
+                                            double default_value,
+                                            Vec g) const {
+  PetscErrorCode ierr;
+  const int X = 1, Y = 2, Z = 3; // indices, just for clarity
+  std::vector<unsigned int> start, count, imap;
+
+  LocalInterpCtx *lic = NULL;
+
+  ierr = get_interp_context(var_name, *grid, zlevels_out, lic); CHKERRQ(ierr);
+
+  assert(lic != NULL);
+
+  ierr = compute_start_and_count(var_name, t_start,
+                                 lic->start[X], lic->count[X],
+                                 lic->start[Y], lic->count[Y],
+                                 lic->start[Z], lic->count[Z],
+                                 start, count, imap); CHKERRQ(ierr);
+
+  ierr = nc->enddef(); CHKERRQ(ierr);
+
+  // We always use "mapped" I/O here, because we don't know where the input
+  // file came from.
+  ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+
+  // Replace missing values if the _FillValue attribute is present,
+  // and if we have missing values to replace.
+  {
+    std::vector<double> attribute;
+    ierr = nc->get_att_double(var_name, "_FillValue", attribute); CHKERRQ(ierr);
+    if (attribute.size() == 1) {
+      const double fill_value = attribute[0],
+        epsilon = 1e-12;
+      for (unsigned int i = 0; i < lic->a_len; ++i) {
+        if (fabs(lic->a[i] - fill_value) < epsilon) {
+          lic->a[i] = default_value;
+        }
+      }
+    }
+  }
+
+  ierr = regrid(grid, zlevels_out, lic, g); CHKERRQ(ierr);
 
   delete lic;
 
@@ -1643,7 +1704,7 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
     }
     input_has_units = true;
   }
-  
+
   if (metadata.has_attribute("units") == true && input_has_units == false) {
     std::string units_string = internal_units.format();
     ierr = verbPrintf(2, m_com,
@@ -1863,12 +1924,12 @@ grid_info::grid_info() {
   time  = 0;
 
   x_len = 0;
-  x_max = 0;
-  x_min = 0;
+  x0    = 0;
+  Lx    = 0;
 
   y_len = 0;
-  y_max = 0;
-  y_min = 0;
+  y0    = 0;
+  Ly    = 0;
 
   z_len = 0;
   z_min = 0;

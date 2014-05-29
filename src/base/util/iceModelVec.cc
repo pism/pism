@@ -35,7 +35,7 @@ IceModelVec::IceModelVec() {
   access_counter = 0;
   array = NULL;
 
-  m_da = NULL;
+  m_da.reset();
   m_da_stencil_width = 1;
   m_dof = 1;                    // default
   begin_end_access_use_dof = true;
@@ -276,8 +276,8 @@ PetscErrorCode  IceModelVec::copy_to_vec(Vec destination) {
   assert(v != NULL);
 
   if (m_has_ghosts) {
-    ierr = DMLocalToGlobalBegin(m_da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(m_da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
+    ierr = DMLocalToGlobalBegin(m_da->get(), v, INSERT_VALUES, destination); CHKERRQ(ierr);
+    ierr = DMLocalToGlobalEnd(m_da->get(), v, INSERT_VALUES, destination); CHKERRQ(ierr);
   } else {
     ierr = VecCopy(v, destination); CHKERRQ(ierr);
   }
@@ -291,8 +291,8 @@ PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
   assert(v != NULL);
 
   if (m_has_ghosts) {
-    ierr =   DMGlobalToLocalBegin(m_da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
-    ierr =     DMGlobalToLocalEnd(m_da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
+    ierr =   DMGlobalToLocalBegin(m_da->get(), source, INSERT_VALUES, v);  CHKERRQ(ierr);
+    ierr =     DMGlobalToLocalEnd(m_da->get(), source, INSERT_VALUES, v);  CHKERRQ(ierr);
   } else {
     ierr = VecCopy(source, v); CHKERRQ(ierr);
   }
@@ -431,14 +431,14 @@ PetscErrorCode IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1.");
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(m_da, &tmp); CHKERRQ(ierr);
+    ierr = DMGetGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).regrid(nc, flag, m_report_range, default_value, tmp); CHKERRQ(ierr);
 
-    ierr = DMGlobalToLocalBegin(m_da, tmp, INSERT_VALUES, v); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(m_da, tmp, INSERT_VALUES, v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(m_da->get(), tmp, INSERT_VALUES, v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(m_da->get(), tmp, INSERT_VALUES, v); CHKERRQ(ierr);
 
-    ierr = DMRestoreGlobalVector(m_da, &tmp); CHKERRQ(ierr);
+    ierr = DMRestoreGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
   } else {
     ierr = metadata(0).regrid(nc, flag, m_report_range, default_value, v); CHKERRQ(ierr);
   }
@@ -459,14 +459,14 @@ PetscErrorCode IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1.");
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(m_da, &tmp); CHKERRQ(ierr);
+    ierr = DMGetGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).read(nc, time, tmp); CHKERRQ(ierr);
 
-    ierr = DMGlobalToLocalBegin(m_da, tmp, INSERT_VALUES, v); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(m_da, tmp, INSERT_VALUES, v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(m_da->get(), tmp, INSERT_VALUES, v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(m_da->get(), tmp, INSERT_VALUES, v); CHKERRQ(ierr);
 
-    ierr = DMRestoreGlobalVector(m_da, &tmp); CHKERRQ(ierr);
+    ierr = DMRestoreGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
   } else {
     ierr = metadata(0).read(nc, time, v); CHKERRQ(ierr);
   }
@@ -523,13 +523,13 @@ PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) {
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1");
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(m_da, &tmp); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalBegin(m_da, v, INSERT_VALUES, tmp); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(m_da, v, INSERT_VALUES, tmp); CHKERRQ(ierr);
+    ierr = DMGetGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
+    ierr = DMLocalToGlobalBegin(m_da->get(), v, INSERT_VALUES, tmp); CHKERRQ(ierr);
+    ierr = DMLocalToGlobalEnd(m_da->get(), v, INSERT_VALUES, tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).write(nc, nctype, write_in_glaciological_units, tmp); CHKERRQ(ierr);
 
-    ierr = DMRestoreGlobalVector(m_da, &tmp); CHKERRQ(ierr);
+    ierr = DMRestoreGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
   } else {
     ierr = metadata(0).write(nc, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
   }
@@ -590,9 +590,9 @@ PetscErrorCode  IceModelVec::begin_access() {
   if (access_counter == 0) {
 
     if (begin_end_access_use_dof == true) {
-      ierr = DMDAVecGetArrayDOF(m_da, v, &array); CHKERRQ(ierr);
+      ierr = DMDAVecGetArrayDOF(m_da->get(), v, &array); CHKERRQ(ierr);
     } else {
-      ierr = DMDAVecGetArray(m_da, v, &array); CHKERRQ(ierr);
+      ierr = DMDAVecGetArray(m_da->get(), v, &array); CHKERRQ(ierr);
     }
   }
 
@@ -617,10 +617,10 @@ PetscErrorCode  IceModelVec::end_access() {
   access_counter--;
   if (access_counter == 0) {
     if (begin_end_access_use_dof == true) {
-      ierr = DMDAVecRestoreArrayDOF(m_da, v, &array);
+      ierr = DMDAVecRestoreArrayDOF(m_da->get(), v, &array);
       CHKERRQ(ierr);
     } else {
-      ierr = DMDAVecRestoreArray(m_da, v, &array); CHKERRQ(ierr);
+      ierr = DMDAVecRestoreArray(m_da->get(), v, &array); CHKERRQ(ierr);
     }
     array = NULL;
   }
@@ -635,8 +635,8 @@ PetscErrorCode  IceModelVec::update_ghosts() {
     return 0;
 
   assert(v != NULL);
-  ierr = DMDALocalToLocalBegin(m_da, v, INSERT_VALUES, v);  CHKERRQ(ierr);
-  ierr = DMDALocalToLocalEnd(m_da, v, INSERT_VALUES, v); CHKERRQ(ierr);
+  ierr = DMDALocalToLocalBegin(m_da->get(), v, INSERT_VALUES, v);  CHKERRQ(ierr);
+  ierr = DMDALocalToLocalEnd(m_da->get(), v, INSERT_VALUES, v); CHKERRQ(ierr);
   return 0;
 }
 
@@ -647,20 +647,20 @@ PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) {
   assert(v != NULL);
 
   if (m_has_ghosts == true && destination.m_has_ghosts == true) {
-    ierr = DMDALocalToLocalBegin(m_da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-    ierr = DMDALocalToLocalEnd(m_da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMDALocalToLocalBegin(m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMDALocalToLocalEnd(m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     return 0;
   }
 
   if (m_has_ghosts == true && destination.m_has_ghosts == false) {
-    ierr = DMLocalToGlobalBegin(m_da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(m_da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMLocalToGlobalBegin(m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMLocalToGlobalEnd(m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     return 0;
   }
 
   if (m_has_ghosts == false && destination.m_has_ghosts == true) {
-    ierr = DMGlobalToLocalBegin(destination.m_da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(destination.m_da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(destination.m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(destination.m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     return 0;
   }
 
@@ -850,6 +850,31 @@ PetscErrorCode IceModelVec::regrid(const std::string &filename, RegriddingFlag f
   return 0;
 }
 
+/** Read a field from a file, interpolating onto the current grid.
+ *
+ * When `flag` is set to `CRITICAL`, stop if could not find the variable
+ * in the provided input file; `default_value` is ignored.
+ *
+ * When `flag` is set to `OPTIONAL`, fill this IceModelVec with
+ * `default_value` if could not find the variable in the provided
+ * input file.
+ *
+ * When `flag` is set to `CRITICAL_FILL_MISSING`, replace missing
+ * values matching the `_FillValue` attribute with `default_value`,
+ * stop if could not find the variable.
+ *
+ * When `flag` is set to `OPTIONAL_FILL_MISSING`, replace missing
+ * values matching the `_FillValue` attribute with `default_value`;
+ * fill the whole IceModelVec with `default_value` if could not find
+ * the variable.
+ *
+ * @param nc input file
+ * @param flag regridding mode, see above
+ * @param default_value default value, meaning depends on the
+ *        regridding mode flag
+ *
+ * @return 0 on success
+ */
 PetscErrorCode IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
                                    double default_value) {
   PetscErrorCode ierr;

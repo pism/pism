@@ -35,11 +35,11 @@ set +e
 diff test-J-out-fd.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.2699      0.10496    0.1903    0.2128    0.0949    0.1578
+                0.3893      0.15736    0.2679    0.3102    0.1187    0.2469
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.1410      0.05888    0.1067    0.1011    0.0631    0.0832
+                0.1869      0.07755    0.1311    0.1367    0.0845    0.1110
 NUM ERRORS DONE
 END-OF-OUTPUT
 

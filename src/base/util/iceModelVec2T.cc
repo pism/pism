@@ -29,8 +29,7 @@ namespace pism {
 
 IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   m_has_ghosts           = false;
-  da3                    = NULL;
-  v3                     = NULL;
+  m_v3                     = NULL;
   array3                 = NULL;
   first                  = -1;
   N                      = 0;
@@ -39,6 +38,8 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   m_period               = 0;
   m_reference_time       = 0.0;
   n_evaluations_per_year = 53;
+
+  m_da3.reset();
 }
 
 IceModelVec2T::~IceModelVec2T() {
@@ -69,11 +70,11 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const std::string &my_sho
 
   ierr = IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width); CHKERRQ(ierr);
 
-  // initialize the da3 member:
-  ierr = grid->get_dm(this->n_records, this->m_da_stencil_width, da3); CHKERRQ(ierr);
+  // initialize the m_da3 member:
+  ierr = grid->get_dm(this->n_records, this->m_da_stencil_width, m_da3); CHKERRQ(ierr);
 
   // allocate the 3D Vec:
-  ierr = DMCreateGlobalVector(da3, &v3); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(m_da3->get(), &m_v3); CHKERRQ(ierr);
 
   return 0;
 }
@@ -83,9 +84,9 @@ PetscErrorCode IceModelVec2T::destroy() {
 
   ierr = IceModelVec2S::destroy(); CHKERRQ(ierr);
 
-  if (v3 != NULL) {
-    ierr = VecDestroy(&v3); CHKERRQ(ierr);
-    v3 = NULL;
+  if (m_v3 != NULL) {
+    ierr = VecDestroy(&m_v3); CHKERRQ(ierr);
+    m_v3 = NULL;
   }
 
   return 0;
@@ -100,7 +101,7 @@ PetscErrorCode IceModelVec2T::get_array3(double*** &a3) {
 PetscErrorCode IceModelVec2T::begin_access() {
   PetscErrorCode ierr;
   if (access_counter == 0) {
-    ierr = DMDAVecGetArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
+    ierr = DMDAVecGetArrayDOF(m_da3->get(), m_v3, &array3); CHKERRQ(ierr);
   }
 
   // this call will increment the access_counter
@@ -114,7 +115,7 @@ PetscErrorCode IceModelVec2T::end_access() {
   PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
 
   if (access_counter == 0) {
-    ierr = DMDAVecRestoreArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArrayDOF(m_da3->get(), m_v3, &array3); CHKERRQ(ierr);
     array3 = NULL;
   }
 

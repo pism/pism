@@ -95,6 +95,9 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
   // equal spacing is the default for all the tests except K
   grid.ice_vertical_spacing = EQUAL;
 
+  // use the non-periodic grid:
+  grid.periodicity = NOT_PERIODIC;
+
   switch (testname) {
   case 'A':
   case 'E':

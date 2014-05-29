@@ -99,6 +99,7 @@ public:
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
+  friend class Hydrology_hydrobmelt;
   friend class Hydrology_hydroinput;
 
   // in the base class these only add/define/write tillwat
@@ -125,7 +126,7 @@ protected:
   // this model's state
   IceModelVec2S Wtil;      // effective thickness of till
   // this model's workspace
-  IceModelVec2S total_input;
+  IceModelVec2S total_input, bmelt_local;
 
   // pointers into IceModel; these describe the ice sheet and the source
   IceModelVec2S *thk,   // ice thickness
@@ -133,6 +134,8 @@ protected:
     *cellarea, // projection-dependent area of each cell, used in mass reporting
     *bmelt; // ice sheet basal melt rate
   IceModelVec2Int *mask;// floating, grounded, etc. mask
+
+  bool hold_bmelt;
 
   IceModelVec2T *inputtobed;// time dependent input of water to bed, in addition to bmelt
   unsigned int inputtobed_period;      // in years
@@ -327,8 +330,11 @@ public:
   virtual PetscErrorCode init(Vars &vars);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
+  friend class DistributedHydrology_hydrovelbase_mag;
+
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
@@ -344,6 +350,7 @@ protected:
   IceModelVec2S psi,    //!< hydraulic potential
     velbase_mag,  //!< sliding speed of overlying ice
     Pnew;   //!< pressure during update
+  bool hold_velbase_mag;
 
   // need to get basal sliding velocity (thus speed):
   StressBalance* stressbalance;

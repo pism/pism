@@ -65,7 +65,7 @@ protected:
   Vec m_g2, m_g2natural;  //!< global Vecs used to transfer data to/from processor 0.
   VecScatter m_scatter; //!< VecScatter used to transfer data to/from processor 0.
   Vec m_mask_p0;
-  DM m_da2;
+  PISMDM::Ptr m_da2;
 
   IceModelVec2Int *m_bcflag;
 };

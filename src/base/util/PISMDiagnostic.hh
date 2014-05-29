@@ -78,6 +78,18 @@ public:
   //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
   virtual int get_nvars() { return dof; }
 
+  //! Reset vertical levels corresponding to the z dimension.
+  /** This is called after the automatic grid extension.
+   */
+  virtual void set_zlevels(std::vector<double> &zlevels)
+  {
+    for (int j = 0; j < dof; ++j) {
+      if (vars[j].get_z().get_name() == "z") {
+        vars[j].set_levels(zlevels);
+      }
+    }
+  }
+
   //! Get a pointer to a metadata object corresponding to variable number N.
   virtual NCSpatialVariable get_metadata(int N = 0)
   {
