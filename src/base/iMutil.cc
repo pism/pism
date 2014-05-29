@@ -27,6 +27,7 @@
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "PISMDiagnostic.hh"
 
 namespace pism {
 
@@ -290,7 +291,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
-    ierr =    T3.extend_vertically(old_Mz, ice_surface_temp); CHKERRQ(ierr);
+    ierr = T3.extend_vertically(old_Mz, ice_surface_temp); CHKERRQ(ierr);
   }
 
   // deal with 3D age conditionally
@@ -302,6 +303,13 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = stress_balance->extend_the_grid(old_Mz); CHKERRQ(ierr); 
   
   ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
+
+  // Now update z levels used for diagnostic quantities:
+  std::map<std::string,Diagnostic*>::iterator j = diagnostics.begin();
+  while (j != diagnostics.end()) {
+    (j->second)->set_zlevels(grid.zlevels);
+    ++j;
+  }
 
   if (save_snapshots && (!split_snapshots)) {
     char tmp[20];

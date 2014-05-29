@@ -210,6 +210,7 @@ void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, grid, *variables);
   dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
   // add diagnostic that only makes sense if transport is modeled

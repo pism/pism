@@ -63,15 +63,15 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  m_callback_data.da = SSADA;
+  m_callback_data.da = SSADA->get();
   m_callback_data.ssa = this;
-  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetFunctionLocal(SSADA->get(), INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA->get(), (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
 
-  ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(SSADA, &m_callback_data); CHKERRQ(ierr);
+  ierr = DMSetMatType(SSADA->get(), "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(SSADA->get(), &m_callback_data); CHKERRQ(ierr);
 
-  ierr = SNESSetDM(m_snes, SSADA); CHKERRQ(ierr);
+  ierr = SNESSetDM(m_snes, SSADA->get()); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   int snes_max_it = 200;

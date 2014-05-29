@@ -55,9 +55,9 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
 
   m_has_ghosts = local;
   if (local) {
-    ierr = DMCreateLocalVector(m_da, &v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(m_da->get(), &v); CHKERRQ(ierr);
   } else {
-    ierr = DMCreateGlobalVector(m_da, &v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(m_da->get(), &v); CHKERRQ(ierr);
   }
 
   m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
@@ -153,7 +153,7 @@ PetscErrorCode BedThermalUnit::allocate() {
     ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
 
     if (exists) {
-      ierr = nc.inq_grid_info("litho_temp", g); CHKERRQ(ierr);
+      ierr = nc.inq_grid_info("litho_temp", grid.periodicity, g); CHKERRQ(ierr);
 
       Mbz = g.z_len;
       Lbz = -g.z_min;

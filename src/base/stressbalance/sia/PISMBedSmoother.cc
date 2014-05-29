@@ -73,17 +73,17 @@ VecScatterBegin/End() to scatter the natural vector onto process 0.
 
 PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
   PetscErrorCode ierr;
-  DM da2;
+  PISMDM::Ptr da2;
   // FIXME: this relies on the fact that IceModel::bed_topography has
   // max_stencil_width ghosts. We should *not* use
   // IceModel::bed_topography directly (i.e. we should use a copy).
   ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(da2, &g2); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(da2->get(), &g2); CHKERRQ(ierr);
 
   // note we want a global Vec but reordered in the natural ordering so when it
   // is scattered to proc zero it is not all messed up; see above
-  ierr = DMDACreateNaturalVector(da2, &g2natural); CHKERRQ(ierr);
+  ierr = DMDACreateNaturalVector(da2->get(), &g2natural); CHKERRQ(ierr);
   // next get scatter context *and* allocate one of Vecs on proc zero
   ierr = VecScatterCreateToZero(g2natural, &scatter, &topgp0); CHKERRQ(ierr);
       

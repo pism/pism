@@ -21,6 +21,16 @@
 
 #include "iceModelVec.hh"
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+using std::tr1::shared_ptr;
+using std::tr1::weak_ptr;
+#else
+#include <memory>
+using std::shared_ptr;
+using std::weak_ptr;
+#endif
+
 namespace pism {
 
 //! A class for storing and accessing 2D time-series (for climate forcing)
@@ -128,8 +138,8 @@ protected:
   std::vector<double> time,             //!< all the times available in filename
     time_bounds;                //!< time bounds
   std::string filename;         //!< file to read (regrid) from
-  DM da3;
-  Vec v3;                       //!< a 3D Vec used to store records
+  PISMDM::Ptr m_da3;
+  Vec m_v3;                       //!< a 3D Vec used to store records
   void ***array3;
   unsigned int n_records, //!< maximum number of records to store in memory
     N,                    //!< number of records kept in memory

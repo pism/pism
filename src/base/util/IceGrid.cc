@@ -23,8 +23,27 @@
 #include "PISMTime_Calendar.hh"
 #include "PISMConfig.hh"
 #include "pism_options.hh"
+#include <cstdlib>              // abort()
 
 namespace pism {
+
+PISMDM::PISMDM(DM dm) {
+  m_dm = dm;
+}
+
+PISMDM::~PISMDM() {
+  PetscErrorCode ierr = DMDestroy(&m_dm); CHKERRCONTINUE(ierr);
+  if (ierr != 0) {
+    // We can't do anything about this failure. We can't recover
+    // from it, and it is almost certainly caused by a programming
+    // error. So, we call abort().
+    abort();
+  }
+}
+
+DM PISMDM::get() const {
+  return m_dm;
+}
 
 IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c), m_unit_system(config.get_unit_system()) {
@@ -152,8 +171,6 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
 }
 
 IceGrid::~IceGrid() {
-  destroy_dms();
-
   delete time;
 }
 
@@ -401,7 +418,7 @@ PetscErrorCode IceGrid::allocate() {
     SETERRQ(com, 3, "IceGrid::allocate(): Ly has to be positive.");
   }
 
-  DM tmp;
+  PISMDM::Ptr tmp;
 
   ierr = this->get_dm(1, max_stencil_width, tmp);
   if (ierr != 0) {
@@ -413,7 +430,7 @@ PetscErrorCode IceGrid::allocate() {
   }
 
   DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(tmp, &info); CHKERRQ(ierr);
+  ierr = DMDAGetLocalInfo(tmp->get(), &info); CHKERRQ(ierr);
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
@@ -560,26 +577,38 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
   x.resize(Mx);
   y.resize(My);
 
-  double x_min = -Lx + x0,
-    x_max = Lx + x0,
-    y_min = -Ly + y0,
-    y_max = Ly + y0;
-
+  // Here x_min, x_max define the extent of the computational domain,
+  // which is not necessarily the same thing as the smallest and
+  // largest values of x.
+  double
+    x_min = x0 - Lx,
+    x_max = x0 + Lx;
   if (periodicity & X_PERIODIC) {
-    x_max -= dx;
+    for (int i = 0; i < Mx; ++i) {
+      x[i] = x_min + (i + 0.5) * dx;
+    }
+    x[Mx - 1] = x_max - 0.5*dx;
+  } else {
+    for (int i = 0; i < Mx; ++i) {
+      x[i] = x_min + i * dx;
+    }
+    x[Mx - 1] = x_max;
   }
 
+  double
+    y_min = y0 - Ly,
+    y_max = y0 + Ly;
   if (periodicity & Y_PERIODIC) {
-    y_max -= dy;
+    for (int i = 0; i < My; ++i) {
+      y[i] = y_min + (i + 0.5) * dy;
+    }
+    y[My - 1] = y_max - 0.5*dy;
+  } else {
+    for (int i = 0; i < My; ++i) {
+      y[i] = y_min + i * dy;
+    }
+    y[My - 1] = y_max;
   }
-
-  for (int i = 0; i < Mx; ++i)
-    x[i] = x_min + i * dx;
-  x[Mx - 1] = x_max;
-
-  for (int i = 0; i < My; ++i)
-    y[i] = y_min + i * dy;
-  y[My - 1] = y_max;
 
   return 0;
 }
@@ -797,7 +826,7 @@ void IceGrid::check_parameters() {
 
 }
 
-PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, DM &result) {
+PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, PISMDM::Ptr &result) {
   PetscErrorCode ierr;
 
   if (da_dof < 0 || da_dof > 10000) {
@@ -810,12 +839,14 @@ PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, DM &result) {
 
   int j = this->dm_key(da_dof, stencil_width);
 
-  if (dms[j] == PETSC_NULL) {
-    ierr = this->create_dm(da_dof, stencil_width, result); CHKERRQ(ierr);
+  if (dms[j].expired() == true) {
+    DM tmp = NULL;
+    ierr = this->create_dm(da_dof, stencil_width, tmp); CHKERRQ(ierr);
 
+    result = PISMDM::Ptr(new PISMDM(tmp));
     dms[j] = result;
   } else {
-    result = dms[j];
+    result = dms[j].lock();
   }
 
   return 0;
@@ -827,17 +858,6 @@ UnitSystem IceGrid::get_unit_system() const {
 
 double IceGrid::convert(double value, const char *unit1, const char *unit2) const {
   return m_unit_system.convert(value, unit1, unit2);
-}
-
-void IceGrid::destroy_dms() {
-
-  std::map<int, DM>::iterator j = dms.begin();
-  while (j != dms.end()) {
-    DMDestroy(&j->second);
-
-    ++j;
-  }
-
 }
 
 PetscErrorCode IceGrid::create_dm(int da_dof, int stencil_width, DM &result) {

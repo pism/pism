@@ -25,6 +25,12 @@
 #include <map>
 #include "PISMUnits.hh"
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
+
 namespace pism {
 
 class Time;
@@ -33,6 +39,29 @@ class Config;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+
+/** Wrapper around PETSc's DM. Simplifies memory management.
+ *
+ * The constructor takes ownership of the dm argument passed to it.
+ *
+ * The destructor call DMDestroy().
+ */
+class PISMDM {
+public:
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<PISMDM> Ptr;
+  typedef std::tr1::weak_ptr<PISMDM> WeakPtr;
+#else
+  typedef std::shared_ptr<PISMDM> Ptr;
+  typedef std::weak_ptr<PISMDM> WeakPtr;
+#endif
+  PISMDM(DM dm);
+  ~PISMDM();
+  DM get() const;
+private:
+  DM m_dm;
+};
+
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
@@ -124,8 +153,8 @@ public:
   PetscErrorCode printVertLevels(int verbosity); 
   unsigned int kBelowHeight(double height);
   PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
-  double      radius(int i, int j);
-  PetscErrorCode get_dm(int dm_dof, int stencil_width, DM &result);
+  double radius(int i, int j);
+  PetscErrorCode get_dm(int dm_dof, int stencil_width, PISMDM::Ptr &result);
   double convert(double, const char*, const char*) const;
   UnitSystem get_unit_system() const;
 
@@ -197,7 +226,7 @@ public:
             y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
   }
 protected:
-  std::map<int,DM> dms;
+  std::map<int,PISMDM::WeakPtr> dms;
   double lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;
 
@@ -207,7 +236,6 @@ protected:
   PetscErrorCode init_interpolation();
 
   PetscErrorCode create_dm(int da_dof, int stencil_width, DM &result);
-  void destroy_dms();
 
   int dm_key(int, int);
   PetscErrorCode init_calendar(std::string &result);

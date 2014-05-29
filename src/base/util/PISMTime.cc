@@ -520,7 +520,7 @@ PetscErrorCode Time::compute_times_simple(double time_start, double delta, doubl
     }
     k += 1;
     t = time_start + k * delta;
-  } while (t < time_end);
+  } while (t <= time_end);
 
   return 0;
 }
