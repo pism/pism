@@ -11,13 +11,11 @@
     near-surface air temperature use by the PDD model: `Sigma = a*T + b`,
     where `T` is the mean-annual air temperature. See
     [#265](https://github.com/pism/pism/issues/265).
-  - Fix RACMO mass balance in the `std-greenland` example. Impoves
-    modeled ice extent. Update the corresponding User's Manual section.
   - Check the range of ice thickness during regridding and
     bootstrapping.
   - Save CTS (cold-temperate transition surface field) when `-o_size
     big` is set. See [#262](https://github.com/pism/pism/issues/262).
-  - Allow statring a run with `-hydrology routing` from a result of a
+  - Allow starting a run with `-hydrology routing` from a result of a
     run with `-hydrology null` (set basal water amount "`bwat`" to a
     default value if not found in an input file).
   - The Temperature Index surface mass balance (PDD) model supports
@@ -34,6 +32,10 @@
   - Update subglacial strength documentation.
 
 ### Bug fixes, etc
+  - Fix RACMO mass balance missing value in the `std-greenland` example.
+    This significantly improves the modeled extent of the Greenland ice
+    sheet in the examples shown in the Getting Started section of the
+    User's Manual.  The figures in this section are all updated.
   - Add `IceModelVec2T::init_constant()` (allows using `IceModelVec2T`
     to store a field that is constant in both time and space; used by
     the PDD model).
@@ -63,7 +65,7 @@
   - Minor fix in the discharge flux reporting code.
   - Fix a bug in `-ocean ...,cache` and `-surface ...,cache`.
 
-## Changes since 0.5 (around May 18, 2012)
+## Changes from 0.5 (around May 18, 2012) to 0.6
 
 ### Basal strength and basal hydrology
   - A significant change to the model physics for till: effective
