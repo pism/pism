@@ -522,8 +522,6 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     ierr = Qstag.end_access(); CHKERRQ(ierr);
     ierr = mask->end_access(); CHKERRQ(ierr);
 
-    // FIXME: following chunk is code duplication with RoutingHydrology::update()
-
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
     ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
