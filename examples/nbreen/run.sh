@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# run preprocess.sh first
+
 GRIDLIST="{500, 250, 125, 62}"
 TYPELIST="{dist, event, routing, disttill}"
 
@@ -63,19 +65,19 @@ if [ "$4" = "dist" ]; then
 
   # distributed run
   oname=nbreen_y${YY}_${dx}m_dist.nc
-  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -stress_balance ssa+sia -ssa_dirichlet_bc -yield_stress constant"
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_tillwat_max 0.0 -stress_balance ssa+sia -ssa_dirichlet_bc -yield_stress constant"
 
 elif [ "$4" = "event" ]; then
 
   # distributed run with summer event
   oname=nbreen_y${YY}_${dx}m_event.nc
-  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -stress_balance ssa+sia -ssa_dirichlet_bc -input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
+  hydro="-hydrology distributed -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_tillwat_max 0.0 -stress_balance ssa+sia -ssa_dirichlet_bc -input_to_bed_file fakesummerevent.nc -input_to_bed_period 1.0 -input_to_bed_reference_year 0.0"
 
 elif [ "$4" = "routing" ]; then
 
   # routing run: very fast
   oname=nbreen_y${YY}_${dx}m_routing.nc
-  hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting"
+  hydro="-hydrology routing -hydrology_null_strip 1.0 -report_mass_accounting -hydrology_tillwat_max 0.0"
   evarlist="thk,bmelt,hydroinput,bwat,bwp,bwatvel,wallmelt,tillwat"  # revised
 
 elif [ "$4" = "disttill" ]; then
@@ -97,7 +99,7 @@ grid="-Mx $myMx -My $myMy -Mz 11 -z_spacing equal -Lz 600"
 
 climate="-surface given -surface_given_file $data"
 
-physics="-config_override nbreen_config.nc -no_mass -energy none"
+physics="-no_mass -energy none"
 
 diagnostics="-extra_file extras_$oname -extra_times $etimes -extra_vars $evarlist"
 
