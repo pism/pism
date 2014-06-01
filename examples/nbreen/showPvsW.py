@@ -151,14 +151,15 @@ else:
   wwmax = args.wmax
 
 # color axis limits
-if args.cmin == None:
-  ccmin = min(ccc)
-else:
-  ccmin = args.cmin
-if args.cmax == None:
-  ccmax = max(ccc)
-else:
-  ccmax = args.cmax
+if args.c != None:
+  if args.cmin == None:
+    ccmin = min(ccc)
+  else:
+    ccmin = args.cmin
+  if args.cmax == None:
+    ccmax = max(ccc)
+  else:
+    ccmax = args.cmax
 
 plt.figure(1)
 if args.c != None:
