@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from matplotlib.pyplot import *
+import matplotlib.pyplot as plt
 
 import sys
 import argparse
@@ -13,22 +13,32 @@ except:
     sys.exit(1)
 
 parser = argparse.ArgumentParser(description='show scatter plot P versus W from a PISM run')
+
 parser.add_argument('filename',
                     help='file from which to get  P = bwprel  and  W = bwat')
+parser.add_argument('-o', default=None,
+                    help='output file for image, in a format matplotlib can write (e.g. .png, .pdf)')
+parser.add_argument('-d', type=int, default=-1,
+                    help='index of frame (default: last frame which is D=-1)')
+
 parser.add_argument('-c', default=None,
                     help='name of variable to use to color points in scatter plot')
 parser.add_argument('-cmin', type=float, default=None,
                     help='crop color values below at this value')
 parser.add_argument('-cmax', type=float, default=None,
                     help='crop color values above at this value')
+
 parser.add_argument('-s', default=None,
                     help='name of variable to use to select whether points appear in scatter plot')
 parser.add_argument('-smin', type=float, default=None,
                     help='select minimum: if -c is used then below this value (of -s var) the points will not be plotted')
 parser.add_argument('-smax', type=float, default=None,
                     help='select minimum: if -c is used then above this value (of -s var) the points will not be plotted')
-parser.add_argument('-d', type=int, default=-1,
-                    help='index of frame (default: last frame which is D=-1)')
+
+parser.add_argument('-wmin', type=float, default=None,
+                    help='lower limit on W axis')
+parser.add_argument('-wmax', type=float, default=None,
+                    help='upper limit on W axis')
 
 args = parser.parse_args()
 
@@ -118,17 +128,53 @@ if args.s != None:
 
 nc.close()
 
-figure(1)
+# to reduce file size, remove zero water points
 if args.c != None:
-  scatter(bwat,bwprel,c=ccc)
-  colorbar()
+  ccc = ccc[bwat>0]
+bwprel = bwprel[bwat>0.0]
+bwat = bwat[bwat>0.0]
+
+# to reduce file size, remove zero pressure points
+if args.c != None:
+  ccc = ccc[bwprel>0]
+bwat = bwat[bwprel>0.0]
+bwprel = bwprel[bwprel>0.0]
+
+# W axis limits
+if args.wmin == None:
+  wwmin = min(bwat)
 else:
-  scatter(bwat,bwprel,c='k')
-#gca().set_aspect('equal')
-gca().autoscale(tight=True)
-xlabel('water thickness W  (m)')
-ylabel('pressure as a fraction of overburden')
+  wwmin = args.wmin
+if args.wmax == None:
+  wwmax = max(bwat)
+else:
+  wwmax = args.wmax
 
-show()
+# color axis limits
+if args.cmin == None:
+  ccmin = min(ccc)
+else:
+  ccmin = args.cmin
+if args.cmax == None:
+  ccmax = max(ccc)
+else:
+  ccmax = args.cmax
 
-print "  done."
+plt.figure(1)
+if args.c != None:
+  plt.scatter(bwat,bwprel,c=ccc,vmin=ccmin,vmax=ccmax,linewidth=0.0,cmap='hsv')
+  plt.colorbar()
+else:
+  plt.scatter(bwat,bwprel,c='k')
+plt.gca().autoscale(tight=True)
+plt.gca().set_xlim((wwmin,wwmax))
+plt.gca().set_ylim((-0.02,1.05))
+plt.xlabel('water thickness W  (m)')
+plt.ylabel('pressure as a fraction of overburden')
+
+if args.o == None:
+  plt.show()
+else:
+  print "  saving scatter plot in %s ...\n" % args.o
+  plt.savefig(args.o, dpi=200, bbox_inches='tight')
+
