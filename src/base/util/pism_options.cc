@@ -747,6 +747,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
                                    "till_compressibility_coefficient");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_effective_fraction_overburden",
                                    "till_effective_fraction_overburden");      CHKERRQ(ierr);
+  ierr = config.scalar_from_option("till_log_factor_transportable_water",
+                                   "till_log_factor_transportable_water");      CHKERRQ(ierr);
   ierr = config.flag_from_option("tauc_slippery_grounding_lines",
                                  "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
   ierr = config.flag_from_option("tauc_add_transportable_water",
