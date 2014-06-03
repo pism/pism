@@ -58,7 +58,7 @@ if len(sys.argv) >= 4:
 else:
   mydpi = 200
 
-bluemarble = False  # FIXME: m.basemap() inverts earth!
+bluemarble = False  # if True, use Blue Marble background
 
 if (field == 'velsurf_mag') | (field == 'velbase_mag'):
   fill       = nc.variables[field]._FillValue
