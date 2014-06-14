@@ -30,7 +30,7 @@ PISM_MPIDO="mpiexec -n "
 PISM_INDATANAME=${BOOTDIR}pism_Antarctica_5km.nc
 
 NN=4  # default number of processors
-if [ $# -gt 0 ] ; then  # if user says "antspinup.sh 8" then NN = 8
+if [ $# -gt 0 ] ; then  # if user says "antspinCC.sh 8" then NN = 8
   NN="$1"
 fi
 echo "$SCRIPTNAME              NN = $NN"
@@ -73,7 +73,7 @@ SIA_ENHANCEMENT="-sia_e 3.0"
 #PIK-stuff; notes:
 # 1)   '-pik' = '-cfbc -part_grid -part_redist -kill_icebergs'
 # 2)   -meltfactor_pik 5e-3 is default when using -ocean pik
-PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -calving eigen_calving,thickness_calving -eigen_calving_K 2.0e18 -thickness_calving_threshold 200.0"
+PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -calving eigen_calving,thickness_calving -eigen_calving_K 2.0e18 -thickness_calving_threshold 200.0 -subgl"
 PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -surface simple -ocean pik -meltfactor_pik 5e-3"
 
 # sliding related options:
