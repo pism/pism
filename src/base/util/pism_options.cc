@@ -841,13 +841,15 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
 
   // Shortcuts
 
-  // option "-pik" turns on a suite of PISMPIK effects (but not "-calving eigen_calving")
+  // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
+  // and in particular NOT  "-calving eigen_calving")
   ierr = OptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag); CHKERRQ(ierr);
   if (flag) {
     config.set_flag_from_option("calving_front_stress_boundary_condition", true);
     config.set_flag_from_option("part_grid", true);
     config.set_flag_from_option("part_redist", true);
     config.set_flag_from_option("kill_icebergs", true);
+    config.set_flag_from_option("sub_groundingline", true);
   }
 
   if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {

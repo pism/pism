@@ -71,9 +71,9 @@ GRIDNAME=30km
 SIA_ENHANCEMENT="-sia_e 3.0"
 
 #PIK-stuff; notes:
-# 1)   '-pik' = '-cfbc -part_grid -part_redist -kill_icebergs'
+# 1)   '-pik' = '-cfbc -part_grid -part_redist -kill_icebergs -subgl'
 # 2)   -meltfactor_pik 5e-3 is default when using -ocean pik
-PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -calving eigen_calving,thickness_calving -eigen_calving_K 2.0e18 -thickness_calving_threshold 200.0 -subgl"
+PIKPHYS="-ssa_method fd -ssa_e 0.6 -pik -calving eigen_calving,thickness_calving -eigen_calving_K 2.0e18 -thickness_calving_threshold 200.0"
 PIKPHYS_COUPLING="-atmosphere given -atmosphere_given_file $PISM_INDATANAME -surface simple -ocean pik -meltfactor_pik 5e-3"
 
 # sliding related options:
@@ -146,7 +146,7 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=100000 
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
-exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav"
+exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,Href,gl_mask"
 expackage="-extra_times 0:1000:$RUNTIME -extra_vars $exvars"
 
 echo
