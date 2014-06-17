@@ -31,6 +31,7 @@ option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
 option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
+mark_as_advanced (Pism_TEST_USING_VALGRIND)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
