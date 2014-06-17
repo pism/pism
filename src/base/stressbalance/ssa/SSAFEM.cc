@@ -744,10 +744,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 }
 
 PetscErrorCode SSAFEM::monitor_jacobian(Mat Jac) {
-  bool monitor_jacobian = false;
-  PetscErrorCode ierr = OptionsIsSet("-ssa_monitor_jacobian", monitor_jacobian); CHKERRQ(ierr);
+  bool mon_jac = false;
+  PetscErrorCode ierr = OptionsIsSet("-ssa_monitor_jacobian", mon_jac); CHKERRQ(ierr);
 
-  if (monitor_jacobian == false) {
+  if (mon_jac == false) {
     return 0;
   }
 
