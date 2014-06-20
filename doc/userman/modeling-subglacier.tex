@@ -85,7 +85,7 @@ In normal modelling cases, variations in yield stress are part of the explanatio
 \begin{equation}
    \tau_c = c_{0} + (\tan\phi)\,N_{til}.  \label{eq:mohrcoulomb}
 \end{equation}
-Here $c_0$ is called the ``till cohesion'', whose default value in PISM is zero \cite[formula (2.4)]{SchoofStream} but which can be set by option \intextoption{till_c_0}.
+Here $c_0$ is called the ``till cohesion'', whose default value in PISM is zero \cite[formula (2.4)]{SchoofStream} but which can be set by option \intextoption{till_cohesion}.
 
 Option combination \texttt{-yield_stress constant -tauc X} can be used to fix the yield stress to have value $\tau_c=$\texttt{X} at all grounded locations and all times if desired.  This is unlikely to be a good modelling choice for real ice sheets.
 
@@ -96,7 +96,7 @@ Option combination \texttt{-yield_stress constant -tauc X} can be used to fix th
     \textbf{Option} & \textbf{Description}
     \\\midrule
     \intextoption{yield_stress mohr_coulomb} &   The default.  Use equation \eqref{eq:mohrcoulomb} to determine $\tau_c$.  Only effective if \texttt{-stress_balance ssa} or \texttt{-stress_balance ssa+sia} is also set. \\
-    \intextoption{till_c_0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
+    \intextoption{till_cohesion} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
    \intextoption{tauc_slippery_grounding_lines} & If set, reduces the basal yield stress at grounded-below-sea-level grid points one cell away from floating ice or ocean.  Specifically, it replaces the normally-computed $\tau_c$ from the Mohr-Coulomb relation, which uses the effective pressure from the modeled amount of water in the till, by the minimum value of $\tau_c$ from Mohr-Coulomb, i.e.~using the effective pressure corresponding to the maximum amount of till-stored water.  Does not alter the reported amount of till water, nor does this mechanism affect water conservation. \\
     \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
     \txtopt{topg_to_phi}{\emph{list of 4 numbers}} & Compute $\phi$ using equation \eqref{eq:phipiecewise}.\\ \midrule

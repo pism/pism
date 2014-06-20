@@ -274,8 +274,11 @@ netcdf pism_config {
     pism_config:default_till_phi = 30.0;
     pism_config:default_till_phi_doc = "degrees; fill value for till friction angle";
 
-    pism_config:till_c_0 = 0.0;
-    pism_config:till_c_0_doc = "Pa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
+    pism_config:till_cohesion = 0.0;
+    pism_config:till_cohesion_doc = "Pa; cohesion of till; = c_0 in most references; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
+
+    pism_config:till_reference_effective_pressure = 1000.0;
+    pism_config:till_reference_effective_pressure_doc = "Pa; reference effective pressure N_0; value from [@ref Tulaczyketal2000]";
 
     pism_config:till_reference_void_ratio = 0.69;
     pism_config:till_reference_void_ratio_doc = "[pure]; void ratio at reference effective pressure N_0; value from [@ref Tulaczyketal2000]";

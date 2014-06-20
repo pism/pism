@@ -740,7 +740,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale"); CHKERRQ(ierr);
 
   // Basal strength
-  ierr = config.scalar_from_option("till_c_0", "till_c_0");      CHKERRQ(ierr);
+  ierr = config.scalar_from_option("till_cohesion", "till_cohesion");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_reference_void_ratio",
                                    "till_reference_void_ratio");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_compressibility_coefficient",
