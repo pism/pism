@@ -755,7 +755,7 @@ netcdf pism_config {
    pism_config:output_variable_order = "xyz";
    pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
-   pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux_mag climatic_mass_balance velsurf_mag diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taub_mag taud_mag temp_pa tillwat topgsmooth usurf wvelsurf";
+   pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux_mag climatic_mass_balance velsurf_mag diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taub_mag taud_mag temp_pa tillwat topgsmooth usurf uvelsurf vvelsurf wvelsurf";
 
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by boundary models.";
 
