@@ -998,19 +998,41 @@ PSB_pressure::PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars)
 PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
+  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
+
   IceModelVec3 *result = new IceModelVec3;
   ierr = result->create(grid, "pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-FIXME: in here I need to get access to thickness (at least) and add that
-to signature of StressBalance::get_pressure()
+  IceModelVec2S *thickness;
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
-  IceModelVec3 *tmp;
-  ierr = model->get_pressure(tmp); CHKERRQ(ierr);
+  ierr = result->begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  ierr = tmp->copy_to(*result); CHKERRQ(ierr);
+  double *P_out_ij;
+  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        int ks = grid.kBelowHeight((*thickness)(i,j));
+        ierr = result->getInternalColumn(i,j,&P_out_ij); CHKERRQ(ierr);
+        const double H = (*thickness)(i,j);
+        // within the ice:
+        for (unsigned int k = 0; k <= ks; ++k) {
+          P_out_ij[k] = rg * (H - grid.zlevels[k]);  // FIXME: add atmospheric pressure?
+        }
+        // above the ice:
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+          P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
+        }
+    }
+  }
+
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = result->end_access(); CHKERRQ(ierr);
 
   output = result;
+
   return 0;
 }
 
