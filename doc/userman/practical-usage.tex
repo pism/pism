@@ -295,9 +295,12 @@ The \texttt{-extra_file} mechanism modifies PISM's adaptive time-stepping scheme
     \texttt{age} & \textsl{s} & age of ice \\
     \texttt{enthalpy} & \textsl{J $\mathrm{kg}^{-1}$} & ice enthalpy (includes sensible heat, latent heat, pressure) \\
     \texttt{temp} & \textsl{K} & ice temperature \\
-    \texttt{cts} & \textsl{none} &  $\mathrm{cts} = E/E_s(p)$, so cold-temperate transition surface is at $\mathrm{cts} = 1$ \\
-    \texttt{liqfrac} & \textsl{1} &  liquid water fraction in ice (between $0$ and $1$) \\
+    \texttt{cts} & \textsl{none} &  $\mathrm{cts} = E/E_s(p)$; cold-temperate transition surface is $\mathrm{cts} = 1$ \\
+    \texttt{liqfrac} & \textsl{none} &  liquid water fraction in ice (between $0$ and $1$) \\
     \texttt{litho_temp} & \textsl{K} & lithosphere (bedrock) temperature, in \texttt{PISMBedThermalUnit} \\
+    \texttt{pressure} & \textsl{Pa} &  ice pressure (in hydrostatic approximation) \\
+    \texttt{tauxz} & \textsl{Pa} &  stress component $\tau_{xz}$ (in shallow ice approximation) \\
+    \texttt{tauyz} & \textsl{Pa} &  stress component $\tau_{yz}$ (in shallow ice approximation) \\
     \texttt{temp} & \textsl{K} &  ice temperature \\
     \texttt{temp_pa} & \textsl{degrees Celsius} &  pressure-adjusted ice temperature (degrees above pressure-melting point) \\
     \texttt{uvel} & \textsl{m / year} &  horizontal velocity of ice in the X direction \\
