@@ -146,7 +146,7 @@ PetscErrorCode PISMStressBalance::get_3d_velocity(IceModelVec3* &u, IceModelVec3
 
 PetscErrorCode PISMStressBalance::get_basal_frictional_heating(IceModelVec2S* &result) {
   PetscErrorCode ierr;
-  ierr = m_stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr); 
+  ierr = m_stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -155,8 +155,15 @@ PetscErrorCode PISMStressBalance::get_volumetric_strain_heating(IceModelVec3* &r
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                                                    IceModelVec2 &result) {
+PetscErrorCode PISMStressBalance::get_pressure(IceModelVec3* &result) {
+  PetscErrorCode ierr;
+  ierr = m_stress_balance->get_hydrostatic_pressure(result); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode PISMStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity,
+                                                                IceModelVec2Int &mask,
+                                                                IceModelVec2 &result) {
   PetscErrorCode ierr;
   ierr = m_stress_balance->compute_2D_principal_strain_rates(velocity, mask, result); CHKERRQ(ierr);
   return 0;

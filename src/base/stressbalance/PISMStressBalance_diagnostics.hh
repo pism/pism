@@ -151,27 +151,35 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Reports the volumetric strain heating.
-class PSB_strainheat : public PISMDiag<PISMStressBalance>
+//! \brief Reports the volumetric strain heating (3D).
+class PSB_strainheat : public Diag<PISMStressBalance>
 {
 public:
   PSB_strainheat(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Reports the principal strain rates.
-class PSB_strain_rates : public PISMDiag<PISMStressBalance>
+//! \brief Reports the vertically-integrated (2D) principal strain rates.
+class PSB_strain_rates : public Diag<PISMStressBalance>
 {
 public:
   PSB_strain_rates(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Reports deviatoric stresses.
-class PSB_deviatoric_stresses : public PISMDiag<PISMStressBalance>
+//! \brief Reports the vertically-integrated (2D) deviatoric stresses.
+class PSB_deviatoric_stresses : public Diag<PISMStressBalance>
 {
 public:
   PSB_deviatoric_stresses(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the pressure within the ice (3D).
+class PSB_pressure : public Diag<PISMStressBalance>
+{
+public:
+  PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
