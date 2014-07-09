@@ -148,12 +148,18 @@ PetscErrorCode StressBalance::get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v
 
 PetscErrorCode StressBalance::get_basal_frictional_heating(IceModelVec2S* &result) {
   PetscErrorCode ierr;
-  ierr = m_stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr); 
+  ierr = m_stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode StressBalance::get_volumetric_strain_heating(IceModelVec3* &result) {
   result = &m_strain_heating;
+  return 0;
+}
+
+PetscErrorCode StressBalance::get_pressure(IceModelVec3* &result) {
+  PetscErrorCode ierr;
+  ierr = m_stress_balance->get_hydrostatic_pressure(result); CHKERRQ(ierr);
   return 0;
 }
 

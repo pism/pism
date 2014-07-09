@@ -51,6 +51,8 @@ void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["strain_rates"] = new PSB_strain_rates(this, grid, *m_variables);
   dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *m_variables);
 
+  dict["pressure"] = new PSB_pressure(this, grid, *m_variables);
+
   m_stress_balance->get_diagnostics(dict, ts_dict);
   m_modifier->get_diagnostics(dict, ts_dict);
 }
@@ -980,6 +982,35 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
 
   output = result;
 
+  return 0;
+}
+
+PSB_pressure::PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_3d("pressure", grid, grid.zlevels);
+
+  set_attrs("pressure in ice (dissipation heating)", "",
+            "Pa", "Pa", 0);
+}
+
+PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3 *result = new IceModelVec3;
+  ierr = result->create(grid, "pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+
+FIXME: in here I need to get access to thickness (at least) and add that
+to signature of StressBalance::get_pressure()
+
+  IceModelVec3 *tmp;
+  ierr = model->get_pressure(tmp); CHKERRQ(ierr);
+
+  ierr = tmp->copy_to(*result); CHKERRQ(ierr);
+
+  output = result;
   return 0;
 }
 
