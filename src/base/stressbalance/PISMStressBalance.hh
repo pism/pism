@@ -96,8 +96,6 @@ public:
 
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result);
 
-  virtual PetscErrorCode get_pressure(IceModelVec3* &result);
-
   // for the calving, etc.:
 
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.

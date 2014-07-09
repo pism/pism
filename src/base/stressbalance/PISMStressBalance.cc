@@ -155,12 +155,6 @@ PetscErrorCode PISMStressBalance::get_volumetric_strain_heating(IceModelVec3* &r
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::get_pressure(IceModelVec3* &result) {
-  PetscErrorCode ierr;
-  ierr = m_stress_balance->get_hydrostatic_pressure(result); CHKERRQ(ierr);
-  return 0;
-}
-
 PetscErrorCode PISMStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity,
                                                                 IceModelVec2Int &mask,
                                                                 IceModelVec2 &result) {
