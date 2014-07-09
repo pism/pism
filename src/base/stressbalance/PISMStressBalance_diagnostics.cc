@@ -52,6 +52,8 @@ void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *m_variables);
 
   dict["pressure"] = new PSB_pressure(this, grid, *m_variables);
+  dict["tauxz"] = new PSB_tauxz(this, grid, *m_variables);
+  dict["tauyz"] = new PSB_tauyz(this, grid, *m_variables);
 
   m_stress_balance->get_diagnostics(dict, ts_dict);
   m_modifier->get_diagnostics(dict, ts_dict);
@@ -991,14 +993,12 @@ PSB_pressure::PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   vars[0].init_3d("pressure", grid, grid.zlevels);
 
-  set_attrs("pressure in ice (dissipation heating)", "",
+  set_attrs("pressure in ice (hydrostatic)", "",
             "Pa", "Pa", 0);
 }
 
 PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-
-  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
 
   IceModelVec3 *result = new IceModelVec3;
   ierr = result->create(grid, "pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -1012,6 +1012,8 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
   double *P_out_ij;
+  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
+
   for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
         int ks = grid.kBelowHeight((*thickness)(i,j));
@@ -1033,6 +1035,140 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
 
   output = result;
 
+  return 0;
+}
+
+
+PSB_tauxz::PSB_tauxz(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_3d("tauxz", grid, grid.zlevels);
+
+  set_attrs("shear stress xz component (in shallow ice approximation SIA)", "",
+            "Pa", "Pa", 0);
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauxz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH PSB_tauyz
+ */
+PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3 *result = new IceModelVec3;
+  ierr = result->create(grid, "tauxz", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+
+  IceModelVec2S *thickness, *surface;
+
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+
+  ierr =    result->begin_access(); CHKERRQ(ierr);
+  ierr =   surface->begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+
+  double *tauxz_out_ij;
+  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
+
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+
+        int ks = grid.kBelowHeight((*thickness)(i,j));
+        ierr = result->getInternalColumn(i,j,&tauxz_out_ij); CHKERRQ(ierr);
+        const double H    = (*thickness)(i,j),
+                     dhdx = surface->diff_x_p(i,j);
+        // within the ice:
+        for (unsigned int k = 0; k <= ks; ++k) {
+          tauxz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdx;
+        }
+        // above the ice:
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+          tauxz_out_ij[k] = 0.0;
+        }
+
+    }
+  }
+
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr =   surface->end_access(); CHKERRQ(ierr);
+  ierr =    result->end_access(); CHKERRQ(ierr);
+
+  output = result;
+  return 0;
+}
+
+
+PSB_tauyz::PSB_tauyz(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_3d("tauyz", grid, grid.zlevels);
+
+  set_attrs("shear stress yz component (in shallow ice approximation SIA)", "",
+            "Pa", "Pa", 0);
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauyz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH PSB_tauxz
+ */
+PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3 *result = new IceModelVec3;
+  ierr = result->create(grid, "tauyz", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+
+  IceModelVec2S *thickness, *surface;
+
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+
+  ierr =    result->begin_access(); CHKERRQ(ierr);
+  ierr =   surface->begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+
+  double *tauyz_out_ij;
+  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
+
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+
+        int ks = grid.kBelowHeight((*thickness)(i,j));
+        ierr = result->getInternalColumn(i,j,&tauyz_out_ij); CHKERRQ(ierr);
+        const double H    = (*thickness)(i,j),
+                     dhdy = surface->diff_y_p(i,j);
+        // within the ice:
+        for (unsigned int k = 0; k <= ks; ++k) {
+          tauyz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdy;
+        }
+        // above the ice:
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+          tauyz_out_ij[k] = 0.0;
+        }
+
+    }
+  }
+
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr =   surface->end_access(); CHKERRQ(ierr);
+  ierr =    result->end_access(); CHKERRQ(ierr);
+
+  output = result;
   return 0;
 }
 

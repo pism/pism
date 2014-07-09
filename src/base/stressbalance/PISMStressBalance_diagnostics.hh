@@ -184,6 +184,22 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Reports the xz component of the shear stress within the ice (3D), according to the SIA formula.
+class PSB_tauxz : public Diag<StressBalance>
+{
+public:
+  PSB_tauxz(StressBalance *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the yz component of the shear stress within the ice (3D), according to the SIA formula.
+class PSB_tauyz : public Diag<StressBalance>
+{
+public:
+  PSB_tauyz(StressBalance *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 
 } // end of namespace pism
 
