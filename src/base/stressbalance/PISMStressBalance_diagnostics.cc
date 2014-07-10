@@ -985,8 +985,8 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
   return 0;
 }
 
-PSB_pressure::PSB_pressure(PISMStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<StressBalance>(m, g, my_vars) {
+PSB_pressure::PSB_pressure(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("pressure", grid, grid.zlevels);
@@ -1037,8 +1037,8 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
 }
 
 
-PSB_tauxz::PSB_tauxz(PISMStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<StressBalance>(m, g, my_vars) {
+PSB_tauxz::PSB_tauxz(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("tauxz", grid, grid.zlevels);
@@ -1104,8 +1104,8 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
 }
 
 
-PSB_tauyz::PSB_tauyz(PISMStressBalance *m, IceGrid &g, Vars &my_vars)
-  : Diag<StressBalance>(m, g, my_vars) {
+PSB_tauyz::PSB_tauyz(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
   vars[0].init_3d("tauyz", grid, grid.zlevels);
