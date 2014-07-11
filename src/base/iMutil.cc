@@ -313,7 +313,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     ++j;
   }
 
-  if (save_snapshots && (!split_snapshots)) {
+  if (save_snapshots && (not split_snapshots)) {
     char tmp[20];
     snprintf(tmp, 20, "%d", grid.Mz);
     
@@ -323,6 +323,18 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     ierr = verbPrintf(2, grid.com,
                       "NOTE: Further snapshots will be saved to '%s'...\n",
                       snapshots_filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (save_extra && (not split_extra)) {
+    char tmp[20];
+    snprintf(tmp, 20, "%d", grid.Mz);
+
+    extra_filename = pism_filename_add_suffix(extra_filename, "-Mz", tmp);
+    extra_file_is_ready = false;
+
+    ierr = verbPrintf(2, grid.com,
+                      "NOTE: Further spatially-variable time-series will be saved to '%s'...\n",
+                      extra_filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
