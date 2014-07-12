@@ -527,7 +527,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   const bool sub_gl = config.get_flag("sub_groundingline");
   if (sub_gl) {
     ierr = gl_mask->begin_access(); CHKERRQ(ierr);
-   }
+  }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
   bool nu_bedrock_set=config.get_flag("nu_bedrock_set");
@@ -561,14 +561,14 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       double c_n = nuH(i,j,1);
 
       if (nu_bedrock_set) {
-       // if option is set, the viscosity at ice-bedrock boundary layer will
-       // be prescribed and is a temperature-independent free (user determined) parameter
+        // if option is set, the viscosity at ice-bedrock boundary layer will
+        // be prescribed and is a temperature-independent free (user determined) parameter
 
-       // direct neighbors
-       int  M_e = mask->as_int(i + 1,j),
-                 M_w = mask->as_int(i - 1,j),
-                 M_n = mask->as_int(i,j + 1),
-                 M_s = mask->as_int(i,j - 1);
+        // direct neighbors
+        int  M_e = mask->as_int(i + 1,j),
+          M_w = mask->as_int(i - 1,j),
+          M_n = mask->as_int(i,j + 1),
+          M_s = mask->as_int(i,j - 1);
 
         if ((*thickness)(i,j) > HminFrozen) {
           if ((*bed)(i-1,j) > (*surface)(i,j) && M.ice_free_land(M_w)) {
@@ -769,7 +769,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   if (sub_gl) {
     ierr = gl_mask->end_access(); CHKERRQ(ierr);
-   }
+  }
 
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = vel.end_access(); CHKERRQ(ierr);
@@ -777,9 +777,9 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
   if (nu_bedrock_set) {
-        ierr = thickness->end_access(); CHKERRQ(ierr);
-        ierr = bed->end_access();       CHKERRQ(ierr);
-        ierr = surface->end_access();   CHKERRQ(ierr);
+    ierr = thickness->end_access(); CHKERRQ(ierr);
+    ierr = bed->end_access();       CHKERRQ(ierr);
+    ierr = surface->end_access();   CHKERRQ(ierr);
   }
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
