@@ -876,26 +876,42 @@ PetscErrorCode SSAFD::solve() {
 
     ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
                             config.get("ssafd_relative_convergence"),
-                            config.get("epsilon_ssa"));
+                            config.get("epsilon_ssa"),
+                            1.0);
+  }
+
+  if (ierr == 1) {
+    // if KSP diverged (i.e. linear solver failure) then try different linear solver
+    ierr = strategy_2_asm();
+  }
+
+  if (ierr == 2) {
+    // if effective viscosity (i.e. outer) iteration failure then try underrelaxing the iteration
+    const double underrelax = config.get("ssafd_nuH_iter_failure_underrelaxation");
+    ierr = verbPrintf(1, grid.com,
+                      "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
+                      underrelax); CHKERRQ(ierr);
+    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
+                            config.get("ssafd_relative_convergence"),
+                            config.get("epsilon_ssa"),
+                            underrelax);
   }
 
   if (ierr != 0) {
+    // try again the old strategy ... it never worked that well ...
     m_default_pc_failure_count += 1;
     ierr = strategy_1_regularization();
   }
 
   if (ierr != 0) {
-    ierr = strategy_2_asm();
-  }
-
-  if (ierr != 0) {
     PetscPrintf(grid.com,
                 "PISM ERROR: all SSAFD strategies failed.\n");
+    write_system_petsc("allstrategiesfailed");
     return ierr;
   }
 
   if (dump_system_matlab) {
-    ierr = write_system_matlab(); CHKERRQ(ierr);
+    ierr = write_system_matlab(""); CHKERRQ(ierr);
   }
   
   if (config.get_flag("brutal_sliding")) {
@@ -917,7 +933,8 @@ PetscErrorCode SSAFD::solve() {
  */
 PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
                                        double ssa_relative_tolerance,
-                                       double nuH_regularization) {
+                                       double nuH_regularization,
+                                       double nuH_iter_failure_underrelax) {
   PetscErrorCode ierr;
   double   nuH_norm, nuH_norm_change;
   int    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
@@ -971,7 +988,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
                         "PISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
                         reason, KSPConvergedReasons[reason]); CHKERRQ(ierr);
 
-      ierr = write_system_petsc(); CHKERRQ(ierr);
+      ierr = write_system_petsc("kspdivergederror"); CHKERRQ(ierr);
 
       // Tell the caller that we failed. (The caller might try again,
       // though.)
@@ -997,6 +1014,10 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
       ierr = compute_nuH_staggered_cfbc(nuH, nuH_regularization); CHKERRQ(ierr);
     } else {
       ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+    }
+    if (nuH_iter_failure_underrelax != 1.0) {
+      ierr = nuH.scale(nuH_iter_failure_underrelax); CHKERRQ(ierr);
+      ierr = nuH.add(1.0 - nuH_iter_failure_underrelax, nuH_old); CHKERRQ(ierr);
     }
     ierr = compute_nuH_norm(nuH_norm, nuH_norm_change); CHKERRQ(ierr);
 
@@ -1071,9 +1092,7 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
   while (k < max_tries) {
     ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
     ierr = verbPrintf(1, grid.com,
-                      "  failed with nuH_regularization = %8.2f.\n"
                       "  re-trying with nuH_regularization multiplied by %8.2f...\n",
-                      nuH_regularization,
                       DEFAULT_EPSILON_MULTIPLIER_SSA); CHKERRQ(ierr);
 
     nuH_regularization *= DEFAULT_EPSILON_MULTIPLIER_SSA;
@@ -1081,7 +1100,8 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
 
     ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
                             config.get("ssafd_relative_convergence"),
-                            nuH_regularization);
+                            nuH_regularization,
+                            1.0);
     if (ierr == 0)
       break;
 
@@ -1107,7 +1127,8 @@ PetscErrorCode SSAFD::strategy_2_asm() {
 
   ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
                           config.get("ssafd_relative_convergence"),
-                          config.get("epsilon_ssa"));
+                          config.get("epsilon_ssa"),
+                          1.0);
 
   return ierr;
 }
@@ -1656,16 +1677,16 @@ bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
   }
 }
 
-PetscErrorCode SSAFD::write_system_petsc() {
+PetscErrorCode SSAFD::write_system_petsc(const std::string &namepart) {
   PetscErrorCode ierr;
 
   // write a file with a fixed filename; avoid zillions of files
-  char filename[PETSC_MAX_PATH_LEN] = "SSAFD_kspdivergederror.petsc";
+  std::string filename = "SSAFD_" + namepart + ".petsc";
   ierr = verbPrintf(1, grid.com,
-                    "  writing linear system to PETSc binary file %s ...\n", filename);
-  CHKERRQ(ierr);
+                    "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
+                    CHKERRQ(ierr);
   PetscViewer viewer;
-  ierr = PetscViewerBinaryOpen(grid.com, filename, FILE_MODE_WRITE,
+  ierr = PetscViewerBinaryOpen(grid.com, filename.c_str(), FILE_MODE_WRITE,
                                &viewer); CHKERRQ(ierr);
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
   ierr = VecView(m_b, viewer); CHKERRQ(ierr);
@@ -1675,10 +1696,10 @@ PetscErrorCode SSAFD::write_system_petsc() {
 }
 
 //! \brief Write the SSA system to an .m (MATLAB) file (for debugging).
-PetscErrorCode SSAFD::write_system_matlab() {
+PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   PetscErrorCode ierr;
   PetscViewer    viewer;
-  std::string prefix = "pism_SSAFD", file_name;
+  std::string    prefix = "SSAFD_" + namepart, file_name;
   char           yearappend[PETSC_MAX_PATH_LEN];
 
   IceModelVec2S component;

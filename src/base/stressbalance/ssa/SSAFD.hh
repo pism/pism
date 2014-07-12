@@ -51,7 +51,8 @@ protected:
 
   virtual PetscErrorCode picard_iteration(unsigned int max_iterations,
                                           double ssa_relative_tolerance,
-                                          double nuH_regularization);
+                                          double nuH_regularization,
+                                          double nuH_iter_failure_underrelax);
 
   virtual PetscErrorCode strategy_1_regularization();
 
@@ -72,9 +73,9 @@ protected:
 
   virtual PetscErrorCode assemble_rhs(Vec rhs);
 
-  virtual PetscErrorCode write_system_petsc();
+  virtual PetscErrorCode write_system_petsc(const std::string &namepart);
 
-  virtual PetscErrorCode write_system_matlab();
+  virtual PetscErrorCode write_system_matlab(const std::string &namepart);
 
   virtual PetscErrorCode update_nuH_viewers();
 
