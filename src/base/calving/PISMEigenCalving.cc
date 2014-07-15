@@ -427,24 +427,29 @@ PetscErrorCode EigenCalving::update_strain_rates() {
   return 0;
 }
 
-/** Remove tips of one-cell-wide ice tongues.
+/** Remove tips of one-cell-wide ice tongues ("noses").  Changes ice thickness.
  *
- * ice tongues like this one (and equivalent)
- *
- * @code
-   O O O
-   X X O
-   O O O
-   @endcode
- *
- * are removed, while ones like this one
+ * The center icy cell in ice tongues like this one (and equivalent)
  *
  * @code
-   X O O
+   O O ?
    X X O
-   X O O
+   O O ?
    @endcode
- * are not.
+ *
+ * where "O" is ice-free and "?" is any mask value, are removed.
+ * Ice tongues like this one
+ *
+ * @code
+   # O ?
+   X X O
+   # O ?
+   @endcode
+ * where one or two of the "#" cells are ice-filled, are not removed.
+ *
+ * See the code for the precise rule, which uses `ice_free_ocean()` for the "O"
+ * cells if the center cell has grounded ice, and uses `ice_free()` if the
+ * center cell has floating ice.
  *
  * @note We use `pism_mask` (and not ice_thickness) to make decisions.
  * This means that we can update `ice_thickness` in place without
@@ -470,15 +475,32 @@ PetscErrorCode EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
                                 //   mask.ice_free(i,j) || (mask.grounded_ice(i,j) && (b(i,j) >= SL)))
         continue;
 
-      const bool
-        ice_free_N  = mask.ice_free_ocean(i, j + 1),
-        ice_free_E  = mask.ice_free_ocean(i + 1, j),
-        ice_free_S  = mask.ice_free_ocean(i, j - 1),
-        ice_free_W  = mask.ice_free_ocean(i - 1, j),
-        ice_free_NE = mask.ice_free_ocean(i + 1, j + 1),
-        ice_free_NW = mask.ice_free_ocean(i - 1, j + 1),
-        ice_free_SE = mask.ice_free_ocean(i + 1, j - 1),
+      bool ice_free_N,  ice_free_E,  ice_free_S,  ice_free_W,
+           ice_free_NE, ice_free_NW, ice_free_SE, ice_free_SW;
+
+      if (mask.grounded_ice(i,j)) {
+        // if (i,j) is grounded ice then we will remove it if it has
+        // exclusively ice-free ocean neighbors
+        ice_free_N  = mask.ice_free_ocean(i, j + 1);
+        ice_free_E  = mask.ice_free_ocean(i + 1, j);
+        ice_free_S  = mask.ice_free_ocean(i, j - 1);
+        ice_free_W  = mask.ice_free_ocean(i - 1, j);
+        ice_free_NE = mask.ice_free_ocean(i + 1, j + 1);
+        ice_free_NW = mask.ice_free_ocean(i - 1, j + 1);
+        ice_free_SE = mask.ice_free_ocean(i + 1, j - 1);
         ice_free_SW = mask.ice_free_ocean(i - 1, j - 1);
+      } else if (mask.floating_ice(i,j)) {
+        // if (i,j) is floating then we will remove it if its neighbors are
+        // ice-free, whether ice-free ocean or ice-free ground
+        ice_free_N  = mask.ice_free(i, j + 1);
+        ice_free_E  = mask.ice_free(i + 1, j);
+        ice_free_S  = mask.ice_free(i, j - 1);
+        ice_free_W  = mask.ice_free(i - 1, j);
+        ice_free_NE = mask.ice_free(i + 1, j + 1);
+        ice_free_NW = mask.ice_free(i - 1, j + 1);
+        ice_free_SE = mask.ice_free(i + 1, j - 1);
+        ice_free_SW = mask.ice_free(i - 1, j - 1);
+      }
 
       if ((ice_free_W == false &&
            ice_free_NW         &&
