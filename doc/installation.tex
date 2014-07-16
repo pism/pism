@@ -121,7 +121,7 @@ This table lists required dependencies for PISM alphabetically.
     GSL &\url{http://www.gnu.org/software/gsl/} & version $\ge$ 1.15\\
     MPI &\url{http://www-unix.mcs.anl.gov/mpi/} & \\
     NetCDF &\url{http://www.unidata.ucar.edu/software/netcdf/} & version $\ge$ 4.1 \\
-    PETSc & \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/} & version $\ge$ \PETSCREL \\
+    PETSc & \url{http://www-unix.mcs.anl.gov/petsc/petsc-as/} & \PETSCREL\xspace $\le$ version $\le$ 3.4.5  \\
     UDUNITS-2 & \url{http://www.unidata.ucar.edu/software/udunits/} & \\
     \bottomrule
   \end{tabular}
@@ -286,7 +286,7 @@ PISM uses \href{http://www-unix.mcs.anl.gov/petsc/}{PETSc (=
 \begin{center}
     \url{http://www-unix.mcs.anl.gov/petsc/}
 \end{center}
-PISM requires a version of PETSc which is \texttt{\PETSCREL} or later. The
+PISM 0.6 requires a version of PETSc which is between \texttt{\PETSCREL} and 3.4.5, inclusive. The
 ``lite'' form of the tarball is fine if you are willing to depend on an Internet
 connection for accessing PETSc documentation.
 
