@@ -213,7 +213,13 @@ PetscErrorCode LocalInterpCtx::printArray() {
   for (int k = 0; k < a_len; k++) {
     ierr = PetscSynchronizedPrintf(com," %5.4f,",a[k]); CHKERRQ(ierr);
   }
+
+#if PETSC_VERSION_LT(3,5,0)
   ierr = PetscSynchronizedFlush(com); CHKERRQ(ierr);
+#else
+  ierr = PetscSynchronizedFlush(com, PETSC_STDOUT); CHKERRQ(ierr);
+#endif
+
   return 0;
 }
 
