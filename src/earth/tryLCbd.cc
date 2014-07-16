@@ -115,7 +115,11 @@ int main(int argc, char *argv[]) {
 
       // in order to show bed elevation as a picture, create a da 
       ierr = DMDACreate2d(PETSC_COMM_SELF,
+#if PETSC_VERSION_LT(3,5,0)
                           DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
+#else
+                          DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+#endif
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
                           PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
