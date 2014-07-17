@@ -12,13 +12,8 @@ rm -f $files
 
 $PISM_PATH/bedrough_test > brout-22.txt
 # compare results
-<<<<<<< HEAD
-diff brout-22.txt - > diff-22.txt <<END-OF-OUTPUT
-BedSmoother TEST
-=======
 diff - brout-22.txt  <<END-OF-OUTPUT
-PISMBedSmoother TEST
->>>>>>> fd8f0d0... Try to support PETSc 3.5.0.
+BedSmoother TEST
   smoothing domain:  Nx = 2, Ny = 2
   original bed    :  min elev =  -500.000000 m,  max elev =   500.000000 m
   smoothed bed    :  min elev =  -372.992474 m,  max elev =   372.992474 m
