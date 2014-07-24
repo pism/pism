@@ -278,7 +278,7 @@ PetscErrorCode DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
   double CC = config.get("hydrology_cavitation_opening_coefficient") /
                     (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
-    powglen = 1.0 / config.get("Glen_exponent"),
+    powglen = 1.0 / config.get("sia_Glen_exponent"), // choice is SIA; see #285
     Wr = config.get("hydrology_roughness_scale");
 
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
@@ -393,7 +393,7 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
 
   const double
             rg    = config.get("fresh_water_density") * config.get("standard_gravity"),
-            nglen = config.get("Glen_exponent"),
+            nglen = config.get("sia_Glen_exponent"), // choice is SIA; see #285
             Aglen = config.get("ice_softness"),
             c1    = config.get("hydrology_cavitation_opening_coefficient"),
             c2    = config.get("hydrology_creep_closure_coefficient"),

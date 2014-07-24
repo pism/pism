@@ -283,8 +283,8 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
   if (result.get_dof() != 3)
     SETERRQ(grid.com, 1, "result.get_dof() == 3 is required");
 
-  // NB: uses constant ice hardness.
-  double hardness = pow(config.get("ice_softness"),-1.0/config.get("Glen_exponent"));
+  // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
+  double hardness = pow(config.get("ice_softness"),-1.0/config.get("ssa_Glen_exponent"));
 
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);

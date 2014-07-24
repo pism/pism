@@ -80,7 +80,7 @@ PetscErrorCode SSATestCaseI::initializeSSAModel()
   config.set_flag("do_pseudo_plastic_till", false);
 
   config.set_string("ssa_flow_law", "isothermal_glen");
-  config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")));
+  config.set_double("ice_softness", pow(B_schoof, -config.get("ssa_Glen_exponent")));
 
   return 0;
 }

@@ -29,7 +29,7 @@ BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
     PISMEnd();
   }
 
-  m_Glen_exponent = config.get("Glen_exponent");
+  m_Glen_exponent = config.get("sia_Glen_exponent"); // choice is SIA; see #285
   m_smoothing_range = config.get("bed_smoother_range");
 
   if (m_smoothing_range > 0.0) {

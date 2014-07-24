@@ -62,7 +62,11 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const Config &config,
   rho          = config.get("ice_density");
   beta_CC_grad = config.get("beta_CC") * rho * standard_gravity;
   melting_point_temp = config.get("water_melting_point_temperature");
-  n            = config.get("Glen_exponent");
+  // following conditional is kludge, probably; see issue #285
+  if (strlen(prefix) > 0)
+    n            = config.get(std::string(prefix) + "Glen_exponent");
+  else
+    n            = config.get("sia_Glen_exponent");
   viscosity_power = (1.0 - n) / (2.0 * n);
   hardness_power  = -1.0 / n;
 

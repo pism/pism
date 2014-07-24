@@ -298,7 +298,8 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, Vars &my_vars)
   // set metadata:
   vars[0].init_2d("hardav", grid);
 
-  const double power = 1.0 / grid.config.get("Glen_exponent");
+  // choice to use SSA power; see #285
+  const double power = 1.0 / grid.config.get("ssa_Glen_exponent");
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
 

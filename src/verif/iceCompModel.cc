@@ -66,7 +66,7 @@ IceCompModel::IceCompModel(IceGrid &g, Config &conf, Config &conf_overrides, int
 
   if (testname == 'V') {
     config.set_string("ssa_flow_law", "isothermal_glen");
-    config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+    config.set_double("ice_softness", pow(1.9e8, -config.get("sia_Glen_exponent")));
   } else {
     // Set the default for IceCompModel:
     config.set_string("sia_flow_law", "arr");
@@ -675,7 +675,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
   double
     seawater_density = config.get("sea_water_density"),
     ice_density      = config.get("ice_density"),
-    Glen_n           = config.get("Glen_exponent"),
+    Glen_n           = config.get("sia_Glen_exponent"),
     standard_gravity = config.get("standard_gravity"),
     // enthalpy and pressure do not matter here
     B0, C,

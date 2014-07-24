@@ -555,8 +555,11 @@ netcdf pism_config {
     pism_config:ice_specific_heat_capacity = 2009.0;
     pism_config:ice_specific_heat_capacity_doc = "J kg-1 K-1; at melting point T_0";
 
-    pism_config:Glen_exponent = 3.0;
-    pism_config:Glen_exponent_doc = "; Glen exponent in ice flow law";
+    pism_config:sia_Glen_exponent = 3.0;
+    pism_config:sia_Glen_exponent_doc = "; Glen exponent in ice flow law for SIA";
+
+    pism_config:ssa_Glen_exponent = 3.0;
+    pism_config:ssa_Glen_exponent_doc = "; Glen exponent in ice flow law for SSA";
 
     pism_config:ice_softness = 3.1689e-24;
     pism_config:ice_softness_doc = "Pa-3 s-1; ice softness used by IsothermalGlenIce [@ref EISMINT96]";

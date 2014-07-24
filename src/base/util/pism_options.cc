@@ -677,11 +677,15 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
 
 
-  // SIA
+  // SIA-related
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("gradient", "surface_gradient_method",
                                     "eta,haseloff,mahaffy"); CHKERRQ(ierr);
+
+  // rheology-related
+  ierr = config.scalar_from_option("sia_n", "sia_Glen_exponent"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_n", "ssa_Glen_exponent"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("sia_e", "sia_enhancement_factor"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_e", "ssa_enhancement_factor"); CHKERRQ(ierr);
