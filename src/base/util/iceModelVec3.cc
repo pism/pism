@@ -648,11 +648,7 @@ PetscErrorCode  IceModelVec3D::has_nan() {
              m_name.c_str(), retval, grid->rank); CHKERRQ(ierr);
   }
 
-#if PETSC_VERSION_LT(3,5,0)
   ierr = PetscSynchronizedFlush(grid->com); CHKERRQ(ierr);
-#else
-  ierr = PetscSynchronizedFlush(grid->com, PETSC_STDOUT); CHKERRQ(ierr);
-#endif
 
   return retval;
 }

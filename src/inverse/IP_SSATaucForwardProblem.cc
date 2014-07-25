@@ -57,12 +57,7 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   ierr = m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width); CHKERRQ(ierr);
   ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width); CHKERRQ(ierr);
 
-#if PETSC_VERSION_LT(3,5,0)
   ierr = DMCreateMatrix(SSADA->get(), "baij", &m_J_state); CHKERRQ(ierr);
-#else
-  ierr = DMSetMatType(SSADA->get(), MATBAIJ); CHKERRQ(ierr);
-  ierr = DMCreateMatrix(SSADA->get(), &m_J_state); CHKERRQ(ierr);
-#endif
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
   double ksp_rtol = 1e-12;
@@ -559,12 +554,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzet
   ierr = m_du_global.scale(-1); CHKERRQ(ierr);
 
   // call PETSc to solve linear system by iterative method.
-#if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-#else
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
-#endif
-
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
 
   KSPConvergedReason  reason;
@@ -626,12 +616,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   ierr = m_du_global.end_access(); CHKERRQ(ierr);
 
   // call PETSc to solve linear system by iterative method.
-#if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-#else
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
-#endif
-
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
 
   KSPConvergedReason  reason;

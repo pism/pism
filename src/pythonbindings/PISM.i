@@ -563,8 +563,6 @@ using namespace pism;
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
 %template(Diag_SSA) pism::Diag<pism::SSA>;
-%ignore SSAFEJacobian;
-%ignore SSAFEFunction;
 %include "stressbalance/ssa/SSA.hh"
 %ignore pism::SSAFEFunction;
 %ignore pism::SSAFEJacobian;

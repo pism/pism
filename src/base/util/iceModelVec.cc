@@ -635,13 +635,8 @@ PetscErrorCode  IceModelVec::update_ghosts() {
     return 0;
 
   assert(v != NULL);
-#if PETSC_VERSION_LT(3,5,0)
   ierr = DMDALocalToLocalBegin(m_da->get(), v, INSERT_VALUES, v);  CHKERRQ(ierr);
   ierr = DMDALocalToLocalEnd(m_da->get(), v, INSERT_VALUES, v); CHKERRQ(ierr);
-#else
-  ierr = DMLocalToLocalBegin(m_da->get(), v, INSERT_VALUES, v);  CHKERRQ(ierr);
-  ierr = DMLocalToLocalEnd(m_da->get(), v, INSERT_VALUES, v); CHKERRQ(ierr);
-#endif
   return 0;
 }
 
@@ -652,13 +647,8 @@ PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) {
   assert(v != NULL);
 
   if (m_has_ghosts == true && destination.m_has_ghosts == true) {
-#if PETSC_VERSION_LT(3,5,0)
     ierr = DMDALocalToLocalBegin(m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
     ierr = DMDALocalToLocalEnd(m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-#else
-    ierr = DMLocalToLocalBegin(m_da->get(), v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
-    ierr = DMLocalToLocalEnd(m_da->get(), v, INSERT_VALUES, destination.v); CHKERRQ(ierr);
-#endif
     return 0;
   }
 
