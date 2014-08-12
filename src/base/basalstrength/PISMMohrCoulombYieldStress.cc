@@ -189,11 +189,13 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
   {
     ierr = OptionsIsSet("-plastic_phi", plastic_phi_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-topg_to_phi",
-                            "Use the till friction angle parameterization", topg_to_phi_set); CHKERRQ(ierr);
+                            "Turn on, and specify, the till friction angle parameterization based on bedrock elevation (topg)",
+                            topg_to_phi_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-tauc_to_phi", "Compute tillphi as a function of tauc and the rest of the model state",
+    ierr = OptionsIsSet("-tauc_to_phi", 
+                            "Turn on, and specify, the till friction angle computation which uses basal yield stress (tauc) and the rest of the model state",
                             tauc_to_phi_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -459,9 +461,8 @@ PetscErrorCode MohrCoulombYieldStress::basal_material_yield_stress(IceModelVec2S
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
-Computes the till friction angle \f$\phi(x,y)\f$ at a location, namely
-`IceModel::vtillphi`, as the following increasing, piecewise-linear function of
-the bed elevation \f$b(x,y)\f$.  Let
+Computes the till friction angle \f$\phi(x,y)\f$ at a location as the following
+increasing, piecewise-linear function of the bed elevation \f$b(x,y)\f$.  Let
         \f[ M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}}) \f]
 be the slope of the nontrivial part.  Then
         \f[ \phi(x,y) = \begin{cases}
@@ -469,29 +470,20 @@ be the slope of the nontrivial part.  Then
                 \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
                                   &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
                 \phi_{\text{max}}, & b_{\text{max}} \le b(x,y), \end{cases} \f]
-The exception is if the point is marked as floating, in which case the till friction angle
-is set to the value `phi_ocean`.
+where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
+\f$b_{\text{min}}=\f$`topg_min`, \f$b_{\text{max}}=\f$`topg_max`.
 
-The default values are vaguely suitable for Antarctica, perhaps:
-- `phi_min` = 5.0 degrees,
-- `phi_max` = 15.0 degrees,
-- `topg_min` = -1000.0 m,
-- `topg_max` = 1000.0 m,
-- `phi_ocean` = 10.0 degrees.
-
-If the user gives option <code>-topg_to_phi A,B,C,D</code> then `phi_ocean`
-is not used. Instead, the same rule as above for grounded ice is used.
- */
+The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
+*/
 PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
   PetscErrorCode ierr;
   bool  topg_to_phi_set;
-  std::vector<double> inarray(4);
 
-  // default values:
-  inarray[0] = 5.0;
-  inarray[1] = 15.0;
-  inarray[2] = -1000.0;
-  inarray[3] = 1000.0;
+  std::vector<double> inarray(4);
+  inarray[0] = config.get("till_topg_to_phi_phi_min");
+  inarray[1] = config.get("till_topg_to_phi_phi_max");
+  inarray[2] = config.get("till_topg_to_phi_topg_min");
+  inarray[3] = config.get("till_topg_to_phi_topg_max");  
 
   // read the comma-separated list of four values
   ierr = OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
