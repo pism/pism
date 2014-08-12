@@ -127,6 +127,9 @@ netcdf pism_config {
     pism_config:tauc_add_transportable_water = "no";
     pism_config:tauc_add_transportable_water_doc = "If 'yes' then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
 
+    pism_config:till_use_topg_to_phi = "no";
+    pism_config:till_use_topg_to_phi_doc = "If THE OPTION -topg_to_phi IS SET THEN THIS WILL BE SET TO 'yes', and then MohrCoulombYieldStress will initialize the tillphi field using a piece-wise linear function of depth described by four parameters.";
+
 
     // parameters:
 

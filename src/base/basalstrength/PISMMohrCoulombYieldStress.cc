@@ -478,28 +478,13 @@ The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl
 PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
   PetscErrorCode ierr;
   bool  topg_to_phi_set;
-
-  std::vector<double> inarray(4);
-  inarray[0] = config.get("till_topg_to_phi_phi_min");
-  inarray[1] = config.get("till_topg_to_phi_phi_max");
-  inarray[2] = config.get("till_topg_to_phi_topg_min");
-  inarray[3] = config.get("till_topg_to_phi_topg_max");  
-
-  // read the comma-separated list of four values
-  ierr = OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
-                              inarray, topg_to_phi_set); CHKERRQ(ierr);
-
+  ierr = OptionsIsSet("-topg_to_phi", topg_to_phi_set);  CHKERRQ(ierr);
   assert(topg_to_phi_set == true);
 
-  if (inarray.size() != 4) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: option -topg_to_phi requires a comma-separated list with 4 numbers; got %d\n",
-                inarray.size());
-    PISMEnd();
-  }
-
-  double phi_min = inarray[0], phi_max = inarray[1],
-    topg_min = inarray[2], topg_max = inarray[3];
+  double phi_min  = config.get("till_topg_to_phi_phi_min"),
+         phi_max  = config.get("till_topg_to_phi_phi_max"),
+         topg_min = config.get("till_topg_to_phi_topg_min"),
+         topg_max = config.get("till_topg_to_phi_topg_max");
 
   if (phi_min >= phi_max) {
     PetscPrintf(grid.com,

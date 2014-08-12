@@ -755,6 +755,26 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
                                    "till_effective_fraction_overburden");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_log_factor_transportable_water",
                                    "till_log_factor_transportable_water");      CHKERRQ(ierr);
+
+  bool topg_to_phi_set;
+  std::vector<double> inarray(4);
+  // read the comma-separated list of four values
+  ierr = OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
+                              inarray, topg_to_phi_set); CHKERRQ(ierr);
+  if (topg_to_phi_set == true) {
+    if (inarray.size() != 4) {
+      PetscPrintf(com,
+                  "PISM ERROR: option -topg_to_phi requires a comma-separated list with 4 numbers; got %d\n",
+                  inarray.size());
+      PISMEnd();
+    }
+    config.set_flag("till_use_topg_to_phi", true);
+    config.set_double("till_topg_to_phi_phi_min", inarray[0]);
+    config.set_double("till_topg_to_phi_phi_max", inarray[1]);
+    config.set_double("till_topg_to_phi_topg_min",inarray[2]);
+    config.set_double("till_topg_to_phi_topg_max",inarray[3]);
+  }
+
   ierr = config.flag_from_option("tauc_slippery_grounding_lines",
                                  "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
   ierr = config.flag_from_option("tauc_add_transportable_water",
@@ -792,7 +812,6 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
 
   // Ice shelves
-
   ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
@@ -812,9 +831,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("fracture_softening",
                                    "fracture_density_softening_lower_limit"); CHKERRQ(ierr);
 
-
   // Calving
-
   ierr = config.string_from_option("calving", "calving_methods"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("thickness_calving_threshold", "thickness_calving_threshold"); CHKERRQ(ierr);
