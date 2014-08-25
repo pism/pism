@@ -237,19 +237,19 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
     ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
   }
 
-  double *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
+  double *w_ij, *u_ij, *u_w, *u_e, *v_ij, *v_s, *v_n;
 
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
 
-      ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
+      ierr = u->getInternalColumn(i-1,j,&u_w); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i,j,  &u_ij); CHKERRQ(ierr);
-      ierr = u->getInternalColumn(i+1,j,&u_ip1); CHKERRQ(ierr);
+      ierr = u->getInternalColumn(i+1,j,&u_e); CHKERRQ(ierr);
 
-      ierr = v->getInternalColumn(i,j-1,&v_jm1); CHKERRQ(ierr);
+      ierr = v->getInternalColumn(i,j-1,&v_s); CHKERRQ(ierr);
       ierr = v->getInternalColumn(i,j,  &v_ij); CHKERRQ(ierr);
-      ierr = v->getInternalColumn(i,j+1,&v_jp1); CHKERRQ(ierr);
+      ierr = v->getInternalColumn(i,j+1,&v_n); CHKERRQ(ierr);
 
       double west = 1, east = 1,
         south = 1, north = 1,
@@ -259,7 +259,7 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
       // Switch between second-order centered differences in the interior and
       // first-order one-sided differences at ice margins.
 
-      // x-derivative of u
+      // x-derivative
       {
         if ((m.floating_ice(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.floating_ice(i+1,j)))
           east = 0;
@@ -272,7 +272,7 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
           D_x = 0.0;
       }
 
-      // y-derivative of v
+      // y-derivative
       {
         if ((m.floating_ice(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.floating_ice(i,j+1)))
           north = 0;
@@ -285,6 +285,9 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
           D_y = 0.0;
       }
 
+      double u_x = D_x * (west * (u_ij[0] - u_w[0]) + east * (u_e[0] - u_ij[0])),
+        v_y = D_y * (south * (v_ij[0] - v_s[0]) + north * (v_n[0] - v_ij[0]));
+
       // at the base: include the basal melt rate
       if (basal_melt_rate) {
         w_ij[0] = - (*basal_melt_rate)(i,j);
@@ -292,14 +295,11 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
         w_ij[0] = 0.0;
       }
 
-      double u_x = D_x * (west * (u_ij[0] - u_im1[0]) + east * (u_ip1[0] - u_ij[0])),
-        v_y = D_y * (south * (v_ij[0] - v_jm1[0]) + north * (v_jp1[0] - v_ij[0]));
-
       // within the ice and above:
       double old_integrand = u_x + v_y;
       for (unsigned int k = 1; k < grid.Mz; ++k) {
-        u_x = D_x * (west  * (u_ij[k] - u_im1[k]) + east  * (u_ip1[k] - u_ij[k]));
-        v_y = D_y * (south * (v_ij[k] - v_jm1[k]) + north * (v_jp1[k] - v_ij[k]));
+        u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
+        v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
         const double new_integrand = u_x + v_y;
 
         const double dz = grid.zlevels[k] - grid.zlevels[k-1];

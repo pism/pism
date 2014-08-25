@@ -1174,9 +1174,9 @@ PetscErrorCode SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
 PetscErrorCode SSAFD::compute_hardav_staggered() {
   PetscErrorCode ierr;
-  double *E, *E_ij, *E_offset;
+  double *E_ij, *E_offset;
 
-  E = new double[grid.Mz];
+  std::vector<double> E(grid.Mz);
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
@@ -1211,7 +1211,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
         }
 
         hardness(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                      &grid.zlevels[0], E); CHKERRQ(ierr);
+                                                      &grid.zlevels[0], &E[0]); CHKERRQ(ierr);
       } // o
     }   // j
   }     // i
@@ -1220,8 +1220,6 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
   ierr = hardness.end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
-
-  delete [] E;
 
   ierr = fracture_induced_softening(); CHKERRQ(ierr);
 
