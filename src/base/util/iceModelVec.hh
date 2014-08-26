@@ -258,7 +258,7 @@ protected:
   int state_counter;            //!< Internal IceModelVec "revision number"
 
   virtual PetscErrorCode destroy();
-  virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
+  virtual PetscErrorCode checkCompatibility(const char *function, IceModelVec &other);
 
   //! \brief Check the array indices and warn if they are out of range.
   void check_array_indices(int i, int j, unsigned int k);
@@ -270,6 +270,7 @@ private:
   IceModelVec& operator=(const IceModelVec&);
 public:
   //! Dump an IceModelVec to a file. *This is for debugging only.*
+  //! Uses const char[] to make it easier to call it from gdb.
   PetscErrorCode dump(const char filename[]);
 };
 

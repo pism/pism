@@ -175,7 +175,7 @@ Result should be executable as part of a Matlab/Octave script.
 PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
                                                  const std::vector<double> &v,
                                                  unsigned int M,
-                                                 const char *info) const {
+                                                 const std::string &info) const {
   PetscErrorCode ierr;
 
   assert(M >= 1);
@@ -189,9 +189,9 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
 
   ierr = PetscViewerASCIIPrintf(viewer,
      "\n%% viewing ColumnSystem column object with description '%s' (columns  [k value])\n",
-     info); CHKERRQ(ierr);
+     info.c_str()); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-      "%s_with_index = [...\n", info); CHKERRQ(ierr);
+      "%s_with_index = [...\n", info.c_str()); CHKERRQ(ierr);
   for (unsigned int k=0; k<M; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,
       "  %5d %.12f", k, v[k]); CHKERRQ(ierr);
@@ -202,7 +202,7 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
     }
   }
   ierr = PetscViewerASCIIPrintf(viewer,
-      "%s = %s_with_index(:,2);\n\n",info,info); CHKERRQ(ierr);
+      "%s = %s_with_index(:,2);\n\n",info.c_str(),info.c_str()); CHKERRQ(ierr);
   return 0;
 }
 
@@ -215,7 +215,7 @@ Give description string as `info` argument.
  */
 PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer,
                                            unsigned int M,
-                                           const char *info) const {
+                                           const std::string &info) const {
   PetscErrorCode ierr;
   PetscBool iascii;
   if (!viewer) {
@@ -226,20 +226,20 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer,
 
   if (M < 2) {
     ierr = PetscViewerASCIIPrintf(viewer,
-      "\n\n<nmax >= 2 required to view columnSystemCtx tridiagonal matrix '%s' ... skipping view\n",info);
+      "\n\n<nmax >= 2 required to view columnSystemCtx tridiagonal matrix '%s' ... skipping view\n",info.c_str());
     CHKERRQ(ierr);
     return 0;
   }
 
   if (M > 500) {
     ierr = PetscViewerASCIIPrintf(viewer,
-      "\n\n<nmax > 500: columnSystemCtx matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n", info); CHKERRQ(ierr);
+      "\n\n<nmax > 500: columnSystemCtx matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n", info.c_str()); CHKERRQ(ierr);
     char vinfo[PETSC_MAX_PATH_LEN];
-    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_super_diagonal_U", info);
+    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_super_diagonal_U", info.c_str());
     ierr = viewVectorValues(viewer, U, M-1, vinfo); CHKERRQ(ierr);
-    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_diagonal_D", info);
+    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_diagonal_D", info.c_str());
     ierr = viewVectorValues(viewer, D, M, vinfo); CHKERRQ(ierr);
-    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_sub_diagonal_L", info);
+    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_sub_diagonal_L", info.c_str());
     {                           // discard L[0], which is not used
       std::vector<double> L_tmp(M - 1);
       for (unsigned int i = 0; i < M - 1; ++i) {
@@ -249,7 +249,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer,
     }
   } else {
     ierr = PetscViewerASCIIPrintf(viewer,
-        "\n%s = [...\n", info); CHKERRQ(ierr);
+        "\n%s = [...\n", info.c_str()); CHKERRQ(ierr);
     for (unsigned int k=0; k<M; k++) {    // k+1 is row  (while j+1 is column)
       if (k == 0) {              // viewing first row
         ierr = PetscViewerASCIIPrintf(viewer, "%.12f %.12f ", D[k], U[k]); CHKERRQ(ierr);

@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     EnthalpyConverter EC(config);
 
     IceFlowLaw *flow_law = NULL;
-    IceFlowLawFactory ice_factory(com, NULL, config, &EC);
+    IceFlowLawFactory ice_factory(com, "sia_", config, &EC);
 
     std::string flow_law_name = ICE_GPBLD;
     ice_factory.setType(ICE_GPBLD); // set the default type

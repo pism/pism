@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
         "(see User's Manual for tests I and J).\n"
         ); CHKERRQ(ierr);
 
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);

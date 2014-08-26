@@ -856,7 +856,7 @@ UnitSystem IceGrid::get_unit_system() const {
   return m_unit_system;
 }
 
-double IceGrid::convert(double value, const char *unit1, const char *unit2) const {
+double IceGrid::convert(double value, const std::string &unit1, const std::string &unit2) const {
   return m_unit_system.convert(value, unit1, unit2);
 }
 

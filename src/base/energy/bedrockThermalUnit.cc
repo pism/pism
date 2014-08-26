@@ -31,7 +31,7 @@ bool IceModelVec3BTU::good_init() {
 }
 
 
-PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name[], bool local,
+PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_short_name, bool local,
                                       int Mbz, double myLbz, int stencil_width) {
   PetscErrorCode ierr;
   grid = &mygrid;

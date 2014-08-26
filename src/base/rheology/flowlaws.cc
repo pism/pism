@@ -40,7 +40,7 @@ PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &confi
                                        EnthalpyConverter *EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
-  ThermoGlenArrIce cpb(PETSC_COMM_SELF, NULL, config, EC); // This is unmodified cold Paterson-Budd
+  ThermoGlenArrIce cpb(PETSC_COMM_SELF, "sia_", config, EC); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
     const double left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
                     right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
@@ -51,27 +51,21 @@ PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &confi
   return PETSC_TRUE;
 }
 
-IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const Config &config,
+IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
                        EnthalpyConverter *my_EC) : EC(my_EC), e(1), com(c) {
-  PetscMemzero(prefix, sizeof(prefix));
-  if (pre) PetscStrncpy(prefix, pre, sizeof(prefix));
+
+  prefix = pre;
 
   standard_gravity   = config.get("standard_gravity");
   ideal_gas_constant = config.get("ideal_gas_constant");
 
-  rho          = config.get("ice_density");
-  beta_CC_grad = config.get("beta_CC") * rho * standard_gravity;
+  rho                = config.get("ice_density");
+  beta_CC_grad       = config.get("beta_CC") * rho * standard_gravity;
   melting_point_temp = config.get("water_melting_point_temperature");
-  // following conditional is kludge, probably; see issue #285
-  if (strlen(prefix) > 0)
-    n            = config.get(std::string(prefix) + "Glen_exponent");
-  else
-    n            = config.get("sia_Glen_exponent");
-  viscosity_power = (1.0 - n) / (2.0 * n);
-  hardness_power  = -1.0 / n;
-
-  if (strlen(prefix) > 0)
-    e = config.get(std::string(prefix) + "enhancement_factor");
+  e                  = config.get(prefix + "enhancement_factor");
+  n                  = config.get(prefix + "Glen_exponent");
+  viscosity_power    = (1.0 - n) / (2.0 * n);
+  hardness_power     = -1.0 / n;
 
   A_cold = config.get("Paterson_Budd_A_cold");
   A_warm = config.get("Paterson_Budd_A_warm");
@@ -194,7 +188,7 @@ double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
 This constructor just sets flow law factor for nonzero water content, from
 \ref AschwandenBlatter and \ref LliboutryDuval1985.
  */
-GPBLDIce::GPBLDIce(MPI_Comm c, const char pre[],
+GPBLDIce::GPBLDIce(MPI_Comm c, const std::string &pre,
                    const Config &config, EnthalpyConverter *my_EC)
   : IceFlowLaw(c, pre, config, my_EC) {
   T_0              = config.get("water_melting_point_temperature");    // K
@@ -267,7 +261,7 @@ double ThermoGlenIce::flow_from_temp(double stress, double temp,
 
 // IsothermalGlenIce
 
-IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const char pre[],
+IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const std::string &pre,
                                      const Config &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   softness_A = config.get("ice_softness");
@@ -276,7 +270,7 @@ IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const char pre[],
 
 // HookeIce
 
-HookeIce::HookeIce(MPI_Comm c, const char pre[],
+HookeIce::HookeIce(MPI_Comm c, const std::string &pre,
                    const Config &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   Q_Hooke  = config.get("Hooke_Q");
@@ -293,7 +287,7 @@ double HookeIce::softness_parameter_from_temp(double T_pa) const {
 
 // Goldsby-Kohlstedt (forward) ice flow law
 
-GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const char pre[],
+GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const std::string &pre,
                      const Config &config, EnthalpyConverter *my_EC)
   : IceFlowLaw(c, pre, config, my_EC) {
 
@@ -463,7 +457,7 @@ GKparts GoldsbyKohlstedtIce::flowParts(double stress, double temp, double pressu
 }
 /*****************/
 
-GoldsbyKohlstedtIceStripped::GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[],
+GoldsbyKohlstedtIceStripped::GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &pre,
                                                          const Config &config,
                                                          EnthalpyConverter *my_EC)
   : GoldsbyKohlstedtIce(c, pre, config, my_EC) {

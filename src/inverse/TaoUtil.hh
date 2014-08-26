@@ -104,7 +104,7 @@ class TaoBasicSolver {
 public:
     
   //! Construct a solver to solve `prob` using TAO algorithm `tao_type`.
-  TaoBasicSolver(MPI_Comm comm, const char* tao_type, Problem &prob):
+  TaoBasicSolver(MPI_Comm comm, const std::string & tao_type, Problem &prob):
     m_comm(comm), m_problem(prob)
   {
     PetscErrorCode ierr;
@@ -162,10 +162,10 @@ public:
 protected:
 
   //! Initialize the TaoSolver and allow the Problem to connect its callbacks.
-  virtual PetscErrorCode construct(const char* tao_type) {
+  virtual PetscErrorCode construct(const std::string & tao_type) {
     PetscErrorCode ierr;
     ierr = TaoCreate(m_comm ,&m_tao); CHKERRQ(ierr); 
-    ierr = TaoSetType(m_tao,tao_type); CHKERRQ(ierr);    
+    ierr = TaoSetType(m_tao,tao_type.c_str()); CHKERRQ(ierr);    
     ierr = m_problem.connect(m_tao); CHKERRQ(ierr);
     ierr = TaoSetFromOptions(m_tao); CHKERRQ(ierr);
     return 0;

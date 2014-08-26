@@ -89,10 +89,10 @@ public:
   PetscErrorCode viewVectorValues(PetscViewer viewer,
                                   const std::vector<double> &v,
                                   unsigned int M,
-                                  const char *info) const;
+                                  const std::string &info) const;
   PetscErrorCode viewMatrix(PetscViewer viewer,
                             unsigned int M,
-                            const char *info) const;
+                            const std::string &info) const;
   virtual PetscErrorCode viewSystem(PetscViewer viewer,
                                     unsigned int M) const;
 

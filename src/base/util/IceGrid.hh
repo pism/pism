@@ -155,7 +155,7 @@ public:
   PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
   double radius(int i, int j);
   PetscErrorCode get_dm(int dm_dof, int stencil_width, PISMDM::Ptr &result);
-  double convert(double, const char*, const char*) const;
+  double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
 
   const Config &config;

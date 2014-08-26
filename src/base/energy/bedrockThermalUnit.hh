@@ -32,7 +32,7 @@ public:
   IceModelVec3BTU() : Lbz(-1.0) {}
   virtual ~IceModelVec3BTU() {}
 
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
+  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name, bool local,
                                 int myMbz, double myLbz, int stencil_width = 1);
                                 
   PetscErrorCode get_layer_depth(double &depth); //!< Return -Lbz value.
