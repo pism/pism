@@ -133,13 +133,12 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     PetscErrorCode  ierr;
 
     // set up fine grid in ice
-    unsigned int fMz = grid.Mz_fine;
     double       fdz = grid.dz_fine;
     std::vector<double> &fzlev = grid.zlevels_fine;
 
     ierr = verbPrintf(5,grid.com,
                       "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f]",
-                      fMz, fdz); CHKERRQ(ierr);
+                      grid.Mz_fine, fdz); CHKERRQ(ierr);
 
     bool viewOneColumn;
     ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
@@ -154,7 +153,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
     const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
 
-    tempSystemCtx system(fMz, "temperature");
+    tempSystemCtx system(grid.Mz_fine, "temperature");
     system.dx              = grid.dx;
     system.dy              = grid.dy;
     system.dtTemp          = dt_TempAge; // same time step for temp and age, currently
@@ -163,8 +162,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     system.ice_k           = ice_k;
     system.ice_c_p         = ice_c;
 
-    double *x;
-    x = new double[fMz]; // space for solution of system
+    std::vector<double> x(grid.Mz_fine);// space for solution of system
 
     // this is bulge limit constant in K; is max amount by which ice
     //   or bedrock can be lower than surface temperature
@@ -172,12 +170,12 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
     double *Tnew;
     // pointers to values in current column
-    system.u     = new double[fMz];
-    system.v     = new double[fMz];
-    system.w     = new double[fMz];
-    system.strain_heating = new double[fMz];
-    system.T     = new double[fMz];
-    Tnew         = new double[fMz];
+    system.u     = new double[grid.Mz_fine];
+    system.v     = new double[grid.Mz_fine];
+    system.w     = new double[grid.Mz_fine];
+    system.strain_heating = new double[grid.Mz_fine];
+    system.T     = new double[grid.Mz_fine];
+    Tnew         = new double[grid.Mz_fine];
 
     // system needs access to T3 for T3.getPlaneStar_fine()
     system.T3 = &T3;
@@ -250,7 +248,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         if (ks>0) { // if there are enough points in ice to bother ...
           // this call will validate ks
           ierr = system.setIndicesAndClearThisColumn(i, j,
-                                                     ice_thickness(i,j), fdz, fMz); CHKERRQ(ierr);
+                                                     ice_thickness(i,j), fdz, grid.Mz_fine); CHKERRQ(ierr);
 
           ierr = u3->getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
           ierr = v3->getValColumn(i,j,ks,system.v); CHKERRQ(ierr);
@@ -284,7 +282,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
             ierr = PetscPrintf(grid.com,
               "\n\nin temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
               i, j); CHKERRQ(ierr);
-            ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
+            ierr = system.viewColumnInfoMFile(x, grid.Mz_fine); CHKERRQ(ierr);
           }
 
         }       // end of "if there are enough points in ice to bother ..."
@@ -353,7 +351,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         }
 
         // set to air temp above ice
-        for (unsigned int k = ks; k < fMz; k++) {
+        for (unsigned int k = ks; k < grid.Mz_fine; k++) {
           Tnew[k] = ice_surface_temp(i,j);
         }
 
@@ -395,7 +393,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
-  delete [] x;
   delete [] system.T;  delete [] system.strain_heating;
   delete [] system.u;  delete [] system.v;  delete [] system.w;
   delete [] Tnew;

@@ -283,7 +283,7 @@ bootstrap temperature profile in the bedrock.
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
 
-  double *T = new double[grid.Mz];
+  std::vector<double> T(grid.Mz);
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
              usesmb  = config.get_string("bootstrapping_temperature_heuristic") == "smb";
   const double
@@ -370,7 +370,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
         }
       }
 
-      ierr = result->setInternalColumn(i,j,T); CHKERRQ(ierr);
+      ierr = result->setInternalColumn(i,j,&T[0]); CHKERRQ(ierr);
 
     }
   }
@@ -380,8 +380,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = result->end_access();               CHKERRQ(ierr);
   ierr = ice_surface_temp.end_access();      CHKERRQ(ierr);
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
-
-  delete [] T;
 
   ierr = result->update_ghosts(); CHKERRQ(ierr);
 

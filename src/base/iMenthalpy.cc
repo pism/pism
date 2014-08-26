@@ -340,10 +340,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         }
 
         // solve the system
-        ierr = esys.solveThisColumn(&Enthnew[0]); CHKERRQ(ierr);
+        ierr = esys.solveThisColumn(Enthnew); CHKERRQ(ierr);
 
         if (viewOneColumn && (i == id && j == jd)) {
-          ierr = esys.viewColumnInfoMFile(&Enthnew[0], grid.Mz_fine); CHKERRQ(ierr);
+          ierr = esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine); CHKERRQ(ierr);
         }
       }
 

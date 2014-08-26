@@ -118,7 +118,7 @@ PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0,
 }
 
 
-PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
+PetscErrorCode tempSystemCtx::solveThisColumn(std::vector<double> &x) {
 
   assert(initAllDone == true);
   assert(schemeParamsValid == true);
@@ -219,7 +219,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(double *x) {
                        "\n\ntridiagonal solve of tempSystemCtx in temperatureStep() FAILED at (%d,%d)\n"
                        " with zero pivot position %d; viewing system to m-file ... \n",
                        m_i, m_j, pivoterr); CHKERRQ(ierr);
-    ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
+    ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in temperatureStep()\n");
   }
 

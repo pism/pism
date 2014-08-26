@@ -27,7 +27,7 @@ int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism
   unsigned int dim1_len = 0, dim2_len = 0;
   std::vector<unsigned int> start, count;
   std::vector<std::string> dims;
-  double *data = NULL;
+  std::vector<double> data;
 
   stat = input.inq_vardimid(var_name, dims); check(stat);
 
@@ -39,10 +39,10 @@ int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism
     count.push_back(dim1_len);
 
     assert(dim1_len > 0);
-    data = new double[dim1_len];
+    data.resize(dim1_len);
 
-    stat = input.get_vara_double(var_name, start, count, data); check(stat);
-    stat = output.put_vara_double(var_name, start, count, data); check(stat);
+    stat = input.get_vara_double(var_name, start, count, &data[0]); check(stat);
+    stat = output.put_vara_double(var_name, start, count, &data[0]); check(stat);
 
   } else if (dims.size() == 2) {
 
@@ -55,14 +55,12 @@ int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism
     count.push_back(dim2_len);
 
     assert(dim1_len*dim2_len > 0);
-    data = new double[dim1_len*dim2_len];
+    data.resize(dim1_len*dim2_len);
 
-    stat = input.get_vara_double(var_name, start, count, data); check(stat);
-    stat = output.put_vara_double(var_name, start, count, data); check(stat);
+    stat = input.get_vara_double(var_name, start, count, &data[0]); check(stat);
+    stat = output.put_vara_double(var_name, start, count, &data[0]); check(stat);
 
   }
-
-  delete[] data;
 
   return 0;
 }

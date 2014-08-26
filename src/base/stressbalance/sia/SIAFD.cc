@@ -543,8 +543,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
   ierr = result.set(0.0); CHKERRQ(ierr);
 
-  double *delta_ij;
-  delta_ij = new double[grid.Mz];
+  std::vector<double> delta_ij(grid.Mz);
 
   const double enhancement_factor = flow_law->enhancement_factor();
   double ice_grain_size = config.get("ice_grain_size");
@@ -677,7 +676,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
           for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
             delta_ij[k] = 0.0;
           }
-          ierr = delta[o].setInternalColumn(i,j,delta_ij); CHKERRQ(ierr);
+          ierr = delta[o].setInternalColumn(i,j,&delta_ij[0]); CHKERRQ(ierr);
         }
       } // o
     } // j
@@ -702,8 +701,6 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   }
 
   ierr = GlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
-
-  delete [] delta_ij;
 
   return 0;
 }

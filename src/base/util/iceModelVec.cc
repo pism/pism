@@ -753,16 +753,15 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
 //! \brief Computes the norm of all components.
 PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
   PetscErrorCode ierr;
-  double *norm_result;
 
   assert(n == NORM_1 || n == NORM_2 || n == NORM_INFINITY);
 
-  norm_result = new double[m_dof];
+  std::vector<double> norm_result(m_dof);
   result.resize(m_dof);
 
   NormType type = this->int_to_normtype(n);
 
-  ierr = VecStrideNormAll(v, type, norm_result); CHKERRQ(ierr);
+  ierr = VecStrideNormAll(v, type, &norm_result[0]); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax if NORM_INFINITY,
@@ -800,8 +799,6 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
     }
 
   }
-
-  delete [] norm_result;
 
   return 0;
 }

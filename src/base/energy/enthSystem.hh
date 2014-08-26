@@ -59,9 +59,9 @@ public:
   PetscErrorCode setBasalHeatFlux(double hf);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
-  PetscErrorCode viewSystem(PetscViewer viewer) const;
+  PetscErrorCode viewSystem(PetscViewer viewer, unsigned int M) const;
 
-  PetscErrorCode solveThisColumn(double *x);
+  PetscErrorCode solveThisColumn(std::vector<double> &x);
 
   double lambda()
   { return m_lambda; }

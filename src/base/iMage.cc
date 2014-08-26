@@ -33,23 +33,18 @@ public:
   ageSystemCtx(int my_Mz, const std::string &my_prefix);
   PetscErrorCode initAllColumns();
 
-  PetscErrorCode solveThisColumn(double *x);
+  PetscErrorCode solveThisColumn(std::vector<double> &x);
 
 public:
   // constants which should be set before calling initForAllColumns()
-  double  dx,
-               dy,
-               dtAge,
-               dzEQ;
+  double  dx, dy, dtAge, dzEQ;
   // pointers which should be set before calling initForAllColumns()
-  double  *u,
-               *v,
-               *w;
+  double  *u, *v, *w;
   IceModelVec3 *tau3;
 
 protected: // used internally
   double nuEQ;
-  bool        initAllDone;
+  bool initAllDone;
 };
 
 
@@ -134,7 +129,7 @@ CODE STILL REFLECTS THE OLD SCHEME.
 
 FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
  */
-PetscErrorCode ageSystemCtx::solveThisColumn(double *x) {
+PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
      "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
@@ -194,7 +189,7 @@ PetscErrorCode ageSystemCtx::solveThisColumn(double *x) {
                        "\n\ntridiagonal solve of ageSystemCtx in ageStep() FAILED at (%d,%d)\n"
                        " with zero pivot position %d; viewing system to m-file ... \n",
                        m_i, m_j, pivoterr); CHKERRQ(ierr);
-    ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
+    ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in ageStep()\n");
   }
 
@@ -244,8 +239,7 @@ PetscErrorCode IceModel::ageStep() {
   int    fMz = grid.Mz_fine;
   double fdz = grid.dz_fine;
 
-  double *x;  
-  x = new double[fMz]; // space for solution
+  std::vector<double> x(fMz);   // space for solution
 
   bool viewOneColumn;
   ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
@@ -306,7 +300,7 @@ PetscErrorCode IceModel::ageStep() {
         }
 
         // put solution in IceModelVec3
-        ierr = vWork3d.setValColumnPL(i,j,x); CHKERRQ(ierr);
+        ierr = vWork3d.setValColumnPL(i,j,&x[0]); CHKERRQ(ierr);
       }
     }
   }
@@ -318,7 +312,6 @@ PetscErrorCode IceModel::ageStep() {
   ierr = w3->end_access();  CHKERRQ(ierr);
   ierr = vWork3d.end_access();  CHKERRQ(ierr);
 
-  delete [] x;
   delete [] system.u;  delete [] system.v;  delete [] system.w;
 
   ierr = vWork3d.update_ghosts(tau3); CHKERRQ(ierr);
