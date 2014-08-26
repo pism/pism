@@ -206,7 +206,8 @@ private:
                                     const std::vector<double> &zlevels,
                                     LocalInterpCtx* &lic) const;
 
-  PetscErrorCode compute_start_and_count(const std::string &name, unsigned int t_start,
+  PetscErrorCode compute_start_and_count(const std::string &name,
+                                         unsigned int t_start, unsigned int t_count,
                                          unsigned int x_start, unsigned int x_count,
                                          unsigned int y_start, unsigned int y_count,
                                          unsigned int z_start, unsigned int z_count,

@@ -945,7 +945,7 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const std::string &var_name,
 
   std::vector<unsigned int> start, count, imap;
   ierr = compute_start_and_count(var_name,
-                                 t_start,
+                                 t_start, 1, // t_count is 1
                                  grid->xs, grid->xm,
                                  grid->ys, grid->ym,
                                  0, z_count,
@@ -1005,7 +1005,7 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const std::string &var_name, unsigned
 
   std::vector<unsigned int> start, count, imap;
   ierr = compute_start_and_count(var_name,
-                                 t - 1,
+                                 t - 1, 1, // t_count is 1
                                  grid->xs, grid->xm,
                                  grid->ys, grid->ym,
                                  0, z_count,
@@ -1074,7 +1074,8 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const std::string &var_name,
 
   assert(lic != NULL);
 
-  ierr = compute_start_and_count(var_name, t_start,
+  ierr = compute_start_and_count(var_name,
+                                 t_start, 1, // t_count is 1
                                  lic->start[X], lic->count[X],
                                  lic->start[Y], lic->count[Y],
                                  lic->start[Z], lic->count[Z],
@@ -1119,7 +1120,8 @@ PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const std::string &va
 
   assert(lic != NULL);
 
-  ierr = compute_start_and_count(var_name, t_start,
+  ierr = compute_start_and_count(var_name,
+                                 t_start, 1, // t_count is 1
                                  lic->start[X], lic->count[X],
                                  lic->start[Y], lic->count[Y],
                                  lic->start[Z], lic->count[Z],
@@ -1286,7 +1288,8 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const std::vector<double> &zlevels_out
 }
 
 
-PetscErrorCode PIO::compute_start_and_count(const std::string &short_name, unsigned int t_start,
+PetscErrorCode PIO::compute_start_and_count(const std::string &short_name,
+                                            unsigned int t_start, unsigned int t_count,
                                             unsigned int x_start, unsigned int x_count,
                                             unsigned int y_start, unsigned int y_count,
                                             unsigned int z_start, unsigned int z_count,
@@ -1314,7 +1317,7 @@ PetscErrorCode PIO::compute_start_and_count(const std::string &short_name, unsig
     switch (dimtype) {
     case T_AXIS:
       start[j] = t_start;
-      count[j] = 1;             // t_count is always 1
+      count[j] = t_count;
       imap[j]  = x_count * y_count * z_count;
       break;
     case X_AXIS:
