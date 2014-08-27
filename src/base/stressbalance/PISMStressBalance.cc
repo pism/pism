@@ -221,9 +221,8 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
                                                         IceModelVec2S *basal_melt_rate,
                                                         IceModelVec3 &result) {
   PetscErrorCode ierr;
-  IceModelVec2Int *mask;
 
-  mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
+  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery m(*mask);
@@ -251,8 +250,7 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
       ierr = v->getInternalColumn(i,j,  &v_ij); CHKERRQ(ierr);
       ierr = v->getInternalColumn(i,j+1,&v_n); CHKERRQ(ierr);
 
-      double west = 1, east = 1,
-        south = 1, north = 1,
+      double west = 1, east = 1, south = 1, north = 1,
         D_x = 0,                // 1/(dx), 1/(2dx), or 0
         D_y = 0;                // 1/(dy), 1/(2dy), or 0
 
@@ -261,9 +259,9 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
 
       // x-derivative
       {
-        if ((m.floating_ice(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.floating_ice(i+1,j)))
+        if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j)))
           east = 0;
-        if ((m.floating_ice(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.floating_ice(i-1,j)))
+        if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j)))
           west = 0;
 
         if (east + west > 0)
@@ -274,9 +272,9 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
 
       // y-derivative
       {
-        if ((m.floating_ice(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.floating_ice(i,j+1)))
+        if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1)))
           north = 0;
-        if ((m.floating_ice(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.floating_ice(i,j-1)))
+        if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1)))
           south = 0;
 
         if (north + south > 0)
@@ -414,18 +412,24 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
 
   ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
+  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+
+  MaskQuery m(*mask);
+
   thickness = dynamic_cast<IceModelVec2S*>(m_variables->get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(m_variables->get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
-  double dx = grid.dx, dy = grid.dy,
+  double
     enhancement_factor = flow_law->enhancement_factor(),
     n = flow_law->exponent(),
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
+  ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = m_strain_heating.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
@@ -439,8 +443,38 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
       double
         *u_ij, *u_w, *u_n, *u_e, *u_s,
         *v_ij, *v_w, *v_n, *v_e, *v_s;
-      double u_x, u_y, u_z, v_x, v_y, v_z;
       double *Sigma, *E_ij;
+
+      double west = 1, east = 1, south = 1, north = 1,
+        D_x = 0,                // 1/(dx), 1/(2dx), or 0
+        D_y = 0;                // 1/(dy), 1/(2dy), or 0
+
+      // x-derivative
+      {
+        if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j)))
+          east = 0;
+        if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j)))
+          west = 0;
+
+        if (east + west > 0)
+          D_x = 1.0 / (grid.dx * (east + west));
+        else
+          D_x = 0.0;
+      }
+
+      // y-derivative
+      {
+        if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1)))
+          north = 0;
+        if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1)))
+          south = 0;
+
+        if (north + south > 0)
+          D_y = 1.0 / (grid.dy * (north + south));
+        else
+          D_y = 0.0;
+      }
+
 
       ierr = u->getInternalColumn(i,     j,     &u_ij); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i - 1, j,     &u_w);  CHKERRQ(ierr);
@@ -462,10 +496,11 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
           pressure = EC.getPressureFromDepth(H - grid.zlevels[k]),
           B        = flow_law->hardness_parameter(E_ij[k], pressure);
 
-        u_x = (u_e[k] - u_w[k]) / (2.0 * dx);
-        u_y = (u_n[k] - u_s[k]) / (2.0 * dy);
-        v_x = (v_e[k] - v_w[k]) / (2.0 * dx);
-        v_y = (v_n[k] - v_s[k]) / (2.0 * dy);
+        double u_z = 0.0, v_z = 0.0,
+          u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
+          u_y = D_y * (south * (u_ij[k] - u_s[k]) + north * (u_n[k] - u_ij[k])),
+          v_x = D_x * (west  * (v_ij[k] - v_w[k]) + east  * (v_e[k] - v_ij[k])),
+          v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
 
         if (k > 0) {
           dz = grid.zlevels[k+1] - grid.zlevels[k-1];
@@ -494,6 +529,7 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr = u->end_access(); CHKERRQ(ierr);
   ierr = v->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
