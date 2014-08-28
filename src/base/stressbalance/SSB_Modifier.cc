@@ -75,7 +75,7 @@ PetscErrorCode ConstantInColumn::init(Vars &vars) {
 ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSB_Modifier(g, e, c)
 {
-  IceFlowLawFactory ice_factory(grid.com, "", config, &EC);
+  IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
   ice_factory.setType(config.get_string("sia_flow_law"));
 

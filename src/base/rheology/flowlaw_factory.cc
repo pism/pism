@@ -20,6 +20,7 @@
 #include "pism_const.hh"
 #include "pism_options.hh"
 #include "PISMUnits.hh"
+#include <cassert>
 
 namespace pism {
 
@@ -30,6 +31,8 @@ IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
   : com(c), config(conf), EC(my_EC) {
 
   prefix = pre;
+
+  assert(prefix.empty() == false);
 
   if (registerAll()) {
     PetscPrintf(com, "IceFlowLawFactory::registerAll returned an error but we're in a constructor\n");
