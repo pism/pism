@@ -39,6 +39,7 @@
 #include "PAConstantPIK.hh"
 #include "PAAnomaly.hh"
 #include "PACosineYearlyCycle.hh"
+#include "PAWeatherStation.hh"
 
 // ocean models:
 #include "POConstant.hh"
@@ -85,6 +86,11 @@ static void create_pa_yearly_cycle(IceGrid& g, const Config& conf,
   result = new PACosineYearlyCycle(g, conf);
 }
 
+static void create_pa_one_station(IceGrid& g, const Config& conf,
+                                  AtmosphereModel* &result) {
+  result = new PAWeatherStation(g, conf);
+}
+
 static void create_pa_lapse_rates(IceGrid& g, const Config& conf,
                                   AtmosphereModel *input, PAModifier* &result) {
   result = new PALapseRates(g, conf, input);
@@ -120,6 +126,7 @@ void PAFactory::add_standard_types() {
   add_model("searise_greenland", &create_pa_searise_greenland);
   add_model("pik",               &create_pa_constant_pik);
   add_model("yearly_cycle",      &create_pa_yearly_cycle);
+  add_model("one_station",       &create_pa_one_station);
   set_default("given");
 
   add_modifier("anomaly",      &create_pa_anomaly);

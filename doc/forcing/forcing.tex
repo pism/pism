@@ -1233,6 +1233,33 @@ temperature using a latitude and surface elevation-dependent formula.
 The parameterization is the same as in the \texttt{-surface pik} model,
 section~\ref{sec:surface-pik}.
 
+\subsection{One weather station}
+\label{sec:atmosphere-one-station}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    \index[options]{\atmosphere!\texttt{one_station}}
+    \index[options]{\atmosphere!\texttt{one_station}!\texttt{-atmosphere_one_station_file}}
+    Command-line options: & \texttt{-atmosphere~one_station},\\
+                          & \texttt{-atmosphere_one_station_file}\\
+    NetCDF variables:     & \variable{air_temp} [Kelvin],\\
+                          & \variable{precipitation} [m / s ice equivalent]\\
+    C++ class:            & \class{PAWeatherStation}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This model~component reads scalar time-series of the near-surface air
+temperature and precipitation from a file specified using the
+\mbox{\texttt{-atmosphere_one_station_file}} option and uses them at \emph{all}
+grid points in the domain. In other words, resulting climate fields
+are constant in space but not necessarily in time.
+
+The \texttt{-atmosphere~one_station} model should be used with a
+modifier such as \texttt{lapse_rate} (see section
+\ref{sec:atmosphere-lapse-rates}) to create spatial variablitity.
+
 \newcommand{\atmospheremods}{Atmosphere modifiers (\texttt{-atmosphere})}
 \subsection{Modifier: Scalar temperature offsets}
 \label{sec:atmosphere-delta-temp}
