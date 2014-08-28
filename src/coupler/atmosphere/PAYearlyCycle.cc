@@ -185,10 +185,12 @@ PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::init_timeseries(double *ts, unsigned int N) {
+PetscErrorCode PAYearlyCycle::init_timeseries(const std::vector<double> &ts) {
   // constants related to the standard yearly cycle
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day);
+
+  size_t N = ts.size();
 
   m_ts_times.resize(N);
   m_cosine_cycle.resize(N);
@@ -202,16 +204,16 @@ PetscErrorCode PAYearlyCycle::init_timeseries(double *ts, unsigned int N) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, double *values) {
+PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    values[k] = m_precipitation(i,j);
+    result[k] = m_precipitation(i,j);
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, double *values) {
+PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    values[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
+    result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
   }
 
   return 0;

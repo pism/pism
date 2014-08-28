@@ -122,42 +122,42 @@ PetscErrorCode PALapseRates::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PALapseRates::init_timeseries(double *ts, unsigned int N) {
+PetscErrorCode PALapseRates::init_timeseries(const std::vector<double> &ts) {
   PetscErrorCode ierr;
-  ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
+  ierr = input_model->init_timeseries(ts); CHKERRQ(ierr);
 
-  m_ts_times.resize(N);
+  m_ts_times = ts;
 
-  ierr = reference_surface.init_interpolation(ts, N); CHKERRQ(ierr);
+  ierr = reference_surface.init_interpolation(ts); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PALapseRates::temp_time_series(int i, int j, double *values) {
+PetscErrorCode PALapseRates::temp_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr;
   std::vector<double> usurf(m_ts_times.size());
 
-  ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
+  ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
 
-  ierr = reference_surface.interp(i, j, &usurf[0]); CHKERRQ(ierr);
+  ierr = reference_surface.interp(i, j, usurf); CHKERRQ(ierr);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    values[m] -= temp_lapse_rate * ((*surface)(i, j) - usurf[m]);
+    result[m] -= temp_lapse_rate * ((*surface)(i, j) - usurf[m]);
   }
 
   return 0;
 }
 
-PetscErrorCode PALapseRates::precip_time_series(int i, int j, double *values) {
+PetscErrorCode PALapseRates::precip_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr;
   std::vector<double> usurf(m_ts_times.size());
 
-  ierr = input_model->precip_time_series(i, j, values); CHKERRQ(ierr);
+  ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
-  ierr = reference_surface.interp(i, j, &usurf[0]); CHKERRQ(ierr);
+  ierr = reference_surface.interp(i, j, usurf); CHKERRQ(ierr);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    values[m] -= precip_lapse_rate * ((*surface)(i, j) - usurf[m]);
+    result[m] -= precip_lapse_rate * ((*surface)(i, j) - usurf[m]);
   }
 
   return 0;

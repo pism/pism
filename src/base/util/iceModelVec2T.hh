@@ -125,14 +125,14 @@ public:
 
   virtual PetscErrorCode interp(double my_t);
 
-  virtual PetscErrorCode interp(int i, int j, double *results);
+  virtual PetscErrorCode interp(int i, int j, std::vector<double> &results);
 
   virtual PetscErrorCode average(double my_t, double my_dt);
   virtual PetscErrorCode average(int i, int j, double &result);
 
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
-  virtual PetscErrorCode init_interpolation(const double *ts, unsigned int ts_length);
+  virtual PetscErrorCode init_interpolation(const std::vector<double> &ts);
 
 protected:
   std::vector<double> time,             //!< all the times available in filename

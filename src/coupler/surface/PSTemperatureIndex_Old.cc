@@ -318,13 +318,13 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   ierr = melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
 
-  ierr = atmosphere->init_timeseries(&ts[0], Nseries); CHKERRQ(ierr);
+  ierr = atmosphere->init_timeseries(ts); CHKERRQ(ierr);
 
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // the temperature time series from the AtmosphereModel and its modifiers
-      ierr = atmosphere->temp_time_series(i, j, &T[0]); CHKERRQ(ierr);
+      ierr = atmosphere->temp_time_series(i, j, T); CHKERRQ(ierr);
 
       if (faustogreve != NULL) {
 	// we have been asked to set mass balance parameters according to

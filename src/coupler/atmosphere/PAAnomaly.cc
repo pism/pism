@@ -146,28 +146,26 @@ PetscErrorCode PAAnomaly::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::init_timeseries(double *ts, unsigned int N) {
+PetscErrorCode PAAnomaly::init_timeseries(const std::vector<double> &ts) {
   PetscErrorCode ierr;
-  ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
+  ierr = input_model->init_timeseries(ts); CHKERRQ(ierr);
 
-  ierr = air_temp_anomaly->init_interpolation(ts, N); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->init_interpolation(ts); CHKERRQ(ierr);
 
-  ierr = precipitation_anomaly->init_interpolation(ts, N); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->init_interpolation(ts); CHKERRQ(ierr);
 
-  m_ts_times.resize(N);
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-    m_ts_times[k] = ts[k];
+  m_ts_times = ts;
   
   return 0;
 }
 
-PetscErrorCode PAAnomaly::temp_time_series(int i, int j, double *result) {
+PetscErrorCode PAAnomaly::temp_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
 
   m_temp_anomaly.reserve(m_ts_times.size());
-  ierr = air_temp_anomaly->interp(i, j, &m_temp_anomaly[0]); CHKERRQ(ierr);
+  ierr = air_temp_anomaly->interp(i, j, m_temp_anomaly); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
     result[k] += m_temp_anomaly[k];
@@ -175,13 +173,13 @@ PetscErrorCode PAAnomaly::temp_time_series(int i, int j, double *result) {
   return 0;
 }
 
-PetscErrorCode PAAnomaly::precip_time_series(int i, int j, double *result) {
+PetscErrorCode PAAnomaly::precip_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
   m_mass_flux_anomaly.reserve(m_ts_times.size());
-  ierr = precipitation_anomaly->interp(i, j, &m_mass_flux_anomaly[0]); CHKERRQ(ierr);
+  ierr = precipitation_anomaly->interp(i, j, m_mass_flux_anomaly); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
     result[k] += m_mass_flux_anomaly[k];

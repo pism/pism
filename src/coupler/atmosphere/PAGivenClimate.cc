@@ -131,30 +131,30 @@ PetscErrorCode PAGivenClimate::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, double *result) {
+PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr;
 
-  ierr = air_temp->interp(i, j, &result[0]); CHKERRQ(ierr);
+  ierr = air_temp->interp(i, j, result); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, double *result) {
+PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr;
 
-  ierr = precipitation->interp(i, j, &result[0]); CHKERRQ(ierr);
+  ierr = precipitation->interp(i, j, result); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::init_timeseries(double *ts, unsigned int N) {
+PetscErrorCode PAGivenClimate::init_timeseries(const std::vector<double> &ts) {
   PetscErrorCode ierr;
 
-  ierr = air_temp->init_interpolation(ts, N); CHKERRQ(ierr);
+  ierr = air_temp->init_interpolation(ts); CHKERRQ(ierr);
 
-  ierr = precipitation->init_interpolation(ts, N); CHKERRQ(ierr);
+  ierr = precipitation->init_interpolation(ts); CHKERRQ(ierr);
 
-  m_ts_times.resize(N);
+  m_ts_times = ts;
   
   return 0;
 }

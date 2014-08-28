@@ -325,7 +325,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   // update standard deviation time series
   if (sd_file_set == true) {
     ierr = air_temp_sd.update(my_t, my_dt); CHKERRQ(ierr);
-    ierr = air_temp_sd.init_interpolation(&ts[0], Nseries); CHKERRQ(ierr);
+    ierr = air_temp_sd.init_interpolation(ts); CHKERRQ(ierr);
   }
 
   MaskQuery m(*mask);
@@ -359,7 +359,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
   ierr = snow_depth.begin_access(); CHKERRQ(ierr);
 
-  ierr = atmosphere->init_timeseries(&ts[0], Nseries); CHKERRQ(ierr);
+  ierr = atmosphere->init_timeseries(ts); CHKERRQ(ierr);
 
   const double ice_density = config.get("ice_density");
 
@@ -367,14 +367,14 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
     for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // the temperature time series from the AtmosphereModel and its modifiers
-      ierr = atmosphere->temp_time_series(i, j, &T[0]); CHKERRQ(ierr);
+      ierr = atmosphere->temp_time_series(i, j, T); CHKERRQ(ierr);
 
       // the precipitation time series from AtmosphereModel and its modifiers
-      ierr = atmosphere->precip_time_series(i, j, &P[0]); CHKERRQ(ierr);
+      ierr = atmosphere->precip_time_series(i, j, P); CHKERRQ(ierr);
 
       // interpolate temperature standard deviation time series
       if (sd_file_set == true) {
-        ierr = air_temp_sd.interp(i, j, &S[0]); CHKERRQ(ierr);
+        ierr = air_temp_sd.interp(i, j, S); CHKERRQ(ierr);
       } else {
         for (int k = 0; k < Nseries; ++k) {
           S[k] = air_temp_sd(i, j);

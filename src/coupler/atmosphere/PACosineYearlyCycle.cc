@@ -140,13 +140,13 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PACosineYearlyCycle::init_timeseries(double *ts, unsigned int N) {
+PetscErrorCode PACosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
   PetscErrorCode ierr;
 
-  ierr = PAYearlyCycle::init_timeseries(ts, N); CHKERRQ(ierr);
+  ierr = PAYearlyCycle::init_timeseries(ts); CHKERRQ(ierr);
 
   if (A != NULL) {
-    for (unsigned int k = 0; k < N; ++k)
+    for (unsigned int k = 0; k < ts.size(); ++k)
       m_cosine_cycle[k] *= (*A)(ts[k]);
   }
 

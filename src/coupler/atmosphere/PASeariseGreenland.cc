@@ -95,10 +95,10 @@ PetscErrorCode PA_SeaRISE_Greenland::init(Vars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, double *values) {
+PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    values[k] = m_precipitation(i,j);
+    result[k] = m_precipitation(i,j);
 
   return 0;
 }

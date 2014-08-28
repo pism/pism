@@ -467,7 +467,9 @@ double IceModelVec2T::max_timestep(double my_t) {
 PetscErrorCode IceModelVec2T::interp(double my_t) {
   PetscErrorCode ierr;
 
-  ierr = init_interpolation(&my_t, 1); CHKERRQ(ierr);
+  std::vector<double> t_vector(1);
+  t_vector[0] = my_t;
+  ierr = init_interpolation(t_vector); CHKERRQ(ierr);
 
   ierr = get_record(m_interp_indices[0]); CHKERRQ(ierr);
 
@@ -503,7 +505,7 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   for (int k = 0; k < M; k++)
     ts[k] = my_t + k * dt;
 
-  ierr = init_interpolation(&ts[0], M); CHKERRQ(ierr);
+  ierr = init_interpolation(ts); CHKERRQ(ierr);
 
   ierr = get_array(a2);         // calls begin_access()
   for (int   i = grid->xs; i < grid->xs+grid->xm; ++i) {
@@ -525,9 +527,11 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
  *
  * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::init_interpolation(const double *ts, unsigned int ts_length) {
+PetscErrorCode IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   unsigned int index = 0,
     last = first + N - 1;
+
+  size_t ts_length = ts.size();
 
   // Compute "periodized" times if necessary.
   std::vector<double> times_requested(ts_length);
@@ -587,7 +591,7 @@ PetscErrorCode IceModelVec2T::init_interpolation(const double *ts, unsigned int 
  *
  * @return 0 on success
  */
-PetscErrorCode IceModelVec2T::interp(int i, int j, double *result) {
+PetscErrorCode IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   double ***a3 = (double***) array3;
   unsigned int ts_length = m_interp_indices.size();
 
@@ -613,7 +617,7 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
   } else {
     std::vector<double> values(M);
 
-    ierr = interp(i, j, &values[0]); CHKERRQ(ierr);
+    ierr = interp(i, j, values); CHKERRQ(ierr);
 
     // rectangular rule (uses the fact that points are equally-spaces
     // in time)

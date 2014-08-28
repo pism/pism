@@ -88,15 +88,15 @@ PetscErrorCode PAConstantPIK::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, double *values) {
+PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    values[k] = air_temp(i,j);
+    result[k] = air_temp(i,j);
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, double *values) {
+PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    values[k] = precipitation(i,j);
+    result[k] = precipitation(i,j);
   return 0;
 }
 
@@ -218,9 +218,8 @@ PetscErrorCode PAConstantPIK::update(double, double) {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::init_timeseries(double *ts, unsigned int N) {
-  (void)ts;
-  m_ts_times.resize(N);
+PetscErrorCode PAConstantPIK::init_timeseries(const std::vector<double> &ts) {
+  m_ts_times = ts;
   return 0;
 }
 
