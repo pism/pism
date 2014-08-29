@@ -944,8 +944,9 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const std::string &var_name,
   PetscErrorCode ierr;
 
   std::vector<unsigned int> start, count, imap;
+  const unsigned int t_count = 1;
   ierr = compute_start_and_count(var_name,
-                                 t_start, 1, // t_count is 1
+                                 t_start, t_count,
                                  grid->xs, grid->xm,
                                  grid->ys, grid->ym,
                                  0, z_count,
@@ -1004,8 +1005,9 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const std::string &var_name, unsigned
 #endif
 
   std::vector<unsigned int> start, count, imap;
+  const unsigned int t_count = 1;
   ierr = compute_start_and_count(var_name,
-                                 t - 1, 1, // t_count is 1
+                                 t - 1, t_count,
                                  grid->xs, grid->xm,
                                  grid->ys, grid->ym,
                                  0, z_count,
@@ -1074,8 +1076,9 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const std::string &var_name,
 
   assert(lic != NULL);
 
+  const unsigned int t_count = 1;
   ierr = compute_start_and_count(var_name,
-                                 t_start, 1, // t_count is 1
+                                 t_start, t_count,
                                  lic->start[X], lic->count[X],
                                  lic->start[Y], lic->count[Y],
                                  lic->start[Z], lic->count[Z],
@@ -1120,8 +1123,9 @@ PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const std::string &va
 
   assert(lic != NULL);
 
+  const unsigned int t_count = 1;
   ierr = compute_start_and_count(var_name,
-                                 t_start, 1, // t_count is 1
+                                 t_start, t_count,
                                  lic->start[X], lic->count[X],
                                  lic->start[Y], lic->count[Y],
                                  lic->start[Z], lic->count[Z],
