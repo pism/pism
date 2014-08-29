@@ -36,7 +36,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
   PetscErrorCode ierr;
   grid = &mygrid;
 
-  if (v != PETSC_NULL) {
+  if (v != NULL) {
     SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated\n",m_name.c_str());
   }
 

@@ -76,7 +76,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   /////////////////////////////////////////////////////////
   double soft_residual = 1.0;
   PetscBool fracture_soft;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-fracture_softening", &soft_residual, &fracture_soft);
+  ierr = PetscOptionsGetScalar(NULL, "-fracture_softening", &soft_residual, &fracture_soft);
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
   // more: T. Albrecht, A. Levermann; Fracture-induced softening for
@@ -95,7 +95,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   int  Nparamf=4;
   double inarrayf[4] = {1.0, 7.0e4, 0.0, 2.0e-10};
   PetscBool  fractures_set;
-  ierr = PetscOptionsGetRealArray(PETSC_NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);
+  ierr = PetscOptionsGetRealArray(NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);
   CHKERRQ(ierr);
   if ((Nparamf > 4) || (Nparamf < 4)) {
     ierr = verbPrintf(1, grid.com,
@@ -117,7 +117,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground); CHKERRQ(ierr);
 
   double fdBoundaryValue = 0.0;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-phi0", &fdBoundaryValue, PETSC_NULL);
+  ierr = PetscOptionsGetScalar(NULL, "-phi0", &fdBoundaryValue, NULL);
 
   PetscBool constant_healing;
   ierr = PetscOptionsHasName(NULL,"-constant_healing",&constant_healing); CHKERRQ(ierr);

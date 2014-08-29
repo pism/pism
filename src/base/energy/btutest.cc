@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */

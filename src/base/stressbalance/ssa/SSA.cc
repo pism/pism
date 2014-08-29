@@ -187,7 +187,7 @@ PetscErrorCode SSA::allocate() {
 PetscErrorCode SSA::deallocate() {
   PetscErrorCode ierr;
 
-  if (SSAX != PETSC_NULL) {
+  if (SSAX != NULL) {
     ierr = VecDestroy(&SSAX); CHKERRQ(ierr);
   }
 

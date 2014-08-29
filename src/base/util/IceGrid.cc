@@ -710,7 +710,7 @@ PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title,
   ierr = compute_viewer_size(viewer_size, X, Y); CHKERRQ(ierr);
 
   // note we reverse x <-> y; see IceGrid::allocate() for original reversal
-  ierr = PetscViewerDrawOpen(com, PETSC_NULL, title.c_str(),
+  ierr = PetscViewerDrawOpen(com, NULL, title.c_str(),
                              PETSC_DECIDE, PETSC_DECIDE, Y, X, &viewer);  CHKERRQ(ierr);
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where

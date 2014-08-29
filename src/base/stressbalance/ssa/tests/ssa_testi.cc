@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm    com;
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
   
@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
     PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-help", &help_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"

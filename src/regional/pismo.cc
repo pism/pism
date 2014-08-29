@@ -461,7 +461,7 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   MPI_Comm    com = PETSC_COMM_WORLD;
 

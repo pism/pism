@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm    com;
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
 

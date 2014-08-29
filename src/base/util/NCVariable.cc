@@ -450,8 +450,8 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   PetscErrorCode ierr;
   double min, max;
 
-  ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
-  ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
+  ierr = VecMin(v, NULL, &min); CHKERRQ(ierr);
+  ierr = VecMax(v, NULL, &max); CHKERRQ(ierr);
 
   cv_converter *c = get_glaciological_units().get_converter_from(get_units());
   assert(c != NULL);

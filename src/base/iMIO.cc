@@ -475,8 +475,8 @@ PetscErrorCode IceModel::regrid(int dimensions) {
          dimensions == 3))
     SETERRQ(grid.com, 1, "dimensions can only be 0, 2 or 3");
 
-  ierr = PetscOptionsBegin(grid.com, PETSC_NULL, "Options controlling regridding",
-                           PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, NULL, "Options controlling regridding",
+                           NULL); CHKERRQ(ierr);
   {
     ierr = OptionsString("-regrid_file", "Specifies the file to regrid from",
                              filename, regrid_file_set); CHKERRQ(ierr);

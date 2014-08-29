@@ -918,10 +918,10 @@ PetscErrorCode IceModel::init_couplers() {
   ierr = verbPrintf(3, grid.com,
                     "Initializing boundary models...\n"); CHKERRQ(ierr);
 
-  assert(surface != PETSC_NULL);
+  assert(surface != NULL);
   ierr = surface->init(variables); CHKERRQ(ierr);
 
-  assert(ocean != PETSC_NULL);
+  assert(ocean != NULL);
   ierr = ocean->init(variables); CHKERRQ(ierr);
 
   return 0;

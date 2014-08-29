@@ -47,7 +47,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     int T_param_number = 4;
     double T_array[4] = {-5, 0, 1325, 1350};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
+    ierr = PetscOptionsGetRealArray(NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
     CHKERRQ(ierr);
 
     T_min = grid.convert(T_array[0], "Celsius", "Kelvin");
@@ -58,7 +58,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     int m_param_number = 5;
     double m_array[5] = {-3, 4, 1100, 1450, 1700};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
+    ierr = PetscOptionsGetRealArray(NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
     CHKERRQ(ierr);
 
     m_min = grid.convert(m_array[0], "m year-1", "m s-1");
@@ -70,7 +70,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     int Nlimitsparam= 2;
     double limitsarray[2] = {0, 0};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL,
+    ierr = PetscOptionsGetRealArray(NULL,
                                     "-climatic_mass_balance_limits",
                                     limitsarray, &Nlimitsparam, &m_limits_set); CHKERRQ(ierr);
 

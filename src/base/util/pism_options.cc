@@ -61,11 +61,11 @@ PetscErrorCode verbosityLevelFromOptions() {
   PetscBool     verbose, levelSet;
 
   ierr = setVerbosityLevel(2);
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
   if (levelSet == PETSC_TRUE) {
     ierr = setVerbosityLevel(myLevel);
   } else {
-    ierr = PetscOptionsHasName(PETSC_NULL, "-verbose", &verbose); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-verbose", &verbose); CHKERRQ(ierr);
     if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(3);
   }
   return 0;
@@ -77,7 +77,7 @@ PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
@@ -93,7 +93,7 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(com,
@@ -111,7 +111,7 @@ PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is not allowed.\n",
@@ -500,7 +500,7 @@ PetscErrorCode OptionsIsSet(std::string option, bool &result) {
   char tmp[1];
   PetscBool flag;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, option.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, option.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
 
   result = (flag == PETSC_TRUE);
 

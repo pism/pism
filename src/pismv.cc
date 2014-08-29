@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
   MPI_Comm        com;
 
-  PetscInitialize(&argc, &argv, PETSC_NULL, help);
+  PetscInitialize(&argc, &argv, NULL, help);
 
   com = PETSC_COMM_WORLD;
       

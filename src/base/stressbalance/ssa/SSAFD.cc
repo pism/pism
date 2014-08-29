@@ -166,7 +166,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   // The nuH viewer:
   view_nuh = false;
   nuh_viewer_size = 300;
-  nuh_viewer = PETSC_NULL;
+  nuh_viewer = NULL;
 
   dump_system_matlab = false;
 
@@ -177,15 +177,15 @@ PetscErrorCode SSAFD::allocate_fd() {
 PetscErrorCode SSAFD::deallocate_fd() {
   PetscErrorCode ierr;
 
-  if (m_KSP != PETSC_NULL) {
+  if (m_KSP != NULL) {
     ierr = KSPDestroy(&m_KSP); CHKERRQ(ierr);
   }
 
-  if (m_A != PETSC_NULL) {
+  if (m_A != NULL) {
     ierr = MatDestroy(&m_A); CHKERRQ(ierr);
   }
 
-  if (m_b != PETSC_NULL) {
+  if (m_b != NULL) {
     ierr = VecDestroy(&m_b); CHKERRQ(ierr);
   }
 
@@ -1607,11 +1607,11 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
   ierr = tmp.end_access(); CHKERRQ(ierr);
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
-  if (nuh_viewer == PETSC_NULL) {
+  if (nuh_viewer == NULL) {
     ierr = grid.create_viewer(nuh_viewer_size, "nuH", nuh_viewer); CHKERRQ(ierr);
   }
 
-  ierr = tmp.view(nuh_viewer, PETSC_NULL); CHKERRQ(ierr);
+  ierr = tmp.view(nuh_viewer, NULL); CHKERRQ(ierr);
 
   return 0;
 }

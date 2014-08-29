@@ -264,7 +264,7 @@ PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 //! \brief View a 2D field.
 PetscErrorCode IceModelVec2::view(int viewer_size) {
   PetscErrorCode ierr;
-  PetscViewer viewers[2] = {PETSC_NULL, PETSC_NULL};
+  PetscViewer viewers[2] = {NULL, NULL};
 
   if (m_dof > 2) SETERRQ(grid->com, 1, "dof > 2 is not supported");
 
@@ -274,7 +274,7 @@ PetscErrorCode IceModelVec2::view(int viewer_size) {
       units = m_metadata[j].get_string("glaciological_units"),
       title = long_name + " (" + units + ")";
 
-    if (map_viewers[c_name] == PETSC_NULL) {
+    if (map_viewers[c_name] == NULL) {
       ierr = grid->create_viewer(viewer_size, title, map_viewers[c_name]); CHKERRQ(ierr);
     }
 
