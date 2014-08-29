@@ -30,7 +30,7 @@ public:
     : PCFactory<OceanModel,POModifier>(g, conf)
   {
     add_standard_types();
-    option = "ocean";
+    m_option = "ocean";
   }
   virtual ~POFactory() {}
   virtual void add_standard_types();

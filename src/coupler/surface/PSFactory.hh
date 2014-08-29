@@ -29,7 +29,7 @@ public:
     : PCFactory<SurfaceModel,PSModifier>(g, conf)
   {
     add_standard_types();
-    option = "surface";
+    m_option = "surface";
   }
 
   virtual ~PSFactory() {}
