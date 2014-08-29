@@ -116,7 +116,8 @@ public:
   using IceModelVec2S::create;
   virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name,
                                 bool local, int width = 1);
-  virtual PetscErrorCode init(const std::string &filename, unsigned int period, double reference_time);
+  virtual PetscErrorCode init(const std::string &filename, unsigned int period,
+                              double reference_time);
   virtual PetscErrorCode init_constant(double value);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);

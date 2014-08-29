@@ -628,7 +628,7 @@ PetscErrorCode PIO::inq_units(const std::string &name, bool &has_units, Unit &un
 
 
 PetscErrorCode PIO::inq_grid_info(const std::string &name, Periodicity p,
-                                  grid_info &g) const {
+                                  grid_info &result) const {
   PetscErrorCode ierr;
 
   std::vector<std::string> dims;
@@ -664,43 +664,43 @@ PetscErrorCode PIO::inq_grid_info(const std::string &name, Periodicity p,
     switch (dimtype) {
     case X_AXIS:
       {
-        ierr = nc->inq_dimlen(dimname, g.x_len); CHKERRQ(ierr);
+        ierr = nc->inq_dimlen(dimname, result.x_len); CHKERRQ(ierr);
         double x_min = 0.0, x_max = 0.0;
         ierr = this->inq_dim_limits(dimname, &x_min, &x_max); CHKERRQ(ierr);
-        ierr = this->get_dim(dimname, g.x); CHKERRQ(ierr);
-        g.x0 = 0.5 * (x_min + x_max);
-        g.Lx = 0.5 * (x_max - x_min);
+        ierr = this->get_dim(dimname, result.x); CHKERRQ(ierr);
+        result.x0 = 0.5 * (x_min + x_max);
+        result.Lx = 0.5 * (x_max - x_min);
         if (p & X_PERIODIC) {
-          const double dx = g.x[1] - g.x[0];
-          g.Lx += 0.5 * dx;
+          const double dx = result.x[1] - result.x[0];
+          result.Lx += 0.5 * dx;
         }
         break;
       }
     case Y_AXIS:
       {
-        ierr = nc->inq_dimlen(dimname, g.y_len); CHKERRQ(ierr);
+        ierr = nc->inq_dimlen(dimname, result.y_len); CHKERRQ(ierr);
         double y_min = 0.0, y_max = 0.0;
         ierr = this->inq_dim_limits(dimname, &y_min, &y_max); CHKERRQ(ierr);
-        ierr = this->get_dim(dimname, g.y); CHKERRQ(ierr);
-        g.y0 = 0.5 * (y_min + y_max);
-        g.Ly = 0.5 * (y_max - y_min);
+        ierr = this->get_dim(dimname, result.y); CHKERRQ(ierr);
+        result.y0 = 0.5 * (y_min + y_max);
+        result.Ly = 0.5 * (y_max - y_min);
         if (p & Y_PERIODIC) {
-          const double dy = g.y[1] - g.y[0];
-          g.Ly += 0.5 * dy;
+          const double dy = result.y[1] - result.y[0];
+          result.Ly += 0.5 * dy;
         }
         break;
       }
     case Z_AXIS:
       {
-        ierr = nc->inq_dimlen(dimname, g.z_len); CHKERRQ(ierr);
-        ierr = this->inq_dim_limits(dimname, &g.z_min, &g.z_max); CHKERRQ(ierr);
-        ierr = this->get_dim(dimname, g.z); CHKERRQ(ierr);
+        ierr = nc->inq_dimlen(dimname, result.z_len); CHKERRQ(ierr);
+        ierr = this->inq_dim_limits(dimname, &result.z_min, &result.z_max); CHKERRQ(ierr);
+        ierr = this->get_dim(dimname, result.z); CHKERRQ(ierr);
         break;
       }
     case T_AXIS:
       {
-        ierr = nc->inq_dimlen(dimname, g.t_len); CHKERRQ(ierr);
-        ierr = this->inq_dim_limits(dimname, NULL, &g.time); CHKERRQ(ierr);
+        ierr = nc->inq_dimlen(dimname, result.t_len); CHKERRQ(ierr);
+        ierr = this->inq_dim_limits(dimname, NULL, &result.time); CHKERRQ(ierr);
         break;
       }
     default:
@@ -808,14 +808,14 @@ PetscErrorCode PIO::def_time(const std::string &name, const std::string &calenda
   if (time_exists)
     return 0;
 
-  // t
-  NCVariable t(name, m_unit_system);
-  t.set_string("long_name", "time");
-  t.set_string("calendar", calendar);
-  ierr = t.set_units(units); CHKERRQ(ierr);
-  t.set_string("axis", "T");
+  // time
+  NCVariable time(name, m_unit_system);
+  time.set_string("long_name", "time");
+  time.set_string("calendar", calendar);
+  ierr = time.set_units(units); CHKERRQ(ierr);
+  time.set_string("axis", "T");
 
-  ierr = this->def_dim(PISM_UNLIMITED, t); CHKERRQ(ierr);
+  ierr = this->def_dim(PISM_UNLIMITED, time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -937,10 +937,10 @@ PetscErrorCode PIO::get_att_text(const std::string &var_name, const std::string 
 /*!
  * Assumes that double corresponds to C++ double.
  *
- * Vec g has to be "global" (i.e. without ghosts).
+ * Vec result has to be "global" (i.e. without ghosts).
  */
 PetscErrorCode PIO::get_vec(IceGrid *grid, const std::string &var_name,
-                            unsigned int z_count, unsigned int t_start, Vec g) const {
+                            unsigned int z_count, unsigned int t_start, Vec result) const {
   PetscErrorCode ierr;
 
   std::vector<unsigned int> start, count, imap;
@@ -955,13 +955,13 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const std::string &var_name,
   ierr = nc->enddef(); CHKERRQ(ierr);
 
   double *a_petsc;
-  ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
+  ierr = VecGetArray(result, &a_petsc); CHKERRQ(ierr);
 
   // We always use "mapped" I/O here, because we don't know where the input
   // file came from.
   ierr = nc->get_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
 
-  ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
+  ierr = VecRestoreArray(result, &a_petsc); CHKERRQ(ierr);
 
   return 0;
 }
@@ -989,25 +989,25 @@ PetscErrorCode PIO::inq_atttype(const std::string &var_name, const std::string &
 /*!
  * Assumes that double corresponds to C++ double.
  *
- * Vec g has to be "global" (i.e. without ghosts).
+ * Vec result has to be "global" (i.e. without ghosts).
  *
  * This method always writes to the last record in the file.
  */
-PetscErrorCode PIO::put_vec(IceGrid *grid, const std::string &var_name, unsigned int z_count, Vec g) const {
+PetscErrorCode PIO::put_vec(IceGrid *grid, const std::string &var_name, unsigned int z_count, Vec result) const {
   PetscErrorCode ierr;
 
-  unsigned int t;
-  ierr = nc->inq_dimlen(grid->config.get_string("time_dimension_name"), t); CHKERRQ(ierr);
+  unsigned int t_length;
+  ierr = nc->inq_dimlen(grid->config.get_string("time_dimension_name"), t_length); CHKERRQ(ierr);
 
 #if (PISM_DEBUG==1)
-  if (t < 1)
-    fprintf(stderr, "time dimension length (%d) is less than 1!\n", t);
+  if (t_length < 1)
+    fprintf(stderr, "time dimension length (%d) is less than 1!\n", t_length);
 #endif
 
   std::vector<unsigned int> start, count, imap;
   const unsigned int t_count = 1;
   ierr = compute_start_and_count(var_name,
-                                 t - 1, t_count,
+                                 t_length - 1, t_count,
                                  grid->xs, grid->xm,
                                  grid->ys, grid->ym,
                                  0, z_count,
@@ -1016,7 +1016,7 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const std::string &var_name, unsigned
   ierr = nc->enddef(); CHKERRQ(ierr);
 
   double *a_petsc;
-  ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
+  ierr = VecGetArray(result, &a_petsc); CHKERRQ(ierr);
 
   if (grid->config.get_string("output_variable_order") == "xyz") {
     // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
@@ -1027,7 +1027,7 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const std::string &var_name, unsigned
     ierr = nc->put_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
   }
 
-  ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
+  ierr = VecRestoreArray(result, &a_petsc); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1065,7 +1065,7 @@ PetscErrorCode PIO::get_interp_context(const std::string &name,
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
 PetscErrorCode PIO::regrid_vec(IceGrid *grid, const std::string &var_name,
                                const std::vector<double> &zlevels_out,
-                               unsigned int t_start, Vec g) const {
+                               unsigned int t_start, Vec result) const {
   PetscErrorCode ierr;
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
   std::vector<unsigned int> start, count, imap;
@@ -1090,7 +1090,7 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const std::string &var_name,
   // file came from.
   ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
 
-  ierr = regrid(grid, zlevels_out, lic, g); CHKERRQ(ierr);
+  ierr = regrid(grid, zlevels_out, lic, result); CHKERRQ(ierr);
 
   delete lic;
 
@@ -1104,7 +1104,7 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const std::string &var_name,
  * @param zlevels_out vertical levels of the resulting grid
  * @param t_start time index of the record to regrid
  * @param default_value default value to replace `_FillValue` with
- * @param[out] g resulting interpolated field
+ * @param[out] result resulting interpolated field
  *
  * @return 0 on success
  */
@@ -1112,7 +1112,7 @@ PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const std::string &va
                                             const std::vector<double> &zlevels_out,
                                             unsigned int t_start,
                                             double default_value,
-                                            Vec g) const {
+                                            Vec result) const {
   PetscErrorCode ierr;
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
   std::vector<unsigned int> start, count, imap;
@@ -1153,7 +1153,7 @@ PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const std::string &va
     }
   }
 
-  ierr = regrid(grid, zlevels_out, lic, g); CHKERRQ(ierr);
+  ierr = regrid(grid, zlevels_out, lic, result); CHKERRQ(ierr);
 
   delete lic;
 
@@ -1185,13 +1185,13 @@ int PIO::k_below(double z, const std::vector<double> &zlevels) const {
  * - the definition of the input grid
  * - the definition of the output grid
  * - input array (lic->a)
- * - output array (Vec g)
+ * - output array (Vec result)
  *
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
 PetscErrorCode PIO::regrid(IceGrid *grid, const std::vector<double> &zlevels_out,
-                           LocalInterpCtx *lic, Vec g) const {
+                           LocalInterpCtx *lic, Vec result) const {
   const int Y = 2, Z = 3; // indices, just for clarity
   PetscErrorCode ierr;
 
@@ -1206,7 +1206,7 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const std::vector<double> &zlevels_out
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
   double *output_array;
-  ierr = VecGetArray(g, &output_array); CHKERRQ(ierr);
+  ierr = VecGetArray(result, &output_array); CHKERRQ(ierr);
 
   for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
     for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
@@ -1286,7 +1286,7 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const std::vector<double> &zlevels_out
     }
   }
 
-  ierr = VecRestoreArray(g, &output_array); CHKERRQ(ierr);
+  ierr = VecRestoreArray(result, &output_array); CHKERRQ(ierr);
 
   return 0;
 }
