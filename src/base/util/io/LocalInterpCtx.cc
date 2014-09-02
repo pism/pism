@@ -26,14 +26,11 @@
 
 namespace pism {
 
-//! Construct a local interpolation context from arrays of parameters.
+//! Construct a local interpolation context.
 /*!
-  This method constructs a class from existing information already read from a NetCDF file and stored
-  in arrays.
-
   The essential quantities to compute are where each processor should start within the NetCDF file grid
   (`start[]`) and how many grid points, from the starting place, the processor has.  The resulting
-  portion of the grid is stored in array `a` (a field of the `LocalInterCtx`).
+  portion of the grid is stored in array `a` (a field of the `LocalInterpCtx`).
 
   We make conservative choices about `start[]` and `count[]`.  In particular, the portions owned by
   processors \e must overlap at one point in the NetCDF file grid, but they \e may overlap more than that
