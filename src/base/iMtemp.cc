@@ -265,7 +265,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
           if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
           // if isMarginal then only do vertical conduction for ice; ignore advection
           //   and strain heating if isMarginal
-          const double thickness_threshold = 100.0; // FIXME: make configurable
+          const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
           const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
           MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
           ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
