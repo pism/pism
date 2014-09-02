@@ -226,8 +226,8 @@ public:
             y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
   }
 protected:
-  std::map<int,PISMDM::WeakPtr> dms;
-  double lambda;         //!< quadratic vertical spacing parameter
+  std::map<int,PISMDM::WeakPtr> m_dms;
+  double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();

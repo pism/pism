@@ -94,7 +94,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   Ly  = config.get("grid_Ly");
   Lz  = config.get("grid_Lz");
 
-  lambda = config.get("grid_lambda");
+  m_lambda = config.get("grid_lambda");
 
   Mx  = static_cast<int>(config.get("grid_Mx"));
   My  = static_cast<int>(config.get("grid_My"));
@@ -227,7 +227,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < Mz - 1; k++) {
       const double zeta = ((double) k) / ((double) Mz - 1);
-      zlevels[k] = Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
+      zlevels[k] = Lz * ((zeta / m_lambda) * (1.0 + (m_lambda - 1.0) * zeta));
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
@@ -839,14 +839,14 @@ PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, PISMDM::Ptr &resul
 
   int j = this->dm_key(da_dof, stencil_width);
 
-  if (dms[j].expired() == true) {
+  if (m_dms[j].expired() == true) {
     DM tmp = NULL;
     ierr = this->create_dm(da_dof, stencil_width, tmp); CHKERRQ(ierr);
 
     result = PISMDM::Ptr(new PISMDM(tmp));
-    dms[j] = result;
+    m_dms[j] = result;
   } else {
-    result = dms[j].lock();
+    result = m_dms[j].lock();
   }
 
   return 0;
