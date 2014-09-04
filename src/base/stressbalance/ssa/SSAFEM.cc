@@ -334,15 +334,15 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
       const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
       for (unsigned int k = 0; k < grid.Mz; k++) {
         Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
-        for (int q = 0; q < FEQuadrature::Nq; q++) {
-          for (int p = 0; p < FEQuadrature::Nk; p++) {
+        for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+          for (unsigned int p = 0; p < FEQuadrature::Nk; p++) {
             Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
           }
         }
       }
 
       // Now, for each column over a quadrature point, find the averaged_hardness.
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
                                                         &grid.zlevels[0], Enth_q[q]);
@@ -360,7 +360,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
   ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  for (int q = 0; q < FEQuadrature::Nq; q++)
+  for (unsigned int q = 0; q < FEQuadrature::Nq; q++)
   {
     delete [] Enth_q[q];
   }
@@ -651,7 +651,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         const double
           jw           = JxW[q],
           U            = u[q].u,
@@ -664,7 +664,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
         ierr = PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
                                    &eta, &deta, &beta, &dbeta); CHKERRQ(ierr);
 
-        for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
+        for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
 
           // Current trial function and its derivatives:
           const double
@@ -689,7 +689,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
             taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_l
             taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_l
 
-          for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
+          for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
 
             // Current test function and its derivatives:
             const double

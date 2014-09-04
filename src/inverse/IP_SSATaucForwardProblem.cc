@@ -107,7 +107,7 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
       m_quadrature.computeTrialFunctionValues(i, j, m_dofmap, *m_tauc, tauc_q);
       const int ij = m_element_index.flatten(i, j);
       SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq];
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         coefficients[q].tauc = tauc_q[q];
       }
     }
@@ -303,7 +303,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     for (j = ys; j < ys + ym; j++) {
 
       // Zero out the element - local residual in prep for updating it.
-      for (int k = 0; k < FEQuadrature::Nk; k++) {
+      for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
         du_e[k].u = 0;
         du_e[k].v = 0;
       }
@@ -329,13 +329,13 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
       // Compute the change in tau_c with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
-      for (int k = 0; k < FEQuadrature::Nk; k++) {
+      for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
         m_tauc_param.toDesignVariable(zeta_e[k], NULL, dtauc_e + k);
         dtauc_e[k] *= dzeta_e[k];
       }
       m_quadrature.computeTrialFunctionValues(dtauc_e, dtauc_q);
 
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         Vector2 u_qq = u_q[q];
 
         const SSACoefficients *coefficients = &m_coefficients[ij*FEQuadrature::Nq + q];
@@ -346,7 +346,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
           dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
         }
 
-        for (int k = 0; k < FEQuadrature::Nk; k++) {
+        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
           du_e[k].u += JxW[q]*dbeta*u_qq.u*test[q][k].val;
           du_e[k].v += JxW[q]*dbeta*u_qq.v*test[q][k].val;
         }
@@ -480,11 +480,11 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
       m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for (int k=0; k<FEQuadrature::Nk; k++) {
+      for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
         dzeta_e[k] = 0;
       }
 
-      for (int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         Vector2 du_qq = du_q[q];
         Vector2 u_qq = u_q[q];
 
@@ -496,7 +496,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
           dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
         }
 
-        for (int k=0; k<FEQuadrature::Nk; k++) {
+        for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
           dzeta_e[k] += JxW[q]*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*test[q][k].val;
         }
       } // q
