@@ -180,6 +180,62 @@ PetscErrorCode PIO::detect_mode(const string &filename) {
   return 0;
 }
 
+
+/**
+ * Check if the storage order of a variable in the current file
+ * matches the memory storage order used by PISM.
+ *
+ * @param var_name name of the variable to check
+ * @param result set to false if storage orders match, true otherwise
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PIO::use_mapped_io(string var_name, bool &result) const {
+  vector<string> dimnames;
+
+  PetscErrorCode ierr = this->inq_vardims(var_name, dimnames); CHKERRQ(ierr);
+
+  vector<AxisType> storage, memory;
+  memory.push_back(X_AXIS);
+  memory.push_back(Y_AXIS);
+
+  for (unsigned int j = 0; j < dimnames.size(); ++j) {
+    AxisType dimtype;
+    ierr = this->inq_dimtype(dimnames[j], dimtype); CHKERRQ(ierr);
+
+    if (j == 0 && dimtype == T_AXIS) {
+      // ignore the time dimension, but only if it is the first
+      // dimension in the list
+      continue;
+    }
+
+    if (dimtype == X_AXIS || dimtype == Y_AXIS) {
+      storage.push_back(dimtype);
+    } else if (dimtype == Z_AXIS) {
+      memory.push_back(dimtype); // now memory = {X_AXIS, Y_AXIS, Z_AXIS}
+      // assume that this variable has only one Z_AXIS in the file
+      storage.push_back(dimtype);
+    } else {
+      // an UNKNOWN_AXIS or T_AXIS at index != 0 was found, use mapped I/O
+      result = true;
+      return 0;
+    }
+  }
+
+  // we support 2D and 3D in-memory arrays, but not 4D
+  assert(memory.size() <= 3);
+
+  if (storage == memory) {
+    // same storage order, do not use mapped I/O
+    result = false;
+  } else {
+    // different storage orders, use mapped I/O
+    result = true;
+  }
+
+  return 0;
+}
+
 PetscErrorCode PIO::check_if_exists(const string &filename, bool &result) {
   PetscErrorCode ierr;
 
@@ -960,9 +1016,13 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
   double *a_petsc;
   ierr = VecGetArray(result, &a_petsc); CHKERRQ(ierr);
 
-  // We always use "mapped" I/O here, because we don't know where the input
-  // file came from.
-  ierr = nc->get_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
+  bool mapped_io = true;
+  ierr = this->use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
+  if (mapped_io == true) {
+    ierr = nc->get_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
+  } else {
+    ierr = nc->get_vara_double(var_name, start, count, (double*)a_petsc); CHKERRQ(ierr);
+  }
 
   ierr = VecRestoreArray(result, &a_petsc); CHKERRQ(ierr);
 
@@ -1089,9 +1149,13 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const string &var_name,
 
   ierr = nc->enddef(); CHKERRQ(ierr);
 
-  // We always use "mapped" I/O here, because we don't know where the input
-  // file came from.
-  ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+  bool mapped_io = true;
+  ierr = this->use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
+  if (mapped_io == true) {
+    ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+  } else {
+    ierr = nc->get_vara_double(var_name, start, count, lic->a); CHKERRQ(ierr);
+  }
 
   ierr = regrid(grid, zlevels_out, lic, result); CHKERRQ(ierr);
 
@@ -1138,7 +1202,13 @@ PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_nam
 
   // We always use "mapped" I/O here, because we don't know where the input
   // file came from.
-  ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+  bool mapped_io = true;
+  ierr = this->use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
+  if (mapped_io == true) {
+    ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+  } else {
+    ierr = nc->get_vara_double(var_name, start, count, lic->a); CHKERRQ(ierr);
+  }
 
   // Replace missing values if the _FillValue attribute is present,
   // and if we have missing values to replace.

@@ -201,6 +201,8 @@ private:
   int m_xs, m_xm, m_ys, m_ym;
   UnitSystem m_unit_system;
 
+  PetscErrorCode use_mapped_io(std::string var_name, bool &result) const;
+
   PetscErrorCode get_interp_context(const std::string &name,
                                     const IceGrid &grid,
                                     const std::vector<double> &zlevels,
