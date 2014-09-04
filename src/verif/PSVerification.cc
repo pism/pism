@@ -80,8 +80,10 @@ PSVerification::~PSVerification() {
 
 PetscErrorCode PSVerification::init(Vars &vars) {
   (void) vars;
-  // Override the SurfaceModel default, which would try to use the
-  // atmosphere pointer.
+  // Make sure that ice surface temperature and climatic mass balance
+  // get initialized at the beginning of the run (as far as I can tell
+  // this affects zero-length runs only).
+  PetscErrorCode ierr = update(grid.time->current(), 0); CHKERRQ(ierr);
   return 0;
 }
 

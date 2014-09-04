@@ -537,12 +537,18 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    // update surface and ocean models so that we can get the
-    // temperature at the top of the bedrock
-    ierr = init_step_couplers(); CHKERRQ(ierr);
+    bool bootstrapping_needed = false;
+    ierr = btu->init(variables, bootstrapping_needed); CHKERRQ(ierr);
 
-    ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
-    ierr = btu->init(variables); CHKERRQ(ierr);
+    if (bootstrapping_needed == true) {
+      // update surface and ocean models so that we can get the
+      // temperature at the top of the bedrock
+      ierr = init_step_couplers(); CHKERRQ(ierr);
+
+      ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+
+      ierr = btu->bootstrap(); CHKERRQ(ierr);
+    }
   }
 
   if (subglacial_hydrology) {

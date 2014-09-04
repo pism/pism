@@ -101,13 +101,12 @@ private:
   values of \f$G_0\f$.
 */
 class BedThermalUnit : public Component_TS {
-
 public:
   BedThermalUnit(IceGrid &g, const Config &conf);
 
   virtual ~BedThermalUnit() { }
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual PetscErrorCode init(Vars &vars, bool &bootstrapping_needed);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
@@ -118,14 +117,16 @@ public:
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
+
+  virtual PetscErrorCode bootstrap();
 protected:
   PetscErrorCode allocate();
 
-  virtual PetscErrorCode bootstrap();
 
-  IceModelVec3BTU  temp;     //!< storage for bedrock thermal layer temperature;
-  //!    part of state; units K; equally-spaced layers;
-  //!    This IceModelVec is only created if Mbz > 1.
+  IceModelVec3BTU temp;
+  //!< storage for bedrock thermal layer temperature; part of state;
+  //!< units K; equally-spaced layers; This IceModelVec is only
+  //!< created if Mbz > 1.
 
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
   double bed_rho, //!< bedrock density

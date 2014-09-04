@@ -38,7 +38,6 @@ public:
   BTU_Test(IceGrid &g, const Config &conf)
     : BedThermalUnit(g, conf) {}
   virtual ~BTU_Test() {}
-protected:
   /** Initialize the bedrock temperature field at the beginning of the run. */
   virtual PetscErrorCode bootstrap();
 };
@@ -214,7 +213,9 @@ int main(int argc, char *argv[]) {
     // initialize BTU object:
     BTU_Test btu(grid, config);
 
-    ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
+    bool bootstrapping_needed = true; // we know it's true
+    ierr = btu.init(variables, bootstrapping_needed); CHKERRQ(ierr);
+    ierr = btu.bootstrap();
 
     double dt_seconds = unit_system.convert(dt_years, "years", "seconds");
 

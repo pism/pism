@@ -194,9 +194,15 @@ PetscErrorCode BedThermalUnit::allocate() {
 
 
 //! \brief Initialize the bedrock thermal unit.
-PetscErrorCode BedThermalUnit::init(Vars &vars) {
+PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
   PetscErrorCode ierr;
   grid_info g;
+
+  // first assume that we don't need to bootstrap
+  bootstrapping_needed = false;
+
+  // store the current "revision number" of the temperature field
+  int temp_revision = temp.get_state_counter();
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
@@ -234,13 +240,14 @@ PetscErrorCode BedThermalUnit::init(Vars &vars) {
     }
 
     ierr = nc.close(); CHKERRQ(ierr);
-  } else {
-    // Bootstrapping
-    ierr = bootstrap(); CHKERRQ(ierr);
   }
 
   if (temp.was_created() == true) {
     ierr = regrid("BedThermalUnit", &temp, REGRID_WITHOUT_REGRID_VARS); CHKERRQ(ierr);
+  }
+
+  if (temp.get_state_counter() == temp_revision) {
+    bootstrapping_needed = true;
   }
 
   return 0;
@@ -479,6 +486,8 @@ PetscErrorCode BedThermalUnit::bootstrap() {
   ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
   ierr = ghf->end_access(); CHKERRQ(ierr);
   ierr = temp.end_access(); CHKERRQ(ierr);
+
+  temp.inc_state_counter();     // mark as modified
 
   return 0;
 }

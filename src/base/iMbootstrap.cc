@@ -46,22 +46,64 @@ PetscErrorCode IceModel::bootstrapFromFile(const std::string &filename) {
   ierr = regrid(2); CHKERRQ(ierr);
 
   // Check the consistency of geometry fields:
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); 
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
-                    "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+  // save age, temperature, and enthalpy "revision numbers". If they
+  // changed, then the corresponding field was initialized using
+  // regridding.
+  int age_revision = tau3.get_state_counter(),
+    temperature_revision = T3.get_state_counter(),
+    enthalpy_revision = Enth3.get_state_counter();
 
-  // Update couplers (because heuristics in bootstrap_3d() might need boundary
-  // conditions provided by couplers):
-  ierr = init_step_couplers(); CHKERRQ(ierr);
+  ierr = regrid(3); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "bootstrapping 3D variables...\n"); CHKERRQ(ierr);
 
   // Fill 3D fields using heuristics:
-  ierr = bootstrap_3d(); CHKERRQ(ierr);
+  {
+    // set the initial age of the ice if appropriate
+    if (config.get_flag("do_age")) {
+      if (age_revision == tau3.get_state_counter()) {
+        ierr = verbPrintf(2, grid.com,
+                          " - setting initial age to %.4f years\n",
+                          config.get("initial_age_of_ice_years"));
+        CHKERRQ(ierr);
+        ierr = tau3.set(config.get("initial_age_of_ice_years", "years", "seconds")); CHKERRQ(ierr);
 
-  ierr = regrid(3); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2, grid.com,
+                          " - age of the ice was set already\n"); CHKERRQ(ierr);
+      }
+    }
+
+    if (config.get_flag("do_cold_ice_methods") == true) {
+      if (temperature_revision == T3.get_state_counter()) {
+        ierr = verbPrintf(2, grid.com,
+                          "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+        ierr = init_step_couplers(); CHKERRQ(ierr);
+
+        // this call will initialize both ice temperature and ice
+        // enthalpy
+        ierr = putTempAtDepth(); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2, grid.com,
+                          " - ice temperature was set already\n"); CHKERRQ(ierr);
+      }
+    } else {
+      // enthalpy mode
+      if (enthalpy_revision == Enth3.get_state_counter()) {
+        ierr = verbPrintf(2, grid.com,
+                          "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+        ierr = init_step_couplers(); CHKERRQ(ierr);
+
+        ierr = putTempAtDepth(); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2, grid.com,
+                          " - ice enthalpy was set already\n"); CHKERRQ(ierr);
+      }
+    }
+  } // end of heuristics
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename.c_str()); CHKERRQ(ierr);
 
@@ -193,33 +235,6 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   return 0;
 }
 
-PetscErrorCode IceModel::bootstrap_3d() {
-  PetscErrorCode ierr;
-
-  // set the initial age of the ice if appropriate
-  if (config.get_flag("do_age")) {
-    ierr = verbPrintf(2, grid.com, 
-      "  setting initial age to %.4f years\n", config.get("initial_age_of_ice_years"));
-      CHKERRQ(ierr);
-      tau3.set(config.get("initial_age_of_ice_years", "years", "seconds"));
-  }
-  
-  ierr = verbPrintf(2, grid.com, "  filling ice temperatures using surface temps (and %s)\n",
-                    (config.get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
-                     ? "quartic guess sans smb" : "mass balance for velocity estimate"));
-     CHKERRQ(ierr);
-  ierr = putTempAtDepth(); CHKERRQ(ierr);
-
-  if (config.get_flag("do_cold_ice_methods") == false) {
-    ierr = verbPrintf(2, grid.com,
-                      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
-    CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-
 //! Create a temperature field within the ice from provided ice thickness, surface temperature, surface mass balance, and geothermal flux.
 /*!
 In bootstrapping we need to determine initial values for the temperature within
@@ -288,6 +303,11 @@ bootstrap temperature profile in the bedrock.
 */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
+
+  ierr = verbPrintf(2, grid.com, " - filling ice temperatures using surface temps (and %s)\n",
+                    (config.get_string("bootstrapping_temperature_heuristic") == "quartic_guess"
+                     ? "quartic guess sans smb" : "mass balance for velocity estimate"));
+  CHKERRQ(ierr);
 
   std::vector<double> T(grid.Mz);
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
@@ -367,7 +387,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
         T[k] = ice_surface_temp(i,j);
 
       // convert to enthalpy if that's what we are calculating
-      if (!do_cold) {
+      if (do_cold == false) {
         for (unsigned int k = 0; k < grid.Mz; ++k) {
           const double depth = HH - grid.zlevels[k];
           const double pressure = EC->getPressureFromDepth(depth);
@@ -391,6 +411,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   if (do_cold) {
     ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com,
+                      " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+    CHKERRQ(ierr);
   }
 
   return 0;

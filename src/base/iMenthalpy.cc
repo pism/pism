@@ -70,6 +70,8 @@ PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceMod
   ierr = temperature.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
+  result.inc_state_counter();
+
   ierr = result.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
@@ -111,6 +113,8 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
 
   ierr = result.update_ghosts(); CHKERRQ(ierr);
 
+  result.inc_state_counter();
+
   return 0;
 }
 
@@ -146,6 +150,9 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
   ierr = enthalpy.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
+
+  result.inc_state_counter();
+
   return 0;
 }
 
