@@ -193,7 +193,7 @@ PetscErrorCode PIO::detect_mode(const string &filename) {
 PetscErrorCode PIO::use_mapped_io(string var_name, bool &result) const {
   vector<string> dimnames;
 
-  PetscErrorCode ierr = this->inq_vardims(var_name, dimnames); CHKERRQ(ierr);
+  PetscErrorCode ierr = inq_vardims(var_name, dimnames); CHKERRQ(ierr);
 
   vector<AxisType> storage, memory;
   memory.push_back(X_AXIS);
@@ -201,7 +201,7 @@ PetscErrorCode PIO::use_mapped_io(string var_name, bool &result) const {
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
     AxisType dimtype;
-    ierr = this->inq_dimtype(dimnames[j], dimtype); CHKERRQ(ierr);
+    ierr = inq_dimtype(dimnames[j], dimtype); CHKERRQ(ierr);
 
     if (j == 0 && dimtype == T_AXIS) {
       // ignore the time dimension, but only if it is the first
@@ -372,7 +372,7 @@ PetscErrorCode PIO::inq_nrecords(const string &name, const string &std_name, uns
   bool exists = false, found_by_standard_name = false;
   string name_found;
 
-  ierr = this->inq_var(name, std_name, exists, name_found, found_by_standard_name); CHKERRQ(ierr);
+  ierr = inq_var(name, std_name, exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (exists == false) {
     result = 0;
@@ -385,7 +385,7 @@ PetscErrorCode PIO::inq_nrecords(const string &name, const string &std_name, uns
   for (unsigned int j = 0; j < dims.size(); ++j) {
     AxisType dimtype;
 
-    ierr = this->inq_dimtype(dims[j], dimtype); CHKERRQ(ierr);
+    ierr = inq_dimtype(dims[j], dimtype); CHKERRQ(ierr);
 
     if (dimtype == T_AXIS) {
       ierr = nc->inq_dimlen(dims[j], result); CHKERRQ(ierr);
@@ -418,7 +418,7 @@ PetscErrorCode PIO::inq_var(const string &short_name, const string &std_name, bo
       string name, attribute;
       ierr = nc->inq_varname(j, name); CHKERRQ(ierr);
 
-      ierr = nc->get_att_text(name, "standard_name", attribute); CHKERRQ(ierr);
+      ierr = get_att_text(name, "standard_name", attribute); CHKERRQ(ierr);
 
       if (attribute.empty())
         continue;
@@ -512,9 +512,9 @@ PetscErrorCode PIO::inq_dimtype(const string &name, AxisType &result) const {
     PISMEnd();
   }
 
-  ierr = nc->get_att_text(name, "axis", axis); CHKERRQ(ierr);
-  ierr = nc->get_att_text(name, "standard_name", standard_name); CHKERRQ(ierr);
-  ierr = nc->get_att_text(name, "units", units); CHKERRQ(ierr);
+  ierr = get_att_text(name, "axis", axis); CHKERRQ(ierr);
+  ierr = get_att_text(name, "standard_name", standard_name); CHKERRQ(ierr);
+  ierr = get_att_text(name, "units", units); CHKERRQ(ierr);
 
   // check if it has units compatible with "seconds":
 
@@ -587,7 +587,7 @@ PetscErrorCode PIO::inq_dim_limits(const string &name, double *min, double *max)
   PetscErrorCode ierr;
   vector<double> data;
 
-  ierr = this->get_dim(name, data); CHKERRQ(ierr);
+  ierr = get_dim(name, data); CHKERRQ(ierr);
 
   double my_min = data[0],
     my_max = data[0];
@@ -616,7 +616,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
   grid_info input;
 
   // The following call may fail because var_name does not exist. (And this is fatal!)
-  ierr = this->inq_grid_info(var_name, periodicity, input); CHKERRQ(ierr);
+  ierr = inq_grid_info(var_name, periodicity, input); CHKERRQ(ierr);
 
   // if we have no vertical grid information, create a fake 2-level vertical grid.
   if (input.z.size() < 2) {
@@ -624,7 +624,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
     ierr = verbPrintf(3, m_com,
                       "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
                       "         Using 2 levels and Lz of %3.3fm\n",
-                      var_name.c_str(), this->inq_filename().c_str(), Lz); CHKERRQ(ierr);
+                      var_name.c_str(), inq_filename().c_str(), Lz); CHKERRQ(ierr);
 
     input.z.clear();
     input.z.push_back(0);
@@ -661,7 +661,7 @@ PetscErrorCode PIO::inq_units(const string &name, bool &has_units, Unit &units) 
   string units_string;
 
   // Get the string:
-  ierr = nc->get_att_text(name, "units", units_string); CHKERRQ(ierr);
+  ierr = get_att_text(name, "units", units_string); CHKERRQ(ierr);
 
   // If a variables does not have the units attribute, set the flag and return:
   if (units_string.empty()) {
@@ -695,11 +695,11 @@ PetscErrorCode PIO::inq_grid_info(const string &name, Periodicity p,
   string name_found;
 
   // try "name" as the standard_name first, then as the short name:
-  ierr = this->inq_var(name, name, exists, name_found, found_by_standard_name); CHKERRQ(ierr);
+  ierr = inq_var(name, name, exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (exists == false)
     SETERRQ2(m_com, 1, "Could not find variable %s in %s", name.c_str(),
-             this->inq_filename().c_str());
+             inq_filename().c_str());
 
   ierr = nc->inq_vardimid(name_found, dims); CHKERRQ(ierr);
 
@@ -718,15 +718,15 @@ PetscErrorCode PIO::inq_grid_info(const string &name, Periodicity p,
     string dimname = dims[i];
 
     AxisType dimtype = UNKNOWN_AXIS;
-    ierr = this->inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
+    ierr = inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
 
     switch (dimtype) {
     case X_AXIS:
       {
         ierr = nc->inq_dimlen(dimname, result.x_len); CHKERRQ(ierr);
         double x_min = 0.0, x_max = 0.0;
-        ierr = this->inq_dim_limits(dimname, &x_min, &x_max); CHKERRQ(ierr);
-        ierr = this->get_dim(dimname, result.x); CHKERRQ(ierr);
+        ierr = inq_dim_limits(dimname, &x_min, &x_max); CHKERRQ(ierr);
+        ierr = get_dim(dimname, result.x); CHKERRQ(ierr);
         result.x0 = 0.5 * (x_min + x_max);
         result.Lx = 0.5 * (x_max - x_min);
         if (p & X_PERIODIC) {
@@ -739,8 +739,8 @@ PetscErrorCode PIO::inq_grid_info(const string &name, Periodicity p,
       {
         ierr = nc->inq_dimlen(dimname, result.y_len); CHKERRQ(ierr);
         double y_min = 0.0, y_max = 0.0;
-        ierr = this->inq_dim_limits(dimname, &y_min, &y_max); CHKERRQ(ierr);
-        ierr = this->get_dim(dimname, result.y); CHKERRQ(ierr);
+        ierr = inq_dim_limits(dimname, &y_min, &y_max); CHKERRQ(ierr);
+        ierr = get_dim(dimname, result.y); CHKERRQ(ierr);
         result.y0 = 0.5 * (y_min + y_max);
         result.Ly = 0.5 * (y_max - y_min);
         if (p & Y_PERIODIC) {
@@ -752,14 +752,14 @@ PetscErrorCode PIO::inq_grid_info(const string &name, Periodicity p,
     case Z_AXIS:
       {
         ierr = nc->inq_dimlen(dimname, result.z_len); CHKERRQ(ierr);
-        ierr = this->inq_dim_limits(dimname, &result.z_min, &result.z_max); CHKERRQ(ierr);
-        ierr = this->get_dim(dimname, result.z); CHKERRQ(ierr);
+        ierr = inq_dim_limits(dimname, &result.z_min, &result.z_max); CHKERRQ(ierr);
+        ierr = get_dim(dimname, result.z); CHKERRQ(ierr);
         break;
       }
     case T_AXIS:
       {
         ierr = nc->inq_dimlen(dimname, result.t_len); CHKERRQ(ierr);
-        ierr = this->inq_dim_limits(dimname, NULL, &result.time); CHKERRQ(ierr);
+        ierr = inq_dim_limits(dimname, NULL, &result.time); CHKERRQ(ierr);
         break;
       }
     default:
@@ -788,7 +788,7 @@ PetscErrorCode PIO::def_dim(unsigned long int length,
   vector<string> dims(1, name);
   ierr = nc->def_var(name, PISM_DOUBLE, dims); CHKERRQ(ierr);
 
-  ierr = this->write_attributes(metadata, PISM_DOUBLE, false); CHKERRQ(ierr);
+  ierr = write_attributes(metadata, PISM_DOUBLE, false); CHKERRQ(ierr);
 
   return 0;
 }
@@ -812,9 +812,7 @@ PetscErrorCode PIO::get_1d_var(const string &name, unsigned int s, unsigned int 
   start[0] = s;
   count[0] = c;
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
-  ierr = nc->get_vara_double(name, start, count, &result[0]); CHKERRQ(ierr);
+  ierr = get_vara_double(name, start, count, &result[0]); CHKERRQ(ierr);
 
   return 0;
 }
@@ -828,10 +826,8 @@ PetscErrorCode PIO::put_1d_var(const string &name, unsigned int s, unsigned int 
   start[0] = s;
   count[0] = c;
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
-  ierr = nc->put_vara_double(name, start, count,
-                             const_cast<double*>(&data[0])); CHKERRQ(ierr);
+  ierr = put_vara_double(name, start, count,
+                               const_cast<double*>(&data[0])); CHKERRQ(ierr);
 
   return 0;
 }
@@ -844,16 +840,14 @@ PetscErrorCode PIO::get_dim(const string &name, vector<double> &data) const {
   unsigned int dim_length = 0;
   ierr = nc->inq_dimlen(name, dim_length); CHKERRQ(ierr);
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
-  ierr = this->get_1d_var(name, 0, dim_length, data); CHKERRQ(ierr);
+  ierr = get_1d_var(name, 0, dim_length, data); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! \brief Write dimension data (a coordinate variable).
 PetscErrorCode PIO::put_dim(const string &name, const vector<double> &data) const {
-  PetscErrorCode ierr = this->put_1d_var(name, 0,
+  PetscErrorCode ierr = put_1d_var(name, 0,
                                          (unsigned int)data.size(), data); CHKERRQ(ierr);
   return 0;
 }
@@ -874,7 +868,7 @@ PetscErrorCode PIO::def_time(const string &name, const string &calendar, const s
   ierr = time.set_units(units); CHKERRQ(ierr);
   time.set_string("axis", "T");
 
-  ierr = this->def_dim(PISM_UNLIMITED, time); CHKERRQ(ierr);
+  ierr = def_dim(PISM_UNLIMITED, time); CHKERRQ(ierr);
 
   return 0;
 }
@@ -892,9 +886,7 @@ PetscErrorCode PIO::append_time(const string &name, double value) const {
   start[0] = dim_length;
   count[0] = 1;
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
-  ierr = nc->put_vara_double(name, start, count, &value); CHKERRQ(ierr);
+  ierr = put_vara_double(name, start, count, &value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -907,10 +899,8 @@ PetscErrorCode PIO::append_history(const string &history) const {
   PetscErrorCode ierr;
   string old_history;
 
-  ierr = nc->redef(); CHKERRQ(ierr);
-
-  ierr = nc->get_att_text("PISM_GLOBAL", "history", old_history); CHKERRQ(ierr);
-  ierr = nc->put_att_text("PISM_GLOBAL", "history", history + old_history); CHKERRQ(ierr);
+  ierr = get_att_text("PISM_GLOBAL", "history", old_history); CHKERRQ(ierr);
+  ierr = put_att_text("PISM_GLOBAL", "history", history + old_history); CHKERRQ(ierr);
 
   return 0;
 }
@@ -968,7 +958,7 @@ PetscErrorCode PIO::get_att_double(const string &var_name, const string &att_nam
   // "valid_min" stored as a string...)
   if (att_type == PISM_CHAR) {
     string tmp;
-    ierr = nc->get_att_text(var_name, att_name, tmp); CHKERRQ(ierr);
+    ierr = get_att_text(var_name, att_name, tmp); CHKERRQ(ierr);
 
     PetscPrintf(m_com,
                 "PISM ERROR: attribute %s:%s in %s is a string (\"%s\");"
@@ -1011,17 +1001,15 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
                                  0, z_count,
                                  start, count, imap); CHKERRQ(ierr);
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
   double *a_petsc;
   ierr = VecGetArray(result, &a_petsc); CHKERRQ(ierr);
 
   bool mapped_io = true;
-  ierr = this->use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
+  ierr = use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
   if (mapped_io == true) {
-    ierr = nc->get_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
+    ierr = get_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
   } else {
-    ierr = nc->get_vara_double(var_name, start, count, (double*)a_petsc); CHKERRQ(ierr);
+    ierr = get_vara_double(var_name, start, count, (double*)a_petsc); CHKERRQ(ierr);
   }
 
   ierr = VecRestoreArray(result, &a_petsc); CHKERRQ(ierr);
@@ -1076,18 +1064,16 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int 
                                  0, z_count,
                                  start, count, imap); CHKERRQ(ierr);
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
   double *a_petsc;
   ierr = VecGetArray(result, &a_petsc); CHKERRQ(ierr);
 
   if (grid->config.get_string("output_variable_order") == "xyz") {
     // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
     // orders in the memory and in NetCDF files are the same.
-    ierr = nc->put_vara_double(var_name, start, count, (double*)a_petsc); CHKERRQ(ierr);
+    ierr = put_vara_double(var_name, start, count, (double*)a_petsc); CHKERRQ(ierr);
   } else {
     // Revert to "mapped" I/O otherwise.
-    ierr = nc->put_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
+    ierr = put_varm_double(var_name, start, count, imap, (double*)a_petsc); CHKERRQ(ierr);
   }
 
   ierr = VecRestoreArray(result, &a_petsc); CHKERRQ(ierr);
@@ -1108,7 +1094,7 @@ PetscErrorCode PIO::get_interp_context(const string &name,
   PetscErrorCode ierr;
   bool exists = false;
 
-  ierr = this->inq_var(name, exists); CHKERRQ(ierr);
+  ierr = inq_var(name, exists); CHKERRQ(ierr);
 
   if (exists == false) {
     lic = NULL;
@@ -1116,7 +1102,7 @@ PetscErrorCode PIO::get_interp_context(const string &name,
   } else {
     grid_info gi;
 
-    ierr = this->inq_grid_info(name, grid.periodicity, gi); CHKERRQ(ierr);
+    ierr = inq_grid_info(name, grid.periodicity, gi); CHKERRQ(ierr);
 
     lic = new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
   }
@@ -1147,14 +1133,12 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const string &var_name,
                                  lic->start[Z], lic->count[Z],
                                  start, count, imap); CHKERRQ(ierr);
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
   bool mapped_io = true;
-  ierr = this->use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
+  ierr = use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
   if (mapped_io == true) {
-    ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+    ierr = get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
   } else {
-    ierr = nc->get_vara_double(var_name, start, count, lic->a); CHKERRQ(ierr);
+    ierr = get_vara_double(var_name, start, count, lic->a); CHKERRQ(ierr);
   }
 
   ierr = regrid(grid, zlevels_out, lic, result); CHKERRQ(ierr);
@@ -1198,16 +1182,12 @@ PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_nam
                                  lic->start[Z], lic->count[Z],
                                  start, count, imap); CHKERRQ(ierr);
 
-  ierr = nc->enddef(); CHKERRQ(ierr);
-
-  // We always use "mapped" I/O here, because we don't know where the input
-  // file came from.
   bool mapped_io = true;
-  ierr = this->use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
+  ierr = use_mapped_io(var_name, mapped_io); CHKERRQ(ierr);
   if (mapped_io == true) {
-    ierr = nc->get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
+    ierr = get_varm_double(var_name, start, count, imap, lic->a); CHKERRQ(ierr);
   } else {
-    ierr = nc->get_vara_double(var_name, start, count, lic->a); CHKERRQ(ierr);
+    ierr = get_vara_double(var_name, start, count, lic->a); CHKERRQ(ierr);
   }
 
   // Replace missing values if the _FillValue attribute is present,
@@ -1389,7 +1369,7 @@ PetscErrorCode PIO::compute_start_and_count(const string &short_name,
     string dimname = dims[j];
 
     AxisType dimtype;
-    ierr = this->inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
+    ierr = inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
 
     switch (dimtype) {
     case T_AXIS:
@@ -1494,31 +1474,31 @@ PetscErrorCode PIO::read_attributes(const string &name, NCVariable &variable) co
   bool variable_exists;
   int nattrs;
 
-  ierr = this->inq_var(name, variable_exists); CHKERRQ(ierr);
+  ierr = inq_var(name, variable_exists); CHKERRQ(ierr);
 
   if (variable_exists == false) {
     ierr = PetscPrintf(m_com,
                        "PISM ERROR: variable %s was not found in %s.\n"
                        "            Exiting...\n",
                        name.c_str(),
-                       this->inq_filename().c_str()); CHKERRQ(ierr);
+                       inq_filename().c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
   variable.clear_all_strings();
   variable.clear_all_doubles();
 
-  ierr = this->inq_nattrs(name, nattrs); CHKERRQ(ierr);
+  ierr = inq_nattrs(name, nattrs); CHKERRQ(ierr);
 
   for (int j = 0; j < nattrs; ++j) {
     string attribute_name;
     IO_Type nctype;
-    ierr = this->inq_attname(name, j, attribute_name); CHKERRQ(ierr);
-    ierr = this->inq_atttype(name, attribute_name, nctype); CHKERRQ(ierr);
+    ierr = inq_attname(name, j, attribute_name); CHKERRQ(ierr);
+    ierr = inq_atttype(name, attribute_name, nctype); CHKERRQ(ierr);
 
     if (nctype == PISM_CHAR) {
       string value;
-      ierr = this->get_att_text(name, attribute_name, value); CHKERRQ(ierr);
+      ierr = get_att_text(name, attribute_name, value); CHKERRQ(ierr);
 
       if (attribute_name == "units") {
         ierr = variable.set_units(value); CHKERRQ(ierr);
@@ -1528,7 +1508,7 @@ PetscErrorCode PIO::read_attributes(const string &name, NCVariable &variable) co
     } else {
       vector<double> values;
 
-      ierr = this->get_att_double(name, attribute_name, values); CHKERRQ(ierr);
+      ierr = get_att_double(name, attribute_name, values); CHKERRQ(ierr);
       variable.set_doubles(attribute_name, values);
     }
   } // end of for (int j = 0; j < nattrs; ++j)
@@ -1549,11 +1529,9 @@ PetscErrorCode PIO::read_attributes(const string &name, NCVariable &variable) co
  */
 PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
                                      bool write_in_glaciological_units) const {
-  int ierr;
+  int ierr = 0;
 
   string var_name = var.get_name();
-
-  ierr = this->redef(); CHKERRQ(ierr);
 
   // units, valid_min, valid_max and valid_range need special treatment:
   if (var.has_attribute("units")) {
@@ -1562,7 +1540,7 @@ PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     if (write_in_glaciological_units)
       output_units = var.get_string("glaciological_units");
 
-    ierr = this->put_att_text(var_name, "units", output_units); CHKERRQ(ierr);
+    ierr = put_att_text(var_name, "units", output_units); CHKERRQ(ierr);
   }
 
   vector<double> bounds(2);
@@ -1590,15 +1568,15 @@ PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
   }
 
   if (var.has_attribute("_FillValue")) {
-    ierr = this->put_att_double(var_name, "_FillValue", nctype, fill_value); CHKERRQ(ierr);
+    ierr = put_att_double(var_name, "_FillValue", nctype, fill_value); CHKERRQ(ierr);
   }
 
   if (var.has_attribute("valid_min") && var.has_attribute("valid_max")) {
-    ierr = this->put_att_double(var_name, "valid_range", nctype, bounds);
+    ierr = put_att_double(var_name, "valid_range", nctype, bounds);
   } else if (var.has_attribute("valid_min")) {
-    ierr = this->put_att_double(var_name, "valid_min",   nctype, bounds[0]);
+    ierr = put_att_double(var_name, "valid_min",   nctype, bounds[0]);
   } else if (var.has_attribute("valid_max")) {
-    ierr = this->put_att_double(var_name, "valid_max",   nctype, bounds[1]);
+    ierr = put_att_double(var_name, "valid_max",   nctype, bounds[1]);
   }
 
   CHKERRQ(ierr);
@@ -1614,7 +1592,7 @@ PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     if (name == "units" || name == "glaciological_units" || value.empty())
       continue;
 
-    ierr = this->put_att_text(var_name, name, value); CHKERRQ(ierr);
+    ierr = put_att_text(var_name, name, value); CHKERRQ(ierr);
   }
 
   // Write double attributes:
@@ -1631,7 +1609,7 @@ PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
         values.empty())
       continue;
 
-    ierr = this->put_att_double(var_name, name, nctype, values); CHKERRQ(ierr);
+    ierr = put_att_double(var_name, name, nctype, values); CHKERRQ(ierr);
   }
 
   return 0;
@@ -1651,12 +1629,12 @@ PetscErrorCode PIO::write_global_attributes(const NCVariable &var) const {
   string old_history;
   NCVariable tmp = var;
 
-  ierr = this->get_att_text("PISM_GLOBAL", "history", old_history); CHKERRQ(ierr);
+  ierr = get_att_text("PISM_GLOBAL", "history", old_history); CHKERRQ(ierr);
 
   tmp.set_name("PISM_GLOBAL");
   tmp.set_string("history", tmp.get_string("history") + old_history);
 
-  ierr = this->write_attributes(tmp, PISM_DOUBLE, false); CHKERRQ(ierr);
+  ierr = write_attributes(tmp, PISM_DOUBLE, false); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1679,7 +1657,7 @@ PetscErrorCode PIO::read_valid_range(const string &name, NCVariable &variable) c
   // Read the units: The following code ignores the units in the input file if
   // a) they are absent :-) b) they are invalid c) they are not compatible with
   // internal units.
-  ierr = this->get_att_text(name, "units", input_units_string); CHKERRQ(ierr);
+  ierr = get_att_text(name, "units", input_units_string); CHKERRQ(ierr);
 
   if (input_units.parse(input_units_string) != 0)
     input_units = variable.get_units();
@@ -1689,17 +1667,17 @@ PetscErrorCode PIO::read_valid_range(const string &name, NCVariable &variable) c
     c = cv_get_trivial();
   }
 
-  ierr = this->get_att_double(name, "valid_range", bounds); CHKERRQ(ierr);
+  ierr = get_att_double(name, "valid_range", bounds); CHKERRQ(ierr);
   if (bounds.size() == 2) {             // valid_range is present
     variable.set_double("valid_min", cv_convert_double(c, bounds[0]));
     variable.set_double("valid_max", cv_convert_double(c, bounds[1]));
   } else {                      // valid_range has the wrong length or is missing
-    ierr = this->get_att_double(name, "valid_min", bounds); CHKERRQ(ierr);
+    ierr = get_att_double(name, "valid_min", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {           // valid_min is present
       variable.set_double("valid_min", cv_convert_double(c, bounds[0]));
     }
 
-    ierr = this->get_att_double(name, "valid_max", bounds); CHKERRQ(ierr);
+    ierr = get_att_double(name, "valid_max", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {           // valid_max is present
       variable.set_double("valid_max", cv_convert_double(c, bounds[0]));
     }
@@ -1725,31 +1703,31 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
     dimension_name = metadata.get_dimension_name();
 
   bool found_by_standard_name;
-  ierr = this->inq_var(name, standard_name,
+  ierr = inq_var(name, standard_name,
                        variable_exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (!variable_exists) {
     ierr = PetscPrintf(m_com,
                        "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
                        name.c_str(),
-                       standard_name.c_str(), this->inq_filename().c_str());
+                       standard_name.c_str(), inq_filename().c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
 
   vector<string> dims;
-  ierr = this->inq_vardims(name_found, dims); CHKERRQ(ierr);
+  ierr = inq_vardims(name_found, dims); CHKERRQ(ierr);
 
   if (dims.size() != 1) {
     ierr = PetscPrintf(m_com,
                        "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
                        "            but a time-series variable can only depend on 1 dimension.\n",
-                       name.c_str(), this->inq_filename().c_str(), dims.size()); CHKERRQ(ierr);
+                       name.c_str(), inq_filename().c_str(), dims.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
   unsigned int length;
-  ierr = this->inq_dimlen(dimension_name, length); CHKERRQ(ierr);
+  ierr = inq_dimlen(dimension_name, length); CHKERRQ(ierr);
 
   if (length <= 0) {
     ierr = PetscPrintf(m_com,
@@ -1760,16 +1738,14 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
 
   data.resize(length);          // memory allocation happens here
 
-  ierr = this->enddef(); CHKERRQ(ierr);
-
-  ierr = this->get_1d_var(name_found, 0, length, data); CHKERRQ(ierr);
+  ierr = get_1d_var(name_found, 0, length, data); CHKERRQ(ierr);
 
   bool input_has_units;
   string input_units_string;
   Unit internal_units = metadata.get_units(),
     input_units(internal_units.get_system());
 
-  ierr = this->get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
+  ierr = get_att_text(name_found, "units", input_units_string); CHKERRQ(ierr);
 
   if (input_units_string.empty() == true) {
     input_has_units = false;
@@ -1807,7 +1783,7 @@ PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_star
   PetscErrorCode ierr;
   vector<double> vector_data(1, data);
 
-  ierr = this->write_timeseries(metadata, t_start, vector_data, nctype); CHKERRQ(ierr);
+  ierr = write_timeseries(metadata, t_start, vector_data, nctype); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1822,19 +1798,17 @@ PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_star
   PetscErrorCode ierr;
   bool variable_exists = false;
 
-  ierr = this->inq_var(metadata.get_name(), variable_exists); CHKERRQ(ierr);
+  ierr = inq_var(metadata.get_name(), variable_exists); CHKERRQ(ierr);
   if (variable_exists == false) {
     ierr = metadata.define(*this, nctype, true); CHKERRQ(ierr);
   }
-
-  ierr = this->enddef(); CHKERRQ(ierr);
 
   // convert to glaciological units:
   ierr = convert_doubles(&data[0], data.size(),
                          metadata.get_units(),
                          metadata.get_glaciological_units()); CHKERRQ(ierr);
 
-  ierr = this->put_1d_var(metadata.get_name(),
+  ierr = put_1d_var(metadata.get_name(),
                           static_cast<unsigned int>(t_start),
                           static_cast<unsigned int>(data.size()), data); CHKERRQ(ierr);
 
@@ -1853,12 +1827,12 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
 
   string
     name     = metadata.get_name(),
-    filename = this->inq_filename();
+    filename = inq_filename();
 
   Unit internal_units = metadata.get_units();
 
   // Find the variable:
-  ierr = this->inq_var(name, variable_exists); CHKERRQ(ierr);
+  ierr = inq_var(name, variable_exists); CHKERRQ(ierr);
 
   if (variable_exists == false) {
     ierr = PetscPrintf(m_com,
@@ -1868,7 +1842,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
   }
 
   vector<string> dims;
-  ierr = this->inq_vardims(name, dims); CHKERRQ(ierr);
+  ierr = inq_vardims(name, dims); CHKERRQ(ierr);
 
   if (dims.size() != 2) {
     ierr = PetscPrintf(m_com,
@@ -1886,7 +1860,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
   unsigned int length = 0;
 
   // Check that we have 2 vertices (interval end-points) per time record.
-  ierr = this->inq_dimlen(bounds_name, length); CHKERRQ(ierr);
+  ierr = inq_dimlen(bounds_name, length); CHKERRQ(ierr);
   if (length != 2) {
     PetscPrintf(m_com,
                 "PISM ERROR: A time-bounds variable has to have exactly 2 bounds per time record.\n"
@@ -1897,7 +1871,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
   }
 
   // Get the number of time records.
-  ierr = this->inq_dimlen(dimension_name, length); CHKERRQ(ierr);
+  ierr = inq_dimlen(dimension_name, length); CHKERRQ(ierr);
   if (length <= 0) {
     ierr = PetscPrintf(m_com,
                        "PISM ERROR: Dimension %s has zero length!\n",
@@ -1907,20 +1881,18 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
 
   data.resize(2*length);                // memory allocation happens here
 
-  ierr = this->enddef(); CHKERRQ(ierr);
-
   vector<unsigned int> start(2), count(2);
   start[0] = 0;
   start[1] = 0;
   count[0] = length;
   count[1] = 2;
 
-  ierr = this->get_vara_double(name, start, count, &data[0]); CHKERRQ(ierr);
+  ierr = get_vara_double(name, start, count, &data[0]); CHKERRQ(ierr);
 
   // Find the corresponding 'time' variable. (We get units from the 'time'
   // variable, because according to CF-1.5 section 7.1 a "boundary variable"
   // may not have metadata set.)
-  ierr = this->inq_var(dimension_name, variable_exists); CHKERRQ(ierr);
+  ierr = inq_var(dimension_name, variable_exists); CHKERRQ(ierr);
 
   if (variable_exists == false) {
     PetscPrintf(m_com, "PISM ERROR: Can't find '%s' in %s.\n",
@@ -1932,7 +1904,7 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
   string input_units_string;
   Unit input_units(internal_units.get_system());
 
-  ierr = this->get_att_text(dimension_name, "units", input_units_string); CHKERRQ(ierr);
+  ierr = get_att_text(dimension_name, "units", input_units_string); CHKERRQ(ierr);
   input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
   if (input_units_string.empty() == true) {
@@ -1972,7 +1944,7 @@ PetscErrorCode PIO::write_time_bounds(const NCTimeBounds &metadata,
   PetscErrorCode ierr;
   bool variable_exists = false;
 
-  ierr = this->inq_var(metadata.get_name(), variable_exists); CHKERRQ(ierr);
+  ierr = inq_var(metadata.get_name(), variable_exists); CHKERRQ(ierr);
   if (variable_exists == false) {
     ierr = metadata.define(*this, nctype, true); CHKERRQ(ierr);
   }
@@ -1981,15 +1953,13 @@ PetscErrorCode PIO::write_time_bounds(const NCTimeBounds &metadata,
   ierr = convert_doubles(&data[0], data.size(),
                          metadata.get_units(), metadata.get_glaciological_units()); CHKERRQ(ierr);
 
-  ierr = this->enddef(); CHKERRQ(ierr);
-
   vector<unsigned int> start(2), count(2);
   start[0] = static_cast<unsigned int>(t_start);
   start[1] = 0;
   count[0] = static_cast<unsigned int>(data.size()) / 2;
   count[1] = 2;
 
-  ierr = this->put_vara_double(metadata.get_name(), start, count, &data[0]); CHKERRQ(ierr);
+  ierr = put_vara_double(metadata.get_name(), start, count, &data[0]); CHKERRQ(ierr);
 
   // restore internal units:
   ierr = convert_doubles(&data[0], data.size(),
