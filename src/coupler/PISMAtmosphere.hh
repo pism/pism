@@ -34,6 +34,8 @@ public:
   AtmosphereModel(IceGrid &g, const Config &conf)
     : Component_TS(g, conf) {};
 
+  virtual PetscErrorCode init(Vars &vars) = 0;
+
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result) = 0;
 

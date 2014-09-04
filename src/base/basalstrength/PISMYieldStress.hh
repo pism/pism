@@ -32,6 +32,8 @@ public:
     : Component_TS(g, conf) {}
   virtual ~YieldStress() {}
 
+  virtual PetscErrorCode init(Vars &vars) = 0;
+
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result) = 0;
 };
 
