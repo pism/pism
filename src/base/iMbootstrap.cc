@@ -77,8 +77,7 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   ierr = verbPrintf(2, grid.com, 
                     "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
 
-  // report on resulting computational box, rescale grid, actually create a
-  // local interpolation context
+  // report on resulting computational box, rescale grid
   ierr = verbPrintf(2, grid.com, 
                     "  rescaling computational box for ice from -boot_file file and\n"
                     "    user options to dimensions:\n"
@@ -91,26 +90,28 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   CHKERRQ(ierr);
 
   std::string usurf_name;
-  bool hExists=false, maskExists=false, usurf_found_by_std_name;
-  ierr = nc.inq_var("usurf", "surface_altitude", hExists, usurf_name, usurf_found_by_std_name); CHKERRQ(ierr);
-  ierr = nc.inq_var("mask", maskExists); CHKERRQ(ierr);
+  bool usurf_found = false, mask_found = false, usurf_found_by_std_name = false;
+  ierr = nc.inq_var("usurf", "surface_altitude",
+                    usurf_found, usurf_name, usurf_found_by_std_name); CHKERRQ(ierr);
+  ierr = nc.inq_var("mask", mask_found); CHKERRQ(ierr);
 
   std::string lon_name, lat_name;
-  bool lonExists=false, latExists=false, lon_found_by_std_name, lat_found_by_std_name;
-  ierr = nc.inq_var("lon", "longitude", lonExists, lon_name, lon_found_by_std_name); CHKERRQ(ierr);
-  ierr = nc.inq_var("lat", "latitude",  latExists, lat_name, lat_found_by_std_name); CHKERRQ(ierr);
+  bool lon_found = false, lat_found = false,
+    lon_found_by_std_name = false, lat_found_by_std_name = false;
+  ierr = nc.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name); CHKERRQ(ierr);
+  ierr = nc.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately
 
-  if (maskExists) {
+  if (mask_found) {
     ierr = verbPrintf(2, grid.com, 
                       "  WARNING: 'mask' found; IGNORING IT!\n"); CHKERRQ(ierr);
   }
 
-  if (hExists) {
+  if (usurf_found) {
     ierr = verbPrintf(2, grid.com, 
                       "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
                       CHKERRQ(ierr);
@@ -120,21 +121,26 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
                     "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, OPTIONAL); CHKERRQ(ierr);
-  if (!lonExists) {
+  if (not lon_found) {
     vLongitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  ierr =  vLatitude.regrid(filename, OPTIONAL); CHKERRQ(ierr);
-  if (!latExists) {
+  ierr = vLatitude.regrid(filename, OPTIONAL); CHKERRQ(ierr);
+  if (not lat_found) {
     vLatitude.metadata().set_string("missing_at_bootstrap","true");
   }
 
-  ierr = bed_topography.regrid(filename, OPTIONAL, config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr = basal_melt_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr = geothermal_flux.regrid(filename, OPTIONAL, config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
-  ierr = bed_uplift_rate.regrid(filename, OPTIONAL, config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
+  ierr = bed_topography.regrid(filename, OPTIONAL,
+                               config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
+  ierr = basal_melt_rate.regrid(filename, OPTIONAL,
+                                config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
+  ierr = geothermal_flux.regrid(filename, OPTIONAL,
+                                config.get("bootstrapping_geothermal_flux_value_no_var")); CHKERRQ(ierr);
+  ierr = bed_uplift_rate.regrid(filename, OPTIONAL,
+                                config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
-  ierr = ice_thickness.regrid(filename, OPTIONAL, config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  ierr = ice_thickness.regrid(filename, OPTIONAL,
+                              config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
   // check the range of the ice thickness
   {
     double thk_min = 0.0, thk_max = 0.0;
