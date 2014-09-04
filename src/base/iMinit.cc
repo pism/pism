@@ -543,6 +543,8 @@ PetscErrorCode IceModel::model_state_setup() {
     if (bootstrapping_needed == true) {
       // update surface and ocean models so that we can get the
       // temperature at the top of the bedrock
+      ierr = verbPrintf(2, grid.com,
+                        "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
       ierr = init_step_couplers(); CHKERRQ(ierr);
 
       ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);

@@ -83,13 +83,19 @@ PetscErrorCode IceModel::bootstrapFromFile(const std::string &filename) {
                           "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
         ierr = init_step_couplers(); CHKERRQ(ierr);
 
-        // this call will initialize both ice temperature and ice
-        // enthalpy
+        // this call will set ice temperature
         ierr = putTempAtDepth(); CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(2, grid.com,
                           " - ice temperature was set already\n"); CHKERRQ(ierr);
       }
+
+      // make sure that enthalpy gets initialized:
+      ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com,
+                        " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+      CHKERRQ(ierr);
+
     } else {
       // enthalpy mode
       if (enthalpy_revision == Enth3.get_state_counter()) {
@@ -97,6 +103,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const std::string &filename) {
                           "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
         ierr = init_step_couplers(); CHKERRQ(ierr);
 
+        // this call will set ice enthalpy
         ierr = putTempAtDepth(); CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(2, grid.com,
@@ -408,13 +415,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   ierr = result->update_ghosts(); CHKERRQ(ierr);
-
-  if (do_cold) {
-    ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
-    ierr = verbPrintf(2, grid.com,
-                      " - ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
-    CHKERRQ(ierr);
-  }
 
   return 0;
 }
