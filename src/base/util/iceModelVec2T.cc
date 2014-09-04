@@ -100,21 +100,21 @@ PetscErrorCode IceModelVec2T::get_array3(double*** &a3) {
 
 PetscErrorCode IceModelVec2T::begin_access() {
   PetscErrorCode ierr;
-  if (access_counter == 0) {
+  if (m_access_counter == 0) {
     ierr = DMDAVecGetArrayDOF(m_da3->get(), m_v3, &array3); CHKERRQ(ierr);
   }
 
-  // this call will increment the access_counter
+  // this call will increment the m_access_counter
   ierr = IceModelVec2S::begin_access(); CHKERRQ(ierr);
   
   return 0;
 }
 
 PetscErrorCode IceModelVec2T::end_access() {
-  // this call will decrement the access_counter
+  // this call will decrement the m_access_counter
   PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
 
-  if (access_counter == 0) {
+  if (m_access_counter == 0) {
     ierr = DMDAVecRestoreArrayDOF(m_da3->get(), m_v3, &array3); CHKERRQ(ierr);
     array3 = NULL;
   }

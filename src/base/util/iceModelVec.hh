@@ -254,8 +254,8 @@ protected:
 
   void *array;  // will be cast to double** or double*** in derived classes
 
-  int access_counter;           // used in begin_access() and end_access()
-  int state_counter;            //!< Internal IceModelVec "revision number"
+  int m_access_counter;           // used in begin_access() and end_access()
+  int m_state_counter;            //!< Internal IceModelVec "revision number"
 
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkCompatibility(const char *function, IceModelVec &other);

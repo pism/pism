@@ -74,6 +74,8 @@ PetscErrorCode add_2d(IceModelVec* const x_in, double alpha, IceModelVec* const 
     ierr = z->update_ghosts(); CHKERRQ(ierr);
   }
 
+  result->inc_state_counter();
+
   return 0;
 }
 
@@ -108,6 +110,8 @@ PetscErrorCode copy_2d(IceModelVec* const source,
   if (scatter) {
     ierr = z->update_ghosts(); CHKERRQ(ierr);
   }
+
+  destination->inc_state_counter();
 
   return 0;
 }

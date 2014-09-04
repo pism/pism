@@ -107,6 +107,8 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, V
     ierr = this->copy_from_vec(g2); CHKERRQ(ierr);
   }
 
+  inc_state_counter();          // mark as modified
+
   return 0;
 }
 
@@ -130,6 +132,8 @@ PetscErrorCode IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S
   ierr = v_x.end_access(); CHKERRQ(ierr);
   ierr = v_y.end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
   
   return 0;
 }
@@ -148,6 +152,8 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
   }
   ierr = end_access(); CHKERRQ(ierr);
   ierr = M.end_access(); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
 
   return 0;
 }
@@ -595,6 +601,8 @@ PetscErrorCode IceModelVec2::set_component(unsigned int N, Vec source) {
 
   ierr = DMDAVecRestoreArray(da2->get(), source, &tmp_src); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArrayDOF(m_da->get(), v, &tmp_v); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
 
   return 0;
 }
