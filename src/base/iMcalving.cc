@@ -165,8 +165,14 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
           delta_Href = 0.0,
           discharge  = 0.0;
 
-        if (use_Href && mask.next_to_ice(i, j) == false) {
+        if (use_Href == true) {
           delta_Href = Href(i,j) - Href_old(i,j);
+          // Only count mass loss. (A cell may stay "partially-filled"
+          // for several time-steps as the calving front advances. In
+          // this case delta_Href is real, but does not correspond to
+          // either loss or gain of mass.)
+          if (delta_Href > 0.0)
+            delta_Href = 0.0;
         } else {
           delta_Href = 0.0;
         }
