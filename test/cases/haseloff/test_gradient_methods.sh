@@ -13,7 +13,7 @@ do
 done;
 
 # Without the bed smoother
-OPTS="$OPTS -config_override ./no_bed_smoother.nc"
+OPTS="$OPTS -bed_smoother_range 0.0"
 for method in mahaffy haseloff;
 do
     mpiexec -n $NN pismr -boot_file $INFILE $GRID -gradient $method $OPTS -extra_file ex-no-smoother-$method.nc -o o-no-smoother-$method.nc
