@@ -560,6 +560,8 @@ using namespace pism;
 
 %include "iceModel.hh"
 
+%include "PISMHydrology.hh"
+
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
 %template(Diag_SSA) pism::Diag<pism::SSA>;
