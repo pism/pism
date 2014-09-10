@@ -465,6 +465,9 @@ netcdf pism_config {
     pism_config:ocean_sub_shelf_heat_flux_into_ice = 0.5;
     pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in @ref pism::POConstant::shelf_base_mass_flux().";
 
+    pism_config:ocean_pik_melt_factor = 5e-3;
+    pism_config:ocean_pik_melt_factor_doc = "1; dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see [@ref Martinetal2011]";
+
     // SSA inversion constants
     
     pism_config:inv_ssa_method = "tikhonov_lmvm";

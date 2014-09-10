@@ -909,6 +909,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.flag_from_option("clip_shelf_base_salinity",
                                  "ocean_three_equation_model_clip_salinity"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor"); CHKERRQ(ierr);
+
   // old options
   ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",
                                    "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
