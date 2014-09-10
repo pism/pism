@@ -523,7 +523,6 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
  * This is used *both* for time-series and "snapshots".
  *
  * @param ts requested times, in seconds
- * @param ts_length number of requested times (length of the `ts` array)
  *
  * @return 0 on success
  */
