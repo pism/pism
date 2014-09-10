@@ -28,6 +28,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMDiagnostic.hh"
+#include "bedrockThermalUnit.hh"
 
 namespace pism {
 
@@ -147,6 +148,11 @@ PetscErrorCode IceModel::update_run_stats() {
   run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
   run_stats.set_double("grid_dx_meters", grid.dx);
   run_stats.set_double("grid_dy_meters", grid.dy);
+  run_stats.set_double("grid_dz_min_meters", grid.dzMIN);
+  run_stats.set_double("grid_dz_max_meters", grid.dzMAX);
+  if (btu != NULL) {
+    run_stats.set_double("grid_dzb_meters", btu->get_vertical_spacing());
+  }
   run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
 
   run_stats.set_double("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);

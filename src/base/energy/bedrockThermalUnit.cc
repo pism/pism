@@ -253,6 +253,21 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
   return 0;
 }
 
+/** Returns the vertical spacing used by the bedrock grid.
+ *
+ * Special case: returns 0 if the bedrock thermal layer has thickness
+ * zero.
+ */
+double BedThermalUnit::get_vertical_spacing() {
+  if (temp.was_created() == true) {
+    double dzb = 0.0;
+    temp.get_spacing(dzb);
+    return dzb;
+  } else {
+    return 0.0;
+  }
+}
+
 
 void BedThermalUnit::add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &result) {
   if (temp.was_created()) {

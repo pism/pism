@@ -119,6 +119,8 @@ public:
   virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
 
   virtual PetscErrorCode bootstrap();
+
+  double get_vertical_spacing();
 protected:
   PetscErrorCode allocate();
 
