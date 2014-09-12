@@ -78,9 +78,9 @@ public:
 
   virtual PetscErrorCode getWaterFraction(double E, double p, double &omega) const;
 
-  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
-  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
-  virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
+  virtual PetscErrorCode getEnth(double T, double omega, double p, double &result) const;
+  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &result) const;
+  virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &result) const;
 
   virtual double c_from_T(double /*T*/) const
   { return c_i; }
