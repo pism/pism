@@ -153,4 +153,5 @@ endif()
 # PISM regression testing
 ENABLE_TESTING()
 include(CTest)
+add_subdirectory (test)
 add_subdirectory (test/regression)
