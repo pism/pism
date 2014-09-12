@@ -122,6 +122,27 @@ def create_modeldata_test():
     grid = create_dummy_grid()
     md = PISM.model.ModelData(grid)
 
+def grid_from_file_test():
+    "Intiialize a grid from a file"
+    grid = create_dummy_grid()
+
+    enthalpy = PISM.model.createEnthalpyVec(grid)
+    enthalpy.set(80e3)
+
+    output_file = "test_grid_from_file.nc"
+    pio = PISM.PIO(grid,"netcdf3")
+    pio.open(output_file, PISM.PISM_READWRITE_MOVE)
+    pio.def_time(grid.config.get_string("time_dimension_name"),
+                 grid.config.get_string("calendar"), grid.time.units_string())
+    pio.append_time(grid.config.get_string("time_dimension_name"),grid.time.current())
+    pio.close()
+
+    enthalpy.write(output_file)
+
+    grid2 = PISM.Context().newgrid()
+
+    PISM.model.initGridFromFile(grid, output_file, PISM.NOT_PERIODIC)
+
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
     grid = create_dummy_grid()
@@ -176,6 +197,17 @@ def create_special_vecs_test():
 
     lat = PISM.model.createLatitudeVec(grid)
 
+    # test var_cmp
+    PISM.model.var_cmp(lon, lat)
+    PISM.model.var_cmp(lat, lon)
+    PISM.model.var_cmp(lon, lon)
+
+    # test ModelVecs.add()
+    modeldata = PISM.model.ModelData(grid)
+    vecs = modeldata.vecs
+
+    vecs.add(mask)
+
     return True
 
 def options_test():
@@ -203,11 +235,10 @@ def modelvecs_test():
     grid = ctx.newgrid()
     PISM.model.initGrid(grid, 1e5, 1e5, 1000.0, 100, 100, 11, PISM.NOT_PERIODIC)
 
-    modeldata = PISM.model.ModelData(grid)
-
     mask = PISM.model.createIceMaskVec(grid)
     mask.set(PISM.MASK_GROUNDED)
 
+    modeldata = PISM.model.ModelData(grid)
     vecs = modeldata.vecs
 
     vecs.add(mask, "ice_mask", writing=True)
@@ -235,6 +266,11 @@ def modelvecs_test():
     # test rename()
     vecs.rename("ice_mask", "mask")
 
+    # remove() a vec not marked for writing
+    vecs.remove("mask")
+
+    vecs.add(mask, "mask")
+
     # test setPISMVarsName
     vecs.setPISMVarsName("mask", "pism_mask")
 
@@ -254,6 +290,7 @@ def modelvecs_test():
 
     # test markForWriting
     vecs.markForWriting("mask")
+    vecs.markForWriting(mask)
 
     # test write()
     output_file = "test_ModelVecs.nc"
@@ -311,3 +348,60 @@ def sia_test():
         vecs.add(fields[key], key)
 
     vel_sia = PISM.sia.computeSIASurfaceVelocities(modeldata)
+
+def util_test():
+    "Test the PISM.util module"
+    grid = create_dummy_grid()
+
+    output_file = "test_pism_util.nc"
+    pio = PISM.PIO(grid,"netcdf3")
+    pio.open(output_file, PISM.PISM_READWRITE_MOVE)
+    pio.close()
+
+    PISM.util.writeProvenance(output_file)
+    PISM.util.writeProvenance(output_file, message="history string")
+
+    PISM.util.fileHasVariable(output_file, "data")
+
+    # Test PISM.util.Bunch
+    b = PISM.util.Bunch(a=1, b="string")
+    b.update(c=3.0)
+
+    print b.a, b["b"], b.has_key("b"), b
+
+def logging_test():
+    "Test the PISM.logging module"
+    grid = create_dummy_grid()
+    pio = PISM.PIO(grid, "netcdf3")
+
+    import PISM.logging as L
+
+    pio.open("log.nc", PISM.PISM_READWRITE_MOVE)
+    pio.close()
+    c = L.CaptureLogger("log.nc")
+
+    L.clear_loggers()
+
+    L.add_logger(L.print_logger)
+    L.add_logger(c)
+
+    PISM.setVerbosityLevel(2)
+
+    L.log("log message", L.kError)
+
+    L.logError("message")
+
+    L.logWarning("message")
+
+    L.logMessage("message")
+
+    L.logDebug("message")
+
+    L.logPrattle("message")
+
+    c.write()                   # default arguments
+    c.readOldLog()
+
+    pio.open("other_log.nc", PISM.PISM_READWRITE_MOVE)
+    pio.close()
+    c.write("other_log.nc", "other_log") # non-default arguments
