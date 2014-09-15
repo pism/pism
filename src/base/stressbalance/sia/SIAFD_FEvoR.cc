@@ -40,8 +40,7 @@ PetscErrorCode SIAFD_FEvoR::init(Vars &vars) {
 
   ierr = SIAFD::init(vars); CHKERRQ(ierr);
 
-  enhancement_factor = dynamic_cast<IceModelVec3*>(vars.get("enhancement_factor"));
-  if (enhancement_factor == NULL) SETERRQ(grid.com, 1, "enhancement_factor is not available");
+  m_variables = &vars;
 
   return 0;
 }
@@ -104,6 +103,9 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
   // new code
+  IceModelVec3 *enhancement_factor = dynamic_cast<IceModelVec3*>(m_variables->get("enhancement_factor"));
+  if (enhancement_factor == NULL) SETERRQ(grid.com, 1, "enhancement_factor is not available");
+
   double *EF_ij, *EF_offset;
   ierr = enhancement_factor->begin_access(); CHKERRQ(ierr);
   // end of new code

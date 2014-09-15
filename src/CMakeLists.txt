@@ -18,6 +18,7 @@ include_directories (
   coupler/ocean
   coupler/util
   calcalcs
+  fevor
   )
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
@@ -152,7 +153,7 @@ add_library (pismbase
   base/calving/PISMOceanKill.cc
   base/calving/PISMEigenCalving.cc
 )
-target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision)
+target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance pismrevision pismfevor)
 
 # Bed deformation models.
 set(PISMEARTH_SRC
@@ -279,6 +280,7 @@ add_subdirectory (calcalcs)
 add_subdirectory (coupler)
 add_subdirectory (base/stressbalance)
 add_subdirectory (regional)
+add_subdirectory (fevor)
 
 if (Pism_DEBUG OR Pism_BUILD_PYTHON_BINDINGS)
   add_subdirectory (pythonbindings)

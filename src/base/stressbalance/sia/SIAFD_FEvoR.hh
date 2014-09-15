@@ -24,6 +24,8 @@
 
 namespace pism {
 
+class Vars;
+
 class SIAFD_FEvoR : public SIAFD {
 public:
   SIAFD_FEvoR(IceGrid &g, EnthalpyConverter &e, const Config &c);
@@ -33,7 +35,7 @@ protected:
   virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                 IceModelVec2Stag &result, bool fast);
 private:
-  IceModelVec3 *enhancement_factor;
+  Vars *m_variables;
 };
 
 } // end of namespace pism

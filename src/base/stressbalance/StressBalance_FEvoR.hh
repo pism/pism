@@ -29,12 +29,8 @@ public:
   StressBalance_FEvoR(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
                       const Config &config);
   virtual ~StressBalance_FEvoR();
-
-  virtual PetscErrorCode init(Vars &vars);
 protected:
   virtual PetscErrorCode compute_volumetric_strain_heating();
-private:
-  IceModelVec3 *enhancement_factor;
 };
 
 } // end of namespace pism

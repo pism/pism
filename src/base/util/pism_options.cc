@@ -890,7 +890,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   }
 
   ierr = config.keyword_from_option("stress_balance", "stress_balance_model",
-                                    "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia"); CHKERRQ(ierr);
+                                    "none,prescribed_sliding,sia,ssa,prescribed_sliding+sia,ssa+sia,sia_fevor"); CHKERRQ(ierr);
 
   bool test_climate_models = false;
   ierr = OptionsIsSet("-test_climate_models", "Disable ice dynamics to test climate models",

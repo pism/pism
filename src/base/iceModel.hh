@@ -65,7 +65,7 @@ class OceanKill;
 class FloatKill;
 class CalvingAtThickness;
 class EigenCalving;
-
+class PISMFEvoR;
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -135,6 +135,7 @@ public:
 
   virtual PetscErrorCode allocate_submodels();
   virtual PetscErrorCode allocate_enthalpy_converter();
+  virtual PetscErrorCode allocate_fevor();
   virtual PetscErrorCode allocate_stressbalance();
   virtual PetscErrorCode allocate_bed_deformation();
   virtual PetscErrorCode allocate_bedrock_thermal_unit();
@@ -211,6 +212,7 @@ protected:
   Hydrology   *subglacial_hydrology;
   YieldStress *basal_yield_stress_model;
 
+  PISMFEvoR *m_fevor;
   EnthalpyConverter *EC;
   BedThermalUnit *btu;
 

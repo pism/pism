@@ -37,17 +37,6 @@ StressBalance_FEvoR::~StressBalance_FEvoR() {
   // empty
 }
 
-PetscErrorCode StressBalance_FEvoR::init(Vars &vars) {
-  PetscErrorCode ierr;
-
-  ierr = StressBalance::init(vars);
-
-  enhancement_factor = dynamic_cast<IceModelVec3*>(vars.get("enhancement_factor"));
-  if (enhancement_factor == NULL) SETERRQ(grid.com, 1, "enhancement_factor is not available");
-
-  return 0;
-}
-
 // FIXME: Code duplication.
 static inline double D2(double u_x, double u_y, double u_z, double v_x, double v_y, double v_z) {
   return 0.5 * (PetscSqr(u_x + v_y) + u_x*u_x + v_y*v_y + 0.5 * (PetscSqr(u_y + v_x) + u_z*u_z + v_z*v_z));
@@ -78,6 +67,9 @@ PetscErrorCode StressBalance_FEvoR::compute_volumetric_strain_heating() {
     exponent = 0.5 * (1.0 / n + 1.0);
 
   // new code
+  IceModelVec3* enhancement_factor = dynamic_cast<IceModelVec3*>(m_variables->get("enhancement_factor"));
+  if (enhancement_factor == NULL) SETERRQ(grid.com, 1, "enhancement_factor is not available");
+
   double *EF_ij;
   ierr = enhancement_factor->begin_access(); CHKERRQ(ierr);
   // end of new code

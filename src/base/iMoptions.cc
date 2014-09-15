@@ -32,6 +32,7 @@
 #include "PISMSurface.hh"
 #include "pism_options.hh"
 #include "IceGrid.hh"
+#include "PISMFEvoR.hh"
 
 namespace pism {
 
@@ -197,6 +198,9 @@ PetscErrorCode IceModel::set_output_size(const std::string &keyword,
 
   if (basal_yield_stress_model != NULL)
     basal_yield_stress_model->add_vars_to_output(keyword, result);
+
+  if (m_fevor != NULL)
+    m_fevor->add_vars_to_output(keyword, result);
 
   // Ask the stress balance module to add more variables:
   if (stress_balance != NULL)

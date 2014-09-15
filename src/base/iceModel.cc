@@ -42,6 +42,7 @@
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 #include "Mask.hh"
+#include "PISMFEvoR.hh"
 
 namespace pism {
 
@@ -68,6 +69,7 @@ IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
   subglacial_hydrology = NULL;
   basal_yield_stress_model = NULL;
 
+  m_fevor = NULL;
   stress_balance = NULL;
 
   external_surface_model = false;
@@ -173,6 +175,7 @@ IceModel::~IceModel() {
   delete basal_yield_stress_model;
   delete EC;
   delete btu;
+  delete m_fevor;
 
   delete iceberg_remover;
   delete ocean_kill_calving;
@@ -669,6 +672,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   if (config.get_flag("sub_groundingline")) {
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
     ierr = update_floatation_mask(); CHKERRQ(ierr);
+  }
+
+  if (m_fevor != NULL) {
+    ierr = m_fevor->update(grid.time->current(), dt); CHKERRQ(ierr);
   }
 
   double sea_level = 0;

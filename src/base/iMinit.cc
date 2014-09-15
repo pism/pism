@@ -53,6 +53,7 @@
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 #include "PISMFloatKill.hh"
+#include "PISMFEvoR.hh"
 
 namespace pism {
 
@@ -564,6 +565,10 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = basal_yield_stress_model->init(variables); CHKERRQ(ierr);
   }
 
+  if (m_fevor != NULL) {
+    ierr = m_fevor->init(variables); CHKERRQ(ierr);
+  }
+
   if (climatic_mass_balance_cumulative.was_created()) {
     if (i_set) {
       ierr = verbPrintf(2, grid.com,
@@ -890,6 +895,8 @@ PetscErrorCode IceModel::allocate_submodels() {
   // this has to happen *after* allocate_subglacial_hydrology()
   ierr = allocate_basal_yield_stress(); CHKERRQ(ierr);
 
+  ierr = allocate_fevor(); CHKERRQ(ierr);
+
   ierr = allocate_bedrock_thermal_unit(); CHKERRQ(ierr);
 
   ierr = allocate_bed_deformation(); CHKERRQ(ierr);
@@ -899,6 +906,16 @@ PetscErrorCode IceModel::allocate_submodels() {
   return 0;
 }
 
+PetscErrorCode IceModel::allocate_fevor() {
+  if (m_fevor == NULL &&
+      config.get_string("stress_balance_model") == "sia_fevor") {
+    m_fevor = new PISMFEvoR(grid, config);
+  } else {
+    m_fevor = NULL;
+  }
+
+  return 0;
+}
 
 PetscErrorCode IceModel::allocate_couplers() {
   PetscErrorCode ierr;
@@ -1087,7 +1104,7 @@ PetscErrorCode IceModel::init_calving() {
 
     if (eigen_calving == NULL) {
       eigen_calving = new EigenCalving(grid, config,
-                                           stress_balance);
+                                       stress_balance);
     }
 
     ierr = eigen_calving->init(variables); CHKERRQ(ierr);

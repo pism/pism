@@ -40,6 +40,7 @@
 #include "PISMFloatKill.hh"
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
+#include "PISMFEvoR.hh"
 
 namespace pism {
 
@@ -186,6 +187,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
       ierr = basal_yield_stress_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
+    if (m_fevor != NULL) {
+      ierr = m_fevor->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
     if (stress_balance != NULL) {
       ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
@@ -252,6 +257,10 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
 
   if (basal_yield_stress_model != NULL) {
     ierr = basal_yield_stress_model->write_variables(vars, nc); CHKERRQ(ierr);
+  }
+
+  if (m_fevor != NULL) {
+    ierr = m_fevor->write_variables(vars, nc); CHKERRQ(ierr);
   }
 
   // Write stress balance-related variables:
