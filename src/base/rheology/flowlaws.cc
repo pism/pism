@@ -156,7 +156,7 @@ double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
         E1 = enthalpy[i], // enthalpy at the right endpoint
         h1 = hardness_parameter(E1, p1); // ice hardness at the right endpoint
 
-      // The midpoint rule sans the "1/2":
+      // The trapezoid rule sans the "1/2":
       B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
 
       h0 = h1;

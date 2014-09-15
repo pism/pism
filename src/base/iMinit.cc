@@ -1129,6 +1129,8 @@ PetscErrorCode IceModel::allocate_bed_deformation() {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
+  config.set_string("bed_deformation_model",model);
+
   if (model == "none")
     return 0;
 
