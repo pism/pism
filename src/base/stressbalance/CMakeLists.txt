@@ -15,6 +15,8 @@ add_library (pismstressbalance
   sia/SIAFD_diagnostics.cc
   sia/SIA_Sliding.cc
   ../basalstrength/basal_resistance.cc
+  sia/SIAFD_FEvoR.cc
+  StressBalance_FEvoR.cc
 )
 target_link_libraries (pismstressbalance
   pismutil

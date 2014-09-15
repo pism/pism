@@ -26,9 +26,11 @@
 #include "iceModel.hh"
 #include "PIO.hh"
 #include "SIAFD.hh"
+#include "SIAFD_FEvoR.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
 #include "PISMStressBalance.hh"
+#include "StressBalance_FEvoR.hh"
 #include "Mask.hh"
 #include "enthalpyConverter.hh"
 #include "varcEnthalpyConverter.hh"
@@ -726,7 +728,7 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   std::string model = config.get_string("stress_balance_model");
 
   ShallowStressBalance *sliding = NULL;
-  if (model == "none" || model == "sia") {
+  if (model == "none" || model == "sia" || model == "sia_fevor") {
     sliding = new ZeroSliding(grid, *EC, config);
   } else if (model == "prescribed_sliding" || model == "prescribed_sliding+sia") {
     sliding = new PrescribedSliding(grid, *EC, config);
@@ -750,12 +752,18 @@ PetscErrorCode IceModel::allocate_stressbalance() {
     modifier = new ConstantInColumn(grid, *EC, config);
   } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
     modifier = new SIAFD(grid, *EC, config);
+  } else if (model == "sia_fevor") {
+    modifier = new SIAFD_FEvoR(grid, *EC, config);
   } else {
     SETERRQ(grid.com, 1, "invalid stress balance model");
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.
-  stress_balance = new StressBalance(grid, sliding, modifier, config);
+  if (model == "sia_fevor") {
+    stress_balance = new StressBalance_FEvoR(grid, sliding, modifier, config);
+  } else {
+    stress_balance = new StressBalance(grid, sliding, modifier, config);
+  }
 
   // PISM stress balance computations are diagnostic, i.e. do not
   // have a state that changes in time.  Therefore this call can be here
