@@ -133,10 +133,10 @@ printf("usurf = %p\n", &*usurf);
 printf("update() 3\n");
 	ierr = lat->begin_access(); CHKERRQ(ierr);
 printf("update() 4\n");
-	for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-		for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-			ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
-		}
+	for (Points p(grid); p; p.next()) {
+		const int i = p.i(), j = p.j();
+
+		ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
 	}
 printf("update() 5\n");
 	ierr = usurf->end_access();	 CHKERRQ(ierr);

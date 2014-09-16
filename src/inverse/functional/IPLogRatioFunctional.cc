@@ -39,20 +39,20 @@ PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
   if (m_weights) {
     ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
-  for (int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      if (m_weights) {
-        w = (*m_weights)(i, j);
-      }
+  for (Points p(m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      Vector2 &u_obs_ij = m_u_observed(i, j);
-      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
-
-      double modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
-
-      double v = log(modelMagSq/obsMagSq);
-      value += w*v*v;
+    if (m_weights) {
+      w = (*m_weights)(i, j);
     }
+
+    Vector2 &u_obs_ij = m_u_observed(i, j);
+    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+
+    double modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
+
+    double v = log(modelMagSq/obsMagSq);
+    value += w*v*v;
   }
   if (m_weights) {
     ierr = m_weights->end_access(); CHKERRQ(ierr);
@@ -78,20 +78,20 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
   if (m_weights) {
     ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
-  for (int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      if (m_weights) {
-        w = (*m_weights)(i, j);
-      }
-      Vector2 &x_ij = x(i, j);
-      Vector2 &u_obs_ij = m_u_observed(i, j);
-      Vector2 u_model_ij = x_ij+u_obs_ij;
-      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+  for (Points p(m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
-      double v = log(modelMagSq/obsMagSq);
-      value += w*v*v;
+    if (m_weights) {
+      w = (*m_weights)(i, j);
     }
+    Vector2 &x_ij = x(i, j);
+    Vector2 &u_obs_ij = m_u_observed(i, j);
+    Vector2 u_model_ij = x_ij+u_obs_ij;
+    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+
+    double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
+    double v = log(modelMagSq/obsMagSq);
+    value += w*v*v;
   }
   if (m_weights) {
     ierr = m_weights->end_access(); CHKERRQ(ierr);
@@ -122,23 +122,23 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
   if (m_weights) {
     ierr = m_weights->begin_access(); CHKERRQ(ierr);
   }
-  for (int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      if (m_weights) {
-        w = (*m_weights)(i, j);
-      }
-      Vector2 &x_ij = x(i, j);
-      Vector2 &u_obs_ij = m_u_observed(i, j);
-      Vector2 u_model_ij = x_ij+u_obs_ij;
+  for (Points p(m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
-      double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
-      double v = log(modelMagSq/obsMagSq);
-      double dJdw =  2*w*v/modelMagSq;
-
-      gradient(i, j).u = dJdw*2*u_model_ij.u/m_normalization;
-      gradient(i, j).v = dJdw*2*u_model_ij.v/m_normalization;
+    if (m_weights) {
+      w = (*m_weights)(i, j);
     }
+    Vector2 &x_ij = x(i, j);
+    Vector2 &u_obs_ij = m_u_observed(i, j);
+    Vector2 u_model_ij = x_ij+u_obs_ij;
+
+    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+    double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
+    double v = log(modelMagSq/obsMagSq);
+    double dJdw =  2*w*v/modelMagSq;
+
+    gradient(i, j).u = dJdw*2*u_model_ij.u/m_normalization;
+    gradient(i, j).v = dJdw*2*u_model_ij.v/m_normalization;
   }
   ierr = m_u_observed.end_access(); CHKERRQ(ierr);
   if (m_weights) {

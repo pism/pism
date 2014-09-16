@@ -113,10 +113,9 @@ PetscErrorCode PSConstantPIK::update(double my_t, double my_dt)
   ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
   }
   ierr = usurf->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);

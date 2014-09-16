@@ -95,18 +95,16 @@ PetscErrorCode IceModel::Href_cleanup() {
   ierr = vHref.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
-        ice_thickness(i, j) += vHref(i, j);
-        vHref(i, j) = 0.0;
-      }
+    if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
+      ice_thickness(i, j) += vHref(i, j);
+      vHref(i, j) = 0.0;
+    }
 
-      if (vHref(i, j) > 0.0 && mask.next_to_ice(i, j) == false) {
-        vHref(i, j) = 0.0;
-      }
-
+    if (vHref(i, j) > 0.0 && mask.next_to_ice(i, j) == false) {
+      vHref(i, j) = 0.0;
     }
   }
 
@@ -157,33 +155,33 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
     ierr = Href_old.begin_access(); CHKERRQ(ierr);
   }
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask.ice_free_ocean(i,j)) {
-        double
-          delta_H    = thickness(i,j) - thickness_old(i,j),
-          delta_Href = 0.0,
-          discharge  = 0.0;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        if (use_Href == true) {
-          delta_Href = Href(i,j) - Href_old(i,j);
-          // Only count mass loss. (A cell may stay "partially-filled"
-          // for several time-steps as the calving front advances. In
-          // this case delta_Href is real, but does not correspond to
-          // either loss or gain of mass.)
-          if (delta_Href > 0.0)
-            delta_Href = 0.0;
-        } else {
+    if (mask.ice_free_ocean(i,j)) {
+      double
+        delta_H    = thickness(i,j) - thickness_old(i,j),
+        delta_Href = 0.0,
+        discharge  = 0.0;
+
+      if (use_Href == true) {
+        delta_Href = Href(i,j) - Href_old(i,j);
+        // Only count mass loss. (A cell may stay "partially-filled"
+        // for several time-steps as the calving front advances. In
+        // this case delta_Href is real, but does not correspond to
+        // either loss or gain of mass.)
+        if (delta_Href > 0.0)
           delta_Href = 0.0;
-        }
-
-        discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
-
-        if (update_2d_discharge)
-          discharge_flux_2D_cumulative(i,j) += discharge;
-
-        my_total_discharge += discharge;
+      } else {
+        delta_Href = 0.0;
       }
+
+      discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
+
+      if (update_2d_discharge)
+        discharge_flux_2D_cumulative(i,j) += discharge;
+
+      my_total_discharge += discharge;
     }
   }
 

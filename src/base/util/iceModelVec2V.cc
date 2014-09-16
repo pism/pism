@@ -57,10 +57,10 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   ierr = result.get_array(mag); CHKERRQ(ierr);
   ierr = get_array(a);
 
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      mag[i][j] = a[i][j].magnitude();
-    }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    mag[i][j] = a[i][j].magnitude();
   }
 
   ierr = result.end_access(); CHKERRQ(ierr);

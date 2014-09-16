@@ -158,15 +158,15 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   const double dx61  = (2*L) / 60; // = 25.0e3
 
   ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double nsd = i * grid.dx, ewd = j * grid.dy;
-      if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
-          (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
-        bed_topography(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
-      } else {
-        bed_topography(i,j) = 1000.0;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double nsd = i * grid.dx, ewd = j * grid.dy;
+    if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
+        (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
+      bed_topography(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
+    } else {
+      bed_topography(i,j) = 1000.0;
     }
   }
   ierr = bed_topography.end_access(); CHKERRQ(ierr);
@@ -184,11 +184,11 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   const double w     = 150.0e3; // mound width
 
   ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double nsd = i * grid.dx, ewd = j * grid.dy;
-      bed_topography(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double nsd = i * grid.dx, ewd = j * grid.dy;
+    bed_topography(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
   }
   ierr = bed_topography.end_access(); CHKERRQ(ierr);
 

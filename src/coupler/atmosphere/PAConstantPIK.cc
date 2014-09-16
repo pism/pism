@@ -204,12 +204,10 @@ PetscErrorCode PAConstantPIK::update(double, double) {
   ierr = air_temp.begin_access();   CHKERRQ(ierr);
   ierr = usurf->begin_access();   CHKERRQ(ierr);
   ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
-
-    }
+    air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
   }
   ierr = usurf->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);

@@ -51,18 +51,18 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = Enthbase.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j)) {
-        // accumulate area of base which is at melt point
-        if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) // FIXME issue #15
-          meltarea += a;
-      }
-      // if you happen to be at center, record absolute basal temp there
-      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        ierr = EC->getAbsTemp(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j)), temp0); // FIXME issue #15
-        CHKERRQ(ierr);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j)) {
+      // accumulate area of base which is at melt point
+      if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) // FIXME issue #15
+        meltarea += a;
+    }
+    // if you happen to be at center, record absolute basal temp there
+    if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+      ierr = EC->getAbsTemp(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j)), temp0); // FIXME issue #15
+      CHKERRQ(ierr);
     }
   }
   ierr = Enthbase.end_access(); CHKERRQ(ierr);
@@ -107,17 +107,17 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
   const double one_year = grid.convert(1.0, "year", "seconds");
 
   // compute local original volume
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j)) {
-        // accumulate volume of ice which is original
-        ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
-        const int  ks = grid.kBelowHeight(ice_thickness(i,j));
-        for (int k=1; k<=ks; k++) {
-          // ice in segment is original if it is as old as one year less than current time
-          if (0.5*(tau[k-1]+tau[k]) > currtime - one_year)
-            origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
-        }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j)) {
+      // accumulate volume of ice which is original
+      ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
+      const int  ks = grid.kBelowHeight(ice_thickness(i,j));
+      for (int k=1; k<=ks; k++) {
+        // ice in segment is original if it is as old as one year less than current time
+        if (0.5*(tau[k-1]+tau[k]) > currtime - one_year)
+          origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
       }
     }
   }
@@ -311,13 +311,13 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
 
   {
     ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        // count all ice, including cells which have so little they
-        // are considered "ice-free"
-        if (ice_thickness(i,j) > 0.0)
-          volume += ice_thickness(i,j) * cell_area(i,j);
-      }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
+      if (ice_thickness(i,j) > 0.0)
+        volume += ice_thickness(i,j) * cell_area(i,j);
     }
     ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   }
@@ -325,10 +325,10 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
   // Add the volume of the ice in Href:
   if (config.get_flag("part_grid")) {
     ierr = vHref.begin_access(); CHKERRQ(ierr);
-    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        volume += vHref(i,j) * cell_area(i,j);
-      }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      volume += vHref(i,j) * cell_area(i,j);
     }
     ierr = vHref.end_access(); CHKERRQ(ierr);
   }
@@ -355,17 +355,17 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = bed_topography.begin_access();  CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.grounded(i,j)) {
-        // count all ice, including cells which have so little they
-        // are considered "ice-free"
-        if (ice_thickness(i,j) > 0) {
-          if (bed_topography(i, j) > sea_level) {
-            volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho ;
-          } else {
-            volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho - cell_area(i,j) * (sea_level - bed_topography(i, j));
-          }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.grounded(i,j)) {
+      // count all ice, including cells which have so little they
+      // are considered "ice-free"
+      if (ice_thickness(i,j) > 0) {
+        if (bed_topography(i, j) > sea_level) {
+          volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho ;
+        } else {
+          volume += ice_thickness(i,j) * cell_area(i,j) * ice_rho/ocean_rho - cell_area(i,j) * (sea_level - bed_topography(i, j));
         }
       }
     }
@@ -391,21 +391,21 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(double &result) {
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // count all ice, including cells which have so little they
-      // are considered "ice-free"
-      if (ice_thickness(i,j) > 0) {
-        const int ks = grid.kBelowHeight(ice_thickness(i,j));
-        ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-        for (int k=0; k<ks; ++k) {
-          if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-            volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
-          }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // count all ice, including cells which have so little they
+    // are considered "ice-free"
+    if (ice_thickness(i,j) > 0) {
+      const int ks = grid.kBelowHeight(ice_thickness(i,j));
+      ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+      for (int k=0; k<ks; ++k) {
+        if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
         }
-        if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (ice_thickness(i,j) - grid.zlevels[ks]) * cell_area(i,j);
-        }
+      }
+      if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+        volume += (ice_thickness(i,j) - grid.zlevels[ks]) * cell_area(i,j);
       }
     }
   }
@@ -427,21 +427,21 @@ PetscErrorCode IceModel::compute_ice_volume_cold(double &result) {
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // count all ice, including cells which have so little they
-      // are considered "ice-free"
-      if (ice_thickness(i,j) > 0) {
-        const int ks = grid.kBelowHeight(ice_thickness(i,j));
-        ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-        for (int k=0; k<ks; ++k) {
-          if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-            volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
-          }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // count all ice, including cells which have so little they
+    // are considered "ice-free"
+    if (ice_thickness(i,j) > 0) {
+      const int ks = grid.kBelowHeight(ice_thickness(i,j));
+      ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+      for (int k=0; k<ks; ++k) {
+        if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+          volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
         }
-        if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (ice_thickness(i,j) - grid.zlevels[ks]) * cell_area(i,j);
-        }
+      }
+      if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+        volume += (ice_thickness(i,j) - grid.zlevels[ks]) * cell_area(i,j);
       }
     }
   }
@@ -463,11 +463,11 @@ PetscErrorCode IceModel::compute_ice_area(double &result) {
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j))
-        area += cell_area(i,j);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j))
+      area += cell_area(i,j);
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);
@@ -491,12 +491,12 @@ PetscErrorCode IceModel::compute_ice_area_temperate(double &result) {
   ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j) &&
-          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
-        area += cell_area(i,j);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j) &&
+        EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
+      area += cell_area(i,j);
     }
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
@@ -522,12 +522,12 @@ PetscErrorCode IceModel::compute_ice_area_cold(double &result) {
   ierr = Enthbase.begin_access(); CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j) &&
-          EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j))) == false) { // FIXME issue #15
-        area += cell_area(i,j);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j) &&
+        EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j))) == false) { // FIXME issue #15
+      area += cell_area(i,j);
     }
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
@@ -548,11 +548,11 @@ PetscErrorCode IceModel::compute_ice_area_grounded(double &result) {
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.grounded_ice(i,j))
-        area += cell_area(i,j);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.grounded_ice(i,j))
+      area += cell_area(i,j);
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
@@ -570,11 +570,11 @@ PetscErrorCode IceModel::compute_ice_area_floating(double &result) {
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.floating_ice(i,j))
-        area += cell_area(i,j);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.floating_ice(i,j))
+      area += cell_area(i,j);
   }
   ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
@@ -599,18 +599,18 @@ PetscErrorCode IceModel::compute_ice_enthalpy(double &result) {
   //   getInternalColumn() is allocated already
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // count all ice, including cells which have so little they
-      // are considered "ice-free"
-      if (ice_thickness(i,j) > 0) {
-        const int ks = grid.kBelowHeight(ice_thickness(i,j));
-        ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-        for (int k=0; k<ks; ++k) {
-          enthalpysum += Enth[k] * (grid.zlevels[k+1] - grid.zlevels[k]);
-        }
-        enthalpysum += Enth[ks] * (ice_thickness(i,j) - grid.zlevels[ks]);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // count all ice, including cells which have so little they
+    // are considered "ice-free"
+    if (ice_thickness(i,j) > 0) {
+      const int ks = grid.kBelowHeight(ice_thickness(i,j));
+      ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+      for (int k=0; k<ks; ++k) {
+        enthalpysum += Enth[k] * (grid.zlevels[k+1] - grid.zlevels[k]);
       }
+      enthalpysum += Enth[ks] * (ice_thickness(i,j) - grid.zlevels[ks]);
     }
   }
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);

@@ -282,12 +282,12 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
-                                   vWork2d[0](i,j));
-         CHKERRQ(ierr);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
+                                 vWork2d[0](i,j));
+    CHKERRQ(ierr);
   }
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);

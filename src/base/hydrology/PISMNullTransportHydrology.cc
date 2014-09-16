@@ -94,14 +94,14 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = Wtil.begin_access(); CHKERRQ(ierr);
   ierr = total_input.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (M.ocean(i,j) || M.ice_free(i,j)) {
-        Wtil(i,j) = 0.0;
-      } else {
-        Wtil(i,j) += icedt * (total_input(i,j) - C);
-        Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ocean(i,j) || M.ice_free(i,j)) {
+      Wtil(i,j) = 0.0;
+    } else {
+      Wtil(i,j) += icedt * (total_input(i,j) - C);
+      Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
     }
   }
   ierr = mask->end_access(); CHKERRQ(ierr);

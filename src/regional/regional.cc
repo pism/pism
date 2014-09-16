@@ -53,51 +53,50 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   ierr = nmm.begin_access(); CHKERRQ(ierr);
   ierr = hst.begin_access(); CHKERRQ(ierr);
 
-  int GHOSTS = 1;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (PointsWithGhosts p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // x-component, i-offset
-      if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
 
-        if (i < 0 || i + 1 > Mx - 1)
-          h_x(i, j, 0) = 0.0;
-        else
-          h_x(i, j, 0) = (hst(i + 1, j) - hst(i, j)) / dx;
-      }
+    // x-component, i-offset
+    if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
 
-      // x-component, j-offset
-      if (nmm(i - 1, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
-          nmm(i - 1, j)     > 0.5 || nmm(i + 1, j)     > 0.5) {
+      if (i < 0 || i + 1 > Mx - 1)
+        h_x(i, j, 0) = 0.0;
+      else
+        h_x(i, j, 0) = (hst(i + 1, j) - hst(i, j)) / dx;
+    }
 
-        if (i - 1 < 0 || j + 1 > My - 1 || i + 1 > Mx - 1)
-          h_x(i, j, 1) = 0.0;
-        else
-          h_x(i, j, 1) = ( + hst(i + 1, j + 1) + hst(i + 1, j)
-                           - hst(i - 1, j + 1) - hst(i - 1, j)) / (4.0 * dx);
+    // x-component, j-offset
+    if (nmm(i - 1, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
+        nmm(i - 1, j)     > 0.5 || nmm(i + 1, j)     > 0.5) {
 
-      }
-
-      // y-component, i-offset
-      if (nmm(i, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
-          nmm(i, j - 1) > 0.5 || nmm(i + 1, j - 1) > 0.5) {
-        if (i < 0 || j + 1 > My - 1 || i + 1 > Mx - 1 || j - 1 < 0)
-          h_y(i, j, 0) = 0.0;
-        else
-          h_y(i, j, 0) = ( + hst(i + 1, j + 1) + hst(i, j + 1)
-                           - hst(i + 1, j - 1) - hst(i, j - 1)) / (4.0 * dy);
-      }
-
-      // y-component, j-offset
-      if (nmm(i, j) > 0.5 || nmm(i, j + 1) > 0.5) {
-        
-        if (j < 0 || j + 1 > My - 1)
-          h_y(i, j, 1) = 0.0;
-        else
-          h_y(i, j, 1) = (hst(i, j + 1) - hst(i, j)) / dy;
-      }
+      if (i - 1 < 0 || j + 1 > My - 1 || i + 1 > Mx - 1)
+        h_x(i, j, 1) = 0.0;
+      else
+        h_x(i, j, 1) = ( + hst(i + 1, j + 1) + hst(i + 1, j)
+                         - hst(i - 1, j + 1) - hst(i - 1, j)) / (4.0 * dx);
 
     }
+
+    // y-component, i-offset
+    if (nmm(i, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
+        nmm(i, j - 1) > 0.5 || nmm(i + 1, j - 1) > 0.5) {
+      if (i < 0 || j + 1 > My - 1 || i + 1 > Mx - 1 || j - 1 < 0)
+        h_y(i, j, 0) = 0.0;
+      else
+        h_y(i, j, 0) = ( + hst(i + 1, j + 1) + hst(i, j + 1)
+                         - hst(i + 1, j - 1) - hst(i, j - 1)) / (4.0 * dy);
+    }
+
+    // y-component, j-offset
+    if (nmm(i, j) > 0.5 || nmm(i, j + 1) > 0.5) {
+        
+      if (j < 0 || j + 1 > My - 1)
+        h_y(i, j, 1) = 0.0;
+      else
+        h_y(i, j, 1) = (hst(i, j + 1) - hst(i, j)) / dy;
+    }
+
   }
   ierr = nmm.end_access(); CHKERRQ(ierr);
   ierr = hst.end_access(); CHKERRQ(ierr);
@@ -151,26 +150,26 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   ierr = nmm.begin_access(); CHKERRQ(ierr);
   ierr = usurfstore->begin_access(); CHKERRQ(ierr);
   ierr = thkstore->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double pressure = EC.getPressureFromDepth((*thkstore)(i,j));
-      if (pressure <= 0) pressure = 0;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
-        if (i - 1 < 0 || i + 1 > grid.Mx - 1)
-          result(i, j).u = 0;
-        else
-          result(i, j).u = - pressure * usurfstore->diff_x(i,j);
-      }
+    double pressure = EC.getPressureFromDepth((*thkstore)(i,j));
+    if (pressure <= 0) pressure = 0;
 
-      if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
-        if (j - 1 < 0 || j + 1 > grid.My - 1)
-          result(i, j).v = 0;
-        else
-          result(i, j).v = - pressure * usurfstore->diff_y(i,j);
-      }
-
+    if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
+      if (i - 1 < 0 || i + 1 > grid.Mx - 1)
+        result(i, j).u = 0;
+      else
+        result(i, j).u = - pressure * usurfstore->diff_x(i,j);
     }
+
+    if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
+      if (j - 1 < 0 || j + 1 > grid.My - 1)
+        result(i, j).v = 0;
+      else
+        result(i, j).v = - pressure * usurfstore->diff_y(i,j);
+    }
+
   }
   ierr = usurfstore->end_access(); CHKERRQ(ierr);
   ierr = thkstore->end_access(); CHKERRQ(ierr);
@@ -203,11 +202,11 @@ PetscErrorCode RegionalDefaultYieldStress::basal_material_yield_stress(IceModelV
   // now set result=tauc to a big value in no_model_strip
   ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((*no_model_mask)(i,j) > 0.5) {
-        result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*no_model_mask)(i,j) > 0.5) {
+      result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
     }
   }
   ierr = result.end_access(); CHKERRQ(ierr);

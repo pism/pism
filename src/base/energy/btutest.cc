@@ -51,14 +51,14 @@ PetscErrorCode BTU_Test::bootstrap() {
 
     ierr = temp.begin_access(); CHKERRQ(ierr);
     double *Tb; // columns of these values
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-        for (unsigned int k=0; k < Mbz; k++) {
-          const double z = zlevels[k];
-          double FF; // Test K:  use Tb[k], ignore FF
-          ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
-        }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+      for (unsigned int k=0; k < Mbz; k++) {
+        const double z = zlevels[k];
+        double FF; // Test K:  use Tb[k], ignore FF
+        ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
       }
     }
     ierr = temp.end_access(); CHKERRQ(ierr);
@@ -241,12 +241,12 @@ int main(int argc, char *argv[]) {
 
       // compute exact ice temperature at z=0 at time y
       ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
-      for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-        for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          double TT, FF; // Test K:  use TT, ignore FF
-          ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
-          (*bedtoptemp)(i,j) = TT;
-        }
+      for (Points p(grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        double TT, FF; // Test K:  use TT, ignore FF
+        ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+        (*bedtoptemp)(i,j) = TT;
       }
       ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
       // we are not communicating anything, which is fine

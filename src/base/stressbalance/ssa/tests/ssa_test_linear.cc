@@ -120,20 +120,20 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   ierr = bc_mask.set(0.0); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double myu, myv;
-      const double myx = grid.x[i], myy=grid.y[j];
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double myu, myv;
+    const double myx = grid.x[i], myy=grid.y[j];
       
-      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
-      if (edge) {
-        bc_mask(i,j) = 1;
-        exactSolution(i,j,myx,myy,&myu,&myv);
-        vel_bc(i,j).u = myu;
-        vel_bc(i,j).v = myv;
-      }
+    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    if (edge) {
+      bc_mask(i,j) = 1;
+      exactSolution(i,j,myx,myy,&myu,&myv);
+      vel_bc(i,j).u = myu;
+      vel_bc(i,j).v = myv;
     }
-  } 
+  }
   ierr = vel_bc.end_access(); CHKERRQ(ierr);
   ierr = bc_mask.end_access(); CHKERRQ(ierr);
     

@@ -124,10 +124,10 @@ PetscErrorCode IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S
   ierr = v_x.begin_access(); CHKERRQ(ierr);
   ierr = v_y.begin_access(); CHKERRQ(ierr);
   ierr = get_array(mag); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      mag[i][j] = sqrt(PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)));
-    }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    mag[i][j] = sqrt(PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)));
   }
   ierr = v_x.end_access(); CHKERRQ(ierr);
   ierr = v_y.end_access(); CHKERRQ(ierr);

@@ -441,11 +441,11 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   (void) info; // Avoid compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      residual_global[i][j].u = 0.0;
-      residual_global[i][j].v = 0.0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    residual_global[i][j].u = 0.0;
+    residual_global[i][j].v = 0.0;
   }
 
   // Start access to Dirichlet data if present.
@@ -559,15 +559,15 @@ PetscErrorCode SSAFEM::monitor_function(const Vector2 **velocity_global,
   ierr = PetscPrintf(grid.com,
                      "SSA Solution and Function values (pointwise residuals)\n"); CHKERRQ(ierr);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      ierr = PetscSynchronizedPrintf(grid.com,
-                                     "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
-                                     i, j,
-                                     velocity_global[i][j].u, velocity_global[i][j].v,
-                                     residual_global[i][j].u, residual_global[i][j].v);
-      CHKERRQ(ierr);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = PetscSynchronizedPrintf(grid.com,
+                                   "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
+                                   i, j,
+                                   velocity_global[i][j].u, velocity_global[i][j].v,
+                                   residual_global[i][j].u, residual_global[i][j].v);
+    CHKERRQ(ierr);
   }
   ierr = PetscSynchronizedFlush(grid.com); CHKERRQ(ierr);
 

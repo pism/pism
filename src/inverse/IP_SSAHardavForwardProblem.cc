@@ -258,11 +258,11 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   ierr = dzeta_local->begin_access(); CHKERRQ(ierr);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (int i =grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j =grid.ys; j<grid.ys+grid.ym; j++) {
-      du_a[i][j].u = 0.0;
-      du_a[i][j].v = 0.0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    du_a[i][j].u = 0.0;
+    du_a[i][j].v = 0.0;
   }
 
   // Aliases to help with notation consistency below.
@@ -467,10 +467,10 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   const double* JxW = m_quadrature.getWeightedJacobian();
 
   // Zero out the portion of the function we are responsible for computing.
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      dzeta_a[i][j] = 0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    dzeta_a[i][j] = 0;
   }
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -524,12 +524,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   } // i
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  for (int i = m_grid.xs; i < m_grid.xs + m_grid.xm; i++) {
-    for (int j = m_grid.ys; j < m_grid.ys + m_grid.ym; j++) {
-      double dB_dzeta;
-      m_design_param.toDesignVariable((*m_zeta)(i, j), NULL, &dB_dzeta);
-      dzeta_a[i][j] *= dB_dzeta;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double dB_dzeta;
+    m_design_param.toDesignVariable((*m_zeta)(i, j), NULL, &dB_dzeta);
+    dzeta_a[i][j] *= dB_dzeta;
   }
 
   if (m_fixed_design_locations) {

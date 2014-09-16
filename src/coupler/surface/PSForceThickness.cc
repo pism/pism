@@ -322,14 +322,14 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = m_target_thickness.begin_access(); CHKERRQ(ierr);
   ierr = m_ftt_mask.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
-        if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
-          result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
-        } else {
-          result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
-        }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
+      if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
+        result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
+      } else {
+        result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
       }
     }
   }

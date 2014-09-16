@@ -179,13 +179,13 @@ PetscErrorCode PSVerification::update_L() {
     Lsqr        = L * L;
 
   ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double r = grid.radius(i, j);
-      m_climatic_mass_balance(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
-    }
+    double r = grid.radius(i, j);
+    m_climatic_mass_balance(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
+
+    m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
   }
   ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
@@ -265,34 +265,34 @@ PetscErrorCode PSVerification::update_ABCDEH(double time) {
   ierr = m_ice_surface_temp.set(T0); CHKERRQ(ierr);
 
   ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar xx = grid.x[i], yy = grid.y[j],
-        r = grid.radius(i, j);
-      switch (m_testname) {
-        case 'A':
-          exactA(r, &H, &accum);
-          break;
-        case 'B':
-          exactB(time, r, &H, &accum);
-          break;
-        case 'C':
-          exactC(time, r, &H, &accum);
-          break;
-        case 'D':
-          exactD(time, r, &H, &accum);
-          break;
-        case 'E':
-          exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-          break;
-        case 'H':
-          exactH(f, time, r, &H, &accum);
-          break;
-        default:
-          SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
-      }
-      m_climatic_mass_balance(i, j) = accum;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    PetscScalar xx = grid.x[i], yy = grid.y[j],
+      r = grid.radius(i, j);
+    switch (m_testname) {
+    case 'A':
+      exactA(r, &H, &accum);
+      break;
+    case 'B':
+      exactB(time, r, &H, &accum);
+      break;
+    case 'C':
+      exactC(time, r, &H, &accum);
+      break;
+    case 'D':
+      exactD(time, r, &H, &accum);
+      break;
+    case 'E':
+      exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
+      break;
+    case 'H':
+      exactH(f, time, r, &H, &accum);
+      break;
+    default:
+      SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
     }
+    m_climatic_mass_balance(i, j) = accum;
   }
   ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
@@ -308,27 +308,27 @@ PetscErrorCode PSVerification::update_FG(double time) {
 
   ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
   ierr = m_ice_surface_temp.begin_access();      CHKERRQ(ierr);
-  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      double r = std::max(grid.radius(i, j), 1.0); // avoid singularity at origin
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      m_ice_surface_temp(i, j) = Tmin + ST * r;
+    double r = std::max(grid.radius(i, j), 1.0); // avoid singularity at origin
 
-      if (r > LforFG - 1.0) { // if (essentially) outside of sheet
-        accum = - ablationRateOutside / secpera;
+    m_ice_surface_temp(i, j) = Tmin + ST * r;
+
+    if (r > LforFG - 1.0) { // if (essentially) outside of sheet
+      accum = - ablationRateOutside / secpera;
+    } else {
+      if (m_testname == 'F') {
+        bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
+                  &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       } else {
-        if (m_testname == 'F') {
-          bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
-                    &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-        } else {
-          bothexact(time, r, &grid.zlevels[0], Mz, ApforG,
-                    &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
-        }
+        bothexact(time, r, &grid.zlevels[0], Mz, ApforG,
+                  &H, &accum, &dummy5[0], &dummy1[0], &dummy2[0], &dummy3[0], &dummy4[0]);
       }
-      m_climatic_mass_balance(i, j) = accum;
+    }
+    m_climatic_mass_balance(i, j) = accum;
 
-    } // j-loop
-  } // i-loop
+  }
   ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = m_ice_surface_temp.end_access();      CHKERRQ(ierr);
 

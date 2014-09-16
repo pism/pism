@@ -601,12 +601,12 @@ void DirichletData_Scalar::fix_residual(const double **x_global, double **r_glob
   IceGrid &grid = *m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j] = m_weight * (x_global[i][j] - (*m_values)(i,j));
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j] = m_weight * (x_global[i][j] - (*m_values)(i,j));
     }
   }
 }
@@ -615,12 +615,12 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
   IceGrid *grid = m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
-    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j] = 0.0;
-      }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j] = 0.0;
     }
   }
 }
@@ -636,15 +636,15 @@ PetscErrorCode DirichletData_Scalar::fix_jacobian(Mat J) {
   // preserved.
 
   const double identity = m_weight;
-  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
-    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        MatStencil row;
-        // Transpose shows up here!
-        row.j = i; row.i = j;
-        ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
-                                          ADD_VALUES); CHKERRQ(ierr);
-      }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      MatStencil row;
+      // Transpose shows up here!
+      row.j = i; row.i = j;
+      ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
+                                        ADD_VALUES); CHKERRQ(ierr);
     }
   }
   return 0;
@@ -700,13 +700,13 @@ void DirichletData_Vector::fix_residual(const Vector2 **x_global, Vector2 **r_gl
   IceGrid *grid = m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
-    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j].u = m_weight * (x_global[i][j].u - (*m_values)(i, j).u);
-        r_global[i][j].v = m_weight * (x_global[i][j].v - (*m_values)(i, j).v);
-      }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j].u = m_weight * (x_global[i][j].u - (*m_values)(i, j).u);
+      r_global[i][j].v = m_weight * (x_global[i][j].v - (*m_values)(i, j).v);
     }
   }
 }
@@ -715,13 +715,13 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
   IceGrid &grid = *m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j].u = 0.0;
-        r_global[i][j].v = 0.0;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j].u = 0.0;
+      r_global[i][j].v = 0.0;
     }
   }
 }
@@ -738,15 +738,15 @@ PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
 
   const double identity[4] = {m_weight, 0,
                               0, m_weight};
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        MatStencil row;
-        // Transpose shows up here!
-        row.j = i; row.i = j;
-        ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
-                                          ADD_VALUES); CHKERRQ(ierr);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      MatStencil row;
+      // Transpose shows up here!
+      row.j = i; row.i = j;
+      ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
+                                        ADD_VALUES); CHKERRQ(ierr);
     }
   }
   return 0;

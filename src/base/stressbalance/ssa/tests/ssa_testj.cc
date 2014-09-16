@@ -102,24 +102,24 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double junk1, myu, myv, H;
-      const double myx = grid.x[i], myy = grid.y[j];
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // set H,h on regular grid
-      ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
+    double junk1, myu, myv, H;
+    const double myx = grid.x[i], myy = grid.y[j];
 
-      thickness(i,j) = H;
-      surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
+    // set H,h on regular grid
+    ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
 
-      // special case at center point: here we set vel_bc at (i,j) by marking
-      // this grid point as SHEET and setting vel_bc approriately
-      if ((i == (grid.Mx)/2) && (j == (grid.My)/2)) {
-        bc_mask(i,j) = 1;
-        vel_bc(i,j).u = myu;
-        vel_bc(i,j).v = myv;
-      }
+    thickness(i,j) = H;
+    surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
+
+    // special case at center point: here we set vel_bc at (i,j) by marking
+    // this grid point as SHEET and setting vel_bc approriately
+    if ((i == (grid.Mx)/2) && (j == (grid.My)/2)) {
+      bc_mask(i,j) = 1;
+      vel_bc(i,j).u = myu;
+      vel_bc(i,j).v = myv;
     }
   }
 

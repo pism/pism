@@ -111,11 +111,11 @@ PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   ierr = u.begin_access(); CHKERRQ(ierr);
   ierr = v.begin_access(); CHKERRQ(ierr);
   ierr = vel_input->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
-      ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
+    ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
   }
   ierr = vel_input->end_access(); CHKERRQ(ierr);
   ierr = v.end_access(); CHKERRQ(ierr);

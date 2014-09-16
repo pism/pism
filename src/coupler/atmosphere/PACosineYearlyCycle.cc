@@ -127,10 +127,9 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   ierr = m_air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
   ierr = m_air_temp_mean_july.begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
   }
 
   ierr = m_air_temp_mean_july.end_access(); CHKERRQ(ierr);

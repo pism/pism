@@ -257,11 +257,11 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   int i, j;
 
   // Zero out the portion of the function we are responsible for computing.
-  for (i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (j = grid.ys; j < grid.ys + grid.ym; j++) {
-      du_a[i][j].u = 0.0;
-      du_a[i][j].v = 0.0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    du_a[i][j].u = 0.0;
+    du_a[i][j].v = 0.0;
   }
 
   // Aliases to help with notation consistency below.
@@ -453,10 +453,10 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   Mask M;
 
   // Zero out the portion of the function we are responsible for computing.
-  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-      dzeta_a[i][j] = 0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    dzeta_a[i][j] = 0;
   }
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
@@ -506,12 +506,12 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   } // i
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  for (i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      double dtauc_dzeta;
-      m_tauc_param.toDesignVariable((*m_zeta)(i, j), NULL, &dtauc_dzeta);
-      dzeta_a[i][j] *= dtauc_dzeta;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double dtauc_dzeta;
+    m_tauc_param.toDesignVariable((*m_zeta)(i, j), NULL, &dtauc_dzeta);
+    dzeta_a[i][j] *= dtauc_dzeta;
   }
 
   if (m_fixed_tauc_locations) {

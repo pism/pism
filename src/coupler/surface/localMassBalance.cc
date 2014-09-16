@@ -360,10 +360,9 @@ PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
   ierr = lon_degE.begin_access(); CHKERRQ(ierr);
   ierr = temp_mj.begin_access();  CHKERRQ(ierr);
 
-  for (int i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
 
   ierr = h.end_access();   CHKERRQ(ierr);

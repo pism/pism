@@ -186,27 +186,27 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = usurf->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double z = (*usurf)(i, j);
-      if (z < z_m_min) {
-        result(i, j) = m_limit_min;
-      }
-      else if ((z >= z_m_min) && (z < z_ELA)) {
-        result(i, j) = dabdz * (z - z_ELA);
-      }
-      else if ((z >= z_ELA) && (z <= z_m_max)) {
-        result(i, j) = dacdz * (z - z_ELA);
-      }
-      else if (z > z_m_max) {
-        result(i, j) = m_limit_max;
-      }
-      else {
-        SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
-      }
-      ierr = verbPrintf(5, grid.com, "!!!!! z=%.2f, climatic_mass_balance=%.2f\n", z,
-                        grid.convert(result(i, j), "m/s", "m/year")); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double z = (*usurf)(i, j);
+    if (z < z_m_min) {
+      result(i, j) = m_limit_min;
     }
+    else if ((z >= z_m_min) && (z < z_ELA)) {
+      result(i, j) = dabdz * (z - z_ELA);
+    }
+    else if ((z >= z_ELA) && (z <= z_m_max)) {
+      result(i, j) = dacdz * (z - z_ELA);
+    }
+    else if (z > z_m_max) {
+      result(i, j) = m_limit_max;
+    }
+    else {
+      SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
+    }
+    ierr = verbPrintf(5, grid.com, "!!!!! z=%.2f, climatic_mass_balance=%.2f\n", z,
+                      grid.convert(result(i, j), "m/s", "m/year")); CHKERRQ(ierr);
   }
   ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
@@ -223,25 +223,25 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = usurf->begin_access(); CHKERRQ(ierr);
   double dTdz = (T_max - T_min)/(z_T_max - z_T_min);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double z = (*usurf)(i, j);
-      if (z <= z_T_min) {
-        result(i, j) = T_min;
-      }
-      else if ((z > z_T_min) && (z < z_T_max)) {
-        result(i, j) = T_min + dTdz * (z - z_T_min);
-      }
-      else if (z >= z_T_max) {
-        result(i, j) = T_max;
-      }
-      else {
-        SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
-      }
-      ierr = verbPrintf(5, grid.com,
-                        "!!!!! z=%.2f, T_min=%.2f, dTdz=%.2f, dz=%.2f, T=%.2f\n",
-                        z, T_min, dTdz, z - z_T_min, result(i, j)); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double z = (*usurf)(i, j);
+    if (z <= z_T_min) {
+      result(i, j) = T_min;
     }
+    else if ((z > z_T_min) && (z < z_T_max)) {
+      result(i, j) = T_min + dTdz * (z - z_T_min);
+    }
+    else if (z >= z_T_max) {
+      result(i, j) = T_max;
+    }
+    else {
+      SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
+    }
+    ierr = verbPrintf(5, grid.com,
+                      "!!!!! z=%.2f, T_min=%.2f, dTdz=%.2f, dz=%.2f, T=%.2f\n",
+                      z, T_min, dTdz, z - z_T_min, result(i, j)); CHKERRQ(ierr);
   }
   ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);

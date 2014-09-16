@@ -101,41 +101,41 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double u_sum = 0, v_sum = 0,
-        thk = (*thickness)(i,j);
-      int ks = grid.kBelowHeight(thk);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // an "ice-free" cell:
-      if (thk < icefree_thickness) {
-        (*result)(i,j).u = 0;
-        (*result)(i,j).v = 0;
-        continue;
-      }
+    double u_sum = 0, v_sum = 0,
+      thk = (*thickness)(i,j);
+    int ks = grid.kBelowHeight(thk);
 
-      // an ice-filled cell:
-      ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
-      ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
-
-      if (thk <= grid.zlevels[1]) {
-        (*result)(i,j).u = u_ij[0];
-        (*result)(i,j).v = v_ij[0];
-        continue;
-      }
-
-      for (int k = 1; k <= ks; ++k) {
-        u_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (u_ij[k] + u_ij[k-1]);
-        v_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (v_ij[k] + v_ij[k-1]);
-      }
-
-      // Finish the trapezoidal rule integration (times 1/2) and turn this
-      // integral into a vertical average. Note that we ignore the ice between
-      // zlevels[ks] and the surface, so in order to have a true average we
-      // divide by zlevels[ks] and not thk.
-      (*result)(i,j).u = 0.5 * u_sum / grid.zlevels[ks];
-      (*result)(i,j).v = 0.5 * v_sum / grid.zlevels[ks];
+    // an "ice-free" cell:
+    if (thk < icefree_thickness) {
+      (*result)(i,j).u = 0;
+      (*result)(i,j).v = 0;
+      continue;
     }
+
+    // an ice-filled cell:
+    ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
+    ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+
+    if (thk <= grid.zlevels[1]) {
+      (*result)(i,j).u = u_ij[0];
+      (*result)(i,j).v = v_ij[0];
+      continue;
+    }
+
+    for (int k = 1; k <= ks; ++k) {
+      u_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (u_ij[k] + u_ij[k-1]);
+      v_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (v_ij[k] + v_ij[k-1]);
+    }
+
+    // Finish the trapezoidal rule integration (times 1/2) and turn this
+    // integral into a vertical average. Note that we ignore the ice between
+    // zlevels[ks] and the surface, so in order to have a true average we
+    // divide by zlevels[ks] and not thk.
+    (*result)(i,j).u = 0.5 * u_sum / grid.zlevels[ks];
+    (*result)(i,j).v = 0.5 * v_sum / grid.zlevels[ks];
   }
 
   ierr = result->end_access(); CHKERRQ(ierr);
@@ -224,9 +224,11 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i)
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j)
-      (*result)(i,j) *= (*thickness)(i,j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    (*result)(i,j) *= (*thickness)(i,j);
+  }
 
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
@@ -376,12 +378,12 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j)) {
-        (*result)(i, j).u = fill_value;
-        (*result)(i, j).v = fill_value;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j)) {
+      (*result)(i, j).u = fill_value;
+      (*result)(i, j).v = fill_value;
     }
   }
 
@@ -444,35 +446,35 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
     sea_water_density = grid.config.get("sea_water_density"),
     R = ice_density / sea_water_density;
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
-      ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
-      ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i, j, &res); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
+    ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
+    ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i, j, &res); CHKERRQ(ierr);
 
-      // in the ice:
-      if (M.grounded(i,j)) {
-        for (int k = 0; k <= ks ; k++)
-          res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      } else {                  // floating
-        const double
-          z_sl = R * (*thickness)(i,j),
-          w_sl = w3->getValZ(i, j, z_sl);
+    // in the ice:
+    if (M.grounded(i,j)) {
+      for (int k = 0; k <= ks ; k++)
+        res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
 
-        for (int k = 0; k <= ks ; k++)
-          res[k] = w[k] - w_sl;
+    } else {                  // floating
+      const double
+        z_sl = R * (*thickness)(i,j),
+        w_sl = w3->getValZ(i, j, z_sl);
 
-      }
-
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++)
-        res[k] = 0.0;
+      for (int k = 0; k <= ks ; k++)
+        res[k] = w[k] - w_sl;
 
     }
+
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++)
+      res[k] = 0.0;
+
   }
 
   ierr = result->end_access(); CHKERRQ(ierr);
@@ -531,11 +533,11 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j))
-        (*result)(i, j) = fill_value;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j))
+      (*result)(i, j) = fill_value;
   }
 
   ierr = result->end_access(); CHKERRQ(ierr);
@@ -586,11 +588,11 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j))
-        (*result)(i, j) = fill_value;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j))
+      (*result)(i, j) = fill_value;
   }
 
   ierr = result->end_access(); CHKERRQ(ierr);
@@ -654,12 +656,12 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j)) {
-        (*result)(i, j).u = fill_value;
-        (*result)(i, j).v = fill_value;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j)) {
+      (*result)(i, j).u = fill_value;
+      (*result)(i, j).v = fill_value;
     }
   }
 
@@ -727,21 +729,21 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
   double *u_ij, *u_out_ij;
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = u3->getInternalColumn(i,j,&u_ij); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i,j,&u_out_ij); CHKERRQ(ierr);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        u_out_ij[k] = u_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++) {
-        u_out_ij[k] = 0.0;
-      }
+    ierr = u3->getInternalColumn(i,j,&u_ij); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i,j,&u_out_ij); CHKERRQ(ierr);
+
+    // in the ice:
+    for (int k = 0; k <= ks ; k++) {
+      u_out_ij[k] = u_ij[k];
+    }
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
+      u_out_ij[k] = 0.0;
     }
   }
 
@@ -782,21 +784,21 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
   double *v_ij, *v_out_ij;
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = v3->getInternalColumn(i,j,&v_ij); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i,j,&v_out_ij); CHKERRQ(ierr);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        v_out_ij[k] = v_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++) {
-        v_out_ij[k] = 0.0;
-      }
+    ierr = v3->getInternalColumn(i,j,&v_ij); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i,j,&v_out_ij); CHKERRQ(ierr);
+
+    // in the ice:
+    for (int k = 0; k <= ks ; k++) {
+      v_out_ij[k] = v_ij[k];
+    }
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
+      v_out_ij[k] = 0.0;
     }
   }
 
@@ -837,21 +839,21 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
   double *w_ij, *w_out_ij;
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = w3->getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i,j,&w_out_ij); CHKERRQ(ierr);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        w_out_ij[k] = w_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++) {
-        w_out_ij[k] = 0.0;
-      }
+    ierr = w3->getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i,j,&w_out_ij); CHKERRQ(ierr);
+
+    // in the ice:
+    for (int k = 0; k <= ks ; k++) {
+      w_out_ij[k] = w_ij[k];
+    }
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
+      w_out_ij[k] = 0.0;
     }
   }
 
@@ -1014,19 +1016,19 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
   double *P_out_ij;
   const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
-        ierr = result->getInternalColumn(i,j,&P_out_ij); CHKERRQ(ierr);
-        const double H = (*thickness)(i,j);
-        // within the ice:
-        for (unsigned int k = 0; k <= ks; ++k) {
-          P_out_ij[k] = rg * (H - grid.zlevels[k]);  // FIXME: add atmospheric pressure?
-        }
-        // above the ice:
-        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
-          P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
-        }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = result->getInternalColumn(i,j,&P_out_ij); CHKERRQ(ierr);
+    const double H = (*thickness)(i,j);
+    // within the ice:
+    for (unsigned int k = 0; k <= ks; ++k) {
+      P_out_ij[k] = rg * (H - grid.zlevels[k]);  // FIXME: add atmospheric pressure?
+    }
+    // above the ice:
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+      P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
     }
   }
 
@@ -1078,23 +1080,23 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
   double *tauxz_out_ij;
   const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
-        ierr = result->getInternalColumn(i,j,&tauxz_out_ij); CHKERRQ(ierr);
-        const double H    = (*thickness)(i,j),
-                     dhdx = surface->diff_x_p(i,j);
-        // within the ice:
-        for (unsigned int k = 0; k <= ks; ++k) {
-          tauxz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdx;
-        }
-        // above the ice:
-        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
-          tauxz_out_ij[k] = 0.0;
-        }
 
+    unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = result->getInternalColumn(i,j,&tauxz_out_ij); CHKERRQ(ierr);
+    const double H    = (*thickness)(i,j),
+      dhdx = surface->diff_x_p(i,j);
+    // within the ice:
+    for (unsigned int k = 0; k <= ks; ++k) {
+      tauxz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdx;
     }
+    // above the ice:
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+      tauxz_out_ij[k] = 0.0;
+    }
+
   }
 
   ierr = thickness->end_access(); CHKERRQ(ierr);
@@ -1145,23 +1147,23 @@ PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
   double *tauyz_out_ij;
   const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
-        ierr = result->getInternalColumn(i,j,&tauyz_out_ij); CHKERRQ(ierr);
-        const double H    = (*thickness)(i,j),
-                     dhdy = surface->diff_y_p(i,j);
-        // within the ice:
-        for (unsigned int k = 0; k <= ks; ++k) {
-          tauyz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdy;
-        }
-        // above the ice:
-        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
-          tauyz_out_ij[k] = 0.0;
-        }
 
+    unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = result->getInternalColumn(i,j,&tauyz_out_ij); CHKERRQ(ierr);
+    const double H    = (*thickness)(i,j),
+      dhdy = surface->diff_y_p(i,j);
+    // within the ice:
+    for (unsigned int k = 0; k <= ks; ++k) {
+      tauyz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdy;
     }
+    // above the ice:
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+      tauyz_out_ij[k] = 0.0;
+    }
+
   }
 
   ierr = thickness->end_access(); CHKERRQ(ierr);

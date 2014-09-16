@@ -70,14 +70,14 @@ PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
   ierr = m_old_mask.begin_access();    CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.floating_ice(i, j)           &&
-          M.next_to_ice_free_ocean(i, j) &&
-          ice_thickness(i, j) < m_calving_threshold) {
-        ice_thickness(i, j) = 0.0;
-        pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.floating_ice(i, j)           &&
+        M.next_to_ice_free_ocean(i, j) &&
+        ice_thickness(i, j) < m_calving_threshold) {
+      ice_thickness(i, j) = 0.0;
+      pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
     }
   }
 

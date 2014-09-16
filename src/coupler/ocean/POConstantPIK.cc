@@ -106,13 +106,11 @@ PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME task #7297
-
-      // temp is set to melting point at depth
-      result(i,j) = T0 - beta_CC * pressure;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME task #7297
+    // temp is set to melting point at depth
+    result(i,j) = T0 - beta_CC * pressure;
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
@@ -140,31 +138,31 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // compute T_f[i][j] according to beckmann_goosse03, which has the
-      // meaning of the freezing temperature of the ocean water directly
-      // under the shelf, (of salinity 35psu) [this is related to the
-      // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
-      // details]
-      double
-        shelfbaseelev = - (ice_density / sea_water_density) * (*ice_thickness)(i,j),
-        T_f           = 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
-      // add 273.15 to convert from Celsius to Kelvin
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // compute ocean_heat_flux according to beckmann_goosse03
-      // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
-      double ocean_heat_flux = meltfactor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
+    // compute T_f[i][j] according to beckmann_goosse03, which has the
+    // meaning of the freezing temperature of the ocean water directly
+    // under the shelf, (of salinity 35psu) [this is related to the
+    // Pressure Melting Temperature, see beckmann_goosse03 eq. 2 for
+    // details]
+    double
+      shelfbaseelev = - (ice_density / sea_water_density) * (*ice_thickness)(i,j),
+      T_f           = 273.15 + (0.0939 -0.057 * ocean_salinity + 7.64e-4 * shelfbaseelev);
+    // add 273.15 to convert from Celsius to Kelvin
+
+    // compute ocean_heat_flux according to beckmann_goosse03
+    // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
+    double ocean_heat_flux = meltfactor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
     
-      // TODO: T_ocean -> field!
+    // TODO: T_ocean -> field!
 
-      // shelfbmassflux is positive if ice is freezing on; here it is always negative:
-      // same sign as ocean_heat_flux (positive if massflux FROM ice TO ocean)
-      result(i,j) = ocean_heat_flux / (L * ice_density); // m s-1
+    // shelfbmassflux is positive if ice is freezing on; here it is always negative:
+    // same sign as ocean_heat_flux (positive if massflux FROM ice TO ocean)
+    result(i,j) = ocean_heat_flux / (L * ice_density); // m s-1
 
-      // convert from [m s-1] to [kg m-2 s-1]:
-      result(i,j) *= ice_density;
-    }
+    // convert from [m s-1] to [kg m-2 s-1]:
+    result(i,j) *= ice_density;
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);

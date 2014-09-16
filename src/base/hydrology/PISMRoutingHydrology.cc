@@ -222,15 +222,15 @@ void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
 PetscErrorCode RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
   PetscErrorCode ierr;
   ierr = waterthk.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (waterthk(i,j) < 0.0) {
-        PetscPrintf(grid.com,
-           "RoutingHydrology ERROR: disallowed negative water layer thickness\n"
-           "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", waterthk(i,j),i,j);
-        PISMEnd();
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (waterthk(i,j) < 0.0) {
+      PetscPrintf(grid.com,
+                  "RoutingHydrology ERROR: disallowed negative water layer thickness\n"
+                  "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
+                  "ENDING ... \n\n", waterthk(i,j),i,j);
+      PISMEnd();
     }
   }
   ierr = waterthk.end_access(); CHKERRQ(ierr);
@@ -264,21 +264,21 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
   ierr = newthk.begin_access(); CHKERRQ(ierr);
   ierr = cellarea->begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (newthk(i,j) < 0.0) {
-        my_negativegain += -newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
-      if (M.ice_free_land(i,j) && (newthk(i,j) > 0.0)) {
-        my_icefreelost += newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
-      if (M.ocean(i,j) && (newthk(i,j) > 0.0)) {
-        my_oceanlost += newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    if (newthk(i,j) < 0.0) {
+      my_negativegain += -newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
+    }
+    if (M.ice_free_land(i,j) && (newthk(i,j) > 0.0)) {
+      my_icefreelost += newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
+    }
+    if (M.ocean(i,j) && (newthk(i,j) > 0.0)) {
+      my_oceanlost += newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
     }
   }
   ierr = newthk.end_access(); CHKERRQ(ierr);
@@ -297,13 +297,13 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
   ierr = newthk.begin_access(); CHKERRQ(ierr);
   ierr = cellarea->begin_access(); CHKERRQ(ierr);
   double my_nullstriplost = 0.0;
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (grid.in_null_strip(i, j, stripwidth)) {
-        my_nullstriplost += newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    if (grid.in_null_strip(i, j, stripwidth)) {
+      my_nullstriplost += newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
     }
   }
   ierr = newthk.end_access(); CHKERRQ(ierr);
@@ -350,11 +350,11 @@ PetscErrorCode RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &r
   ierr = Pover.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ocean(i,j))
-        result(i,j) = Pover(i,j);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ocean(i,j))
+      result(i,j) = Pover(i,j);
   }
   ierr = Pover.end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
@@ -373,31 +373,31 @@ PetscErrorCode RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &res
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      // east
-      if (M.grounded_ice(i,j))
-        if (M.grounded_ice(i+1,j))
-          result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j));
-        else
-          result(i,j,0) = W(i,j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // east
+    if (M.grounded_ice(i,j))
+      if (M.grounded_ice(i+1,j))
+        result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j));
       else
-        if (M.grounded_ice(i+1,j))
-          result(i,j,0) = W(i+1,j);
-        else
-          result(i,j,0) = 0.0;
-      // north
-      if (M.grounded_ice(i,j))
-        if (M.grounded_ice(i,j+1))
-          result(i,j,1) = 0.5 * (W(i,j) + W(i,j+1));
-        else
-          result(i,j,1) = W(i,j);
+        result(i,j,0) = W(i,j);
+    else
+      if (M.grounded_ice(i+1,j))
+        result(i,j,0) = W(i+1,j);
       else
-        if (M.grounded_ice(i,j+1))
-          result(i,j,1) = W(i,j+1);
-        else
-          result(i,j,1) = 0.0;
-    }
+        result(i,j,0) = 0.0;
+    // north
+    if (M.grounded_ice(i,j))
+      if (M.grounded_ice(i,j+1))
+        result(i,j,1) = 0.5 * (W(i,j) + W(i,j+1));
+      else
+        result(i,j,1) = W(i,j);
+    else
+      if (M.grounded_ice(i,j+1))
+        result(i,j,1) = W(i,j+1);
+      else
+        result(i,j,1) = 0.0;
   }
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = W.end_access(); CHKERRQ(ierr);
@@ -443,15 +443,15 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(
     double dRdx, dRdy;
     ierr = R.begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
-    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        dRdx = (R(i+1,j) - R(i,j)) / grid.dx;
-        dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy);
-        result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
-        dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx);
-        dRdy = (R(i,j+1) - R(i,j)) / grid.dy;
-        result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
-      }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      dRdx = (R(i+1,j) - R(i,j)) / grid.dx;
+      dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy);
+      result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
+      dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx);
+      dRdy = (R(i,j+1) - R(i,j)) / grid.dy;
+      result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
     }
     ierr = R.end_access(); CHKERRQ(ierr);
     ierr = result.end_access(); CHKERRQ(ierr);
@@ -460,22 +460,22 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(
   double betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
   ierr = Wstag.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      for (int o = 0; o < 2; ++o) {
-        double Ktmp = k * pow(Wstag(i,j,o),alpha-1.0);
-        if (beta < 2.0) {
-          // regularize negative power |\grad psi|^{beta-2} by adding eps because
-          //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
-          const double eps = 1.0;   // Pa m-1
-          result(i,j,o) = Ktmp * pow(result(i,j,o) + eps * eps,betapow);
-        } else if (beta > 2.0) {
-          result(i,j,o) = Ktmp * pow(result(i,j,o),betapow);
-        } else { // beta == 2.0
-          result(i,j,o) = Ktmp;
-        }
-        mymaxKW = PetscMax(mymaxKW, result(i,j,o) * Wstag(i,j,o));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    for (int o = 0; o < 2; ++o) {
+      double Ktmp = k * pow(Wstag(i,j,o),alpha-1.0);
+      if (beta < 2.0) {
+        // regularize negative power |\grad psi|^{beta-2} by adding eps because
+        //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
+        const double eps = 1.0;   // Pa m-1
+        result(i,j,o) = Ktmp * pow(result(i,j,o) + eps * eps,betapow);
+      } else if (beta > 2.0) {
+        result(i,j,o) = Ktmp * pow(result(i,j,o),betapow);
+      } else { // beta == 2.0
+        result(i,j,o) = Ktmp;
       }
+      mymaxKW = PetscMax(mymaxKW, result(i,j,o) * Wstag(i,j,o));
     }
   }
   ierr = Wstag.end_access(); CHKERRQ(ierr);
@@ -529,27 +529,27 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
   ierr = R.begin_access(); CHKERRQ(ierr);
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (W(i,j) > 0.0) {
-        dRdx = 0.0;
-        if (W(i+1,j) > 0.0) {
-          dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx);
-        }
-        if (W(i-1,j) > 0.0) {
-          dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx);
-        }
-        dRdy = 0.0;
-        if (W(i,j+1) > 0.0) {
-          dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy);
-        }
-        if (W(i,j-1) > 0.0) {
-          dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy);
-        }
-        result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
-      } else
-        result(i,j) = 0.0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (W(i,j) > 0.0) {
+      dRdx = 0.0;
+      if (W(i+1,j) > 0.0) {
+        dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx);
+      }
+      if (W(i-1,j) > 0.0) {
+        dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx);
+      }
+      dRdy = 0.0;
+      if (W(i,j+1) > 0.0) {
+        dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy);
+      }
+      if (W(i,j-1) > 0.0) {
+        dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy);
+      }
+      result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
+    } else
+      result(i,j) = 0.0;
   }
   ierr = R.end_access(); CHKERRQ(ierr);
   ierr = W.end_access(); CHKERRQ(ierr);
@@ -591,25 +591,25 @@ PetscErrorCode RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
   ierr = Kstag.begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (Wstag(i,j,0) > 0.0) {
-        dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
-        dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
-        result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
-      } else
-        result(i,j,0) = 0.0;
-      if (Wstag(i,j,1) > 0.0) {
-        dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
-        dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
-        result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
-      } else
-        result(i,j,1) = 0.0;
-      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth))
-        result(i,j,0) = 0.0;
-      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth))
-        result(i,j,1) = 0.0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (Wstag(i,j,0) > 0.0) {
+      dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
+      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
+      result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
+    } else
+      result(i,j,0) = 0.0;
+    if (Wstag(i,j,1) > 0.0) {
+      dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
+      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
+      result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
+    } else
+      result(i,j,1) = 0.0;
+    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth))
+      result(i,j,0) = 0.0;
+    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth))
+      result(i,j,1) = 0.0;
   }
   ierr = R.end_access(); CHKERRQ(ierr);
   ierr = Wstag.end_access(); CHKERRQ(ierr);
@@ -631,11 +631,11 @@ PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
   ierr = W.begin_access(); CHKERRQ(ierr);
   ierr = V.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j);
-      result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j);
+    result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
   }
   ierr = W.end_access(); CHKERRQ(ierr);
   ierr = V.end_access(); CHKERRQ(ierr);
@@ -692,11 +692,11 @@ PetscErrorCode RoutingHydrology::raw_update_Wtil(double hdt) {
   ierr = Wtil.begin_access(); CHKERRQ(ierr);
   ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
   ierr = total_input.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
-      Wtilnew(i,j) = PetscMin(PetscMax(0.0, Wtilnew(i,j)), tillwat_max);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
+    Wtilnew(i,j) = PetscMin(PetscMax(0.0, Wtilnew(i,j)), tillwat_max);
   }
   ierr = Wtil.end_access(); CHKERRQ(ierr);
   ierr = Wtilnew.end_access(); CHKERRQ(ierr);
@@ -722,19 +722,19 @@ PetscErrorCode RoutingHydrology::raw_update_W(double hdt) {
     ierr = Qstag.begin_access(); CHKERRQ(ierr);
     ierr = total_input.begin_access(); CHKERRQ(ierr);
     ierr = Wnew.begin_access(); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
-                    + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
-        const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
-                         Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
-                         Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
-                         Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
-        diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
-                + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
-        Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
-                    + hdt * (- divadflux + diffW + total_input(i,j));
-      }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
+        + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
+      const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
+        Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
+        Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
+        Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
+      diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
+        + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
+      Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
+        + hdt * (- divadflux + diffW + total_input(i,j));
     }
     ierr = W.end_access(); CHKERRQ(ierr);
     ierr = Wtil.end_access(); CHKERRQ(ierr);

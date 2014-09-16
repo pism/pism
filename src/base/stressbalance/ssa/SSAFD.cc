@@ -306,96 +306,95 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     ierr = m_melange_back_pressure->begin_access(); CHKERRQ(ierr);
   }
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (m_vel_bc != NULL &&
-          bc_locations->as_int(i, j) == 1) {
-        rhs_uv[i][j].u = m_scaling * (*m_vel_bc)(i, j).u;
-        rhs_uv[i][j].v = m_scaling * (*m_vel_bc)(i, j).v;
+    if (m_vel_bc != NULL &&
+        bc_locations->as_int(i, j) == 1) {
+      rhs_uv[i][j].u = m_scaling * (*m_vel_bc)(i, j).u;
+      rhs_uv[i][j].v = m_scaling * (*m_vel_bc)(i, j).v;
+      continue;
+    }
+
+    if (use_cfbc) {
+      double H_ij = (*thickness)(i,j);
+      int M_ij = mask->as_int(i,j),
+        M_e = mask->as_int(i + 1,j),
+        M_w = mask->as_int(i - 1,j),
+        M_n = mask->as_int(i,j + 1),
+        M_s = mask->as_int(i,j - 1);
+
+      // Note: this sets velocities at both ice-free ocean and ice-free
+      // bedrock to zero. This means that we need to set boundary conditions
+      // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
+      // to be consistent.
+      if (M.ice_free(M_ij)) {
+        rhs_uv[i][j].u = m_scaling * ice_free_default_velocity;
+        rhs_uv[i][j].v = m_scaling * ice_free_default_velocity;
         continue;
       }
 
-      if (use_cfbc) {
-        double H_ij = (*thickness)(i,j);
-        int M_ij = mask->as_int(i,j),
-          M_e = mask->as_int(i + 1,j),
-          M_w = mask->as_int(i - 1,j),
-          M_n = mask->as_int(i,j + 1),
-          M_s = mask->as_int(i,j - 1);
-
-        // Note: this sets velocities at both ice-free ocean and ice-free
-        // bedrock to zero. This means that we need to set boundary conditions
-        // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
-        // to be consistent.
-        if (M.ice_free(M_ij)) {
-          rhs_uv[i][j].u = m_scaling * ice_free_default_velocity;
-          rhs_uv[i][j].v = m_scaling * ice_free_default_velocity;
-          continue;
+      if (is_marginal(i, j, bedrock_boundary)) {
+        int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
+        // direct neighbors
+        if (bedrock_boundary) {
+          if (M.ice_free_ocean(M_e)) aPP = 0;
+          if (M.ice_free_ocean(M_w)) aMM = 0;
+          if (M.ice_free_ocean(M_n)) bPP = 0;
+          if (M.ice_free_ocean(M_s)) bMM = 0;
+        } else {
+          if (M.ice_free(M_e)) aPP = 0;
+          if (M.ice_free(M_w)) aMM = 0;
+          if (M.ice_free(M_n)) bPP = 0;
+          if (M.ice_free(M_s)) bMM = 0;
         }
 
-        if (is_marginal(i, j, bedrock_boundary)) {
-          int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
-          // direct neighbors
-          if (bedrock_boundary) {
-            if (M.ice_free_ocean(M_e)) aPP = 0;
-            if (M.ice_free_ocean(M_w)) aMM = 0;
-            if (M.ice_free_ocean(M_n)) bPP = 0;
-            if (M.ice_free_ocean(M_s)) bMM = 0;
+        const double H_ij2 = H_ij*H_ij,
+          b     = (*bed)(i,j),
+          rho_g = rho_ice * standard_gravity;
+
+        double ocean_pressure;
+        // this is not really the ocean_pressure, but the difference
+        // between ocean_pressure and isotrop.normal stresses
+        // (=pressure) from within the ice
+
+        if (M.ocean(M_ij)) {
+          // floating shelf
+          ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
+        } else {
+          // grounded terminus
+          if (b >= sea_level) {
+            ocean_pressure = 0.5 * rho_g * H_ij2;
           } else {
-            if (M.ice_free(M_e)) aPP = 0;
-            if (M.ice_free(M_w)) aMM = 0;
-            if (M.ice_free(M_n)) bPP = 0;
-            if (M.ice_free(M_s)) bMM = 0;
+            ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
           }
+        }
 
-          const double H_ij2 = H_ij*H_ij,
-            b     = (*bed)(i,j),
-            rho_g = rho_ice * standard_gravity;
+        if (m_melange_back_pressure != NULL) {
+          double lambda = (*m_melange_back_pressure)(i, j);
 
-          double ocean_pressure;
-          // this is not really the ocean_pressure, but the difference
-          // between ocean_pressure and isotrop.normal stresses
-          // (=pressure) from within the ice
+          // adjust the "pressure imbalance term" using the provided
+          // "melange back pressure fraction".
+          ocean_pressure *= (1.0 - lambda);
+        }
 
-          if (M.ocean(M_ij)) {
-            // floating shelf
-            ocean_pressure = 0.5 * rho_g * (1.0 - (rho_ice / rho_ocean)) * H_ij2;
-          } else {
-            // grounded terminus
-            if (b >= sea_level) {
-              ocean_pressure = 0.5 * rho_g * H_ij2;
-            } else {
-              ocean_pressure = 0.5 * rho_g * (H_ij2 - (rho_ocean / rho_ice) * pow(sea_level - b, 2.0));
-            }
-          }
+        // Note that if the current cell is "marginal" but not a CFBC
+        // location, the following two lines are equaivalent to the "usual
+        // case" below.
+        rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
+        rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
 
-          if (m_melange_back_pressure != NULL) {
-            double lambda = (*m_melange_back_pressure)(i, j);
-
-            // adjust the "pressure imbalance term" using the provided
-            // "melange back pressure fraction".
-            ocean_pressure *= (1.0 - lambda);
-          }
-
-          // Note that if the current cell is "marginal" but not a CFBC
-          // location, the following two lines are equaivalent to the "usual
-          // case" below.
-          rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
-          rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
-
-          continue;
-        } // end of "if (is_marginal(i, j))"
+        continue;
+      } // end of "if (is_marginal(i, j))"
 
         // If we reached this point, then CFBC are enabled, but we are in the
         // interior of a sheet or shelf. See "usual case" below.
 
-      }   // end of "if (use_cfbc)"
+    }   // end of "if (use_cfbc)"
 
-      // usual case: use already computed driving stress
-      rhs_uv[i][j].u = taud(i, j).u;
-      rhs_uv[i][j].v = taud(i, j).v;
-    }
+    // usual case: use already computed driving stress
+    rhs_uv[i][j].u = taud(i, j).u;
+    rhs_uv[i][j].v = taud(i, j).v;
   }
 
   if (use_cfbc && m_melange_back_pressure != NULL) {
@@ -539,229 +538,228 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   double nu_bedrock=config.get("nu_bedrock");
   double HminFrozen=0.0;
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // Handle the easy case: provided Dirichlet boundary conditions
-      if (m_vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
-        // set diagonal entry to one (scaled); RHS entry will be known velocity;
+    // Handle the easy case: provided Dirichlet boundary conditions
+    if (m_vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
+      // set diagonal entry to one (scaled); RHS entry will be known velocity;
+      ierr = set_diagonal_matrix_entry(A, i, j, m_scaling); CHKERRQ(ierr);
+      continue;
+    }
+
+    /* Provide shorthand for the following staggered coefficients  nu H:
+     *      c_n
+     *  c_w     c_e
+     *      c_s
+     */
+    // const
+    double c_w = nuH(i-1,j,0);
+    double c_e = nuH(i,j,0);
+    double c_s = nuH(i,j-1,1);
+    double c_n = nuH(i,j,1);
+
+    if (nu_bedrock_set) {
+      // if option is set, the viscosity at ice-bedrock boundary layer will
+      // be prescribed and is a temperature-independent free (user determined) parameter
+
+      // direct neighbors
+      int  M_e = mask->as_int(i + 1,j),
+        M_w = mask->as_int(i - 1,j),
+        M_n = mask->as_int(i,j + 1),
+        M_s = mask->as_int(i,j - 1);
+
+      if ((*thickness)(i,j) > HminFrozen) {
+        if ((*bed)(i-1,j) > (*surface)(i,j) && M.ice_free_land(M_w)) {
+          c_w = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
+        }
+        if ((*bed)(i+1,j) > (*surface)(i,j) && M.ice_free_land(M_e)) {
+          c_e = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+        }
+        if ((*bed)(i,j+1) > (*surface)(i,j) && M.ice_free_land(M_n)) {
+          c_n = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
+        }
+        if ((*bed)(i,j-1) > (*surface)(i,j) && M.ice_free_land(M_s)) {
+          c_s = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
+        }
+      }
+    }
+
+    // We use DAGetMatrix to obtain the SSA matrix, which means that all 18
+    // non-zeros get allocated, even though we use only 13 (or 14). The
+    // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
+    // because this makes the code easier to understand.
+    const int sten = 18;
+    MatStencil row, col[sten];
+
+    int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
+    int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
+
+    int M_ij = mask->as_int(i,j);
+
+    if (use_cfbc) {
+      int
+        // direct neighbors
+        M_e = mask->as_int(i + 1,j),
+        M_w = mask->as_int(i - 1,j),
+        M_n = mask->as_int(i,j + 1),
+        M_s = mask->as_int(i,j - 1),
+        // "diagonal" neighbors
+        M_ne = mask->as_int(i + 1,j + 1),
+        M_se = mask->as_int(i + 1,j - 1),
+        M_nw = mask->as_int(i - 1,j + 1),
+        M_sw = mask->as_int(i - 1,j - 1);
+
+      // Note: this sets velocities at both ice-free ocean and ice-free
+      // bedrock to zero. This means that we need to set boundary conditions
+      // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
+      // to be consistent.
+      if (M.ice_free(M_ij)) {
         ierr = set_diagonal_matrix_entry(A, i, j, m_scaling); CHKERRQ(ierr);
         continue;
       }
 
-      /* Provide shorthand for the following staggered coefficients  nu H:
-       *      c_n
-       *  c_w     c_e
-       *      c_s
-       */
-      // const
-      double c_w = nuH(i-1,j,0);
-      double c_e = nuH(i,j,0);
-      double c_s = nuH(i,j-1,1);
-      double c_n = nuH(i,j,1);
+      if (is_marginal(i, j, bedrock_boundary)) {
+        // If at least one of the following four conditions is "true", we're
+        // at a CFBC location.
+        if (bedrock_boundary) {
 
-      if (nu_bedrock_set) {
-        // if option is set, the viscosity at ice-bedrock boundary layer will
-        // be prescribed and is a temperature-independent free (user determined) parameter
+          if (M.ice_free_ocean(M_e)) aPP = 0;
+          if (M.ice_free_ocean(M_w)) aMM = 0;
+          if (M.ice_free_ocean(M_n)) bPP = 0;
+          if (M.ice_free_ocean(M_s)) bMM = 0;
 
-        // direct neighbors
-        int  M_e = mask->as_int(i + 1,j),
-          M_w = mask->as_int(i - 1,j),
-          M_n = mask->as_int(i,j + 1),
-          M_s = mask->as_int(i,j - 1);
+          // decide whether to use centered or one-sided differences
+          if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_ne)) aPn = 0;
+          if (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_ne)) bPe = 0;
+          if (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_se)) bMe = 0;
+          if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_se)) aPs = 0;
+          if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_sw)) aMs = 0;
+          if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_sw)) bMw = 0;
+          if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_nw)) bPw = 0;
+          if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_nw)) aMn = 0;
+        } else {
+          if (M.ice_free(M_e)) aPP = 0;
+          if (M.ice_free(M_w)) aMM = 0;
+          if (M.ice_free(M_n)) bPP = 0;
+          if (M.ice_free(M_s)) bMM = 0;
 
-        if ((*thickness)(i,j) > HminFrozen) {
-          if ((*bed)(i-1,j) > (*surface)(i,j) && M.ice_free_land(M_w)) {
-            c_w = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i-1,j));
-          }
-          if ((*bed)(i+1,j) > (*surface)(i,j) && M.ice_free_land(M_e)) {
-            c_e = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
-          }
-          if ((*bed)(i,j+1) > (*surface)(i,j) && M.ice_free_land(M_n)) {
-            c_n = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i,j+1));
-          }
-          if ((*bed)(i,j-1) > (*surface)(i,j) && M.ice_free_land(M_s)) {
-            c_s = nu_bedrock * 0.5 * ((*thickness)(i,j)+(*thickness)(i+1,j));
-          }
-        }
+          // decide whether to use centered or one-sided differences
+          if (M.ice_free(M_n) || M.ice_free(M_ne)) aPn = 0;
+          if (M.ice_free(M_e) || M.ice_free(M_ne)) bPe = 0;
+          if (M.ice_free(M_e) || M.ice_free(M_se)) bMe = 0;
+          if (M.ice_free(M_s) || M.ice_free(M_se)) aPs = 0;
+          if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
+          if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
+          if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
+          if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;                           }
       }
-
-      // We use DAGetMatrix to obtain the SSA matrix, which means that all 18
-      // non-zeros get allocated, even though we use only 13 (or 14). The
-      // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
-      // because this makes the code easier to understand.
-      const int sten = 18;
-      MatStencil row, col[sten];
-
-      int aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
-      int bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
-
-      int M_ij = mask->as_int(i,j);
-
-      if (use_cfbc) {
-        int
-          // direct neighbors
-          M_e = mask->as_int(i + 1,j),
-          M_w = mask->as_int(i - 1,j),
-          M_n = mask->as_int(i,j + 1),
-          M_s = mask->as_int(i,j - 1),
-          // "diagonal" neighbors
-          M_ne = mask->as_int(i + 1,j + 1),
-          M_se = mask->as_int(i + 1,j - 1),
-          M_nw = mask->as_int(i - 1,j + 1),
-          M_sw = mask->as_int(i - 1,j - 1);
-
-        // Note: this sets velocities at both ice-free ocean and ice-free
-        // bedrock to zero. This means that we need to set boundary conditions
-        // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
-        // to be consistent.
-        if (M.ice_free(M_ij)) {
-          ierr = set_diagonal_matrix_entry(A, i, j, m_scaling); CHKERRQ(ierr);
-          continue;
-        }
-
-        if (is_marginal(i, j, bedrock_boundary)) {
-          // If at least one of the following four conditions is "true", we're
-          // at a CFBC location.
-          if (bedrock_boundary) {
-
-            if (M.ice_free_ocean(M_e)) aPP = 0;
-            if (M.ice_free_ocean(M_w)) aMM = 0;
-            if (M.ice_free_ocean(M_n)) bPP = 0;
-            if (M.ice_free_ocean(M_s)) bMM = 0;
-
-            // decide whether to use centered or one-sided differences
-            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_ne)) aPn = 0;
-            if (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_ne)) bPe = 0;
-            if (M.ice_free_ocean(M_e) || M.ice_free_ocean(M_se)) bMe = 0;
-            if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_se)) aPs = 0;
-            if (M.ice_free_ocean(M_s) || M.ice_free_ocean(M_sw)) aMs = 0;
-            if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_sw)) bMw = 0;
-            if (M.ice_free_ocean(M_w) || M.ice_free_ocean(M_nw)) bPw = 0;
-            if (M.ice_free_ocean(M_n) || M.ice_free_ocean(M_nw)) aMn = 0;
-          } else {
-            if (M.ice_free(M_e)) aPP = 0;
-            if (M.ice_free(M_w)) aMM = 0;
-            if (M.ice_free(M_n)) bPP = 0;
-            if (M.ice_free(M_s)) bMM = 0;
-
-            // decide whether to use centered or one-sided differences
-            if (M.ice_free(M_n) || M.ice_free(M_ne)) aPn = 0;
-            if (M.ice_free(M_e) || M.ice_free(M_ne)) bPe = 0;
-            if (M.ice_free(M_e) || M.ice_free(M_se)) bMe = 0;
-            if (M.ice_free(M_s) || M.ice_free(M_se)) aPs = 0;
-            if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
-            if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
-            if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
-            if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;                           }
-        }
-      } // end of "if (use_cfbc)"
+    } // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
-      const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
+    const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
 
-      /* Coefficients of the discretization of the first equation; u first, then v. */
-      double eq1[] = {
-        0,  -c_n*bPP/dy2,  0,
-        -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
-        0,  -c_s*bMM/dy2,  0,
-        c_w*aMM*bPw/d2+c_n*aMn*bPP/d4,  (c_n*aPn*bPP-c_n*aMn*bPP)/d4+(c_w*aMM*bPP-c_e*aPP*bPP)/d2,  -c_e*aPP*bPe/d2-c_n*aPn*bPP/d4,
-        (c_w*aMM*bMw-c_w*aMM*bPw)/d2+(c_n*aMM*bPP-c_s*aMM*bMM)/d4,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d4+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d2,  (c_e*aPP*bPe-c_e*aPP*bMe)/d2+(c_s*aPP*bMM-c_n*aPP*bPP)/d4,
-        -c_w*aMM*bMw/d2-c_s*aMs*bMM/d4,  (c_s*aMs*bMM-c_s*aPs*bMM)/d4+(c_e*aPP*bMM-c_w*aMM*bMM)/d2,  c_e*aPP*bMe/d2+c_s*aPs*bMM/d4,
-      };
+    /* Coefficients of the discretization of the first equation; u first, then v. */
+    double eq1[] = {
+      0,  -c_n*bPP/dy2,  0,
+      -4*c_w*aMM/dx2,  (c_n*bPP+c_s*bMM)/dy2+(4*c_e*aPP+4*c_w*aMM)/dx2,  -4*c_e*aPP/dx2,
+      0,  -c_s*bMM/dy2,  0,
+      c_w*aMM*bPw/d2+c_n*aMn*bPP/d4,  (c_n*aPn*bPP-c_n*aMn*bPP)/d4+(c_w*aMM*bPP-c_e*aPP*bPP)/d2,  -c_e*aPP*bPe/d2-c_n*aPn*bPP/d4,
+      (c_w*aMM*bMw-c_w*aMM*bPw)/d2+(c_n*aMM*bPP-c_s*aMM*bMM)/d4,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d4+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d2,  (c_e*aPP*bPe-c_e*aPP*bMe)/d2+(c_s*aPP*bMM-c_n*aPP*bPP)/d4,
+      -c_w*aMM*bMw/d2-c_s*aMs*bMM/d4,  (c_s*aMs*bMM-c_s*aPs*bMM)/d4+(c_e*aPP*bMM-c_w*aMM*bMM)/d2,  c_e*aPP*bMe/d2+c_s*aPs*bMM/d4,
+    };
 
-      /* Coefficients of the discretization of the second equation; u first, then v. */
-      double eq2[] = {
-        c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
-        (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
-        -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
-        0,  -4*c_n*bPP/dy2,  0,
-        -c_w*aMM/dx2,  (4*c_n*bPP+4*c_s*bMM)/dy2+(c_e*aPP+c_w*aMM)/dx2,  -c_e*aPP/dx2,
-        0,  -4*c_s*bMM/dy2,  0,
-      };
+    /* Coefficients of the discretization of the second equation; u first, then v. */
+    double eq2[] = {
+      c_w*aMM*bPw/d4+c_n*aMn*bPP/d2,  (c_n*aPn*bPP-c_n*aMn*bPP)/d2+(c_w*aMM*bPP-c_e*aPP*bPP)/d4,  -c_e*aPP*bPe/d4-c_n*aPn*bPP/d2,
+      (c_w*aMM*bMw-c_w*aMM*bPw)/d4+(c_n*aMM*bPP-c_s*aMM*bMM)/d2,  (c_n*aPP*bPP-c_n*aMM*bPP-c_s*aPP*bMM+c_s*aMM*bMM)/d2+(c_e*aPP*bPP-c_w*aMM*bPP-c_e*aPP*bMM+c_w*aMM*bMM)/d4,  (c_e*aPP*bPe-c_e*aPP*bMe)/d4+(c_s*aPP*bMM-c_n*aPP*bPP)/d2,
+      -c_w*aMM*bMw/d4-c_s*aMs*bMM/d2,  (c_s*aMs*bMM-c_s*aPs*bMM)/d2+(c_e*aPP*bMM-c_w*aMM*bMM)/d4,  c_e*aPP*bMe/d4+c_s*aPs*bMM/d2,
+      0,  -4*c_n*bPP/dy2,  0,
+      -c_w*aMM/dx2,  (4*c_n*bPP+4*c_s*bMM)/dy2+(c_e*aPP+c_w*aMM)/dx2,  -c_e*aPP/dx2,
+      0,  -4*c_s*bMM/dy2,  0,
+    };
 
-      /* i indices */
-      const int I[] = {
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-        i-1,  i,  i+1,
-      };
+    /* i indices */
+    const int I[] = {
+      i-1,  i,  i+1,
+      i-1,  i,  i+1,
+      i-1,  i,  i+1,
+      i-1,  i,  i+1,
+      i-1,  i,  i+1,
+      i-1,  i,  i+1,
+    };
 
-      /* j indices */
-      const int J[] = {
-        j+1,  j+1,  j+1,
-        j,  j,  j,
-        j-1,  j-1,  j-1,
-        j+1,  j+1,  j+1,
-        j,  j,  j,
-        j-1,  j-1,  j-1,
-      };
+    /* j indices */
+    const int J[] = {
+      j+1,  j+1,  j+1,
+      j,  j,  j,
+      j-1,  j-1,  j-1,
+      j+1,  j+1,  j+1,
+      j,  j,  j,
+      j-1,  j-1,  j-1,
+    };
 
-      /* component indices */
-      const int C[] = {
-        0,  0,  0,
-        0,  0,  0,
-        0,  0,  0,
-        1,  1,  1,
-        1,  1,  1,
-        1,  1,  1,
-      };
-      /* end Maxima-generated code */
+    /* component indices */
+    const int C[] = {
+      0,  0,  0,
+      0,  0,  0,
+      0,  0,  0,
+      1,  1,  1,
+      1,  1,  1,
+      1,  1,  1,
+    };
+    /* end Maxima-generated code */
 
-      /* Dragging ice experiences friction at the bed determined by the
-       *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
-       *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
-       *    (i.e. on left side of SSA eqns).  */
-      double beta = 0.0;
-      if (include_basal_shear) {
-        if (M.grounded_ice(M_ij)) {
-          beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-        } else if (M.ice_free_land(M_ij)) {
-          // apply drag even in this case, to help with margins; note ice free
-          // areas already have a strength extension
-          beta = beta_ice_free_bedrock;
+    /* Dragging ice experiences friction at the bed determined by the
+     *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
+     *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
+     *    (i.e. on left side of SSA eqns).  */
+    double beta = 0.0;
+    if (include_basal_shear) {
+      if (M.grounded_ice(M_ij)) {
+        beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+      } else if (M.ice_free_land(M_ij)) {
+        // apply drag even in this case, to help with margins; note ice free
+        // areas already have a strength extension
+        beta = beta_ice_free_bedrock;
+      }
+      if (sub_gl) {
+        // reduce the basal drag at grid cells that are partially grounded:
+        if (M.icy(M_ij)) {
+          beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
         }
-        if (sub_gl) {
-          // reduce the basal drag at grid cells that are partially grounded:
-          if (M.icy(M_ij)) {
-            beta = (*gl_mask)(i,j) * basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-          }
-        }
       }
+    }
 
-      // add beta to diagonal entries
-      eq1[4]  += beta;
-      eq2[13] += beta;
+    // add beta to diagonal entries
+    eq1[4]  += beta;
+    eq2[13] += beta;
 
-      // check diagonal entries:
-      const double eps = 1e-16;
-      if (fabs(eq1[4]) < eps) {
-        fprintf(stderr, "PISM ERROR: first  (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
-        zero_pivot_flag = 1;
-      }
-      if (fabs(eq2[13]) < eps) {
-        fprintf(stderr, "PISM ERROR: second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
-        zero_pivot_flag = 1;
-      }
+    // check diagonal entries:
+    const double eps = 1e-16;
+    if (fabs(eq1[4]) < eps) {
+      fprintf(stderr, "PISM ERROR: first  (X) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+      zero_pivot_flag = 1;
+    }
+    if (fabs(eq2[13]) < eps) {
+      fprintf(stderr, "PISM ERROR: second (Y) equation in the SSAFD system: zero diagonal entry at a regular (not Dirichlet B.C.) location: i = %d, j = %d\n", i, j);
+      zero_pivot_flag = 1;
+    }
 
-      // build equations: NOTE TRANSPOSE
-      row.j = i; row.i = j;
-      for (int m = 0; m < sten; m++) {
-        col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
-      }
+    // build equations: NOTE TRANSPOSE
+    row.j = i; row.i = j;
+    for (int m = 0; m < sten; m++) {
+      col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
+    }
 
-      // set coefficients of the first equation:
-      row.c = 0;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES); CHKERRQ(ierr);
+    // set coefficients of the first equation:
+    row.c = 0;
+    ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES); CHKERRQ(ierr);
 
-      // set coefficients of the second equation:
-      row.c = 1;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
-    } // j-loop
-  } // i-loop
+    // set coefficients of the second equation:
+    row.c = 1;
+    ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
+  } // loop over points
 
   if (m_vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
@@ -1185,36 +1183,36 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
 
   MaskQuery m(*mask);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      ierr = enthalpy->getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
-      for (int o=0; o<2; o++) {
-        const int oi = 1-o, oj=o;
-        double H;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        if (m.icy(i,j) && m.icy(i+oi,j+oj))
-          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
-        else if (m.icy(i,j))
-          H = (*thickness)(i,j);
-        else
-          H = (*thickness)(i+oi,j+oj);
+    ierr = enthalpy->getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
+    for (int o=0; o<2; o++) {
+      const int oi = 1-o, oj=o;
+      double H;
 
-        if (H == 0) {
-          hardness(i,j,o) = -1e6; // an obviously impossible value
-          continue;
-        }
+      if (m.icy(i,j) && m.icy(i+oi,j+oj))
+        H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+      else if (m.icy(i,j))
+        H = (*thickness)(i,j);
+      else
+        H = (*thickness)(i+oi,j+oj);
 
-        ierr = enthalpy->getInternalColumn(i+oi,j+oj,&E_offset); CHKERRQ(ierr);
-        // build a column of enthalpy values a the current location:
-        for (unsigned int k = 0; k < grid.Mz; ++k) {
-          E[k] = 0.5 * (E_ij[k] + E_offset[k]);
-        }
+      if (H == 0) {
+        hardness(i,j,o) = -1e6; // an obviously impossible value
+        continue;
+      }
 
-        hardness(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
-                                                      &grid.zlevels[0], &E[0]); CHKERRQ(ierr);
-      } // o
-    }   // j
-  }     // i
+      ierr = enthalpy->getInternalColumn(i+oi,j+oj,&E_offset); CHKERRQ(ierr);
+      // build a column of enthalpy values a the current location:
+      for (unsigned int k = 0; k < grid.Mz; ++k) {
+        E[k] = 0.5 * (E_ij[k] + E_offset[k]);
+      }
+
+      hardness(i,j,o) = flow_law->averaged_hardness(H, grid.kBelowHeight(H),
+                                                    &grid.zlevels[0], &E[0]); CHKERRQ(ierr);
+    } // o
+  }     // loop over points
 
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = hardness.end_access(); CHKERRQ(ierr);
@@ -1272,19 +1270,19 @@ PetscErrorCode SSAFD::fracture_induced_softening() {
 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = fracture_density->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      for (int o=0; o<2; o++) {
-        const int oi = 1-o, oj=o;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        const double
-          // fracture density on the staggered grid:
-          phi       = 0.5 * ((*fracture_density)(i,j) + (*fracture_density)(i+oi,j+oj)),
-          // the line below implements equation (6) in the paper
-          softening = pow((1.0-(1.0-epsilon)*phi), -n_glen);
+    for (int o=0; o<2; o++) {
+      const int oi = 1-o, oj=o;
 
-        hardness(i,j,o) *= pow(softening,-1.0/n_glen);
-      }
+      const double
+        // fracture density on the staggered grid:
+        phi       = 0.5 * ((*fracture_density)(i,j) + (*fracture_density)(i+oi,j+oj)),
+        // the line below implements equation (6) in the paper
+        softening = pow((1.0-(1.0-epsilon)*phi), -n_glen);
+
+      hardness(i,j,o) *= pow(softening,-1.0/n_glen);
     }
   }
   ierr = fracture_density->end_access(); CHKERRQ(ierr);
@@ -1359,45 +1357,44 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
 
   for (int o=0; o<2; ++o) {
     const int oi = 1 - o, oj=o;
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-        const double H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
+      const double H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
-        if (H < strength_extension->get_min_thickness()) {
-          result(i,j,o) = strength_extension->get_notional_strength();
-          continue;
-        }
+      if (H < strength_extension->get_min_thickness()) {
+        result(i,j,o) = strength_extension->get_notional_strength();
+        continue;
+      }
 
-        double u_x, u_y, v_x, v_y;
-        // Check the offset to determine how to differentiate velocity
-        if (o == 0) {
-          u_x = (uv(i+1,j).u - uv(i,j).u) / dx;
-          u_y = (uv(i,j+1).u + uv(i+1,j+1).u - uv(i,j-1).u - uv(i+1,j-1).u) / (4*dy);
-          v_x = (uv(i+1,j).v - uv(i,j).v) / dx;
-          v_y = (uv(i,j+1).v + uv(i+1,j+1).v - uv(i,j-1).v - uv(i+1,j-1).v) / (4*dy);
-        } else {
-          u_x = (uv(i+1,j).u + uv(i+1,j+1).u - uv(i-1,j).u - uv(i-1,j+1).u) / (4*dx);
-          u_y = (uv(i,j+1).u - uv(i,j).u) / dy;
-          v_x = (uv(i+1,j).v + uv(i+1,j+1).v - uv(i-1,j).v - uv(i-1,j+1).v) / (4*dx);
-          v_y = (uv(i,j+1).v - uv(i,j).v) / dy;
-        }
+      double u_x, u_y, v_x, v_y;
+      // Check the offset to determine how to differentiate velocity
+      if (o == 0) {
+        u_x = (uv(i+1,j).u - uv(i,j).u) / dx;
+        u_y = (uv(i,j+1).u + uv(i+1,j+1).u - uv(i,j-1).u - uv(i+1,j-1).u) / (4*dy);
+        v_x = (uv(i+1,j).v - uv(i,j).v) / dx;
+        v_y = (uv(i,j+1).v + uv(i+1,j+1).v - uv(i,j-1).v - uv(i+1,j-1).v) / (4*dy);
+      } else {
+        u_x = (uv(i+1,j).u + uv(i+1,j+1).u - uv(i-1,j).u - uv(i-1,j+1).u) / (4*dx);
+        u_y = (uv(i,j+1).u - uv(i,j).u) / dy;
+        v_x = (uv(i+1,j).v + uv(i+1,j+1).v - uv(i-1,j).v - uv(i-1,j+1).v) / (4*dx);
+        v_y = (uv(i,j+1).v - uv(i,j).v) / dy;
+      }
 
-        double nu;
-        flow_law->effective_viscosity(hardness(i,j,o),
-                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                      &nu, NULL);
+      double nu;
+      flow_law->effective_viscosity(hardness(i,j,o),
+                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                    &nu, NULL);
 
-        result(i,j,o) = nu * H;
+      result(i,j,o) = nu * H;
 
-        // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
-        result(i,j,o) *= nu_enhancement_scaling;
+      // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
+      result(i,j,o) *= nu_enhancement_scaling;
 
-        // We ensure that nuH is bounded below by a positive constant.
-        result(i,j,o) += nuH_regularization;
+      // We ensure that nuH is bounded below by a positive constant.
+      result(i,j,o) += nuH_regularization;
 
-      } // j
-    } // i
+    }
   } // o
 
   ierr = thickness->end_access(); CHKERRQ(ierr);
@@ -1447,122 +1444,120 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   ierr = m_work.begin_access(); CHKERRQ(ierr);
   ierr = m_velocity.begin_access(); CHKERRQ(ierr);
 
-  int GHOSTS = 1;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (PointsWithGhosts p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // x-derivative, i-offset
-      {
-        if (m.icy(i,j) && m.icy(i+1,j)) {
-          m_work(i,j,U_X) = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
-          m_work(i,j,V_X) = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
-          m_work(i,j,W_I) = 1.0;
-        } else {
-          m_work(i,j,U_X) = 0.0;
-          m_work(i,j,V_X) = 0.0;
-          m_work(i,j,W_I) = 0.0;
-        }
+    // x-derivative, i-offset
+    {
+      if (m.icy(i,j) && m.icy(i+1,j)) {
+        m_work(i,j,U_X) = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
+        m_work(i,j,V_X) = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
+        m_work(i,j,W_I) = 1.0;
+      } else {
+        m_work(i,j,U_X) = 0.0;
+        m_work(i,j,V_X) = 0.0;
+        m_work(i,j,W_I) = 0.0;
       }
+    }
 
-      // y-derivative, j-offset
-      {
-        if (m.icy(i,j) && m.icy(i,j+1)) {
-          m_work(i,j,U_Y) = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
-          m_work(i,j,V_Y) = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
-          m_work(i,j,W_J) = 1.0;
-        } else {
-          m_work(i,j,U_Y) = 0.0;
-          m_work(i,j,V_Y) = 0.0;
-          m_work(i,j,W_J) = 0.0;
-        }
+    // y-derivative, j-offset
+    {
+      if (m.icy(i,j) && m.icy(i,j+1)) {
+        m_work(i,j,U_Y) = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
+        m_work(i,j,V_Y) = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
+        m_work(i,j,W_J) = 1.0;
+      } else {
+        m_work(i,j,U_Y) = 0.0;
+        m_work(i,j,V_Y) = 0.0;
+        m_work(i,j,W_J) = 0.0;
       }
-    } // j-loop
-  } // i-loop
+    }
+  }
   ierr = m_velocity.end_access(); CHKERRQ(ierr);
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
  
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double u_x, u_y, v_x, v_y, H, nu, W;
-      // i-offset
-      {
-        if (m.icy(i,j) && m.icy(i+1,j))
-          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+1,j));
-        else if (m.icy(i,j))
-          H = (*thickness)(i,j);
-        else
-          H = (*thickness)(i+1,j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        if (H >= strength_extension->get_min_thickness()) {
-          u_x = m_work(i,j,U_X);
-          v_x = m_work(i,j,V_X);
+    double u_x, u_y, v_x, v_y, H, nu, W;
+    // i-offset
+    {
+      if (m.icy(i,j) && m.icy(i+1,j))
+        H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+1,j));
+      else if (m.icy(i,j))
+        H = (*thickness)(i,j);
+      else
+        H = (*thickness)(i+1,j);
 
-          W = m_work(i,j,W_J) + m_work(i,j-1,W_J) + m_work(i+1,j-1,W_J) + m_work(i+1,j,W_J);
-          if (W > 0) {
-            u_y = 1.0/W * (m_work(i,j,U_Y) + m_work(i,j-1,U_Y) +
-                           m_work(i+1,j-1,U_Y) + m_work(i+1,j,U_Y));
-            v_y = 1.0/W * (m_work(i,j,V_Y) + m_work(i,j-1,V_Y) +
-                           m_work(i+1,j-1,V_Y) + m_work(i+1,j,V_Y));
-          } else {
-            u_y = 0.0;
-            v_y = 0.0;
-          }
+      if (H >= strength_extension->get_min_thickness()) {
+        u_x = m_work(i,j,U_X);
+        v_x = m_work(i,j,V_X);
 
-          flow_law->effective_viscosity(hardness(i,j,0),
-                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                        &nu, NULL);
-          result(i,j,0) = nu * H;
+        W = m_work(i,j,W_J) + m_work(i,j-1,W_J) + m_work(i+1,j-1,W_J) + m_work(i+1,j,W_J);
+        if (W > 0) {
+          u_y = 1.0/W * (m_work(i,j,U_Y) + m_work(i,j-1,U_Y) +
+                         m_work(i+1,j-1,U_Y) + m_work(i+1,j,U_Y));
+          v_y = 1.0/W * (m_work(i,j,V_Y) + m_work(i,j-1,V_Y) +
+                         m_work(i+1,j-1,V_Y) + m_work(i+1,j,V_Y));
         } else {
-          result(i,j,0) = strength_extension->get_notional_strength();
+          u_y = 0.0;
+          v_y = 0.0;
         }
+
+        flow_law->effective_viscosity(hardness(i,j,0),
+                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                      &nu, NULL);
+        result(i,j,0) = nu * H;
+      } else {
+        result(i,j,0) = strength_extension->get_notional_strength();
       }
+    }
       
-      // j-offset
-      {
-        if (m.icy(i,j) && m.icy(i,j+1))
-          H = 0.5 * ((*thickness)(i,j) + (*thickness)(i,j+1));
-        else if (m.icy(i,j))
-          H = (*thickness)(i,j);
-        else
-          H = (*thickness)(i,j+1);
+    // j-offset
+    {
+      if (m.icy(i,j) && m.icy(i,j+1))
+        H = 0.5 * ((*thickness)(i,j) + (*thickness)(i,j+1));
+      else if (m.icy(i,j))
+        H = (*thickness)(i,j);
+      else
+        H = (*thickness)(i,j+1);
 
-        if (H >= strength_extension->get_min_thickness()) {
-          u_y = m_work(i,j,U_Y);
-          v_y = m_work(i,j,V_Y);
+      if (H >= strength_extension->get_min_thickness()) {
+        u_y = m_work(i,j,U_Y);
+        v_y = m_work(i,j,V_Y);
 
-          W = m_work(i,j,W_I) + m_work(i-1,j,W_I) + m_work(i-1,j+1,W_I) + m_work(i,j+1,W_I);
-          if (W > 0.0) {
-            u_x = 1.0/W * (m_work(i,j,U_X) + m_work(i-1,j,U_X) +
-                           m_work(i-1,j+1,U_X) + m_work(i,j+1,U_X));
-            v_x = 1.0/W * (m_work(i,j,V_X) + m_work(i-1,j,V_X) +
-                           m_work(i-1,j+1,V_X) + m_work(i,j+1,V_X));
-          } else {
-            u_x = 0.0;
-            v_x = 0.0;
-          }
-
-          flow_law->effective_viscosity(hardness(i,j,1),
-                                        secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                        &nu, NULL);
-          result(i,j,1) = nu * H;
+        W = m_work(i,j,W_I) + m_work(i-1,j,W_I) + m_work(i-1,j+1,W_I) + m_work(i,j+1,W_I);
+        if (W > 0.0) {
+          u_x = 1.0/W * (m_work(i,j,U_X) + m_work(i-1,j,U_X) +
+                         m_work(i-1,j+1,U_X) + m_work(i,j+1,U_X));
+          v_x = 1.0/W * (m_work(i,j,V_X) + m_work(i-1,j,V_X) +
+                         m_work(i-1,j+1,V_X) + m_work(i,j+1,V_X));
         } else {
-          result(i,j,1) = strength_extension->get_notional_strength();
+          u_x = 0.0;
+          v_x = 0.0;
         }
-      }
 
-      // adjustments:
-      for (unsigned int o = 0; o < 2; ++o) {
-        // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
-        result(i,j,o) *= nu_enhancement_scaling;
-
-        // We ensure that nuH is bounded below by a positive constant.
-        result(i,j,o) += nuH_regularization;
+        flow_law->effective_viscosity(hardness(i,j,1),
+                                      secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                      &nu, NULL);
+        result(i,j,1) = nu * H;
+      } else {
+        result(i,j,1) = strength_extension->get_notional_strength();
       }
-    } // j-loop
-  } // i-loop
+    }
+
+    // adjustments:
+    for (unsigned int o = 0; o < 2; ++o) {
+      // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
+      result(i,j,o) *= nu_enhancement_scaling;
+
+      // We ensure that nuH is bounded below by a positive constant.
+      result(i,j,o) += nuH_regularization;
+    }
+  }
 
 
   ierr = thickness->end_access(); CHKERRQ(ierr);
@@ -1593,14 +1588,14 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
   ierr = nuH.begin_access(); CHKERRQ(ierr);
   ierr = tmp.begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
-        if (avg_nuH > 1.0e14) {
-          tmp(i,j) = log10(avg_nuH);
-        } else {
-          tmp(i,j) = 14.0;
-        }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
+    if (avg_nuH > 1.0e14) {
+      tmp(i,j) = log10(avg_nuH);
+    } else {
+      tmp(i,j) = 14.0;
     }
   }
 

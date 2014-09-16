@@ -94,13 +94,13 @@ PetscErrorCode IceRegionalModel::set_no_model_strip(double strip) {
   PetscErrorCode ierr;
 
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if (grid.in_null_strip(i, j, strip) == true) {
-          no_model_mask(i, j) = 1;
-        } else {
-          no_model_mask(i, j) = 0;
-        }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (grid.in_null_strip(i, j, strip) == true) {
+        no_model_mask(i, j) = 1;
+      } else {
+        no_model_mask(i, j) = 0;
       }
     }
     ierr = no_model_mask.end_access(); CHKERRQ(ierr);
@@ -424,17 +424,17 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
 
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (no_model_mask(i, j) < 0.5)
-        continue;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = vWork3d.getInternalColumn(i, j, &new_enthalpy); CHKERRQ(ierr);
-      ierr = Enth3.getInternalColumn(i, j, &old_enthalpy); CHKERRQ(ierr);
+    if (no_model_mask(i, j) < 0.5)
+      continue;
 
-      for (unsigned int k = 0; k < grid.Mz; ++k)
-        new_enthalpy[k] = old_enthalpy[k];
-    }
+    ierr = vWork3d.getInternalColumn(i, j, &new_enthalpy); CHKERRQ(ierr);
+    ierr = Enth3.getInternalColumn(i, j, &old_enthalpy); CHKERRQ(ierr);
+
+    for (unsigned int k = 0; k < grid.Mz; ++k)
+      new_enthalpy[k] = old_enthalpy[k];
   }
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
@@ -442,13 +442,13 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
   // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
   ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
   ierr = bmr_stored.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (no_model_mask(i, j) < 0.5)
-        continue;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      basal_melt_rate(i, j) = bmr_stored(i, j);
-    }
+    if (no_model_mask(i, j) < 0.5)
+      continue;
+
+    basal_melt_rate(i, j) = bmr_stored(i, j);
   }
   ierr = bmr_stored.end_access(); CHKERRQ(ierr);
   ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);

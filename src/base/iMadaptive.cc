@@ -60,24 +60,24 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
 
   // update global max of abs of velocities for CFL; only velocities under surface
   double maxu = 0.0, maxv = 0.0, maxw = 0.0;
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      if (mask.icy(i, j)) {
-        const int ks = grid.kBelowHeight(ice_thickness(i, j));
-        ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
-        ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
-        ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
-        for (int k = 0; k <= ks; ++k) {
-          const double
-            absu = PetscAbs(u[k]),
-            absv = PetscAbs(v[k]);
-          maxu = PetscMax(maxu, absu);
-          maxv = PetscMax(maxv, absv);
-          maxw = PetscMax(maxw, PetscAbs(w[k]));
-          const double denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
-          if (denom > 0.0) {
-            maxtimestep = PetscMin(maxtimestep, 1.0 / denom);
-          }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j)) {
+      const int ks = grid.kBelowHeight(ice_thickness(i, j));
+      ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
+      ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
+      ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
+      for (int k = 0; k <= ks; ++k) {
+        const double
+          absu = PetscAbs(u[k]),
+          absv = PetscAbs(v[k]);
+        maxu = PetscMax(maxu, absu);
+        maxv = PetscMax(maxv, absv);
+        maxw = PetscMax(maxw, PetscAbs(w[k]));
+        const double denom = PetscAbs(absu / grid.dx) + PetscAbs(absv / grid.dy);
+        if (denom > 0.0) {
+          maxtimestep = PetscMin(maxtimestep, 1.0 / denom);
         }
       }
     }
@@ -121,13 +121,13 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
 
   ierr = vel.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask.icy(i, j)) {
-        const double denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
-        if (denom > 0.0)
-          maxtimestep = PetscMin(maxtimestep, 1.0/denom);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.icy(i, j)) {
+      const double denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
+      if (denom > 0.0)
+        maxtimestep = PetscMin(maxtimestep, 1.0/denom);
     }
   }
   ierr = vel.end_access(); CHKERRQ(ierr);
@@ -422,18 +422,18 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const int  fks = grid.kBelowHeight(ice_thickness(i,j));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
-      ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
+    const int  fks = grid.kBelowHeight(ice_thickness(i,j));
 
-      // check horizontal CFL conditions at each point
-      for (int k=0; k<=fks; k++) {
-        if (PetscAbs(u[k]) > CFL_x)  *CFLviol += 1.0;
-        if (PetscAbs(v[k]) > CFL_y)  *CFLviol += 1.0;
-      }
+    ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
+    ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
+
+    // check horizontal CFL conditions at each point
+    for (int k=0; k<=fks; k++) {
+      if (PetscAbs(u[k]) > CFL_x)  *CFLviol += 1.0;
+      if (PetscAbs(v[k]) > CFL_y)  *CFLviol += 1.0;
     }
   }
 

@@ -350,62 +350,62 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = geothermal_flux.begin_access();       CHKERRQ(ierr);
   ierr = result->begin_access();               CHKERRQ(ierr);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double HH = ice_thickness(i,j),
-                        Ts = ice_surface_temp(i,j),
-                        gg = geothermal_flux(i,j);
-      const unsigned int ks = grid.kBelowHeight(HH);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // within ice
-      if (usesmb == true) { // method 1:  includes surface mass balance in estimate
-        const double mm = climatic_mass_balance(i,j);
-        if (mm <= 0.0) { // negative or zero surface mass balance case: linear
-          for (unsigned int k = 0; k < ks; k++) {
-            const double z = grid.zlevels[k],
-              Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
-            T[k] = gg / ice_k * (HH - z) + Ts;
-            T[k] = PetscMin(Tpmp,T[k]);
-          }
-        } else { // positive surface mass balance case
-          const double C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
-            gamma0 = sqrt(mm * HH / (2.0 * KK));
+    const double HH = ice_thickness(i,j),
+      Ts = ice_surface_temp(i,j),
+      gg = geothermal_flux(i,j);
+    const unsigned int ks = grid.kBelowHeight(HH);
 
-          for (unsigned int k = 0; k < ks; k++) {
-            const double z = grid.zlevels[k],
-              Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
-            T[k] = Ts + C0 * (erf(gamma0) - erf(gamma0 * z / HH));
-            T[k] = PetscMin(Tpmp,T[k]);
-          }
-        }
-      } else { // method 2:  does not use smb
-        const double beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
-                          alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
+    // within ice
+    if (usesmb == true) { // method 1:  includes surface mass balance in estimate
+      const double mm = climatic_mass_balance(i,j);
+      if (mm <= 0.0) { // negative or zero surface mass balance case: linear
         for (unsigned int k = 0; k < ks; k++) {
-          const double depth = HH - grid.zlevels[k],
-                            Tpmp = melting_point_temp - beta_CC_grad * depth,
-                            d2 = depth * depth;
-          T[k] = PetscMin(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
+          const double z = grid.zlevels[k],
+            Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
+          T[k] = gg / ice_k * (HH - z) + Ts;
+          T[k] = PetscMin(Tpmp,T[k]);
+        }
+      } else { // positive surface mass balance case
+        const double C0 = (gg * sqrt(M_PI * HH * KK)) / (ice_k * sqrt(2.0 * mm)),
+          gamma0 = sqrt(mm * HH / (2.0 * KK));
+
+        for (unsigned int k = 0; k < ks; k++) {
+          const double z = grid.zlevels[k],
+            Tpmp = melting_point_temp - beta_CC_grad * (HH - z);
+          T[k] = Ts + C0 * (erf(gamma0) - erf(gamma0 * z / HH));
+          T[k] = PetscMin(Tpmp,T[k]);
         }
       }
-
-      // above ice
-      for (unsigned int k = ks; k < grid.Mz; k++)
-        T[k] = ice_surface_temp(i,j);
-
-      // convert to enthalpy if that's what we are calculating
-      if (do_cold == false) {
-        for (unsigned int k = 0; k < grid.Mz; ++k) {
-          const double depth = HH - grid.zlevels[k];
-          const double pressure = EC->getPressureFromDepth(depth);
-          // reuse T to store enthalpy; assume that the ice is cold
-          ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
-        }
+    } else { // method 2:  does not use smb
+      const double beta = (4.0/21.0) * (gg / (2.0 * ice_k * HH * HH * HH)),
+        alpha = (gg / (2.0 * HH * ice_k)) - 2.0 * HH * HH * beta;
+      for (unsigned int k = 0; k < ks; k++) {
+        const double depth = HH - grid.zlevels[k],
+          Tpmp = melting_point_temp - beta_CC_grad * depth,
+          d2 = depth * depth;
+        T[k] = PetscMin(Tpmp, Ts + alpha * d2 + beta * d2 * d2);
       }
-
-      ierr = result->setInternalColumn(i,j,&T[0]); CHKERRQ(ierr);
-
     }
+
+    // above ice
+    for (unsigned int k = ks; k < grid.Mz; k++)
+      T[k] = ice_surface_temp(i,j);
+
+    // convert to enthalpy if that's what we are calculating
+    if (do_cold == false) {
+      for (unsigned int k = 0; k < grid.Mz; ++k) {
+        const double depth = HH - grid.zlevels[k];
+        const double pressure = EC->getPressureFromDepth(depth);
+        // reuse T to store enthalpy; assume that the ice is cold
+        ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
+      }
+    }
+
+    ierr = result->setInternalColumn(i,j,&T[0]); CHKERRQ(ierr);
+
   }
 
   ierr = ice_thickness.end_access();         CHKERRQ(ierr);

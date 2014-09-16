@@ -218,11 +218,11 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
   // compute eta = H^{8/3}, which is more regular, on reg grid
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = eta.begin_access(); CHKERRQ(ierr);
-  int GHOSTS = 2;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      eta(i,j) = pow((*thickness)(i,j), etapow);
-    }
+  int GHOSTS = eta.get_stencil_width();
+  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    eta(i,j) = pow((*thickness)(i,j), etapow);
   }
   ierr = eta.end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
@@ -236,38 +236,37 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
   ierr = eta.begin_access(); CHKERRQ(ierr);
   for (int o=0; o<2; o++) {
 
-    GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (o==0) {     // If I-offset
-          const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
-          if (mean_eta > 0.0) {
-            const double factor = invpow * pow(mean_eta, dinvpow);
-            h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
-            h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
-                                   - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
-          } else {
-            h_x(i,j,o) = 0.0;
-            h_y(i,j,o) = 0.0;
-          }
-          // now add bed slope to get actual h_x,h_y
-          h_x(i,j,o) += bed->diff_x_stagE(i,j);
-          h_y(i,j,o) += bed->diff_y_stagE(i,j);
-        } else {        // J-offset
-          const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
-          if (mean_eta > 0.0) {
-            const double factor = invpow * pow(mean_eta, dinvpow);
-            h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
-            h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
-                                   - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
-          } else {
-            h_y(i,j,o) = 0.0;
-            h_x(i,j,o) = 0.0;
-          }
-          // now add bed slope to get actual h_x,h_y
-          h_y(i,j,o) += bed->diff_y_stagN(i,j);
-          h_x(i,j,o) += bed->diff_x_stagN(i,j);
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (o==0) {     // If I-offset
+        const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
+        if (mean_eta > 0.0) {
+          const double factor = invpow * pow(mean_eta, dinvpow);
+          h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
+          h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
+                                 - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
+        } else {
+          h_x(i,j,o) = 0.0;
+          h_y(i,j,o) = 0.0;
         }
+        // now add bed slope to get actual h_x,h_y
+        h_x(i,j,o) += bed->diff_x_stagE(i,j);
+        h_y(i,j,o) += bed->diff_y_stagE(i,j);
+      } else {        // J-offset
+        const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
+        if (mean_eta > 0.0) {
+          const double factor = invpow * pow(mean_eta, dinvpow);
+          h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
+          h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
+                                 - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
+        } else {
+          h_y(i,j,o) = 0.0;
+          h_x(i,j,o) = 0.0;
+        }
+        // now add bed slope to get actual h_x,h_y
+        h_y(i,j,o) += bed->diff_y_stagN(i,j);
+        h_x(i,j,o) += bed->diff_x_stagN(i,j);
       }
     }
   }
@@ -293,18 +292,17 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
   ierr = surface->begin_access(); CHKERRQ(ierr);
 
   for (int o=0; o<2; o++) {
-    int GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (o==0) {     // If I-offset
-          h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
-          h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
-                        - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
-        } else {        // J-offset
-          h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
-          h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
-                        - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
-        }
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (o==0) {     // If I-offset
+        h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
+        h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
+                      - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
+      } else {        // J-offset
+        h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
+        h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
+                      - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
       }
     }
   }
@@ -379,105 +377,104 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
   ierr = h.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = b.begin_access(); CHKERRQ(ierr);
-  int GHOSTS = 1;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+  for (PointsWithGhosts p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // x-derivative, i-offset
-      {
-        if ((m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)) ||
-            (m.ice_free_ocean(i,j) && m.floating_ice(i+1,j))) {
-          // marine margin
-          h_x(i,j,0) = 0;
-          w_i(i,j)   = 0;
-        } else if ((m.icy(i,j) && m.ice_free(i+1,j) && b(i+1,j) > h(i,j)) ||
-                   (m.ice_free(i,j) && m.icy(i+1,j) && b(i,j) > h(i+1,j))) {
-          // ice next to a "cliff"
-          h_x(i,j,0) = 0.0;
-          w_i(i,j)   = 0;
-        } else {
-          // default case
-          h_x(i,j,0) = (h(i+1,j) - h(i,j)) / dx;
-          w_i(i,j)   = 1;
-        }
-      }
 
-      // y-derivative, j-offset
-      {
-        if ((m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)) ||
-            (m.ice_free_ocean(i,j) && m.floating_ice(i,j+1))) {
-          // marine margin
-          h_y(i,j,1) = 0.0;
-          w_j(i,j)   = 0.0;
-        } else if ((m.icy(i,j) && m.ice_free(i,j+1) && b(i,j+1) > h(i,j)) ||
-                   (m.ice_free(i,j) && m.icy(i,j+1) && b(i,j) > h(i,j+1))) {
-          // ice next to a "cliff"
-          h_y(i,j,1) = 0.0;
-          w_j(i,j)   = 0.0;
-        } else {
-          // default case
-          h_y(i,j,1) = (h(i,j+1) - h(i,j)) / dy;
-          w_j(i,j)   = 1.0;
-        }
+    // x-derivative, i-offset
+    {
+      if ((m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)) ||
+          (m.ice_free_ocean(i,j) && m.floating_ice(i+1,j))) {
+        // marine margin
+        h_x(i,j,0) = 0;
+        w_i(i,j)   = 0;
+      } else if ((m.icy(i,j) && m.ice_free(i+1,j) && b(i+1,j) > h(i,j)) ||
+                 (m.ice_free(i,j) && m.icy(i+1,j) && b(i,j) > h(i+1,j))) {
+        // ice next to a "cliff"
+        h_x(i,j,0) = 0.0;
+        w_i(i,j)   = 0;
+      } else {
+        // default case
+        h_x(i,j,0) = (h(i+1,j) - h(i,j)) / dx;
+        w_i(i,j)   = 1;
       }
-    } // inner loop (j)
-  } // outer loop (i)
+    }
+
+    // y-derivative, j-offset
+    {
+      if ((m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)) ||
+          (m.ice_free_ocean(i,j) && m.floating_ice(i,j+1))) {
+        // marine margin
+        h_y(i,j,1) = 0.0;
+        w_j(i,j)   = 0.0;
+      } else if ((m.icy(i,j) && m.ice_free(i,j+1) && b(i,j+1) > h(i,j)) ||
+                 (m.ice_free(i,j) && m.icy(i,j+1) && b(i,j) > h(i,j+1))) {
+        // ice next to a "cliff"
+        h_y(i,j,1) = 0.0;
+        w_j(i,j)   = 0.0;
+      } else {
+        // default case
+        h_y(i,j,1) = (h(i,j+1) - h(i,j)) / dy;
+        w_j(i,j)   = 1.0;
+      }
+    }
+  }
   ierr = b.end_access(); CHKERRQ(ierr);
   ierr = h.end_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      // x-derivative, j-offset
-      {
-        if (w_j(i,j) > 0) {
-          double W = w_i(i,j) + w_i(i-1,j) + w_i(i-1,j+1) + w_i(i,j+1);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // x-derivative, j-offset
+    {
+      if (w_j(i,j) > 0) {
+        double W = w_i(i,j) + w_i(i-1,j) + w_i(i-1,j+1) + w_i(i,j+1);
+        if (W > 0)
+          h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0) + h_x(i-1,j+1,0) + h_x(i,j+1,0));
+        else
+          h_x(i,j,1) = 0.0;
+      } else {
+        if (m.icy(i,j)) {
+          double W = w_i(i,j) + w_i(i-1,j);
           if (W > 0)
-            h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0) + h_x(i-1,j+1,0) + h_x(i,j+1,0));
+            h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0));
           else
             h_x(i,j,1) = 0.0;
         } else {
-          if (m.icy(i,j)) {
-            double W = w_i(i,j) + w_i(i-1,j);
-            if (W > 0)
-              h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0));
-            else
-              h_x(i,j,1) = 0.0;
-          } else {
-            double W = w_i(i,j+1) + w_i(i-1,j+1);
-            if (W > 0)
-              h_x(i,j,1) = 1.0/W * (h_x(i-1,j+1,0) + h_x(i,j+1,0));
-            else
-              h_x(i,j,1) = 0.0;
-          }
+          double W = w_i(i,j+1) + w_i(i-1,j+1);
+          if (W > 0)
+            h_x(i,j,1) = 1.0/W * (h_x(i-1,j+1,0) + h_x(i,j+1,0));
+          else
+            h_x(i,j,1) = 0.0;
         }
-      } // end of "x-derivative, j-offset"
+      }
+    } // end of "x-derivative, j-offset"
 
       // y-derivative, i-offset
-      {
-        if (w_i(i,j) > 0) {
-          double W = w_j(i,j) + w_j(i,j-1) + w_j(i+1,j-1) + w_j(i+1,j);
+    {
+      if (w_i(i,j) > 0) {
+        double W = w_j(i,j) + w_j(i,j-1) + w_j(i+1,j-1) + w_j(i+1,j);
+        if (W > 0)
+          h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1) + h_y(i+1,j-1,1) + h_y(i+1,j,1));
+        else
+          h_y(i,j,0) = 0.0;
+      } else {
+        if (m.icy(i,j)) {
+          double W = w_j(i,j) + w_j(i,j-1);
           if (W > 0)
-            h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1) + h_y(i+1,j-1,1) + h_y(i+1,j,1));
+            h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1));
           else
             h_y(i,j,0) = 0.0;
         } else {
-          if (m.icy(i,j)) {
-            double W = w_j(i,j) + w_j(i,j-1);
-            if (W > 0)
-              h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1));
-            else
-              h_y(i,j,0) = 0.0;
-          } else {
-            double W = w_j(i+1,j-1) + w_j(i+1,j);
-            if (W > 0)
-              h_y(i,j,0) = 1.0/W * (h_y(i+1,j-1,1) + h_y(i+1,j,1));
-            else
-              h_y(i,j,0) = 0.0;
-          }
+          double W = w_j(i+1,j-1) + w_j(i+1,j);
+          if (W > 0)
+            h_y(i,j,0) = 1.0/W * (h_y(i+1,j-1,1) + h_y(i+1,j,1));
+          else
+            h_y(i,j,0) = 0.0;
         }
-      } // end of "y-derivative, i-offset"
-    }   // inner loop (j)
-  }     // outer loop (i)
+      }
+    } // end of "y-derivative, i-offset"
+  }
 
 
   ierr = mask->end_access(); CHKERRQ(ierr);
@@ -592,94 +589,93 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
-    int GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
-        //   are regular grid neighbors of a staggered point:
-        const int oi = 1 - o, oj = o;
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-        const double
-          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+      // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
+      //   are regular grid neighbors of a staggered point:
+      const int oi = 1 - o, oj = o;
 
-        // zero thickness case:
-        if (thk == 0.0) {
-          result(i,j,o) = 0.0;
-          if (full_update) {
-            ierr = delta[o].setColumn(i, j, 0.0); CHKERRQ(ierr);
-          }
-          continue;
-        }
+      const double
+        thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-        if (use_age) {
-          ierr = age->getInternalColumn(i, j, &age_ij); CHKERRQ(ierr);
-          ierr = age->getInternalColumn(i+oi, j+oj, &age_offset); CHKERRQ(ierr);
-        }
-
-        ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
-        ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
-
-        const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-        const int      ks = grid.kBelowHeight(thk);
-        const double   alpha =
-          sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
-        const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
-
-        double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
-        for (int k = 0; k <= ks; ++k) {
-          double depth = thk - grid.zlevels[k]; // FIXME issue #15
-          // pressure added by the ice (i.e. pressure difference between the
-          // current level and the top of the column)
-          const double pressure = EC.getPressureFromDepth(depth);
-
-          double flow;
-          if (use_age) {
-            ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
-          }
-          // If the flow law does not use grain size, it will just ignore it,
-          // no harm there
-          double E = 0.5 * (E_ij[k] + E_offset[k]);
-          flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
-
-          delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
-
-          if (k > 0) { // trapezoidal rule
-            const double dz = grid.zlevels[k] - grid.zlevels[k-1];
-            Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
-          }
-        }
-        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - grid.zlevels[ks];
-        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
-
-        // Override diffusivity at the edges of the domain. (At these
-        // locations PISM uses ghost cells *beyond* the boundary of
-        // the computational domain. This does not matter if the ice
-        // does not extend all the way to the domain boundary, as in
-        // whole-ice-sheet simulations. In a regional setup, though,
-        // this adjustment lets us avoid taking very small time-steps
-        // because of the possible thickness and bed elevation
-        // "discontinuities" at the boundary.)
-        if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
-          Dfoffset = 0.0;
-
-        my_D_max = PetscMax(my_D_max, Dfoffset);
-
-        // vertically-averaged SIA-only flux, sans sliding; note
-        //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
-        //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
-        result(i,j,o) = - Dfoffset * slope;
-
-        // if doing the full update, fill the delta column above the ice and
-        // store it:
+      // zero thickness case:
+      if (thk == 0.0) {
+        result(i,j,o) = 0.0;
         if (full_update) {
-          for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
-            delta_ij[k] = 0.0;
-          }
-          ierr = delta[o].setInternalColumn(i,j,&delta_ij[0]); CHKERRQ(ierr);
+          ierr = delta[o].setColumn(i, j, 0.0); CHKERRQ(ierr);
         }
-      } // o
-    } // j
+        continue;
+      }
+
+      if (use_age) {
+        ierr = age->getInternalColumn(i, j, &age_ij); CHKERRQ(ierr);
+        ierr = age->getInternalColumn(i+oi, j+oj, &age_offset); CHKERRQ(ierr);
+      }
+
+      ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
+      ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
+
+      const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
+      const int      ks = grid.kBelowHeight(thk);
+      const double   alpha =
+        sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
+      const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
+
+      double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
+      for (int k = 0; k <= ks; ++k) {
+        double depth = thk - grid.zlevels[k]; // FIXME issue #15
+        // pressure added by the ice (i.e. pressure difference between the
+        // current level and the top of the column)
+        const double pressure = EC.getPressureFromDepth(depth);
+
+        double flow;
+        if (use_age) {
+          ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
+        }
+        // If the flow law does not use grain size, it will just ignore it,
+        // no harm there
+        double E = 0.5 * (E_ij[k] + E_offset[k]);
+        flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
+
+        delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
+
+        if (k > 0) { // trapezoidal rule
+          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+          Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+        }
+      }
+      // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+      const double dz = thk - grid.zlevels[ks];
+      Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+
+      // Override diffusivity at the edges of the domain. (At these
+      // locations PISM uses ghost cells *beyond* the boundary of
+      // the computational domain. This does not matter if the ice
+      // does not extend all the way to the domain boundary, as in
+      // whole-ice-sheet simulations. In a regional setup, though,
+      // this adjustment lets us avoid taking very small time-steps
+      // because of the possible thickness and bed elevation
+      // "discontinuities" at the boundary.)
+      if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
+        Dfoffset = 0.0;
+
+      my_D_max = PetscMax(my_D_max, Dfoffset);
+
+      // vertically-averaged SIA-only flux, sans sliding; note
+      //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
+      //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
+      result(i,j,o) = - Dfoffset * slope;
+
+      // if doing the full update, fill the delta column above the ice and
+      // store it:
+      if (full_update) {
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+          delta_ij[k] = 0.0;
+        }
+        ierr = delta[o].setInternalColumn(i,j,&delta_ij[0]); CHKERRQ(ierr);
+      }
+    }
   } // i
 
   ierr = h_y.end_access(); CHKERRQ(ierr);
@@ -748,38 +744,38 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   ierr = delta[0].begin_access(); CHKERRQ(ierr);
   ierr = delta[1].begin_access(); CHKERRQ(ierr);
   ierr = D_stag.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      for (int o = 0; o < 2; ++o) {
-        const int oi = 1 - o, oj = o;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
+    for (int o = 0; o < 2; ++o) {
+      const int oi = 1 - o, oj = o;
 
-        const double
-          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+      ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
 
-        if (thk == 0) {
-          D_stag(i,j,o) = 0.0;
-          continue;
-        }
+      const double
+        thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-        const unsigned int ks = grid.kBelowHeight(thk);
-        double Dfoffset = 0.0;
-
-        for (unsigned int k = 1; k <= ks; ++k) {
-          double depth = thk - grid.zlevels[k];
-
-          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
-          // trapezoidal rule
-          Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
-        }
-
-        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - grid.zlevels[ks];
-        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
-
-        D_stag(i,j,o) = Dfoffset;
+      if (thk == 0) {
+        D_stag(i,j,o) = 0.0;
+        continue;
       }
+
+      const unsigned int ks = grid.kBelowHeight(thk);
+      double Dfoffset = 0.0;
+
+      for (unsigned int k = 1; k <= ks; ++k) {
+        double depth = thk - grid.zlevels[k];
+
+        const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+        // trapezoidal rule
+        Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+      }
+
+      // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+      const double dz = thk - grid.zlevels[ks];
+      Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+
+      D_stag(i,j,o) = Dfoffset;
     }
   }
   ierr = D_stag.end_access(); CHKERRQ(ierr);
@@ -834,31 +830,30 @@ PetscErrorCode SIAFD::compute_I() {
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
 
   for (int o = 0; o < 2; ++o) {
-    int GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        const int oi = 1-o, oj=o;
-        const double
-          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
-        ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
+      const int oi = 1-o, oj=o;
+      const double
+        thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
 
-        const unsigned int ks = grid.kBelowHeight(thk);
+      ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
+      ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
 
-        // within the ice:
-        I_ij[0] = 0.0;
-        double I_current = 0.0;
-        for (unsigned int k = 1; k <= ks; ++k) {
-          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
-          // trapezoidal rule
-          I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
-          I_ij[k] = I_current;
-        }
-        // above the ice:
-        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
-          I_ij[k] = I_current;
-        }
+      const unsigned int ks = grid.kBelowHeight(thk);
+
+      // within the ice:
+      I_ij[0] = 0.0;
+      double I_current = 0.0;
+      for (unsigned int k = 1; k <= ks; ++k) {
+        const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+        // trapezoidal rule
+        I_current += 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
+        I_ij[k] = I_current;
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+        I_ij[k] = I_current;
       }
     }
   }
@@ -911,36 +906,36 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   ierr = I[0].begin_access(); CHKERRQ(ierr);
   ierr = I[1].begin_access(); CHKERRQ(ierr);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = I[0].getInternalColumn(i, j, &IEAST); CHKERRQ(ierr);
-      ierr = I[0].getInternalColumn(i - 1, j, &IWEST); CHKERRQ(ierr);
-      ierr = I[1].getInternalColumn(i, j, &INORTH); CHKERRQ(ierr);
-      ierr = I[1].getInternalColumn(i, j - 1, &ISOUTH); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = u_out.getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
-      ierr = v_out.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+    ierr = I[0].getInternalColumn(i, j, &IEAST); CHKERRQ(ierr);
+    ierr = I[0].getInternalColumn(i - 1, j, &IWEST); CHKERRQ(ierr);
+    ierr = I[1].getInternalColumn(i, j, &INORTH); CHKERRQ(ierr);
+    ierr = I[1].getInternalColumn(i, j - 1, &ISOUTH); CHKERRQ(ierr);
 
-      // Fetch values from 2D fields *outside* of the k-loop:
-      double h_x_w = h_x(i - 1, j, 0), h_x_e = h_x(i, j, 0),
-        h_x_n = h_x(i, j, 1), h_x_s = h_x(i, j - 1, 1);
+    ierr = u_out.getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
+    ierr = v_out.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
 
-      double h_y_w = h_y(i - 1, j, 0), h_y_e = h_y(i, j, 0),
-        h_y_n = h_y(i, j, 1), h_y_s = h_y(i, j - 1, 1);
+    // Fetch values from 2D fields *outside* of the k-loop:
+    double h_x_w = h_x(i - 1, j, 0), h_x_e = h_x(i, j, 0),
+      h_x_n = h_x(i, j, 1), h_x_s = h_x(i, j - 1, 1);
 
-      double vel_input_u = (*vel_input)(i, j).u,
-        vel_input_v = (*vel_input)(i, j).v;
+    double h_y_w = h_y(i - 1, j, 0), h_y_e = h_y(i, j, 0),
+      h_y_n = h_y(i, j, 1), h_y_s = h_y(i, j - 1, 1);
 
-      for (unsigned int k = 0; k < grid.Mz; ++k) {
-        u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
-                             INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
-        v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
-                             INORTH[k] * h_y_n + ISOUTH[k] * h_y_s);
+    double vel_input_u = (*vel_input)(i, j).u,
+      vel_input_v = (*vel_input)(i, j).v;
 
-        // Add the "SSA" velocity:
-        u_ij[k] += vel_input_u;
-        v_ij[k] += vel_input_v;
-      }
+    for (unsigned int k = 0; k < grid.Mz; ++k) {
+      u_ij[k] = - 0.25 * (IEAST[k]  * h_x_e + IWEST[k]  * h_x_w +
+                          INORTH[k] * h_x_n + ISOUTH[k] * h_x_s);
+      v_ij[k] = - 0.25 * (IEAST[k]  * h_y_e + IWEST[k]  * h_y_w +
+                          INORTH[k] * h_y_n + ISOUTH[k] * h_y_s);
+
+      // Add the "SSA" velocity:
+      u_ij[k] += vel_input_u;
+      v_ij[k] += vel_input_v;
     }
   }
 

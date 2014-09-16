@@ -100,13 +100,11 @@ PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
 
   ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15
-
-      // temp is set to melting point at depth
-      result(i,j) = T0 - beta_CC * pressure;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15
+    // temp is set to melting point at depth
+    result(i,j) = T0 - beta_CC * pressure;
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);

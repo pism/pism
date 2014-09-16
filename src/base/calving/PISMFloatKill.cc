@@ -55,12 +55,11 @@ PetscErrorCode FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
 
   ierr = pism_mask.begin_access();     CHKERRQ(ierr);
   ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.floating_ice(i, j)) {
-        ice_thickness(i, j) = 0.0;
-        pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    if (M.floating_ice(i, j)) {
+      ice_thickness(i, j) = 0.0;
+      pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
     }
   }
   ierr = ice_thickness.end_access(); CHKERRQ(ierr);

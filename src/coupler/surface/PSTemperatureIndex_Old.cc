@@ -320,47 +320,46 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
 
   ierr = atmosphere->init_timeseries(ts); CHKERRQ(ierr);
 
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // the temperature time series from the AtmosphereModel and its modifiers
-      ierr = atmosphere->temp_time_series(i, j, T); CHKERRQ(ierr);
+    // the temperature time series from the AtmosphereModel and its modifiers
+    ierr = atmosphere->temp_time_series(i, j, T); CHKERRQ(ierr);
 
-      if (faustogreve != NULL) {
-	// we have been asked to set mass balance parameters according to
-	//   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-	ierr = faustogreve->setDegreeDayFactors(i, j, (*usurf)(i, j),
-                                                (*lat)(i, j), (*lon)(i, j), ddf);
-        CHKERRQ(ierr);
-      }
-
-      // use the temperature time series, the "positive" threshhold, and the
-      //   standard deviation of the daily variability to get the number of
-      //   positive degree days (PDDs)
-      PetscScalar sigma = base_pddStdDev;
-      if (sigmalapserate != 0.0) {
-        sigma += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
-      }
-      PetscScalar pddsum = mbscheme->getPDDSumFromTemperatureTimeSeries(sigma, base_pddThresholdTemp,
-                                                                        tseries, dtseries, &T[0], Nseries);
-
-      // use the temperature time series to remove the rainfall from the precipitation
-      PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
-                                  climatic_mass_balance(i,j), // precipitation rate (input)
-                                  tseries, dtseries, &T[0], Nseries);
-
-      // use degree-day factors, and number of PDDs, and the snow precipitation, to
-      //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
-      ierr = mbscheme->getMassFluxesFromPDDs(ddf, my_dt, pddsum, snow_amount,
-                                             accumulation_rate(i,j), // output
-                                             melt_rate(i,j), // output
-                                             runoff_rate(i,j), // output
-                                             climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
+    if (faustogreve != NULL) {
+      // we have been asked to set mass balance parameters according to
+      //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
+      ierr = faustogreve->setDegreeDayFactors(i, j, (*usurf)(i, j),
+                                              (*lat)(i, j), (*lon)(i, j), ddf);
       CHKERRQ(ierr);
-
-      // convert from m/s to m/s * kg/m3 = (kg m-2)/s
-      climatic_mass_balance(i,j) *= ice_density;
     }
+
+    // use the temperature time series, the "positive" threshhold, and the
+    //   standard deviation of the daily variability to get the number of
+    //   positive degree days (PDDs)
+    PetscScalar sigma = base_pddStdDev;
+    if (sigmalapserate != 0.0) {
+      sigma += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
+    }
+    PetscScalar pddsum = mbscheme->getPDDSumFromTemperatureTimeSeries(sigma, base_pddThresholdTemp,
+                                                                      tseries, dtseries, &T[0], Nseries);
+
+    // use the temperature time series to remove the rainfall from the precipitation
+    PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
+                                                                                  climatic_mass_balance(i,j), // precipitation rate (input)
+                                                                                  tseries, dtseries, &T[0], Nseries);
+
+    // use degree-day factors, and number of PDDs, and the snow precipitation, to
+    //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
+    ierr = mbscheme->getMassFluxesFromPDDs(ddf, my_dt, pddsum, snow_amount,
+                                           accumulation_rate(i,j), // output
+                                           melt_rate(i,j), // output
+                                           runoff_rate(i,j), // output
+                                           climatic_mass_balance(i,j)); // climatic_mass_balance = smb (output)
+    CHKERRQ(ierr);
+
+    // convert from m/s to m/s * kg/m3 = (kg m-2)/s
+    climatic_mass_balance(i,j) *= ice_density;
   }
 
   ierr = accumulation_rate.end_access(); CHKERRQ(ierr);

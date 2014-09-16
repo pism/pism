@@ -386,10 +386,9 @@ PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(
   ierr = lon->begin_access();      CHKERRQ(ierr);
   ierr = temp_mj.begin_access();   CHKERRQ(ierr); 
 
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      temp_mj(i,j) = d_mj + gamma_mj * (*surfelev)(i, j) + c_mj * (*lat)(i, j) + kappa_mj * (-(*lon)(i, j));
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    temp_mj(i,j) = d_mj + gamma_mj * (*surfelev)(i, j) + c_mj * (*lat)(i, j) + kappa_mj * (-(*lon)(i, j));
   }
   
   ierr = surfelev->end_access(); CHKERRQ(ierr);

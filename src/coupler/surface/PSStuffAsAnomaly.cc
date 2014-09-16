@@ -131,11 +131,11 @@ PetscErrorCode PSStuffAsAnomaly::update(double my_t, double my_dt) {
   ierr = temp_0.begin_access(); CHKERRQ(ierr);
   ierr = temp_input.begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
-      temp(i, j) = temp(i, j) - temp_0(i, j) + temp_input(i, j);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    mass_flux(i, j) = mass_flux(i, j) - mass_flux_0(i, j) + mass_flux_input(i, j);
+    temp(i, j)      = temp(i, j) - temp_0(i, j) + temp_input(i, j);
   }
 
   ierr = temp_input.end_access(); CHKERRQ(ierr);
