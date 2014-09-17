@@ -667,9 +667,7 @@ public:
 
   PetscErrorCode  getHorSlice(Vec &gslice, double z); // used in iMmatlab.cc
   PetscErrorCode  getHorSlice(IceModelVec2S &gslice, double z);
-  PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2S &myH); // used in iMviewers.cc
   PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, IceModelVec2S &myH);
-  PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, double **H);
   PetscErrorCode  extend_vertically(int old_Mz, double fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
 protected:

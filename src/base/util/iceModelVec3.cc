@@ -421,53 +421,15 @@ PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) {
 
 
 //! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2S gsurf.
-PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, IceModelVec2S &myH) {
-  PetscErrorCode ierr;
-  double    **H;
-  ierr = myH.get_array(H); CHKERRQ(ierr);
-  ierr = getSurfaceValues(gsurf, H); CHKERRQ(ierr);
-  ierr = myH.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-//! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to a Vec gsurf.
-/*!
-  This version is used in iMviewers.cc
- */
-PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2S &myH) {
-  PetscErrorCode ierr;
-  double **surf_val;
-
-  PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
-
+PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
+                                               IceModelVec2S &H) {
   IceModelVec::AccessList list(*this);
-  list.add(myH);
+  list.add(surface_values);
 
-  ierr = DMDAVecGetArray(da2->get(), gsurf, &surf_val); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    surf_val[i][j] = getValZ(i, j, myH(i,j));
+    surface_values(i, j) = getValZ(i, j, H(i, j));
   }
-  ierr = DMDAVecRestoreArray(da2->get(), gsurf, &surf_val); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, double **H) {
-  PetscErrorCode ierr;
-  double    **surf_val;
-
-  ierr = begin_access(); CHKERRQ(ierr);
-  ierr = gsurf.get_array(surf_val); CHKERRQ(ierr);
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    surf_val[i][j] = getValZ(i,j,H[i][j]);
-  }
-  ierr = gsurf.end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
