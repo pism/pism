@@ -272,8 +272,20 @@ public:
   //! Dump an IceModelVec to a file. *This is for debugging only.*
   //! Uses const char[] to make it easier to call it from gdb.
   PetscErrorCode dump(const char filename[]);
-};
 
+public:
+
+  //! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
+  class AccessList {
+  public:
+    AccessList();
+    AccessList(IceModelVec &v);
+    ~AccessList();
+    void add(IceModelVec &v);
+  private:
+    std::vector<IceModelVec*> m_vecs;
+  };
+};
 
 enum Direction {North = 0, East, South, West};
 

@@ -905,4 +905,26 @@ PetscErrorCode IceModelVec::write(const PIO &nc, IO_Type nctype) {
   return 0;
 }
 
+IceModelVec::AccessList::AccessList() {
+  // empty
+}
+
+IceModelVec::AccessList::~AccessList() {
+  while (m_vecs.empty() == false) {
+    IceModelVec *vec = m_vecs.back();
+    vec->end_access();
+    m_vecs.pop_back();
+  }
+}
+
+IceModelVec::AccessList::AccessList(IceModelVec &vec) {
+  add(vec);
+}
+
+void IceModelVec::AccessList::add(IceModelVec &vec) {
+  std::vector<IceModelVec*>::iterator j = m_vecs.begin();
+  vec.begin_access();
+  m_vecs.push_back(&vec);
+}
+
 } // end of namespace pism
