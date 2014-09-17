@@ -145,62 +145,63 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
   ierr = update_mask(bed_topography, ice_thickness, vMask); CHKERRQ(ierr);
 
   // First step: distribute residual ice thickness
-  ierr = vMask.begin_access();      CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
-  ierr = vHref.begin_access();      CHKERRQ(ierr);
-  ierr = H_residual.begin_access(); CHKERRQ(ierr);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  {
+    IceModelVec::AccessList list; // will be destroyed at the end of the block
+    list.add(vMask);
+    list.add(ice_thickness);
+    list.add(vHref);
+    list.add(H_residual);
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (H_residual(i,j) <= 0.0)
-      continue;
+      if (H_residual(i,j) <= 0.0)
+        continue;
 
-    planeStar<int> m = vMask.int_star(i,j);
-    int N = 0; // number of empty or partially filled neighbors
-    planeStar<bool> neighbors;
-    neighbors.set(false);
+      planeStar<int> m = vMask.int_star(i,j);
+      int N = 0; // number of empty or partially filled neighbors
+      planeStar<bool> neighbors;
+      neighbors.set(false);
 
-    if (mask.ice_free_ocean(m.e)) {
-      N++;
-      neighbors.e = true;
+      if (mask.ice_free_ocean(m.e)) {
+        N++;
+        neighbors.e = true;
+      }
+      if (mask.ice_free_ocean(m.w)) {
+        N++;
+        neighbors.w = true;
+      }
+      if (mask.ice_free_ocean(m.n)) {
+        N++;
+        neighbors.n = true;
+      }
+      if (mask.ice_free_ocean(m.s)) {
+        N++;
+        neighbors.s = true;
+      }
+
+      if (N > 0)  {
+        // Remaining ice mass will be redistributed equally among all
+        // adjacent partially-filled cells (is there a more physical
+        // way?)
+        if (neighbors.e)
+          vHref(i + 1, j) += H_residual(i, j) / N;
+        if (neighbors.w)
+          vHref(i - 1, j) += H_residual(i, j) / N;
+        if (neighbors.n)
+          vHref(i, j + 1) += H_residual(i, j) / N;
+        if (neighbors.s)
+          vHref(i, j - 1) += H_residual(i, j) / N;
+
+        H_residual(i, j) = 0.0;
+      } else {
+        // Conserve mass, but (possibly) create a "ridge" at the shelf
+        // front
+        ice_thickness(i, j) += H_residual(i, j);
+        H_residual(i, j) = 0.0;
+      }
+
     }
-    if (mask.ice_free_ocean(m.w)) {
-      N++;
-      neighbors.w = true;
-    }
-    if (mask.ice_free_ocean(m.n)) {
-      N++;
-      neighbors.n = true;
-    }
-    if (mask.ice_free_ocean(m.s)) {
-      N++;
-      neighbors.s = true;
-    }
-
-    if (N > 0)  {
-      // Remaining ice mass will be redistributed equally among all
-      // adjacent partially-filled cells (is there a more physical
-      // way?)
-      if (neighbors.e)
-        vHref(i + 1, j) += H_residual(i, j) / N;
-      if (neighbors.w)
-        vHref(i - 1, j) += H_residual(i, j) / N;
-      if (neighbors.n)
-        vHref(i, j + 1) += H_residual(i, j) / N;
-      if (neighbors.s)
-        vHref(i, j - 1) += H_residual(i, j) / N;
-
-      H_residual(i, j) = 0.0;
-    } else {
-      // Conserve mass, but (possibly) create a "ridge" at the shelf
-      // front
-      ice_thickness(i, j) += H_residual(i, j);
-      H_residual(i, j) = 0.0;
-    }
-
   }
-  ierr = vMask.end_access();      CHKERRQ(ierr);
-  ierr = ice_thickness.end_access();         CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -214,50 +215,47 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
 
   // Second step: we need to redistribute residual ice volume if
   // neighbors which gained redistributed ice also become full.
-  ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
-  ierr = ice_surface_elevation.begin_access();         CHKERRQ(ierr);
-  ierr = bed_topography.begin_access();       CHKERRQ(ierr);
-  ierr = vMask.begin_access();      CHKERRQ(ierr);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  {
+    IceModelVec::AccessList list;   // will be destroyed at the end of the block
+    list.add(ice_thickness);
+    list.add(ice_surface_elevation);
+    list.add(bed_topography);
+    list.add(vMask);
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    if (vHref(i,j) <= 0.0)
-      continue;
+      if (vHref(i,j) <= 0.0)
+        continue;
 
-    double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
-                                                 ice_thickness.star(i, j),
-                                                 ice_surface_elevation.star(i, j),
-                                                 bed_topography(i,j),
-                                                 reduce_frontal_thickness);
+      double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
+                                                   ice_thickness.star(i, j),
+                                                   ice_surface_elevation.star(i, j),
+                                                   bed_topography(i,j),
+                                                   reduce_frontal_thickness);
 
-    double coverage_ratio = 1.0;
-    if (H_threshold > 0.0)
-      coverage_ratio = vHref(i, j) / H_threshold;
-    if (coverage_ratio >= 1.0) {
-      // The current partially filled grid cell is considered to be full
-      H_residual(i, j) = vHref(i, j) - H_threshold;
-      remaining_residual_thickness += H_residual(i, j);
-      ice_thickness(i, j) += H_threshold;
-      vHref(i, j) = 0.0;
+      double coverage_ratio = 1.0;
+      if (H_threshold > 0.0)
+        coverage_ratio = vHref(i, j) / H_threshold;
+      if (coverage_ratio >= 1.0) {
+        // The current partially filled grid cell is considered to be full
+        H_residual(i, j) = vHref(i, j) - H_threshold;
+        remaining_residual_thickness += H_residual(i, j);
+        ice_thickness(i, j) += H_threshold;
+        vHref(i, j) = 0.0;
+      }
+      if (ice_thickness(i, j)<0) {
+        ierr = verbPrintf(1, grid.com,
+                          "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
+                          "  H_threshold: %f\n"
+                          "  coverage_ratio: %f\n"
+                          "  vHref: %f\n"
+                          "  H_residual: %f\n"
+                          "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
+                          vHref(i, j), H_residual(i, j), ice_thickness(i, j)); CHKERRQ(ierr);
+      }
+
     }
-    if (ice_thickness(i, j)<0) {
-      ierr = verbPrintf(1, grid.com,
-                        "PISM WARNING: at i=%d, j=%d, we just produced negative ice thickness.\n"
-                        "  H_threshold: %f\n"
-                        "  coverage_ratio: %f\n"
-                        "  vHref: %f\n"
-                        "  H_residual: %f\n"
-                        "  ice_thickness: %f\n", i, j, H_threshold, coverage_ratio,
-                        vHref(i, j), H_residual(i, j), ice_thickness(i, j)); CHKERRQ(ierr);
-    }
-
   }
-  ierr = ice_thickness.end_access();         CHKERRQ(ierr);
-  ierr = ice_surface_elevation.end_access();         CHKERRQ(ierr);
-  ierr = bed_topography.end_access();       CHKERRQ(ierr);
-  ierr = vMask.end_access();      CHKERRQ(ierr);
-  ierr = vHref.end_access();      CHKERRQ(ierr);
-  ierr = H_residual.end_access(); CHKERRQ(ierr);
 
   // check if redistribution should be run once more
   ierr = GlobalSum(&remaining_residual_thickness,

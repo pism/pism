@@ -49,9 +49,10 @@ Because Enth3 gets set, does ghost communication to finish.
 PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result) {
   PetscErrorCode ierr;
 
-  ierr = temperature.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(temperature);
+  list.add(result);
+  list.add(ice_thickness);
 
   double *Tij, *Enthij; // columns of these values
   for (Points p(grid); p; p.next()) {
@@ -66,9 +67,6 @@ PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceMod
     }
   }
 
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = temperature.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   result.inc_state_counter();
 
@@ -87,10 +85,11 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
                                           IceModelVec3 &result) {
   PetscErrorCode ierr;
 
-  ierr = temperature.begin_access(); CHKERRQ(ierr);
-  ierr = liquid_water_fraction.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(temperature);
+  list.add(liquid_water_fraction);
+  list.add(result);
+  list.add(ice_thickness);
 
   double *Tij, *Liqfracij, *Enthij; // columns of these values
   for (Points p(grid); p; p.next()) {
@@ -106,10 +105,6 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
     }
   }
 
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = temperature.end_access(); CHKERRQ(ierr);
-  ierr = liquid_water_fraction.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = result.update_ghosts(); CHKERRQ(ierr);
 
@@ -133,9 +128,12 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
      "1", ""); CHKERRQ(ierr);
 
   double *omegaij, *Enthij; // columns of these values
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(enthalpy);
+  list.add(ice_thickness);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -147,9 +145,6 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
                                   omegaij[k]); CHKERRQ(ierr);
     }
   }
-  ierr = enthalpy.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   result.inc_state_counter();
 
@@ -172,9 +167,12 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
      "", ""); CHKERRQ(ierr);
 
   double *CTSij, *Enthij; // columns of these values
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(Enth3);
+  list.add(ice_thickness);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -185,9 +183,6 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &result) {
       CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));
     }
   }
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -261,33 +256,34 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   assert(subglacial_hydrology != NULL);
   ierr = subglacial_hydrology->till_water_thickness(till_water_thickness); CHKERRQ(ierr);
 
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_surface_temp);
 
-  ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
+  list.add(shelfbtemp);
 
   // get other map-plane fields
-  ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
-  ierr = Rb->begin_access(); CHKERRQ(ierr);
-  ierr = basal_heat_flux.begin_access(); CHKERRQ(ierr);
-  ierr = till_water_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  list.add(liqfrac_surface);
+  list.add(ice_thickness);
+  list.add(basal_melt_rate);
+  list.add(*Rb);
+  list.add(basal_heat_flux);
+  list.add(till_water_thickness);
+  list.add(vMask);
 
   // these are accessed a column at a time
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(*strain_heating3);
+  list.add(Enth3);
+  list.add(vWork3d);
 
   unsigned int liquifiedCount = 0;
 
   MaskQuery mask(vMask);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  for (Points pt(grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
 
 
     // ignore advection and strain heating in ice if isMarginal
@@ -487,23 +483,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   }
 
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = Rb->end_access(); CHKERRQ(ierr);
-  ierr = basal_heat_flux.end_access(); CHKERRQ(ierr);
-  ierr = till_water_thickness.end_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
-  ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
   // FIXME: use cell areas
   *liquifiedVol = ((double) liquifiedCount) * grid.dz_fine * grid.dx * grid.dy;

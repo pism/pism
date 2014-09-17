@@ -48,9 +48,10 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
 
   MaskQuery mask(vMask);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = Enthbase.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(ice_thickness);
+  list.add(Enthbase);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -65,9 +66,6 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
       CHKERRQ(ierr);
     }
   }
-  ierr = Enthbase.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   // communication
   ierr = GlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
@@ -100,9 +98,10 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
   double *tau, origvol = 0.0;
   MaskQuery mask(vMask);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = tau3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(ice_thickness);
+  list.add(tau3);
 
   const double one_year = grid.convert(1.0, "year", "seconds");
 
@@ -122,9 +121,6 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
     }
   }
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = tau3.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   // communicate to turn into global original fraction
   ierr = GlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
@@ -307,10 +303,11 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
   PetscErrorCode ierr;
   double     volume=0.0;
 
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(cell_area);
 
   {
-    ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+    list.add(ice_thickness);
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -319,21 +316,18 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
       if (ice_thickness(i,j) > 0.0)
         volume += ice_thickness(i,j) * cell_area(i,j);
     }
-    ierr = ice_thickness.end_access(); CHKERRQ(ierr);
   }
 
   // Add the volume of the ice in Href:
   if (config.get_flag("part_grid")) {
-    ierr = vHref.begin_access(); CHKERRQ(ierr);
+    list.add(vHref);
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       volume += vHref(i,j) * cell_area(i,j);
     }
-    ierr = vHref.end_access(); CHKERRQ(ierr);
   }
 
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -351,10 +345,11 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   double sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = bed_topography.begin_access();  CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(ice_thickness);
+  list.add(bed_topography);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -372,10 +367,6 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   }
   const double oceanarea=3.61e14;//in square meters
   volume /= oceanarea;
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -388,9 +379,10 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(double &result) {
 
   double *Enth;  // do NOT delete this pointer: space returned by
   //   getInternalColumn() is allocated already
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(Enth3);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -409,9 +401,6 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(double &result) {
       }
     }
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -424,9 +413,10 @@ PetscErrorCode IceModel::compute_ice_volume_cold(double &result) {
 
   double *Enth;  // do NOT delete this pointer: space returned by
   //   getInternalColumn() is allocated already
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(Enth3);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -445,9 +435,6 @@ PetscErrorCode IceModel::compute_ice_volume_cold(double &result) {
       }
     }
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -460,18 +447,16 @@ PetscErrorCode IceModel::compute_ice_area(double &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(ice_thickness);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j))
       area += cell_area(i,j);
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -487,10 +472,11 @@ PetscErrorCode IceModel::compute_ice_area_temperate(double &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = Enthbase.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(Enthbase);
+  list.add(ice_thickness);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -499,10 +485,6 @@ PetscErrorCode IceModel::compute_ice_area_temperate(double &result) {
       area += cell_area(i,j);
     }
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = Enthbase.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -518,10 +500,11 @@ PetscErrorCode IceModel::compute_ice_area_cold(double &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = Enthbase.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(Enthbase);
+  list.add(ice_thickness);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -530,10 +513,6 @@ PetscErrorCode IceModel::compute_ice_area_cold(double &result) {
       area += cell_area(i,j);
     }
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = Enthbase.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -546,16 +525,15 @@ PetscErrorCode IceModel::compute_ice_area_grounded(double &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j))
       area += cell_area(i,j);
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -568,16 +546,15 @@ PetscErrorCode IceModel::compute_ice_area_floating(double &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vMask);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.floating_ice(i,j))
       area += cell_area(i,j);
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -597,8 +574,9 @@ PetscErrorCode IceModel::compute_ice_enthalpy(double &result) {
 
   double *Enth;  // do NOT delete this pointer: space returned by
   //   getInternalColumn() is allocated already
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(Enth3);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -613,8 +591,6 @@ PetscErrorCode IceModel::compute_ice_enthalpy(double &result) {
       enthalpysum += Enth[ks] * (ice_thickness(i,j) - grid.zlevels[ks]);
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
 
   enthalpysum *= config.get("ice_density") * (grid.dx * grid.dy);
 

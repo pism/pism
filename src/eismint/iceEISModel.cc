@@ -147,7 +147,6 @@ PetscErrorCode IceEISModel::allocate_couplers() {
 }
 
 PetscErrorCode IceEISModel::generateTroughTopography() {
-  PetscErrorCode  ierr;
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
   
@@ -157,7 +156,8 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   const double slope = b0/L;
   const double dx61  = (2*L) / 60; // = 25.0e3
 
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(bed_topography);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -169,28 +169,26 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
       bed_topography(i,j) = 1000.0;
     }
   }
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
 
 PetscErrorCode IceEISModel::generateMoundTopography() {
-  PetscErrorCode  ierr;
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
   
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width
 
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(bed_topography);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid.dx, ewd = j * grid.dy;
     bed_topography(i,j) = PetscAbs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
   }
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

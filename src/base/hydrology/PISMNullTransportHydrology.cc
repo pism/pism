@@ -91,9 +91,10 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
   }
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
-  ierr = total_input.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(Wtil);
+  list.add(total_input);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -104,9 +105,6 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
       Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
     }
   }
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
-  ierr = total_input.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

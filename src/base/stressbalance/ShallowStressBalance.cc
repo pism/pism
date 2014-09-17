@@ -139,14 +139,13 @@ PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVe
                                                                       IceModelVec2S &tauc,
                                                                       IceModelVec2Int &mask,
                                                                       IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
   MaskQuery m(mask);
 
-  ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = tauc.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(velocity);
+  list.add(result);
+  list.add(tauc);
+  list.add(mask);
   
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -162,14 +161,8 @@ PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVe
     }
   }
 
-  ierr = mask.end_access(); CHKERRQ(ierr);
-  ierr = tauc.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = velocity.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
-
 
 
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.
@@ -191,20 +184,19 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
-  PetscErrorCode ierr;
   double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
   if (result.get_dof() != 2)
     SETERRQ(grid.com, 1, "result.dof() == 2 is required");
 
-  ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(velocity);
+  list.add(result);
+  list.add(mask);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
 
     if (M.ice_free(mask.as_int(i,j))) {
       result(i,j,0) = 0.0;
@@ -265,9 +257,6 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
 
   }
 
-  ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -276,7 +265,6 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
 /*! Note: IceModelVec2 result has to have dof == 3. */
 PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
-  PetscErrorCode ierr;
   double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
@@ -286,13 +274,13 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
   double hardness = pow(config.get("ice_softness"),-1.0/config.get("ssa_Glen_exponent"));
 
-  ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(velocity);
+  list.add(result);
+  list.add(mask);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
 
     if (M.ice_free(mask.as_int(i,j))) {
       result(i,j,0) = 0.0;
@@ -357,9 +345,6 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
 
   }
 
-  ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -406,9 +391,10 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   double standard_gravity = grid.config.get("standard_gravity"),
     ice_density = grid.config.get("ice_density");
 
-  ierr =    result->begin_access(); CHKERRQ(ierr);
-  ierr =   surface->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*surface);
+  list.add(*thickness);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -422,10 +408,6 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
       (*result)(i,j).v = - pressure * surface->diff_y_p(i,j);
     }
   }
-
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
-  ierr =    result->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -511,10 +493,11 @@ PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
 
   MaskQuery m(*mask);
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = vel.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*tauc);
+  list.add(vel);
+  list.add(*mask);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -527,10 +510,6 @@ PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
       (*result)(i,j).v = 0.0;
     }
   }
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = vel.end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
 
   output = result;
 
@@ -647,17 +626,15 @@ PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
   ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
   IceModelVec2V &vel = *velocity;
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = velocity->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*tauc);
+  list.add(*velocity);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
   }
-  ierr = velocity->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;

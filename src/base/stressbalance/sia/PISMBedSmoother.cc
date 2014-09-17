@@ -334,17 +334,17 @@ PetscErrorCode BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
                                                  IceModelVec2S &thk,
                                                  IceModelVec2Int &mask,
                                                  IceModelVec2S *thksmooth) { 
-  PetscErrorCode ierr;  
-
   MaskQuery M(mask);
   IceModelVec2S &result = *thksmooth;
 
-  ierr = mask.begin_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
-  ierr = maxtl.begin_access(); CHKERRQ(ierr);
-  ierr = usurf.begin_access(); CHKERRQ(ierr);
-  ierr = thk.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(mask);
+  list.add(topgsmooth);
+  list.add(maxtl);
+  list.add(usurf);
+  list.add(thk);
+  list.add(result);
+
   int GHOSTS = topgsmooth.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -370,12 +370,6 @@ PetscErrorCode BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
       }
     }
   }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.end_access(); CHKERRQ(ierr);
-  ierr = maxtl.end_access(); CHKERRQ(ierr);
-  ierr = usurf.end_access(); CHKERRQ(ierr);
-  ierr = thk.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -412,13 +406,14 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
 
   IceModelVec2S &result = *theta;
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = usurf.begin_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
-  ierr = maxtl.begin_access(); CHKERRQ(ierr);
-  ierr = C2.begin_access(); CHKERRQ(ierr);
-  ierr = C3.begin_access(); CHKERRQ(ierr);
-  ierr = C4.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(usurf);
+  list.add(topgsmooth);
+  list.add(maxtl);
+  list.add(C2);
+  list.add(C3);
+  list.add(C4);
   
   int GHOSTS = topgsmooth.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
@@ -446,13 +441,6 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
       result(i,j) = 0.00;  // FIXME = min_theta; make configurable
     }
   }
-  ierr = C4.end_access(); CHKERRQ(ierr);
-  ierr = C3.end_access(); CHKERRQ(ierr);
-  ierr = C2.end_access(); CHKERRQ(ierr);
-  ierr = maxtl.end_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.end_access(); CHKERRQ(ierr);
-  ierr = usurf.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

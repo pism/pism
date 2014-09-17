@@ -97,10 +97,11 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ssa->strength_extension->set_notional_strength(nu0 * H0);
   ssa->strength_extension->set_min_thickness(800);
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = surface.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(surface);
+  list.add(bc_mask);
+  list.add(vel_bc);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -122,11 +123,6 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
       vel_bc(i,j).v = myv;
     }
   }
-
-  ierr = surface.end_access(); CHKERRQ(ierr);
-  ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
   ierr = surface.update_ghosts(); CHKERRQ(ierr);

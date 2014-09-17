@@ -331,10 +331,11 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
 
   MaskQuery mask(model->vMask);
 
-  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
-  ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->vMask);
+  list.add(model->Enth3);
+  list.add(model->ice_thickness);
+  list.add(*result);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -347,10 +348,6 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
       (*result)(i,j) = fillval;
     }
   }
-  ierr = model->Enth3.end_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -374,13 +371,12 @@ PetscErrorCode IceModel_rank::compute(IceModelVec* &output) {
   ierr = result->create(grid, "rank", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  IceModelVec::AccessList list;
+  list.add(*result);
 
-    (*result)(i,j) = grid.rank;
+  for (Points p(grid); p; p.next()) {
+    (*result)(p.i(),p.j()) = grid.rank;
   }
-  ierr = result->end_access();
 
   output = result;
   return 0;
@@ -443,25 +439,18 @@ PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
 
   MaskQuery mask(*ice_mask);
 
-  ierr = ice_mask->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*ice_mask);
+  list.add(*thickness);
   for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (mask.icy(i, j)) {
+    if (mask.icy(p.i(), p.j())) {
       ice_filled_cells += 1;
     }
   }
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = ice_mask->end_access(); CHKERRQ(ierr);
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
   for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    (*result)(i,j) = ice_filled_cells;
+    (*result)(p.i(), p.j()) = ice_filled_cells;
   }
-  ierr = result->end_access();
 
   output = result;
   return 0;
@@ -498,9 +487,12 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   double *Tij, *Enthij; // columns of these values
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*enthalpy);
+  list.add(*thickness);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -519,9 +511,6 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
       CHKERRQ(ierr);
     }
   }
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -561,11 +550,14 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   double *Tij, *Enthij; // columns of these values
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*enthalpy);
+  list.add(*thickness);
+
+  for (Points pt(grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
 
     ierr = result->getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
     ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
@@ -589,9 +581,6 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
 
     }
   }
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   ierr = result->shift(-melting_point_temp); CHKERRQ(ierr);
 
@@ -629,9 +618,12 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   double *Enthij; // columns of these values
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*enthalpy);
+  list.add(*thickness);
+
   for (Points pt(grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
@@ -655,9 +647,6 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
       }
     }
   }
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   ierr = result->shift(-melting_point_temp); CHKERRQ(ierr);
 
@@ -687,27 +676,24 @@ PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
 
   // compute levels corresponding to 1 m below the ice surface:
 
-  ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->ice_thickness);
+  list.add(*result);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) = PetscMax(model->ice_thickness(i,j) - 1.0, 0.0);
   }
-  ierr = result->end_access(); CHKERRQ(ierr);
 
   ierr = model->Enth3.getSurfaceValues(*result, *result); CHKERRQ(ierr);  // z=0 slice
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (model->ice_thickness(i,j) <= 1.0)
       (*result)(i,j) = fill_value;
   }
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
-
 
   output = result;
   return 0;
@@ -770,9 +756,10 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
 
   MaskQuery mask(model->vMask);
 
-  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->vMask);
+  list.add(*result);
+  list.add(*thickness);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -789,9 +776,6 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   result->metadata() = vars[0];
   output = result;
@@ -826,8 +810,9 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
   // result contains surface enthalpy; note that it is allocated by
   // enth.compute().
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*thickness);
 
   double depth = 1.0,
     pressure = model->EC->getPressureFromDepth(depth);
@@ -843,8 +828,6 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
 
   result->metadata() = vars[0];
   output = result;
@@ -908,10 +891,12 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
 
   MaskQuery mask(model->vMask);
 
-  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->vMask);
+  list.add(*result);
+  list.add(model->Enth3);
+  list.add(model->ice_thickness);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -940,10 +925,6 @@ PetscErrorCode IceModel_tempicethk::compute(IceModelVec* &output) {
       (*result)(i,j) = grid.config.get("fill_value");
     }
   }
-  ierr = model->Enth3.end_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -977,10 +958,12 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
 
   const double fill_value = grid.config.get("fill_value");
 
-  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = model->Enth3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->vMask);
+  list.add(*result);
+  list.add(model->ice_thickness);
+  list.add(model->Enth3);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -1040,10 +1023,6 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
                i, j, k, ks);
     }
   }
-  ierr = model->Enth3.end_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = model->vMask.end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -1698,10 +1677,10 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
   if (gsl_isnan(last_report_time)) {
     ierr = result->set(grid.convert(2e6, "m/year", "m/s")); CHKERRQ(ierr);
   } else {
-
-    ierr = result->begin_access(); CHKERRQ(ierr);
-    ierr = last_ice_thickness.begin_access(); CHKERRQ(ierr);
-    ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
+    IceModelVec::AccessList list;
+    list.add(*result);
+    list.add(last_ice_thickness);
+    list.add(model->ice_thickness);
 
     double dt = grid.time->current() - last_report_time;
     for (Points p(grid); p; p.next()) {
@@ -1709,11 +1688,6 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
 
       (*result)(i, j) = (model->ice_thickness(i, j) - last_ice_thickness(i, j)) / dt;
     }
-
-    ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
-    ierr = last_ice_thickness.end_access(); CHKERRQ(ierr);
-    ierr = result->end_access(); CHKERRQ(ierr);
-
   }
 
   // Save the ice thickness and the corresponding time:
@@ -1724,18 +1698,14 @@ PetscErrorCode IceModel_dHdt::compute(IceModelVec* &output) {
 }
 
 PetscErrorCode IceModel_dHdt::update_cumulative() {
-  PetscErrorCode ierr;
-  ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = last_ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->ice_thickness);
+  list.add(last_ice_thickness);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
     last_ice_thickness(i, j) = model->ice_thickness(i, j);
   }
-
-  ierr = last_ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
 
   last_report_time = grid.time->current();
 
@@ -1759,18 +1729,17 @@ PetscErrorCode IceModel_ivolg::update(double a, double b) {
 
   MaskQuery mask(model->vMask);
 
-  ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
-  ierr = model->cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->ice_thickness);
+  list.add(model->vMask);
+  list.add(model->cell_area);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j))
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);;
   }
-  ierr = model->cell_area.end_access(); CHKERRQ(ierr);
-  ierr = model->vMask.end_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
 
@@ -1796,18 +1765,17 @@ PetscErrorCode IceModel_ivolf::update(double a, double b) {
 
   MaskQuery mask(model->vMask);
 
-  ierr = model->ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = model->vMask.begin_access(); CHKERRQ(ierr);
-  ierr = model->cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(model->ice_thickness);
+  list.add(model->vMask);
+  list.add(model->cell_area);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.floating_ice(i,j))
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);;
   }
-  ierr = model->cell_area.end_access(); CHKERRQ(ierr);
-  ierr = model->vMask.end_access(); CHKERRQ(ierr);
-  ierr = model->ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
 
@@ -2082,7 +2050,9 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
   if (m_var_name == "lon")
     latitude = false;
 
-  ierr =  result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -2107,7 +2077,6 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
         values[k] = x * RAD_TO_DEG;
     }
   }
-  ierr =  result->end_access(); CHKERRQ(ierr);
 
   output = result;
 

@@ -344,11 +344,12 @@ PetscErrorCode IceModel::putTempAtDepth() {
   else
     result = &Enth3;
 
-  ierr = ice_surface_temp.begin_access();      CHKERRQ(ierr);
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
-  ierr = geothermal_flux.begin_access();       CHKERRQ(ierr);
-  ierr = result->begin_access();               CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_surface_temp);
+  list.add(climatic_mass_balance);
+  list.add(ice_thickness);
+  list.add(geothermal_flux);
+  list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -408,11 +409,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   }
 
-  ierr = ice_thickness.end_access();         CHKERRQ(ierr);
-  ierr = geothermal_flux.end_access();       CHKERRQ(ierr);
-  ierr = result->end_access();               CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access();      CHKERRQ(ierr);
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   ierr = result->update_ghosts(); CHKERRQ(ierr);
 

@@ -48,14 +48,14 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
   const int Mx = grid.Mx, My = grid.My;
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = nmm.begin_access(); CHKERRQ(ierr);
-  ierr = hst.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
+  list.add(nmm);
+  list.add(hst);
 
   for (PointsWithGhosts p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
 
     // x-component, i-offset
     if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
@@ -98,10 +98,6 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
     }
 
   }
-  ierr = nmm.end_access(); CHKERRQ(ierr);
-  ierr = hst.end_access(); CHKERRQ(ierr);
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -146,10 +142,12 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
   IceModelVec2Int &nmm = *no_model_mask;
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = nmm.begin_access(); CHKERRQ(ierr);
-  ierr = usurfstore->begin_access(); CHKERRQ(ierr);
-  ierr = thkstore->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(nmm);
+  list.add(*usurfstore);
+  list.add(*thkstore);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -169,12 +167,8 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
       else
         result(i, j).v = - pressure * usurfstore->diff_y(i,j);
     }
-
   }
-  ierr = usurfstore->end_access(); CHKERRQ(ierr);
-  ierr = thkstore->end_access(); CHKERRQ(ierr);
-  ierr = nmm.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -200,8 +194,10 @@ PetscErrorCode RegionalDefaultYieldStress::basal_material_yield_stress(IceModelV
   ierr = MohrCoulombYieldStress::basal_material_yield_stress(result); CHKERRQ(ierr);
 
   // now set result=tauc to a big value in no_model_strip
-  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*no_model_mask);
+  list.add(result);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -209,8 +205,6 @@ PetscErrorCode RegionalDefaultYieldStress::basal_material_yield_stress(IceModelV
       result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
     }
   }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
   return 0;
 }
 

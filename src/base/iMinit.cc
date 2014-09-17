@@ -1112,7 +1112,6 @@ PetscErrorCode IceModel::init_calving() {
 }
 
 PetscErrorCode IceModel::allocate_bed_deformation() {
-  PetscErrorCode ierr;
   std::string model = config.get_string("bed_deformation_model");
 
   if (beddef == NULL) {

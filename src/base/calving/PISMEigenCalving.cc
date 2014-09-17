@@ -104,14 +104,15 @@ PetscErrorCode EigenCalving::update(double dt,
 
   MaskQuery mask(pism_mask);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  ierr = Href.begin_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.begin_access(); CHKERRQ(ierr);
-  ierr = m_thk_loss.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(pism_mask);
+  list.add(Href);
+  list.add(m_strain_rates);
+  list.add(m_thk_loss);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  for (Points pt(grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
     // Average of strain-rate eigenvalues in adjacent floating grid
     // cells to be used for eigen-calving:
     double
@@ -215,11 +216,10 @@ PetscErrorCode EigenCalving::update(double dt,
 
     } // end of "if (ice_free_ocean && next_to_floating)"
   }
-  ierr = m_thk_loss.end_access(); CHKERRQ(ierr);
 
   ierr = m_thk_loss.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = m_thk_loss.begin_access(); CHKERRQ(ierr);
+  list.add(m_thk_loss);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -242,11 +242,6 @@ PetscErrorCode EigenCalving::update(double dt,
     }
 
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
-  ierr = Href.end_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.end_access(); CHKERRQ(ierr);
-  ierr = m_thk_loss.end_access(); CHKERRQ(ierr);
 
   ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
 
@@ -301,11 +296,12 @@ PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
 
   ierr = update_strain_rates(); CHKERRQ(ierr);
 
-  ierr = m_mask->begin_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_mask);
+  list.add(m_strain_rates);
 
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  for (Points pt(grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
     // Average of strain-rate eigenvalues in adjacent floating grid cells to
     // be used for eigencalving
     double eigen1 = 0.0, eigen2 = 0.0;
@@ -361,8 +357,6 @@ PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
 
   }
 
-  ierr = m_mask->end_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.end_access(); CHKERRQ(ierr);
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
   ierr = GlobalSum(&my_calving_rate_mean, &calving_rate_mean, grid.com); CHKERRQ(ierr);
@@ -460,12 +454,11 @@ PetscErrorCode EigenCalving::update_strain_rates() {
  */
 PetscErrorCode EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
                                                        IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
-
   MaskQuery mask(pism_mask);
 
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(pism_mask);
+  list.add(ice_thickness);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -529,8 +522,6 @@ PetscErrorCode EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
       ice_thickness(i, j) = 0.0;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

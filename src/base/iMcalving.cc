@@ -84,16 +84,15 @@ PetscErrorCode IceModel::do_calving() {
  * floating ice neighbor.
  */
 PetscErrorCode IceModel::Href_cleanup() {
-  PetscErrorCode ierr;
-
   if (vHref.was_created() == false)
     return 0;
 
   MaskQuery mask(vMask);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vHref.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(vHref);
+  list.add(vMask);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -107,10 +106,6 @@ PetscErrorCode IceModel::Href_cleanup() {
       vHref(i, j) = 0.0;
     }
   }
-
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vHref.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -141,18 +136,19 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
     use_Href = Href.was_created() && Href_old.was_created();
   double my_total_discharge = 0.0, total_discharge;
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = thickness_old.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(thickness_old);
+  list.add(vMask);
+  list.add(cell_area);
 
   if (update_2d_discharge) {
-    ierr = discharge_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+    list.add(discharge_flux_2D_cumulative);
   }
 
   if (use_Href) {
-    ierr = Href.begin_access(); CHKERRQ(ierr);
-    ierr = Href_old.begin_access(); CHKERRQ(ierr);
+    list.add(Href);
+    list.add(Href_old);
   }
 
   for (Points p(grid); p; p.next()) {
@@ -184,20 +180,6 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
       my_total_discharge += discharge;
     }
   }
-
-  if (use_Href) {
-    ierr = Href_old.end_access(); CHKERRQ(ierr);
-    ierr = Href.end_access(); CHKERRQ(ierr);
-  }
-
-  if (update_2d_discharge) {
-    ierr = discharge_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = thickness_old.end_access(); CHKERRQ(ierr);
-  ierr = thickness.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&my_total_discharge, &total_discharge, grid.com); CHKERRQ(ierr);
 

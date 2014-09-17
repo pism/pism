@@ -124,16 +124,18 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
 
   MaskQuery m(*mask);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
 
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  list.add(*mask);
+  list.add(*surface);
+  list.add(*bed);
+  list.add(*enthalpy);
 
-  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
-  ierr = basal_frictional_heating.begin_access(); CHKERRQ(ierr);
+  list.add(m_velocity);
+  list.add(basal_frictional_heating);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -172,16 +174,8 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
     }
   }
 
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
-  ierr = basal_frictional_heating.end_access(); CHKERRQ(ierr);
 
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
-  ierr = surface->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
   ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
@@ -297,8 +291,6 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
 PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
-
   const double n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -307,24 +299,25 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
   IceModelVec2S &eta = work_2d;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = eta.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(eta);
+
   int GHOSTS = eta.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     eta(i,j) = pow((*thickness)(i,j), etapow);
   }
-  ierr = eta.end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  list.add(h_x);
+  list.add(h_y);
 
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = eta.begin_access(); CHKERRQ(ierr);
+  list.add(*bed);
+  list.add(eta);
   for (int o=0; o<2; o++) {
 
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -361,11 +354,6 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
       }
     }
   }
-  ierr = eta.end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -376,8 +364,6 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
  * above the surface of the ice
  */
 PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
-
   const double Hicefree = 0.0;  // standard for ice-free, in Haseloff
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
@@ -386,11 +372,12 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
     &H = *thickness,
     &h = *surface;
 
-  ierr = h_x.begin_access();        CHKERRQ(ierr);
-  ierr = h_y.begin_access();        CHKERRQ(ierr);
-  ierr = bed->begin_access();       CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access();   CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
+  list.add(*bed);
+  list.add(*thickness);
+  list.add(*surface);
   for (int o=0; o<2; o++) {
 
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -453,11 +440,6 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
     }
   }     // o
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access();       CHKERRQ(ierr);
-  ierr = surface->end_access();   CHKERRQ(ierr);
-  ierr = h_y.end_access();        CHKERRQ(ierr);
-  ierr = h_x.end_access();        CHKERRQ(ierr);
 
   return 0;
 }
@@ -465,13 +447,14 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
   IceModelVec2S &h = *surface;
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
+  list.add(*surface);
 
   for (int o=0; o<2; o++) {
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -489,9 +472,6 @@ PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceM
     }
   }
 
-  ierr = surface->end_access(); CHKERRQ(ierr);
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

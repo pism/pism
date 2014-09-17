@@ -279,9 +279,11 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // for extending the variables Enth3 and vWork3d vertically, put into
   //   vWork2d[0] the enthalpy of the air
   double p_air = EC->getPressureFromDepth(0.0);
-  ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(liqfrac_surface);
+  list.add(vWork2d[0]);
+  list.add(ice_surface_temp);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -289,9 +291,6 @@ PetscErrorCode IceModel::check_maximum_thickness() {
                                  vWork2d[0](i,j));
     CHKERRQ(ierr);
   }
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
   // Model state 3D vectors:
   ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);

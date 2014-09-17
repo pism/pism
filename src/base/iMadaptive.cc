@@ -49,11 +49,12 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   IceModelVec3 *u3 = NULL, *v3 = NULL, *w3 = NULL;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(vMask);
 
   MaskQuery mask(vMask);
   double *u = NULL, *v = NULL, *w = NULL;
@@ -83,11 +84,6 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
     }
   }
 
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
   ierr = GlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
@@ -119,8 +115,9 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
   IceModelVec2V &vel = *vel_advective; // a shortcut
 
-  ierr = vel.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vel);
+  list.add(vMask);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -130,8 +127,6 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
         maxtimestep = PetscMin(maxtimestep, 1.0/denom);
     }
   }
-  ierr = vel.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
   return 0;
@@ -418,9 +413,10 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
   IceModelVec3 *u3, *v3, *dummy;
   ierr = stress_balance->get_3d_velocity(u3, v3, dummy); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*u3);
+  list.add(*v3);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -437,9 +433,6 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
     }
   }
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access();  CHKERRQ(ierr);
-  ierr = v3->end_access();  CHKERRQ(ierr);
 
   return 0;
 }

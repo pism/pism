@@ -58,17 +58,15 @@ PetscErrorCode add_2d(IceModelVec* const x_in, double alpha, IceModelVec* const 
 
   IceGrid *grid = z->get_grid();
 
-  ierr = x->begin_access(); CHKERRQ(ierr);
-  ierr = y->begin_access(); CHKERRQ(ierr);
-  ierr = z->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*x);
+  list.add(*y);
+  list.add(*z);
   for (PointsWithGhosts p(*grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*z)(i, j) = (*x)(i, j) + (*y)(i, j) * alpha;
   }
-  ierr = z->end_access(); CHKERRQ(ierr);
-  ierr = y->end_access(); CHKERRQ(ierr);
-  ierr = x->end_access(); CHKERRQ(ierr);
 
   if (scatter) {
     ierr = z->update_ghosts(); CHKERRQ(ierr);
@@ -97,15 +95,14 @@ PetscErrorCode copy_2d(IceModelVec* const source,
 
   IceGrid *grid = z->get_grid();
 
-  ierr = x->begin_access(); CHKERRQ(ierr);
-  ierr = z->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*x);
+  list.add(*z);
   for (PointsWithGhosts p(*grid, stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*z)(i, j) = (*x)(i, j);
   }
-  ierr = z->end_access(); CHKERRQ(ierr);
-  ierr = x->end_access(); CHKERRQ(ierr);
 
   if (scatter) {
     ierr = z->update_ghosts(); CHKERRQ(ierr);

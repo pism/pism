@@ -178,7 +178,7 @@ PetscErrorCode PSVerification::update_L() {
     L           = 750e3,
     Lsqr        = L * L;
 
-  ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(m_climatic_mass_balance);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -187,7 +187,6 @@ PetscErrorCode PSVerification::update_L() {
 
     m_climatic_mass_balance(i, j) *= ice_density; // convert to [kg m-2 s-1]
   }
-  ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -264,7 +263,7 @@ PetscErrorCode PSVerification::update_ABCDEH(double time) {
 
   ierr = m_ice_surface_temp.set(T0); CHKERRQ(ierr);
 
-  ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(m_climatic_mass_balance);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -294,20 +293,19 @@ PetscErrorCode PSVerification::update_ABCDEH(double time) {
     }
     m_climatic_mass_balance(i, j) = accum;
   }
-  ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode PSVerification::update_FG(double time) {
-  PetscErrorCode ierr;
   unsigned int   Mz = grid.Mz;
   double         H, accum;
 
   std::vector<double> dummy1(Mz), dummy2(Mz), dummy3(Mz), dummy4(Mz), dummy5(Mz);
 
-  ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  ierr = m_ice_surface_temp.begin_access();      CHKERRQ(ierr);
+  IceModelVec::AccessList list(m_climatic_mass_balance);
+  list.add(m_ice_surface_temp);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -329,8 +327,6 @@ PetscErrorCode PSVerification::update_FG(double time) {
     m_climatic_mass_balance(i, j) = accum;
 
   }
-  ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
-  ierr = m_ice_surface_temp.end_access();      CHKERRQ(ierr);
 
   return 0;
 }

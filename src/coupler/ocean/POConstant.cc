@@ -91,23 +91,20 @@ PetscErrorCode POConstant::sea_level_elevation(double &result) {
 }
 
 PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
   const double T0 = config.get("water_melting_point_temperature"), // K
     beta_CC       = config.get("beta_CC"),
     g             = config.get("standard_gravity"),
     ice_density   = config.get("ice_density");
 
-  ierr = ice_thickness->begin_access();   CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*ice_thickness);
+  list.add(result);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * (*ice_thickness)(i,j); // FIXME issue #15
     // temp is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
-  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

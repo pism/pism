@@ -227,13 +227,14 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
 
   MaskQuery m(*mask);
 
-  ierr = u->begin_access(); CHKERRQ(ierr);
-  ierr = v->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*u);
+  list.add(*v);
+  list.add(result);
+  list.add(*mask);
 
   if (basal_melt_rate) {
-    ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
+    list.add(*basal_melt_rate);
   }
 
   double *w_ij, *u_ij, *u_w, *u_e, *v_ij, *v_s, *v_n;
@@ -307,17 +308,7 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
 
       old_integrand = new_integrand;
     }
-
   }
-
-  if (basal_melt_rate) {
-    ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = u->end_access(); CHKERRQ(ierr);
-  ierr = v->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -429,12 +420,13 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = m_strain_heating.begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = u->begin_access(); CHKERRQ(ierr);
-  ierr = v->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*enthalpy);
+  list.add(m_strain_heating);
+  list.add(*thickness);
+  list.add(*u);
+  list.add(*v);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -523,13 +515,6 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
                           remaining_levels*sizeof(double)); CHKERRQ(ierr);
     }
   }
-
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = m_strain_heating.end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = u->end_access(); CHKERRQ(ierr);
-  ierr = v->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   return 0;
 }

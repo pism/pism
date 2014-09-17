@@ -206,8 +206,6 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
 PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
-
   const double n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -216,24 +214,24 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
   IceModelVec2S &eta = work_2d[0];
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = eta.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(eta);
+  list.add(*thickness);
+
   int GHOSTS = eta.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     eta(i,j) = pow((*thickness)(i,j), etapow);
   }
-  ierr = eta.end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  list.add(h_x);
+  list.add(h_y);
 
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = eta.begin_access(); CHKERRQ(ierr);
+  list.add(*bed);
+  list.add(eta);
   for (int o=0; o<2; o++) {
 
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -270,11 +268,7 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
       }
     }
   }
-  ierr = eta.end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
 
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -283,13 +277,14 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
   IceModelVec2S &h = *surface;
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
+  list.add(*surface);
 
   for (int o=0; o<2; o++) {
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -307,9 +302,6 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
     }
   }
 
-  ierr = surface->end_access(); CHKERRQ(ierr);
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -369,17 +361,18 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
 
   MaskQuery m(*mask);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = w_i.begin_access(); CHKERRQ(ierr);
-  ierr = w_j.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
+  list.add(w_i);
+  list.add(w_j);
 
-  ierr = h.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = b.begin_access(); CHKERRQ(ierr);
+  list.add(h);
+  list.add(*mask);
+  list.add(b);
+
   for (PointsWithGhosts p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
 
     // x-derivative, i-offset
     {
@@ -419,8 +412,6 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
       }
     }
   }
-  ierr = b.end_access(); CHKERRQ(ierr);
-  ierr = h.end_access(); CHKERRQ(ierr);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -475,13 +466,6 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
       }
     } // end of "y-derivative, i-offset"
   }
-
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = w_j.end_access(); CHKERRQ(ierr);
-  ierr = w_i.end_access(); CHKERRQ(ierr);
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   ierr = h_x.update_ghosts(); CHKERRQ(ierr);
   ierr = h_y.update_ghosts(); CHKERRQ(ierr);
@@ -567,25 +551,26 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         &thk_smooth); CHKERRQ(ierr);
 
-  ierr = theta.begin_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(theta);
+  list.add(thk_smooth);
+  list.add(result);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  list.add(h_x);
+  list.add(h_y);
 
   double *age_ij, *age_offset;
   if (use_age) {
-    ierr = age->begin_access(); CHKERRQ(ierr);
+    list.add(*age);
   }
 
   if (full_update) {
-    ierr = delta[0].begin_access(); CHKERRQ(ierr);
-    ierr = delta[1].begin_access(); CHKERRQ(ierr);
+    list.add(delta[0]);
+    list.add(delta[1]);
   }
 
   double *E_ij, *E_offset;
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  list.add(*enthalpy);
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
@@ -678,24 +663,6 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     }
   } // i
 
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
-
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = theta.end_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
-
-  if (use_age) {
-    ierr = age->end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-
-  if (full_update) {
-    ierr = delta[1].end_access(); CHKERRQ(ierr);
-    ierr = delta[0].end_access(); CHKERRQ(ierr);
-  }
-
   ierr = GlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
 
   return 0;
@@ -740,10 +707,11 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         &thk_smooth); CHKERRQ(ierr);
 
-  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
-  ierr = delta[0].begin_access(); CHKERRQ(ierr);
-  ierr = delta[1].begin_access(); CHKERRQ(ierr);
-  ierr = D_stag.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thk_smooth);
+  list.add(delta[0]);
+  list.add(delta[1]);
+  list.add(D_stag);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -778,10 +746,6 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
       D_stag(i,j,o) = Dfoffset;
     }
   }
-  ierr = D_stag.end_access(); CHKERRQ(ierr);
-  ierr = delta[1].end_access(); CHKERRQ(ierr);
-  ierr = delta[0].end_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -823,11 +787,12 @@ PetscErrorCode SIAFD::compute_I() {
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         &thk_smooth); CHKERRQ(ierr);
 
-  ierr = delta[0].begin_access(); CHKERRQ(ierr);
-  ierr = delta[1].begin_access(); CHKERRQ(ierr);
-  ierr = I[0].begin_access(); CHKERRQ(ierr);
-  ierr = I[1].begin_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(delta[0]);
+  list.add(delta[1]);
+  list.add(I[0]);
+  list.add(I[1]);
+  list.add(thk_smooth);
 
   for (int o = 0; o < 2; ++o) {
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -858,11 +823,6 @@ PetscErrorCode SIAFD::compute_I() {
     }
   }
 
-  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
-  ierr = I[1].end_access(); CHKERRQ(ierr);
-  ierr = I[0].end_access(); CHKERRQ(ierr);
-  ierr = delta[1].end_access(); CHKERRQ(ierr);
-  ierr = delta[0].end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -896,15 +856,16 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
 
   double *u_ij, *v_ij, *IEAST, *IWEST, *INORTH, *ISOUTH;
 
-  ierr = u_out.begin_access(); CHKERRQ(ierr);
-  ierr = v_out.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(u_out);
+  list.add(v_out);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = vel_input->begin_access(); CHKERRQ(ierr);
+  list.add(h_x);
+  list.add(h_y);
+  list.add(*vel_input);
 
-  ierr = I[0].begin_access(); CHKERRQ(ierr);
-  ierr = I[1].begin_access(); CHKERRQ(ierr);
+  list.add(I[0]);
+  list.add(I[1]);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -938,16 +899,6 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
       v_ij[k] += vel_input_v;
     }
   }
-
-  ierr = I[1].end_access(); CHKERRQ(ierr);
-  ierr = I[0].end_access(); CHKERRQ(ierr);
-
-  ierr = vel_input->end_access(); CHKERRQ(ierr);
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
-
-  ierr = u_out.end_access(); CHKERRQ(ierr);
-  ierr = v_out.end_access(); CHKERRQ(ierr);
 
   // Communicate to get ghosts:
   ierr = u_out.update_ghosts(); CHKERRQ(ierr);

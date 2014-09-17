@@ -98,7 +98,8 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   config.set_flag("compute_surf_grad_inward_ssa", true);
   config.set_double("epsilon_ssa", 0.0);  // don't use this lower bound
 
-  ierr = tauc.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(tauc);
 
   double standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
@@ -111,15 +112,12 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
     const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
     tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
   }
-  ierr = tauc.end_access(); CHKERRQ(ierr);
   ierr = tauc.update_ghosts(); CHKERRQ(ierr);
 
-
-
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = surface.begin_access(); CHKERRQ(ierr);
-  ierr = bed.begin_access(); CHKERRQ(ierr);
+  list.add(vel_bc);
+  list.add(bc_mask);
+  list.add(surface);
+  list.add(bed);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -136,20 +134,12 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
       vel_bc(i,j).v = myv;
     }
   }
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
-  ierr = surface.end_access(); CHKERRQ(ierr);
-  ierr = bed.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
   ierr = surface.update_ghosts(); CHKERRQ(ierr);
-
   ierr = bed.update_ghosts(); CHKERRQ(ierr);
-
   ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-
   ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-
 
   ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
 

@@ -329,16 +329,17 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   }
 
   MaskQuery m(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(*mask);
 
   if (lat != NULL) {
-    ierr = lat->begin_access(); CHKERRQ(ierr);
+    list.add(*lat);
   }
 
   if (faustogreve != NULL) {
     assert(lat != NULL && lon != NULL && usurf != NULL);
-    ierr = lon->begin_access(); CHKERRQ(ierr);
-    ierr = usurf->begin_access(); CHKERRQ(ierr);
+    list.add(*lon);
+    list.add(*usurf);
     ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
   }
 
@@ -351,13 +352,13 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   DegreeDayFactors  ddf = base_ddf;
 
   ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
-  ierr = air_temp_sd.begin_access(); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  list.add(air_temp_sd);
+  list.add(climatic_mass_balance);
 
-  ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
-  ierr = melt_rate.begin_access(); CHKERRQ(ierr);
-  ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
-  ierr = snow_depth.begin_access(); CHKERRQ(ierr);
+  list.add(accumulation_rate);
+  list.add(melt_rate);
+  list.add(runoff_rate);
+  list.add(snow_depth);
 
   ierr = atmosphere->init_timeseries(ts); CHKERRQ(ierr);
 
@@ -453,25 +454,7 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
     }
   }
 
-  ierr = accumulation_rate.end_access(); CHKERRQ(ierr);
-  ierr = melt_rate.end_access(); CHKERRQ(ierr);
-  ierr = runoff_rate.end_access(); CHKERRQ(ierr);
-  ierr = snow_depth.end_access(); CHKERRQ(ierr);
-
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
-  ierr = air_temp_sd.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-
-  if (lat != NULL) {
-    ierr = lat->end_access(); CHKERRQ(ierr);
-  }
-
-  if (faustogreve != NULL) {
-    ierr = lon->end_access(); CHKERRQ(ierr);
-    ierr = usurf->end_access(); CHKERRQ(ierr);
-  }
 
   m_next_balance_year_start = compute_next_balance_year_start(grid.time->current());
 

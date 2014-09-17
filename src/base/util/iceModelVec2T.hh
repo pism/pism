@@ -88,21 +88,19 @@ namespace pism {
   // is is OK to call update() again, it will not re-read data if at all possible
   ierr = v.update(t, max_dt); CHKERRQ(ierr);
 
-  ierr = v.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(v);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
     // do more
   }
-  ierr = v.end_access(); CHKERRQ(ierr);
 
   // compute an average value over a time interval at a certain grid location:
 
   double average;
-  ierr = v.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(v);
   ierr = v.average(grid.xs, grid.ys, t, max_dt, average); CHKERRQ(ierr);
-  ierr = v.end_access(); CHKERRQ(ierr);
 
   \endcode
 */

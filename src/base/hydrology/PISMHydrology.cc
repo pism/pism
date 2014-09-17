@@ -270,9 +270,9 @@ PetscErrorCode Hydrology::wall_melt(IceModelVec2S &result) {
 Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
 PetscErrorCode Hydrology::check_Wtil_bounds() {
-  PetscErrorCode ierr;
   double tillwat_max = config.get("hydrology_tillwat_max");
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(Wtil);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -291,7 +291,6 @@ PetscErrorCode Hydrology::check_Wtil_bounds() {
       PISMEnd();
     }
   }
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -310,25 +309,26 @@ Call this method using the current \e hydrology time step.  This method
 may be called many times per IceModel time step.  See update() method
 in derived classes of Hydrology.
  */
-PetscErrorCode Hydrology::get_input_rate(
-                  double hydro_t, double hydro_dt, IceModelVec2S &result) {
+PetscErrorCode Hydrology::get_input_rate(double hydro_t, double hydro_dt,
+                                         IceModelVec2S &result) {
   PetscErrorCode ierr;
-  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
+  bool   use_const   = config.get_flag("hydrology_use_const_bmelt");
   double const_bmelt = config.get("hydrology_const_bmelt");
 
+  IceModelVec::AccessList list;
   if (inputtobed != NULL) {
     ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
     ierr = inputtobed->interp(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
-    ierr = inputtobed->begin_access(); CHKERRQ(ierr);
+    list.add(*inputtobed);
   }
 
   if (!hold_bmelt) {
     ierr = bmelt->copy_to(bmelt_local); CHKERRQ(ierr);
   }
 
-  ierr = bmelt_local.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  list.add(bmelt_local);
+  list.add(*mask);
+  list.add(result);
   MaskQuery m(*mask);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -340,12 +340,6 @@ PetscErrorCode Hydrology::get_input_rate(
       }
     } else
       result(i,j) = 0.0;
-  }
-  ierr = bmelt_local.end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  if (inputtobed != NULL) {
-    ierr = inputtobed->end_access(); CHKERRQ(ierr);
   }
   return 0;
 }

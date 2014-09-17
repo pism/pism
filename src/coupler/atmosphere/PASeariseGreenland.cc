@@ -141,23 +141,18 @@ PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
 
   IceModelVec2S &h = *m_surfelev, &lat_degN = *m_lat, &lon_degE = *m_lon;
 
-  ierr = h.begin_access();   CHKERRQ(ierr);
-  ierr = lat_degN.begin_access(); CHKERRQ(ierr);
-  ierr = lon_degE.begin_access(); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_annual.begin_access();  CHKERRQ(ierr);
-  ierr = m_air_temp_mean_july.begin_access();  CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h);
+  list.add(lat_degN);
+  list.add(lon_degE);
+  list.add(m_air_temp_mean_annual);
+  list.add(m_air_temp_mean_july);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
     m_air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
-
-  ierr = h.end_access();   CHKERRQ(ierr);
-  ierr = lat_degN.end_access(); CHKERRQ(ierr);
-  ierr = lon_degE.end_access(); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_annual.end_access();  CHKERRQ(ierr);
-  ierr = m_air_temp_mean_july.end_access();  CHKERRQ(ierr);
 
   return 0;
 }

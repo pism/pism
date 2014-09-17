@@ -515,7 +515,7 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   ierr = get_array(a2);         // calls begin_access()
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    ierr = average(i, j, a2[i][j]); CHKERRQ(ierr);
+    ierr = average(i, j, a2[i][j]); CHKERRQ(ierr); // NB! order
   }
   ierr = end_access(); CHKERRQ(ierr);
 

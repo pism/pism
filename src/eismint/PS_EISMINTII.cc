@@ -146,8 +146,10 @@ PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
   }
 
   // now fill in accum and surface temp
-  ierr = m_ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(m_ice_surface_temp);
+  list.add(m_climatic_mass_balance);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -159,8 +161,6 @@ PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
     // set surface temperature
     m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;  // formula (8) in (Payne et al 2000)
   }
-  ierr = m_ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   // convert from [m/s] to [kg m-2 s-1]
   ierr = m_climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);

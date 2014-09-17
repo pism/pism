@@ -290,16 +290,18 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   for (PetscInt k = 0; k < Nseries; ++k)
     ts[k] = my_t + k * dtseries;
 
+  IceModelVec::AccessList list;
+
   if (lat != NULL) {
-    ierr = lat->begin_access(); CHKERRQ(ierr);
+    list.add(*lat);
   }
 
   if (faustogreve != NULL) {
     if (lat == NULL) { SETERRQ(grid.com, 1,"faustogreve object is allocated BUT lat==NULL"); }
     if (lon == NULL) { SETERRQ(grid.com, 2,"faustogreve object is allocated BUT lon==NULL"); }
     if (usurf == NULL) { SETERRQ(grid.com, 3,"faustogreve object is allocated BUT usurf==NULL"); }
-    ierr = lon->begin_access(); CHKERRQ(ierr);
-    ierr = usurf->begin_access(); CHKERRQ(ierr);
+    list.add(*lon);
+    list.add(*usurf);
     ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
   }
 
@@ -312,11 +314,11 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   DegreeDayFactors_Old  ddf = base_ddf;
 
   ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
+  list.add(climatic_mass_balance);
 
-  ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
-  ierr = melt_rate.begin_access(); CHKERRQ(ierr);
-  ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
+  list.add(accumulation_rate);
+  list.add(melt_rate);
+  list.add(runoff_rate);
 
   ierr = atmosphere->init_timeseries(ts); CHKERRQ(ierr);
 
@@ -362,21 +364,7 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
     climatic_mass_balance(i,j) *= ice_density;
   }
 
-  ierr = accumulation_rate.end_access(); CHKERRQ(ierr);
-  ierr = melt_rate.end_access(); CHKERRQ(ierr);
-  ierr = runoff_rate.end_access(); CHKERRQ(ierr);
-
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
-
-  if (lat != NULL) {
-    ierr = lat->end_access(); CHKERRQ(ierr);
-  }
-
-  if (faustogreve != NULL) {
-    ierr = lon->end_access(); CHKERRQ(ierr);
-    ierr = usurf->end_access(); CHKERRQ(ierr);
-  }
 
   return 0;
 }

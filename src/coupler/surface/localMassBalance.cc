@@ -306,9 +306,8 @@ PetscErrorCode FaustoGrevePDDObject::setDegreeDayFactors(int i, int j,
                                                          double lat, double /* lon */,
                                                          DegreeDayFactors &ddf) {
 
-  PetscErrorCode ierr = temp_mj.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(temp_mj);
   const double T_mj = temp_mj(i,j);
-  ierr = temp_mj.end_access(); CHKERRQ(ierr);
 
   if (lat < pdd_fausto_latitude_beta_w) { // case lat < 72 deg N
     ddf.ice  = beta_ice_w;
@@ -345,8 +344,6 @@ Unfortunately this duplicates code in PA_SeaRISE_Greenland::update();
  */
 PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
                                                     IceModelVec2S *lat, IceModelVec2S *lon) {
-  PetscErrorCode ierr;
-
   const double
     d_mj     = config.get("snow_temp_fausto_d_mj"),      // K
     gamma_mj = config.get("snow_temp_fausto_gamma_mj"),  // K m-1
@@ -355,20 +352,16 @@ PetscErrorCode FaustoGrevePDDObject::update_temp_mj(IceModelVec2S *surfelev,
 
   IceModelVec2S &h = *surfelev, &lat_degN = *lat, &lon_degE = *lon;
 
-  ierr = h.begin_access();   CHKERRQ(ierr);
-  ierr = lat_degN.begin_access(); CHKERRQ(ierr);
-  ierr = lon_degE.begin_access(); CHKERRQ(ierr);
-  ierr = temp_mj.begin_access();  CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h);
+  list.add(lat_degN);
+  list.add(lon_degE);
+  list.add(temp_mj);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
-
-  ierr = h.end_access();   CHKERRQ(ierr);
-  ierr = lat_degN.end_access(); CHKERRQ(ierr);
-  ierr = lon_degE.end_access(); CHKERRQ(ierr);
-  ierr = temp_mj.end_access();  CHKERRQ(ierr);
 
   return 0;
 }

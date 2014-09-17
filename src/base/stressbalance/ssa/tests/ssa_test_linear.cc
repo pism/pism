@@ -118,8 +118,10 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
 
   // Set boundary conditions (Dirichlet all the way around).
   ierr = bc_mask.set(0.0); CHKERRQ(ierr);
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(vel_bc);
+  list.add(bc_mask);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -134,14 +136,9 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
       vel_bc(i,j).v = myv;
     }
   }
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
     
   ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-
   ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-
-
 
   ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
 

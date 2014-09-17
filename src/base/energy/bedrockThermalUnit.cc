@@ -402,12 +402,13 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
   double *Tbold;
   std::vector<double> Tbnew(Mbz);
 
-  ierr = temp.begin_access(); CHKERRQ(ierr);
-  ierr = ghf->begin_access(); CHKERRQ(ierr);
-  ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(temp);
+  list.add(*ghf);
+  list.add(*bedtoptemp);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
 
     ierr = temp.getInternalColumn(i,j,&Tbold); CHKERRQ(ierr); // Tbold actually points into temp memory
     Tbold[k0] = (*bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
@@ -421,9 +422,6 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
 
     ierr = temp.setInternalColumn(i,j,&Tbnew[0]); CHKERRQ(ierr); // copy from Tbnew into temp memory
   }
-  ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
-  ierr = ghf->end_access(); CHKERRQ(ierr);
-  ierr = temp.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -453,8 +451,11 @@ PetscErrorCode BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result)
   const int  k0  = Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
   double *Tb;
-  ierr = temp.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(temp);
+  list.add(result);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -465,8 +466,6 @@ PetscErrorCode BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result)
       result(i,j) = - bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
     }
   }
-  ierr = temp.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -486,9 +485,10 @@ PetscErrorCode BedThermalUnit::bootstrap() {
   temp.get_spacing(dzb);
   const int k0 = Mbz-1; // Tb[k0] = ice/bedrock interface temp
 
-  ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
-  ierr = ghf->begin_access(); CHKERRQ(ierr);
-  ierr = temp.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*bedtoptemp);
+  list.add(*ghf);
+  list.add(temp);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -498,9 +498,6 @@ PetscErrorCode BedThermalUnit::bootstrap() {
       Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / bed_k;
     }
   }
-  ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
-  ierr = ghf->end_access(); CHKERRQ(ierr);
-  ierr = temp.end_access(); CHKERRQ(ierr);
 
   temp.inc_state_counter();     // mark as modified
 

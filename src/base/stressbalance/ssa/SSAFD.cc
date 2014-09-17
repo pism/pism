@@ -281,29 +281,33 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     rho_ice = config.get("ice_density");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
+  // FIXME: bedrock_boundary is a misleading name
+  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
   ierr = compute_driving_stress(taud); CHKERRQ(ierr);
 
-  ierr = taud.begin_access(); CHKERRQ(ierr);
+
   ierr = DMDAVecGetArray(SSADA->get(), rhs, &rhs_uv); CHKERRQ(ierr);
 
-  bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc"); // FIXME: bedrock_boundary is a misleading name
+  IceModelVec::AccessList list;
+  list.add(taud);
 
   if (m_vel_bc && bc_locations) {
-    ierr = m_vel_bc->begin_access(); CHKERRQ(ierr);
-    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
+    list.add(*m_vel_bc);
+    list.add(*bc_locations);
   }
 
   if (use_cfbc) {
-    ierr = thickness->begin_access(); CHKERRQ(ierr);
-    ierr = bed->begin_access(); CHKERRQ(ierr);
-    ierr = mask->begin_access(); CHKERRQ(ierr);
+    list.add(*thickness);
+    list.add(*bed);
+    list.add(*mask);
   }
 
   if (use_cfbc && m_melange_back_pressure != NULL) {
-    ierr = m_melange_back_pressure->begin_access(); CHKERRQ(ierr);
+    list.add(*m_melange_back_pressure);
   }
 
   for (Points p(grid); p; p.next()) {
@@ -397,22 +401,6 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     rhs_uv[i][j].v = taud(i, j).v;
   }
 
-  if (use_cfbc && m_melange_back_pressure != NULL) {
-    ierr = m_melange_back_pressure->end_access(); CHKERRQ(ierr);
-  }
-
-  if (use_cfbc) {
-    ierr = thickness->end_access(); CHKERRQ(ierr);
-    ierr = bed->end_access(); CHKERRQ(ierr);
-    ierr = mask->end_access(); CHKERRQ(ierr);
-  }
-
-  if (m_vel_bc && bc_locations) {
-    ierr = bc_locations->end_access(); CHKERRQ(ierr);
-    ierr = m_vel_bc->end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = taud.end_access(); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArray(SSADA->get(), rhs, &rhs_uv); CHKERRQ(ierr);
 
   return 0;
@@ -503,41 +491,42 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   const double   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
   const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
+  // FIXME: bedrock_boundary is a misleading name
+  const bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
+
   // shortcut:
   IceModelVec2V &vel = m_velocity;
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
-  /* matrix assembly loop */
-
-  ierr = nuH.begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = vel.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(nuH);
+  list.add(*tauc);
+  list.add(vel);
+  list.add(*mask);
 
   Mask M;
 
-  const bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc"); // FIXME: bedrock_boundary is a misleading name
-
   if (m_vel_bc && bc_locations) {
-    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
+    list.add(*bc_locations);
   }
   
   const bool sub_gl = config.get_flag("sub_groundingline");
   if (sub_gl) {
-    ierr = gl_mask->begin_access(); CHKERRQ(ierr);
+    list.add(*gl_mask);
   }
 
   // handles friction of the ice cell along ice-free bedrock margins when bedrock higher than ice surface (in simplified setups)
   bool nu_bedrock_set=config.get_flag("nu_bedrock_set");
   if (nu_bedrock_set) {
-    ierr =    thickness->begin_access();  CHKERRQ(ierr);
-    ierr =    bed->begin_access();        CHKERRQ(ierr);
-    ierr =    surface->begin_access();    CHKERRQ(ierr);
+    list.add(*thickness);
+    list.add(*bed);
+    list.add(*surface);
   }
   double nu_bedrock=config.get("nu_bedrock");
   double HminFrozen=0.0;
 
+  /* matrix assembly loop */
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -760,25 +749,6 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     row.c = 1;
     ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
   } // loop over points
-
-  if (m_vel_bc && bc_locations) {
-    ierr = bc_locations->end_access(); CHKERRQ(ierr);
-  }
-
-  if (sub_gl) {
-    ierr = gl_mask->end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = vel.end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = nuH.end_access(); CHKERRQ(ierr);
-
-  if (nu_bedrock_set) {
-    ierr = thickness->end_access(); CHKERRQ(ierr);
-    ierr = bed->end_access();       CHKERRQ(ierr);
-    ierr = surface->end_access();   CHKERRQ(ierr);
-  }
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -1176,10 +1146,11 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
 
   std::vector<double> E(grid.Mz);
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = hardness.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(*enthalpy);
+  list.add(hardness);
+  list.add(*mask);
 
   MaskQuery m(*mask);
 
@@ -1214,10 +1185,6 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
     } // o
   }     // loop over points
 
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = hardness.end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   ierr = fracture_induced_softening(); CHKERRQ(ierr);
 
@@ -1259,8 +1226,6 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
 PetscErrorCode SSAFD::fracture_induced_softening() {
-  PetscErrorCode ierr;
-
   if (config.get_flag("do_fracture_density") == false)
     return 0;
 
@@ -1268,8 +1233,10 @@ PetscErrorCode SSAFD::fracture_induced_softening() {
     epsilon = config.get("fracture_density_softening_lower_limit"),
     n_glen  = flow_law->exponent();
 
-  ierr = hardness.begin_access(); CHKERRQ(ierr);
-  ierr = fracture_density->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(hardness);
+  list.add(*fracture_density);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -1285,8 +1252,6 @@ PetscErrorCode SSAFD::fracture_induced_softening() {
       hardness(i,j,o) *= pow(softening,-1.0/n_glen);
     }
   }
-  ierr = fracture_density->end_access(); CHKERRQ(ierr);
-  ierr = hardness.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1344,10 +1309,11 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
 
   IceModelVec2V &uv = m_velocity; // shortcut
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = uv.begin_access(); CHKERRQ(ierr);
-  ierr = hardness.begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(uv);
+  list.add(hardness);
+  list.add(*thickness);
 
   double ssa_enhancement_factor = flow_law->enhancement_factor(),
     n_glen = flow_law->exponent(),
@@ -1397,10 +1363,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
     }
   } // o
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = hardness.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = uv.end_access(); CHKERRQ(ierr);
 
   // Some communication
   ierr = result.update_ghosts(); CHKERRQ(ierr);
@@ -1440,9 +1402,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 
   MaskQuery m(*mask);
 
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = m_work.begin_access(); CHKERRQ(ierr);
-  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(m_work);
+  list.add(m_velocity);
 
   for (PointsWithGhosts p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1473,11 +1436,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
       }
     }
   }
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = hardness.begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  list.add(result);
+  list.add(hardness);
+  list.add(*thickness);
  
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1559,14 +1521,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
     }
   }
 
-
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = hardness.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-
-  ierr = m_work.end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-
   // Some communication
   ierr = result.update_ghosts(); CHKERRQ(ierr);
 
@@ -1585,8 +1539,9 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
                        "log10 of (viscosity * thickness)",
                        "Pa s m", ""); CHKERRQ(ierr);
 
-  ierr = nuH.begin_access(); CHKERRQ(ierr);
-  ierr = tmp.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(nuH);
+  list.add(tmp);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1598,9 +1553,6 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
       tmp(i,j) = 14.0;
     }
   }
-
-  ierr = tmp.end_access(); CHKERRQ(ierr);
-  ierr = nuH.end_access(); CHKERRQ(ierr);
 
   if (nuh_viewer == NULL) {
     ierr = grid.create_viewer(nuh_viewer_size, "nuH", nuh_viewer); CHKERRQ(ierr);
@@ -1629,7 +1581,7 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
 
 //! \brief Checks if a cell is near or at the ice front.
 /*!
- * You need to call mask->begin_access() before and mask->end_access() after using this.
+ * You need to call create IceModelVec::AccessList object and add mask to it.
  *
  * Note that a cell is a CFBC location of one of four direct neighbors is ice-free.
  *

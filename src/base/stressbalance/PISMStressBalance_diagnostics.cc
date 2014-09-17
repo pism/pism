@@ -96,10 +96,11 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*thickness);
+  list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -138,10 +139,6 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
     (*result)(i,j).v = 0.5 * v_sum / grid.zlevels[ks];
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -221,8 +218,9 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   result = dynamic_cast<IceModelVec2S*>(tmp);
   if (result == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -230,8 +228,6 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
     (*result)(i,j) *= (*thickness)(i,j);
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   ierr = result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
 
@@ -375,8 +371,10 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -387,8 +385,6 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -431,14 +427,15 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = uplift->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(*mask);
+  list.add(*bed);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(*uplift);
+  list.add(*result);
 
   MaskQuery M(*mask);
 
@@ -477,14 +474,6 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
 
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = uplift->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -530,8 +519,10 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -540,8 +531,6 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
       (*result)(i, j) = fill_value;
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   delete tmp;
   output = result;
@@ -585,8 +574,10 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -595,8 +586,6 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
       (*result)(i, j) = fill_value;
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   delete tmp;
   output = result;
@@ -653,8 +642,10 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -665,8 +656,6 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -724,9 +713,10 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*u3);
+  list.add(*result);
+  list.add(*thickness);
 
   double *u_ij, *u_out_ij;
   for (Points p(grid); p; p.next()) {
@@ -747,9 +737,6 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -779,9 +766,10 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*v3);
+  list.add(*result);
+  list.add(*thickness);
 
   double *v_ij, *v_out_ij;
   for (Points p(grid); p; p.next()) {
@@ -802,9 +790,6 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -834,9 +819,10 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*w3);
+  list.add(*result);
+  list.add(*thickness);
 
   double *w_ij, *w_out_ij;
   for (Points p(grid); p; p.next()) {
@@ -857,9 +843,6 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -1010,8 +993,9 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*thickness);
 
   double *P_out_ij;
   const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
@@ -1032,8 +1016,6 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
 
   output = result;
 
@@ -1073,9 +1055,10 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
-  ierr =    result->begin_access(); CHKERRQ(ierr);
-  ierr =   surface->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*surface);
+  list.add(*thickness);
 
   double *tauxz_out_ij;
   const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
@@ -1099,9 +1082,6 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
 
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
-  ierr =    result->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -1140,9 +1120,10 @@ PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
   surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
-  ierr =    result->begin_access(); CHKERRQ(ierr);
-  ierr =   surface->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*surface);
+  list.add(*thickness);
 
   double *tauyz_out_ij;
   const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
@@ -1166,9 +1147,6 @@ PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
 
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
-  ierr =    result->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;

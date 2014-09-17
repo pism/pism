@@ -42,31 +42,33 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
   ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates);
   ierr = stress_balance->compute_2D_stresses(*ssa_velocity, vMask, deviatoric_stresses);
-  ierr = ssa_velocity->begin_access(); CHKERRQ(ierr);
-  ierr = strain_rates.begin_access(); CHKERRQ(ierr);
-  ierr = deviatoric_stresses.begin_access(); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vFD.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*ssa_velocity);
+  list.add(strain_rates);
+  list.add(deviatoric_stresses);
+
+  list.add(ice_thickness);
+  list.add(vFD);
   ierr = vFD.copy_to(vFDnew); CHKERRQ(ierr);
-  ierr = vFDnew.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access();  CHKERRQ(ierr);
+  list.add(vFDnew);
+  list.add(vMask);
 
   const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
   if (dirichlet_bc) {
-    ierr = vBCMask.begin_access();  CHKERRQ(ierr);
-    ierr = vBCvel.begin_access();  CHKERRQ(ierr);
+    list.add(vBCMask);
+    list.add(vBCvel);
   }
 
   const bool write_fd = config.get_flag("write_fd_fields");
   if (write_fd) {
-    ierr = vFG.begin_access();  CHKERRQ(ierr);
-    ierr = vFH.begin_access();  CHKERRQ(ierr);
-    ierr = vFE.begin_access();  CHKERRQ(ierr);
-    ierr = vFT.begin_access();  CHKERRQ(ierr);
-    ierr = vFA.begin_access();  CHKERRQ(ierr);
+    list.add(vFG);
+    list.add(vFH);
+    list.add(vFE);
+    list.add(vFT);
+    list.add(vFA);
     ierr = vFA.copy_to(vFAnew); CHKERRQ(ierr);
-    ierr = vFAnew.begin_access(); CHKERRQ(ierr);
+    list.add(vFAnew);
   }
 
   MaskQuery M(vMask);
@@ -149,23 +151,23 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
     if (fd2d_scheme) {
 
-      if (uvel>=dx*vvel/dy && vvel>=0.0) //1
+      if (uvel>=dx*vvel/dy && vvel>=0.0) { //1
         tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx + vvel*(vFD(i-1,j)-vFD(i-1,j-1))/dy;
-      else if (uvel<=dx*vvel/dy && uvel>=0.0) //2
+      } else if (uvel<=dx*vvel/dy && uvel>=0.0) { //2
         tempFD = uvel*(vFD(i,j-1)-vFD(i-1,j-1))/dx + vvel*(vFD(i,j)-vFD(i,j-1))/dy;
-      else if (uvel>=-dx*vvel/dy && uvel<=0.0) //3
+      } else if (uvel>=-dx*vvel/dy && uvel<=0.0) { //3
         tempFD = -uvel*(vFD(i,j-1)-vFD(i+1,j-1))/dx + vvel*(vFD(i,j)-vFD(i,j-1))/dy;
-      else if (uvel<=-dx*vvel/dy && vvel>=0.0) //4
+      } else if (uvel<=-dx*vvel/dy && vvel>=0.0) { //4
         tempFD = -uvel*(vFD(i,j)-vFD(i+1,j))/dx + vvel*(vFD(i+1,j)-vFD(i+1,j-1))/dy;
-      else if (uvel<=dx*vvel/dy && vvel<=0.0) //5
+      } else if (uvel<=dx*vvel/dy && vvel<=0.0) { //5
         tempFD = -uvel*(vFD(i,j)-vFD(i+1,j))/dx - vvel*(vFD(i+1,j)-vFD(i+1,j+1))/dy;
-      else if (uvel>=dx*vvel/dy && uvel<=0.0) //6
+      } else if (uvel>=dx*vvel/dy && uvel<=0.0) { //6
         tempFD = -uvel*(vFD(i,j+1)-vFD(i+1,j+1))/dx - vvel*(vFD(i,j)-vFD(i,j+1))/dy;
-      else if (uvel<=-dx*vvel/dy && uvel>=0.0) //7
+      } else if (uvel<=-dx*vvel/dy && uvel>=0.0) { //7
         tempFD = uvel*(vFD(i,j+1)-vFD(i-1,j+1))/dx - vvel*(vFD(i,j)-vFD(i,j+1))/dy;
-      else if (uvel>=-dx*vvel/dy && vvel<=0.0) //8
+      } else if (uvel>=-dx*vvel/dy && vvel<=0.0) { //8
         tempFD = uvel*(vFD(i,j)-vFD(i-1,j))/dx - vvel*(vFD(i-1,j)-vFD(i-1,j+1))/dy;
-      else{
+      } else {
         ierr = verbPrintf(3,grid.com,
                           "######### missing case of angle %f of %f and %f at %d, %d \n",
                           atan(vvel/uvel)/M_PI*180.,uvel*3e7,vvel*3e7,i,j);
@@ -269,10 +271,13 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     }
 
     //bounding
-    if (vFDnew(i,j)<0.0)
+    if (vFDnew(i,j)<0.0) {
       vFDnew(i,j)=0.0;
-    if (vFDnew(i,j)>1.0)
+    }
+
+    if (vFDnew(i,j)>1.0) {
       vFDnew(i,j)=1.0;
+    }
 
     //################################################################################
     // write related fracture quantities to nc-file
@@ -292,30 +297,32 @@ PetscErrorCode IceModel::calculateFractureDensity() {
       // fracture healing rate
       if (ice_thickness(i,j)>0.0) {
         if (constant_healing || (strain_rates(i,j,0) < healThreshold)) {
-          if (fracture_weighted_healing)
+          if (fracture_weighted_healing) {
             vFH(i,j)=fdheal*(1-vFD(i,j));
-          else
+          } else {
             vFH(i,j)=fdheal;
-        }
-        else
+          }
+        } else {
           vFH(i,j)=0.0;
+        }
       }
 
       //fracture age since fracturing occured
       vFAnew(i,j) -= dt * uvel * (uvel<0 ? vFA(i+1,j)-vFA(i, j):vFA(i, j)-vFA(i-1, j))/dx;
       vFAnew(i,j) -= dt * vvel * (vvel<0 ? vFA(i,j+1)-vFA(i, j):vFA(i, j)-vFA(i, j-1))/dy;
       vFAnew(i,j)+= dt/grid.convert(1.0, "year", "seconds");
-      if (sigmat > initThreshold)
+      if (sigmat > initThreshold) {
         vFAnew(i,j) = 0.0;
+      }
 
       // additional flow enhancement due to fracture softening
       double phi_exp=3.0;//flow_law->exponent();
       double softening = pow((1.0-(1.0-soft_residual)*vFDnew(i,j)),-phi_exp);
       if (ice_thickness(i,j)>0.0) {
         vFE(i,j)=1.0/pow(softening,1/3.0);
-      }
-      else
+      } else {
         vFE(i,j)=1.0;
+      }
     }
 
     //boundary condition
@@ -349,29 +356,10 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     }
   }
 
-  ierr = ssa_velocity->end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = vFD.end_access(); CHKERRQ(ierr);
-  ierr = vFDnew.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access();  CHKERRQ(ierr);
-
-  if (dirichlet_bc) {
-    ierr = vBCMask.end_access();  CHKERRQ(ierr);
-    ierr = vBCvel.end_access();  CHKERRQ(ierr);
-  }
-
   if (write_fd) {
-    ierr = vFG.end_access();  CHKERRQ(ierr);
-    ierr = vFH.end_access();  CHKERRQ(ierr);
-    ierr = vFE.end_access();  CHKERRQ(ierr);
-    ierr = vFT.end_access();  CHKERRQ(ierr);
-    ierr = vFA.end_access();  CHKERRQ(ierr);
-    ierr = vFAnew.end_access(); CHKERRQ(ierr);
     ierr = vFAnew.update_ghosts(vFA); CHKERRQ(ierr);
   }
 
-  ierr = strain_rates.end_access(); CHKERRQ(ierr);
-  ierr = deviatoric_stresses.end_access(); CHKERRQ(ierr);
   ierr = vFDnew.update_ghosts(vFD); CHKERRQ(ierr);
 
   return 0;

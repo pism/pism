@@ -84,9 +84,10 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr = thickness.begin_access();  CHKERRQ(ierr);
-  ierr = bed.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access();         CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(bed);
+  list.add(result);
 
   int GHOSTS = result.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
@@ -94,10 +95,6 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
 
     result(i, j) = gc.mask(bed(i, j), thickness(i,j));
   }
-
-  ierr = thickness.end_access();  CHKERRQ(ierr);
-  ierr = bed.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access();         CHKERRQ(ierr);
 
   return 0;
 }
@@ -126,9 +123,10 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr = result.begin_access();         CHKERRQ(ierr);
-  ierr = thickness.begin_access();  CHKERRQ(ierr);
-  ierr = bed.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(thickness);
+  list.add(bed);
 
   int GHOSTS = result.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
@@ -140,10 +138,6 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
     }
     result(i, j) = gc.surface(bed(i, j), thickness(i, j));
   }
-
-  ierr = result.end_access();         CHKERRQ(ierr);
-  ierr = thickness.end_access();  CHKERRQ(ierr);
-  ierr = bed.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -541,25 +535,26 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
 
-  ierr = cell_area.begin_access();             CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access();         CHKERRQ(ierr);
-  ierr = ice_surface_elevation.begin_access(); CHKERRQ(ierr);
-  ierr = bed_topography.begin_access();        CHKERRQ(ierr);
-  ierr = basal_melt_rate.begin_access();       CHKERRQ(ierr);
-  ierr = Qdiff->begin_access();                CHKERRQ(ierr);
-  ierr = vel_advective->begin_access();        CHKERRQ(ierr);
-  ierr = climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access();                 CHKERRQ(ierr);
-  ierr = vHnew.begin_access();                 CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(cell_area);
+  list.add(ice_thickness);
+  list.add(ice_surface_elevation);
+  list.add(bed_topography);
+  list.add(basal_melt_rate);
+  list.add(*Qdiff);
+  list.add(*vel_advective);
+  list.add(climatic_mass_balance);
+  list.add(vMask);
+  list.add(vHnew);
 
   // related to PIK part_grid mechanism; see Albrecht et al 2011
   const bool do_part_grid = config.get_flag("part_grid"),
     do_redist = config.get_flag("part_redist"),
     reduce_frontal_thickness = config.get_flag("part_grid_reduce_frontal_thickness");
   if (do_part_grid) {
-    ierr = vHref.begin_access(); CHKERRQ(ierr);
+    list.add(vHref);
     if (do_redist) {
-      ierr = H_residual.begin_access(); CHKERRQ(ierr);
+      list.add(H_residual);
       // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
       //        was not sufficient to zero-out H_residual already
       ierr = H_residual.set(0.0); CHKERRQ(ierr);
@@ -567,28 +562,28 @@ PetscErrorCode IceModel::massContExplicitStep() {
   }
   const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
   if (dirichlet_bc) {
-    ierr = vBCMask.begin_access();  CHKERRQ(ierr);
-    ierr = vBCvel.begin_access();  CHKERRQ(ierr);
+    list.add(vBCMask);
+    list.add(vBCvel);
   }
 
   if (compute_cumulative_climatic_mass_balance) {
-    ierr = climatic_mass_balance_cumulative.begin_access(); CHKERRQ(ierr);
+    list.add(climatic_mass_balance_cumulative);
   }
 
   if (compute_cumulative_nonneg_flux) {
-    ierr = nonneg_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+    list.add(nonneg_flux_2D_cumulative);
   }
 
   if (compute_cumulative_grounded_basal_flux) {
-    ierr = grounded_basal_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+    list.add(grounded_basal_flux_2D_cumulative);
   }
 
   if (compute_cumulative_floating_basal_flux) {
-    ierr = floating_basal_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+    list.add(floating_basal_flux_2D_cumulative);
   }
 
   if (compute_flux_divergence) {
-    ierr = flux_divergence.begin_access(); CHKERRQ(ierr);
+    list.add(flux_divergence);
   }
 
   MaskQuery mask(vMask);
@@ -764,49 +759,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   }
 
-  ierr = basal_melt_rate.end_access();       CHKERRQ(ierr);
-  ierr = vMask.end_access();                 CHKERRQ(ierr);
-  ierr = Qdiff->end_access();                CHKERRQ(ierr);
-  ierr = vel_advective->end_access();        CHKERRQ(ierr);
-  ierr = climatic_mass_balance.end_access(); CHKERRQ(ierr);
-  ierr = bed_topography.end_access();        CHKERRQ(ierr);
-  ierr = ice_surface_elevation.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access();         CHKERRQ(ierr);
-  ierr = vHnew.end_access();                 CHKERRQ(ierr);
-  ierr = cell_area.end_access();             CHKERRQ(ierr);
-
-  if (compute_flux_divergence) {
-    ierr = flux_divergence.end_access(); CHKERRQ(ierr);
-  }
-
-  if (compute_cumulative_grounded_basal_flux) {
-    ierr = grounded_basal_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
-  }
-
-  if (compute_cumulative_floating_basal_flux) {
-    ierr = floating_basal_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
-  }
-
-  if (compute_cumulative_nonneg_flux) {
-    ierr = nonneg_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
-  }
-
-  if (compute_cumulative_climatic_mass_balance) {
-    ierr = climatic_mass_balance_cumulative.end_access(); CHKERRQ(ierr);
-  }
-
-  if (do_part_grid) {
-    ierr = vHref.end_access(); CHKERRQ(ierr);
-    if (do_redist) {
-      ierr = H_residual.end_access(); CHKERRQ(ierr);
-    }
-  }
-
-  if (dirichlet_bc) {
-    ierr = vBCMask.end_access();  CHKERRQ(ierr);
-    ierr = vBCvel.end_access();  CHKERRQ(ierr);
-  }
-
   // flux accounting
   {
     ierr = GlobalSum(&proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux, grid.com); CHKERRQ(ierr);
@@ -939,16 +891,16 @@ PetscErrorCode IceModel::update_floatation_mask() {
   ierr = gl_mask_x.set(0.0); CHKERRQ(ierr);
   ierr = gl_mask_y.set(0.0); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access();  CHKERRQ(ierr);
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access();          CHKERRQ(ierr);
-  ierr = gl_mask.begin_access();        CHKERRQ(ierr);
-  ierr = gl_mask_x.begin_access();      CHKERRQ(ierr);
-  ierr = gl_mask_y.begin_access();      CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(bed_topography);
+  list.add(vMask);
+  list.add(gl_mask);
+  list.add(gl_mask_x);
+  list.add(gl_mask_y);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
 
     double
       alpha        = 0.0,
@@ -1069,13 +1021,6 @@ PetscErrorCode IceModel::update_floatation_mask() {
       gl_mask(i,j)   = 1.0 - gl_mask_fl_x * gl_mask_fl_y;
     }
   }
-
-  ierr = ice_thickness.end_access();  CHKERRQ(ierr);
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access();          CHKERRQ(ierr);
-  ierr = gl_mask.end_access();        CHKERRQ(ierr);
-  ierr = gl_mask_x.end_access();      CHKERRQ(ierr);
-  ierr = gl_mask_y.end_access();      CHKERRQ(ierr);
 
   return 0;
 }

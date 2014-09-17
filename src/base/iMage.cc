@@ -261,12 +261,13 @@ PetscErrorCode IceModel::ageStep() {
   IceModelVec3 *u3, *v3, *w3;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = tau3.begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(tau3);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(vWork3d);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -305,12 +306,6 @@ PetscErrorCode IceModel::ageStep() {
     }
   }
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = tau3.end_access();  CHKERRQ(ierr);
-  ierr = u3->end_access();  CHKERRQ(ierr);
-  ierr = v3->end_access();  CHKERRQ(ierr);
-  ierr = w3->end_access();  CHKERRQ(ierr);
-  ierr = vWork3d.end_access();  CHKERRQ(ierr);
 
   delete [] system.u;  delete [] system.v;  delete [] system.w;
 

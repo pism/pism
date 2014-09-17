@@ -397,7 +397,8 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = geothermal_flux.set(Ggeo); CHKERRQ(ierr);
   ierr = vMask.set(MASK_GROUNDED);  CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(ice_thickness);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -431,7 +432,6 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
     default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -520,14 +520,14 @@ PetscErrorCode IceCompModel::initTestL() {
   }
   CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access();  CHKERRQ(ierr); 
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr); 
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(bed_topography);
+
   for (k = 0; k < MM; k++) {
     ice_thickness(rrv[k].i, rrv[k].j)  = HH[k];
     bed_topography(rrv[k].i, rrv[k].j) = bb[k];
   }
-  ierr = ice_thickness.end_access();  CHKERRQ(ierr); 
-  ierr = bed_topography.end_access(); CHKERRQ(ierr); 
 
   ierr = ice_thickness.update_ghosts();  CHKERRQ(ierr); 
   ierr = bed_topography.update_ghosts(); CHKERRQ(ierr); 
@@ -543,14 +543,14 @@ PetscErrorCode IceCompModel::reset_thickness_tests_AE() {
   PetscErrorCode ierr;
   const double LforAE = 750e3; // m
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(ice_thickness);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (grid.radius(i, j) > LforAE)
       ice_thickness(i, j) = 0;
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
   return 0;
@@ -564,7 +564,8 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
 
   const double time = grid.time->current();
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(ice_thickness);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -593,7 +594,6 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
     default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, or H");
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -613,8 +613,10 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr); 
-  ierr = vel_adv->begin_access();      CHKERRQ(ierr); 
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*vel_adv);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -623,8 +625,6 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
     ice_thickness(i,j) = H;
     (*vel_adv)(i,j)    = bvel;
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr); 
-  ierr = vel_adv->end_access();      CHKERRQ(ierr); 
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr); 
   return 0;
@@ -667,9 +667,9 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
 
   double     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(ice_thickness);
   if (testname == 'L') {
-    ierr = vHexactL.begin_access(); CHKERRQ(ierr);
+    list.add(vHexactL);
   }
 
   double
@@ -770,11 +770,6 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
     avHerr += PetscAbsReal(ice_thickness(i,j) - Hexact);
   }
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  if (testname == 'L') {
-    ierr = vHexactL.end_access(); CHKERRQ(ierr);
-  }
-
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;
   ierr = GlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
@@ -813,8 +808,10 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
-  ierr = vel_adv->begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*vel_adv);
+  list.add(ice_thickness);
+
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -832,8 +829,6 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
       avvecerr += vecerr;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = vel_adv->end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
   ierr = GlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
@@ -1285,9 +1280,11 @@ PetscErrorCode IceCompModel::test_V_init() {
   double upstream_velocity = grid.convert(300.0, "m/year", "m/second"),
     upstream_thk = 600.0;
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vBCMask.begin_access(); CHKERRQ(ierr);
-  ierr = vBCvel.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(vBCMask);
+  list.add(vBCvel);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -1301,9 +1298,6 @@ PetscErrorCode IceCompModel::test_V_init() {
       ice_thickness(i, j) = 0;
     }
   }
-  ierr = vBCvel.end_access(); CHKERRQ(ierr);
-  ierr = vBCMask.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = vBCMask.update_ghosts(); CHKERRQ(ierr);
 

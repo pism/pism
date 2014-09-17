@@ -401,15 +401,17 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
     }
   }
 
+  IceModelVec::AccessList list;
   if (addtransportable == true) {
-    ierr = m_bwat.begin_access(); CHKERRQ(ierr);
+    list.add(m_bwat);
   }
-  ierr = m_tillwat.begin_access();         CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access();        CHKERRQ(ierr);
-  ierr = m_tauc.begin_access();            CHKERRQ(ierr);
-  ierr = m_mask->begin_access();           CHKERRQ(ierr);
-  ierr = m_bed_topography->begin_access(); CHKERRQ(ierr);
-  ierr = m_Po.begin_access();              CHKERRQ(ierr);
+  list.add(m_tillwat);
+  list.add(m_till_phi);
+  list.add(m_tauc);
+  list.add(*m_mask);
+  list.add(*m_bed_topography);
+  list.add(m_Po);
+
   MaskQuery m(*m_mask);
 
   for (Points p(grid); p; p.next()) {
@@ -436,16 +438,6 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
 
       m_tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
     }
-  }
-
-  ierr = m_Po.end_access();              CHKERRQ(ierr);
-  ierr = m_bed_topography->end_access(); CHKERRQ(ierr);
-  ierr = m_mask->end_access();           CHKERRQ(ierr);
-  ierr = m_tauc.end_access();            CHKERRQ(ierr);
-  ierr = m_till_phi.end_access();        CHKERRQ(ierr);
-  ierr = m_tillwat.end_access();         CHKERRQ(ierr);
-  if (addtransportable == true) {
-    ierr = m_bwat.end_access(); CHKERRQ(ierr);
   }
 
   ierr = m_tauc.update_ghosts(); CHKERRQ(ierr);
@@ -509,8 +501,9 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
 
   double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
-  ierr = m_bed_topography->begin_access(); CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_bed_topography);
+  list.add(m_till_phi);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -523,11 +516,7 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
     } else {
       m_till_phi(i, j) = phi_min + (bed - topg_min) * slope;
     }
-
   }
-
-  ierr = m_bed_topography->end_access(); CHKERRQ(ierr);
-  ierr = m_till_phi.end_access(); CHKERRQ(ierr);
 
   // communicate ghosts so that the tauc computation can be performed locally
   // (including ghosts of tauc, that is)
@@ -550,12 +539,15 @@ PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
   ierr = m_hydrology->till_water_thickness(m_tillwat); CHKERRQ(ierr);
   ierr = m_hydrology->overburden_pressure(m_Po); CHKERRQ(ierr);
 
-  ierr = m_mask->begin_access();    CHKERRQ(ierr);
-  ierr = m_tauc.begin_access();     CHKERRQ(ierr);
-  ierr = m_tillwat.begin_access();  CHKERRQ(ierr);
-  ierr = m_Po.begin_access();       CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_mask);
+  list.add(m_tauc);
+  list.add(m_tillwat);
+  list.add(m_Po);
+  list.add(m_till_phi);
+
   MaskQuery m(*m_mask);
+
   int GHOSTS = m_till_phi.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -571,11 +563,6 @@ PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
       m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
     }
   }
-  ierr = m_mask->end_access();    CHKERRQ(ierr);
-  ierr = m_tauc.end_access();     CHKERRQ(ierr);
-  ierr = m_till_phi.end_access(); CHKERRQ(ierr);
-  ierr = m_tillwat.end_access();  CHKERRQ(ierr);
-  ierr = m_Po.end_access();       CHKERRQ(ierr);
 
   return 0;
 }

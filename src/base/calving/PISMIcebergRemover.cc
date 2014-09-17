@@ -68,7 +68,9 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
     ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
 
     ierr = DMDAVecGetArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
-    ierr = pism_mask.begin_access(); CHKERRQ(ierr);
+
+    IceModelVec::AccessList list;
+    list.add(pism_mask);
 
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -82,7 +84,7 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
     // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
     // don't want them removed.
     if (m_bcflag) {
-      ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
+      list.add(*m_bcflag);
 
       for (Points p(grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -90,9 +92,7 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
         if (m_bcflag->as_int(i,j) == 1 && M.icy(i,j))
           iceberg_mask[i][j] = mask_grounded_ice;
       }
-      ierr = m_bcflag->end_access(); CHKERRQ(ierr);
     }
-    ierr = pism_mask.end_access(); CHKERRQ(ierr);
     ierr = DMDAVecRestoreArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
   }
 
@@ -116,13 +116,15 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
   // "iceberg" mask:
   {
     ierr = DMDAVecGetArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
-    ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-    ierr = pism_mask.begin_access(); CHKERRQ(ierr);
+
+    IceModelVec::AccessList list;
+    list.add(ice_thickness);
+    list.add(pism_mask);
 
     if (m_bcflag != NULL) {
       // if SSA Dirichlet B.C. are in use, do not modify mask and ice
       // thickness at Dirichlet B.C. locations
-      ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
+      list.add(*m_bcflag);
 
       for (Points p(grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -132,7 +134,6 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
           pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
         }
       }
-      ierr = m_bcflag->end_access(); CHKERRQ(ierr);
     } else {
 
       for (Points p(grid); p; p.next()) {
@@ -144,8 +145,6 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
         }
       }
     }
-    ierr = pism_mask.end_access(); CHKERRQ(ierr);
-    ierr = ice_thickness.end_access(); CHKERRQ(ierr);
     ierr = DMDAVecRestoreArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
   }
 

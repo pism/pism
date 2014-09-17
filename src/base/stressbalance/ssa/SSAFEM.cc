@@ -261,21 +261,22 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*enthalpy);
   bool driving_stress_explicit;
   if ((driving_stress_x != NULL) && (driving_stress_y != NULL)) {
     driving_stress_explicit = true;
-    ierr = driving_stress_x->begin_access(); CHKERRQ(ierr);
-    ierr = driving_stress_y->begin_access(); CHKERRQ(ierr);
+    list.add(*driving_stress_x);
+    list.add(*driving_stress_y);
   } else {
     // The class SSA ensures in this case that 'surface' is available
     driving_stress_explicit = false;
-    ierr = surface->begin_access(); CHKERRQ(ierr);
+    list.add(*surface);
   }
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  list.add(*thickness);
+  list.add(*bed);
+  list.add(*tauc);
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys   = m_element_index.ys, ym = m_element_index.ym;
@@ -347,18 +348,9 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
         coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
                                                         &grid.zlevels[0], Enth_q[q]);
       }
-    }
-  }
-  if (driving_stress_explicit) {
-    ierr = driving_stress_x->end_access(); CHKERRQ(ierr);
-    ierr = driving_stress_y->end_access(); CHKERRQ(ierr);
-  } else {
-    ierr = surface->end_access(); CHKERRQ(ierr);
-  }
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
+
+    } // j-loop
+  } // i-loop
 
   for (unsigned int q = 0; q < FEQuadrature::Nq; q++)
   {

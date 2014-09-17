@@ -85,10 +85,10 @@ PetscErrorCode OceanKill::init(Vars &vars) {
     tmp = &thickness;
   }
 
-  ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  ierr = tmp->begin_access();              CHKERRQ(ierr);
-  ierr = mask->begin_access();             CHKERRQ(ierr);
-
+  IceModelVec::AccessList list;
+  list.add(m_ocean_kill_mask);
+  list.add(*tmp);
+  list.add(*mask);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -99,10 +99,6 @@ PetscErrorCode OceanKill::init(Vars &vars) {
       m_ocean_kill_mask(i, j) = 1;
   }
 
-  ierr = mask->end_access();             CHKERRQ(ierr);
-  ierr = tmp->end_access();              CHKERRQ(ierr);
-  ierr = m_ocean_kill_mask.end_access(); CHKERRQ(ierr);
-
   ierr = m_ocean_kill_mask.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
@@ -110,11 +106,11 @@ PetscErrorCode OceanKill::init(Vars &vars) {
 
 // Updates mask and ice thickness, including ghosts.
 PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
+  IceModelVec::AccessList list;
+  list.add(m_ocean_kill_mask);
+  list.add(pism_mask);
+  list.add(ice_thickness);
 
-  ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  ierr = pism_mask.begin_access();         CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access();     CHKERRQ(ierr);
   int GHOSTS = pism_mask.get_stencil_width();
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -124,9 +120,6 @@ PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
       ice_thickness(i, j) = 0.0;
     }
   }
-  ierr = ice_thickness.end_access();     CHKERRQ(ierr);
-  ierr = pism_mask.end_access();         CHKERRQ(ierr);
-  ierr = m_ocean_kill_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

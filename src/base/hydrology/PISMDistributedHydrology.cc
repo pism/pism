@@ -237,8 +237,10 @@ PetscErrorCode DistributedHydrology::check_P_bounds(bool enforce_upper) {
 
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
-  ierr = P.begin_access(); CHKERRQ(ierr);
-  ierr = Pover.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(P);
+  list.add(Pover);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -259,8 +261,6 @@ PetscErrorCode DistributedHydrology::check_P_bounds(bool enforce_upper) {
       PISMEnd();
     }
   }
-  ierr = P.end_access(); CHKERRQ(ierr);
-  ierr = Pover.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -283,10 +283,12 @@ PetscErrorCode DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
 
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
-  ierr = W.begin_access();      CHKERRQ(ierr);
-  ierr = Pover.begin_access();  CHKERRQ(ierr);
-  ierr = velbase_mag.begin_access();  CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(W);
+  list.add(Pover);
+  list.add(velbase_mag);
+  list.add(result);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -306,10 +308,6 @@ PetscErrorCode DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
       result(i, j) = PetscMax(0.0, Pover(i, j) - sb * pow(Wratio, powglen));
     }
   }
-  ierr = W.end_access();      CHKERRQ(ierr);
-  ierr = Pover.end_access();  CHKERRQ(ierr);
-  ierr = velbase_mag.end_access();  CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -460,18 +458,20 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
 
     MaskQuery M(*mask);
 
-    ierr = P.begin_access(); CHKERRQ(ierr);
-    ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = Wtil.begin_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
-    ierr = velbase_mag.begin_access(); CHKERRQ(ierr);
-    ierr = Wstag.begin_access(); CHKERRQ(ierr);
-    ierr = Kstag.begin_access(); CHKERRQ(ierr);
-    ierr = Qstag.begin_access(); CHKERRQ(ierr);
-    ierr = total_input.begin_access(); CHKERRQ(ierr);
-    ierr = mask->begin_access(); CHKERRQ(ierr);
-    ierr = Pover.begin_access(); CHKERRQ(ierr);
-    ierr = Pnew.begin_access(); CHKERRQ(ierr);
+    IceModelVec::AccessList list;
+    list.add(P);
+    list.add(W);
+    list.add(Wtil);
+    list.add(Wtilnew);
+    list.add(velbase_mag);
+    list.add(Wstag);
+    list.add(Kstag);
+    list.add(Qstag);
+    list.add(total_input);
+    list.add(*mask);
+    list.add(Pover);
+    list.add(Pnew);
+
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -509,18 +509,6 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
         Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
       }
     }
-    ierr = P.end_access(); CHKERRQ(ierr);
-    ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = Wtil.end_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
-    ierr = velbase_mag.end_access(); CHKERRQ(ierr);
-    ierr = Pnew.end_access(); CHKERRQ(ierr);
-    ierr = Pover.end_access(); CHKERRQ(ierr);
-    ierr = total_input.end_access(); CHKERRQ(ierr);
-    ierr = Wstag.end_access(); CHKERRQ(ierr);
-    ierr = Kstag.end_access(); CHKERRQ(ierr);
-    ierr = Qstag.end_access(); CHKERRQ(ierr);
-    ierr = mask->end_access(); CHKERRQ(ierr);
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);

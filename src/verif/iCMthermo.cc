@@ -69,8 +69,9 @@ PetscErrorCode IceCompModel::initTestFG() {
 
   double *T = new double[grid.Mz];
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access();            CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(T3);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -97,9 +98,6 @@ PetscErrorCode IceCompModel::initTestFG() {
     }
     ierr = T3.setInternalColumn(i, j, T); CHKERRQ(ierr);
   }
-
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -131,7 +129,10 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
     ice_c     = config.get("ice_specific_heat_capacity");
 
   // before temperature and flow step, set strain_heating_c from exact values
-  ierr = strain_heating3_comp.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(strain_heating3_comp);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -152,8 +153,6 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
       ierr = strain_heating3_comp.setInternalColumn(i, j, strain_heating_C); CHKERRQ(ierr);
     }
   }
-
-  ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
 
   delete [] dummy1;
   delete [] dummy2;
@@ -189,16 +188,14 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-
-
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating3_comp.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(T3);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(*strain_heating3);
+  list.add(strain_heating3_comp);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -242,15 +239,6 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
     }
   }
 
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
-
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-
   delete [] Uradial;
   delete [] T;
   delete [] u;
@@ -286,8 +274,10 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
   double *T;
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(T3);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -315,8 +305,6 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(double &gmaxTerr,
       }
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   delete [] Tex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
@@ -380,8 +368,10 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
     default: SETERRQ(grid.com, 2,"again: ice and bedrock temperature errors only for tests K and O\n");
   }
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = bedrock_temp->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(T3);
+  list.add(*bedrock_temp);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -400,8 +390,6 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
       avTerr += Terr;
     }
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = bedrock_temp->end_access(); CHKERRQ(ierr);
 
   delete [] Tex;  delete [] Tbex;
 
@@ -428,7 +416,7 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 
   double     dummy, z, Texact, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(T3);
 
   domeT=0; domeTexact = 0; Terr=0; avTerr=0;
 
@@ -470,7 +458,6 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
     // add to sums for average errors
     avTerr += PetscAbs(Tbase - Texact);
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   double gdomeT, gdomeTexact;
 
@@ -506,8 +493,10 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
   IceModelVec3 *strain_heating3;
   ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*strain_heating3);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -538,8 +527,6 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
       }
     }
   }
-  ierr =     ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
 
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
@@ -562,10 +549,12 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, doub
   IceModelVec3 *u3, *v3, *w3;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -599,10 +588,6 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, doub
       avWerr += Werr;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
   ierr = GlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
@@ -626,7 +611,8 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
 
-  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(basal_melt_rate);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -634,7 +620,6 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
     maxbmelterr = PetscMax(maxbmelterr, err);
     minbmelterr = PetscMin(minbmelterr, err);
   }
-  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
   ierr = GlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
@@ -667,13 +652,13 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
   }
 
   // copy column values into 3D arrays
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(T3);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     ierr = T3.setInternalColumn(i,j,Tcol); CHKERRQ(ierr);
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   delete [] Tcol;
 
@@ -756,13 +741,11 @@ PetscErrorCode BTU_Verification::bootstrap() {
   }
 
   // copy column values into 3D arrays
-  ierr = temp.begin_access(); CHKERRQ(ierr);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+  IceModelVec::AccessList list(temp);
 
-    ierr = temp.setInternalColumn(i,j,&Tbcol[0]); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    ierr = temp.setInternalColumn(p.i(), p.j(), &Tbcol[0]); CHKERRQ(ierr);
   }
-  ierr = temp.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

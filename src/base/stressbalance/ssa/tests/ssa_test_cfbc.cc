@@ -133,11 +133,12 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   ierr = enthalpy.set(528668.35); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
   CHKERRQ(ierr);
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = surface.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = ice_mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(surface);
+  list.add(bc_mask);
+  list.add(vel_bc);
+  list.add(ice_mask);
 
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
@@ -168,11 +169,6 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
     }
   }
 
-  ierr = ice_mask.end_access(); CHKERRQ(ierr);
-  ierr = surface.end_access(); CHKERRQ(ierr);
-  ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
   ierr = surface.update_ghosts(); CHKERRQ(ierr);

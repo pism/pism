@@ -88,8 +88,6 @@ kept.
 */
 PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
 {
-  PetscErrorCode ierr;
-
   IceModelVec2S *m_tauc = tauc;
 
   m_zeta = &new_zeta;
@@ -99,7 +97,8 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
 
   // Cache tauc at the quadrature points in m_coefficients.
   double tauc_q[FEQuadrature::Nq];
-  ierr = m_tauc->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(*m_tauc);
+
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys = m_element_index.ys, ym = m_element_index.ym;
   for (int i = xs; i < xs + xm; i++) {
@@ -112,7 +111,6 @@ PetscErrorCode IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta)
       }
     }
   }
-  ierr = m_tauc->end_access(); CHKERRQ(ierr);
 
   // Flag the state jacobian as needing rebuilding.
   m_rebuild_J_state = true;
@@ -241,9 +239,9 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
                                                                Vector2 **du_a) {
   PetscErrorCode ierr;
 
-  ierr = m_zeta->begin_access(); CHKERRQ(ierr);
-
-  ierr = u.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_zeta);
+  list.add(u);
 
   IceModelVec2S *dzeta_local;
   if (dzeta.has_ghosts()) {
@@ -252,9 +250,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     ierr = m_dzeta_local.copy_from(dzeta); CHKERRQ(ierr);
     dzeta_local = &m_dzeta_local;
   }
-  ierr = dzeta_local->begin_access(); CHKERRQ(ierr);
-
-  int i, j;
+  list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(grid); p; p.next()) {
@@ -299,8 +295,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (i = xs; i < xs + xm; i++) {
-    for (j = ys; j < ys + ym; j++) {
+  for (int i = xs; i < xs + xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
 
       // Zero out the element - local residual in prep for updating it.
       for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
@@ -355,14 +351,12 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
     } // j
   } // i
 
-  if (dirichletBC) dirichletBC.fix_residual_homogeneous(du_a);
+  if (dirichletBC) {
+    dirichletBC.fix_residual_homogeneous(du_a);
+  }
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
   ierr = fixedZeta.finish(); CHKERRQ(ierr);
-
-  ierr = m_zeta->end_access(); CHKERRQ(ierr);
-  ierr = u.end_access(); CHKERRQ(ierr);
-  ierr = dzeta_local->end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -410,12 +404,11 @@ to this method.
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                          IceModelVec2V &du,
                                                                          double **dzeta_a) {
-  int         i, j;
   PetscErrorCode ierr;
 
-  ierr = m_zeta->begin_access(); CHKERRQ(ierr);
-
-  ierr = u.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_zeta);
+  list.add(u);
 
   IceModelVec2V *du_local;
   if (du.has_ghosts()) {
@@ -424,7 +417,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
     ierr = m_du_local.copy_from(du); CHKERRQ(ierr);
     du_local = &m_du_local;
   }
-  ierr = du_local->begin_access(); CHKERRQ(ierr);
+  list.add(*du_local);
 
   Vector2 u_e[FEQuadrature::Nk];
   Vector2 u_q[FEQuadrature::Nq];
@@ -461,8 +454,8 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
-  for (i=xs; i<xs+xm; i++) {
-    for (j=ys; j<ys+ym; j++) {
+  for (int i=xs; i<xs+xm; i++) {
+    for (int j=ys; j<ys+ym; j++) {
       // Index into coefficient storage in m_coefficients
       const int ij = m_element_index.flatten(i, j);
 
@@ -520,10 +513,6 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
     fixedTauc.fix_residual_homogeneous(dzeta_a);
     ierr = fixedTauc.finish(); CHKERRQ(ierr);
   }
-
-  ierr = m_zeta->end_access(); CHKERRQ(ierr);
-  ierr = u.end_access(); CHKERRQ(ierr);
-  ierr = du_local->end_access(); CHKERRQ(ierr);
 
   return 0;
 }

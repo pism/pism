@@ -235,8 +235,6 @@ minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
 PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
-  PetscErrorCode ierr;
-
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
   const double n = flow_law->exponent(), // frequently n = 3
@@ -250,14 +248,14 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
-  ierr =   surface->begin_access();    CHKERRQ(ierr);
-  ierr =       bed->begin_access();  CHKERRQ(ierr);
-  ierr =      mask->begin_access();  CHKERRQ(ierr);
-  ierr =        thk.begin_access();  CHKERRQ(ierr);
-
   MaskQuery m(*mask);
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*surface);
+  list.add(*bed);
+  list.add(*mask);
+  list.add(thk);
+  list.add(result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -365,11 +363,6 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
     } // end of "(pressure > 0)"
   }
 
-  ierr =        thk.end_access(); CHKERRQ(ierr);
-  ierr =       bed->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
-  ierr =      mask->end_access(); CHKERRQ(ierr);
-  ierr =     result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

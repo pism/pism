@@ -34,11 +34,13 @@ PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
 
   double w = 1.0;
 
-  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(m_u_observed);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
   }
+
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -54,10 +56,6 @@ PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
     double v = log(modelMagSq/obsMagSq);
     value += w*v*v;
   }
-  if (m_weights) {
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
-  }
-  ierr = m_u_observed.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
 
@@ -72,12 +70,15 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
 
   double w = 1.;
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(x);
 
-  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
+  list.add(m_u_observed);
+
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
   }
+
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -93,35 +94,28 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
     double v = log(modelMagSq/obsMagSq);
     value += w*v*v;
   }
-  if (m_weights) {
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
-  }
-  ierr = m_u_observed.end_access(); CHKERRQ(ierr);
 
   value /= m_normalization;
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
 PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
-  PetscErrorCode   ierr;
-
   gradient.set(0);
 
   double w = 1.;
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(x);
+  list.add(gradient);
+  list.add(m_u_observed);
 
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
-
-  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
   }
+
   for (Points p(m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -140,13 +134,6 @@ PetscErrorCode IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V 
     gradient(i, j).u = dJdw*2*u_model_ij.u/m_normalization;
     gradient(i, j).v = dJdw*2*u_model_ij.v/m_normalization;
   }
-  ierr = m_u_observed.end_access(); CHKERRQ(ierr);
-  if (m_weights) {
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

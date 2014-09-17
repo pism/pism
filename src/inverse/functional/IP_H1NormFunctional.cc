@@ -29,7 +29,7 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -59,7 +59,6 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -73,11 +72,12 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   double a_e[FEQuadrature::Nk];
   double a_q[FEQuadrature::Nq], dadx_q[FEQuadrature::Nq], dady_q[FEQuadrature::Nq];
-  ierr = a.begin_access(); CHKERRQ(ierr);
 
   double b_e[FEQuadrature::Nk];
   double b_q[FEQuadrature::Nq], dbdx_q[FEQuadrature::Nq], dbdy_q[FEQuadrature::Nq];
-  ierr = b.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(a);
+  list.add(b);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -113,9 +113,6 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  ierr = a.end_access(); CHKERRQ(ierr);
-  ierr = b.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -129,10 +126,11 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
 
   double gradient_e[FEQuadrature::Nk];
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
+  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -178,8 +176,7 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   } // i
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 

@@ -92,9 +92,10 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   double dx2 = 0.5 * grid.dx, dy2 = 0.5 * grid.dy;
 
-  ierr = vLatitude.begin_access(); CHKERRQ(ierr);
-  ierr = vLongitude.begin_access(); CHKERRQ(ierr);
-  ierr =  cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(vLatitude);
+  list.add(vLongitude);
+  list.add(cell_area);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -129,9 +130,6 @@ PetscErrorCode IceModel::compute_cell_areas() {
     vLongitude(i, j) = x * RAD_TO_DEG;
     vLatitude(i, j)  = y * RAD_TO_DEG;
   }
-  ierr =  cell_area.end_access(); CHKERRQ(ierr);  
-  ierr = vLongitude.end_access(); CHKERRQ(ierr);
-  ierr = vLatitude.end_access(); CHKERRQ(ierr);
 
   pj_free(pism);
   pj_free(lonlat);

@@ -33,17 +33,15 @@ PetscErrorCode IPMeanSquareFunctional2V::normalize(double scale) {
   double value = 0;
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    IceModelVec::AccessList list;
+    list.add(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       value += (*m_weights)(i, j);
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
       value += 1;
     }
   }
@@ -59,17 +57,17 @@ PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPU
   // The value of the objective
   double value = 0;
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(x);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       Vector2 &x_ij = x(i, j);
       value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v)*(*m_weights)(i, j);
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -82,8 +80,6 @@ PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPU
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -93,12 +89,12 @@ PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b,
   // The value of the objective
   double value = 0;
 
-  ierr = a.begin_access(); CHKERRQ(ierr);
-
-  ierr = b.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(a);
+  list.add(b);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -106,7 +102,6 @@ PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b,
       Vector2 &b_ij = b(i, j);
       value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v)*(*m_weights)(i, j);
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -120,30 +115,24 @@ PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b,
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = a.end_access(); CHKERRQ(ierr);
-  ierr = b.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
 PetscErrorCode IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
-  PetscErrorCode   ierr;
-
   gradient.set(0);
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
-
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(x);
+  list.add(gradient);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       gradient(i, j).u = 2*x(i, j).u*(*m_weights)(i, j) / m_normalization;
       gradient(i, j).v = 2*x(i, j).v*(*m_weights)(i, j) / m_normalization;
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -152,9 +141,6 @@ PetscErrorCode IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVe
       gradient(i, j).v = 2*x(i, j).v / m_normalization;
     }
   }
-
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -172,17 +158,14 @@ PetscErrorCode IPMeanSquareFunctional2S::normalize(double scale) {
   double value = 0;
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    IceModelVec::AccessList list(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       value += (*m_weights)(i, j);
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
       value += 1;
     }
   }
@@ -198,17 +181,16 @@ PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPU
   // The value of the objective
   double value = 0;
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(x);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double &x_ij = x(i, j);
       value += x_ij*x_ij*(*m_weights)(i, j);
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -221,8 +203,6 @@ PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPU
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -232,18 +212,17 @@ PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b,
   // The value of the objective
   double value = 0;
 
-  ierr = a.begin_access(); CHKERRQ(ierr);
-
-  ierr = b.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(a);
+  list.add(b);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       value += (a(i, j)*b(i, j))*(*m_weights)(i, j);
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -255,30 +234,24 @@ PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b,
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = a.end_access(); CHKERRQ(ierr);
-  ierr = b.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
 
 PetscErrorCode IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
-  PetscErrorCode ierr;
-
   gradient.set(0);
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
-
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(x);
+  list.add(gradient);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       gradient(i, j) = 2*x(i, j)*(*m_weights)(i, j) / m_normalization;
     }
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
   } else {
     for (Points p(m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -287,8 +260,6 @@ PetscErrorCode IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVe
     }
   }
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

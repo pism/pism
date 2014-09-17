@@ -390,14 +390,14 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, double z) {
   PISMDM::Ptr da2;
   ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
 
-  ierr = begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(*this);
   ierr = DMDAVecGetArray(da2->get(), gslice, &slice_val); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     slice_val[i][j] = getValZ(i,j,z);
   }
   ierr = DMDAVecRestoreArray(da2->get(), gslice, &slice_val); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
+
 
   return 0;
 }
@@ -408,17 +408,13 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, double z) {
  * coordinate system, not in reality.
  */
 PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) {
-  PetscErrorCode ierr;
-  double    **slice_val;
+  IceModelVec::AccessList list(*this);
+  list.add(gslice);
 
-  ierr = begin_access(); CHKERRQ(ierr);
-  ierr = gslice.get_array(slice_val); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    slice_val[i][j] = getValZ(i,j,z);
+    gslice(i, j) = getValZ(i, j, z);
   }
-  ierr = gslice.end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -440,21 +436,21 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, IceModelVec
  */
 PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2S &myH) {
   PetscErrorCode ierr;
-  double    **H, **surf_val;
+  double **surf_val;
 
   PISMDM::Ptr da2;
   ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
 
-  ierr = begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(*this);
+  list.add(myH);
+
   ierr = DMDAVecGetArray(da2->get(), gsurf, &surf_val); CHKERRQ(ierr);
-  ierr = myH.get_array(H); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    surf_val[i][j] = getValZ(i,j,H[i][j]);
+    surf_val[i][j] = getValZ(i, j, myH(i,j));
   }
-  ierr = myH.end_access(); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArray(da2->get(), gsurf, &surf_val); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -617,14 +613,13 @@ PetscErrorCode  IceModelVec3D::has_nan() {
   int retval=0;
   const int max_print_this_rank=10;
 
-  ierr = begin_access(); CHKERRQ(ierr);
-  int i = 0, j = 0;
-  unsigned int k = 0;
+  IceModelVec::AccessList list(*this);
+
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     ierr = getInternalColumn(i, j, &tmp); CHKERRQ(ierr);
-    for (k = 0; k < m_n_levels; k++) {
+    for (unsigned int k = 0; k < m_n_levels; k++) {
       if (gsl_isnan(tmp[k])) {
         retval++;
         if (retval <= max_print_this_rank) {
@@ -636,7 +631,6 @@ PetscErrorCode  IceModelVec3D::has_nan() {
       }
     }
   }
-  ierr = end_access(); CHKERRQ(ierr);
 
   if (retval > 0) {
     ierr = PetscSynchronizedPrintf(grid->com, 

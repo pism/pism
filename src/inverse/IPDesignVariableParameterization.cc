@@ -46,10 +46,11 @@ PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable(IceMode
                                                                          bool communicate) {
   PetscErrorCode ierr;
 
-  ierr = zeta.begin_access(); CHKERRQ(ierr);
-  ierr = d.begin_access(); CHKERRQ(ierr);
-  IceGrid &grid = *zeta.get_grid();
-  for (Points p(grid); p; p.next()) {
+  IceModelVec::AccessList list;
+  list.add(zeta);
+  list.add(d);
+
+  for (Points p(*zeta.get_grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     ierr = this->toDesignVariable(zeta(i, j), &d(i, j), NULL); CHKERRQ(ierr);
@@ -57,8 +58,6 @@ PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable(IceMode
       PetscPrintf(PETSC_COMM_WORLD, "made a d nan zeta = %g d = %g\n", zeta(i, j), d(i, j));
     }
   }
-  ierr = zeta.end_access(); CHKERRQ(ierr);
-  ierr = d.end_access(); CHKERRQ(ierr);
   if (communicate) {
     ierr = d.update_ghosts(); CHKERRQ(ierr);
   }
@@ -70,10 +69,11 @@ PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable(IceMo
                                                                             IceModelVec2S &zeta,
                                                                             bool communicate) {
   PetscErrorCode ierr;
-  ierr = zeta.begin_access(); CHKERRQ(ierr);
-  ierr = d.begin_access(); CHKERRQ(ierr);
-  IceGrid &grid = *zeta.get_grid();
-  for (Points p(grid); p; p.next()) {
+  IceModelVec::AccessList list;
+  list.add(zeta);
+  list.add(d);
+
+  for (Points p(*zeta.get_grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     ierr = this->fromDesignVariable(d(i, j), &zeta(i, j)); CHKERRQ(ierr);
@@ -81,8 +81,6 @@ PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable(IceMo
       PetscPrintf(PETSC_COMM_WORLD, "made a zeta nan d = %g zeta = %g\n", d(i, j), zeta(i, j));
     }
   }
-  ierr = zeta.end_access(); CHKERRQ(ierr);
-  ierr = d.end_access(); CHKERRQ(ierr);
   if (communicate) {
     ierr = zeta.update_ghosts(); CHKERRQ(ierr);
   }

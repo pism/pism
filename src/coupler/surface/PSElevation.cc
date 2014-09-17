@@ -184,8 +184,9 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   double dabdz = -m_min/(z_ELA - z_m_min);
   double dacdz = m_max/(z_m_max - z_ELA);
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = usurf->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(*usurf);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -208,8 +209,6 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
     ierr = verbPrintf(5, grid.com, "!!!!! z=%.2f, climatic_mass_balance=%.2f\n", z,
                       grid.convert(result(i, j), "m/s", "m/year")); CHKERRQ(ierr);
   }
-  ierr = usurf->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   // convert from m/s ice equivalent to kg m-2 s-1:
   ierr = result.scale(config.get("ice_density")); CHKERRQ(ierr);
@@ -220,8 +219,9 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
 PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = usurf->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(*usurf);
   double dTdz = (T_max - T_min)/(z_T_max - z_T_min);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -243,8 +243,6 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
                       "!!!!! z=%.2f, T_min=%.2f, dTdz=%.2f, dz=%.2f, T=%.2f\n",
                       z, T_min, dTdz, z - z_T_min, result(i, j)); CHKERRQ(ierr);
   }
-  ierr = usurf->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

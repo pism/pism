@@ -93,21 +93,20 @@ private:
 PetscErrorCode IceRegionalModel::set_no_model_strip(double strip) {
   PetscErrorCode ierr;
 
-    ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-    for (Points p(grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+  IceModelVec::AccessList list(no_model_mask);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (grid.in_null_strip(i, j, strip) == true) {
-        no_model_mask(i, j) = 1;
-      } else {
-        no_model_mask(i, j) = 0;
-      }
+    if (grid.in_null_strip(i, j, strip) == true) {
+      no_model_mask(i, j) = 1;
+    } else {
+      no_model_mask(i, j) = 0;
     }
-    ierr = no_model_mask.end_access(); CHKERRQ(ierr);
+  }
 
-    no_model_mask.metadata().set_string("pism_intent", "model_state");
+  no_model_mask.metadata().set_string("pism_intent", "model_state");
 
-    ierr = no_model_mask.update_ghosts(); CHKERRQ(ierr);
+  ierr = no_model_mask.update_ghosts(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -374,11 +373,9 @@ PetscErrorCode IceRegionalModel::massContExplicitStep() {
 
   // This ensures that no_model_mask is available in
   // IceRegionalModel::cell_interface_fluxes() below.
-  ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(no_model_mask);
 
   ierr = IceModel::massContExplicitStep(); CHKERRQ(ierr);
-
-  ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -420,10 +417,11 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
 
   // note that the call above sets vWork3d; ghosts are comminucated later (in
   // IceModel::energyStep()).
-  ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(no_model_mask);
+  list.add(vWork3d);
+  list.add(Enth3);
 
-  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -436,12 +434,10 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
     for (unsigned int k = 0; k < grid.Mz; ++k)
       new_enthalpy[k] = old_enthalpy[k];
   }
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
   // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
-  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
-  ierr = bmr_stored.begin_access(); CHKERRQ(ierr);
+  list.add(basal_melt_rate);
+  list.add(bmr_stored);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -450,10 +446,6 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
 
     basal_melt_rate(i, j) = bmr_stored(i, j);
   }
-  ierr = bmr_stored.end_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
-
-  ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

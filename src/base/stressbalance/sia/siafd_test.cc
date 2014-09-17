@@ -66,8 +66,10 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
 
   double *strain_heating_ij;
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(strain_heating);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -90,8 +92,6 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
       }
     }
   }
-  ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = strain_heating.end_access(); CHKERRQ(ierr);
 
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
@@ -120,10 +120,12 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
 
   const double LforFG = 750000; // m
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(u3);
+  list.add(v3);
+  list.add(w3);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -149,10 +151,6 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
       avWerr += Werr;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
   ierr = GlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
@@ -171,9 +169,10 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
                                               IceModelVec3 &enthalpy) {
   PetscErrorCode ierr;
 
-  ierr = temperature.begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy.begin_access(); CHKERRQ(ierr);
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(temperature);
+  list.add(enthalpy);
+  list.add(thickness);
 
   double *T_ij, *E_ij; // columns of these values
   for (Points p(grid); p; p.next()) {
@@ -191,9 +190,6 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
   }
 
-  ierr = enthalpy.end_access(); CHKERRQ(ierr);
-  ierr = temperature.end_access(); CHKERRQ(ierr);
-  ierr = thickness.end_access(); CHKERRQ(ierr);
 
   ierr = enthalpy.update_ghosts(); CHKERRQ(ierr);
   return 0;
@@ -226,8 +222,9 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   double *T;
   T = new double[grid.Mz];
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(*enthalpy);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -246,8 +243,6 @@ PetscErrorCode setInitStateF(IceGrid &grid,
     ierr = enthalpy->setInternalColumn(i, j, T); CHKERRQ(ierr);
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr =  enthalpy->end_access(); CHKERRQ(ierr);
 
   ierr = thickness->update_ghosts(); CHKERRQ(ierr);
 

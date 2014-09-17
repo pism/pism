@@ -126,12 +126,13 @@ printf("BEGIN update(%f, %f)\n", my_t, my_dt);
 #if 0
 // This code from PIK needs to go
 printf("update() 1\n");
-	ierr = ice_surface_temp.begin_access();	 CHKERRQ(ierr);
+	IceModelVec::AccessList list;
+	list.add(ice_surface_temp);
 printf("update() 2\n");
 printf("usurf = %p\n", &*usurf);
-	ierr = usurf->begin_access();	 CHKERRQ(ierr);
+	list.add(*usurf);
 printf("update() 3\n");
-	ierr = lat->begin_access(); CHKERRQ(ierr);
+	list.add(*lat);
 printf("update() 4\n");
 	for (Points p(grid); p; p.next()) {
 		const int i = p.i(), j = p.j();
@@ -139,12 +140,6 @@ printf("update() 4\n");
 		ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
 	}
 printf("update() 5\n");
-	ierr = usurf->end_access();	 CHKERRQ(ierr);
-printf("update() 6\n");
-	ierr = lat->end_access(); CHKERRQ(ierr);
-printf("update() 7\n");
-	ierr = ice_surface_temp.end_access();	 CHKERRQ(ierr);
-printf("update() 8\n");
 #endif
 
 #if 0

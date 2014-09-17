@@ -21,12 +21,13 @@
 namespace pism {
 
 void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
-                    IceModelVec2Int &out_mask, IceModelVec2S &out_surface)
+                                 IceModelVec2Int &out_mask, IceModelVec2S &out_surface)
 {
-  bed.begin_access();
-  thickness.begin_access();
-  out_mask.begin_access();
-  out_surface.begin_access();
+  IceModelVec::AccessList list;
+  list.add(bed);
+  list.add(thickness);
+  list.add(out_mask);
+  list.add(out_surface);
   IceGrid *grid = bed.get_grid();
   
   int stencil = out_mask.get_stencil_width();
@@ -38,10 +39,6 @@ void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
     out_mask(i,j) = mask_value;
   }
   
-  bed.end_access();
-  thickness.end_access();
-  out_mask.end_access();
-  out_surface.end_access();
 }
 
 } // end of namespace pism

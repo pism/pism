@@ -66,9 +66,10 @@ PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
   // this call fills ghosts of m_old_mask
   ierr = pism_mask.copy_to(m_old_mask); CHKERRQ(ierr);
 
-  ierr = pism_mask.begin_access();     CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = m_old_mask.begin_access();    CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(pism_mask);
+  list.add(ice_thickness);
+  list.add(m_old_mask);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -80,10 +81,6 @@ PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
       pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
     }
   }
-
-  ierr = m_old_mask.end_access();    CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access();     CHKERRQ(ierr);
 
   ierr = pism_mask.update_ghosts();     CHKERRQ(ierr);
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);

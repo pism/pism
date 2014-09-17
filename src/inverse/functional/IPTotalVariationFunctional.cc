@@ -36,7 +36,8 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -66,8 +67,6 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -80,10 +79,11 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
 
   double gradient_e[FEQuadrature::Nk];
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
+  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -128,8 +128,6 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   } // i
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
