@@ -82,157 +82,137 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         &thk_smooth); CHKERRQ(ierr);
 
-  ierr = theta.begin_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(theta);
+  list.add(thk_smooth);
+  list.add(result);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  list.add(h_x);
+  list.add(h_y);
 
   double *age_ij, *age_offset;
   if (use_age) {
-    ierr = age->begin_access(); CHKERRQ(ierr);
+    list.add(*age);
   }
 
   if (full_update) {
-    ierr = delta[0].begin_access(); CHKERRQ(ierr);
-    ierr = delta[1].begin_access(); CHKERRQ(ierr);
+    list.add(delta[0]);
+    list.add(delta[1]);
   }
 
   double *E_ij, *E_offset;
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  list.add(*enthalpy);
 
   // new code
   IceModelVec3 *enhancement_factor = dynamic_cast<IceModelVec3*>(m_variables->get("enhancement_factor"));
-  if (enhancement_factor == NULL) SETERRQ(grid.com, 1, "enhancement_factor is not available");
+  if (enhancement_factor == NULL) {
+    SETERRQ(grid.com, 1, "enhancement_factor is not available");
+  }
 
   double *EF_ij, *EF_offset;
-  ierr = enhancement_factor->begin_access(); CHKERRQ(ierr);
+  list.add(*enhancement_factor);
   // end of new code
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
-    int GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
-        //   are regular grid neighbors of a staggered point:
-        const int oi = 1 - o, oj = o;
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-        const double
-          thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+      // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
+      //   are regular grid neighbors of a staggered point:
+      const int oi = 1 - o, oj = o;
 
-        // zero thickness case:
-        if (thk == 0.0) {
-          result(i,j,o) = 0.0;
-          if (full_update) {
-            ierr = delta[o].setColumn(i, j, 0.0); CHKERRQ(ierr);
-          }
-          continue;
+      const double
+        thk = 0.5 * (thk_smooth(i,j) + thk_smooth(i+oi,j+oj));
+
+      // zero thickness case:
+      if (thk == 0.0) {
+        result(i,j,o) = 0.0;
+        if (full_update) {
+          ierr = delta[o].setColumn(i, j, 0.0); CHKERRQ(ierr);
         }
+        continue;
+      }
 
+      if (use_age) {
+        ierr = age->getInternalColumn(i, j, &age_ij); CHKERRQ(ierr);
+        ierr = age->getInternalColumn(i+oi, j+oj, &age_offset); CHKERRQ(ierr);
+      }
+
+      ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
+      ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
+
+      // new code
+      ierr = enhancement_factor->getInternalColumn(i, j, &EF_ij); CHKERRQ(ierr);
+      ierr = enhancement_factor->getInternalColumn(i+oi, j+oj, &EF_offset); CHKERRQ(ierr);
+      // end of new code
+
+      const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
+      const int      ks = grid.kBelowHeight(thk);
+      const double   alpha =
+        sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
+      const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
+
+      double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
+      for (int k = 0; k <= ks; ++k) {
+        double depth = thk - grid.zlevels[k]; // FIXME issue #15
+        // pressure added by the ice (i.e. pressure difference between the
+        // current level and the top of the column)
+        const double pressure = EC.getPressureFromDepth(depth);
+
+        double flow;
         if (use_age) {
-          ierr = age->getInternalColumn(i, j, &age_ij); CHKERRQ(ierr);
-          ierr = age->getInternalColumn(i+oi, j+oj, &age_offset); CHKERRQ(ierr);
+          ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
         }
-
-        ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
-        ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
+        // If the flow law does not use grain size, it will just ignore it,
+        // no harm there
+        double E = 0.5 * (E_ij[k] + E_offset[k]);
+        flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
 
         // new code
-        ierr = enhancement_factor->getInternalColumn(i, j, &EF_ij); CHKERRQ(ierr);
-        ierr = enhancement_factor->getInternalColumn(i+oi, j+oj, &EF_offset); CHKERRQ(ierr);
+        // compute the enhancement factor on the staggered grid
+        double EF = 0.5 * (EF_ij[k] + EF_offset[k]);
+
+        delta_ij[k] = EF * theta_local * 2.0 * pressure * flow;
         // end of new code
 
-        const double slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-        const int      ks = grid.kBelowHeight(thk);
-        const double   alpha =
-          sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
-        const double theta_local = 0.5 * (theta(i,j) + theta(i+oi,j+oj));
-
-        double  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
-        for (int k = 0; k <= ks; ++k) {
-          double depth = thk - grid.zlevels[k]; // FIXME issue #15
-          // pressure added by the ice (i.e. pressure difference between the
-          // current level and the top of the column)
-          const double pressure = EC.getPressureFromDepth(depth);
-
-          double flow;
-          if (use_age) {
-            ice_grain_size = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
-          }
-          // If the flow law does not use grain size, it will just ignore it,
-          // no harm there
-          double E = 0.5 * (E_ij[k] + E_offset[k]);
-          flow = flow_law->flow(alpha * pressure, E, pressure, ice_grain_size);
-
-          // new code
-          // compute the enhancement factor on the staggered grid
-          double EF = 0.5 * (EF_ij[k] + EF_offset[k]);
-
-          delta_ij[k] = EF * theta_local * 2.0 * pressure * flow;
-          // end of new code
-
-          if (k > 0) { // trapezoidal rule
-            const double dz = grid.zlevels[k] - grid.zlevels[k-1];
-            Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
-          }
+        if (k > 0) { // trapezoidal rule
+          const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+          Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
-        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
-        const double dz = thk - grid.zlevels[ks];
-        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+      }
+      // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+      const double dz = thk - grid.zlevels[ks];
+      Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
-        // Override diffusivity at the edges of the domain. (At these
-        // locations PISM uses ghost cells *beyond* the boundary of
-        // the computational domain. This does not matter if the ice
-        // does not extend all the way to the domain boundary, as in
-        // whole-ice-sheet simulations. In a regional setup, though,
-        // this adjustment lets us avoid taking very small time-steps
-        // because of the possible thickness and bed elevation
-        // "discontinuities" at the boundary.)
-        if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
-          Dfoffset = 0.0;
+      // Override diffusivity at the edges of the domain. (At these
+      // locations PISM uses ghost cells *beyond* the boundary of
+      // the computational domain. This does not matter if the ice
+      // does not extend all the way to the domain boundary, as in
+      // whole-ice-sheet simulations. In a regional setup, though,
+      // this adjustment lets us avoid taking very small time-steps
+      // because of the possible thickness and bed elevation
+      // "discontinuities" at the boundary.)
+      if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
+        Dfoffset = 0.0;
 
-        my_D_max = PetscMax(my_D_max, Dfoffset);
+      my_D_max = PetscMax(my_D_max, Dfoffset);
 
-        // vertically-averaged SIA-only flux, sans sliding; note
-        //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
-        //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
-        result(i,j,o) = - Dfoffset * slope;
+      // vertically-averaged SIA-only flux, sans sliding; note
+      //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
+      //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
+      result(i,j,o) = - Dfoffset * slope;
 
-        // if doing the full update, fill the delta column above the ice and
-        // store it:
-        if (full_update) {
-          for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
-            delta_ij[k] = 0.0;
-          }
-          ierr = delta[o].setInternalColumn(i,j,&delta_ij[0]); CHKERRQ(ierr);
+      // if doing the full update, fill the delta column above the ice and
+      // store it:
+      if (full_update) {
+        for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+          delta_ij[k] = 0.0;
         }
-      } // o
-    } // j
-  } // i
-
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
-
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = theta.end_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
-
-  if (use_age) {
-    ierr = age->end_access(); CHKERRQ(ierr);
-  }
-
-  // new code
-  ierr = enhancement_factor->end_access(); CHKERRQ(ierr);
-  // end of new code
-
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-
-  if (full_update) {
-    ierr = delta[1].end_access(); CHKERRQ(ierr);
-    ierr = delta[0].end_access(); CHKERRQ(ierr);
-  }
+        ierr = delta[o].setInternalColumn(i,j,&delta_ij[0]); CHKERRQ(ierr);
+      }
+    }
+  } // o-loop
 
   ierr = GlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
 

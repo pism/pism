@@ -43,7 +43,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   m_dt = dt;
 
   // FIXME: put real code here
-  PetscErrorCode ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor"));
+  PetscErrorCode ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
 
   return 0;
 }
