@@ -32,7 +32,7 @@
 namespace pism {
 
 IceModelVec::IceModelVec() {
-  access_counter = 0;
+  m_access_counter = 0;
   array = NULL;
 
   m_da.reset();
@@ -52,7 +52,7 @@ IceModelVec::IceModelVec() {
   // vars.resize(dof);
   reset_attrs(0);
 
-  state_counter = 0;
+  m_state_counter = 0;
 
   v = NULL;
 
@@ -72,17 +72,18 @@ IceModelVec::IceModelVec() {
  * See also inc_state_counter().
  */
 int IceModelVec::get_state_counter() const {
-  return state_counter;
+  return m_state_counter;
 }
 
 //! \brief Increment the object state counter.
 /*!
- * See the documentation of get_state_counter(). This method is the \b only way
- * to increment the state counter. It is \b not modified or automatically
- * updated.
+ * See the documentation of get_state_counter(). This method is the
+ * *only* way to manually increment the state counter. It is also
+ * automatically updated by IceModelVec methods that are known to
+ * change stored values.
  */
 void IceModelVec::inc_state_counter() {
-  state_counter++;
+  m_state_counter++;
 }
 
 IceModelVec::~IceModelVec() {
@@ -130,7 +131,7 @@ PetscErrorCode  IceModelVec::destroy() {
     }
   }
 
-  assert(access_counter == 0);
+  assert(m_access_counter == 0);
 
   return 0;
 }
@@ -248,6 +249,8 @@ PetscErrorCode IceModelVec::add(double alpha, IceModelVec &x) {
   PetscErrorCode ierr = checkCompatibility("add", x); CHKERRQ(ierr);
 
   ierr = VecAXPY(v, alpha, x.v); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -256,6 +259,8 @@ PetscErrorCode IceModelVec::shift(double alpha) {
   assert(v != NULL);
 
   PetscErrorCode ierr = VecShift(v, alpha); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -264,6 +269,8 @@ PetscErrorCode IceModelVec::scale(double alpha) {
   assert(v != NULL);
 
   PetscErrorCode ierr = VecScale(v, alpha); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -296,6 +303,8 @@ PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
   } else {
     ierr = VecCopy(source, v); CHKERRQ(ierr);
   }
+
+  inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -307,6 +316,7 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
   ierr = checkCompatibility("copy_to", destination); CHKERRQ(ierr);
 
   ierr = VecCopy(v, destination.v); CHKERRQ(ierr);
+  destination.inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -583,11 +593,11 @@ PetscErrorCode  IceModelVec::begin_access() {
 #if (PISM_DEBUG==1)
   assert(v != NULL);
 
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec::begin_access(): access_counter < 0");
+  if (m_access_counter < 0)
+    SETERRQ(grid->com, 1, "IceModelVec::begin_access(): m_access_counter < 0");
 #endif
 
-  if (access_counter == 0) {
+  if (m_access_counter == 0) {
 
     if (begin_end_access_use_dof == true) {
       ierr = DMDAVecGetArrayDOF(m_da->get(), v, &array); CHKERRQ(ierr);
@@ -596,7 +606,7 @@ PetscErrorCode  IceModelVec::begin_access() {
     }
   }
 
-  access_counter++;
+  m_access_counter++;
 
   return 0;
 }
@@ -610,12 +620,12 @@ PetscErrorCode  IceModelVec::end_access() {
   if (array == NULL)
     SETERRQ(grid->com, 1, "IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
 
-  if (access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec::end_access(): access_counter < 0");
+  if (m_access_counter < 0)
+    SETERRQ(grid->com, 1, "IceModelVec::end_access(): m_access_counter < 0");
 #endif
 
-  access_counter--;
-  if (access_counter == 0) {
+  m_access_counter--;
+  if (m_access_counter == 0) {
     if (begin_end_access_use_dof == true) {
       ierr = DMDAVecRestoreArrayDOF(m_da->get(), v, &array);
       CHKERRQ(ierr);
@@ -669,6 +679,7 @@ PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) {
              " (name1='%s', name2='%s')", m_name.c_str(), destination.m_name.c_str());
   }
 
+  destination.inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -677,6 +688,7 @@ PetscErrorCode  IceModelVec::set(const double c) {
   PetscErrorCode ierr;
   assert(v != NULL);
   ierr = VecSet(v,c); CHKERRQ(ierr);
+  inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -698,7 +710,10 @@ PetscErrorCode IceModelVec::has_nan() {
 
 void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
   double ghost_width = 0;
-  if (m_has_ghosts) ghost_width = m_da_stencil_width;
+  if (m_has_ghosts) {
+    ghost_width = m_da_stencil_width;
+  }
+
   bool out_of_range = (i < grid->xs - ghost_width) ||
     (i > grid->xs + grid->xm + ghost_width) ||
     (j < grid->ys - ghost_width) ||
@@ -706,6 +721,13 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
     (k >= m_dof);
 
   assert(out_of_range == false);
+
+  if (array == NULL) {
+    PetscPrintf(grid->com,
+                "PISM ERROR: IceModelVec::begin_access() was not called (name = '%s')\n",
+                m_name.c_str());
+  }
+  assert(array != NULL);
 }
 
 //! \brief Compute parameters for 2D loop computations involving 3
@@ -753,16 +775,15 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
 //! \brief Computes the norm of all components.
 PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
   PetscErrorCode ierr;
-  double *norm_result;
 
   assert(n == NORM_1 || n == NORM_2 || n == NORM_INFINITY);
 
-  norm_result = new double[m_dof];
+  std::vector<double> norm_result(m_dof);
   result.resize(m_dof);
 
   NormType type = this->int_to_normtype(n);
 
-  ierr = VecStrideNormAll(v, type, norm_result); CHKERRQ(ierr);
+  ierr = VecStrideNormAll(v, type, &norm_result[0]); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax if NORM_INFINITY,
@@ -800,8 +821,6 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
     }
 
   }
-
-  delete [] norm_result;
 
   return 0;
 }
@@ -879,12 +898,14 @@ PetscErrorCode IceModelVec::regrid(const PIO &nc, RegriddingFlag flag,
                                    double default_value) {
   PetscErrorCode ierr;
   ierr = this->regrid_impl(nc, flag, default_value); CHKERRQ(ierr);
+  inc_state_counter();          // mark as modified
   return 0;
 }
 
 PetscErrorCode IceModelVec::read(const PIO &nc, const unsigned int time) {
   PetscErrorCode ierr;
   ierr = this->read_impl(nc, time); CHKERRQ(ierr);
+  inc_state_counter();          // mark as modified
   return 0;
 }
 
@@ -892,6 +913,27 @@ PetscErrorCode IceModelVec::write(const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
   ierr = write_impl(nc, nctype); CHKERRQ(ierr);
   return 0;
+}
+
+IceModelVec::AccessList::AccessList() {
+  // empty
+}
+
+IceModelVec::AccessList::~AccessList() {
+  while (m_vecs.empty() == false) {
+    IceModelVec *vec = m_vecs.back();
+    vec->end_access();
+    m_vecs.pop_back();
+  }
+}
+
+IceModelVec::AccessList::AccessList(IceModelVec &vec) {
+  add(vec);
+}
+
+void IceModelVec::AccessList::add(IceModelVec &vec) {
+  vec.begin_access();
+  m_vecs.push_back(&vec);
 }
 
 } // end of namespace pism

@@ -61,7 +61,7 @@ public:
   PetscErrorCode setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
                                                   double my_Rb);
 
-  PetscErrorCode solveThisColumn(double *x);  
+  PetscErrorCode solveThisColumn(std::vector<double> &x);
 
 public:
   // constants which should be set before calling initForAllColumns()

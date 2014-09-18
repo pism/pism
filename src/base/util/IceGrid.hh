@@ -31,6 +31,8 @@
 #include <memory>
 #endif
 
+#include <cassert>
+
 namespace pism {
 
 class Time;
@@ -120,11 +122,18 @@ private:
   double loop above can be modified to look like
 
   \code
-  int GHOSTS = 1;
-  for (int i=grid.xs - GHOSTS; i<grid.xs+grid.xm + GHOSTS; ++i) {
-  for (int j=grid.ys - GHOSTS; j<grid.ys+grid.ym + GHOSTS; ++j) {
-  // compute something at i,j
+  for (PointsWithGhosts p(grid, ghost_width); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    field(i,j) = value;
   }
+  \endcode
+
+  to iterate over points without ghosts, do
+
+  \code
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    field(i,j) = value;
   }
   \endcode
 
@@ -155,7 +164,7 @@ public:
   PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
   double radius(int i, int j);
   PetscErrorCode get_dm(int dm_dof, int stencil_width, PISMDM::Ptr &result);
-  double convert(double, const char*, const char*) const;
+  double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
 
   const Config &config;
@@ -226,8 +235,8 @@ public:
             y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
   }
 protected:
-  std::map<int,PISMDM::WeakPtr> dms;
-  double lambda;         //!< quadratic vertical spacing parameter
+  std::map<int,PISMDM::WeakPtr> m_dms;
+  double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
@@ -245,7 +254,59 @@ private:
   IceGrid & operator=(IceGrid const &);
 };
 
+/** Iterator class for traversing the grid, including ghost points.
+ *
+ * Usage:
+ *
+ * `for (PointsWithGhosts p(grid, stencil_width); p; p.next()) { ... }`
+ */
+class PointsWithGhosts {
+public:
+  PointsWithGhosts(IceGrid &g, unsigned int stencil_width = 1) {
+    m_i_first = g.xs - stencil_width;
+    m_i_last  = g.xs + g.xm + stencil_width - 1;
+    m_j_first = g.ys - stencil_width;
+    m_j_last  = g.ys + g.ym + stencil_width - 1;
+
+    m_i = m_i_first;
+    m_j = m_j_first;
+    m_done = false;
+  }
+
+  int i() const { return m_i; }
+  int j() const { return m_j; }
+
+  void next() {
+    assert(m_done == false);
+    m_j += 1;
+    if (m_j > m_j_last) {
+      m_j = m_j_first;        // wrap around
+      m_i += 1;
+    }
+    if (m_i > m_i_last) {
+      m_i = m_i_first;        // ensure that indexes are valid
+      m_done = true;
+    }
+  }
+
+  operator bool() const { return m_done == false; }
+private:
+  int m_i, m_j;
+  int m_i_first, m_i_last, m_j_first, m_j_last;
+  bool m_done;
+};
+
+/** Iterator class for traversing the grid (without ghost points).
+ *
+ * Usage:
+ *
+ * `for (Points p(grid); p; p.next()) { double foo = p.i(); ... }`
+ */
+class Points : public PointsWithGhosts {
+public:
+  Points(IceGrid &g) : PointsWithGhosts(g, 0) {}
+};
+
 } // end of namespace pism
 
 #endif  /* __grid_hh */
-

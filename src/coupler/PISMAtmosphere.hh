@@ -34,6 +34,8 @@ public:
   AtmosphereModel(IceGrid &g, const Config &conf)
     : Component_TS(g, conf) {};
 
+  virtual PetscErrorCode init(Vars &vars) = 0;
+
   //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
   virtual PetscErrorCode mean_precipitation(IceModelVec2S &result) = 0;
 
@@ -42,18 +44,18 @@ public:
 
   virtual PetscErrorCode begin_pointwise_access() = 0;
   virtual PetscErrorCode end_pointwise_access() = 0;
-  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N) = 0;
-  //! \brief Sets a pre-allocated N-element array "values" to the time-series of
+  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts) = 0;
+  //! \brief Sets a pre-allocated N-element array "result" to the time-series of
   //! ice-equivalent precipitation (m/s) at the point i,j on the grid.
   //!
   //! See temp_time_series() for more.
-  virtual PetscErrorCode precip_time_series(int i, int j, double *values) = 0;
+  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &result) = 0;
 
-  //! \brief Sets a pre-allocated N-element array "values" to the time-series
+  //! \brief Sets a pre-allocated N-element array "result" to the time-series
   //! of near-surface air temperature (degrees Kelvin) at the point i,j on the
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
   //! begin_pointwise_access() and end_pointwise_access()
-  virtual PetscErrorCode temp_time_series(int i, int j, double *values) = 0;
+  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &result) = 0;
   //! \brief Sets result to a snapshot of temperature for the current time.
   //! (For diagnostic purposes.)
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result) = 0;

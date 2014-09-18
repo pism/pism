@@ -317,27 +317,24 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
 
   MaskQuery m(*m_pism_mask);
 
-  ierr = m_pism_mask->begin_access(); CHKERRQ(ierr);
-  ierr = m_ice_thickness->begin_access();   CHKERRQ(ierr);
-  ierr = m_target_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = m_ftt_mask.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
-        if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
-          result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
-        } else {
-          result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
-        }
+  IceModelVec::AccessList list;
+  list.add(*m_pism_mask);
+  list.add(*m_ice_thickness);
+  list.add(m_target_thickness);
+  list.add(m_ftt_mask);
+  list.add(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m_ftt_mask(i,j) > 0.5 && m.grounded(i, j)) {
+      if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
+        result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
+      } else {
+        result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - (*m_ice_thickness)(i,j));
       }
     }
   }
-  ierr = m_ice_thickness->end_access(); CHKERRQ(ierr);
-  ierr = m_target_thickness.end_access(); CHKERRQ(ierr);
-  ierr = m_ftt_mask.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = m_pism_mask->end_access(); CHKERRQ(ierr);
   // no communication needed
 
   return 0;

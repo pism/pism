@@ -55,6 +55,7 @@ PetscErrorCode DistributedHydrology::allocate_pressure() {
   ierr = velbase_mag.set_attrs("internal",
                          "ice sliding speed seen by subglacial hydrology",
                          "m s-1", ""); CHKERRQ(ierr);
+  velbase_mag.metadata().set_double("valid_min", 0.0);
   ierr = Pnew.create(grid, "Pnew_internal", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = Pnew.set_attrs("internal",
                      "new transportable subglacial water pressure during update",
@@ -114,15 +115,12 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
     ierr = P_from_W_steady(P); CHKERRQ(ierr);
   }
 
-  velbase_mag.metadata().set_double("valid_min", -9.99e200);  // set valid_min below diagnostic fill value: FIXME!
   if (hold_flag) {
     ierr = verbPrintf(2, grid.com,
        "  reading velbase_mag for 'distributed' hydrology from '%s'.\n", filename.c_str()); CHKERRQ(ierr);
-    ierr = velbase_mag.regrid(filename, CRITICAL); CHKERRQ(ierr);
-    ierr = velbase_mag.mask_by(velbase_mag,0.0); CHKERRQ(ierr);  // attempt replace any negative fill with zero
+    ierr = velbase_mag.regrid(filename, CRITICAL_FILL_MISSING, 0.0); CHKERRQ(ierr);
     hold_velbase_mag = true;
   }
-  velbase_mag.metadata().set_double("valid_min", 0.0);  // set valid_min
 
   return 0;
 }
@@ -239,30 +237,30 @@ PetscErrorCode DistributedHydrology::check_P_bounds(bool enforce_upper) {
 
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
-  ierr = P.begin_access(); CHKERRQ(ierr);
-  ierr = Pover.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (P(i,j) < 0.0) {
-        PetscPrintf(grid.com,
-           "PISM ERROR: disallowed negative subglacial water pressure\n"
-           "    P = %.6f Pa\n at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", P(i,j),i,j);
-        PISMEnd();
-      }
-      if (enforce_upper) {
-        P(i,j) = PetscMin(P(i,j), Pover(i,j));
-      } else if (P(i,j) > Pover(i,j) + 0.001) {
-        PetscPrintf(grid.com,
-           "PISM ERROR: subglacial water pressure P = %.16f Pa exceeds\n"
-           "    overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", P(i,j),Pover(i,j),i,j);
-        PISMEnd();
-      }
+  IceModelVec::AccessList list;
+  list.add(P);
+  list.add(Pover);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (P(i,j) < 0.0) {
+      PetscPrintf(grid.com,
+                  "PISM ERROR: disallowed negative subglacial water pressure\n"
+                  "    P = %.6f Pa\n at (i,j)=(%d,%d)\n"
+                  "ENDING ... \n\n", P(i,j),i,j);
+      PISMEnd();
+    }
+    if (enforce_upper) {
+      P(i,j) = PetscMin(P(i,j), Pover(i,j));
+    } else if (P(i,j) > Pover(i,j) + 0.001) {
+      PetscPrintf(grid.com,
+                  "PISM ERROR: subglacial water pressure P = %.16f Pa exceeds\n"
+                  "    overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)\n"
+                  "ENDING ... \n\n", P(i,j),Pover(i,j),i,j);
+      PISMEnd();
     }
   }
-  ierr = P.end_access(); CHKERRQ(ierr);
-  ierr = Pover.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -280,38 +278,36 @@ PetscErrorCode DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
   PetscErrorCode ierr;
   double CC = config.get("hydrology_cavitation_opening_coefficient") /
                     (config.get("hydrology_creep_closure_coefficient") * config.get("ice_softness")),
-    powglen = 1.0 / config.get("Glen_exponent"),
+    powglen = 1.0 / config.get("sia_Glen_exponent"), // choice is SIA; see #285
     Wr = config.get("hydrology_roughness_scale");
 
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
 
-  ierr = W.begin_access();      CHKERRQ(ierr);
-  ierr = Pover.begin_access();  CHKERRQ(ierr);
-  ierr = velbase_mag.begin_access();  CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      double sb = pow(CC * velbase_mag(i, j), powglen);
-      if (W(i, j) == 0.0) {
-        // see P(W) formula in steady state; note P(W) is continuous (in steady
-        // state); these facts imply:
-        if (sb > 0.0)
-          result(i, j) = 0.0;        // no water + cavitation = underpressure
-        else
-          result(i, j) = Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
-      } else {
-        double Wratio = PetscMax(0.0, Wr - W(i, j)) / W(i, j);
-        // in cases where steady state is actually possible this will
-        //   come out positive, but otherwise we should get underpressure P=0,
-        //   and that is what it yields
-        result(i, j) = PetscMax(0.0, Pover(i, j) - sb * pow(Wratio, powglen));
-      }
+  IceModelVec::AccessList list;
+  list.add(W);
+  list.add(Pover);
+  list.add(velbase_mag);
+  list.add(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double sb = pow(CC * velbase_mag(i, j), powglen);
+    if (W(i, j) == 0.0) {
+      // see P(W) formula in steady state; note P(W) is continuous (in steady
+      // state); these facts imply:
+      if (sb > 0.0)
+        result(i, j) = 0.0;        // no water + cavitation = underpressure
+      else
+        result(i, j) = Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
+    } else {
+      double Wratio = PetscMax(0.0, Wr - W(i, j)) / W(i, j);
+      // in cases where steady state is actually possible this will
+      //   come out positive, but otherwise we should get underpressure P=0,
+      //   and that is what it yields
+      result(i, j) = PetscMax(0.0, Pover(i, j) - sb * pow(Wratio, powglen));
     }
   }
-  ierr = W.end_access();      CHKERRQ(ierr);
-  ierr = Pover.end_access();  CHKERRQ(ierr);
-  ierr = velbase_mag.end_access();  CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -395,7 +391,7 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
 
   const double
             rg    = config.get("fresh_water_density") * config.get("standard_gravity"),
-            nglen = config.get("Glen_exponent"),
+            nglen = config.get("sia_Glen_exponent"), // choice is SIA; see #285
             Aglen = config.get("ice_softness"),
             c1    = config.get("hydrology_cavitation_opening_coefficient"),
             c2    = config.get("hydrology_creep_closure_coefficient"),
@@ -418,15 +414,6 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     ierr = check_water_thickness_nonnegative(W); CHKERRQ(ierr);
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
-
-    // update Wtilnew (the actual step) from W and Wtil
-    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
 
     // note that ice dynamics can change overburden pressure, so we can only check P
     //   bounds if thk has not changed; if thk could have just changed, such as in the
@@ -452,6 +439,15 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 
+    // update Wtilnew from Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
+
     // update Pnew from time step
     const double  CC = (rg * hdt) / phi0,
                      wux  = 1.0 / (grid.dx * grid.dx),
@@ -462,71 +458,59 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
 
     MaskQuery M(*mask);
 
-    ierr = P.begin_access(); CHKERRQ(ierr);
-    ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = Wtil.begin_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
-    ierr = velbase_mag.begin_access(); CHKERRQ(ierr);
-    ierr = Wstag.begin_access(); CHKERRQ(ierr);
-    ierr = Kstag.begin_access(); CHKERRQ(ierr);
-    ierr = Qstag.begin_access(); CHKERRQ(ierr);
-    ierr = total_input.begin_access(); CHKERRQ(ierr);
-    ierr = mask->begin_access(); CHKERRQ(ierr);
-    ierr = Pover.begin_access(); CHKERRQ(ierr);
-    ierr = Pnew.begin_access(); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (M.ice_free_land(i,j))
-          Pnew(i,j) = 0.0;
-        else if (M.ocean(i,j))
-          Pnew(i,j) = Pover(i,j);
-        else if (W(i,j) <= 0.0) {
-          // see P(W) formula *in steady state*; note P(W) is continuous (in steady
-          // state); these facts imply:
-          if (velbase_mag(i,j) > 0.0)
-            Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
-          else
-            Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
-        } else {
-          // opening and closure terms in pressure equation
-          Open = PetscMax(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
-          Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
+    IceModelVec::AccessList list;
+    list.add(P);
+    list.add(W);
+    list.add(Wtil);
+    list.add(Wtilnew);
+    list.add(velbase_mag);
+    list.add(Wstag);
+    list.add(Kstag);
+    list.add(Qstag);
+    list.add(total_input);
+    list.add(*mask);
+    list.add(Pover);
+    list.add(Pnew);
 
-          // compute the flux divergence the same way as in raw_update_W()
-          divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
-                      + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
-          const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
-                           Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
-                           Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
-                           Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
-          diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
-                  + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
-          divflux = - divadflux + diffW;
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-          // pressure update equation
-          ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
-          Pnew(i,j) = P(i,j) + CC * (divflux + ZZ);
-          // projection to enforce  0 <= P <= P_o
-          Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
-        }
+      if (M.ice_free_land(i,j))
+        Pnew(i,j) = 0.0;
+      else if (M.ocean(i,j))
+        Pnew(i,j) = Pover(i,j);
+      else if (W(i,j) <= 0.0) {
+        // see P(W) formula *in steady state*; note P(W) is continuous (in steady
+        // state); these facts imply:
+        if (velbase_mag(i,j) > 0.0)
+          Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
+        else
+          Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
+      } else {
+        // opening and closure terms in pressure equation
+        Open = PetscMax(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));
+        Close = c2 * Aglen * pow(Pover(i,j) - P(i,j),nglen) * W(i,j);
+
+        // compute the flux divergence the same way as in raw_update_W()
+        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
+          + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
+        const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
+          Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
+          Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
+          Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
+        diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
+          + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
+        divflux = - divadflux + diffW;
+
+        // pressure update equation
+        ZZ = Close - Open + total_input(i,j) - (Wtilnew(i,j) - Wtil(i,j)) / hdt;
+        Pnew(i,j) = P(i,j) + CC * (divflux + ZZ);
+        // projection to enforce  0 <= P <= P_o
+        Pnew(i,j) = PetscMin(PetscMax(0.0, Pnew(i,j)), Pover(i,j));
       }
     }
-    ierr = P.end_access(); CHKERRQ(ierr);
-    ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = Wtil.end_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
-    ierr = velbase_mag.end_access(); CHKERRQ(ierr);
-    ierr = Pnew.end_access(); CHKERRQ(ierr);
-    ierr = Pover.end_access(); CHKERRQ(ierr);
-    ierr = total_input.end_access(); CHKERRQ(ierr);
-    ierr = Wstag.end_access(); CHKERRQ(ierr);
-    ierr = Kstag.end_access(); CHKERRQ(ierr);
-    ierr = Qstag.end_access(); CHKERRQ(ierr);
-    ierr = mask->end_access(); CHKERRQ(ierr);
 
-    // FIXME: following chunk is code duplication with RoutingHydrology::update()
-
-    // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
+    // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
     ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
@@ -548,8 +532,8 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
                       " 'distributed' hydrology summary:\n"
                       "     %d hydrology sub-steps with average dt = %.7f years = %.2f s\n"
                       "        (average of %.2f steps per CFL time; max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-                      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
-                      "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
+                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
+                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
                       hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
                       cumratio/hydrocount, maxV, maxD,
                       icefreelost, oceanlost,

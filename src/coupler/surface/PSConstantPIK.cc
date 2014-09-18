@@ -101,8 +101,6 @@ PetscErrorCode PSConstantPIK::init(Vars &vars) {
 
 PetscErrorCode PSConstantPIK::update(double my_t, double my_dt)
 {
-  PetscErrorCode ierr;
-
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12))
     return 0;
@@ -110,17 +108,15 @@ PetscErrorCode PSConstantPIK::update(double my_t, double my_dt)
   m_t  = my_t;
   m_dt = my_dt;
 
-  ierr = ice_surface_temp.begin_access();   CHKERRQ(ierr);
-  ierr = usurf->begin_access();   CHKERRQ(ierr);
-  ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
-    }
+  IceModelVec::AccessList list;
+  list.add(ice_surface_temp);
+  list.add(*usurf);
+  list.add(*lat);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    ice_surface_temp(i,j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0);
   }
-  ierr = usurf->end_access();   CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access();   CHKERRQ(ierr);
 
   return 0;
 }

@@ -153,7 +153,7 @@ IceModel::~IceModel() {
   // de-allocate viewers
   std::map<std::string,PetscViewer>::iterator k = viewers.begin();
   while (k != viewers.end()) {
-    if ((*k).second != PETSC_NULL) {
+    if ((*k).second != NULL) {
       PetscViewerDestroy(&(*k).second);
       ++k;
     }

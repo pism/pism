@@ -380,7 +380,7 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 /*! \brief Solve the tridiagonal system, in a single column, which
  *  determines the new values of the ice enthalpy.
  */
-PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
+PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
@@ -440,7 +440,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
                        "\n\ntridiagonal solve of enthSystemCtx in enthalpyAndDrainageStep() FAILED at (%d,%d)\n"
                        " with zero pivot position %d; viewing system to m-file ... \n",
                        m_i, m_j, pivoterr); CHKERRQ(ierr);
-    ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
+    ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in enthalpyDrainageStep()\n");
   }
 
@@ -462,15 +462,16 @@ PetscErrorCode enthSystemCtx::solveThisColumn(double *x) {
 }
 
 //! View the tridiagonal system A x = b to a PETSc viewer, both A as a full matrix and b as a vector.
-PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer) const {
+PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer,
+                                         unsigned int M) const {
   PetscErrorCode ierr;
   std::string info;
   info = prefix + "_A";
-  ierr = viewMatrix(viewer,info.c_str()); CHKERRQ(ierr);
+  ierr = viewMatrix(viewer, M, info.c_str()); CHKERRQ(ierr);
   info = prefix + "_rhs";
-  ierr = viewVectorValues(viewer,rhs,m_nmax,info.c_str()); CHKERRQ(ierr);
+  ierr = viewVectorValues(viewer, rhs, M, info.c_str()); CHKERRQ(ierr);
   info = prefix + "_R";
-  ierr = viewVectorValues(viewer,&R[0],Mz,info.c_str()); CHKERRQ(ierr);
+  ierr = viewVectorValues(viewer, R, M, info.c_str()); CHKERRQ(ierr);
   return 0;
 }
 

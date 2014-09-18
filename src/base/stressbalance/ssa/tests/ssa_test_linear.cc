@@ -118,30 +118,27 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
 
   // Set boundary conditions (Dirichlet all the way around).
   ierr = bc_mask.set(0.0); CHKERRQ(ierr);
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double myu, myv;
-      const double myx = grid.x[i], myy=grid.y[j];
+
+  IceModelVec::AccessList list;
+  list.add(vel_bc);
+  list.add(bc_mask);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double myu, myv;
+    const double myx = grid.x[i], myy=grid.y[j];
       
-      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
-      if (edge) {
-        bc_mask(i,j) = 1;
-        exactSolution(i,j,myx,myy,&myu,&myv);
-        vel_bc(i,j).u = myu;
-        vel_bc(i,j).v = myv;
-      }
+    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    if (edge) {
+      bc_mask(i,j) = 1;
+      exactSolution(i,j,myx,myy,&myu,&myv);
+      vel_bc(i,j).u = myu;
+      vel_bc(i,j).v = myv;
     }
-  } 
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
+  }
     
   ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-
   ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-
-
 
   ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
 
@@ -169,13 +166,13 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm    com;  // won't be used except for rank,size
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
@@ -183,8 +180,8 @@ int main(int argc, char *argv[]) {
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
     PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-help", &help_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"

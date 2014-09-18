@@ -148,7 +148,7 @@ PetscErrorCode StressBalance::get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v
 
 PetscErrorCode StressBalance::get_basal_frictional_heating(IceModelVec2S* &result) {
   PetscErrorCode ierr;
-  ierr = m_stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr); 
+  ierr = m_stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -221,105 +221,94 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
                                                         IceModelVec2S *basal_melt_rate,
                                                         IceModelVec3 &result) {
   PetscErrorCode ierr;
-  IceModelVec2Int *mask;
 
-  mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
+  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery m(*mask);
 
-  ierr = u->begin_access(); CHKERRQ(ierr);
-  ierr = v->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*u);
+  list.add(*v);
+  list.add(result);
+  list.add(*mask);
 
   if (basal_melt_rate) {
-    ierr = basal_melt_rate->begin_access(); CHKERRQ(ierr);
+    list.add(*basal_melt_rate);
   }
 
-  double *w_ij, *u_ij, *u_im1, *u_ip1, *v_ij, *v_jm1, *v_jp1;
+  double *w_ij, *u_ij, *u_w, *u_e, *v_ij, *v_s, *v_n;
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
-      ierr = u->getInternalColumn(i,j,  &u_ij); CHKERRQ(ierr);
-      ierr = u->getInternalColumn(i+1,j,&u_ip1); CHKERRQ(ierr);
+    ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
 
-      ierr = v->getInternalColumn(i,j-1,&v_jm1); CHKERRQ(ierr);
-      ierr = v->getInternalColumn(i,j,  &v_ij); CHKERRQ(ierr);
-      ierr = v->getInternalColumn(i,j+1,&v_jp1); CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i-1,j,&u_w); CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i,j,  &u_ij); CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i+1,j,&u_e); CHKERRQ(ierr);
 
-      double west = 1, east = 1,
-        south = 1, north = 1,
-        D_x = 0,                // 1/(dx), 1/(2dx), or 0
-        D_y = 0;                // 1/(dy), 1/(2dy), or 0
+    ierr = v->getInternalColumn(i,j-1,&v_s); CHKERRQ(ierr);
+    ierr = v->getInternalColumn(i,j,  &v_ij); CHKERRQ(ierr);
+    ierr = v->getInternalColumn(i,j+1,&v_n); CHKERRQ(ierr);
 
-      // Switch between second-order centered differences in the interior and
-      // first-order one-sided differences at ice margins.
+    double west = 1, east = 1, south = 1, north = 1,
+      D_x = 0,                // 1/(dx), 1/(2dx), or 0
+      D_y = 0;                // 1/(dy), 1/(2dy), or 0
 
-      // x-derivative of u
-      {
-        if ((m.floating_ice(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.floating_ice(i+1,j)))
-          east = 0;
-        if ((m.floating_ice(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.floating_ice(i-1,j)))
-          west = 0;
+    // Switch between second-order centered differences in the interior and
+    // first-order one-sided differences at ice margins.
 
-        if (east + west > 0)
-          D_x = 1.0 / (grid.dx * (east + west));
-        else
-          D_x = 0.0;
-      }
+    // x-derivative
+    {
+      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j)))
+        east = 0;
+      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j)))
+        west = 0;
 
-      // y-derivative of v
-      {
-        if ((m.floating_ice(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.floating_ice(i,j+1)))
-          north = 0;
-        if ((m.floating_ice(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.floating_ice(i,j-1)))
-          south = 0;
+      if (east + west > 0)
+        D_x = 1.0 / (grid.dx * (east + west));
+      else
+        D_x = 0.0;
+    }
 
-        if (north + south > 0)
-          D_y = 1.0 / (grid.dy * (north + south));
-        else
-          D_y = 0.0;
-      }
+    // y-derivative
+    {
+      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1)))
+        north = 0;
+      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1)))
+        south = 0;
 
-      // at the base: include the basal melt rate
-      if (basal_melt_rate) {
-        w_ij[0] = - (*basal_melt_rate)(i,j);
-      } else {
-        w_ij[0] = 0.0;
-      }
+      if (north + south > 0)
+        D_y = 1.0 / (grid.dy * (north + south));
+      else
+        D_y = 0.0;
+    }
 
-      double u_x = D_x * (west * (u_ij[0] - u_im1[0]) + east * (u_ip1[0] - u_ij[0])),
-        v_y = D_y * (south * (v_ij[0] - v_jm1[0]) + north * (v_jp1[0] - v_ij[0]));
+    double u_x = D_x * (west * (u_ij[0] - u_w[0]) + east * (u_e[0] - u_ij[0])),
+      v_y = D_y * (south * (v_ij[0] - v_s[0]) + north * (v_n[0] - v_ij[0]));
 
-      // within the ice and above:
-      double old_integrand = u_x + v_y;
-      for (unsigned int k = 1; k < grid.Mz; ++k) {
-        u_x = D_x * (west  * (u_ij[k] - u_im1[k]) + east  * (u_ip1[k] - u_ij[k]));
-        v_y = D_y * (south * (v_ij[k] - v_jm1[k]) + north * (v_jp1[k] - v_ij[k]));
-        const double new_integrand = u_x + v_y;
+    // at the base: include the basal melt rate
+    if (basal_melt_rate) {
+      w_ij[0] = - (*basal_melt_rate)(i,j);
+    } else {
+      w_ij[0] = 0.0;
+    }
 
-        const double dz = grid.zlevels[k] - grid.zlevels[k-1];
+    // within the ice and above:
+    double old_integrand = u_x + v_y;
+    for (unsigned int k = 1; k < grid.Mz; ++k) {
+      u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k]));
+      v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+      const double new_integrand = u_x + v_y;
 
-        w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
+      const double dz = grid.zlevels[k] - grid.zlevels[k-1];
 
-        old_integrand = new_integrand;
-      }
+      w_ij[k] = w_ij[k-1] - 0.5 * (new_integrand + old_integrand) * dz;
 
-    } // j-loop
-  }   // i-loop
-
-  if (basal_melt_rate) {
-    ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
+      old_integrand = new_integrand;
+    }
   }
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = u->end_access(); CHKERRQ(ierr);
-  ierr = v->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -414,86 +403,118 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
 
   ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
+  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
+  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+
+  MaskQuery m(*mask);
+
   thickness = dynamic_cast<IceModelVec2S*>(m_variables->get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   enthalpy = dynamic_cast<IceModelVec3*>(m_variables->get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
-  double dx = grid.dx, dy = grid.dy,
+  double
     enhancement_factor = flow_law->enhancement_factor(),
     n = flow_law->exponent(),
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  ierr = m_strain_heating.begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = u->begin_access(); CHKERRQ(ierr);
-  ierr = v->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*enthalpy);
+  list.add(m_strain_heating);
+  list.add(*thickness);
+  list.add(*u);
+  list.add(*v);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double H = (*thickness)(i,j);
-      int ks = grid.kBelowHeight(H);
-      double
-        *u_ij, *u_w, *u_n, *u_e, *u_s,
-        *v_ij, *v_w, *v_n, *v_e, *v_s;
-      double u_x, u_y, u_z, v_x, v_y, v_z;
-      double *Sigma, *E_ij;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = u->getInternalColumn(i,     j,     &u_ij); CHKERRQ(ierr);
-      ierr = u->getInternalColumn(i - 1, j,     &u_w);  CHKERRQ(ierr);
-      ierr = u->getInternalColumn(i + 1, j,     &u_e);  CHKERRQ(ierr);
-      ierr = u->getInternalColumn(i,     j - 1, &u_s);  CHKERRQ(ierr);
-      ierr = u->getInternalColumn(i,     j + 1, &u_n);  CHKERRQ(ierr);
+    double H = (*thickness)(i,j);
+    int ks = grid.kBelowHeight(H);
+    double
+      *u_ij, *u_w, *u_n, *u_e, *u_s,
+      *v_ij, *v_w, *v_n, *v_e, *v_s;
+    double *Sigma, *E_ij;
 
-      ierr = v->getInternalColumn(i,     j,     &v_ij); CHKERRQ(ierr);
-      ierr = v->getInternalColumn(i - 1, j,     &v_w);  CHKERRQ(ierr);
-      ierr = v->getInternalColumn(i + 1, j,     &v_e);  CHKERRQ(ierr);
-      ierr = v->getInternalColumn(i,     j - 1, &v_s);  CHKERRQ(ierr);
-      ierr = v->getInternalColumn(i,     j + 1, &v_n);  CHKERRQ(ierr);
+    double west = 1, east = 1, south = 1, north = 1,
+      D_x = 0,                // 1/(dx), 1/(2dx), or 0
+      D_y = 0;                // 1/(dy), 1/(2dy), or 0
 
-      ierr =        enthalpy->getInternalColumn(i, j, &E_ij);  CHKERRQ(ierr);
-      ierr = m_strain_heating.getInternalColumn(i, j, &Sigma); CHKERRQ(ierr);
+    // x-derivative
+    {
+      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j)))
+        east = 0;
+      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j)))
+        west = 0;
 
-      for (int k = 0; k <= ks; ++k) {
-        double dz,
-          pressure = EC.getPressureFromDepth(H - grid.zlevels[k]),
-          B        = flow_law->hardness_parameter(E_ij[k], pressure);
+      if (east + west > 0)
+        D_x = 1.0 / (grid.dx * (east + west));
+      else
+        D_x = 0.0;
+    }
 
-        u_x = (u_e[k] - u_w[k]) / (2.0 * dx);
-        u_y = (u_n[k] - u_s[k]) / (2.0 * dy);
-        v_x = (v_e[k] - v_w[k]) / (2.0 * dx);
-        v_y = (v_n[k] - v_s[k]) / (2.0 * dy);
+    // y-derivative
+    {
+      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1)))
+        north = 0;
+      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1)))
+        south = 0;
 
-        if (k > 0) {
-          dz = grid.zlevels[k+1] - grid.zlevels[k-1];
-          u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
-          v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
-        } else {
-          // use one-sided differences for u_z and v_z on the bottom level
-          dz = grid.zlevels[1] - grid.zlevels[0];
-          u_z = (u_ij[1] - u_ij[0]) / dz;
-          v_z = (v_ij[1] - v_ij[0]) / dz;
-        }
+      if (north + south > 0)
+        D_y = 1.0 / (grid.dy * (north + south));
+      else
+        D_y = 0.0;
+    }
 
-        Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
-      } // k-loop
 
-      int remaining_levels = grid.Mz - (ks + 1);
-      if (remaining_levels > 0) {
-        ierr = PetscMemzero(&Sigma[ks+1],
-                            remaining_levels*sizeof(double)); CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i,     j,     &u_ij); CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i - 1, j,     &u_w);  CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i + 1, j,     &u_e);  CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i,     j - 1, &u_s);  CHKERRQ(ierr);
+    ierr = u->getInternalColumn(i,     j + 1, &u_n);  CHKERRQ(ierr);
+
+    ierr = v->getInternalColumn(i,     j,     &v_ij); CHKERRQ(ierr);
+    ierr = v->getInternalColumn(i - 1, j,     &v_w);  CHKERRQ(ierr);
+    ierr = v->getInternalColumn(i + 1, j,     &v_e);  CHKERRQ(ierr);
+    ierr = v->getInternalColumn(i,     j - 1, &v_s);  CHKERRQ(ierr);
+    ierr = v->getInternalColumn(i,     j + 1, &v_n);  CHKERRQ(ierr);
+
+    ierr =        enthalpy->getInternalColumn(i, j, &E_ij);  CHKERRQ(ierr);
+    ierr = m_strain_heating.getInternalColumn(i, j, &Sigma); CHKERRQ(ierr);
+
+    for (int k = 0; k <= ks; ++k) {
+      double dz,
+        pressure = EC.getPressureFromDepth(H - grid.zlevels[k]),
+        B        = flow_law->hardness_parameter(E_ij[k], pressure);
+
+      double u_z = 0.0, v_z = 0.0,
+        u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
+        u_y = D_y * (south * (u_ij[k] - u_s[k]) + north * (u_n[k] - u_ij[k])),
+        v_x = D_x * (west  * (v_ij[k] - v_w[k]) + east  * (v_e[k] - v_ij[k])),
+        v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+
+      if (k > 0) {
+        dz = grid.zlevels[k+1] - grid.zlevels[k-1];
+        u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
+        v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
+      } else {
+        // use one-sided differences for u_z and v_z on the bottom level
+        dz = grid.zlevels[1] - grid.zlevels[0];
+        u_z = (u_ij[1] - u_ij[0]) / dz;
+        v_z = (v_ij[1] - v_ij[0]) / dz;
       }
-    }   // j-loop
-  }     // i-loop
 
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
-  ierr = m_strain_heating.end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = u->end_access(); CHKERRQ(ierr);
-  ierr = v->end_access(); CHKERRQ(ierr);
+      Sigma[k] = 2.0 * e_to_a_power * B * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
+    } // k-loop
+
+    int remaining_levels = grid.Mz - (ks + 1);
+    if (remaining_levels > 0) {
+      ierr = PetscMemzero(&Sigma[ks+1],
+                          remaining_levels*sizeof(double)); CHKERRQ(ierr);
+    }
+  }
 
   return 0;
 }

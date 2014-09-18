@@ -36,7 +36,8 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -56,7 +57,7 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
       if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, x_e);
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         value += m_c*JxW[q]*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2);
       } // q
     } // j
@@ -65,8 +66,6 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
-
-  ierr = x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -80,10 +79,11 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
 
   double gradient_e[FEQuadrature::Nk];
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
+  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -112,13 +112,13 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element - local residual in prep for updating it.
-      for (int k = 0; k < FEQuadrature::Nk; k++) {
+      for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
         gradient_e[k] = 0;
       }
 
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         const double &dxdx_qq = dxdx_q[q], &dxdy_qq = dxdy_q[q];
-        for (int k = 0; k < FEQuadrature::Nk; k++) {
+        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
           gradient_e[k] += m_c*JxW[q]*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2 - 1)
             *(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy);
         } // k
@@ -128,8 +128,6 @@ PetscErrorCode IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceMod
   } // i
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

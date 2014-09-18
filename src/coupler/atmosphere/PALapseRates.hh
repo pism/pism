@@ -38,9 +38,9 @@ public:
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
 
-  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
-  virtual PetscErrorCode precip_time_series(int i, int j, double *result);
-  virtual PetscErrorCode temp_time_series(int i, int j, double *result);
+  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
+  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &result);
+  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &result);
 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 

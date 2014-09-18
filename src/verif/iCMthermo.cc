@@ -69,37 +69,35 @@ PetscErrorCode IceCompModel::initTestFG() {
 
   double *T = new double[grid.Mz];
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access();            CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(T3);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      double r = grid.radius(i, j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (r > LforFG - 1.0) { // if (essentially) outside of sheet
-        ice_thickness(i, j) = 0.0;
-        for (int k = 0; k < Mz; k++)
-          T[k] = Tmin + ST * r;
+    double r = grid.radius(i, j);
+
+    if (r > LforFG - 1.0) { // if (essentially) outside of sheet
+      ice_thickness(i, j) = 0.0;
+      for (int k = 0; k < Mz; k++)
+        T[k] = Tmin + ST * r;
+    } else {
+      r = PetscMax(r, 1.0); // avoid singularity at origin
+      if (testname == 'F') {
+        bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
+                  &H, &accum, T, dummy1, dummy2, dummy3, dummy4);
+        ice_thickness(i, j) = H;
+
       } else {
-        r = PetscMax(r, 1.0); // avoid singularity at origin
-        if (testname == 'F') {
-          bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,
-                     &H, &accum, T, dummy1, dummy2, dummy3, dummy4);
-          ice_thickness(i, j) = H;
+        bothexact(grid.time->current(), r, &grid.zlevels[0], Mz, ApforG,
+                  &H, &accum, T, dummy1, dummy2, dummy3, dummy4);
+        ice_thickness(i, j) = H;
 
-        } else {
-          bothexact(grid.time->current(), r, &grid.zlevels[0], Mz, ApforG,
-                     &H, &accum, T, dummy1, dummy2, dummy3, dummy4);
-          ice_thickness(i, j) = H;
-
-        }
       }
-      ierr = T3.setInternalColumn(i, j, T); CHKERRQ(ierr);
     }
+    ierr = T3.setInternalColumn(i, j, T); CHKERRQ(ierr);
   }
-
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -131,29 +129,30 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
     ice_c     = config.get("ice_specific_heat_capacity");
 
   // before temperature and flow step, set strain_heating_c from exact values
-  ierr = strain_heating3_comp.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double r = grid.radius(i, j);
-      if (r > LforFG - 1.0) {  // outside of sheet
-        ierr = strain_heating3_comp.setColumn(i, j, 0.0); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(strain_heating3_comp);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double r = grid.radius(i, j);
+    if (r > LforFG - 1.0) {  // outside of sheet
+      ierr = strain_heating3_comp.setColumn(i, j, 0.0); CHKERRQ(ierr);
+    } else {
+      r = PetscMax(r, 1.0); // avoid singularity at origin
+      if (testname == 'F') {
+        bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
+                  &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
       } else {
-        r = PetscMax(r, 1.0); // avoid singularity at origin
-        if (testname == 'F') {
-          bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
-                    &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
-        } else {
-          bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
-                    &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
-        }
-        for (unsigned int k=0;  k<grid.Mz;  k++) // scale strain_heating to J/(s m^3)
-          strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
-        ierr = strain_heating3_comp.setInternalColumn(i, j, strain_heating_C); CHKERRQ(ierr);
+        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
+                  &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
       }
+      for (unsigned int k=0;  k<grid.Mz;  k++) // scale strain_heating to J/(s m^3)
+        strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
+      ierr = strain_heating3_comp.setInternalColumn(i, j, strain_heating_C); CHKERRQ(ierr);
     }
   }
-
-  ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
 
   delete [] dummy1;
   delete [] dummy2;
@@ -189,67 +188,56 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
     ice_rho   = config.get("ice_density"),
     ice_c     = config.get("ice_specific_heat_capacity");
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(T3);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(*strain_heating3);
+  list.add(strain_heating3_comp);
 
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+    double xx = grid.x[i], yy = grid.y[j], r = grid.radius(i, j);
+    if (r > LforFG - 1.0) {  // outside of sheet
 
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating3_comp.begin_access(); CHKERRQ(ierr);
+      ice_thickness(i, j) = 0.0;
+      Ts = Tmin + ST * r;
+      ierr = T3.setColumn(i, j, Ts); CHKERRQ(ierr);
+      ierr = u3->setColumn(i, j, 0.0); CHKERRQ(ierr);
+      ierr = v3->setColumn(i, j, 0.0); CHKERRQ(ierr);
+      ierr = w3->setColumn(i, j, 0.0); CHKERRQ(ierr);
+      ierr = strain_heating3->setColumn(i, j, 0.0); CHKERRQ(ierr);
+      ierr = strain_heating3_comp.setColumn(i, j, 0.0); CHKERRQ(ierr);
+    } else {  // inside the sheet
+      r = PetscMax(r, 1.0); // avoid singularity at origin
+      if (testname == 'F') {
+        bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
+                  &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
+        ice_thickness(i,j)   = H;
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double xx = grid.x[i], yy = grid.y[j], r = grid.radius(i, j);
-      if (r > LforFG - 1.0) {  // outside of sheet
+      } else {
+        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
+                  &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
+        ice_thickness(i,j)   = H;
 
-        ice_thickness(i, j) = 0.0;
-        Ts = Tmin + ST * r;
-        ierr = T3.setColumn(i, j, Ts); CHKERRQ(ierr);
-        ierr = u3->setColumn(i, j, 0.0); CHKERRQ(ierr);
-        ierr = v3->setColumn(i, j, 0.0); CHKERRQ(ierr);
-        ierr = w3->setColumn(i, j, 0.0); CHKERRQ(ierr);
-        ierr = strain_heating3->setColumn(i, j, 0.0); CHKERRQ(ierr);
-        ierr = strain_heating3_comp.setColumn(i, j, 0.0); CHKERRQ(ierr);
-      } else {  // inside the sheet
-        r = PetscMax(r, 1.0); // avoid singularity at origin
-        if (testname == 'F') {
-          bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
-                    &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
-          ice_thickness(i,j)   = H;
-
-        } else {
-          bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
-                    &H, &accum, T, Uradial, w, strain_heating, strain_heating_C);
-          ice_thickness(i,j)   = H;
-
-        }
-        for (unsigned int k = 0; k < grid.Mz; k++) {
-          u[k] = Uradial[k]*(xx/r);
-          v[k] = Uradial[k]*(yy/r);
-          strain_heating[k] = strain_heating[k] * ice_rho * ice_c; // scale strain_heating to J/(s m^3)
-          strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c; // scale strain_heating_C to J/(s m^3)
-        }
-        ierr = T3.setInternalColumn(i, j, T); CHKERRQ(ierr);
-        ierr = u3->setInternalColumn(i, j, u); CHKERRQ(ierr);
-        ierr = v3->setInternalColumn(i, j, v); CHKERRQ(ierr);
-        ierr = w3->setInternalColumn(i, j, w); CHKERRQ(ierr);
-        ierr = strain_heating3->setInternalColumn(i, j, strain_heating); CHKERRQ(ierr);
-        ierr = strain_heating3_comp.setInternalColumn(i, j, strain_heating_C); CHKERRQ(ierr);
       }
+      for (unsigned int k = 0; k < grid.Mz; k++) {
+        u[k] = Uradial[k]*(xx/r);
+        v[k] = Uradial[k]*(yy/r);
+        strain_heating[k] = strain_heating[k] * ice_rho * ice_c; // scale strain_heating to J/(s m^3)
+        strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c; // scale strain_heating_C to J/(s m^3)
+      }
+      ierr = T3.setInternalColumn(i, j, T); CHKERRQ(ierr);
+      ierr = u3->setInternalColumn(i, j, u); CHKERRQ(ierr);
+      ierr = v3->setInternalColumn(i, j, v); CHKERRQ(ierr);
+      ierr = w3->setInternalColumn(i, j, w); CHKERRQ(ierr);
+      ierr = strain_heating3->setInternalColumn(i, j, strain_heating); CHKERRQ(ierr);
+      ierr = strain_heating3_comp.setInternalColumn(i, j, strain_heating_C); CHKERRQ(ierr);
     }
   }
-
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3_comp.end_access(); CHKERRQ(ierr);
-
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   delete [] Uradial;
   delete [] T;
@@ -286,37 +274,37 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
   double *T;
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      double r = grid.radius(i, j);
-      ierr = T3.getInternalColumn(i, j, &T); CHKERRQ(ierr);
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
-                                                // and not at central singularity
-        switch (testname) {
-          case 'F':
-            bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
-                      &junk0, &junk1, Tex, dummy1, dummy2, dummy3, dummy4);
-            break;
-          case 'G':
-            bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
-                      &junk0, &junk1, Tex, dummy1, dummy2, dummy3, dummy4);
-            break;
-          default:  SETERRQ(grid.com, 1, "temperature errors only computable for tests F and G\n");
-        }
-        const int ks = grid.kBelowHeight(ice_thickness(i,j));
-        for (int k = 0; k < ks; k++) {  // only eval error if below num surface
-          const double Terr = PetscAbs(T[k] - Tex[k]);
-          maxTerr = PetscMax(maxTerr, Terr);
-          avcount += 1.0;
-          avTerr += Terr;
-        }
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(T3);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double r = grid.radius(i, j);
+    ierr = T3.getInternalColumn(i, j, &T); CHKERRQ(ierr);
+    if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
+      // and not at central singularity
+      switch (testname) {
+      case 'F':
+        bothexact(0.0, r, &grid.zlevels[0], grid.Mz, 0.0,
+                  &junk0, &junk1, Tex, dummy1, dummy2, dummy3, dummy4);
+        break;
+      case 'G':
+        bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
+                  &junk0, &junk1, Tex, dummy1, dummy2, dummy3, dummy4);
+        break;
+      default:  SETERRQ(grid.com, 1, "temperature errors only computable for tests F and G\n");
+      }
+      const int ks = grid.kBelowHeight(ice_thickness(i,j));
+      for (int k = 0; k < ks; k++) {  // only eval error if below num surface
+        const double Terr = PetscAbs(T[k] - Tex[k]);
+        maxTerr = PetscMax(maxTerr, Terr);
+        avcount += 1.0;
+        avTerr += Terr;
       }
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   delete [] Tex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
@@ -380,28 +368,28 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
     default: SETERRQ(grid.com, 2,"again: ice and bedrock temperature errors only for tests K and O\n");
   }
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = bedrock_temp->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      ierr = bedrock_temp->getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-      for (unsigned int kb = 0; kb < Mbz; kb++) {
-        const double Tberr = PetscAbs(Tb[kb] - Tbex[kb]);
-        maxTberr = PetscMax(maxTberr,Tberr);
-        avbcount += 1.0;
-        avTberr += Tberr;
-      }
-      ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
-      for (unsigned int k = 0; k < grid.Mz; k++) {
-        const double Terr = PetscAbs(T[k] - Tex[k]);
-        maxTerr = PetscMax(maxTerr,Terr);
-        avcount += 1.0;
-        avTerr += Terr;
-      }
+  IceModelVec::AccessList list;
+  list.add(T3);
+  list.add(*bedrock_temp);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = bedrock_temp->getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+    for (unsigned int kb = 0; kb < Mbz; kb++) {
+      const double Tberr = PetscAbs(Tb[kb] - Tbex[kb]);
+      maxTberr = PetscMax(maxTberr,Tberr);
+      avbcount += 1.0;
+      avTberr += Tberr;
+    }
+    ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
+    for (unsigned int k = 0; k < grid.Mz; k++) {
+      const double Terr = PetscAbs(T[k] - Tex[k]);
+      maxTerr = PetscMax(maxTerr,Terr);
+      avcount += 1.0;
+      avTerr += Terr;
     }
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = bedrock_temp->end_access(); CHKERRQ(ierr);
 
   delete [] Tex;  delete [] Tbex;
 
@@ -428,49 +416,48 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 
   double     dummy, z, Texact, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(T3);
 
   domeT=0; domeTexact = 0; Terr=0; avTerr=0;
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double r = grid.radius(i,j);
-      switch (testname) {
-        case 'F':
-          if (r > LforFG - 1.0) {  // outside of sheet
-            Texact=Tmin + ST * r;  // = Ts
-          } else {
-            r=PetscMax(r,1.0);
-            z=0.0;
-            bothexact(0.0,r,&z,1,0.0,
-                      &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
-          }
-          break;
-        case 'G':
-          if (r > LforFG -1.0) {  // outside of sheet
-            Texact=Tmin + ST * r;  // = Ts
-          } else {
-            r=PetscMax(r,1.0);
-            z=0.0;
-            bothexact(grid.time->current(),r,&z,1,ApforG,
-                      &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
-          }
-          break;
-        default:  SETERRQ(grid.com, 1,"temperature errors only computable for tests F and G\n");
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      const double Tbase = T3.getValZ(i,j,0.0);
-      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        domeT = Tbase;
-        domeTexact = Texact;
+    double r = grid.radius(i,j);
+    switch (testname) {
+    case 'F':
+      if (r > LforFG - 1.0) {  // outside of sheet
+        Texact=Tmin + ST * r;  // = Ts
+      } else {
+        r=PetscMax(r,1.0);
+        z=0.0;
+        bothexact(0.0,r,&z,1,0.0,
+                  &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
       }
-      // compute maximum errors
-      Terr = PetscMax(Terr,PetscAbsReal(Tbase - Texact));
-      // add to sums for average errors
-      avTerr += PetscAbs(Tbase - Texact);
+      break;
+    case 'G':
+      if (r > LforFG -1.0) {  // outside of sheet
+        Texact=Tmin + ST * r;  // = Ts
+      } else {
+        r=PetscMax(r,1.0);
+        z=0.0;
+        bothexact(grid.time->current(),r,&z,1,ApforG,
+                  &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
+      }
+      break;
+    default:  SETERRQ(grid.com, 1,"temperature errors only computable for tests F and G\n");
     }
+
+    const double Tbase = T3.getValZ(i,j,0.0);
+    if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+      domeT = Tbase;
+      domeTexact = Texact;
+    }
+    // compute maximum errors
+    Terr = PetscMax(Terr,PetscAbsReal(Tbase - Texact));
+    // add to sums for average errors
+    avTerr += PetscAbs(Tbase - Texact);
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   double gdomeT, gdomeTexact;
 
@@ -506,40 +493,40 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
   IceModelVec3 *strain_heating3;
   ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      double r = grid.radius(i,j);
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
-                                                // and not at central singularity
-        switch (testname) {
-          case 'F':
-            bothexact(0.0,r,&grid.zlevels[0],grid.Mz,0.0,
-                      &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
-            break;
-          case 'G':
-            bothexact(grid.time->current(),r,&grid.zlevels[0],grid.Mz,ApforG,
-                      &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
-            break;
-          default:
-            SETERRQ(grid.com, 1,"strain-heating (strain_heating) errors only computable for tests F and G\n");
-        }
-        for (unsigned int k = 0; k < grid.Mz; k++)
-          strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
-        const unsigned int ks = grid.kBelowHeight(ice_thickness(i,j));
-        ierr = strain_heating3->getInternalColumn(i,j,&strain_heating); CHKERRQ(ierr);
-        for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
-          const double strain_heating_err = PetscAbs(strain_heating[k] - strain_heating_exact[k]);
-          max_strain_heating_err = PetscMax(max_strain_heating_err,strain_heating_err);
-          avcount += 1.0;
-          av_strain_heating_err += strain_heating_err;
-        }
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*strain_heating3);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double r = grid.radius(i,j);
+    if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
+      // and not at central singularity
+      switch (testname) {
+      case 'F':
+        bothexact(0.0,r,&grid.zlevels[0],grid.Mz,0.0,
+                  &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
+        break;
+      case 'G':
+        bothexact(grid.time->current(),r,&grid.zlevels[0],grid.Mz,ApforG,
+                  &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
+        break;
+      default:
+        SETERRQ(grid.com, 1,"strain-heating (strain_heating) errors only computable for tests F and G\n");
+      }
+      for (unsigned int k = 0; k < grid.Mz; k++)
+        strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
+      const unsigned int ks = grid.kBelowHeight(ice_thickness(i,j));
+      ierr = strain_heating3->getInternalColumn(i,j,&strain_heating); CHKERRQ(ierr);
+      for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
+        const double strain_heating_err = PetscAbs(strain_heating[k] - strain_heating_exact[k]);
+        max_strain_heating_err = PetscMax(max_strain_heating_err,strain_heating_err);
+        avcount += 1.0;
+        av_strain_heating_err += strain_heating_err;
       }
     }
   }
-  ierr =     ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
 
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
@@ -562,47 +549,45 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, doub
   IceModelVec3 *u3, *v3, *w3;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      double xx = grid.x[i], yy = grid.y[j], r = grid.radius(i, j);
-      if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
-                                                // and not at central singularity
-        double radialUex, wex;
-        double dummy0, dummy1, dummy2, dummy3, dummy4;
-        switch (testname) {
-          case 'F':
-            bothexact(0.0, r, &ice_thickness(i,j), 1, 0.0,
-                      &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
-            break;
-          case 'G':
-            bothexact(grid.time->current(), r, &ice_thickness(i,j), 1, ApforG,
-                      &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
-            break;
-          default:
-            SETERRQ(grid.com, 1, "surface velocity errors only computed for tests F and G\n");
-        }
-        const double uex = (xx/r) * radialUex;
-        const double vex = (yy/r) * radialUex;
-        // note that because getValZ does linear interpolation and H[i][j] is not exactly at
-        // a grid point, this causes nonzero errors even with option -eo
-        const double Uerr = sqrt(PetscSqr(u3->getValZ(i, j, ice_thickness(i,j)) - uex)
-                                      + PetscSqr(v3->getValZ(i, j, ice_thickness(i,j)) - vex));
-        maxUerr = PetscMax(maxUerr, Uerr);
-        avUerr += Uerr;
-        const double Werr = PetscAbs(w3->getValZ(i, j, ice_thickness(i,j)) - wex);
-        maxWerr = PetscMax(maxWerr, Werr);
-        avWerr += Werr;
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double xx = grid.x[i], yy = grid.y[j], r = grid.radius(i, j);
+    if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
+      // and not at central singularity
+      double radialUex, wex;
+      double dummy0, dummy1, dummy2, dummy3, dummy4;
+      switch (testname) {
+      case 'F':
+        bothexact(0.0, r, &ice_thickness(i,j), 1, 0.0,
+                  &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
+        break;
+      case 'G':
+        bothexact(grid.time->current(), r, &ice_thickness(i,j), 1, ApforG,
+                  &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
+        break;
+      default:
+        SETERRQ(grid.com, 1, "surface velocity errors only computed for tests F and G\n");
       }
+      const double uex = (xx/r) * radialUex;
+      const double vex = (yy/r) * radialUex;
+      // note that because getValZ does linear interpolation and H[i][j] is not exactly at
+      // a grid point, this causes nonzero errors even with option -eo
+      const double Uerr = sqrt(PetscSqr(u3->getValZ(i, j, ice_thickness(i,j)) - uex)
+                               + PetscSqr(v3->getValZ(i, j, ice_thickness(i,j)) - vex));
+      maxUerr = PetscMax(maxUerr, Uerr);
+      avUerr += Uerr;
+      const double Werr = PetscAbs(w3->getValZ(i, j, ice_thickness(i,j)) - wex);
+      maxWerr = PetscMax(maxWerr, Werr);
+      avWerr += Werr;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
   ierr = GlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
@@ -626,15 +611,15 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
 
-  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      err = PetscAbs(basal_melt_rate(i,j) - bmelt);
-      maxbmelterr = PetscMax(maxbmelterr, err);
-      minbmelterr = PetscMin(minbmelterr, err);
-    }
+  IceModelVec::AccessList list(basal_melt_rate);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    err = PetscAbs(basal_melt_rate(i,j) - bmelt);
+    maxbmelterr = PetscMax(maxbmelterr, err);
+    minbmelterr = PetscMin(minbmelterr, err);
   }
-  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
   ierr = GlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
@@ -667,13 +652,13 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
   }
 
   // copy column values into 3D arrays
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.setInternalColumn(i,j,Tcol); CHKERRQ(ierr);
-    }
+  IceModelVec::AccessList list(T3);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = T3.setInternalColumn(i,j,Tcol); CHKERRQ(ierr);
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
 
   delete [] Tcol;
 
@@ -756,13 +741,11 @@ PetscErrorCode BTU_Verification::bootstrap() {
   }
 
   // copy column values into 3D arrays
-  ierr = temp.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = temp.setInternalColumn(i,j,&Tbcol[0]); CHKERRQ(ierr);
-    }
+  IceModelVec::AccessList list(temp);
+
+  for (Points p(grid); p; p.next()) {
+    ierr = temp.setInternalColumn(p.i(), p.j(), &Tbcol[0]); CHKERRQ(ierr);
   }
-  ierr = temp.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

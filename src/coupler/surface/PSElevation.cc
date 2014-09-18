@@ -47,7 +47,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     int T_param_number = 4;
     double T_array[4] = {-5, 0, 1325, 1350};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
+    ierr = PetscOptionsGetRealArray(NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
     CHKERRQ(ierr);
 
     T_min = grid.convert(T_array[0], "Celsius", "Kelvin");
@@ -58,7 +58,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     int m_param_number = 5;
     double m_array[5] = {-3, 4, 1100, 1450, 1700};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
+    ierr = PetscOptionsGetRealArray(NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
     CHKERRQ(ierr);
 
     m_min = grid.convert(m_array[0], "m year-1", "m s-1");
@@ -70,7 +70,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     int Nlimitsparam= 2;
     double limitsarray[2] = {0, 0};
 
-    ierr = PetscOptionsGetRealArray(PETSC_NULL,
+    ierr = PetscOptionsGetRealArray(NULL,
                                     "-climatic_mass_balance_limits",
                                     limitsarray, &Nlimitsparam, &m_limits_set); CHKERRQ(ierr);
 
@@ -184,32 +184,31 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   double dabdz = -m_min/(z_ELA - z_m_min);
   double dacdz = m_max/(z_m_max - z_ELA);
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = usurf->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double z = (*usurf)(i, j);
-      if (z < z_m_min) {
-        result(i, j) = m_limit_min;
-      }
-      else if ((z >= z_m_min) && (z < z_ELA)) {
-        result(i, j) = dabdz * (z - z_ELA);
-      }
-      else if ((z >= z_ELA) && (z <= z_m_max)) {
-        result(i, j) = dacdz * (z - z_ELA);
-      }
-      else if (z > z_m_max) {
-        result(i, j) = m_limit_max;
-      }
-      else {
-        SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
-      }
-      ierr = verbPrintf(5, grid.com, "!!!!! z=%.2f, climatic_mass_balance=%.2f\n", z,
-                        grid.convert(result(i, j), "m/s", "m/year")); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(*usurf);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double z = (*usurf)(i, j);
+    if (z < z_m_min) {
+      result(i, j) = m_limit_min;
     }
+    else if ((z >= z_m_min) && (z < z_ELA)) {
+      result(i, j) = dabdz * (z - z_ELA);
+    }
+    else if ((z >= z_ELA) && (z <= z_m_max)) {
+      result(i, j) = dacdz * (z - z_ELA);
+    }
+    else if (z > z_m_max) {
+      result(i, j) = m_limit_max;
+    }
+    else {
+      SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
+    }
+    ierr = verbPrintf(5, grid.com, "!!!!! z=%.2f, climatic_mass_balance=%.2f\n", z,
+                      grid.convert(result(i, j), "m/s", "m/year")); CHKERRQ(ierr);
   }
-  ierr = usurf->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   // convert from m/s ice equivalent to kg m-2 s-1:
   ierr = result.scale(config.get("ice_density")); CHKERRQ(ierr);
@@ -220,31 +219,30 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
 PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = usurf->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(*usurf);
   double dTdz = (T_max - T_min)/(z_T_max - z_T_min);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double z = (*usurf)(i, j);
-      if (z <= z_T_min) {
-        result(i, j) = T_min;
-      }
-      else if ((z > z_T_min) && (z < z_T_max)) {
-        result(i, j) = T_min + dTdz * (z - z_T_min);
-      }
-      else if (z >= z_T_max) {
-        result(i, j) = T_max;
-      }
-      else {
-        SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
-      }
-      ierr = verbPrintf(5, grid.com,
-                        "!!!!! z=%.2f, T_min=%.2f, dTdz=%.2f, dz=%.2f, T=%.2f\n",
-                        z, T_min, dTdz, z - z_T_min, result(i, j)); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double z = (*usurf)(i, j);
+    if (z <= z_T_min) {
+      result(i, j) = T_min;
     }
+    else if ((z > z_T_min) && (z < z_T_max)) {
+      result(i, j) = T_min + dTdz * (z - z_T_min);
+    }
+    else if (z >= z_T_max) {
+      result(i, j) = T_max;
+    }
+    else {
+      SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
+    }
+    ierr = verbPrintf(5, grid.com,
+                      "!!!!! z=%.2f, T_min=%.2f, dTdz=%.2f, dz=%.2f, T=%.2f\n",
+                      z, T_min, dTdz, z - z_T_min, result(i, j)); CHKERRQ(ierr);
   }
-  ierr = usurf->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

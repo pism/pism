@@ -51,6 +51,10 @@ void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["strain_rates"] = new PSB_strain_rates(this, grid, *m_variables);
   dict["deviatoric_stresses"] = new PSB_deviatoric_stresses(this, grid, *m_variables);
 
+  dict["pressure"] = new PSB_pressure(this, grid, *m_variables);
+  dict["tauxz"] = new PSB_tauxz(this, grid, *m_variables);
+  dict["tauyz"] = new PSB_tauyz(this, grid, *m_variables);
+
   m_stress_balance->get_diagnostics(dict, ts_dict);
   m_modifier->get_diagnostics(dict, ts_dict);
 }
@@ -92,52 +96,49 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*thickness);
+  list.add(*result);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double u_sum = 0, v_sum = 0,
-        thk = (*thickness)(i,j);
-      int ks = grid.kBelowHeight(thk);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // an "ice-free" cell:
-      if (thk < icefree_thickness) {
-        (*result)(i,j).u = 0;
-        (*result)(i,j).v = 0;
-        continue;
-      }
+    double u_sum = 0, v_sum = 0,
+      thk = (*thickness)(i,j);
+    int ks = grid.kBelowHeight(thk);
 
-      // an ice-filled cell:
-      ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
-      ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
-
-      if (thk <= grid.zlevels[1]) {
-        (*result)(i,j).u = u_ij[0];
-        (*result)(i,j).v = v_ij[0];
-        continue;
-      }
-
-      for (int k = 1; k <= ks; ++k) {
-        u_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (u_ij[k] + u_ij[k-1]);
-        v_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (v_ij[k] + v_ij[k-1]);
-      }
-
-      // Finish the trapezoidal rule integration (times 1/2) and turn this
-      // integral into a vertical average. Note that we ignore the ice between
-      // zlevels[ks] and the surface, so in order to have a true average we
-      // divide by zlevels[ks] and not thk.
-      (*result)(i,j).u = 0.5 * u_sum / grid.zlevels[ks];
-      (*result)(i,j).v = 0.5 * v_sum / grid.zlevels[ks];
+    // an "ice-free" cell:
+    if (thk < icefree_thickness) {
+      (*result)(i,j).u = 0;
+      (*result)(i,j).v = 0;
+      continue;
     }
+
+    // an ice-filled cell:
+    ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
+    ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+
+    if (thk <= grid.zlevels[1]) {
+      (*result)(i,j).u = u_ij[0];
+      (*result)(i,j).v = v_ij[0];
+      continue;
+    }
+
+    for (int k = 1; k <= ks; ++k) {
+      u_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (u_ij[k] + u_ij[k-1]);
+      v_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (v_ij[k] + v_ij[k-1]);
+    }
+
+    // Finish the trapezoidal rule integration (times 1/2) and turn this
+    // integral into a vertical average. Note that we ignore the ice between
+    // zlevels[ks] and the surface, so in order to have a true average we
+    // divide by zlevels[ks] and not thk.
+    (*result)(i,j).u = 0.5 * u_sum / grid.zlevels[ks];
+    (*result)(i,j).v = 0.5 * v_sum / grid.zlevels[ks];
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -217,15 +218,16 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   result = dynamic_cast<IceModelVec2S*>(tmp);
   if (result == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(*result);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i)
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j)
-      (*result)(i,j) *= (*thickness)(i,j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
+    (*result)(i,j) *= (*thickness)(i,j);
+  }
+
 
   ierr = result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
 
@@ -369,20 +371,20 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j)) {
-        (*result)(i, j).u = fill_value;
-        (*result)(i, j).v = fill_value;
-      }
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j)) {
+      (*result)(i, j).u = fill_value;
+      (*result)(i, j).v = fill_value;
     }
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -425,14 +427,15 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = uplift->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(*mask);
+  list.add(*bed);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(*uplift);
+  list.add(*result);
 
   MaskQuery M(*mask);
 
@@ -440,45 +443,37 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
     sea_water_density = grid.config.get("sea_water_density"),
     R = ice_density / sea_water_density;
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
-      ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
-      ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i, j, &res); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
+    ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
+    ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i, j, &res); CHKERRQ(ierr);
 
-      // in the ice:
-      if (M.grounded(i,j)) {
-        for (int k = 0; k <= ks ; k++)
-          res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      } else {                  // floating
-        const double
-          z_sl = R * (*thickness)(i,j),
-          w_sl = w3->getValZ(i, j, z_sl);
+    // in the ice:
+    if (M.grounded(i,j)) {
+      for (int k = 0; k <= ks ; k++)
+        res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
 
-        for (int k = 0; k <= ks ; k++)
-          res[k] = w[k] - w_sl;
+    } else {                  // floating
+      const double
+        z_sl = R * (*thickness)(i,j),
+        w_sl = w3->getValZ(i, j, z_sl);
 
-      }
-
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++)
-        res[k] = 0.0;
+      for (int k = 0; k <= ks ; k++)
+        res[k] = w[k] - w_sl;
 
     }
+
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++)
+      res[k] = 0.0;
+
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = uplift->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -524,18 +519,18 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j))
-        (*result)(i, j) = fill_value;
-    }
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j))
+      (*result)(i, j) = fill_value;
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   delete tmp;
   output = result;
@@ -579,18 +574,18 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j))
-        (*result)(i, j) = fill_value;
-    }
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j))
+      (*result)(i, j) = fill_value;
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   delete tmp;
   output = result;
@@ -647,20 +642,20 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ice_free(i, j)) {
-        (*result)(i, j).u = fill_value;
-        (*result)(i, j).v = fill_value;
-      }
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(*result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ice_free(i, j)) {
+      (*result)(i, j).u = fill_value;
+      (*result)(i, j).v = fill_value;
     }
   }
 
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -718,32 +713,30 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*u3);
+  list.add(*result);
+  list.add(*thickness);
 
   double *u_ij, *u_out_ij;
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = u3->getInternalColumn(i,j,&u_ij); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i,j,&u_out_ij); CHKERRQ(ierr);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        u_out_ij[k] = u_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++) {
-        u_out_ij[k] = 0.0;
-      }
+    ierr = u3->getInternalColumn(i,j,&u_ij); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i,j,&u_out_ij); CHKERRQ(ierr);
+
+    // in the ice:
+    for (int k = 0; k <= ks ; k++) {
+      u_out_ij[k] = u_ij[k];
+    }
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
+      u_out_ij[k] = 0.0;
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = u3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -773,32 +766,30 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*v3);
+  list.add(*result);
+  list.add(*thickness);
 
   double *v_ij, *v_out_ij;
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = v3->getInternalColumn(i,j,&v_ij); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i,j,&v_out_ij); CHKERRQ(ierr);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        v_out_ij[k] = v_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++) {
-        v_out_ij[k] = 0.0;
-      }
+    ierr = v3->getInternalColumn(i,j,&v_ij); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i,j,&v_out_ij); CHKERRQ(ierr);
+
+    // in the ice:
+    for (int k = 0; k <= ks ; k++) {
+      v_out_ij[k] = v_ij[k];
+    }
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
+      v_out_ij[k] = 0.0;
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -828,32 +819,30 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*w3);
+  list.add(*result);
+  list.add(*thickness);
 
   double *w_ij, *w_out_ij;
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      int ks = grid.kBelowHeight((*thickness)(i,j));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      ierr = w3->getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
-      ierr = result->getInternalColumn(i,j,&w_out_ij); CHKERRQ(ierr);
+    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-      // in the ice:
-      for (int k = 0; k <= ks ; k++) {
-        w_out_ij[k] = w_ij[k];
-      }
-      // above the ice:
-      for (unsigned int k = ks+1; k < grid.Mz ; k++) {
-        w_out_ij[k] = 0.0;
-      }
+    ierr = w3->getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
+    ierr = result->getInternalColumn(i,j,&w_out_ij); CHKERRQ(ierr);
+
+    // in the ice:
+    for (int k = 0; k <= ks ; k++) {
+      w_out_ij[k] = w_ij[k];
+    }
+    // above the ice:
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
+      w_out_ij[k] = 0.0;
     }
   }
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -980,6 +969,186 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
 
   output = result;
 
+  return 0;
+}
+
+PSB_pressure::PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_3d("pressure", grid, grid.zlevels);
+
+  set_attrs("pressure in ice (hydrostatic)", "",
+            "Pa", "Pa", 0);
+}
+
+PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3 *result = new IceModelVec3;
+  ierr = result->create(grid, "pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+
+  IceModelVec2S *thickness;
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*thickness);
+
+  double *P_out_ij;
+  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = result->getInternalColumn(i,j,&P_out_ij); CHKERRQ(ierr);
+    const double H = (*thickness)(i,j);
+    // within the ice:
+    for (unsigned int k = 0; k <= ks; ++k) {
+      P_out_ij[k] = rg * (H - grid.zlevels[k]);  // FIXME: add atmospheric pressure?
+    }
+    // above the ice:
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+      P_out_ij[k] = 0.0;  // FIXME: use atmospheric pressure?
+    }
+  }
+
+
+  output = result;
+
+  return 0;
+}
+
+
+PSB_tauxz::PSB_tauxz(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_3d("tauxz", grid, grid.zlevels);
+
+  set_attrs("shear stress xz component (in shallow ice approximation SIA)", "",
+            "Pa", "Pa", 0);
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauxz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH PSB_tauyz
+ */
+PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3 *result = new IceModelVec3;
+  ierr = result->create(grid, "tauxz", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+
+  IceModelVec2S *thickness, *surface;
+
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*surface);
+  list.add(*thickness);
+
+  double *tauxz_out_ij;
+  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+
+    unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = result->getInternalColumn(i,j,&tauxz_out_ij); CHKERRQ(ierr);
+    const double H    = (*thickness)(i,j),
+      dhdx = surface->diff_x_p(i,j);
+    // within the ice:
+    for (unsigned int k = 0; k <= ks; ++k) {
+      tauxz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdx;
+    }
+    // above the ice:
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+      tauxz_out_ij[k] = 0.0;
+    }
+
+  }
+
+
+  output = result;
+  return 0;
+}
+
+
+PSB_tauyz::PSB_tauyz(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
+
+  // set metadata:
+  vars[0].init_3d("tauyz", grid, grid.zlevels);
+
+  set_attrs("shear stress yz component (in shallow ice approximation SIA)", "",
+            "Pa", "Pa", 0);
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauyz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH PSB_tauxz
+ */
+PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  IceModelVec3 *result = new IceModelVec3;
+  ierr = result->create(grid, "tauyz", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+
+  IceModelVec2S *thickness, *surface;
+
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*surface);
+  list.add(*thickness);
+
+  double *tauyz_out_ij;
+  const double rg = grid.config.get("ice_density") * grid.config.get("standard_gravity");
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+
+    unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+    ierr = result->getInternalColumn(i,j,&tauyz_out_ij); CHKERRQ(ierr);
+    const double H    = (*thickness)(i,j),
+      dhdy = surface->diff_y_p(i,j);
+    // within the ice:
+    for (unsigned int k = 0; k <= ks; ++k) {
+      tauyz_out_ij[k] = - rg * (H - grid.zlevels[k]) * dhdy;
+    }
+    // above the ice:
+    for (unsigned int k = ks + 1; k < grid.Mz; ++k) {
+      tauyz_out_ij[k] = 0.0;
+    }
+
+  }
+
+
+  output = result;
   return 0;
 }
 

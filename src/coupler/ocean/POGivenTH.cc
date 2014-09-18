@@ -161,36 +161,32 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
 
   POGivenTHConstants c(config);
 
-  ierr = ice_thickness->begin_access();  CHKERRQ(ierr);
-  ierr = theta_ocean->begin_access();    CHKERRQ(ierr);
-  ierr = salinity_ocean->begin_access(); CHKERRQ(ierr);
-  ierr = shelfbtemp.begin_access();      CHKERRQ(ierr);
-  ierr = shelfbmassflux.begin_access();  CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*ice_thickness);
+  list.add(*theta_ocean);
+  list.add(*salinity_ocean);
+  list.add(shelfbtemp);
+  list.add(shelfbmassflux);
 
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      double
-        shelf_base_temp        = 0.0,
-        shelf_base_massflux   = 0.0;
-      ierr = pointwise_update(c,
-                              (*salinity_ocean)(i,j),
-                              potential_temperature_celsius,
-                              (*ice_thickness)(i,j),
-                              &shelf_base_temp,
-                              &shelf_base_massflux); CHKERRQ(ierr);
+    double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
 
-      shelfbtemp(i,j)     = shelf_base_temp;
-      shelfbmassflux(i,j) = shelf_base_massflux;
-    }
+    double
+      shelf_base_temp        = 0.0,
+      shelf_base_massflux   = 0.0;
+    ierr = pointwise_update(c,
+                            (*salinity_ocean)(i,j),
+                            potential_temperature_celsius,
+                            (*ice_thickness)(i,j),
+                            &shelf_base_temp,
+                            &shelf_base_massflux); CHKERRQ(ierr);
+
+    shelfbtemp(i,j)     = shelf_base_temp;
+    shelfbmassflux(i,j) = shelf_base_massflux;
   }
 
-  ierr = shelfbmassflux.end_access();  CHKERRQ(ierr);
-  ierr = shelfbtemp.end_access();      CHKERRQ(ierr);
-  ierr = salinity_ocean->end_access(); CHKERRQ(ierr);
-  ierr = theta_ocean->end_access();    CHKERRQ(ierr);
-  ierr = ice_thickness->end_access();  CHKERRQ(ierr);
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
   ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);

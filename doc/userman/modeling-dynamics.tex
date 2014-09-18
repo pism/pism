@@ -2,58 +2,6 @@
 \section{Modeling choices:  Ice dynamics and thermodynamics}
 \label{sec:modeling-dynamics}
 
-\subsection{Ice rheology}
-\label{sec:rheology}
-\optsection{Ice rheology}
-
-The ``rheology'' of a viscous fluid refers to the relation between the applied stress and the resulting deformation, the strain rate.  The models of ice rheology available in PISM are all of isotropic Glen-Nye type \cite{Paterson}.   A rheology in this class is described by a ``flow law'', which is a function $F(\sigma,T,\omega,P,d)$ in the ``constitutive relation''
-\begin{equation}
-D_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.  \label{eq:constitutive}
-\end{equation}
-Here $D_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction, $P$ is the pressure, $d$ is the grain size, and $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F = \frac{1}{2} \sigma_{ij}' \sigma_{ij}'$ so $\sigma$ is the second invariant of the stress deviator tensor.
-
-For example,
-\begin{equation}
-F(\sigma,T) = A(T) \sigma^{n-1}  \label{eq:isothermalglen}
-\end{equation}
-is the common temperature-dependent Glen law \cite{PatersonBudd,BBL}, which has no dependence on liquid water fraction, pressure, or grain size.  If the ice softness $A(T)=A_0$ is constant then the law is isothermal, whereas if there is dependence on temperature then $A(T)$ is usually a generalization of ``Arrhenius'' form $A(T) = A \exp(-Q/RT^*)$.  The more elaborate Goldsby-Kohlstedt law \cite{GoldsbyKohlstedt} is also a function $F(\sigma,T,P,d)$.
-
-In the enthalpy mode of PISM, which is the thermodynamical modeling default, there is only one choice for the flow law: the Glen-Paterson-Budd-Lliboutry-Duval law \cite{AschwandenBuelerKhroulevBlatter,LliboutryDuval1985,PatersonBudd}, a function $F(\sigma,T,\omega,P)$.  This law is the only one in the literature that depends on both the temperature and the liquid water fraction; it parameterizes the (observed) softening of pressure-melting-temperature ice as its liquid fraction increases.  One can use this default polythermal law or one may choose among a number of ``cold ice'' laws listed in Table \ref{tab:flowlaw} which do not use the liquid water fraction.  
-
-Command-line options \intextoption{sia_flow_law} and \intextoption{ssa_flow_law} control which flow law is used by the SIA and SSA ice dynamics models, respectively.  Allowed arguments are listed in table \ref{tab:flowlaw} below.  Form \eqref{eq:constitutive} of the flow law is used in the SIA.  However, the ``viscosity'' form of such a flow law, found by inverting the constitutive relation, is needed for ice shelf and ice stream (SSA) flow \cite{BBssasliding}:
-	$$\sigma_{ij}' = 2 \nu(D,T,\omega,P,d)\,D_{ij} $$
-Here $\nu(D,T,\omega,P,d)$ is the ``effective viscosity'' and $D^2 = \frac{1}{2} D_{ij} D_{ij}$.  Viscosity form is not known for the Goldsby-Kohlstedt law \cite{GoldsbyKohlstedt}, so option ``\texttt{-ssa_flow_law gk}'' is an error.
-
-One can also choose either \texttt{-sia_flow_law isothermal_glen} or \texttt{-ssa_flow_law isothermal_glen}, which is $F(\sigma) = A_0 \sigma^{n-1}$ with inverse $\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}$ where $A_0$ is the ice softness and $B_0=A_0^{-1/n}$ is the ice hardness.
-
-Options \intextoption{sia_e} and \intextoption{ssa_e} set flow enhancement factors for the SIA and SSA respectively. These options can be used with any flow law.  Option \texttt{-sia_e} sets ``$e$'' in ``$D_{ij} = e\, F(\sigma,T,\omega,P,d)\, \sigma_{ij}',$'' in equation \eqref{eq:constitutive}.  Option \texttt{-ssa_e} sets ``$e$'' in the viscosity form so that ``$\sigma_{ij}'  = e^{-1/n}\, 2\, \nu(D,T,\omega,P,d)\, D_{ij}.$''
-
-Flow law parameters such as ice softness can be changed using configuration parameters (see section \ref{sec:pism-defaults} and the implementation of flow laws in the \emph{Source Code Browser}).  One can also choose the scalar function $F$ reasonably arbitrarily by modifying source code; see source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}; note that Table \ref{tab:flowlaw} also lists the C++ classes declared in \texttt{flowlaw.hh}.
-
-\begin{table}[ht]
-\centering
-\index{rheology}\index{flow law}
-\small
-\begin{tabular}{p{0.16\linewidth}p{0.2\linewidth}p{0.58\linewidth}}\toprule
-\textbf{Type} & C++ Class & \textbf{Comments and Reference} \\ \midrule
-\texttt{gpbld} &\texttt{GPBLDIce}  & Glen-Paterson-Budd-Lliboutry-Duval law \cite{LliboutryDuval1985}, the enthalpy-based default in PISM \cite{AschwandenBuelerKhroulevBlatter}.  Extends the Paterson-Budd law (below) to positive liquid water fraction.  If $A_{c}(T)$ is from Paterson-Budd then this law returns $A(T,\omega) = A_{c}(T) (1 + C \omega)$, where $\omega$ is the liquid water fraction, $C$ is a configuration parameter \texttt{gpbld_water_frac_coeff} [default $C=181.25$], and $\omega$ is capped at level \texttt{gpbld_water_frac_observed_limit}.  \\  \midrule
-\texttt{pb} &\texttt{ThermoGlenIce}  & Paterson-Budd law, the cold-mode default.  Fixed Glen exponent $n=3$.  Has a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
- \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K; here $T^*$ is pressure-adjusted temperature \cite{PatersonBudd}. \\
-\texttt{arr} &  \texttt{ThermoGlenArrIce} & \emph{Cold} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically coupled exact solutions Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} and run by \texttt{pismv -test F} and \texttt{pismv -test G}. \\
-\texttt{arrwarm} & \texttt{ThermoGlenArrIceWarm} & \emph{Warm} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
-\texttt{hooke} & \texttt{HookeIce} & Hooke law \mbox{$A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$.}  Fixed Glen exponent $n=3$ and constants as in \cite{Hooke,PayneBaldwin}.\\
-\texttt{gk} & \texttt{GoldsbyKohlstedtIce} & The  Goldsby-Kohlstedt flow law.  This law has a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt}. It does not have a viscosity form and can only be used by the SIA stress balance. \\
-\texttt{isothermal_glen} &  \texttt{IsothermalGlenIce} &The isothermal Glen flow law. \\
-\bottomrule
-\normalsize	
-\end{tabular}
-\caption{Choosing the ice rheology using \texttt{-sia_flow_law} and \texttt{-ssa_flow_law}.  Flow law choices other than \texttt{gpbld} do not use the liquid water fraction $\omega$ but only the temperature $T$.}
-\label{tab:flowlaw}
-\end{table}
-
-
-\clearpage
-
 \subsection{Choosing the stress balance}
 \label{subsect:stressbalance}
 \optsection{Stress balance}
@@ -62,11 +10,13 @@ The basic stress balance used for all grounded ice in PISM is the non-sliding, t
 
 The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance applies to floating ice.  See the Ross ice shelf example in section \ref{sec:ross} for an example in which the SSA is only applied to floating ice.
 
-The SSA is also used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}.  Specifically for the SSA with ``plastic'' (Coulomb friction) basal resistance, the locations of ice streams are determined as part of a free boundary problem of Schoof \cite{SchoofStream}, a model for emergent ice streams within a ice sheet and ice shelf system.  This model explains ice streams through a combination of plastic till failure and SSA stress balance.  As a combination of SIA and SSA it is a ``hybrid'' approximation of the Stokes model \cite{BBssasliding,Winkelmannetal2011}.  In other words, this SSA description of ice streams is the preferred ``sliding law'' for the SIA, and it should be used in preference to classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}
+The SSA is also used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}.  Specifically for the SSA with ``plastic'' (Coulomb friction) basal resistance, the locations of ice streams are determined as part of a free boundary problem of Schoof \cite{SchoofStream}, a model for emergent ice streams within a ice sheet and ice shelf system.  This model explains ice streams through a combination of plastic till failure and SSA stress balance.
 
-Option \texttt{-stress_balance ssa+sia} turns on such use of the SSA as a sliding law using the ``plastic'' basal resistance law; floating ice is also subject to the SSA with this option.  Of course there is more to the use of a stress balance than just turning it on!  At all grounded points a yield stress, or a pseudo-yield-stress in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is modeled by the subglacial hydrology mode choice (subsection \ref{subsect:subhydro}) based on the basal melt rate which is, primarily, thermodynamically-determined (subsection \ref{subsect:basestrength}).
+This SSA description of ice streams is, however, also the preferred ``sliding law'' for the SIA \cite{BBssasliding,Winkelmannetal2011}.  The SSA should be combined with the SIA, in this way, in preference to classical SIA sliding laws which make ice basal velocity a local function of the basal value of the driving stress.\index{SIA (shallow ice approximation)!sliding laws}.  The resulting combination of SIA and SSA is a ``hybrid'' approximation of the Stokes model \cite{Winkelmannetal2011}.  Option \texttt{-stress_balance ssa+sia} turns on this ``hybrid'' model.  In this use of the SSA as a sliding law, floating ice is also subject to the SSA.
 
-Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, while Table \ref{tab:ssausage} describes additional controls on the numerical solution of the stress balance equations.  If the ice sheet being modeled has any floating ice then the user is advised to read section \ref{sec:pism-pik} on modeling marine ice sheets.
+Of course there is more to the use of a stress balance than just turning it on!  At all grounded points a yield stress, or a pseudo-yield-stress in the case of power law sliding (subsection \ref{subsect:basestrength}), is computed from the amount of stored basal water and from a (generally) spatially-varying till strength.  The amount of stored basal water is modeled by the subglacial hydrology mode choice (subsection \ref{subsect:subhydro}) based on the basal melt rate which is, primarily, thermodynamically-determined (subsection \ref{subsect:basestrength}).
+
+Table \ref{tab:stressbalchoice} describes the basic choice of stress balance.  If the SSA stress balance is used, a choice of two solvers is available, namely \texttt{-ssa_method fd} (default) or \texttt{-ssa_method fem}.  See Table \ref{tab:ssausage}, which describes additional controls on the numerical solution of the stress balance equations.  If option \texttt{-ssa_method fd} is chosen then several more controls on numerics are available; see Table \ref{tab:ssafdcontrols}.  If the ice sheet being modeled has any floating ice then the user is advised to read section \ref{sec:pism-pik} on modeling marine ice sheets.
 
 \begin{table}[ht]
 \centering
@@ -92,22 +42,147 @@ Table \ref{tab:stressbalchoice} describes the basic choice of stress balance, wh
   \centering
   \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
      \toprule
-     \textbf{Option} & \textbf{Description}\\\midrule
-     \intextoption{ssa_method} [\texttt{fd}$\big|$\texttt{fem}] & Both finite difference (\texttt{fd}; the default) and finite element (\texttt{fem}) versions of the SSA numerical solver are implemented in PISM.  They behave similarly for runs without PIK options (section \ref{sec:pism-pik}), but the \texttt{fd} solver is the only one which allows PIK options.  \texttt{fd} uses Picard iteration \cite{BBssasliding}, while \texttt{fem} uses a Newton method.  The \texttt{fem} solver has surface velocity inversion capability \cite{Habermannetal2013}.  \\
-     \intextoption{ssa_eps} ($10^{13}$) & The numerical scheme for the SSA computes an effective viscosity $\nu$ which which depends on strain rates and ice hardness (thus on temperature).  The minimum value of the effective viscosity times the thickness (i.e.~$\nu H$) is important to the difficulty of solving the numerical SSA.  This constant is added ($\nu H \to \nu H + \text{\texttt{ssa_eps}}$) to keep $\nu H$ bounded away from zero.  The units of \texttt{ssa_eps} are $\text{Pa}\,\text{m}\,\text{s}$.  Turn off this lower bound by \texttt{-ssa_eps 0.0}.  Use option \texttt{-ssa_view_nuh} to view the product $\nu H$ for your simulation, to evaluate the relative importance of this \texttt{ssa_eps} regularization.  Note that in a typical Greenland run we see a wide range of values for $\nu H$ from $\sim 10^{14}$ to $\sim 10^{20}$ $\text{Pa}\,\text{m}\,\text{s}$. \\
-     \intextoption{ssa_maxi} (300) & (\emph{Only active with} \texttt{-ssa_method fd}.)  Set the maximum allowed number of Picard (nonlinear) iterations in solving the shallow shelf approximation.\\
-     \intextoption{ssa_rtol} ($10^{-4}$) & (\emph{Only active with} \texttt{-ssa_method fd}.)  The numerical scheme for the SSA does a nonlinear iteration wherein velocities (and temperatures) are used to compute a vertically-averaged effective viscosity which is used to solve the equations for horizontal velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.  In particular, the nonlinear part of the iteration requires that successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
-	$\|(\nu^{(k)} - \nu^{(k-1)}) H\|_1 \le \text{\texttt{ssa_rtol}} \|\nu^{(k)} H\|_1$
-in order to end the iteration with $\nu = \nu^{(k)}$. \\
-    \intextoption{ssafd_ksp_rtol} ($10^{-5}$) & (\emph{Only active with} \texttt{-ssa_method fd}.)  Set the relative change tolerance for the iteration inside the linear solver. \\
+     \textbf{Option (default)} & \textbf{Description}\\\midrule
+     \intextoption{ssa_method} [\texttt{fd}$\big|$\texttt{fem}] & Both finite difference (\texttt{fd}; the default) and finite element (\texttt{fem}) versions of the SSA numerical solver are implemented in PISM.  The \texttt{fd} solver is the only one which allows PIK options (section \ref{sec:pism-pik}).  \texttt{fd} uses Picard iteration \cite{BBssasliding}, while \texttt{fem} uses a Newton method.  The \texttt{fem} solver has surface velocity inversion capability \cite{Habermannetal2013}.  \\
+     \intextoption{ssa_eps} ($10^{13}$) & The numerical schemes for the SSA compute an effective viscosity $\nu$ which depends on strain rates and ice hardness (thus temperature).  The minimum value of the effective viscosity times the thickness (i.e.~$\nu H$) largely determines the difficulty of solving the numerical SSA.  This constant is added to keep $\nu H$ bounded away from zero: $\nu H \to \nu H + \text{\texttt{ssa_eps}}$.  Units of \texttt{ssa_eps} are $\text{Pa}\,\text{m}\,\text{s}$.  Set to zero to turn off this lower bound. \\
+     \intextoption{ssa_view_nuh}  & View the product $\nu H$ for your simulation as a runtime viewer (section \ref{sec:diagnostic-viewers}).  In a typical Greenland run we see a wide range of values for $\nu H$ from $\sim 10^{14}$ to $\sim 10^{20}$ $\text{Pa}\,\text{m}\,\text{s}$. \\
 \bottomrule
 \end{tabular}
-\caption{Controlling the numerical SSA stress balance in PISM}
+\caption{Choice of, and controls on, the numerical SSA stress balance.}
 \label{tab:ssausage}
 \end{table}
 
+\begin{table}[ht]
+  \centering
+  \bigskip
+  \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
+     \toprule
+     \textbf{Option (default)} & \textbf{Description}\\\midrule
+%FIXME: this should be "ssafd_picard_maxi"?
+     \intextoption{ssa_maxi} (300) & Set the maximum allowed number of Picard (nonlinear) iterations in solving the shallow shelf approximation.\\
+%FIXME: this should be "ssafd_picard_rtol"?
+     \intextoption{ssa_rtol} ($10^{-4}$) & The Picard iteration computes a vertically-averaged effective viscosity which is used to solve the equations for horizontal velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.  The Picard iteration stops when successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
+      $$\|(\nu^{(k)} - \nu^{(k-1)}) H\|_1 \le Z \|\nu^{(k)} H\|_1$$
+where $Z=$ \texttt{ssa_rtol}. \\
+    \intextoption{ssafd_ksp_rtol} ($10^{-5}$) & Set the relative change tolerance for the iteration inside the Krylov linear solver used at each Picard iteration. \\
+\bottomrule
+\end{tabular}
+\caption{Controls on the numerical iteration of the \texttt{-ssa_method fd} solver.}
+\label{tab:ssafdcontrols}
+\end{table}
 
 \clearpage
+
+
+\subsection{Ice rheology}
+\label{sec:rheology}
+\optsection{Ice rheology}
+
+The ``rheology'' of a viscous fluid refers to the relation between the applied stress and the resulting deformation, the strain rate.  The models of ice rheology available in PISM are all isotropic \cite{Paterson}.   A rheology in this class is described by a ``flow law'', which is, in the most general case in PISM, a function $F(\sigma,T,\omega,P,d)$ in the ``constitutive relation'' form
+\begin{equation}
+D_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'.  \label{eq:constitutive}
+\end{equation}
+Here $D_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction, $P$ is the pressure, $d$ is the grain size, and $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F = \frac{1}{2} \sigma_{ij}' \sigma_{ij}'$ defines the second invariant $\sigma$ of the stress deviator tensor.
+
+Form \eqref{eq:constitutive} of the flow law is used in the SIA, but the ``viscosity'' form of a flow law, found by inverting the constitutive relation \eqref{eq:constitutive}, is needed for ice shelf and ice stream (SSA) flow \cite{BBssasliding}:
+\begin{equation}
+\sigma_{ij}' = 2 \nu(D,T,\omega,P,d)\,D_{ij}  \label{eq:viscosityform}
+\end{equation}
+Here $\nu(D,T,\omega,P,d)$ is the ``effective viscosity'' and $D^2 = \frac{1}{2} D_{ij} D_{ij}$.
+
+Most of the flow laws in PISM are of Glen-Nye single-power type.  For example,
+\begin{equation}
+F(\sigma,T) = A(T) \sigma^{n-1}  \label{eq:glen}
+\end{equation}
+is the common temperature-dependent Glen law \cite{PatersonBudd,BBL} (which has no dependence on liquid water fraction, pressure, or grain size).  If the ice softness $A(T)=A_0$ is constant then the law is isothermal, whereas if there is dependence on temperature then $A(T)$ is usually a generalization of ``Arrhenius'' form $A(T) = A \exp(-Q/(R T))$.
+
+The more elaborate Goldsby-Kohlstedt law \cite{GoldsbyKohlstedt} is a function $F(\sigma,T,P,d)$, but in this case the function $F$ cannot be factored into a product of a function of $T,P,d$ and a single power of $\sigma$, as in form \eqref{eq:glen}.
+
+There is only one choice for the flow law which takes full advantage of the enthalpy mode of PISM, which is the thermodynamical modeling (i.e.~conservation of energy) default.  Namely the Glen-Paterson-Budd-Lliboutry-Duval flow law \cite{AschwandenBuelerKhroulevBlatter,LliboutryDuval1985,PatersonBudd}, which is a function $F(\sigma,T,\omega,P)$.  This law is the only one in the literature where the ice softness depends on both the temperature and the liquid water fraction, so it parameterizes the (observed) softening of pressure-melting-temperature ice as its liquid fraction increases.  One can use this default polythermal law or one may choose among a number of ``cold ice'' laws listed in Table \ref{tab:flowlaw} which do not use the liquid water fraction.  
+
+All flow law parameters can be changed using configuration parameters; see section \ref{sec:pism-defaults} and the implementation of flow laws in the \emph{Source Code Browser}.  Note that different flow laws have different numbers of parameters, but all have at least two parameters (e.g.~$A_0$ and $n$ in \texttt{isothermal_glen}).  One can create a new, and reasonably arbitrarily, scalar function $F$ by modifying source code; see source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.  To assist such modifications, note that Table \ref{tab:flowlaw} below also lists the C++ classes declared in \texttt{flowlaw.hh}.
+
+\subsubsection*{Choosing the flow laws for SIA and SSA stress balances}  Command-line options \intextoption{sia_flow_law} and \intextoption{ssa_flow_law} choose which flow law is used by the SIA and SSA stress balances, respectively.  Allowed arguments are listed in Tables \ref{tab:flowlaw} and \ref{tab:flowlawgk} below.  Viscosity form \eqref{eq:viscosityform} is not known for the Goldsby-Kohlstedt law \cite{GoldsbyKohlstedt}, so option ``\texttt{-ssa_flow_law gk}'' is an error.
+
+\begin{table}[ht]
+\centering
+\index{rheology}\index{flow law}
+\small
+\begin{tabular}{p{0.16\linewidth}p{0.2\linewidth}p{0.58\linewidth}}\toprule
+\textbf{Name} & C++ Class & \textbf{Comments and References} \\ \midrule
+\texttt{gpbld} &\texttt{GPBLDIce}  & Glen-Paterson-Budd-Lliboutry-Duval law \cite{LliboutryDuval1985}, the enthalpy-based default in PISM \cite{AschwandenBuelerKhroulevBlatter}.  Extends the Paterson-Budd law (below) to positive liquid water fraction.  If $A_{c}(T)$ is from Paterson-Budd then this law returns $A(T,\omega) = A_{c}(T) (1 + C \omega)$, where $\omega$ is the liquid water fraction, $C$ is a configuration parameter \texttt{gpbld_water_frac_coeff} [default $C=181.25$], and $\omega$ is capped at level \texttt{gpbld_water_frac_observed_limit}.  \\  \midrule
+\texttt{pb} &\texttt{ThermoGlenIce}  & Paterson-Budd law, the cold-mode default.  Fixed Glen exponent $n=3$.  Has a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
+ \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K; here $T^*$ is pressure-adjusted temperature \cite{PatersonBudd}. \\
+\texttt{arr} &  \texttt{ThermoGlenArrIce} & \emph{Cold} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically-coupled exact solutions run by \texttt{pismv -test F} and \texttt{pismv -test G} \cite{BBL,BB}. \\
+\texttt{arrwarm} & \texttt{ThermoGlenArrIceWarm} & \emph{Warm} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
+\texttt{hooke} & \texttt{HookeIce} & Hooke law with \mbox{$A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$.}  Fixed Glen exponent $n=3$ and constants as in \cite{Hooke,PayneBaldwin}.\\
+\texttt{isothermal_glen} &  \texttt{IsothermalGlenIce} & The isothermal Glen flow law.  Here $F(\sigma) = A_0 \sigma^{n-1}$ with inverse $\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}$ where $A_0$ is the ice softness and $B_0=A_0^{-1/n}$ is the ice hardness. \\
+\bottomrule
+\normalsize	
+\end{tabular}
+\caption{Single-power flow laws.  Choose the ice rheology using \texttt{-sia_flow_law} and \texttt{-ssa_flow_law} and one of the above names.  Flow law choices other than \texttt{gpbld} do not use the liquid water fraction $\omega$ but only the temperature $T$.}
+\label{tab:flowlaw}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\index{rheology}\index{flow law}
+\small
+\begin{tabular}{p{0.1\linewidth}p{0.2\linewidth}p{0.55\linewidth}}\toprule
+\textbf{Name} & C++ Class & \textbf{Comments and References} \\ \midrule
+\texttt{gk} & \texttt{GoldsbyKohlstedtIce} & This law has a combination of exponents from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt}.  It can only be used by the SIA stress balance.  Because it has more than one power, option \texttt{-sia_n} has no effect, though \texttt{-sia_e} works as expected.  This law does not use the liquid water fraction, but only the temperature. \\
+\bottomrule
+\normalsize	
+\end{tabular}
+\caption{The Goldsby-Kohlstedt flow law. Use option \texttt{-sia_flow_law gk}.}
+\label{tab:flowlawgk}
+\end{table}
+
+
+\subsubsection*{Choose enhancement factor and exponent}  An enhancement factor can be added to any flow law through a runtime option.  Single-power laws also permit control of the flow law exponent through a runtime option.
+
+Options \intextoption{sia_e} and \intextoption{ssa_e} set flow enhancement factors for the SIA and SSA respectively.  Option \texttt{-sia_e} sets ``$e$'' in ``$D_{ij} = e\, F(\sigma,T,\omega,P,d)\, \sigma_{ij}',$'' in equation \eqref{eq:constitutive}.  Option \texttt{-ssa_e} sets ``$e$'' in the viscosity form so that ``$\sigma_{ij}'  = e^{-1/n}\, 2\, \nu(D,T,\omega,P,d)\, D_{ij}.$''
+
+Options \intextoption{sia_n} and \intextoption{ssa_n} set the exponent when a single-power flow law is used (see Table \ref{tab:flowlaw}).  Simply changing to a different value from the default $n=3$ is not recommended without a corresponding change to the enhancement factor, however.  This is because the coefficient and the power are non-trivially linked when a power law is fit to experimental data \cite{CuffeyPaterson,PatersonBudd}.
+
+Here is a possible approach to adjusting both the enhancement factor and the exponent.  Suppose $\sigma_0$ is preferred as a scale (reference) for the driving stress that appears in both SIA and SSA models.  Typically this is on the order of one bar or $10^5$ Pa.  Suppose one wants the same amount of deformation $D_0$ at this reference driving stress as one changes from the old exponent $n_{old}$ to the new exponent $n_{new}$.  That is, suppose one wants both
+  $$D_0 = E_{old}\, A\, \sigma_0^{n_{old}} \qquad \text{and} \qquad D_0 = E_{new}\, A\, \sigma_0^{n_{new}}$$
+to be true with a new enhancement factor $E_{new}$.  Eliminating $D_0$ and solving for the new enhancement factor gives
+\begin{equation}
+E_{new} = E_{old}\, \sigma_0^{n_{old} - n_{new}}.  \label{eq:renewexponent}
+\end{equation}
+It follows, for example, that if one has a run with values
+\begin{quote}
+\texttt{-sia_e 3.0 -sia_n 3.0}
+\end{quote}
+then a new run with exponent $n=6.0$ and the same deformation at the reference driving stress of $10^5$ Pa will use
+\begin{quote}
+\texttt{-sia_e 3.0e-15 -sia_n 6.0}
+\end{quote}
+because $E_{new} = 3.0 \sigma_0^{3-6} = 3.0 \times (10^5)^{-3}$ from equation \eqref{eq:renewexponent}.
+
+A corresponding formula applies to \texttt{-ssa_e} if the \texttt{-ssa_n} value changes.
+
+\begin{table}[ht]
+\centering
+\bigskip
+\index{flow law exponent}\index{enhancement factor}
+\small
+\begin{tabular}{p{0.18\linewidth}p{0.26\linewidth}p{0.5\linewidth}}\toprule
+\textbf{Option (default)} & \textbf{Configuration parameter} & \textbf{Comments} \\ \midrule
+\intextoption{sia_e} (1.0) & \texttt{sia_enhancement_factor} & Note \cite[see supplement]{AschwandenAdalgeirsdottirKhroulev} used $3.0$ for Greenland ice sheet simulations while \cite{Martinetal2011} used $4.5$ for simulations of the Antarctic ice sheet with PISM-PIK. \\
+\intextoption{sia_n} (3.0) & \texttt{sia_Glen_exponent} & See text and eqn \eqref{eq:renewexponent} to also set \texttt{-sia_e} if \texttt{-sia_n} changes. \\
+\intextoption{ssa_e} (1.0) & \texttt{ssa_enhancement_factor} & Note \cite{Martinetal2011} used $0.512$ for simulations of the Antarctic ice sheet with PISM-PIK. \\
+\intextoption{ssa_n} (3.0) & \texttt{ssa_Glen_exponent} & See text and eqn \eqref{eq:renewexponent} to also set \texttt{-ssa_e} if \texttt{-ssa_n} changes. \\
+\bottomrule
+\normalsize	
+\end{tabular}
+\caption{For all flow laws, an enhancement factor can be added by a runtime option.  For the single-power flow laws in Table \ref{tab:flowlaw}, the (Glen) exponent can be controlled by a runtime option.}
+\label{tab:enhancementandexponent}
+\end{table}
+
+\clearpage
+
 
 \subsection{Surface gradient method}
 \label{subsect:gradient}

@@ -29,7 +29,7 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -49,7 +49,7 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
       if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, x_e);
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
-      for (int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         value += JxW[q]*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
       } // q
     } // j
@@ -59,7 +59,6 @@ PetscErrorCode IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -73,11 +72,12 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   double a_e[FEQuadrature::Nk];
   double a_q[FEQuadrature::Nq], dadx_q[FEQuadrature::Nq], dady_q[FEQuadrature::Nq];
-  ierr = a.begin_access(); CHKERRQ(ierr);
 
   double b_e[FEQuadrature::Nk];
   double b_q[FEQuadrature::Nq], dbdx_q[FEQuadrature::Nq], dbdy_q[FEQuadrature::Nq];
-  ierr = b.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(a);
+  list.add(b);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -103,7 +103,7 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
       if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, b_e);
       m_quadrature.computeTrialFunctionValues(b_e, b_q, dbdx_q, dbdy_q);
 
-      for (int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         value += JxW[q]*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
       } // q
     } // j
@@ -112,9 +112,6 @@ PetscErrorCode IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
-
-  ierr = a.end_access(); CHKERRQ(ierr);
-  ierr = b.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -129,10 +126,11 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
 
   double gradient_e[FEQuadrature::Nk];
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
+  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -161,14 +159,14 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for (int k=0; k<FEQuadrature::Nk; k++) {
+      for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
         gradient_e[k] = 0;
       }
 
-      for (int q=0; q<FEQuadrature::Nq; q++) {
+      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         const double &x_qq=x_q[q];
         const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
-        for (int k=0; k<FEQuadrature::Nk; k++) {
+        for (unsigned int k=0; k<FEQuadrature::Nk; k++) {
           gradient_e[k] += 2*JxW[q]*(m_cL2*x_qq*test[q][k].val +
             m_cH1*(dxdx_qq*test[q][k].dx + dxdy_qq*test[q][k].dy));
         } // k
@@ -178,8 +176,7 @@ PetscErrorCode IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   } // i
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -221,9 +218,9 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
-      for (int q=0; q<FEQuadrature::Nq; q++) {
-        for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
-          for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
+      for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
+        for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
+          for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
             const FEFunctionGerm &test_qk=test[q][k];
             const FEFunctionGerm &test_ql=test[q][l];
             K[k][l] += JxW[q]*(m_cL2*test_qk.val*test_ql.val +

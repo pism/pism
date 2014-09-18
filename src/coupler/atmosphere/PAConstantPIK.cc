@@ -88,15 +88,15 @@ PetscErrorCode PAConstantPIK::end_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, double *values) {
+PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    values[k] = air_temp(i,j);
+    result[k] = air_temp(i,j);
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, double *values) {
+PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++)
-    values[k] = precipitation(i,j);
+    result[k] = precipitation(i,j);
   return 0;
 }
 
@@ -196,31 +196,24 @@ PetscErrorCode PAConstantPIK::init(Vars &vars) {
 }
 
 PetscErrorCode PAConstantPIK::update(double, double) {
-  PetscErrorCode ierr;
-
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
-  ierr = air_temp.begin_access();   CHKERRQ(ierr);
-  ierr = usurf->begin_access();   CHKERRQ(ierr);
-  ierr = lat->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  IceModelVec::AccessList list;
+  list.add(air_temp);
+  list.add(*usurf);
+  list.add(*lat);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
-
-    }
+    air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
   }
-  ierr = usurf->end_access();   CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = air_temp.end_access();   CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::init_timeseries(double *ts, unsigned int N) {
-  (void)ts;
-  m_ts_times.resize(N);
+PetscErrorCode PAConstantPIK::init_timeseries(const std::vector<double> &ts) {
+  m_ts_times = ts;
   return 0;
 }
 

@@ -52,27 +52,27 @@ PetscErrorCode add_2d(IceModelVec* const x_in, double alpha, IceModelVec* const 
     SETERRQ(PETSC_COMM_SELF, 1, "incompatible arguments");
   }
 
-  int ghosts = 0;
+  int stencil = 0;
   bool scatter = false;
-  compute_params(x, y, z, ghosts, scatter);
+  compute_params(x, y, z, stencil, scatter);
 
   IceGrid *grid = z->get_grid();
 
-  ierr = x->begin_access(); CHKERRQ(ierr);
-  ierr = y->begin_access(); CHKERRQ(ierr);
-  ierr = z->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid->xs - ghosts; i < grid->xs+grid->xm + ghosts; ++i) {
-    for (int j = grid->ys - ghosts; j < grid->ys+grid->ym + ghosts; ++j) {
-      (*z)(i, j) = (*x)(i, j) + (*y)(i, j) * alpha;
-    }
+  IceModelVec::AccessList list;
+  list.add(*x);
+  list.add(*y);
+  list.add(*z);
+  for (PointsWithGhosts p(*grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    (*z)(i, j) = (*x)(i, j) + (*y)(i, j) * alpha;
   }
-  ierr = z->end_access(); CHKERRQ(ierr);
-  ierr = y->end_access(); CHKERRQ(ierr);
-  ierr = x->end_access(); CHKERRQ(ierr);
 
   if (scatter) {
     ierr = z->update_ghosts(); CHKERRQ(ierr);
   }
+
+  result->inc_state_counter();
 
   return 0;
 }
@@ -89,25 +89,26 @@ PetscErrorCode copy_2d(IceModelVec* const source,
     SETERRQ(PETSC_COMM_SELF, 1, "incompatible arguments");
   }
 
-  int ghosts = 0;
+  int stencil = 0;
   bool scatter = false;
-  compute_params(x, x, z, ghosts, scatter);
+  compute_params(x, x, z, stencil, scatter);
 
   IceGrid *grid = z->get_grid();
 
-  ierr = x->begin_access(); CHKERRQ(ierr);
-  ierr = z->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid->xs - ghosts; i < grid->xs+grid->xm + ghosts; ++i) {
-    for (int j = grid->ys - ghosts; j < grid->ys+grid->ym + ghosts; ++j) {
-      (*z)(i, j) = (*x)(i, j);
-    }
+  IceModelVec::AccessList list;
+  list.add(*x);
+  list.add(*z);
+  for (PointsWithGhosts p(*grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    (*z)(i, j) = (*x)(i, j);
   }
-  ierr = z->end_access(); CHKERRQ(ierr);
-  ierr = x->end_access(); CHKERRQ(ierr);
 
   if (scatter) {
     ierr = z->update_ghosts(); CHKERRQ(ierr);
   }
+
+  destination->inc_state_counter();
 
   return 0;
 }

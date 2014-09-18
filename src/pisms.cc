@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm    com;
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
       "where major option chooses type of simplified experiment:\n"
       "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"); CHKERRQ(ierr);
 
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);

@@ -139,37 +139,30 @@ PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVe
                                                                       IceModelVec2S &tauc,
                                                                       IceModelVec2Int &mask,
                                                                       IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
   MaskQuery m(mask);
 
-  ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = tauc.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(velocity);
+  list.add(result);
+  list.add(tauc);
+  list.add(mask);
   
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (m.ocean(i,j)) {
-        result(i,j) = 0.0;
-      } else {
-        const double
-          C = basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
-              basal_stress_x = - C * velocity(i,j).u,
-              basal_stress_y = - C * velocity(i,j).v;
-        result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m.ocean(i,j)) {
+      result(i,j) = 0.0;
+    } else {
+      const double
+        C = basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v),
+        basal_stress_x = - C * velocity(i,j).u,
+        basal_stress_y = - C * velocity(i,j).v;
+      result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
     }
   }
 
-  ierr = mask.end_access(); CHKERRQ(ierr);
-  ierr = tauc.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = velocity.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
-
 
 
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.
@@ -191,83 +184,79 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
-  PetscErrorCode ierr;
   double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
   if (result.get_dof() != 2)
     SETERRQ(grid.com, 1, "result.dof() == 2 is required");
 
-  ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(velocity);
+  list.add(result);
+  list.add(mask);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (M.ice_free(mask.as_int(i,j))) {
-        result(i,j,0) = 0.0;
-        result(i,j,1) = 0.0;
-        continue;
-      }
+    if (M.ice_free(mask.as_int(i,j))) {
+      result(i,j,0) = 0.0;
+      result(i,j,1) = 0.0;
+      continue;
+    }
 
-      planeStar<int> m = mask.int_star(i,j);
-      planeStar<Vector2> U = velocity.star(i,j);
+    planeStar<int> m = mask.int_star(i,j);
+    planeStar<Vector2> U = velocity.star(i,j);
 
-      // strain in units s-1
-      double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
-        east = 1, west = 1, south = 1, north = 1;
+    // strain in units s-1
+    double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
+      east = 1, west = 1, south = 1, north = 1;
 
-      // Computes u_x using second-order centered finite differences written as
-      // weighted sums of first-order one-sided finite differences.
-      //
-      // Given the cell layout
-      // *----n----*
-      // |         |
-      // |         |
-      // w         e
-      // |         |
-      // |         |
-      // *----s----*
-      // east == 0 if the east neighbor of the current cell is ice-free. In
-      // this case we use the left- (west-) sided difference.
-      //
-      // If both neighbors in the east-west (x) direction are ice-free the
-      // x-derivative is set to zero (see u_x, v_x initialization above).
-      //
-      // Similarly in other directions.
-      if (M.ice_free(m.e))
-        east = 0;
-      if (M.ice_free(m.w))
-        west = 0;
-      if (M.ice_free(m.n))
-        north = 0;
-      if (M.ice_free(m.s))
-        south = 0;
+    // Computes u_x using second-order centered finite differences written as
+    // weighted sums of first-order one-sided finite differences.
+    //
+    // Given the cell layout
+    // *----n----*
+    // |         |
+    // |         |
+    // w         e
+    // |         |
+    // |         |
+    // *----s----*
+    // east == 0 if the east neighbor of the current cell is ice-free. In
+    // this case we use the left- (west-) sided difference.
+    //
+    // If both neighbors in the east-west (x) direction are ice-free the
+    // x-derivative is set to zero (see u_x, v_x initialization above).
+    //
+    // Similarly in other directions.
+    if (M.ice_free(m.e))
+      east = 0;
+    if (M.ice_free(m.w))
+      west = 0;
+    if (M.ice_free(m.n))
+      north = 0;
+    if (M.ice_free(m.s))
+      south = 0;
 
-      if (west + east > 0) {
-        u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
-        v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
-      }
+    if (west + east > 0) {
+      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
+      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
+    }
 
-      if (south + north > 0) {
-        u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
-        v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
-      }
+    if (south + north > 0) {
+      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
+      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
+    }
 
-      const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
-        B   = 0.5 * (u_x - v_y),
-        Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
-        q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
-      result(i,j,0) = A + q;
-      result(i,j,1) = A - q; // q >= 0 so e1 >= e2
+    const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
+      B   = 0.5 * (u_x - v_y),
+      Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
+      q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
+    result(i,j,0) = A + q;
+    result(i,j,1) = A - q; // q >= 0 so e1 >= e2
 
-    } // j
-  }   // i
+  }
 
-  ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -276,90 +265,86 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
 /*! Note: IceModelVec2 result has to have dof == 3. */
 PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
-  PetscErrorCode ierr;
   double    dx = grid.dx, dy = grid.dy;
   Mask M;
 
   if (result.get_dof() != 3)
     SETERRQ(grid.com, 1, "result.get_dof() == 3 is required");
 
-  // NB: uses constant ice hardness.
-  double hardness = pow(config.get("ice_softness"),-1.0/config.get("Glen_exponent"));
+  // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
+  double hardness = pow(config.get("ice_softness"),-1.0/config.get("ssa_Glen_exponent"));
 
-  ierr = velocity.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(velocity);
+  list.add(result);
+  list.add(mask);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (M.ice_free(mask.as_int(i,j))) {
-        result(i,j,0) = 0.0;
-        result(i,j,1) = 0.0;
-        result(i,j,2) = 0.0;
-        continue;
-      }
+    if (M.ice_free(mask.as_int(i,j))) {
+      result(i,j,0) = 0.0;
+      result(i,j,1) = 0.0;
+      result(i,j,2) = 0.0;
+      continue;
+    }
 
-      planeStar<int> m = mask.int_star(i,j);
-      planeStar<Vector2> U = velocity.star(i,j);
+    planeStar<int> m = mask.int_star(i,j);
+    planeStar<Vector2> U = velocity.star(i,j);
 
-      // strain in units s-1
-      double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
-        east = 1, west = 1, south = 1, north = 1;
+    // strain in units s-1
+    double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
+      east = 1, west = 1, south = 1, north = 1;
 
-      // Computes u_x using second-order centered finite differences written as
-      // weighted sums of first-order one-sided finite differences.
-      //
-      // Given the cell layout
-      // *----n----*
-      // |         |
-      // |         |
-      // w         e
-      // |         |
-      // |         |
-      // *----s----*
-      // east == 0 if the east neighbor of the current cell is ice-free. In
-      // this case we use the left- (west-) sided difference.
-      //
-      // If both neighbors in the east-west (x) direction are ice-free the
-      // x-derivative is set to zero (see u_x, v_x initialization above).
-      //
-      // Similarly in y-direction.
-      if (M.ice_free(m.e))
-        east = 0;
-      if (M.ice_free(m.w))
-        west = 0;
-      if (M.ice_free(m.n))
-        north = 0;
-      if (M.ice_free(m.s))
-        south = 0;
+    // Computes u_x using second-order centered finite differences written as
+    // weighted sums of first-order one-sided finite differences.
+    //
+    // Given the cell layout
+    // *----n----*
+    // |         |
+    // |         |
+    // w         e
+    // |         |
+    // |         |
+    // *----s----*
+    // east == 0 if the east neighbor of the current cell is ice-free. In
+    // this case we use the left- (west-) sided difference.
+    //
+    // If both neighbors in the east-west (x) direction are ice-free the
+    // x-derivative is set to zero (see u_x, v_x initialization above).
+    //
+    // Similarly in y-direction.
+    if (M.ice_free(m.e))
+      east = 0;
+    if (M.ice_free(m.w))
+      west = 0;
+    if (M.ice_free(m.n))
+      north = 0;
+    if (M.ice_free(m.s))
+      south = 0;
 
-      if (west + east > 0) {
-        u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
-        v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
-      }
+    if (west + east > 0) {
+      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
+      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
+    }
 
-      if (south + north > 0) {
-        u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
-        v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
-      }
+    if (south + north > 0) {
+      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
+      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
+    }
 
-      double nu;
-      flow_law->effective_viscosity(hardness,
-                                    secondInvariant_2D(u_x, u_y, v_x, v_y),
-                                    &nu, NULL);
+    double nu;
+    flow_law->effective_viscosity(hardness,
+                                  secondInvariant_2D(u_x, u_y, v_x, v_y),
+                                  &nu, NULL);
 
-      //get deviatoric stresses
-      result(i,j,0) = nu*u_x;
-      result(i,j,1) = nu*v_y;
-      result(i,j,2) = 0.5*nu*(u_y+v_x);
+    //get deviatoric stresses
+    result(i,j,0) = nu*u_x;
+    result(i,j,1) = nu*v_y;
+    result(i,j,2) = 0.5*nu*(u_y+v_x);
 
-    } // j
-  }   // i
+  }
 
-  ierr = velocity.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -406,26 +391,23 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   double standard_gravity = grid.config.get("standard_gravity"),
     ice_density = grid.config.get("ice_density");
 
-  ierr =    result->begin_access(); CHKERRQ(ierr);
-  ierr =   surface->begin_access(); CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*surface);
+  list.add(*thickness);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double pressure = ice_density * standard_gravity * (*thickness)(i,j);
-      if (pressure <= 0.0) {
-        (*result)(i,j).u = 0.0;
-        (*result)(i,j).v = 0.0;
-      } else {
-        (*result)(i,j).u = - pressure * surface->diff_x_p(i,j);
-        (*result)(i,j).v = - pressure * surface->diff_y_p(i,j);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double pressure = ice_density * standard_gravity * (*thickness)(i,j);
+    if (pressure <= 0.0) {
+      (*result)(i,j).u = 0.0;
+      (*result)(i,j).v = 0.0;
+    } else {
+      (*result)(i,j).u = - pressure * surface->diff_x_p(i,j);
+      (*result)(i,j).v = - pressure * surface->diff_y_p(i,j);
     }
   }
-
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
-  ierr =    result->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -511,26 +493,23 @@ PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
 
   MaskQuery m(*mask);
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = vel.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (m.grounded_ice(i,j)) {
-        double beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-        (*result)(i,j).u = - beta * vel(i,j).u;
-        (*result)(i,j).v = - beta * vel(i,j).v;
-      } else {
-        (*result)(i,j).u = 0.0;
-        (*result)(i,j).v = 0.0;
-      }
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*tauc);
+  list.add(vel);
+  list.add(*mask);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m.grounded_ice(i,j)) {
+      double beta = basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+      (*result)(i,j).u = - beta * vel(i,j).u;
+      (*result)(i,j).v = - beta * vel(i,j).v;
+    } else {
+      (*result)(i,j).u = 0.0;
+      (*result)(i,j).v = 0.0;
     }
   }
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = vel.end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
 
   output = result;
 
@@ -647,17 +626,15 @@ PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
   ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
   IceModelVec2V &vel = *velocity;
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = velocity->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-    }
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*tauc);
+  list.add(*velocity);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
   }
-  ierr = velocity->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;

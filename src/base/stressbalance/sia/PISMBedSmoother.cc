@@ -29,7 +29,7 @@ BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
     PISMEnd();
   }
 
-  m_Glen_exponent = config.get("Glen_exponent");
+  m_Glen_exponent = config.get("sia_Glen_exponent"); // choice is SIA; see #285
   m_smoothing_range = config.get("bed_smoother_range");
 
   if (m_smoothing_range > 0.0) {
@@ -334,49 +334,42 @@ PetscErrorCode BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
                                                  IceModelVec2S &thk,
                                                  IceModelVec2Int &mask,
                                                  IceModelVec2S *thksmooth) { 
-  PetscErrorCode ierr;  
-
   MaskQuery M(mask);
   IceModelVec2S &result = *thksmooth;
 
-  int GHOSTS = topgsmooth.get_stencil_width();
+  IceModelVec::AccessList list;
+  list.add(mask);
+  list.add(topgsmooth);
+  list.add(maxtl);
+  list.add(usurf);
+  list.add(thk);
+  list.add(result);
 
-  ierr = mask.begin_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
-  ierr = maxtl.begin_access(); CHKERRQ(ierr);
-  ierr = usurf.begin_access(); CHKERRQ(ierr);
-  ierr = thk.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if (thk(i,j) < 0.0) {
-        SETERRQ2(grid.com, 2,
-          "PISM ERROR:  BedSmoother detects negative original thickness\n"
-          "  at location (i,j) = (%d,%d) ... ending\n",i,j);
-      } else if (thk(i,j) == 0.0) {
-        result(i,j) = 0.0;
-      } else if (maxtl(i,j) >= thk(i,j)) {
-        result(i,j) = thk(i,j);
+  int GHOSTS = topgsmooth.get_stencil_width();
+  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (thk(i,j) < 0.0) {
+      SETERRQ2(grid.com, 2,
+               "PISM ERROR:  BedSmoother detects negative original thickness\n"
+               "  at location (i,j) = (%d,%d) ... ending\n",i,j);
+    } else if (thk(i,j) == 0.0) {
+      result(i,j) = 0.0;
+    } else if (maxtl(i,j) >= thk(i,j)) {
+      result(i,j) = thk(i,j);
+    } else {
+      if (M.grounded(i,j)) {
+        // if grounded, compute smoothed thickness as the difference of ice
+        // surface elevation and smoothed bed elevation
+        const double thks_try = usurf(i,j) - topgsmooth(i,j);
+        result(i,j) = (thks_try > 0.0) ? thks_try : 0.0;
       } else {
-        if (M.grounded(i,j)) {
-          // if grounded, compute smoothed thickness as the difference of ice
-          // surface elevation and smoothed bed elevation
-          const double thks_try = usurf(i,j) - topgsmooth(i,j);
-          result(i,j) = (thks_try > 0.0) ? thks_try : 0.0;
-        } else {
-          // if floating, use original thickness (note: surface elevation was
-          // computed using this thickness and the sea level elevation)
-          result(i,j) = thk(i,j);
-        }
+        // if floating, use original thickness (note: surface elevation was
+        // computed using this thickness and the sea level elevation)
+        result(i,j) = thk(i,j);
       }
     }
   }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.end_access(); CHKERRQ(ierr);
-  ierr = maxtl.end_access(); CHKERRQ(ierr);
-  ierr = usurf.end_access(); CHKERRQ(ierr);
-  ierr = thk.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -411,49 +404,43 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
     return 0;
   }
 
-  int GHOSTS = topgsmooth.get_stencil_width();
-  
   IceModelVec2S &result = *theta;
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = usurf.begin_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
-  ierr = maxtl.begin_access(); CHKERRQ(ierr);
-  ierr = C2.begin_access(); CHKERRQ(ierr);
-  ierr = C3.begin_access(); CHKERRQ(ierr);
-  ierr = C4.begin_access(); CHKERRQ(ierr);
-  for (int i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      const double H = usurf(i,j) - topgsmooth(i,j);
-      if (H > maxtl(i,j)) { 
-        // thickness exceeds maximum variation in patch of local topography,
-        // so ice buries local topography; note maxtl >= 0 always
-        const double Hinv = 1.0 / PetscMax(H, 1.0);
-        double omega = 1.0 + Hinv*Hinv * (C2(i,j) + Hinv * (C3(i,j) + Hinv*C4(i,j)));
-        if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
-          SETERRQ2(grid.com, 1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
-                     "    in BedSmoother.get_theta() ... ending\n",i,j);
-        }
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(usurf);
+  list.add(topgsmooth);
+  list.add(maxtl);
+  list.add(C2);
+  list.add(C3);
+  list.add(C4);
+  
+  int GHOSTS = topgsmooth.get_stencil_width();
+  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        if (omega < 0.001)      // this check *should not* be necessary
-          omega = 0.001;
-
-        result(i,j) = pow(omega,-m_Glen_exponent);
-        // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
-        if (result(i,j) > 1.0)  result(i,j) = 1.0;
-        if (result(i,j) < 0.0)  result(i,j) = 0.0;
-      } else {
-        result(i,j) = 0.00;  // FIXME = min_theta; make configurable
+    const double H = usurf(i,j) - topgsmooth(i,j);
+    if (H > maxtl(i,j)) { 
+      // thickness exceeds maximum variation in patch of local topography,
+      // so ice buries local topography; note maxtl >= 0 always
+      const double Hinv = 1.0 / PetscMax(H, 1.0);
+      double omega = 1.0 + Hinv*Hinv * (C2(i,j) + Hinv * (C3(i,j) + Hinv*C4(i,j)));
+      if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
+        SETERRQ2(grid.com, 1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
+                 "    in BedSmoother.get_theta() ... ending\n",i,j);
       }
+
+      if (omega < 0.001)      // this check *should not* be necessary
+        omega = 0.001;
+
+      result(i,j) = pow(omega,-m_Glen_exponent);
+      // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
+      if (result(i,j) > 1.0)  result(i,j) = 1.0;
+      if (result(i,j) < 0.0)  result(i,j) = 0.0;
+    } else {
+      result(i,j) = 0.00;  // FIXME = min_theta; make configurable
     }
-  }  
-  ierr = C4.end_access(); CHKERRQ(ierr);
-  ierr = C3.end_access(); CHKERRQ(ierr);
-  ierr = C2.end_access(); CHKERRQ(ierr);
-  ierr = maxtl.end_access(); CHKERRQ(ierr);
-  ierr = topgsmooth.end_access(); CHKERRQ(ierr);
-  ierr = usurf.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+  }
 
   return 0;
 }
