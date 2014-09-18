@@ -537,12 +537,20 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    // update surface and ocean models so that we can get the
-    // temperature at the top of the bedrock
-    ierr = init_step_couplers(); CHKERRQ(ierr);
+    bool bootstrapping_needed = false;
+    ierr = btu->init(variables, bootstrapping_needed); CHKERRQ(ierr);
 
-    ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
-    ierr = btu->init(variables); CHKERRQ(ierr);
+    if (bootstrapping_needed == true) {
+      // update surface and ocean models so that we can get the
+      // temperature at the top of the bedrock
+      ierr = verbPrintf(2, grid.com,
+                        "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+      ierr = init_step_couplers(); CHKERRQ(ierr);
+
+      ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+
+      ierr = btu->bootstrap(); CHKERRQ(ierr);
+    }
   }
 
   if (subglacial_hydrology) {
@@ -918,10 +926,10 @@ PetscErrorCode IceModel::init_couplers() {
   ierr = verbPrintf(3, grid.com,
                     "Initializing boundary models...\n"); CHKERRQ(ierr);
 
-  assert(surface != PETSC_NULL);
+  assert(surface != NULL);
   ierr = surface->init(variables); CHKERRQ(ierr);
 
-  assert(ocean != PETSC_NULL);
+  assert(ocean != NULL);
   ierr = ocean->init(variables); CHKERRQ(ierr);
 
   return 0;
@@ -1104,34 +1112,23 @@ PetscErrorCode IceModel::init_calving() {
 }
 
 PetscErrorCode IceModel::allocate_bed_deformation() {
-  PetscErrorCode ierr;
   std::string model = config.get_string("bed_deformation_model");
-  std::set<std::string> choices;
 
-  choices.insert("none");
-  choices.insert("iso");
-  choices.insert("lc");
+  if (beddef == NULL) {
+    if (model == "none") {
+      beddef = NULL;
+      return 0;
+    }
 
-  ierr = PetscOptionsBegin(grid.com, "", "Bed deformation model", ""); CHKERRQ(ierr);
-  {
-    bool dummy;
-    ierr = OptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
-                         choices, model, model, dummy); CHKERRQ(ierr);
+    if (model == "iso") {
+      beddef = new PBPointwiseIsostasy(grid, config);
+      return 0;
+    }
 
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (model == "none")
-    return 0;
-
-  if ((model == "iso") && (beddef == NULL)) {
-    beddef = new PBPointwiseIsostasy(grid, config);
-    return 0;
-  }
-
-  if ((model == "lc") && (beddef == NULL)) {
-    beddef = new PBLingleClark(grid, config);
-    return 0;
+    if (model == "lc") {
+      beddef = new PBLingleClark(grid, config);
+      return 0;
+    }
   }
 
   return 0;

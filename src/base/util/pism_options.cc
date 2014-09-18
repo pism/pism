@@ -61,11 +61,11 @@ PetscErrorCode verbosityLevelFromOptions() {
   PetscBool     verbose, levelSet;
 
   ierr = setVerbosityLevel(2);
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
   if (levelSet == PETSC_TRUE) {
     ierr = setVerbosityLevel(myLevel);
   } else {
-    ierr = PetscOptionsHasName(PETSC_NULL, "-verbose", &verbose); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-verbose", &verbose); CHKERRQ(ierr);
     if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(3);
   }
   return 0;
@@ -77,7 +77,7 @@ PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
@@ -93,7 +93,7 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(com,
@@ -111,7 +111,7 @@ PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
     ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is not allowed.\n",
@@ -500,7 +500,7 @@ PetscErrorCode OptionsIsSet(std::string option, bool &result) {
   char tmp[1];
   PetscBool flag;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, option.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, option.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
 
   result = (flag == PETSC_TRUE);
 
@@ -645,14 +645,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
                                    "hydrology_const_bmelt"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_tillwat_max",
                                    "hydrology_tillwat_max"); CHKERRQ(ierr);
-  // this only applies to NullTransportHydrology:
-  ierr = config.scalar_from_option("hydrology_tillwat_decay_rate_null",
-                                   "hydrology_tillwat_decay_rate_null"); CHKERRQ(ierr);
-  // these only apply to RoutingHydrology:
-  ierr = config.scalar_from_option("hydrology_tillwat_rate",
-                                   "hydrology_tillwat_rate"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("hydrology_tillwat_transfer_proportion",
-                                   "hydrology_tillwat_transfer_proportion"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("hydrology_tillwat_decay_rate",
+                                   "hydrology_tillwat_decay_rate"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_hydraulic_conductivity",
                                    "hydrology_hydraulic_conductivity"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("hydrology_thickness_power_in_flux",
@@ -683,11 +677,15 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("max_dt", "maximum_time_step_years"); CHKERRQ(ierr);
 
 
-  // SIA
+  // SIA-related
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 
   ierr = config.keyword_from_option("gradient", "surface_gradient_method",
                                     "eta,haseloff,mahaffy"); CHKERRQ(ierr);
+
+  // rheology-related
+  ierr = config.scalar_from_option("sia_n", "sia_Glen_exponent"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_n", "ssa_Glen_exponent"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("sia_e", "sia_enhancement_factor"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_e", "ssa_enhancement_factor"); CHKERRQ(ierr);
@@ -707,6 +705,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("ssafd_nuH_iter_failure_underrelaxation", "ssafd_nuH_iter_failure_underrelaxation"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("ssa_dirichlet_bc", "ssa_dirichlet_bc"); CHKERRQ(ierr);
   ierr = config.flag_from_option("cfbc", "calving_front_stress_boundary_condition"); CHKERRQ(ierr);
@@ -746,13 +746,35 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("inv_log_ratio_scale","inv_log_ratio_scale"); CHKERRQ(ierr);
 
   // Basal strength
-  ierr = config.scalar_from_option("till_c_0", "till_c_0");      CHKERRQ(ierr);
+  ierr = config.scalar_from_option("till_cohesion", "till_cohesion");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_reference_void_ratio",
                                    "till_reference_void_ratio");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_compressibility_coefficient",
                                    "till_compressibility_coefficient");      CHKERRQ(ierr);
   ierr = config.scalar_from_option("till_effective_fraction_overburden",
                                    "till_effective_fraction_overburden");      CHKERRQ(ierr);
+  ierr = config.scalar_from_option("till_log_factor_transportable_water",
+                                   "till_log_factor_transportable_water");      CHKERRQ(ierr);
+
+  bool topg_to_phi_set;
+  std::vector<double> inarray(4);
+  // read the comma-separated list of four values
+  ierr = OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
+                              inarray, topg_to_phi_set); CHKERRQ(ierr);
+  if (topg_to_phi_set == true) {
+    if (inarray.size() != 4) {
+      PetscPrintf(com,
+                  "PISM ERROR: option -topg_to_phi requires a comma-separated list with 4 numbers; got %d\n",
+                  inarray.size());
+      PISMEnd();
+    }
+    config.set_flag("till_use_topg_to_phi", true);
+    config.set_double("till_topg_to_phi_phi_min", inarray[0]);
+    config.set_double("till_topg_to_phi_phi_max", inarray[1]);
+    config.set_double("till_topg_to_phi_topg_min",inarray[2]);
+    config.set_double("till_topg_to_phi_topg_max",inarray[3]);
+  }
+
   ierr = config.flag_from_option("tauc_slippery_grounding_lines",
                                  "tauc_slippery_grounding_lines"); CHKERRQ(ierr);
   ierr = config.flag_from_option("tauc_add_transportable_water",
@@ -790,7 +812,6 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.flag_from_option("subgl", "sub_groundingline"); CHKERRQ(ierr);
 
   // Ice shelves
-
   ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("part_grid_reduce_frontal_thickness",
@@ -810,9 +831,7 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("fracture_softening",
                                    "fracture_density_softening_lower_limit"); CHKERRQ(ierr);
 
-
   // Calving
-
   ierr = config.string_from_option("calving", "calving_methods"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("thickness_calving_threshold", "thickness_calving_threshold"); CHKERRQ(ierr);
@@ -845,13 +864,15 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
 
   // Shortcuts
 
-  // option "-pik" turns on a suite of PISMPIK effects (but not "-calving eigen_calving")
+  // option "-pik" turns on a suite of PISMPIK effects (but NOT a calving choice,
+  // and in particular NOT  "-calving eigen_calving")
   ierr = OptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag); CHKERRQ(ierr);
   if (flag) {
     config.set_flag_from_option("calving_front_stress_boundary_condition", true);
     config.set_flag_from_option("part_grid", true);
     config.set_flag_from_option("part_redist", true);
     config.set_flag_from_option("kill_icebergs", true);
+    config.set_flag_from_option("sub_groundingline", true);
   }
 
   if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
@@ -881,12 +902,16 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
     // let the user decide if they want to use "-no_mass" or not
   }
 
+  ierr = config.keyword_from_option("bed_def",
+                                    "bed_deformation_model", "none,iso,lc"); CHKERRQ(ierr);
   ierr = config.flag_from_option("bed_def_lc_elastic_model", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("clip_shelf_base_salinity",
                                  "ocean_three_equation_model_clip_salinity"); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor"); CHKERRQ(ierr);
 
   // old options
   ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",

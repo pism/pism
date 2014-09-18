@@ -46,11 +46,6 @@ ncatted -O -a units,bcflag,d,c, $PISMDATA
 ncatted -O -a long_name,bcflag,o,c,"equals one where (u_ssa_bc,v_ssa_bc) should be applied as sliding seen by hydrology" $PISMDATA
 ncatted -O -a standard_name,bcflag,d,c, $PISMDATA
 
-CONF=nbreen_config
-echo "creating PISM-readable config override file $CONF.nc ..."
-rm -f $CONF.nc
-ncgen -o $CONF.nc $CONF.cdl
-
 INTOBED=fakesummerevent.nc
 echo "calling fake-inputtobed.py to create PISM-readable -input_to_bed file $INTOBED ..."
 ./fake-inputtobed.py

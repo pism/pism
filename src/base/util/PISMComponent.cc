@@ -38,9 +38,9 @@ PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid
 
   // read file names:
   char i_file[PETSC_MAX_PATH_LEN], boot_file_file[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
+  ierr = PetscOptionsGetString(NULL, "-i", i_file, 
                                PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_file", boot_file_file, 
+  ierr = PetscOptionsGetString(NULL, "-boot_file", boot_file_file, 
                                PETSC_MAX_PATH_LEN, &boot_file_set); CHKERRQ(ierr);
   if (i_set) {
     if (boot_file_set) {

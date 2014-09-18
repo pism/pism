@@ -88,20 +88,19 @@ namespace pism {
   // is is OK to call update() again, it will not re-read data if at all possible
   ierr = v.update(t, max_dt); CHKERRQ(ierr);
 
-  ierr = v.begin_access(); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
-  for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-  ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
-  // do more
+  IceModelVec::AccessList list(v);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
+    // do more
   }
-  ierr = v.end_access(); CHKERRQ(ierr);
 
   // compute an average value over a time interval at a certain grid location:
 
   double average;
-  ierr = v.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(v);
   ierr = v.average(grid.xs, grid.ys, t, max_dt, average); CHKERRQ(ierr);
-  ierr = v.end_access(); CHKERRQ(ierr);
 
   \endcode
 */
@@ -116,7 +115,8 @@ public:
   using IceModelVec2S::create;
   virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name,
                                 bool local, int width = 1);
-  virtual PetscErrorCode init(const std::string &filename, unsigned int period, double reference_time);
+  virtual PetscErrorCode init(const std::string &filename, unsigned int period,
+                              double reference_time);
   virtual PetscErrorCode init_constant(double value);
   virtual PetscErrorCode update(double my_t, double my_dt);
   virtual PetscErrorCode set_record(int n);
@@ -125,14 +125,14 @@ public:
 
   virtual PetscErrorCode interp(double my_t);
 
-  virtual PetscErrorCode interp(int i, int j, double *results);
+  virtual PetscErrorCode interp(int i, int j, std::vector<double> &results);
 
   virtual PetscErrorCode average(double my_t, double my_dt);
   virtual PetscErrorCode average(int i, int j, double &result);
 
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
-  virtual PetscErrorCode init_interpolation(const double *ts, unsigned int ts_length);
+  virtual PetscErrorCode init_interpolation(const std::vector<double> &ts);
 
 protected:
   std::vector<double> time,             //!< all the times available in filename

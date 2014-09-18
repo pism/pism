@@ -33,12 +33,12 @@ namespace pism {
 #define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
-typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const char[],
+typedef PetscErrorCode(*IceFlowLawCreator)(MPI_Comm, const std::string &,
                                            const Config &, EnthalpyConverter*, IceFlowLaw **);
 
 class IceFlowLawFactory {
 public:
-  IceFlowLawFactory(MPI_Comm, const char prefix[],
+  IceFlowLawFactory(MPI_Comm, const std::string &prefix,
                     const Config &conf,
                     EnthalpyConverter *my_EC);
   ~IceFlowLawFactory();
@@ -51,8 +51,7 @@ private:
   PetscErrorCode registerAll();
 private:
   MPI_Comm com;
-  char prefix[256];
-  std::string type_name;
+  std::string type_name, prefix;
   std::map<std::string, IceFlowLawCreator> flow_laws;
   const Config &config;
   EnthalpyConverter *EC;

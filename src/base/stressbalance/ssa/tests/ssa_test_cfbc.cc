@@ -112,7 +112,7 @@ PetscErrorCode SSATestCaseCFBC::initializeGrid(int Mx, int My)
 PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 {
 
-  config.set_double("ice_softness", pow(1.9e8, -config.get("Glen_exponent")));
+  config.set_double("ice_softness", pow(1.9e8, -config.get("ssa_Glen_exponent")));
   config.set_flag("compute_surf_grad_inward_ssa", false);
   config.set_flag("calving_front_stress_boundary_condition", true);
   config.set_string("ssa_flow_law", "isothermal_glen");
@@ -133,46 +133,42 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   ierr = enthalpy.set(528668.35); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
   CHKERRQ(ierr);
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = surface.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = ice_mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(surface);
+  list.add(bc_mask);
+  list.add(vel_bc);
+  list.add(ice_mask);
 
   double ocean_rho = config.get("sea_water_density"),
     ice_rho = config.get("ice_density");
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double x = grid.x[i];
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (i != grid.Mx - 1) {
-        thickness(i, j) = H_exact(V0, H0, C, x + grid.Lx);
-        ice_mask(i, j)  = MASK_FLOATING;
-      } else {
-        thickness(i, j) = 0;
-        ice_mask(i, j)  = MASK_ICE_FREE_OCEAN;
-      }
+    const double x = grid.x[i];
 
-      surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j);
+    if (i != grid.Mx - 1) {
+      thickness(i, j) = H_exact(V0, H0, C, x + grid.Lx);
+      ice_mask(i, j)  = MASK_FLOATING;
+    } else {
+      thickness(i, j) = 0;
+      ice_mask(i, j)  = MASK_ICE_FREE_OCEAN;
+    }
 
-      if (i == 0) {
-        bc_mask(i, j)  = 1;
-        vel_bc(i, j).u = V0;
-        vel_bc(i, j).v = 0;
-      } else {
-        bc_mask(i, j)  = 0;
-        vel_bc(i, j).u = 0;
-        vel_bc(i, j).v = 0;
-      }
+    surface(i,j) = (1.0 - ice_rho / ocean_rho) * thickness(i, j);
+
+    if (i == 0) {
+      bc_mask(i, j)  = 1;
+      vel_bc(i, j).u = V0;
+      vel_bc(i, j).v = 0;
+    } else {
+      bc_mask(i, j)  = 0;
+      vel_bc(i, j).u = 0;
+      vel_bc(i, j).v = 0;
     }
   }
 
-  ierr = ice_mask.end_access(); CHKERRQ(ierr);
-  ierr = surface.end_access(); CHKERRQ(ierr);
-  ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
   ierr = surface.update_ghosts(); CHKERRQ(ierr);
@@ -210,13 +206,13 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm    com;  // won't be used except for rank,size
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
@@ -224,8 +220,8 @@ int main(int argc, char *argv[]) {
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
     PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-help", &help_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"

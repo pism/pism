@@ -442,8 +442,8 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   PetscErrorCode ierr;
   double min, max;
 
-  ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
-  ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
+  ierr = VecMin(v, NULL, &min); CHKERRQ(ierr);
+  ierr = VecMax(v, NULL, &max); CHKERRQ(ierr);
 
   assert(UnitConverter::are_convertible(get_units(), get_glaciological_units()) == true);
   UnitConverter c(this->get_units(), this->get_glaciological_units());

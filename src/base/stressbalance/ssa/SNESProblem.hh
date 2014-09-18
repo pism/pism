@@ -33,7 +33,7 @@ public:
 
   virtual PetscErrorCode solve();
 
-  virtual const char *name();
+  virtual const std::string &name();
 
   virtual Vec solution()
   {
@@ -172,7 +172,7 @@ PetscErrorCode SNESProblem<DOF,U>::finalize() {
 }
 
 template<int DOF, class U>
-const char *SNESProblem<DOF,U>::name()
+const std::string &SNESProblem<DOF,U>::name()
 {
   return "UnnamedProblem";
 }
@@ -191,10 +191,10 @@ PetscErrorCode SNESProblem<DOF,U>::solve()
   if (reason < 0)
     {
       SETERRQ2(m_grid.com, 1,
-               "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name(), SNESConvergedReasons[reason]);
+               "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name().c_str(), SNESConvergedReasons[reason]);
     }
 
-  verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n", name(), SNESConvergedReasons[reason]);
+  verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n", name().c_str(), SNESConvergedReasons[reason]);
   return 0;
 }
 

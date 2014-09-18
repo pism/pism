@@ -25,6 +25,12 @@
 #include "IceGrid.hh"
 #include <map>
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
+
 namespace pism {
 
 class Config;
@@ -32,99 +38,131 @@ class Config;
 template <class Model, class Modifier>
 class PCFactory {
 public:
-  PCFactory<Model,Modifier>(IceGrid& g, const Config& conf)
-  : grid(g), config(conf) {}
-  virtual ~PCFactory<Model,Modifier>() {}
+
+  // virtual base class that allows storing different model creators
+  // in the same dictionary
+  class ModelCreator {
+  public:
+    virtual Model* create(IceGrid &g, const Config &conf) = 0;
+    virtual ~ModelCreator() {}
+  };
+
+  // Creator for a specific model class M.
+  template <class M>
+  class SpecificModelCreator : public ModelCreator {
+  public:
+    M* create(IceGrid &g, const Config &conf) {
+      return new M(g, conf);
+    }
+  };
+
+  // virtual base class that allows storing different modifier
+  // creators in the same dictionary
+  class ModifierCreator {
+  public:
+    virtual Modifier* create(IceGrid &g, const Config &conf, Model* input) = 0;
+    virtual ~ModifierCreator() {}
+  };
+
+  // Creator for a specific modifier class M.
+  template <class M>
+  class SpecificModifierCreator : public ModifierCreator {
+  public:
+    M* create(IceGrid &g, const Config &conf, Model* input) {
+      return new M(g, conf, input);
+    }
+  };
+
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<ModelCreator> ModelCreatorPtr;
+  typedef std::tr1::shared_ptr<ModifierCreator> ModifierCreatorPtr;
+#else
+  typedef std::shared_ptr<ModelCreator> ModelCreatorPtr;
+  typedef std::shared_ptr<ModifierCreator> ModifierCreatorPtr;
+#endif
+
+  PCFactory<Model,Modifier>(IceGrid &g, const Config &conf)
+  : m_grid(g), m_config(conf) {}
+  ~PCFactory<Model,Modifier>() {}
 
   //! Sets the default type name.
-  virtual PetscErrorCode set_default(std::string name) {
-    void (*func) (IceGrid&, const Config&, Model*&);
-
-    func = models[name];
-    if (!func) {
-      SETERRQ1(grid.com, 1,"ERROR: type %s is not registered", name.c_str());
+  PetscErrorCode set_default(std::string name) {
+    if (m_models[name] == NULL) {
+      SETERRQ1(m_grid.com, 1,"ERROR: type %s is not registered", name.c_str());
     } else {
-      default_type = name;
+      m_default_type = name;
     }
     return 0;
   }
 
   //! Creates a boundary model. Processes command-line options.
-  virtual PetscErrorCode create(Model* &result) {
-    void (*F) (IceGrid&, const Config&, Model*&);
+  PetscErrorCode create(Model* &result) {
     PetscErrorCode ierr;
     std::vector<std::string> choices;
     std::string model_list, modifier_list, descr;
     bool flag = false;
 
     // build a list of available models:
-    typename std::map<std::string,void(*)(IceGrid&, const Config&, Model*&)>::iterator k;
-    k = models.begin();
+    typename std::map<std::string, ModelCreatorPtr >::iterator k;
+    k = m_models.begin();
     model_list = "[" + (k++)->first;
-    for (; k != models.end(); k++) {
+    for (; k != m_models.end(); k++) {
       model_list += ", " + k->first;
     }
     model_list += "]";
 
     // build a list of available modifiers:
-    typename std::map<std::string,void(*)(IceGrid&, const Config&, Model*, Modifier*&)>::iterator p;
-    p = modifiers.begin();
+    typename std::map<std::string, ModifierCreatorPtr >::iterator p;
+    p = m_modifiers.begin();
     modifier_list = "[" + (p++)->first;
-    for (; p != modifiers.end(); p++) {
+    for (; p != m_modifiers.end(); p++) {
       modifier_list += ", " + p->first;
     }
     modifier_list += "]";
 
-    descr =  "Sets up the PISM " + option + " model. Available models: " + model_list +
+    descr =  "Sets up the PISM " + m_option + " model. Available models: " + model_list +
       " Available modifiers: " + modifier_list;
 
     // Get the command-line option:
-    ierr = OptionsStringArray("-" + option, descr, default_type, choices, flag); CHKERRQ(ierr);
+    ierr = OptionsStringArray("-" + m_option, descr, m_default_type, choices, flag); CHKERRQ(ierr);
 
     if (choices.empty()) {
-      if (flag) {
-        PetscPrintf(grid.com, "ERROR: option -%s requires an argument.\n", option.c_str());
+      if (flag == true) {
+        PetscPrintf(m_grid.com, "ERROR: option -%s requires an argument.\n", m_option.c_str());
         PISMEnd();
       }
-      choices.push_back(default_type);
+      choices.push_back(m_default_type);
     }
 
     // the first element has to be an *actual* model (not a modifier), so we
     // create it:
     std::vector<std::string>::iterator j = choices.begin();
 
-    F = models[*j];
-    if (!F) {
-      PetscPrintf(grid.com,
+    if (m_models[*j] == NULL) {
+      PetscPrintf(m_grid.com,
                   "ERROR: %s model \"%s\" is not available.\n"
                   "  Available models:    %s\n"
                   "  Available modifiers: %s\n",
-                  option.c_str(), j->c_str(),
+                  m_option.c_str(), j->c_str(),
                   model_list.c_str(), modifier_list.c_str());
       PISMEnd();
     }
 
-    (*F)(grid, config, result);
+    result = m_models[*j]->create(m_grid, m_config);
 
     ++j;
 
     // process remaining arguments:
     while (j != choices.end()) {
-      void (*M) (IceGrid&, const Config&, Model*, Modifier*&);
-      Modifier *mod;
-
-      M = modifiers[*j];
-      if (!M) {
-        PetscPrintf(grid.com,
+      if (m_modifiers[*j] == NULL) {
+        PetscPrintf(m_grid.com,
                     "ERROR: %s modifier \"%s\" is not available.\n"
                     "  Available modifiers: %s\n",
-                    option.c_str(), j->c_str(), modifier_list.c_str());
+                    m_option.c_str(), j->c_str(), modifier_list.c_str());
         PISMEnd();
       }
 
-      (*M)(grid, config, result, mod);
-
-      result = mod;
+      result =  m_modifiers[*j]->create(m_grid, m_config, result);
 
       ++j;
     }
@@ -133,38 +171,40 @@ public:
   }
 
   //! Adds a boundary model to the dictionary.
-  virtual void add_model(std::string name, void(*func)(IceGrid&, const Config&, Model*&)) {
-    models[name] = func;
+  template <class M>
+  void add_model(std::string name) {
+    m_models[name] = ModelCreatorPtr(new SpecificModelCreator<M>);
   }
 
-  virtual void add_modifier(std::string name, void(*func)(IceGrid&, const Config&, Model*, Modifier*&)) {
-    modifiers[name] = func;
+  template <class M>
+  void add_modifier(std::string name) {
+    m_modifiers[name] = ModifierCreatorPtr(new SpecificModifierCreator<M>);
   }
 
   //! Removes a boundary model from the dictionary.
-  virtual void remove_model(std::string name) {
-    models.erase(name);
+  void remove_model(std::string name) {
+    m_models.erase(name);
   }
 
-  virtual void remove_modifier(std::string name) {
-    modifiers.erase(name);
+  void remove_modifier(std::string name) {
+    m_modifiers.erase(name);
   }
 
   //! Clears the dictionary.
-  virtual void clear_models() {
-    models.clear();
+  void clear_models() {
+    m_models.clear();
   }
 
-  virtual void clear_modifiers() {
-    modifiers.clear();
+  void clear_modifiers() {
+    m_modifiers.clear();
   }
 protected:
   virtual void add_standard_types() {}
-  std::string default_type, option;
-  std::map<std::string,void(*)(IceGrid&, const Config&, Model*&)> models;
-  std::map<std::string,void(*)(IceGrid&, const Config&, Model*, Modifier*&)> modifiers;
-  IceGrid& grid;
-  const Config& config;
+  std::string m_default_type, m_option;
+  std::map<std::string, ModelCreatorPtr> m_models;
+  std::map<std::string, ModifierCreatorPtr> m_modifiers;
+  IceGrid &m_grid;
+  const Config &m_config;
 };
 
 } // end of namespace pism

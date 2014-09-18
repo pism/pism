@@ -45,9 +45,9 @@ public:
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
-  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
-  virtual PetscErrorCode temp_time_series(int i, int j, double *values);
-  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
+  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
+  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &result);
+  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &result);
 protected:
   PetscErrorCode init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);

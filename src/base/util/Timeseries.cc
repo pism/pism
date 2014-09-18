@@ -287,7 +287,7 @@ double Timeseries::average(double t, double dt, unsigned int N) {
     sum += V[i] + V[i+1];
   }
 
-  return sum / (2*N);
+  return sum / (2.0*N);
 }
 
 //! Append a pair (t,v) to the timeseries.

@@ -49,8 +49,6 @@ BedDeformLC::~BedDeformLC() {
     VecDestroy(&vleft);
     VecDestroy(&vright);
     VecDestroy(&lrmE);
-    delete [] cx;
-    delete [] cy;
   }
 }
 
@@ -137,8 +135,8 @@ PetscErrorCode BedDeformLC::alloc() {
   dft_forward = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_FORWARD, FFTW_MEASURE);
   dft_inverse = fftw_plan_dft_2d(Nx, Ny, fftw_input, fftw_output, FFTW_BACKWARD, FFTW_MEASURE);
 
-  cx = new double[Nx];
-  cy = new double[Ny];
+  cx.resize(Nx);
+  cy.resize(Ny);
 
   allocDone = true;
   return 0;

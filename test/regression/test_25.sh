@@ -10,7 +10,7 @@ files="flowtable-25.txt diff-25.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -flow_law gk > flowtable-25.txt
+$PISM_PATH/flowlaw_test -sia_flow_law gk > flowtable-25.txt
 # compare results
 diff flowtable-25.txt - > diff-25.txt <<END-OF-OUTPUT
 flow law:   "Goldsby-Kohlstedt / Paterson-Budd (hybrid)"

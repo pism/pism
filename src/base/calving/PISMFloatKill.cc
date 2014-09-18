@@ -53,21 +53,21 @@ PetscErrorCode FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
   PetscErrorCode ierr;
   MaskQuery M(pism_mask);
 
-  ierr = pism_mask.begin_access();     CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.floating_ice(i, j)) {
-        ice_thickness(i, j) = 0.0;
-        pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
-      }
+  IceModelVec::AccessList list;
+  list.add(pism_mask);
+  list.add(ice_thickness);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    if (M.floating_ice(i, j)) {
+      ice_thickness(i, j) = 0.0;
+      pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access();     CHKERRQ(ierr);
 
   ierr = pism_mask.update_ghosts();     CHKERRQ(ierr);
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
+
   return 0;
 }
 

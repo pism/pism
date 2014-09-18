@@ -107,6 +107,8 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, V
     ierr = this->copy_from_vec(g2); CHKERRQ(ierr);
   }
 
+  inc_state_counter();          // mark as modified
+
   return 0;
 }
 
@@ -117,37 +119,35 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, V
   Does not communicate.
  */
 PetscErrorCode IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y) {
-  PetscErrorCode ierr;
-  double **mag = NULL;
-  ierr = v_x.begin_access(); CHKERRQ(ierr);
-  ierr = v_y.begin_access(); CHKERRQ(ierr);
-  ierr = get_array(mag); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      mag[i][j] = sqrt(PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)));
-    }
+  IceModelVec::AccessList list(*this);
+  list.add(v_x);
+  list.add(v_y);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    (*this)(i,j) = sqrt(PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)));
   }
-  ierr = v_x.end_access(); CHKERRQ(ierr);
-  ierr = v_y.end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
   
   return 0;
 }
 
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`. 
 PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
-  PetscErrorCode ierr;
-  double **a = NULL;
-  ierr = get_array(a); CHKERRQ(ierr);
-  ierr = M.begin_access(); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      if (M(i,j) <= 0.0)
-        a[i][j] = fill;
+  IceModelVec::AccessList list(*this);
+  list.add(M);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M(i,j) <= 0.0) {
+      (*this)(i,j) = fill;
     }
   }
-  ierr = end_access(); CHKERRQ(ierr);
-  ierr = M.end_access(); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
 
   return 0;
 }
@@ -264,7 +264,7 @@ PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 //! \brief View a 2D field.
 PetscErrorCode IceModelVec2::view(int viewer_size) {
   PetscErrorCode ierr;
-  PetscViewer viewers[2] = {PETSC_NULL, PETSC_NULL};
+  PetscViewer viewers[2] = {NULL, NULL};
 
   if (m_dof > 2) SETERRQ(grid->com, 1, "dof > 2 is not supported");
 
@@ -274,7 +274,7 @@ PetscErrorCode IceModelVec2::view(int viewer_size) {
       units = m_metadata[j].get_string("glaciological_units"),
       title = long_name + " (" + units + ")";
 
-    if (map_viewers[c_name] == PETSC_NULL) {
+    if (map_viewers[c_name] == NULL) {
       ierr = grid->create_viewer(viewer_size, title, map_viewers[c_name]); CHKERRQ(ierr);
     }
 
@@ -367,21 +367,20 @@ PetscErrorCode IceModelVec2S::has_nan() {
   const int max_print_this_rank=10;
   int retval=0;
 
-  ierr = begin_access(); CHKERRQ(ierr);
-  int i, j;
-  for (i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      if (gsl_isnan((*this)(i,j))) {
-        retval++;
-        if (retval <= max_print_this_rank) {
-          ierr = PetscSynchronizedPrintf(grid->com, 
-             "IceModelVec2S %s: NAN (or uninitialized) at i = %d, j = %d on rank = %d\n",
-             m_name.c_str(), i, j, grid->rank); CHKERRQ(ierr);
-        }
+  IceModelVec::AccessList list(*this);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (gsl_isnan((*this)(i,j))) {
+      retval++;
+      if (retval <= max_print_this_rank) {
+        ierr = PetscSynchronizedPrintf(grid->com, 
+                                       "IceModelVec2S %s: NAN (or uninitialized) at i = %d, j = %d on rank = %d\n",
+                                       m_name.c_str(), i, j, grid->rank); CHKERRQ(ierr);
       }
     }
   }
-  ierr = end_access(); CHKERRQ(ierr);
 
   if (retval > 0) {
     ierr = PetscSynchronizedPrintf(grid->com, 
@@ -470,14 +469,12 @@ PetscErrorCode IceModelVec2S::sum(double &result) {
   PetscErrorCode ierr;
   double my_result = 0;
 
+  IceModelVec::AccessList list(*this);
+  
   // sum up the local part:
-  ierr = begin_access(); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      my_result += (*this)(i,j);
-    }
+  for (Points p(*grid); p; p.next()) {
+    my_result += (*this)(p.i(), p.j());
   }
-  ierr = end_access(); CHKERRQ(ierr);
 
   // find the global sum:
   ierr = GlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
@@ -489,14 +486,13 @@ PetscErrorCode IceModelVec2S::sum(double &result) {
 //! Finds maximum over all the values in an IceModelVec2S object.  Ignores ghosts.
 PetscErrorCode IceModelVec2S::max(double &result) {
   PetscErrorCode ierr;
-  ierr = begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(*this);
+
   double my_result = (*this)(grid->xs,grid->ys);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      my_result = PetscMax(my_result,(*this)(i,j));
-    }
+  for (Points p(*grid); p; p.next()) {
+    my_result = PetscMax(my_result,(*this)(p.i(), p.j()));
   }
-  ierr = end_access(); CHKERRQ(ierr);
+
   ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
@@ -505,14 +501,13 @@ PetscErrorCode IceModelVec2S::max(double &result) {
 //! Finds maximum over all the absolute values in an IceModelVec2S object.  Ignores ghosts.
 PetscErrorCode IceModelVec2S::absmax(double &result) {
   PetscErrorCode ierr;
-  ierr = begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(*this);
   double my_result = 0.0;
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      my_result = PetscMax(my_result,PetscAbs((*this)(i,j)));
-    }
+  for (Points p(*grid); p; p.next()) {
+    my_result = PetscMax(my_result,PetscAbs((*this)(p.i(), p.j())));
   }
-  ierr = end_access(); CHKERRQ(ierr);
+
   ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
@@ -521,14 +516,13 @@ PetscErrorCode IceModelVec2S::absmax(double &result) {
 //! Finds minimum over all the values in an IceModelVec2S object.  Ignores ghosts.
 PetscErrorCode IceModelVec2S::min(double &result) {
   PetscErrorCode ierr;
-  ierr = begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(*this);
+
   double my_result = (*this)(grid->xs,grid->ys);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      my_result = PetscMin(my_result,(*this)(i,j));
-    }
+  for (Points p(*grid); p; p.next()) {
+    my_result = PetscMin(my_result,(*this)(p.i(), p.j()));
   }
-  ierr = end_access(); CHKERRQ(ierr);
+
   ierr = GlobalMin(&my_result, &result, grid->com); CHKERRQ(ierr);
   return 0;
 }
@@ -595,6 +589,8 @@ PetscErrorCode IceModelVec2::set_component(unsigned int N, Vec source) {
 
   ierr = DMDAVecRestoreArray(da2->get(), source, &tmp_src); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArrayDOF(m_da->get(), v, &tmp_v); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
 
   return 0;
 }
@@ -687,18 +683,15 @@ PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, const std::string &my_
  * The current IceModelVec needs to have ghosts.
  */
 PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+  IceModelVec::AccessList list(*this);
+  list.add(result);
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = begin_access(); CHKERRQ(ierr);
-  for (int i = grid->xs; i < grid->xs+grid->xm; ++i) {
-    for (int j = grid->ys; j < grid->ys+grid->ym; ++j) {
-      result(i,j) = 0.25 * ((*this)(i,j,0) + (*this)(i,j,1)
-                              + (*this)(i,j-1,1) + (*this)(i-1,j,0));
-    } // j
-  }   // i
-  ierr = end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j) = 0.25 * ((*this)(i,j,0) + (*this)(i,j,1)
+                          + (*this)(i,j-1,1) + (*this)(i-1,j,0));
+  }
 
   return 0;
 }
@@ -709,18 +702,15 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
  * The current IceModelVec needs to have ghosts.
  */
 PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
-  PetscErrorCode ierr;
+  IceModelVec::AccessList list(*this);
+  list.add(result);
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = begin_access(); CHKERRQ(ierr);
-  for (int i = grid->xs; i < grid->xs+grid->xm; ++i) {
-    for (int j = grid->ys; j < grid->ys+grid->ym; ++j) {
-        result(i,j).u = 0.5 * ((*this)(i-1,j,0) + (*this)(i,j,0));
-        result(i,j).v = 0.5 * ((*this)(i,j-1,1) + (*this)(i,j,1));
-    } // j
-  }   // i
-  ierr = end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j).u = 0.5 * ((*this)(i-1,j,0) + (*this)(i,j,0));
+    result(i,j).v = 0.5 * ((*this)(i,j-1,1) + (*this)(i,j,1));
+  }
 
   return 0;
 }
@@ -733,14 +723,15 @@ Assumes z is allocated.
 PetscErrorCode IceModelVec2Stag::absmaxcomponents(double* z) {
   PetscErrorCode ierr;
   double my_z[2] = {0.0, 0.0};
-  ierr = begin_access(); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      my_z[0] = PetscMax(my_z[0],PetscAbs((*this)(i,j,0)));
-      my_z[1] = PetscMax(my_z[1],PetscAbs((*this)(i,j,1)));
-    }
+
+  IceModelVec::AccessList list(*this);
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    my_z[0] = PetscMax(my_z[0],PetscAbs((*this)(i,j,0)));
+    my_z[1] = PetscMax(my_z[1],PetscAbs((*this)(i,j,1)));
   }
-  ierr = end_access(); CHKERRQ(ierr);
+
   ierr = GlobalMax(&(my_z[0]), &(z[0]), grid->com); CHKERRQ(ierr);
   ierr = GlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
   return 0;

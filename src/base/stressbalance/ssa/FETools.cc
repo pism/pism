@@ -182,7 +182,7 @@ void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
   memcpy(m_row, m_col, Nk*sizeof(m_col[0]));
 
   // We do not ever sum into rows that are not owned by the local rank.
-  for (int k = 0; k < Nk; k++) {
+  for (unsigned int k = 0; k < Nk; k++) {
     int pism_i = m_row[k].j, pism_j = m_row[k].i;
     if (pism_i < grid.xs || grid.xs + grid.xm - 1 < pism_i ||
         pism_j < grid.ys || grid.ys + grid.ym - 1 < pism_j) {
@@ -277,15 +277,15 @@ FEQuadrature::FEQuadrature(const IceGrid &grid, double L) {
   m_jacobianDet = jacobian_x*jacobian_y;
 
   FEShapeQ1 shape;
-  for (int q = 0; q < Nq; q++) {
-    for (int k = 0; k < Nk; k++) {
+  for (unsigned int q = 0; q < Nq; q++) {
+    for (unsigned int k = 0; k < Nk; k++) {
       shape.eval(k, quadPoints[q][0], quadPoints[q][1], &m_germs[q][k]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;
     }
   }
 
-  for (int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < Nq; q++) {
     m_JxW[q] = m_jacobianDet * quadWeights[q];
   }
 }
@@ -318,10 +318,10 @@ const FEFunctionGerm *FEQuadrature::testFunctionValues(int q, int k) {
   finite-element function with element-local degrees of freedom `x_local`.*/
 /*! There should be room for FEQuadrature::Nq values in the output vector `vals`. */
 void FEQuadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals) {
-  for (int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < Nq; q++) {
     const FEFunctionGerm *test = m_germs[q];
     vals[q] = 0;
-    for (int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < Nk; k++) {
       vals[q] += test[k].val * x_local[k];
     }
   }
@@ -333,10 +333,10 @@ void FEQuadrature_Scalar::computeTrialFunctionValues(const double *x_local, doub
 /*! There should be room for FEQuadrature::Nq values in the output vectors `vals`, `dx`,
   and `dy`. */
 void FEQuadrature_Scalar::computeTrialFunctionValues(const double *x_local, double *vals, double *dx, double *dy) {
-  for (int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < Nq; q++) {
     const FEFunctionGerm *test = m_germs[q];
     vals[q] = 0; dx[q] = 0; dy[q] = 0;
-    for (int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < Nk; k++) {
       vals[q] += test[k].val * x_local[k];
       dx[q]   += test[k].dx * x_local[k];
       dy[q]   += test[k].dy * x_local[k];
@@ -383,11 +383,11 @@ void FEQuadrature_Scalar::computeTrialFunctionValues(int i, int j,
   finite-element function with element-local degrees of freedom `x_local`.*/
 /*! There should be room for FEQuadrature::Nq values in the output vector `vals`. */
 void FEQuadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *result) {
-  for (int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < Nq; q++) {
     result[q].u = 0;
     result[q].v = 0;
     const FEFunctionGerm *test = m_germs[q];
-    for (int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < Nk; k++) {
       result[q].u += test[k].val * x_local[k].u;
       result[q].v += test[k].val * x_local[k].v;
     }
@@ -406,12 +406,12 @@ void FEQuadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vec
  * \right] @f].
  */
 void FEQuadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, double (*Dv)[3]) {
-  for (int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < Nq; q++) {
     vals[q].u = 0; vals[q].v = 0;
     double *Dvq = Dv[q];
     Dvq[0] = 0; Dvq[1] = 0; Dvq[2] = 0;
     const FEFunctionGerm *test = m_germs[q];
-    for (int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
       Dvq[0] += test[k].dx * x_local[k].u;
@@ -428,12 +428,12 @@ void FEQuadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vec
   and similarly for `dy`.
 */
 void FEQuadrature_Vector::computeTrialFunctionValues(const Vector2 *x_local, Vector2 *vals, Vector2 *dx, Vector2 *dy) {
-  for (int q = 0; q < Nq; q++) {
+  for (unsigned int q = 0; q < Nq; q++) {
     vals[q].u = 0; vals[q].v = 0;
     dx[q].u = 0; dx[q].v = 0;
     dy[q].u = 0; dy[q].v = 0;
     const FEFunctionGerm *test = m_germs[q];
-    for (int k = 0; k < Nk; k++) {
+    for (unsigned int k = 0; k < Nk; k++) {
       vals[q].u += test[k].val * x_local[k].u;
       vals[q].v += test[k].val * x_local[k].v;
       dx[q].u += test[k].dx * x_local[k].u;
@@ -492,7 +492,7 @@ const double FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1.0, 1.0, 1.0, 1.0}
 
 DirichletData::DirichletData()
   : m_indices(NULL), m_weight(1.0) {
-  for (int k = 0; k < FEQuadrature::Nk; ++k) {
+  for (unsigned int k = 0; k < FEQuadrature::Nk; ++k) {
     m_indices_e[k] = 0;
   }
 }
@@ -550,7 +550,7 @@ PetscErrorCode DirichletData::finish_impl(IceModelVec *values) {
 
 void DirichletData::constrain(FEDOFMap &dofmap) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (int k = 0; k < FEQuadrature::Nk; k++) {
+  for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       // Mark any kind of Dirichlet node as not to be touched
       dofmap.markRowInvalid(k);
@@ -577,7 +577,7 @@ void DirichletData_Scalar::update(FEDOFMap &dofmap, double* x_local) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (int k = 0; k < FEQuadrature::Nk; k++) {
+  for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
       dofmap.localToGlobal(k, &i, &j);
@@ -588,7 +588,7 @@ void DirichletData_Scalar::update(FEDOFMap &dofmap, double* x_local) {
 
 void DirichletData_Scalar::update_homogeneous(FEDOFMap &dofmap, double* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (int k = 0; k < FEQuadrature::Nk; k++) {
+  for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_local[k] = 0.;
     }
@@ -601,12 +601,12 @@ void DirichletData_Scalar::fix_residual(const double **x_global, double **r_glob
   IceGrid &grid = *m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j] = m_weight * (x_global[i][j] - (*m_values)(i,j));
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j] = m_weight * (x_global[i][j] - (*m_values)(i,j));
     }
   }
 }
@@ -615,12 +615,12 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
   IceGrid *grid = m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
-    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j] = 0.0;
-      }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j] = 0.0;
     }
   }
 }
@@ -636,15 +636,15 @@ PetscErrorCode DirichletData_Scalar::fix_jacobian(Mat J) {
   // preserved.
 
   const double identity = m_weight;
-  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
-    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        MatStencil row;
-        // Transpose shows up here!
-        row.j = i; row.i = j;
-        ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
-                                          ADD_VALUES); CHKERRQ(ierr);
-      }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      MatStencil row;
+      // Transpose shows up here!
+      row.j = i; row.i = j;
+      ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
+                                        ADD_VALUES); CHKERRQ(ierr);
     }
   }
   return 0;
@@ -674,7 +674,7 @@ void DirichletData_Vector::update(FEDOFMap &dofmap, Vector2* x_local) {
   assert(m_values != NULL);
 
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (int k = 0; k < FEQuadrature::Nk; k++) {
+  for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       int i, j;
       dofmap.localToGlobal(k, &i, &j);
@@ -686,7 +686,7 @@ void DirichletData_Vector::update(FEDOFMap &dofmap, Vector2* x_local) {
 
 void DirichletData_Vector::update_homogeneous(FEDOFMap &dofmap, Vector2* x_local) {
   dofmap.extractLocalDOFs(*m_indices, m_indices_e);
-  for (int k = 0; k < FEQuadrature::Nk; k++) {
+  for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
       x_local[k].u = 0.0;
       x_local[k].v = 0.0;
@@ -700,13 +700,13 @@ void DirichletData_Vector::fix_residual(const Vector2 **x_global, Vector2 **r_gl
   IceGrid *grid = m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
-    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j].u = m_weight * (x_global[i][j].u - (*m_values)(i, j).u);
-        r_global[i][j].v = m_weight * (x_global[i][j].v - (*m_values)(i, j).v);
-      }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j].u = m_weight * (x_global[i][j].u - (*m_values)(i, j).u);
+      r_global[i][j].v = m_weight * (x_global[i][j].v - (*m_values)(i, j).v);
     }
   }
 }
@@ -715,13 +715,13 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2 **r_global) {
   IceGrid &grid = *m_indices->get_grid();
 
   // For each node that we own:
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        // Enforce explicit dirichlet data.
-        r_global[i][j].u = 0.0;
-        r_global[i][j].v = 0.0;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      // Enforce explicit dirichlet data.
+      r_global[i][j].u = 0.0;
+      r_global[i][j].v = 0.0;
     }
   }
 }
@@ -738,15 +738,15 @@ PetscErrorCode DirichletData_Vector::fix_jacobian(Mat J) {
 
   const double identity[4] = {m_weight, 0,
                               0, m_weight};
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if ((*m_indices)(i, j) > 0.5) {
-        MatStencil row;
-        // Transpose shows up here!
-        row.j = i; row.i = j;
-        ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
-                                          ADD_VALUES); CHKERRQ(ierr);
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*m_indices)(i, j) > 0.5) {
+      MatStencil row;
+      // Transpose shows up here!
+      row.j = i; row.i = j;
+      ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
+                                        ADD_VALUES); CHKERRQ(ierr);
     }
   }
   return 0;

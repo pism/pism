@@ -38,11 +38,11 @@ public:
   virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 
-  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N);
+  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_time_series(int i, int j, double *values);
-  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
+  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &values);
+  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 

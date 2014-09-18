@@ -25,21 +25,22 @@ using namespace pism;
 
 PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm)
 {
-  return GlobalMax(&local_max,result,comm);
+  return GlobalMax(&local_max, result, comm);
 }
 PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm)
 {
-  return GlobalMin(&local_min,result,comm);  
+  return GlobalMin(&local_min, result, comm);
 }
 PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
 {
-  return GlobalSum(&local_sum,result,comm);  
+  return GlobalSum(&local_sum, result, comm);
 }
 
-PetscErrorCode optionsGroupBegin(MPI_Comm comm,const char *prefix,const char *mess,const char *sec)
+PetscErrorCode optionsGroupBegin(MPI_Comm comm, const std::string &prefix,
+                                 const std::string &mess, const std::string &sec)
 {
   PetscOptionsPublishCount=(PetscOptionsPublish?-1:1);
-  return PetscOptionsBegin_Private(comm,prefix,mess,sec);
+  return PetscOptionsBegin_Private(comm, prefix.c_str(), mess.c_str(), sec.c_str());
 }
 
 void optionsGroupNext()
@@ -62,4 +63,3 @@ void set_abort_on_sigint(bool abort)
 {
   gSIGINT_is_fatal = abort;
 }
-

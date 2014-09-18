@@ -274,7 +274,7 @@ public:
 
   PetscErrorCode addLocalJacobianBlock(const double *K, Mat J);
 
-  static const int Nk = 4; //<! The number of test functions defined on an element.
+  static const unsigned int Nk = 4; //<! The number of test functions defined on an element.
   
 private:
   static const int kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
@@ -385,8 +385,8 @@ class FEQuadrature
 public:
   FEQuadrature(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
-  static const int Nq = 4;  //!< Number of quadrature points.
-  static const int Nk = 4;  //!< Number of test functions on the element.
+  static const unsigned int Nq = 4;  //!< Number of quadrature points.
+  static const unsigned int Nk = 4;  //!< Number of test functions on the element.
   
   // define FEFunctionGermArray, which is an array of FEQuadrature::Nq
   // FEFunctionGerms

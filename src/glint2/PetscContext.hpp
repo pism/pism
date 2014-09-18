@@ -33,7 +33,7 @@ public:
 			"GLINT2 PISM module";
 		PetscErrorCode ierr;
 printf("Calling PetscInitialize\n");
-		ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+		ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 printf("Done calling PetscInitialize\n");
 		return 0;
 	}

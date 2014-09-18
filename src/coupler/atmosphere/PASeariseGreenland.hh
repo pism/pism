@@ -35,7 +35,7 @@ public:
 
   virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode precip_time_series(int i, int j, double *values);
+  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
 protected:
   IceModelVec2S *m_lat, *m_lon, *m_surfelev;
 };

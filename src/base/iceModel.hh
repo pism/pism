@@ -171,7 +171,6 @@ public:
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const std::string &fname);
   virtual PetscErrorCode bootstrap_2d(const std::string &fname);
-  virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
   // see iMoptions.cc

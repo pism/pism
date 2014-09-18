@@ -96,8 +96,6 @@ public:
     : grid(g), config(conf) {}
   virtual ~Component() {}
 
-  virtual PetscErrorCode init(Vars &vars) = 0;
-
   //! \brief Adds more variable names to result (to let sub-models respect
   //! -o_size or -save_size).
   /*!

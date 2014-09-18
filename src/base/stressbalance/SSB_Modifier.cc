@@ -75,7 +75,7 @@ PetscErrorCode ConstantInColumn::init(Vars &vars) {
 ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSB_Modifier(g, e, c)
 {
-  IceFlowLawFactory ice_factory(grid.com, "", config, &EC);
+  IceFlowLawFactory ice_factory(grid.com, "sia_", config, &EC);
 
   ice_factory.setType(config.get_string("sia_flow_law"));
 
@@ -108,18 +108,17 @@ PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
     return 0;
 
   // horizontal velocity and its maximum:
-  ierr = u.begin_access(); CHKERRQ(ierr);
-  ierr = v.begin_access(); CHKERRQ(ierr);
-  ierr = vel_input->begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
-      ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
-    }
+  IceModelVec::AccessList list;
+  list.add(u);
+  list.add(v);
+  list.add(*vel_input);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
+    ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
   }
-  ierr = vel_input->end_access(); CHKERRQ(ierr);
-  ierr = v.end_access(); CHKERRQ(ierr);
-  ierr = u.end_access(); CHKERRQ(ierr);  
 
   // Communicate to get ghosts (needed to compute w):
   ierr = u.update_ghosts(); CHKERRQ(ierr);

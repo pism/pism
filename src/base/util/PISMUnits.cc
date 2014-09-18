@@ -38,10 +38,17 @@ public:
 /** Initialize the unit system by reading from an XML unit
  * definition file.
  */
-UnitSystem::UnitSystem(const char *path) {
+UnitSystem::UnitSystem(const std::string &path) {
   ut_system *tmp;
+
   ut_set_error_message_handler(ut_ignore);
-  tmp = ut_read_xml(path);
+
+  if (path.empty() == false) {
+    tmp = ut_read_xml(path.c_str());
+  } else {
+    tmp = ut_read_xml(NULL);
+  }
+
   if (tmp == NULL) {
     std::string message = std::string("ut_read_xml(") + path + ") failed";
     throw std::runtime_error(message);

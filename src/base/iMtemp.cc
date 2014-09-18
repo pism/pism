@@ -130,272 +130,251 @@ This method should be kept because it is worth having alternative physics, and
   times this occurs is reported as a "BPbulge" percentage.
   */
 PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
-    PetscErrorCode  ierr;
+  PetscErrorCode  ierr;
 
-    // set up fine grid in ice
-    unsigned int fMz = grid.Mz_fine;
-    double       fdz = grid.dz_fine;
-    std::vector<double> &fzlev = grid.zlevels_fine;
+  // set up fine grid in ice
+  double               fdz   = grid.dz_fine;
+  std::vector<double> &fzlev = grid.zlevels_fine;
 
-    ierr = verbPrintf(5,grid.com,
-                      "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f]",
-                      fMz, fdz); CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com,
+                    "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f]",
+                    grid.Mz_fine, fdz); CHKERRQ(ierr);
 
-    bool viewOneColumn;
-    ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  bool viewOneColumn;
+  ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-    const double
-      ice_density        = config.get("ice_density"),
-      ice_k              = config.get("ice_thermal_conductivity"),
-      ice_c              = config.get("ice_specific_heat_capacity"),
-      L                  = config.get("water_latent_heat_fusion"),
-      melting_point_temp = config.get("water_melting_point_temperature"),
-      beta_CC_grad       = config.get("beta_CC") * ice_density * config.get("standard_gravity");
+  const double
+    ice_density        = config.get("ice_density"),
+    ice_k              = config.get("ice_thermal_conductivity"),
+    ice_c              = config.get("ice_specific_heat_capacity"),
+    L                  = config.get("water_latent_heat_fusion"),
+    melting_point_temp = config.get("water_melting_point_temperature"),
+    beta_CC_grad       = config.get("beta_CC") * ice_density * config.get("standard_gravity");
 
-    const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
+  const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
 
-    tempSystemCtx system(fMz, "temperature");
-    system.dx              = grid.dx;
-    system.dy              = grid.dy;
-    system.dtTemp          = dt_TempAge; // same time step for temp and age, currently
-    system.dzEQ            = fdz;
-    system.ice_rho         = ice_density;
-    system.ice_k           = ice_k;
-    system.ice_c_p         = ice_c;
+  tempSystemCtx system(grid.Mz_fine, "temperature");
+  system.dx      = grid.dx;
+  system.dy      = grid.dy;
+  system.dtTemp  = dt_TempAge;  // same time step for temp and age, currently
+  system.dzEQ    = fdz;
+  system.ice_rho = ice_density;
+  system.ice_k   = ice_k;
+  system.ice_c_p = ice_c;
 
-    double *x;
-    x = new double[fMz]; // space for solution of system
+  std::vector<double> x(grid.Mz_fine);// space for solution of system
 
-    // this is bulge limit constant in K; is max amount by which ice
-    //   or bedrock can be lower than surface temperature
-    const double bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
+  // this is bulge limit constant in K; is max amount by which ice
+  //   or bedrock can be lower than surface temperature
+  const double bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
 
-    double *Tnew;
-    // pointers to values in current column
-    system.u     = new double[fMz];
-    system.v     = new double[fMz];
-    system.w     = new double[fMz];
-    system.strain_heating = new double[fMz];
-    system.T     = new double[fMz];
-    Tnew         = new double[fMz];
+  double *Tnew;
+  // pointers to values in current column
+  system.u     = new double[grid.Mz_fine];
+  system.v     = new double[grid.Mz_fine];
+  system.w     = new double[grid.Mz_fine];
+  system.strain_heating = new double[grid.Mz_fine];
+  system.T     = new double[grid.Mz_fine];
+  Tnew         = new double[grid.Mz_fine];
 
-    // system needs access to T3 for T3.getPlaneStar_fine()
-    system.T3 = &T3;
+  // system needs access to T3 for T3.getPlaneStar_fine()
+  system.T3 = &T3;
 
-    // checks that all needed constants and pointers got set:
-    ierr = system.initAllColumns(); CHKERRQ(ierr);
+  // checks that all needed constants and pointers got set:
+  ierr = system.initAllColumns(); CHKERRQ(ierr);
 
-    // now get map-plane fields, starting with coupler fields
-    assert(surface != NULL);
-    ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
+  // now get map-plane fields, starting with coupler fields
+  assert(surface != NULL);
+  ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
 
-    assert(ocean != NULL);
-    ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
+  assert(ocean != NULL);
+  ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
 
-    IceModelVec2S &G0 = vWork2d[0];
-    ierr = G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", ""); CHKERRQ(ierr);
-    ierr = G0.set_glaciological_units("mW m-2");
+  IceModelVec2S &G0 = vWork2d[0];
+  ierr = G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", ""); CHKERRQ(ierr);
+  ierr = G0.set_glaciological_units("mW m-2");
 
-    assert(btu != NULL);
-    ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
+  assert(btu != NULL);
+  ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
 
-    IceModelVec2S &bwatcurr = vWork2d[1];
-    ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
-    ierr = bwatcurr.set_glaciological_units("m");
+  IceModelVec2S &bwatcurr = vWork2d[1];
+  ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
+  ierr = bwatcurr.set_glaciological_units("m");
 
-    assert(subglacial_hydrology != NULL);
-    ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
+  assert(subglacial_hydrology != NULL);
+  ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
 
-    ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-    ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_surface_temp);
+  list.add(shelfbtemp);
 
-    ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-    ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
-    ierr = vMask.begin_access(); CHKERRQ(ierr);
-    ierr = G0.begin_access(); CHKERRQ(ierr);
-    ierr = bwatcurr.begin_access(); CHKERRQ(ierr);
+  list.add(ice_thickness);
+  list.add(basal_melt_rate);
+  list.add(vMask);
+  list.add(G0);
+  list.add(bwatcurr);
 
-    IceModelVec2S *Rb;            // basal frictional heating
-    assert(stress_balance != NULL);
-    ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
+  IceModelVec2S *Rb;            // basal frictional heating
+  assert(stress_balance != NULL);
+  ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
 
-    IceModelVec3 *u3, *v3, *w3, *strain_heating3;
-    ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
-    ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
+  IceModelVec3 *u3, *v3, *w3, *strain_heating3;
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
-    ierr = Rb->begin_access(); CHKERRQ(ierr);
+  list.add(*Rb);
 
-    ierr = u3->begin_access(); CHKERRQ(ierr);
-    ierr = v3->begin_access(); CHKERRQ(ierr);
-    ierr = w3->begin_access(); CHKERRQ(ierr);
-    ierr = strain_heating3->begin_access(); CHKERRQ(ierr);
-    ierr = T3.begin_access(); CHKERRQ(ierr);
-    ierr = vWork3d.begin_access(); CHKERRQ(ierr);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(*strain_heating3);
+  list.add(T3);
+  list.add(vWork3d);
 
-    // counts unreasonably low temperature values; deprecated?
-    int myLowTempCount = 0;
-    int maxLowTempCount = static_cast<int>(config.get("max_low_temp_count"));
-    double globalMinAllowedTemp = config.get("global_min_allowed_temp");
+  // counts unreasonably low temperature values; deprecated?
+  int myLowTempCount = 0;
+  int maxLowTempCount = static_cast<int>(config.get("max_low_temp_count"));
+  double globalMinAllowedTemp = config.get("global_min_allowed_temp");
 
-    const double epsilon = grid.convert(1e-6, "m/year", "m/second");
+  const double epsilon = grid.convert(1e-6, "m/year", "m/second");
 
-    MaskQuery mask(vMask);
+  MaskQuery mask(vMask);
 
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        // this should *not* be replaced by call to grid.kBelowHeight():
-        const int ks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
+    // this should *not* be replaced by call to grid.kBelowHeight():
+    const int ks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
 
-        if (ks>0) { // if there are enough points in ice to bother ...
-          // this call will validate ks
-          ierr = system.setIndicesAndClearThisColumn(i, j,
-                                                     ice_thickness(i,j), fdz, fMz); CHKERRQ(ierr);
+    if (ks>0) { // if there are enough points in ice to bother ...
+      // this call will validate ks
+      ierr = system.setIndicesAndClearThisColumn(i, j,
+                                                 ice_thickness(i,j), fdz, grid.Mz_fine); CHKERRQ(ierr);
 
-          ierr = u3->getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
-          ierr = v3->getValColumn(i,j,ks,system.v); CHKERRQ(ierr);
-          ierr = w3->getValColumn(i,j,ks,system.w); CHKERRQ(ierr);
-          ierr = strain_heating3->getValColumn(i,j,ks,system.strain_heating); CHKERRQ(ierr);
-          ierr = T3.getValColumn(i,j,ks,system.T); CHKERRQ(ierr);
+      ierr = u3->getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
+      ierr = v3->getValColumn(i,j,ks,system.v); CHKERRQ(ierr);
+      ierr = w3->getValColumn(i,j,ks,system.w); CHKERRQ(ierr);
+      ierr = strain_heating3->getValColumn(i,j,ks,system.strain_heating); CHKERRQ(ierr);
+      ierr = T3.getValColumn(i,j,ks,system.T); CHKERRQ(ierr);
 
-          // go through column and find appropriate lambda for BOMBPROOF
-          double lambda = 1.0;  // start with centered implicit for more accuracy
-          for (int k = 1; k < ks; k++) {
-            const double denom = (PetscAbs(system.w[k]) + epsilon) * ice_density * ice_c * fdz;
-            lambda = PetscMin(lambda, 2.0 * ice_k / denom);
-          }
-          if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
-          // if isMarginal then only do vertical conduction for ice; ignore advection
-          //   and strain heating if isMarginal
-          const double thickness_threshold = 100.0; // FIXME: make configurable
-          const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
-          MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
-          ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
-          CHKERRQ(ierr);
+      // go through column and find appropriate lambda for BOMBPROOF
+      double lambda = 1.0;  // start with centered implicit for more accuracy
+      for (int k = 1; k < ks; k++) {
+        const double denom = (PetscAbs(system.w[k]) + epsilon) * ice_density * ice_c * fdz;
+        lambda = PetscMin(lambda, 2.0 * ice_k / denom);
+      }
+      if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
+      // if isMarginal then only do vertical conduction for ice; ignore advection
+      //   and strain heating if isMarginal
+      const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
+      const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
+      MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
+      ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
+      CHKERRQ(ierr);
 
-          // set boundary values for tridiagonal system
-          ierr = system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j)); CHKERRQ(ierr);
-          ierr = system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j)); CHKERRQ(ierr);
+      // set boundary values for tridiagonal system
+      ierr = system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j)); CHKERRQ(ierr);
+      ierr = system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j)); CHKERRQ(ierr);
 
-          // solve the system for this column; melting not addressed yet
-          ierr = system.solveThisColumn(x); CHKERRQ(ierr);
+      // solve the system for this column; melting not addressed yet
+      ierr = system.solveThisColumn(x); CHKERRQ(ierr);
 
-          if (viewOneColumn && (i == id && j == jd)) {
-            ierr = PetscPrintf(grid.com,
-              "\n\nin temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
-              i, j); CHKERRQ(ierr);
-            ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
-          }
+      if (viewOneColumn && (i == id && j == jd)) {
+        ierr = PetscPrintf(grid.com,
+                           "\n\nin temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
+                           i, j); CHKERRQ(ierr);
+        ierr = system.viewColumnInfoMFile(x, grid.Mz_fine); CHKERRQ(ierr);
+      }
 
-        }       // end of "if there are enough points in ice to bother ..."
+    }       // end of "if there are enough points in ice to bother ..."
 
-        // prepare for melting/refreezing
-        double bwatnew = bwatcurr(i,j);
+    // prepare for melting/refreezing
+    double bwatnew = bwatcurr(i,j);
 
-        // insert solution for generic ice segments
-        for (int k=1; k <= ks; k++) {
-          if (allow_above_melting == true) { // in the ice
-            Tnew[k] = x[k];
-          } else {
-            const double
-              Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - fzlev[k]); // FIXME issue #15
-            if (x[k] > Tpmp) {
-              Tnew[k] = Tpmp;
-              double Texcess = x[k] - Tpmp; // always positive
-              excessToFromBasalMeltLayer(ice_density, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
-              // Texcess  will always come back zero here; ignore it
-            } else {
-              Tnew[k] = x[k];
-            }
-          }
-          if (Tnew[k] < globalMinAllowedTemp) {
-            ierr = PetscPrintf(PETSC_COMM_SELF,
-                               "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
-                               " proc %d; mask=%d; w=%f m/year]]\n",
-                               Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
-                               grid.convert(system.w[k],
-                                       "m/s", "m/year")); CHKERRQ(ierr);
-            myLowTempCount++;
-          }
-          if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
-            Tnew[k] = ice_surface_temp(i,j) - bulgeMax;  bulgeCount++;   }
-        }
-
-        // insert solution for ice base segment
-        if (ks > 0) {
-          if (allow_above_melting == true) { // ice/rock interface
-            Tnew[0] = x[0];
-          } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-            const double Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
-            double Texcess = x[0] - Tpmp; // positive or negative
-            if (mask.ocean(i,j)) {
-              // when floating, only half a segment has had its temperature raised
-              // above Tpmp
-              excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
-            } else {
-              excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
-            }
-            Tnew[0] = Tpmp + Texcess;
-            if (Tnew[0] > (Tpmp + 0.00001)) {
-              SETERRQ(grid.com, 1,"updated temperature came out above Tpmp");
-            }
-          }
-          if (Tnew[0] < globalMinAllowedTemp) {
-            ierr = PetscPrintf(PETSC_COMM_SELF,
-                               "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
-                               " proc %d; mask=%d; w=%f]]\n",
-                               Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
-                               grid.convert(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
-            myLowTempCount++;
-          }
-          if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
-            Tnew[0] = ice_surface_temp(i,j) - bulgeMax;   bulgeCount++;   }
-        }
-
-        // set to air temp above ice
-        for (unsigned int k = ks; k < fMz; k++) {
-          Tnew[k] = ice_surface_temp(i,j);
-        }
-
-        // transfer column into vWork3d; communication later
-        ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
-
-        // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
-        if (mask.ocean(i,j)) {
-          basal_melt_rate(i,j) = 0.0;
+    // insert solution for generic ice segments
+    for (int k=1; k <= ks; k++) {
+      if (allow_above_melting == true) { // in the ice
+        Tnew[k] = x[k];
+      } else {
+        const double
+          Tpmp = melting_point_temp - beta_CC_grad * (ice_thickness(i,j) - fzlev[k]); // FIXME issue #15
+        if (x[k] > Tpmp) {
+          Tnew[k] = Tpmp;
+          double Texcess = x[k] - Tpmp; // always positive
+          excessToFromBasalMeltLayer(ice_density, ice_c, L, fzlev[k], fdz, &Texcess, &bwatnew);
+          // Texcess  will always come back zero here; ignore it
         } else {
-          // basalMeltRate is rate of change of bwat;  can be negative
-          //   (subglacial water freezes-on); note this rate is calculated
-          //   *before* limiting or other nontrivial modelling of bwat,
-          //   which is Hydrology's job
-          basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
-        } // end of the grounded case
-    } // j-loop
-  } // i-loop
+          Tnew[k] = x[k];
+        }
+      }
+      if (Tnew[k] < globalMinAllowedTemp) {
+        ierr = PetscPrintf(PETSC_COMM_SELF,
+                           "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
+                           " proc %d; mask=%d; w=%f m/year]]\n",
+                           Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
+                           grid.convert(system.w[k],
+                                        "m/s", "m/year")); CHKERRQ(ierr);
+        myLowTempCount++;
+      }
+      if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
+        Tnew[k] = ice_surface_temp(i,j) - bulgeMax;  bulgeCount++;   }
+    }
+
+    // insert solution for ice base segment
+    if (ks > 0) {
+      if (allow_above_melting == true) { // ice/rock interface
+        Tnew[0] = x[0];
+      } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
+        const double Tpmp = melting_point_temp - beta_CC_grad * ice_thickness(i,j); // FIXME issue #15
+        double Texcess = x[0] - Tpmp; // positive or negative
+        if (mask.ocean(i,j)) {
+          // when floating, only half a segment has had its temperature raised
+          // above Tpmp
+          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz/2.0, &Texcess, &bwatnew);
+        } else {
+          excessToFromBasalMeltLayer(ice_density, ice_c, L, 0.0, fdz, &Texcess, &bwatnew);
+        }
+        Tnew[0] = Tpmp + Texcess;
+        if (Tnew[0] > (Tpmp + 0.00001)) {
+          SETERRQ(grid.com, 1,"updated temperature came out above Tpmp");
+        }
+      }
+      if (Tnew[0] < globalMinAllowedTemp) {
+        ierr = PetscPrintf(PETSC_COMM_SELF,
+                           "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
+                           " proc %d; mask=%d; w=%f]]\n",
+                           Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
+                           grid.convert(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
+        myLowTempCount++;
+      }
+      if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
+        Tnew[0] = ice_surface_temp(i,j) - bulgeMax;   bulgeCount++;   }
+    }
+
+    // set to air temp above ice
+    for (unsigned int k = ks; k < grid.Mz_fine; k++) {
+      Tnew[k] = ice_surface_temp(i,j);
+    }
+
+    // transfer column into vWork3d; communication later
+    ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
+
+    // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
+    if (mask.ocean(i,j)) {
+      basal_melt_rate(i,j) = 0.0;
+    } else {
+      // basalMeltRate is rate of change of bwat;  can be negative
+      //   (subglacial water freezes-on); note this rate is calculated
+      //   *before* limiting or other nontrivial modelling of bwat,
+      //   which is Hydrology's job
+      basal_melt_rate(i,j) = (bwatnew - bwatcurr(i,j)) / dt_TempAge;
+    } // end of the grounded case
+  }
 
   if (myLowTempCount > maxLowTempCount) {
     SETERRQ(grid.com, 1,"too many low temps");
   }
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = Rb->end_access(); CHKERRQ(ierr);
-  ierr = G0.end_access(); CHKERRQ(ierr);
-  ierr = bwatcurr.end_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
-
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-
-  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
-
-  ierr = u3->end_access(); CHKERRQ(ierr);
-  ierr = v3->end_access(); CHKERRQ(ierr);
-  ierr = w3->end_access(); CHKERRQ(ierr);
-  ierr = strain_heating3->end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = vWork3d.end_access(); CHKERRQ(ierr);
-
-  delete [] x;
   delete [] system.T;  delete [] system.strain_heating;
   delete [] system.u;  delete [] system.v;  delete [] system.w;
   delete [] Tnew;

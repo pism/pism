@@ -189,11 +189,13 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
   {
     ierr = OptionsIsSet("-plastic_phi", plastic_phi_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-topg_to_phi",
-                            "Use the till friction angle parameterization", topg_to_phi_set); CHKERRQ(ierr);
+                            "Turn on, and specify, the till friction angle parameterization based on bedrock elevation (topg)",
+                            topg_to_phi_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-tauc_to_phi", "Compute tillphi as a function of tauc and the rest of the model state",
+    ierr = OptionsIsSet("-tauc_to_phi", 
+                            "Turn on, and specify, the till friction angle computation which uses basal yield stress (tauc) and the rest of the model state",
                             tauc_to_phi_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -347,23 +349,23 @@ and by expressing the coefficient as the tangent of a till friction angle
 See [@ref Paterson] table 8.1 regarding values.
 
 The effective pressure on the till is empirically-related
-to the amount of water in the till, namely this formula derived from
-[@ref Tulaczyketal2000]:
+to the amount of water in the till.  We use this formula derived from
+[@ref Tulaczyketal2000] and documented in [@ref BuelervanPeltDRAFT]:
 
-@f[ N_til = \delta P_o 10^{(e_0/C_c) (1 - W_{til}/W_{til}^{max})} @f]
+@f[ N_{til} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s 10^{(e_0/C_c) (1 - s)}\right\} @f]
 
-where  @f$ \delta @f$ =`till_effective_fraction_overburden`,  @f$ P_o @f$  is the
-overburden pressure,  @f$ e_0 @f$ =`till_reference_void_ratio` is the void ratio
-at the effective pressure minimum, and  @f$ C_c @f$ ==`till_compressibility_coefficient`
-is the coefficient of compressibility of the till.  Constants  @f$ e_0,C_c @f$  are
-derived by [@ref Tulaczyketal2000] from laboratory experiments on samples of
-till.  Also  @f$ W_{til}^{max} @f$ =`hydrology_tillwat_max`.
+where  @f$ s = W_{til} / W_{til}^{max} @f$,  @f$ W_{til}^{max} @f$ =`hydrology_tillwat_max`,
+@f$ \delta @f$ =`till_effective_fraction_overburden`,  @f$ P_o @f$  is the
+overburden pressure,  @f$ N_0 @f$ =`till_reference_effective_pressure` is a
+reference effective pressure,   @f$ e_0 @f$ =`till_reference_void_ratio` is the void ratio
+at the reference effective pressure, and  @f$ C_c @f$ =`till_compressibility_coefficient`
+is the coefficient of compressibility of the till.  Constants  @f$ N_0, e_0, C_c @f$  are
+found by [@ref Tulaczyketal2000] from laboratory experiments on samples of
+till.
 
-If `tauc_add_transportable_water` is yes then the above formula becomes
-
-@f[ N_til = \delta P_o 10^{(e_0/C_c) (1 - (W+W_{til})/W_{til}^{max})}, @f]
-
-that is, here the water amount is the sum @f$ W+W_{til} @f$.  This only works
+If `tauc_add_transportable_water` is yes then @f$ s @f$ in the above formula
+becomes @f$ s = (W + W_{til}) / W_{til}^{max} @f$,
+that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
 RoutingHydrology (or derived class thereof).
  */
@@ -382,12 +384,12 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
 
   const double high_tauc   = config.get("high_tauc"),
                tillwat_max = config.get("hydrology_tillwat_max"),
-               c0          = config.get("till_c_0"),
+               c0          = config.get("till_cohesion"),
+               N0          = config.get("till_reference_effective_pressure"),
                e0overCc    = config.get("till_reference_void_ratio")
                                 / config.get("till_compressibility_coefficient"),
                delta       = config.get("till_effective_fraction_overburden"),
                tlftw       = config.get("till_log_factor_transportable_water");
-
 
   RoutingHydrology* hydrowithtransport = dynamic_cast<RoutingHydrology*>(m_hydrology);
   if (m_hydrology) {
@@ -399,50 +401,43 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
     }
   }
 
+  IceModelVec::AccessList list;
   if (addtransportable == true) {
-    ierr = m_bwat.begin_access(); CHKERRQ(ierr);
+    list.add(m_bwat);
   }
-  ierr = m_tillwat.begin_access();         CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access();        CHKERRQ(ierr);
-  ierr = m_tauc.begin_access();            CHKERRQ(ierr);
-  ierr = m_mask->begin_access();           CHKERRQ(ierr);
-  ierr = m_bed_topography->begin_access(); CHKERRQ(ierr);
-  ierr = m_Po.begin_access();              CHKERRQ(ierr);
+  list.add(m_tillwat);
+  list.add(m_till_phi);
+  list.add(m_tauc);
+  list.add(*m_mask);
+  list.add(*m_bed_topography);
+  list.add(m_Po);
+
   MaskQuery m(*m_mask);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (m.ocean(i, j)) {
-        m_tauc(i, j) = 0.0;
-      } else if (m.ice_free(i, j)) {
-        m_tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
-      } else { // grounded and there is some ice
-        // user can ask that marine grounding lines get special treatment
-        const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        double water = m_tillwat(i,j); // usual case
-        if (slipperygl == true &&
-            (*m_bed_topography)(i,j) <= sea_level &&
-            (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j))) {
-          water = tillwat_max;
-        } else if (addtransportable == true) {
-          water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
-        }
-
-        double Ntil = delta * m_Po(i,j) * pow(10.0, e0overCc * (1.0 - (water / tillwat_max)));
-        Ntil = PetscMin(m_Po(i,j), Ntil);
-        m_tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
+    if (m.ocean(i, j)) {
+      m_tauc(i, j) = 0.0;
+    } else if (m.ice_free(i, j)) {
+      m_tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
+    } else { // grounded and there is some ice
+      // user can ask that marine grounding lines get special treatment
+      const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
+      double water = m_tillwat(i,j); // usual case
+      if (slipperygl == true &&
+          (*m_bed_topography)(i,j) <= sea_level &&
+          (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j))) {
+        water = tillwat_max;
+      } else if (addtransportable == true) {
+        water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
+      double s    = water / tillwat_max,
+        Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntil = PetscMin(m_Po(i,j), Ntil);
+
+      m_tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
     }
-  }
-  ierr = m_Po.end_access();              CHKERRQ(ierr);
-  ierr = m_bed_topography->end_access(); CHKERRQ(ierr);
-  ierr = m_mask->end_access();           CHKERRQ(ierr);
-  ierr = m_tauc.end_access();            CHKERRQ(ierr);
-  ierr = m_till_phi.end_access();        CHKERRQ(ierr);
-  ierr = m_tillwat.end_access();         CHKERRQ(ierr);
-  if (addtransportable == true) {
-    ierr = m_bwat.end_access(); CHKERRQ(ierr);
   }
 
   ierr = m_tauc.update_ghosts(); CHKERRQ(ierr);
@@ -458,9 +453,8 @@ PetscErrorCode MohrCoulombYieldStress::basal_material_yield_stress(IceModelVec2S
 
 //! Computes the till friction angle phi as a piecewise linear function of bed elevation, according to user options.
 /*!
-Computes the till friction angle \f$\phi(x,y)\f$ at a location, namely
-`IceModel::vtillphi`, as the following increasing, piecewise-linear function of
-the bed elevation \f$b(x,y)\f$.  Let
+Computes the till friction angle \f$\phi(x,y)\f$ at a location as the following
+increasing, piecewise-linear function of the bed elevation \f$b(x,y)\f$.  Let
         \f[ M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}}) \f]
 be the slope of the nontrivial part.  Then
         \f[ \phi(x,y) = \begin{cases}
@@ -468,45 +462,21 @@ be the slope of the nontrivial part.  Then
                 \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
                                   &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
                 \phi_{\text{max}}, & b_{\text{max}} \le b(x,y), \end{cases} \f]
-The exception is if the point is marked as floating, in which case the till friction angle
-is set to the value `phi_ocean`.
+where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
+\f$b_{\text{min}}=\f$`topg_min`, \f$b_{\text{max}}=\f$`topg_max`.
 
-The default values are vaguely suitable for Antarctica, perhaps:
-- `phi_min` = 5.0 degrees,
-- `phi_max` = 15.0 degrees,
-- `topg_min` = -1000.0 m,
-- `topg_max` = 1000.0 m,
-- `phi_ocean` = 10.0 degrees.
-
-If the user gives option <code>-topg_to_phi A,B,C,D</code> then `phi_ocean`
-is not used. Instead, the same rule as above for grounded ice is used.
- */
+The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
+*/
 PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
   PetscErrorCode ierr;
   bool  topg_to_phi_set;
-  std::vector<double> inarray(4);
-
-  // default values:
-  inarray[0] = 5.0;
-  inarray[1] = 15.0;
-  inarray[2] = -1000.0;
-  inarray[3] = 1000.0;
-
-  // read the comma-separated list of four values
-  ierr = OptionsRealArray("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
-                              inarray, topg_to_phi_set); CHKERRQ(ierr);
-
+  ierr = OptionsIsSet("-topg_to_phi", topg_to_phi_set);  CHKERRQ(ierr);
   assert(topg_to_phi_set == true);
 
-  if (inarray.size() != 4) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: option -topg_to_phi requires a comma-separated list with 4 numbers; got %d\n",
-                inarray.size());
-    PISMEnd();
-  }
-
-  double phi_min = inarray[0], phi_max = inarray[1],
-    topg_min = inarray[2], topg_max = inarray[3];
+  double phi_min  = config.get("till_topg_to_phi_phi_min"),
+         phi_max  = config.get("till_topg_to_phi_phi_max"),
+         topg_min = config.get("till_topg_to_phi_topg_min"),
+         topg_max = config.get("till_topg_to_phi_topg_max");
 
   if (phi_min >= phi_max) {
     PetscPrintf(grid.com,
@@ -531,26 +501,22 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
 
   double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
-  ierr = m_bed_topography->begin_access(); CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_bed_topography);
+  list.add(m_till_phi);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      double bed = (*m_bed_topography)(i, j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    double bed = (*m_bed_topography)(i, j);
 
-      if (bed <= topg_min) {
-        m_till_phi(i, j) = phi_min;
-      } else if (bed >= topg_max) {
-        m_till_phi(i, j) = phi_max;
-      } else {
-        m_till_phi(i, j) = phi_min + (bed - topg_min) * slope;
-      }
-
+    if (bed <= topg_min) {
+      m_till_phi(i, j) = phi_min;
+    } else if (bed >= topg_max) {
+      m_till_phi(i, j) = phi_max;
+    } else {
+      m_till_phi(i, j) = phi_min + (bed - topg_min) * slope;
     }
   }
-
-  ierr = m_bed_topography->end_access(); CHKERRQ(ierr);
-  ierr = m_till_phi.end_access(); CHKERRQ(ierr);
 
   // communicate ghosts so that the tauc computation can be performed locally
   // (including ghosts of tauc, that is)
@@ -562,7 +528,8 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
 
 PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
   PetscErrorCode ierr;
-  const double c0 = config.get("till_c_0"),
+  const double c0 = config.get("till_cohesion"),
+    N0            = config.get("till_reference_effective_pressure"),
     e0overCc      = config.get("till_reference_void_ratio")/ config.get("till_compressibility_coefficient"),
     delta         = config.get("till_effective_fraction_overburden"),
     tillwat_max   = config.get("hydrology_tillwat_max");
@@ -572,30 +539,30 @@ PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
   ierr = m_hydrology->till_water_thickness(m_tillwat); CHKERRQ(ierr);
   ierr = m_hydrology->overburden_pressure(m_Po); CHKERRQ(ierr);
 
-  ierr = m_mask->begin_access();    CHKERRQ(ierr);
-  ierr = m_tauc.begin_access();     CHKERRQ(ierr);
-  ierr = m_tillwat.begin_access();  CHKERRQ(ierr);
-  ierr = m_Po.begin_access();       CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_mask);
+  list.add(m_tauc);
+  list.add(m_tillwat);
+  list.add(m_Po);
+  list.add(m_till_phi);
+
   MaskQuery m(*m_mask);
-  int GHOSTS = grid.max_stencil_width;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if (m.ocean(i, j)) {
-        // no change
-      } else if (m.ice_free(i, j)) {
-        // no change
-      } else { // grounded and there is some ice
-        double Ntil = delta * m_Po(i,j) * pow(10.0, e0overCc * (1.0 - (m_tillwat(i,j) / tillwat_max)));
-        m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
-      }
+
+  int GHOSTS = m_till_phi.get_stencil_width();
+  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m.ocean(i, j)) {
+      // no change
+    } else if (m.ice_free(i, j)) {
+      // no change
+    } else { // grounded and there is some ice
+      double s    = m_tillwat(i,j) / tillwat_max,
+        Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntil = PetscMin(m_Po(i,j), Ntil);
+      m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
     }
   }
-  ierr = m_mask->end_access();    CHKERRQ(ierr);
-  ierr = m_tauc.end_access();     CHKERRQ(ierr);
-  ierr = m_till_phi.end_access(); CHKERRQ(ierr);
-  ierr = m_tillwat.end_access();  CHKERRQ(ierr);
-  ierr = m_Po.end_access();       CHKERRQ(ierr);
 
   return 0;
 }

@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
   MPI_Comm        com;
 
-  PetscInitialize(&argc, &argv, PETSC_NULL, help);
+  PetscInitialize(&argc, &argv, NULL, help);
 
   com = PETSC_COMM_WORLD;
       
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
         "(see User's Manual for tests I and J).\n"
         ); CHKERRQ(ierr);
 
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides, true); CHKERRQ(ierr);
