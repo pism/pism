@@ -425,6 +425,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
                                                IceModelVec2S &H) {
   IceModelVec::AccessList list(*this);
   list.add(surface_values);
+  list.add(H);
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
