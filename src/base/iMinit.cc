@@ -1137,34 +1137,23 @@ PetscErrorCode IceModel::init_calving() {
 }
 
 PetscErrorCode IceModel::allocate_bed_deformation() {
-  PetscErrorCode ierr;
   std::string model = config.get_string("bed_deformation_model");
-  std::set<std::string> choices;
 
-  choices.insert("none");
-  choices.insert("iso");
-  choices.insert("lc");
+  if (beddef == NULL) {
+    if (model == "none") {
+      beddef = NULL;
+      return 0;
+    }
 
-  ierr = PetscOptionsBegin(grid.com, "", "Bed deformation model", ""); CHKERRQ(ierr);
-  {
-    bool dummy;
-    ierr = OptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
-                         choices, model, model, dummy); CHKERRQ(ierr);
+    if (model == "iso") {
+      beddef = new PBPointwiseIsostasy(grid, config);
+      return 0;
+    }
 
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (model == "none")
-    return 0;
-
-  if ((model == "iso") && (beddef == NULL)) {
-    beddef = new PBPointwiseIsostasy(grid, config);
-    return 0;
-  }
-
-  if ((model == "lc") && (beddef == NULL)) {
-    beddef = new PBLingleClark(grid, config);
-    return 0;
+    if (model == "lc") {
+      beddef = new PBLingleClark(grid, config);
+      return 0;
+    }
   }
 
   return 0;

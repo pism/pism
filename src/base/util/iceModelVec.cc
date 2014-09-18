@@ -710,7 +710,10 @@ PetscErrorCode IceModelVec::has_nan() {
 
 void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
   double ghost_width = 0;
-  if (m_has_ghosts) ghost_width = m_da_stencil_width;
+  if (m_has_ghosts) {
+    ghost_width = m_da_stencil_width;
+  }
+
   bool out_of_range = (i < grid->xs - ghost_width) ||
     (i > grid->xs + grid->xm + ghost_width) ||
     (j < grid->ys - ghost_width) ||
@@ -718,6 +721,13 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
     (k >= m_dof);
 
   assert(out_of_range == false);
+
+  if (array == NULL) {
+    PetscPrintf(grid->com,
+                "PISM ERROR: IceModelVec::begin_access() was not called (name = '%s')\n",
+                m_name.c_str());
+  }
+  assert(array != NULL);
 }
 
 //! \brief Compute parameters for 2D loop computations involving 3
@@ -903,6 +913,27 @@ PetscErrorCode IceModelVec::write(const PIO &nc, IO_Type nctype) {
   PetscErrorCode ierr;
   ierr = write_impl(nc, nctype); CHKERRQ(ierr);
   return 0;
+}
+
+IceModelVec::AccessList::AccessList() {
+  // empty
+}
+
+IceModelVec::AccessList::~AccessList() {
+  while (m_vecs.empty() == false) {
+    IceModelVec *vec = m_vecs.back();
+    vec->end_access();
+    m_vecs.pop_back();
+  }
+}
+
+IceModelVec::AccessList::AccessList(IceModelVec &vec) {
+  add(vec);
+}
+
+void IceModelVec::AccessList::add(IceModelVec &vec) {
+  vec.begin_access();
+  m_vecs.push_back(&vec);
 }
 
 } // end of namespace pism

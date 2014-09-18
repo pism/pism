@@ -78,18 +78,17 @@ PetscErrorCode Hydrology_bwprel::compute(IceModelVec* &output) {
   ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
   ierr = model->overburden_pressure(*Po); CHKERRQ(ierr);
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = Po->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((*Po)(i,j) > 0.0)
-        (*result)(i,j) /= (*Po)(i,j);
-      else
-        (*result)(i,j) = fill;
-    }
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*Po);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*Po)(i,j) > 0.0)
+      (*result)(i,j) /= (*Po)(i,j);
+    else
+      (*result)(i,j) = fill;
   }
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = Po->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;

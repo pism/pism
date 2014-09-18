@@ -389,10 +389,13 @@ PetscErrorCode IceModelVec2T::discard(int number) {
 
   ierr = get_array(a2); CHKERRQ(ierr);
   ierr = get_array3(a3); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j)
-      for (unsigned int k = 0; k < N; ++k)
-        a3[i][j][k] = a3[i][j][k + number];
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    for (unsigned int k = 0; k < N; ++k) {
+      a3[i][j][k] = a3[i][j][k + number];
+    }
+  }
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   
@@ -406,9 +409,10 @@ PetscErrorCode IceModelVec2T::set_record(int n) {
 
   ierr = get_array(a2); CHKERRQ(ierr);
   ierr = get_array3(a3); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j)
-      a3[i][j][n] = a2[i][j];
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    a3[i][j][n] = a2[i][j];
+  }
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
 
@@ -422,9 +426,10 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
 
   ierr = get_array(a2); CHKERRQ(ierr);
   ierr = get_array3(a3); CHKERRQ(ierr);
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i)
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j)
-      a2[i][j] = a3[i][j][n];
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    a2[i][j] = a3[i][j][n];
+  }
   ierr = end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
 
@@ -508,10 +513,9 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
   ierr = init_interpolation(ts); CHKERRQ(ierr);
 
   ierr = get_array(a2);         // calls begin_access()
-  for (int   i = grid->xs; i < grid->xs+grid->xm; ++i) {
-    for (int j = grid->ys; j < grid->ys+grid->ym; ++j) {
-      ierr = average(i, j, a2[i][j]); CHKERRQ(ierr);
-    }
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    ierr = average(i, j, a2[i][j]); CHKERRQ(ierr); // NB! order
   }
   ierr = end_access(); CHKERRQ(ierr);
 

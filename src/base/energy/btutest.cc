@@ -49,19 +49,18 @@ PetscErrorCode BTU_Test::bootstrap() {
   if (Mbz > 1) {
     std::vector<double> zlevels = temp.get_levels();
 
-    ierr = temp.begin_access(); CHKERRQ(ierr);
+    IceModelVec::AccessList list(temp);
     double *Tb; // columns of these values
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-        for (unsigned int k=0; k < Mbz; k++) {
-          const double z = zlevels[k];
-          double FF; // Test K:  use Tb[k], ignore FF
-          ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
-        }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+      for (unsigned int k=0; k < Mbz; k++) {
+        const double z = zlevels[k];
+        double FF; // Test K:  use Tb[k], ignore FF
+        ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
       }
     }
-    ierr = temp.end_access(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -240,15 +239,14 @@ int main(int argc, char *argv[]) {
       const double time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
 
       // compute exact ice temperature at z=0 at time y
-      ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
-      for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-        for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          double TT, FF; // Test K:  use TT, ignore FF
-          ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
-          (*bedtoptemp)(i,j) = TT;
-        }
+      IceModelVec::AccessList list(*bedtoptemp);
+      for (Points p(grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        double TT, FF; // Test K:  use TT, ignore FF
+        ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+        (*bedtoptemp)(i,j) = TT;
       }
-      ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
       // we are not communicating anything, which is fine
 
       // update the temperature inside the thermal layer using bedtoptemp

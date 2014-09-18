@@ -107,29 +107,23 @@ PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
 
   IceGrid *grid = thickness.get_grid();
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = hardav.begin_access();    CHKERRQ(ierr);
-  ierr = enthalpy.begin_access();  CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(hardav);
+  list.add(enthalpy);
 
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // Evaluate column integrals in flow law at every quadrature point's column
-      double H = thickness(i,j);
-      double *enthColumn;
-      ierr = enthalpy.getInternalColumn(i, j, &enthColumn); CHKERRQ(ierr);
-      hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
-                                            &(grid->zlevels[0]), enthColumn);
-    }
+    // Evaluate column integrals in flow law at every quadrature point's column
+    double H = thickness(i,j);
+    double *enthColumn;
+    ierr = enthalpy.getInternalColumn(i, j, &enthColumn); CHKERRQ(ierr);
+    hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
+                                                &(grid->zlevels[0]), enthColumn);
   }
 
-  ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = hardav.end_access();    CHKERRQ(ierr);
-  ierr = enthalpy.end_access();  CHKERRQ(ierr);
-
-  if (hardav.has_ghosts()) {
-    ierr = hardav.update_ghosts(); CHKERRQ(ierr);
-  }
+  ierr = hardav.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -156,7 +150,7 @@ double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
         E1 = enthalpy[i], // enthalpy at the right endpoint
         h1 = hardness_parameter(E1, p1); // ice hardness at the right endpoint
 
-      // The midpoint rule sans the "1/2":
+      // The trapezoid rule sans the "1/2":
       B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
 
       h0 = h1;

@@ -111,8 +111,6 @@ PetscErrorCode PACosineYearlyCycle::update(double my_t, double my_dt) {
 }
 
 PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
     T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
@@ -123,19 +121,15 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
     scaling = (*A)(m_t + 0.5 * m_dt);
   }
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_annual.begin_access(); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_july.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(result);
+  list.add(m_air_temp_mean_annual);
+  list.add(m_air_temp_mean_july);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
   }
-
-  ierr = m_air_temp_mean_july.end_access(); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_annual.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

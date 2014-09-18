@@ -902,6 +902,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
     // let the user decide if they want to use "-no_mass" or not
   }
 
+  ierr = config.keyword_from_option("bed_def",
+                                    "bed_deformation_model", "none,iso,lc"); CHKERRQ(ierr);
   ierr = config.flag_from_option("bed_def_lc_elastic_model", "bed_def_lc_elastic_model"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("dry", "is_dry_simulation"); CHKERRQ(ierr);

@@ -98,58 +98,48 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   config.set_flag("compute_surf_grad_inward_ssa", true);
   config.set_double("epsilon_ssa", 0.0);  // don't use this lower bound
 
-  ierr = tauc.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(tauc);
 
   double standard_gravity = config.get("standard_gravity"),
     ice_rho = config.get("ice_density");
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double y = grid.y[j];
-      const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
-      tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double y = grid.y[j];
+    const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
+    const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
+    tauc(i,j) = f * pow(PetscAbs(y / L_schoof), m_schoof);
   }
-  ierr = tauc.end_access(); CHKERRQ(ierr);
   ierr = tauc.update_ghosts(); CHKERRQ(ierr);
 
+  list.add(vel_bc);
+  list.add(bc_mask);
+  list.add(surface);
+  list.add(bed);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
+    double junk, myu, myv;
+    const double myx = grid.x[i], myy=grid.y[j];
+    // eval exact solution; will only use exact vels if at edge
+    exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
+    surface(i,j) = bed(i,j) + H0_schoof;
 
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = surface.begin_access(); CHKERRQ(ierr);
-  ierr = bed.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double junk, myu, myv;
-      const double myx = grid.x[i], myy=grid.y[j];
-      // eval exact solution; will only use exact vels if at edge
-      exactI(m_schoof, myx, myy, &(bed(i,j)), &junk, &myu, &myv); 
-      surface(i,j) = bed(i,j) + H0_schoof;
-
-      bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
-      if (edge) {
-        bc_mask(i,j) = 1;
-        vel_bc(i,j).u = myu;
-        vel_bc(i,j).v = myv;
-      }
+    bool edge = ((j == 0) || (j == grid.My - 1)) || ((i==0) || (i==grid.Mx-1));
+    if (edge) {
+      bc_mask(i,j) = 1;
+      vel_bc(i,j).u = myu;
+      vel_bc(i,j).v = myv;
     }
   }
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
-  ierr = surface.end_access(); CHKERRQ(ierr);
-  ierr = bed.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
   ierr = surface.update_ghosts(); CHKERRQ(ierr);
-
   ierr = bed.update_ghosts(); CHKERRQ(ierr);
-
   ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
-
   ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
-
 
   ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
 

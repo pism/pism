@@ -1261,81 +1261,81 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out,
   double *output_array;
   ierr = VecGetArray(result, &output_array); CHKERRQ(ierr);
 
-  for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
-    for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
+  // NOTE: make sure that the traversal order is correct!
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      const int i0 = i - grid->xs, j0 = j - grid->ys;
+    const int i0 = i - grid->xs, j0 = j - grid->ys;
 
-      for (unsigned int k = 0; k < nlevels; k++) {
-        // location (x,y,z) is in target computational domain
-        const double
-          z = zlevels_out[k];
+    for (unsigned int k = 0; k < nlevels; k++) {
+      // location (x,y,z) is in target computational domain
+      const double
+        z = zlevels_out[k];
 
-        // Indices of neighboring points.
-        const int
-          Im = lic->x_left[i0],
-          Ip = lic->x_right[i0],
-          Jm = lic->y_left[j0],
-          Jp = lic->y_right[j0];
+      // Indices of neighboring points.
+      const int
+        Im = lic->x_left[i0],
+        Ip = lic->x_right[i0],
+        Jm = lic->y_left[j0],
+        Jp = lic->y_right[j0];
 
-        double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
+      double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
 
-        if (nlevels > 1) {
-          // get the index into the source grid, for just below the level z
-          const int kc = k_below(z, zlevels_in);
+      if (nlevels > 1) {
+        // get the index into the source grid, for just below the level z
+        const int kc = k_below(z, zlevels_in);
 
-          // We pretend that there are always 8 neighbors (4 in the map plane,
-          // 2 vertical levels). And compute the indices into the input_array for
-          // those neighbors.
-          const int mmm = (Im * y_count + Jm) * z_count + kc;
-          const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
-          const int mpm = (Im * y_count + Jp) * z_count + kc;
-          const int mpp = (Im * y_count + Jp) * z_count + kc + 1;
-          const int pmm = (Ip * y_count + Jm) * z_count + kc;
-          const int pmp = (Ip * y_count + Jm) * z_count + kc + 1;
-          const int ppm = (Ip * y_count + Jp) * z_count + kc;
-          const int ppp = (Ip * y_count + Jp) * z_count + kc + 1;
+        // We pretend that there are always 8 neighbors (4 in the map plane,
+        // 2 vertical levels). And compute the indices into the input_array for
+        // those neighbors.
+        const int mmm = (Im * y_count + Jm) * z_count + kc;
+        const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
+        const int mpm = (Im * y_count + Jp) * z_count + kc;
+        const int mpp = (Im * y_count + Jp) * z_count + kc + 1;
+        const int pmm = (Ip * y_count + Jm) * z_count + kc;
+        const int pmp = (Ip * y_count + Jm) * z_count + kc + 1;
+        const int ppm = (Ip * y_count + Jp) * z_count + kc;
+        const int ppp = (Ip * y_count + Jp) * z_count + kc + 1;
 
-          // We know how to index the neighbors, but we don't yet know where the
-          // point lies within this box.  This is represented by kk in [0,1].
-          const double zkc = zlevels_in[kc];
-          double dz;
-          if (kc == z_count - 1) {
-            dz = zlevels_in[kc] - zlevels_in[kc-1];
-          } else {
-            dz = zlevels_in[kc+1] - zlevels_in[kc];
-          }
-          const double kk = (z - zkc) / dz;
-
-          // linear interpolation in the z-direction
-          a_mm = input_array[mmm] * (1.0 - kk) + input_array[mmp] * kk;
-          a_mp = input_array[mpm] * (1.0 - kk) + input_array[mpp] * kk;
-          a_pm = input_array[pmm] * (1.0 - kk) + input_array[pmp] * kk;
-          a_pp = input_array[ppm] * (1.0 - kk) + input_array[ppp] * kk;
+        // We know how to index the neighbors, but we don't yet know where the
+        // point lies within this box.  This is represented by kk in [0,1].
+        const double zkc = zlevels_in[kc];
+        double dz;
+        if (kc == z_count - 1) {
+          dz = zlevels_in[kc] - zlevels_in[kc-1];
         } else {
-          // we don't need to interpolate vertically for the 2-D case
-          a_mm = input_array[Im * y_count + Jm];
-          a_mp = input_array[Im * y_count + Jp];
-          a_pm = input_array[Ip * y_count + Jm];
-          a_pp = input_array[Ip * y_count + Jp];
+          dz = zlevels_in[kc+1] - zlevels_in[kc];
         }
+        const double kk = (z - zkc) / dz;
 
-        // interpolation coefficient in the y direction
-        const double jj = lic->y_alpha[j0];
-
-        // interpolate in y direction
-        const double a_m = a_mm * (1.0 - jj) + a_mp * jj;
-        const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
-
-        // interpolation coefficient in the x direction
-        const double ii = lic->x_alpha[i0];
-
-        int index = (i0 * grid->ym + j0) * nlevels + k;
-
-        // index into the new array and interpolate in x direction
-        output_array[index] = a_m * (1.0 - ii) + a_p * ii;
-        // done with the point at (x,y,z)
+        // linear interpolation in the z-direction
+        a_mm = input_array[mmm] * (1.0 - kk) + input_array[mmp] * kk;
+        a_mp = input_array[mpm] * (1.0 - kk) + input_array[mpp] * kk;
+        a_pm = input_array[pmm] * (1.0 - kk) + input_array[pmp] * kk;
+        a_pp = input_array[ppm] * (1.0 - kk) + input_array[ppp] * kk;
+      } else {
+        // we don't need to interpolate vertically for the 2-D case
+        a_mm = input_array[Im * y_count + Jm];
+        a_mp = input_array[Im * y_count + Jp];
+        a_pm = input_array[Ip * y_count + Jm];
+        a_pp = input_array[Ip * y_count + Jp];
       }
+
+      // interpolation coefficient in the y direction
+      const double jj = lic->y_alpha[j0];
+
+      // interpolate in y direction
+      const double a_m = a_mm * (1.0 - jj) + a_mp * jj;
+      const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
+
+      // interpolation coefficient in the x direction
+      const double ii = lic->x_alpha[i0];
+
+      int index = (i0 * grid->ym + j0) * nlevels + k;
+
+      // index into the new array and interpolate in x direction
+      output_array[index] = a_m * (1.0 - ii) + a_p * ii;
+      // done with the point at (x,y,z)
     }
   }
 

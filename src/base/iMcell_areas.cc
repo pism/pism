@@ -92,46 +92,44 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   double dx2 = 0.5 * grid.dx, dy2 = 0.5 * grid.dy;
 
-  ierr = vLatitude.begin_access(); CHKERRQ(ierr);
-  ierr = vLongitude.begin_access(); CHKERRQ(ierr);
-  ierr =  cell_area.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double x = grid.x[i], y = grid.y[j], Z;
+  IceModelVec::AccessList list;
+  list.add(vLatitude);
+  list.add(vLongitude);
+  list.add(cell_area);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // compute the cell area:
-      double x_nw = x - dx2, y_nw = y + dy2;
-      Z = 0;
-      pj_transform(pism, geocent, 1, 1, &x_nw, &y_nw, &Z);
-      double nw[3] = {x_nw, y_nw, Z};
+    double x = grid.x[i], y = grid.y[j], Z;
 
-      double x_ne = x + dx2, y_ne = y + dy2;
-      Z = 0;
-      pj_transform(pism, geocent, 1, 1, &x_ne, &y_ne, &Z);
-      double ne[3] = {x_ne, y_ne, Z};
+    // compute the cell area:
+    double x_nw = x - dx2, y_nw = y + dy2;
+    Z = 0;
+    pj_transform(pism, geocent, 1, 1, &x_nw, &y_nw, &Z);
+    double nw[3] = {x_nw, y_nw, Z};
 
-      double x_se = x + dx2, y_se = y - dy2;
-      Z = 0;
-      pj_transform(pism, geocent, 1, 1, &x_se, &y_se, &Z);
-      double se[3] = {x_se, y_se, Z};
+    double x_ne = x + dx2, y_ne = y + dy2;
+    Z = 0;
+    pj_transform(pism, geocent, 1, 1, &x_ne, &y_ne, &Z);
+    double ne[3] = {x_ne, y_ne, Z};
 
-      double x_sw = x - dx2, y_sw = y - dy2;
-      Z = 0;
-      pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z);
-      double sw[3] = {x_sw, y_sw, Z};
+    double x_se = x + dx2, y_se = y - dy2;
+    Z = 0;
+    pj_transform(pism, geocent, 1, 1, &x_se, &y_se, &Z);
+    double se[3] = {x_se, y_se, Z};
 
-      cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
+    double x_sw = x - dx2, y_sw = y - dy2;
+    Z = 0;
+    pj_transform(pism, geocent, 1, 1, &x_sw, &y_sw, &Z);
+    double sw[3] = {x_sw, y_sw, Z};
 
-      // compute lon,lat coordinates:
-      pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
-      // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
-      vLongitude(i, j) = x * RAD_TO_DEG;
-      vLatitude(i, j)  = y * RAD_TO_DEG;
-    }
+    cell_area(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
+
+    // compute lon,lat coordinates:
+    pj_transform(pism, lonlat, 1, 1, &x, &y, NULL);
+    // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
+    vLongitude(i, j) = x * RAD_TO_DEG;
+    vLatitude(i, j)  = y * RAD_TO_DEG;
   }
-  ierr =  cell_area.end_access(); CHKERRQ(ierr);  
-  ierr = vLongitude.end_access(); CHKERRQ(ierr);
-  ierr = vLatitude.end_access(); CHKERRQ(ierr);
 
   pj_free(pism);
   pj_free(lonlat);

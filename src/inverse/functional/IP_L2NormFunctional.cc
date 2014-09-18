@@ -29,7 +29,8 @@ PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -53,7 +54,6 @@ PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -68,8 +68,8 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   double b_q[FEQuadrature::Nq];
 
-  ierr = a.begin_access(); CHKERRQ(ierr);
-  ierr = b.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(a);
+  list.add(b);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -92,8 +92,6 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = a.end_access(); CHKERRQ(ierr);
-  ierr = b.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -105,10 +103,10 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
   ierr = gradient.set(0); CHKERRQ(ierr);
 
   double x_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
-
   double gradient_e[FEQuadrature::Nk];
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
+  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -143,8 +141,6 @@ PetscErrorCode IP_L2NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S
     } // j
   } // i
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -158,7 +154,7 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
   Vector2 x_e[FEQuadrature::Nk];
   Vector2 x_q[FEQuadrature::Nq];
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(x);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -182,7 +178,6 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -197,8 +192,8 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
 
   Vector2 b_q[FEQuadrature::Nq];
 
-  ierr = a.begin_access(); CHKERRQ(ierr);
-  ierr = b.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(a);
+  list.add(b);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -221,8 +216,6 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = a.end_access(); CHKERRQ(ierr);
-  ierr = b.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -234,10 +227,10 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
   ierr = gradient.set(0); CHKERRQ(ierr);
 
   Vector2 x_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
-
   Vector2 gradient_e[FEQuadrature::Nk];
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list(x);
+  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -275,8 +268,6 @@ PetscErrorCode IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V
     } // j
   } // i
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

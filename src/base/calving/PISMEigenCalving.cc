@@ -104,150 +104,144 @@ PetscErrorCode EigenCalving::update(double dt,
 
   MaskQuery mask(pism_mask);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  ierr = Href.begin_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.begin_access(); CHKERRQ(ierr);
-  ierr = m_thk_loss.begin_access(); CHKERRQ(ierr);
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(pism_mask);
+  list.add(Href);
+  list.add(m_strain_rates);
+  list.add(m_thk_loss);
 
-      // Average of strain-rate eigenvalues in adjacent floating grid
-      // cells to be used for eigen-calving:
+  for (Points pt(grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
+    // Average of strain-rate eigenvalues in adjacent floating grid
+    // cells to be used for eigen-calving:
+    double
+      eigen1    = 0.0,
+      eigen2    = 0.0;
+    // Neighbor-averaged ice thickness:
+    double
+      H_average = 0.0;
+
+    int N_floating_neighbors = 0, M = 0;
+    // M is the number of cells used to compute averages of strain
+    // rate components.
+
+    // Find partially filled or empty grid boxes on the icefree ocean, which
+    // have floating ice neighbors after the mass continuity step
+    if (mask.ice_free_ocean(i, j) &&
+        mask.next_to_floating_ice(i, j)) {
+
+      if (mask.floating_ice(i + 1, j)) {
+        N_floating_neighbors += 1;
+        H_average += ice_thickness(i + 1, j);
+      }
+
+      if (mask.floating_ice(i - 1, j)) {
+        N_floating_neighbors += 1;
+        H_average += ice_thickness(i - 1, j);
+      }
+
+      if (mask.floating_ice(i, j + 1)) {
+        N_floating_neighbors += 1;
+        H_average += ice_thickness(i, j + 1);
+      }
+
+      if (mask.floating_ice(i, j - 1)) {
+        N_floating_neighbors += 1;
+        H_average += ice_thickness(i, j - 1);
+      }
+
+      if (N_floating_neighbors > 0)
+        H_average /= N_floating_neighbors;
+
+      for (int p = -1; p < 2; p += 2) {
+        int i_offset = p * offset;
+        if (mask.floating_ice(i + i_offset, j) &&
+            mask.ice_margin(i + i_offset, j) == false) {
+          eigen1 += m_strain_rates(i + i_offset, j, 0);
+          eigen2 += m_strain_rates(i + i_offset, j, 1);
+          M += 1;
+        }
+      }
+
+      for (int q = -1; q < 2; q += 2) {
+        int j_offset = q * offset;
+        if (mask.floating_ice(i, j + j_offset) &&
+            mask.ice_margin(i , j + j_offset) == false) {
+          eigen1 += m_strain_rates(i, j + j_offset, 0);
+          eigen2 += m_strain_rates(i, j + j_offset, 1);
+          M += 1;
+        }
+      }
+
+      if (M > 0) {
+        eigen1 /= M;
+        eigen2 /= M;
+      }
+
       double
-        eigen1    = 0.0,
-        eigen2    = 0.0;
-      // Neighbor-averaged ice thickness:
-      double
-        H_average = 0.0;
+        calving_rate_horizontal = 0.0,
+        eigenCalvOffset         = 0.0;
+      // eigenCalvOffset allows adjusting the transition from
+      // compressive to extensive flow regime
 
-      int N_floating_neighbors = 0, M = 0;
-      // M is the number of cells used to compute averages of strain
-      // rate components.
+      // Calving law
+      //
+      // eigen1 * eigen2 has units [s^-2] and calving_rate_horizontal
+      // [m*s^1] hence, eigen_calving_K has units [m*s]
+      if (eigen2 > eigenCalvOffset &&
+          eigen1 > 0.0) { // if spreading in all directions
+        calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
+      }
 
-      // Find partially filled or empty grid boxes on the icefree ocean, which
-      // have floating ice neighbors after the mass continuity step
-      if (mask.ice_free_ocean(i, j) &&
-          mask.next_to_floating_ice(i, j)) {
+      // calculate mass loss with respect to the associated ice thickness and the grid size:
+      double calving_rate = calving_rate_horizontal * H_average / grid.dx; // in m/s
 
-        if (mask.floating_ice(i + 1, j)) {
-          N_floating_neighbors += 1;
-          H_average += ice_thickness(i + 1, j);
+      // apply calving rate at partially filled or empty grid cells
+      if (calving_rate > 0.0) {
+        Href(i, j) -= calving_rate * dt; // in m
+
+        if (Href(i, j) < 0.0) {
+          // Partially filled grid cell became ice-free
+
+          m_thk_loss(i, j) = -Href(i, j); // in m, corresponds to additional ice loss
+          Href(i, j)       = 0.0;
+
+          // additional mass loss will be distributed among
+          // N_floating_neighbors:
+          if (N_floating_neighbors > 0)
+            m_thk_loss(i, j) /= N_floating_neighbors;
         }
+      }
 
-        if (mask.floating_ice(i - 1, j)) {
-          N_floating_neighbors += 1;
-          H_average += ice_thickness(i - 1, j);
-        }
-
-        if (mask.floating_ice(i, j + 1)) {
-          N_floating_neighbors += 1;
-          H_average += ice_thickness(i, j + 1);
-        }
-
-        if (mask.floating_ice(i, j - 1)) {
-          N_floating_neighbors += 1;
-          H_average += ice_thickness(i, j - 1);
-        }
-
-        if (N_floating_neighbors > 0)
-          H_average /= N_floating_neighbors;
-
-        for (int p = -1; p < 2; p += 2) {
-          int i_offset = p * offset;
-          if (mask.floating_ice(i + i_offset, j) &&
-              mask.ice_margin(i + i_offset, j) == false) {
-            eigen1 += m_strain_rates(i + i_offset, j, 0);
-            eigen2 += m_strain_rates(i + i_offset, j, 1);
-            M += 1;
-          }
-        }
-
-        for (int q = -1; q < 2; q += 2) {
-          int j_offset = q * offset;
-          if (mask.floating_ice(i, j + j_offset) &&
-              mask.ice_margin(i , j + j_offset) == false) {
-            eigen1 += m_strain_rates(i, j + j_offset, 0);
-            eigen2 += m_strain_rates(i, j + j_offset, 1);
-            M += 1;
-          }
-        }
-
-        if (M > 0) {
-          eigen1 /= M;
-          eigen2 /= M;
-        }
-
-        double
-          calving_rate_horizontal = 0.0,
-          eigenCalvOffset         = 0.0;
-        // eigenCalvOffset allows adjusting the transition from
-        // compressive to extensive flow regime
-
-        // Calving law
-        //
-        // eigen1 * eigen2 has units [s^-2] and calving_rate_horizontal
-        // [m*s^1] hence, eigen_calving_K has units [m*s]
-        if (eigen2 > eigenCalvOffset &&
-            eigen1 > 0.0) { // if spreading in all directions
-          calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
-        }
-
-        // calculate mass loss with respect to the associated ice thickness and the grid size:
-        double calving_rate = calving_rate_horizontal * H_average / grid.dx; // in m/s
-
-        // apply calving rate at partially filled or empty grid cells
-        if (calving_rate > 0.0) {
-          Href(i, j) -= calving_rate * dt; // in m
-
-          if (Href(i, j) < 0.0) {
-            // Partially filled grid cell became ice-free
-
-            m_thk_loss(i, j) = -Href(i, j); // in m, corresponds to additional ice loss
-            Href(i, j)       = 0.0;
-
-            // additional mass loss will be distributed among
-            // N_floating_neighbors:
-            if (N_floating_neighbors > 0)
-              m_thk_loss(i, j) /= N_floating_neighbors;
-          }
-        }
-
-      } // end of "if (ice_free_ocean && next_to_floating)"
-    } // j-loop
-  } // i-loop
-  ierr = m_thk_loss.end_access(); CHKERRQ(ierr);
+    } // end of "if (ice_free_ocean && next_to_floating)"
+  }
 
   ierr = m_thk_loss.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = m_thk_loss.begin_access(); CHKERRQ(ierr);
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      double thk_loss_ij = 0.0;
+  list.add(m_thk_loss);
 
-      if (mask.floating_ice(i, j) &&
-          (m_thk_loss(i + 1, j) > 0.0 || m_thk_loss(i - 1, j) > 0.0 ||
-           m_thk_loss(i, j + 1) > 0.0 || m_thk_loss(i, j - 1) > 0.0)) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    double thk_loss_ij = 0.0;
 
-        thk_loss_ij = (m_thk_loss(i + 1, j) + m_thk_loss(i - 1, j) +
-                       m_thk_loss(i, j + 1) + m_thk_loss(i, j - 1));     // in m/s
+    if (mask.floating_ice(i, j) &&
+        (m_thk_loss(i + 1, j) > 0.0 || m_thk_loss(i - 1, j) > 0.0 ||
+         m_thk_loss(i, j + 1) > 0.0 || m_thk_loss(i, j - 1) > 0.0)) {
 
-        // Note PetscMax: we do not account for further calving
-        // ice-inwards! Alternatively CFL criterion for time stepping
-        // could be adjusted to maximum of calving rate
-        Href(i, j) = PetscMax(ice_thickness(i, j) - thk_loss_ij, 0.0); // in m
+      thk_loss_ij = (m_thk_loss(i + 1, j) + m_thk_loss(i - 1, j) +
+                     m_thk_loss(i, j + 1) + m_thk_loss(i, j - 1));     // in m/s
 
-        ice_thickness(i, j) = 0.0;
-        pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
-      }
+      // Note PetscMax: we do not account for further calving
+      // ice-inwards! Alternatively CFL criterion for time stepping
+      // could be adjusted to maximum of calving rate
+      Href(i, j) = PetscMax(ice_thickness(i, j) - thk_loss_ij, 0.0); // in m
 
-    } // j-loop
-  } // i-loop
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
-  ierr = Href.end_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.end_access(); CHKERRQ(ierr);
-  ierr = m_thk_loss.end_access(); CHKERRQ(ierr);
+      ice_thickness(i, j) = 0.0;
+      pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
+    }
+
+  }
 
   ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
 
@@ -302,69 +296,67 @@ PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
 
   ierr = update_strain_rates(); CHKERRQ(ierr);
 
-  ierr = m_mask->begin_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_mask);
+  list.add(m_strain_rates);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      // Average of strain-rate eigenvalues in adjacent floating grid cells to
-      // be used for eigencalving
-      double eigen1 = 0.0, eigen2 = 0.0;
-      // Number of cells used in computing eigen1 and eigen2:
-      int M = 0;
+  for (Points pt(grid); pt; pt.next()) {
+    const int i = pt.i(), j = pt.j();
+    // Average of strain-rate eigenvalues in adjacent floating grid cells to
+    // be used for eigencalving
+    double eigen1 = 0.0, eigen2 = 0.0;
+    // Number of cells used in computing eigen1 and eigen2:
+    int M = 0;
 
-      // find partially filled or empty grid boxes on the ice-free
-      // ocean which have floating ice neighbors
-      if ((mask.ice_free_ocean(i, j) &&
-           mask.next_to_floating_ice(i, j)) == false)
-        continue;
+    // find partially filled or empty grid boxes on the ice-free
+    // ocean which have floating ice neighbors
+    if ((mask.ice_free_ocean(i, j) &&
+         mask.next_to_floating_ice(i, j)) == false)
+      continue;
 
-      double
-        calving_rate_horizontal = 0.0,
-        eigenCalvOffset = 0.0;
+    double
+      calving_rate_horizontal = 0.0,
+      eigenCalvOffset = 0.0;
 
-      for (int p = -1; p < 2; p += 2) {
-        int i_offset = p * offset;
-        if (mask.floating_ice(i + i_offset, j) &&
-            mask.ice_margin(i + i_offset, j) == false) {
-          eigen1 += m_strain_rates(i + i_offset, j, 0);
-          eigen2 += m_strain_rates(i + i_offset, j, 1);
-          M += 1;
-        }
+    for (int p = -1; p < 2; p += 2) {
+      int i_offset = p * offset;
+      if (mask.floating_ice(i + i_offset, j) &&
+          mask.ice_margin(i + i_offset, j) == false) {
+        eigen1 += m_strain_rates(i + i_offset, j, 0);
+        eigen2 += m_strain_rates(i + i_offset, j, 1);
+        M += 1;
       }
+    }
 
-      for (int q = -1; q < 2; q += 2) {
-        int j_offset = q * offset;
-        if (mask.floating_ice(i, j + j_offset) &&
-            mask.ice_margin(i,   j + j_offset) == false) {
-          eigen1 += m_strain_rates(i, j + j_offset, 0);
-          eigen2 += m_strain_rates(i, j + j_offset, 1);
-          M += 1;
-        }
+    for (int q = -1; q < 2; q += 2) {
+      int j_offset = q * offset;
+      if (mask.floating_ice(i, j + j_offset) &&
+          mask.ice_margin(i,   j + j_offset) == false) {
+        eigen1 += m_strain_rates(i, j + j_offset, 0);
+        eigen2 += m_strain_rates(i, j + j_offset, 1);
+        M += 1;
       }
+    }
 
-      if (M > 0) {
-        eigen1 /= M;
-        eigen2 /= M;
+    if (M > 0) {
+      eigen1 /= M;
+      eigen2 /= M;
+    }
+
+    // calving law
+    if (eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
+      calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
+      my_calving_rate_counter += 1.0;
+      my_calving_rate_mean += calving_rate_horizontal;
+      if (my_calving_rate_max < calving_rate_horizontal) {
+        i0 = i;
+        j0 = j;
       }
+      my_calving_rate_max = PetscMax(my_calving_rate_max, calving_rate_horizontal);
+    } else calving_rate_horizontal = 0.0;
 
-      // calving law
-      if (eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
-        calving_rate_horizontal = m_K * eigen1 * (eigen2 - eigenCalvOffset);
-        my_calving_rate_counter += 1.0;
-        my_calving_rate_mean += calving_rate_horizontal;
-        if (my_calving_rate_max < calving_rate_horizontal) {
-          i0 = i;
-          j0 = j;
-        }
-        my_calving_rate_max = PetscMax(my_calving_rate_max, calving_rate_horizontal);
-      } else calving_rate_horizontal = 0.0;
+  }
 
-    } // i-loop
-  } // j-loop
-
-  ierr = m_mask->end_access(); CHKERRQ(ierr);
-  ierr = m_strain_rates.end_access(); CHKERRQ(ierr);
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
   ierr = GlobalSum(&my_calving_rate_mean, &calving_rate_mean, grid.com); CHKERRQ(ierr);
@@ -462,77 +454,74 @@ PetscErrorCode EigenCalving::update_strain_rates() {
  */
 PetscErrorCode EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
                                                        IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
-
   MaskQuery mask(pism_mask);
 
-  ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      if (mask.ice_free(i, j))  // FIXME: it might be better to have access to bedrock elevation b(i,j)
-                                // and sea level SL so that the predicate can be
-                                //   mask.ice_free(i,j) || (mask.grounded_ice(i,j) && (b(i,j) >= SL)))
-        continue;
+  IceModelVec::AccessList list;
+  list.add(pism_mask);
+  list.add(ice_thickness);
 
-      bool ice_free_N,  ice_free_E,  ice_free_S,  ice_free_W,
-           ice_free_NE, ice_free_NW, ice_free_SE, ice_free_SW;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    if (mask.ice_free(i, j))  // FIXME: it might be better to have access to bedrock elevation b(i,j)
+      // and sea level SL so that the predicate can be
+      //   mask.ice_free(i,j) || (mask.grounded_ice(i,j) && (b(i,j) >= SL)))
+      continue;
 
-      if (mask.grounded_ice(i,j)) {
-        // if (i,j) is grounded ice then we will remove it if it has
-        // exclusively ice-free ocean neighbors
-        ice_free_N  = mask.ice_free_ocean(i, j + 1);
-        ice_free_E  = mask.ice_free_ocean(i + 1, j);
-        ice_free_S  = mask.ice_free_ocean(i, j - 1);
-        ice_free_W  = mask.ice_free_ocean(i - 1, j);
-        ice_free_NE = mask.ice_free_ocean(i + 1, j + 1);
-        ice_free_NW = mask.ice_free_ocean(i - 1, j + 1);
-        ice_free_SE = mask.ice_free_ocean(i + 1, j - 1);
-        ice_free_SW = mask.ice_free_ocean(i - 1, j - 1);
-      } else if (mask.floating_ice(i,j)) {
-        // if (i,j) is floating then we will remove it if its neighbors are
-        // ice-free, whether ice-free ocean or ice-free ground
-        ice_free_N  = mask.ice_free(i, j + 1);
-        ice_free_E  = mask.ice_free(i + 1, j);
-        ice_free_S  = mask.ice_free(i, j - 1);
-        ice_free_W  = mask.ice_free(i - 1, j);
-        ice_free_NE = mask.ice_free(i + 1, j + 1);
-        ice_free_NW = mask.ice_free(i - 1, j + 1);
-        ice_free_SE = mask.ice_free(i + 1, j - 1);
-        ice_free_SW = mask.ice_free(i - 1, j - 1);
-      }
+    bool ice_free_N,  ice_free_E,  ice_free_S,  ice_free_W,
+      ice_free_NE, ice_free_NW, ice_free_SE, ice_free_SW;
 
-      if ((ice_free_W == false &&
-           ice_free_NW         &&
-           ice_free_SW         &&
-           ice_free_N          &&
-           ice_free_S          &&
-           ice_free_E)         ||
-          (ice_free_N == false &&
-           ice_free_NW         &&
-           ice_free_NE         &&
-           ice_free_W          &&
-           ice_free_E          &&
-           ice_free_S)         ||
-          (ice_free_E == false &&
-           ice_free_NE         &&
-           ice_free_SE         &&
-           ice_free_W          &&
-           ice_free_S          &&
-           ice_free_N)         ||
-          (ice_free_S == false &&
-           ice_free_SW         &&
-           ice_free_SE         &&
-           ice_free_W          &&
-           ice_free_E          &&
-           ice_free_N)) {
-        pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
-        ice_thickness(i, j) = 0.0;
-      }
+    if (mask.grounded_ice(i,j)) {
+      // if (i,j) is grounded ice then we will remove it if it has
+      // exclusively ice-free ocean neighbors
+      ice_free_N  = mask.ice_free_ocean(i, j + 1);
+      ice_free_E  = mask.ice_free_ocean(i + 1, j);
+      ice_free_S  = mask.ice_free_ocean(i, j - 1);
+      ice_free_W  = mask.ice_free_ocean(i - 1, j);
+      ice_free_NE = mask.ice_free_ocean(i + 1, j + 1);
+      ice_free_NW = mask.ice_free_ocean(i - 1, j + 1);
+      ice_free_SE = mask.ice_free_ocean(i + 1, j - 1);
+      ice_free_SW = mask.ice_free_ocean(i - 1, j - 1);
+    } else if (mask.floating_ice(i,j)) {
+      // if (i,j) is floating then we will remove it if its neighbors are
+      // ice-free, whether ice-free ocean or ice-free ground
+      ice_free_N  = mask.ice_free(i, j + 1);
+      ice_free_E  = mask.ice_free(i + 1, j);
+      ice_free_S  = mask.ice_free(i, j - 1);
+      ice_free_W  = mask.ice_free(i - 1, j);
+      ice_free_NE = mask.ice_free(i + 1, j + 1);
+      ice_free_NW = mask.ice_free(i - 1, j + 1);
+      ice_free_SE = mask.ice_free(i + 1, j - 1);
+      ice_free_SW = mask.ice_free(i - 1, j - 1);
+    }
+
+    if ((ice_free_W == false &&
+         ice_free_NW         &&
+         ice_free_SW         &&
+         ice_free_N          &&
+         ice_free_S          &&
+         ice_free_E)         ||
+        (ice_free_N == false &&
+         ice_free_NW         &&
+         ice_free_NE         &&
+         ice_free_W          &&
+         ice_free_E          &&
+         ice_free_S)         ||
+        (ice_free_E == false &&
+         ice_free_NE         &&
+         ice_free_SE         &&
+         ice_free_W          &&
+         ice_free_S          &&
+         ice_free_N)         ||
+        (ice_free_S == false &&
+         ice_free_SW         &&
+         ice_free_SE         &&
+         ice_free_W          &&
+         ice_free_E          &&
+         ice_free_N)) {
+      pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
+      ice_thickness(i, j) = 0.0;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = pism_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

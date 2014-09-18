@@ -84,35 +84,28 @@ PetscErrorCode IceModel::do_calving() {
  * floating ice neighbor.
  */
 PetscErrorCode IceModel::Href_cleanup() {
-  PetscErrorCode ierr;
-
   if (vHref.was_created() == false)
     return 0;
 
   MaskQuery mask(vMask);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vHref.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(vHref);
+  list.add(vMask);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
-        ice_thickness(i, j) += vHref(i, j);
-        vHref(i, j) = 0.0;
-      }
+    if (ice_thickness(i, j) > 0 && vHref(i, j) > 0) {
+      ice_thickness(i, j) += vHref(i, j);
+      vHref(i, j) = 0.0;
+    }
 
-      if (vHref(i, j) > 0.0 && mask.next_to_ice(i, j) == false) {
-        vHref(i, j) = 0.0;
-      }
-
+    if (vHref(i, j) > 0.0 && mask.next_to_ice(i, j) == false) {
+      vHref(i, j) = 0.0;
     }
   }
-
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vHref.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -143,63 +136,50 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
     use_Href = Href.was_created() && Href_old.was_created();
   double my_total_discharge = 0.0, total_discharge;
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = thickness_old.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(thickness_old);
+  list.add(vMask);
+  list.add(cell_area);
 
   if (update_2d_discharge) {
-    ierr = discharge_flux_2D_cumulative.begin_access(); CHKERRQ(ierr);
+    list.add(discharge_flux_2D_cumulative);
   }
 
   if (use_Href) {
-    ierr = Href.begin_access(); CHKERRQ(ierr);
-    ierr = Href_old.begin_access(); CHKERRQ(ierr);
+    list.add(Href);
+    list.add(Href_old);
   }
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask.ice_free_ocean(i,j)) {
-        double
-          delta_H    = thickness(i,j) - thickness_old(i,j),
-          delta_Href = 0.0,
-          discharge  = 0.0;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        if (use_Href == true) {
-          delta_Href = Href(i,j) - Href_old(i,j);
-          // Only count mass loss. (A cell may stay "partially-filled"
-          // for several time-steps as the calving front advances. In
-          // this case delta_Href is real, but does not correspond to
-          // either loss or gain of mass.)
-          if (delta_Href > 0.0)
-            delta_Href = 0.0;
-        } else {
+    if (mask.ice_free_ocean(i,j)) {
+      double
+        delta_H    = thickness(i,j) - thickness_old(i,j),
+        delta_Href = 0.0,
+        discharge  = 0.0;
+
+      if (use_Href == true) {
+        delta_Href = Href(i,j) - Href_old(i,j);
+        // Only count mass loss. (A cell may stay "partially-filled"
+        // for several time-steps as the calving front advances. In
+        // this case delta_Href is real, but does not correspond to
+        // either loss or gain of mass.)
+        if (delta_Href > 0.0)
           delta_Href = 0.0;
-        }
-
-        discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
-
-        if (update_2d_discharge)
-          discharge_flux_2D_cumulative(i,j) += discharge;
-
-        my_total_discharge += discharge;
+      } else {
+        delta_Href = 0.0;
       }
+
+      discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
+
+      if (update_2d_discharge)
+        discharge_flux_2D_cumulative(i,j) += discharge;
+
+      my_total_discharge += discharge;
     }
   }
-
-  if (use_Href) {
-    ierr = Href_old.end_access(); CHKERRQ(ierr);
-    ierr = Href.end_access(); CHKERRQ(ierr);
-  }
-
-  if (update_2d_discharge) {
-    ierr = discharge_flux_2D_cumulative.end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = thickness_old.end_access(); CHKERRQ(ierr);
-  ierr = thickness.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&my_total_discharge, &total_discharge, grid.com); CHKERRQ(ierr);
 

@@ -272,8 +272,20 @@ public:
   //! Dump an IceModelVec to a file. *This is for debugging only.*
   //! Uses const char[] to make it easier to call it from gdb.
   PetscErrorCode dump(const char filename[]);
-};
 
+public:
+
+  //! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
+  class AccessList {
+  public:
+    AccessList();
+    AccessList(IceModelVec &v);
+    ~AccessList();
+    void add(IceModelVec &v);
+  private:
+    std::vector<IceModelVec*> m_vecs;
+  };
+};
 
 enum Direction {North = 0, East, South, West};
 
@@ -655,9 +667,7 @@ public:
 
   PetscErrorCode  getHorSlice(Vec &gslice, double z); // used in iMmatlab.cc
   PetscErrorCode  getHorSlice(IceModelVec2S &gslice, double z);
-  PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2S &myH); // used in iMviewers.cc
   PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, IceModelVec2S &myH);
-  PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, double **H);
   PetscErrorCode  extend_vertically(int old_Mz, double fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
 protected:

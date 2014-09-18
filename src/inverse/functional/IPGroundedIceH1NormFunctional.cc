@@ -29,7 +29,9 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(x);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -37,7 +39,7 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double
   DirichletData_Scalar dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
 
-  ierr = m_ice_mask.begin_access(); CHKERRQ(ierr);
+  list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
@@ -66,10 +68,6 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::valueAt(IceModelVec2S &x, double
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  ierr = m_ice_mask.end_access(); CHKERRQ(ierr);
-
-  ierr = x.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -82,11 +80,13 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVe
 
   double a_e[FEQuadrature::Nk];
   double a_q[FEQuadrature::Nq], dadx_q[FEQuadrature::Nq], dady_q[FEQuadrature::Nq];
-  ierr = a.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(a);
 
   double b_e[FEQuadrature::Nk];
   double b_q[FEQuadrature::Nq], dbdx_q[FEQuadrature::Nq], dbdy_q[FEQuadrature::Nq];
-  ierr = b.begin_access(); CHKERRQ(ierr);
+  list.add(b);
 
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
@@ -94,7 +94,7 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVe
   DirichletData_Scalar dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
 
-  ierr = m_ice_mask.begin_access(); CHKERRQ(ierr);
+  list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all LOCAL elements.
@@ -129,11 +129,6 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::dot(IceModelVec2S &a, IceModelVe
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
 
-  ierr = m_ice_mask.end_access(); CHKERRQ(ierr);
-
-  ierr = a.end_access(); CHKERRQ(ierr);
-  ierr = b.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -147,10 +142,12 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, Ice
 
   double x_e[FEQuadrature::Nk];
   double x_q[FEQuadrature::Nq], dxdx_q[FEQuadrature::Nq], dxdy_q[FEQuadrature::Nq];
-  ierr = x.begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(x);
 
   double gradient_e[FEQuadrature::Nk];
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
+  list.add(gradient);
 
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
@@ -161,7 +158,7 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, Ice
   DirichletData_Scalar dirichletBC;
   ierr = dirichletBC.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
 
-  ierr = m_ice_mask.begin_access(); CHKERRQ(ierr);
+  list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
 
   // Loop through all local and ghosted elements.
@@ -202,9 +199,6 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::gradientAt(IceModelVec2S &x, Ice
   } // i
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
-  ierr = m_ice_mask.end_access(); CHKERRQ(ierr);
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -221,7 +215,8 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   DirichletData_Scalar zeroLocs;
   ierr = zeroLocs.init(m_dirichletIndices, NULL); CHKERRQ(ierr);
 
-  ierr = m_ice_mask.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(m_ice_mask);
   MaskQuery iceQuery(m_ice_mask);
 
   // Values of the finite element test functions at the quadrature points.
@@ -270,7 +265,6 @@ PetscErrorCode IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   }
   ierr = zeroLocs.finish(); CHKERRQ(ierr);
 
-  ierr = m_ice_mask.end_access(); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(form, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(form, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

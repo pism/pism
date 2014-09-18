@@ -21,27 +21,24 @@
 namespace pism {
 
 void GeometryCalculator::compute(IceModelVec2S &bed, IceModelVec2S &thickness,
-                    IceModelVec2Int &out_mask, IceModelVec2S &out_surface)
+                                 IceModelVec2Int &out_mask, IceModelVec2S &out_surface)
 {
-  bed.begin_access();
-  thickness.begin_access();
-  out_mask.begin_access();
-  out_surface.begin_access();
+  IceModelVec::AccessList list;
+  list.add(bed);
+  list.add(thickness);
+  list.add(out_mask);
+  list.add(out_surface);
   IceGrid *grid = bed.get_grid();
   
-  int GHOSTS = grid->max_stencil_width;
-  for (int   i = grid->xs - GHOSTS; i < grid->xs+grid->xm + GHOSTS; ++i) {
-    for (int j = grid->ys - GHOSTS; j < grid->ys+grid->ym + GHOSTS; ++j) {
-      int mask_value;
-      compute(bed(i,j),thickness(i,j),&mask_value,&out_surface(i,j));
-      out_mask(i,j) = mask_value;
-    } // inner for loop (j)
-  } // outer for loop (i)
+  int stencil = out_mask.get_stencil_width();
+  for (PointsWithGhosts p(*grid, stencil); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    int mask_value;
+    compute(bed(i,j),thickness(i,j),&mask_value,&out_surface(i,j));
+    out_mask(i,j) = mask_value;
+  }
   
-  bed.end_access();
-  thickness.end_access();
-  out_mask.end_access();
-  out_surface.end_access();
 }
 
 } // end of namespace pism

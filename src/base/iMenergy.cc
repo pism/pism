@@ -133,43 +133,38 @@ PetscErrorCode IceModel::combine_basal_melt_rate() {
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
 
   const bool sub_gl = config.get_flag("sub_groundingline");
+
+  IceModelVec::AccessList list;
+
   if (sub_gl == true) {
-    ierr = gl_mask.begin_access(); CHKERRQ(ierr);
+    list.add(gl_mask);
   }
 
   MaskQuery mask(vMask);
 
   double ice_density = config.get("ice_density");
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate.begin_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
+  list.add(vMask);
+  list.add(basal_melt_rate);
+  list.add(shelfbmassflux);
 
-  for (int i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      double lambda = 1.0;      // 1.0 corresponds to the grounded case
-      // Note: here we convert shelf base mass flux from [kg m-2 s-1] to [m s-1]:
-      const double
-        M_grounded   = basal_melt_rate(i,j),
-        M_shelf_base = shelfbmassflux(i,j) / ice_density;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // Use the fractional floatation mask to adjust the basal melt
-      // rate near the grounding line:
-      if (sub_gl == true) {
-        lambda = gl_mask(i,j);
-      } else if (mask.ocean(i,j)) {
-        lambda = 0.0;
-      }
-      basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
+    double lambda = 1.0;      // 1.0 corresponds to the grounded case
+    // Note: here we convert shelf base mass flux from [kg m-2 s-1] to [m s-1]:
+    const double
+      M_grounded   = basal_melt_rate(i,j),
+      M_shelf_base = shelfbmassflux(i,j) / ice_density;
+
+    // Use the fractional floatation mask to adjust the basal melt
+    // rate near the grounding line:
+    if (sub_gl == true) {
+      lambda = gl_mask(i,j);
+    } else if (mask.ocean(i,j)) {
+      lambda = 0.0;
     }
-  }
-
-  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
-  ierr = basal_melt_rate.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-
-  if (sub_gl == true) {
-    ierr = gl_mask.end_access(); CHKERRQ(ierr);
+    basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
   }
 
   return 0;
@@ -196,35 +191,31 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask.grounded(i,j)) {
-        if (mask.ice_free(i,j)) { // no ice: sees air temp
-          result(i,j) = ice_surface_temp(i,j);
-        } else { // ice: sees temp of base of ice
-          const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
-          double temp;
-          // ignore return code when getting temperature: we are committed to
-          //   this enthalpy field; getAbsTemp() only returns temperatures at or
-          //   below pressure melting
-          EC->getAbsTemp(result(i,j), pressure, temp);
-          result(i,j) = temp;
-        }
-      } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
+  IceModelVec::AccessList list;
+  list.add(bed_topography);
+  list.add(result);
+  list.add(ice_thickness);
+  list.add(vMask);
+  list.add(ice_surface_temp);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.grounded(i,j)) {
+      if (mask.ice_free(i,j)) { // no ice: sees air temp
+        result(i,j) = ice_surface_temp(i,j);
+      } else { // ice: sees temp of base of ice
+        const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
+        double temp;
+        // ignore return code when getting temperature: we are committed to
+        //   this enthalpy field; getAbsTemp() only returns temperatures at or
+        //   below pressure melting
+        EC->getAbsTemp(result(i,j), pressure, temp);
+        result(i,j) = temp;
       }
+    } else { // floating: apply pressure melting temp as top of bedrock temp
+      result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

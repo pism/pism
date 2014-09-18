@@ -401,51 +401,43 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
     }
   }
 
+  IceModelVec::AccessList list;
   if (addtransportable == true) {
-    ierr = m_bwat.begin_access(); CHKERRQ(ierr);
+    list.add(m_bwat);
   }
-  ierr = m_tillwat.begin_access();         CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access();        CHKERRQ(ierr);
-  ierr = m_tauc.begin_access();            CHKERRQ(ierr);
-  ierr = m_mask->begin_access();           CHKERRQ(ierr);
-  ierr = m_bed_topography->begin_access(); CHKERRQ(ierr);
-  ierr = m_Po.begin_access();              CHKERRQ(ierr);
+  list.add(m_tillwat);
+  list.add(m_till_phi);
+  list.add(m_tauc);
+  list.add(*m_mask);
+  list.add(*m_bed_topography);
+  list.add(m_Po);
+
   MaskQuery m(*m_mask);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (m.ocean(i, j)) {
-        m_tauc(i, j) = 0.0;
-      } else if (m.ice_free(i, j)) {
-        m_tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
-      } else { // grounded and there is some ice
-        // user can ask that marine grounding lines get special treatment
-        const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
-        double water = m_tillwat(i,j); // usual case
-        if (slipperygl == true &&
-            (*m_bed_topography)(i,j) <= sea_level &&
-            (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j))) {
-          water = tillwat_max;
-        } else if (addtransportable == true) {
-          water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
-        }
-        double s    = water / tillwat_max,
-               Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-        Ntil = PetscMin(m_Po(i,j), Ntil);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        m_tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
+    if (m.ocean(i, j)) {
+      m_tauc(i, j) = 0.0;
+    } else if (m.ice_free(i, j)) {
+      m_tauc(i, j) = high_tauc;  // large yield stress if grounded and ice-free
+    } else { // grounded and there is some ice
+      // user can ask that marine grounding lines get special treatment
+      const double sea_level = 0.0; // FIXME: get sea-level from correct PISM source
+      double water = m_tillwat(i,j); // usual case
+      if (slipperygl == true &&
+          (*m_bed_topography)(i,j) <= sea_level &&
+          (m.next_to_floating_ice(i,j) || m.next_to_ice_free_ocean(i,j))) {
+        water = tillwat_max;
+      } else if (addtransportable == true) {
+        water = m_tillwat(i,j) + tlftw * log(1.0 + m_bwat(i,j) / tlftw);
       }
-    }
-  }
+      double s    = water / tillwat_max,
+        Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntil = PetscMin(m_Po(i,j), Ntil);
 
-  ierr = m_Po.end_access();              CHKERRQ(ierr);
-  ierr = m_bed_topography->end_access(); CHKERRQ(ierr);
-  ierr = m_mask->end_access();           CHKERRQ(ierr);
-  ierr = m_tauc.end_access();            CHKERRQ(ierr);
-  ierr = m_till_phi.end_access();        CHKERRQ(ierr);
-  ierr = m_tillwat.end_access();         CHKERRQ(ierr);
-  if (addtransportable == true) {
-    ierr = m_bwat.end_access(); CHKERRQ(ierr);
+      m_tauc(i, j) = c0 + Ntil * tan((M_PI/180.0) * m_till_phi(i, j));
+    }
   }
 
   ierr = m_tauc.update_ghosts(); CHKERRQ(ierr);
@@ -509,26 +501,22 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
 
   double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
-  ierr = m_bed_topography->begin_access(); CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_bed_topography);
+  list.add(m_till_phi);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; ++j) {
-      double bed = (*m_bed_topography)(i, j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    double bed = (*m_bed_topography)(i, j);
 
-      if (bed <= topg_min) {
-        m_till_phi(i, j) = phi_min;
-      } else if (bed >= topg_max) {
-        m_till_phi(i, j) = phi_max;
-      } else {
-        m_till_phi(i, j) = phi_min + (bed - topg_min) * slope;
-      }
-
+    if (bed <= topg_min) {
+      m_till_phi(i, j) = phi_min;
+    } else if (bed >= topg_max) {
+      m_till_phi(i, j) = phi_max;
+    } else {
+      m_till_phi(i, j) = phi_min + (bed - topg_min) * slope;
     }
   }
-
-  ierr = m_bed_topography->end_access(); CHKERRQ(ierr);
-  ierr = m_till_phi.end_access(); CHKERRQ(ierr);
 
   // communicate ghosts so that the tauc computation can be performed locally
   // (including ghosts of tauc, that is)
@@ -551,32 +539,30 @@ PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
   ierr = m_hydrology->till_water_thickness(m_tillwat); CHKERRQ(ierr);
   ierr = m_hydrology->overburden_pressure(m_Po); CHKERRQ(ierr);
 
-  ierr = m_mask->begin_access();    CHKERRQ(ierr);
-  ierr = m_tauc.begin_access();     CHKERRQ(ierr);
-  ierr = m_tillwat.begin_access();  CHKERRQ(ierr);
-  ierr = m_Po.begin_access();       CHKERRQ(ierr);
-  ierr = m_till_phi.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*m_mask);
+  list.add(m_tauc);
+  list.add(m_tillwat);
+  list.add(m_Po);
+  list.add(m_till_phi);
+
   MaskQuery m(*m_mask);
-  int GHOSTS = grid.max_stencil_width;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if (m.ocean(i, j)) {
-        // no change
-      } else if (m.ice_free(i, j)) {
-        // no change
-      } else { // grounded and there is some ice
-        double s    = m_tillwat(i,j) / tillwat_max,
-               Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
-        Ntil = PetscMin(m_Po(i,j), Ntil);
-        m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
-      }
+
+  int GHOSTS = m_till_phi.get_stencil_width();
+  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m.ocean(i, j)) {
+      // no change
+    } else if (m.ice_free(i, j)) {
+      // no change
+    } else { // grounded and there is some ice
+      double s    = m_tillwat(i,j) / tillwat_max,
+        Ntil = N0 * pow(delta * m_Po(i,j) / N0, s) * pow(10.0, e0overCc * (1.0 - s));
+      Ntil = PetscMin(m_Po(i,j), Ntil);
+      m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
     }
   }
-  ierr = m_mask->end_access();    CHKERRQ(ierr);
-  ierr = m_tauc.end_access();     CHKERRQ(ierr);
-  ierr = m_till_phi.end_access(); CHKERRQ(ierr);
-  ierr = m_tillwat.end_access();  CHKERRQ(ierr);
-  ierr = m_Po.end_access();       CHKERRQ(ierr);
 
   return 0;
 }

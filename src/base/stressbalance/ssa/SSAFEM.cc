@@ -261,21 +261,22 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*enthalpy);
   bool driving_stress_explicit;
   if ((driving_stress_x != NULL) && (driving_stress_y != NULL)) {
     driving_stress_explicit = true;
-    ierr = driving_stress_x->begin_access(); CHKERRQ(ierr);
-    ierr = driving_stress_y->begin_access(); CHKERRQ(ierr);
+    list.add(*driving_stress_x);
+    list.add(*driving_stress_y);
   } else {
     // The class SSA ensures in this case that 'surface' is available
     driving_stress_explicit = false;
-    ierr = surface->begin_access(); CHKERRQ(ierr);
+    list.add(*surface);
   }
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  list.add(*thickness);
+  list.add(*bed);
+  list.add(*tauc);
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys   = m_element_index.ys, ym = m_element_index.ym;
@@ -347,18 +348,9 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
         coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
                                                         &grid.zlevels[0], Enth_q[q]);
       }
-    }
-  }
-  if (driving_stress_explicit) {
-    ierr = driving_stress_x->end_access(); CHKERRQ(ierr);
-    ierr = driving_stress_y->end_access(); CHKERRQ(ierr);
-  } else {
-    ierr = surface->end_access(); CHKERRQ(ierr);
-  }
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
+
+    } // j-loop
+  } // i-loop
 
   for (unsigned int q = 0; q < FEQuadrature::Nq; q++)
   {
@@ -441,11 +433,11 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   (void) info; // Avoid compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      residual_global[i][j].u = 0.0;
-      residual_global[i][j].v = 0.0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    residual_global[i][j].u = 0.0;
+    residual_global[i][j].v = 0.0;
   }
 
   // Start access to Dirichlet data if present.
@@ -559,15 +551,15 @@ PetscErrorCode SSAFEM::monitor_function(const Vector2 **velocity_global,
   ierr = PetscPrintf(grid.com,
                      "SSA Solution and Function values (pointwise residuals)\n"); CHKERRQ(ierr);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      ierr = PetscSynchronizedPrintf(grid.com,
-                                     "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
-                                     i, j,
-                                     velocity_global[i][j].u, velocity_global[i][j].v,
-                                     residual_global[i][j].u, residual_global[i][j].v);
-      CHKERRQ(ierr);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = PetscSynchronizedPrintf(grid.com,
+                                   "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
+                                   i, j,
+                                   velocity_global[i][j].u, velocity_global[i][j].v,
+                                   residual_global[i][j].u, residual_global[i][j].v);
+    CHKERRQ(ierr);
   }
   ierr = PetscSynchronizedFlush(grid.com); CHKERRQ(ierr);
 

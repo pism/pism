@@ -37,26 +37,23 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
 
   double w = 1.;
 
-  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(m_u_observed);
 
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
   }
-  for (int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      Vector2 &u_obs_ij = m_u_observed(i, j);
-      if (m_weights) {
-        w = (*m_weights)(i, j);
-      }
-      double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
-      value += log(1 + w*scale_sq/obsMagSq);
+
+  for (Points p(m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    Vector2 &u_obs_ij = m_u_observed(i, j);
+    if (m_weights) {
+      w = (*m_weights)(i, j);
     }
+    double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
+    value += log(1 + w*scale_sq/obsMagSq);
   }
-  if (m_weights) {
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
-  }
-
-  ierr = m_u_observed.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
   return 0;
@@ -70,73 +67,59 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
 
   double w = 1;
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(x);
+  list.add(m_u_observed);
+  if (m_weights) {
+    list.add(*m_weights);
+  }
 
-  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
-  if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
-  }
-  for (int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      Vector2 &x_ij = x(i, j);
-      Vector2 &u_obs_ij = m_u_observed(i, j);
-      if (m_weights) {
-        w = (*m_weights)(i, j);
-      }
-      double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
-      value += log(1 + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v)/obsMagSq);
+  for (Points p(m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    Vector2 &x_ij = x(i, j);
+    Vector2 &u_obs_ij = m_u_observed(i, j);
+    if (m_weights) {
+      w = (*m_weights)(i, j);
     }
-  }
-  ierr = m_u_observed.end_access(); CHKERRQ(ierr);
-  if (m_weights) {
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
+    double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
+    value += log(1 + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v)/obsMagSq);
   }
 
   value /= m_normalization;
 
   ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-
   return 0;
 }
 
 PetscErrorCode IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
-  PetscErrorCode   ierr;
-
   gradient.set(0);
 
   double w = 1;
 
-  ierr = x.begin_access(); CHKERRQ(ierr);
-
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
-
-  ierr = m_u_observed.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(x);
+  list.add(gradient);
+  list.add(m_u_observed);
   if (m_weights) {
-    ierr = m_weights->begin_access(); CHKERRQ(ierr);
+    list.add(*m_weights);
   }
-  for (int i=m_grid.xs; i<m_grid.xs+m_grid.xm; i++) {
-    for (int j=m_grid.ys; j<m_grid.ys+m_grid.ym; j++) {
-      Vector2 &x_ij = x(i, j);
-      Vector2 &u_obs_ij = m_u_observed(i, j);
-      if (m_weights) {
-        w = (*m_weights)(i, j);
-      }
-      double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
-      double dJdxsq =  w/(obsMagSq + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v));
 
-      gradient(i, j).u = dJdxsq*2*x_ij.u/m_normalization;
-      gradient(i, j).v = dJdxsq*2*x_ij.v/m_normalization;
+  for (Points p(m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    Vector2 &x_ij = x(i, j);
+    Vector2 &u_obs_ij = m_u_observed(i, j);
+    if (m_weights) {
+      w = (*m_weights)(i, j);
     }
-  }
-  ierr = m_u_observed.end_access(); CHKERRQ(ierr);
-  if (m_weights) {
-    ierr = m_weights->end_access(); CHKERRQ(ierr);
-  }
+    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+    double dJdxsq =  w/(obsMagSq + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v));
 
-  ierr = x.end_access(); CHKERRQ(ierr);
-  ierr = gradient.end_access(); CHKERRQ(ierr);
+    gradient(i, j).u = dJdxsq*2*x_ij.u/m_normalization;
+    gradient(i, j).v = dJdxsq*2*x_ij.v/m_normalization;
+  }
 
   return 0;
 }

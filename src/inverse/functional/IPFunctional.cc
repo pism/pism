@@ -29,22 +29,27 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceM
   
   ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
   
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i< grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j< grid.ys+grid.ym; j++) {
-      x.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(gradient);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    {
+      IceModelVec::AccessList access_x(x);
       x(i,j) += h;
-      x.end_access(); CHKERRQ(ierr);
-      x.update_ghosts();
-      ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
-      x.begin_access(); CHKERRQ(ierr);
-      x(i,j) -= h;
-      x.end_access(); CHKERRQ(ierr);
-      x.update_ghosts();
-      gradient(i,j) = (Fh-F0)/h;
     }
+    x.update_ghosts();
+
+    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
+
+    {
+      IceModelVec::AccessList access_x(x);
+      x(i,j) -= h;
+    }
+    x.update_ghosts();
+
+    gradient(i,j) = (Fh-F0)/h;
   }
-  ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -57,33 +62,43 @@ PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceM
   
   ierr = f.valueAt(x,&F0); CHKERRQ(ierr);
   
-  ierr = gradient.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i< grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j< grid.ys+grid.ym; j++) {
-      x.begin_access(); CHKERRQ(ierr);
-      x(i,j).u += h;
-      x.end_access(); CHKERRQ(ierr);
-      x.update_ghosts();
-      ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
-      x.begin_access(); CHKERRQ(ierr);
-      x(i,j).u -= h;
-      x.end_access(); CHKERRQ(ierr);
-      x.update_ghosts();
-      gradient(i,j).u = (Fh-F0)/h;
+  IceModelVec::AccessList access_gradient(gradient);
 
-      x.begin_access(); CHKERRQ(ierr);
-      x(i,j).v += h;
-      x.end_access(); CHKERRQ(ierr);
-      x.update_ghosts();
-      ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
-      x.begin_access(); CHKERRQ(ierr);
-      x(i,j).v -= h;
-      x.end_access(); CHKERRQ(ierr);
-      x.update_ghosts();
-      gradient(i,j).v = (Fh-F0)/h;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    {
+      IceModelVec::AccessList access_x(x);
+      x(i,j).u += h;
     }
+    x.update_ghosts();
+
+    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
+
+    {
+      IceModelVec::AccessList access_x(x);
+      x(i,j).u -= h;
+    }
+    x.update_ghosts();
+
+    gradient(i,j).u = (Fh-F0)/h;
+
+    {
+      IceModelVec::AccessList access_x(x);
+      x(i,j).v += h;
+    }
+    x.update_ghosts();
+
+    ierr = f.valueAt(x,&Fh); CHKERRQ(ierr);
+
+    {
+      IceModelVec::AccessList access_x(x);
+      x(i,j).v -= h;
+    }
+    x.update_ghosts();
+
+    gradient(i,j).v = (Fh-F0)/h;
   }
-  ierr = gradient.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

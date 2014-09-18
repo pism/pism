@@ -393,45 +393,45 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
-  ierr = T3.set(T0);               CHKERRQ(ierr);
-  ierr = geothermal_flux.set(Ggeo);           CHKERRQ(ierr);
-  ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
+  ierr = T3.set(T0);                CHKERRQ(ierr);
+  ierr = geothermal_flux.set(Ggeo); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_GROUNDED);  CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double xx = grid.x[i], yy = grid.y[j],
-        r = grid.radius(i, j);
-      switch (testname) {
-        case 'A':
-          exactA(r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'B':
-          exactB(time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'C':
-          exactC(time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'D':
-          exactD(time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'E':
-          exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'H':
-          exactH(f, time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
-      }
+  IceModelVec::AccessList list(ice_thickness);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double xx = grid.x[i], yy = grid.y[j],
+      r = grid.radius(i, j);
+    switch (testname) {
+    case 'A':
+      exactA(r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'B':
+      exactB(time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'C':
+      exactC(time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'D':
+      exactD(time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'E':
+      exactE(xx, yy, &H, &accum, &dummy1, &dummy2, &dummy3);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'H':
+      exactH(f, time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -479,14 +479,14 @@ PetscErrorCode IceCompModel::initTestL() {
 
   std::vector<rgrid> rrv(MM);  // destructor at end of scope
   int k = 0;
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      rrv[k].i = i;
-      rrv[k].j = j;
-      rrv[k].r = grid.radius(i,j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      k += 1;
-    }
+    rrv[k].i = i;
+    rrv[k].j = j;
+    rrv[k].r = grid.radius(i,j);
+
+    k += 1;
   }
 
   std::sort(rrv.begin(), rrv.end(), rgridReverseSort()); // so rrv[k].r > rrv[k+1].r
@@ -520,14 +520,14 @@ PetscErrorCode IceCompModel::initTestL() {
   }
   CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access();  CHKERRQ(ierr); 
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr); 
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(bed_topography);
+
   for (k = 0; k < MM; k++) {
     ice_thickness(rrv[k].i, rrv[k].j)  = HH[k];
     bed_topography(rrv[k].i, rrv[k].j) = bb[k];
   }
-  ierr = ice_thickness.end_access();  CHKERRQ(ierr); 
-  ierr = bed_topography.end_access(); CHKERRQ(ierr); 
 
   ierr = ice_thickness.update_ghosts();  CHKERRQ(ierr); 
   ierr = bed_topography.update_ghosts(); CHKERRQ(ierr); 
@@ -543,14 +543,14 @@ PetscErrorCode IceCompModel::reset_thickness_tests_AE() {
   PetscErrorCode ierr;
   const double LforAE = 750e3; // m
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (grid.radius(i, j) > LforAE)
-        ice_thickness(i, j) = 0;
-    }
+  IceModelVec::AccessList list(ice_thickness);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (grid.radius(i, j) > LforAE)
+      ice_thickness(i, j) = 0;
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
   return 0;
@@ -564,36 +564,36 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
 
   const double time = grid.time->current();
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double r = grid.radius(i, j);
-      switch (testname) {
-        case 'A':
-          exactA(r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'B':
-          exactB(time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'C':
-          exactC(time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'D':
-          exactD(time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        case 'H':
-          exactH(f, time, r, &H, &accum);
-          ice_thickness(i, j)   = H;
-          break;
-        default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, or H");
-      }
+  IceModelVec::AccessList list(ice_thickness);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double r = grid.radius(i, j);
+    switch (testname) {
+    case 'A':
+      exactA(r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'B':
+      exactB(time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'C':
+      exactC(time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'D':
+      exactD(time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    case 'H':
+      exactH(f, time, r, &H, &accum);
+      ice_thickness(i, j)   = H;
+      break;
+    default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, or H");
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
 
@@ -613,18 +613,18 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr); 
-  ierr = vel_adv->begin_access();      CHKERRQ(ierr); 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double xx = grid.x[i], yy = grid.y[j];
-      exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
-      ice_thickness(i,j) = H;
-      (*vel_adv)(i,j)    = bvel;
-    }
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(*vel_adv);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double xx = grid.x[i], yy = grid.y[j];
+    exactE(xx, yy, &H, &accum, &dummy, &bvel.u, &bvel.v);
+    ice_thickness(i,j) = H;
+    (*vel_adv)(i,j)    = bvel;
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr); 
-  ierr = vel_adv->end_access();      CHKERRQ(ierr); 
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr); 
   return 0;
@@ -667,9 +667,9 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
 
   double     dummy, z, dummy1, dummy2, dummy3, dummy4, dummy5;
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(ice_thickness);
   if (testname == 'L') {
-    ierr = vHexactL.begin_access(); CHKERRQ(ierr);
+    list.add(vHexactL);
   }
 
   double
@@ -691,88 +691,83 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
   // area of grid square in square km:
   const double   a = grid.dx * grid.dy * 1e-3 * 1e-3;
   const double   m = (2.0 * Glen_n + 2.0) / Glen_n;
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (ice_thickness(i,j) > 0) {
-        area += a;
-        vol += a * ice_thickness(i,j) * 1e-3;
-      }
-      double xx = grid.x[i], yy = grid.y[j],
-        r = grid.radius(i,j);
-      switch (testname) {
-      case 'A':
-        exactA(r,&Hexact,&dummy);
-        break;
-      case 'B':
-        exactB(time,r,&Hexact,&dummy);
-        break;
-      case 'C':
-        exactC(time,r,&Hexact,&dummy);
-        break;
-      case 'D':
-        exactD(time,r,&Hexact,&dummy);
-        break;
-      case 'E':
-        exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
-        break;
-      case 'F':
-        if (r > LforFG - 1.0) {  // outside of sheet
-          Hexact=0.0;
-        } else {
-          r=PetscMax(r,1.0);
-          z=0.0;
-          bothexact(0.0,r,&z,1,0.0,
-                    &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
-        }
-        break;
-      case 'G':
-        if (r > LforFG -1.0) {  // outside of sheet
-          Hexact=0.0;
-        } else {
-          r=PetscMax(r,1.0);
-          z=0.0;
-          bothexact(time,r,&z,1,ApforG,
-                    &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
-        }
-        break;
-      case 'H':
-        exactH(f,time,r,&Hexact,&dummy);
-        break;
-      case 'K':
-      case 'O':
-        Hexact = 3000.0;
-        break;
-      case 'L':
-        Hexact = vHexactL(i,j);
-        break;
-      case 'V':
-        {
-          Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
-        }
-        break;
-      default:
-        SETERRQ(grid.com, 1, "test must be A, B, C, D, E, F, G, H, K, L, or O");
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (Hexact > 0) {
-        areaexact += a;
-        volexact += a * Hexact * 1e-3;
-      }
-      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        domeH = ice_thickness(i,j);
-        domeHexact = Hexact;
-      }
-      // compute maximum errors
-      Herr = PetscMax(Herr,PetscAbsReal(ice_thickness(i,j) - Hexact));
-      etaerr = PetscMax(etaerr,PetscAbsReal(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
-      // add to sums for average errors
-      avHerr += PetscAbsReal(ice_thickness(i,j) - Hexact);
+    if (ice_thickness(i,j) > 0) {
+      area += a;
+      vol += a * ice_thickness(i,j) * 1e-3;
     }
-  }
+    double xx = grid.x[i], yy = grid.y[j],
+      r = grid.radius(i,j);
+    switch (testname) {
+    case 'A':
+      exactA(r,&Hexact,&dummy);
+      break;
+    case 'B':
+      exactB(time,r,&Hexact,&dummy);
+      break;
+    case 'C':
+      exactC(time,r,&Hexact,&dummy);
+      break;
+    case 'D':
+      exactD(time,r,&Hexact,&dummy);
+      break;
+    case 'E':
+      exactE(xx,yy,&Hexact,&dummy,&dummy1,&dummy2,&dummy3);
+      break;
+    case 'F':
+      if (r > LforFG - 1.0) {  // outside of sheet
+        Hexact=0.0;
+      } else {
+        r=PetscMax(r,1.0);
+        z=0.0;
+        bothexact(0.0,r,&z,1,0.0,
+                  &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
+      }
+      break;
+    case 'G':
+      if (r > LforFG -1.0) {  // outside of sheet
+        Hexact=0.0;
+      } else {
+        r=PetscMax(r,1.0);
+        z=0.0;
+        bothexact(time,r,&z,1,ApforG,
+                  &Hexact,&dummy,&dummy5,&dummy1,&dummy2,&dummy3,&dummy4);
+      }
+      break;
+    case 'H':
+      exactH(f,time,r,&Hexact,&dummy);
+      break;
+    case 'K':
+    case 'O':
+      Hexact = 3000.0;
+      break;
+    case 'L':
+      Hexact = vHexactL(i,j);
+      break;
+    case 'V':
+      {
+        Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
+      }
+      break;
+    default:
+      SETERRQ(grid.com, 1, "test must be A, B, C, D, E, F, G, H, K, L, or O");
+    }
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  if (testname == 'L') {
-    ierr = vHexactL.end_access(); CHKERRQ(ierr);
+    if (Hexact > 0) {
+      areaexact += a;
+      volexact += a * Hexact * 1e-3;
+    }
+    if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+      domeH = ice_thickness(i,j);
+      domeHexact = Hexact;
+    }
+    // compute maximum errors
+    Herr = PetscMax(Herr,PetscAbsReal(ice_thickness(i,j) - Hexact));
+    etaerr = PetscMax(etaerr,PetscAbsReal(pow(ice_thickness(i,j),m) - pow(Hexact,m)));
+    // add to sums for average errors
+    avHerr += PetscAbsReal(ice_thickness(i,j) - Hexact);
   }
 
   // globalize (find errors over all processors)
@@ -813,27 +808,27 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
 
-  ierr = vel_adv->begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*vel_adv);
+  list.add(ice_thickness);
+
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (ice_thickness(i,j) > 0.0) {
-        double xx = grid.x[i], yy = grid.y[j];
-        exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
-        // compute maximum errors
-        const double uberr = PetscAbsReal((*vel_adv)(i,j).u - ubexact);
-        const double vberr = PetscAbsReal((*vel_adv)(i,j).v - vbexact);
-        maxuberr = PetscMax(maxuberr,uberr);
-        maxvberr = PetscMax(maxvberr,vberr);
-        const double vecerr = sqrt(uberr*uberr + vberr*vberr);
-        maxvecerr = PetscMax(maxvecerr,vecerr);
-        avvecerr += vecerr;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (ice_thickness(i,j) > 0.0) {
+      double xx = grid.x[i], yy = grid.y[j];
+      exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);
+      // compute maximum errors
+      const double uberr = PetscAbsReal((*vel_adv)(i,j).u - ubexact);
+      const double vberr = PetscAbsReal((*vel_adv)(i,j).v - vbexact);
+      maxuberr = PetscMax(maxuberr,uberr);
+      maxvberr = PetscMax(maxvberr,vberr);
+      const double vecerr = sqrt(uberr*uberr + vberr*vberr);
+      maxvecerr = PetscMax(maxvecerr,vecerr);
+      avvecerr += vecerr;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = vel_adv->end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
   ierr = GlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
@@ -1285,25 +1280,24 @@ PetscErrorCode IceCompModel::test_V_init() {
   double upstream_velocity = grid.convert(300.0, "m/year", "m/second"),
     upstream_thk = 600.0;
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vBCMask.begin_access(); CHKERRQ(ierr);
-  ierr = vBCvel.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (i <= 2) {
-        vBCMask(i,j) = 1;
-        vBCvel(i,j)  = Vector2(upstream_velocity, 0.0);
-        ice_thickness(i, j) = upstream_thk;
-      } else {
-        vBCMask(i,j) = 0;
-        vBCvel(i,j)  = Vector2(0.0, 0.0);
-        ice_thickness(i, j) = 0;
-      }
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(vBCMask);
+  list.add(vBCvel);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (i <= 2) {
+      vBCMask(i,j) = 1;
+      vBCvel(i,j)  = Vector2(upstream_velocity, 0.0);
+      ice_thickness(i, j) = upstream_thk;
+    } else {
+      vBCMask(i,j) = 0;
+      vBCvel(i,j)  = Vector2(0.0, 0.0);
+      ice_thickness(i, j) = 0;
     }
   }
-  ierr = vBCvel.end_access(); CHKERRQ(ierr);
-  ierr = vBCMask.end_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
 
   ierr = vBCMask.update_ghosts(); CHKERRQ(ierr);
 
