@@ -1,5 +1,7 @@
 project (Pism)
 cmake_minimum_required (VERSION 2.8.0) # 2.8.0 is almost 3 years old, so this should be OK
+cmake_policy(SET CMP0026 OLD)
+
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
