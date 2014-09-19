@@ -383,8 +383,6 @@ PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
                                            double *nuH, double *dnuH,
                                            double *beta, double *dbeta) {
 
-  Mask M;
-
   if (coefficients.H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dnuH) {
@@ -401,12 +399,12 @@ PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
     }
   }
 
-  if (M.grounded_ice(coefficients.mask)) {
+  if (mask::grounded_ice(coefficients.mask)) {
     basal_sliding_law->drag_with_derivative(coefficients.tauc, u.u, u.v, beta, dbeta);
   } else {
     *beta = 0;
 
-    if (M.ice_free_land(coefficients.mask)) {
+    if (mask::ice_free_land(coefficients.mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
 

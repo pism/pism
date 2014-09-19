@@ -125,15 +125,13 @@ PetscErrorCode tempSystemCtx::solveThisColumn(std::vector<double> &x) {
   assert(surfBCsValid == true);
   assert(basalBCsValid == true);
 
-  Mask M;
-
   // bottom of ice; k=0 eqn
   if (m_ks == 0) { // no ice; set T[0] to surface temp if grounded
     // note L[0] not allocated 
     D[0] = 1.0;
     U[0] = 0.0;
     // if floating and no ice then worry only about bedrock temps
-    if (M.ocean(mask)) {
+    if (mask::ocean(mask)) {
       // essentially no ice but floating ... ask OceanCoupler
       rhs[0] = Tshelfbase;
     } else { // top of bedrock sees atmosphere
@@ -141,7 +139,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(std::vector<double> &x) {
     }
   } else { // m_ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
-    if (M.ocean(mask)) {
+    if (mask::ocean(mask)) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       // note L[0] not allocated 
       D[0] = 1.0;

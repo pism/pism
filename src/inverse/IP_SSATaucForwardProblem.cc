@@ -289,9 +289,6 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  // Mask (query?) for determining where ice is grounded.
-  Mask M;
-
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
@@ -338,7 +335,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         // Determine "dbeta / dzeta" at the quadrature point
         double dbeta = 0;
-        if (M.grounded_ice(coefficients->mask)) {
+        if (mask::grounded_ice(coefficients->mask)) {
           dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
         }
 
@@ -442,9 +439,6 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  // Mask query for determining where ice is grounded.
-  Mask M;
-
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -485,7 +479,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 
         // Determine "dbeta/dtauc" at the quadrature point
         double dbeta_dtauc = 0;
-        if (M.grounded_ice(coefficients->mask)) {
+        if (mask::grounded_ice(coefficients->mask)) {
           dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
         }
 

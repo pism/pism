@@ -31,6 +31,7 @@
 
 namespace pism {
 
+using namespace mask;
 
 //! \file iMgeometry.cc Methods of IceModel which update and maintain consistency of ice sheet geometry.
 
@@ -177,7 +178,6 @@ void IceModel::adjust_flow(planeStar<int> mask,
   Direction dirs[] = {North, East, South, West};
   // mask values
   int mask_current = mask.ij;
-  Mask M;
 
   // Loop over neighbors:
   for (int n = 0; n < 4; ++n) {
@@ -190,37 +190,37 @@ void IceModel::adjust_flow(planeStar<int> mask,
     // go here and not after if-conditions.
 
     // Case 1: Flow between grounded_ice and grounded_ice.
-    if (M.grounded_ice(mask_current) && M.grounded_ice(mask_neighbor)) {
+    if (grounded_ice(mask_current) && grounded_ice(mask_neighbor)) {
       // no adjustment; kept for completeness
       continue;
     }
 
 
     // Cases 2 and 3: Flow between grounded_ice and floating_ice.
-    if ((M.grounded_ice(mask_current) && M.floating_ice(mask_neighbor)) ||
-        (M.floating_ice(mask_current) && M.grounded_ice(mask_neighbor))) {
+    if ((grounded_ice(mask_current) && floating_ice(mask_neighbor)) ||
+        (floating_ice(mask_current) && grounded_ice(mask_neighbor))) {
       // no adjustment
       continue;
     }
 
 
     // Cases 4 and 5: Flow between grounded_ice and ice_free_land.
-    if ((M.grounded_ice(mask_current) && M.ice_free_land(mask_neighbor)) ||
-        (M.ice_free_land(mask_current) && M.grounded_ice(mask_neighbor))) {
+    if ((grounded_ice(mask_current) && ice_free_land(mask_neighbor)) ||
+        (ice_free_land(mask_current) && grounded_ice(mask_neighbor))) {
       // no adjustment
       continue;
     }
 
 
     // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
-    if ((M.grounded_ice(mask_current) && M.ice_free_ocean(mask_neighbor)) ||
-        (M.ice_free_ocean(mask_current) && M.grounded_ice(mask_neighbor))) {
+    if ((grounded_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
+        (ice_free_ocean(mask_current) && grounded_ice(mask_neighbor))) {
       // no adjustment
       continue;
     }
 
     // Case 8: Flow between floating_ice and floating_ice.
-    if (M.floating_ice(mask_current) && M.floating_ice(mask_neighbor)) {
+    if (floating_ice(mask_current) && floating_ice(mask_neighbor)) {
       // disable SIA flow
       SIA_flux[direction] = 0.0;
       continue;
@@ -228,8 +228,8 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
 
     // Cases 9 and 10: Flow between floating_ice and ice_free_land.
-    if ((M.floating_ice(mask_current) && M.ice_free_land(mask_neighbor)) ||
-        (M.ice_free_land(mask_current) && M.floating_ice(mask_neighbor))) {
+    if ((floating_ice(mask_current) && ice_free_land(mask_neighbor)) ||
+        (ice_free_land(mask_current) && floating_ice(mask_neighbor))) {
       // disable all flow
 
       // This ensures that an ice shelf does not climb up a cliff.
@@ -241,8 +241,8 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
 
     // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
-    if ((M.floating_ice(mask_current) && M.ice_free_ocean(mask_neighbor)) ||
-        (M.ice_free_ocean(mask_current) && M.floating_ice(mask_neighbor))) {
+    if ((floating_ice(mask_current) && ice_free_ocean(mask_neighbor)) ||
+        (ice_free_ocean(mask_current) && floating_ice(mask_neighbor))) {
 
       SIA_flux[direction] = 0.0;
 
@@ -252,7 +252,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
     }
 
     // Case 13: Flow between ice_free_land and ice_free_land.
-    if (M.ice_free_land(mask_current) && M.ice_free_land(mask_neighbor)) {
+    if (ice_free_land(mask_current) && ice_free_land(mask_neighbor)) {
 
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
@@ -261,8 +261,8 @@ void IceModel::adjust_flow(planeStar<int> mask,
 
 
     // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
-    if ((M.ice_free_land(mask_current) && M.ice_free_ocean(mask_neighbor)) ||
-        (M.ice_free_ocean(mask_current) && M.ice_free_land(mask_neighbor))) {
+    if ((ice_free_land(mask_current) && ice_free_ocean(mask_neighbor)) ||
+        (ice_free_ocean(mask_current) && ice_free_land(mask_neighbor))) {
 
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
@@ -270,7 +270,7 @@ void IceModel::adjust_flow(planeStar<int> mask,
     }
 
     // Case 16: Flow between ice_free_ocean and ice_free_ocean.
-    if (M.ice_free_ocean(mask_current) && M.ice_free_ocean(mask_neighbor)) {
+    if (ice_free_ocean(mask_current) && ice_free_ocean(mask_neighbor)) {
 
       SIA_flux[direction] = 0.0;
       SSA_velocity[direction] = 0.0;
@@ -315,7 +315,6 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
 
   planeStar<int> mask = vMask.int_star(i,j);
   Direction dirs[4] = {North, East, South, West};
-  Mask M;
 
   planeStar<int> bc_mask;
   planeStar<Vector2> bc_velocity;
@@ -337,7 +336,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
     out_SIA_flux[direction] = in_SIA_flux[direction];
 
     // Compute the out_SSA_velocity (SSA):
-    if (M.icy(mask_current) && M.icy(mask_neighbor)) {
+    if (icy(mask_current) && icy(mask_neighbor)) {
 
       // Case 1: both sides of the interface are icy
       if (direction == East || direction == West)
@@ -345,7 +344,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
       else
         out_SSA_velocity[direction] = 0.5 * (in_SSA_velocity.ij.v + in_SSA_velocity[direction].v);
 
-    } else if (M.icy(mask_current) && M.ice_free(mask_neighbor)) {
+    } else if (icy(mask_current) && ice_free(mask_neighbor)) {
 
       // Case 2: icy cell next to an ice-free cell
       if (direction == East || direction == West)
@@ -353,7 +352,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
       else
         out_SSA_velocity[direction] = in_SSA_velocity.ij.v;
 
-    } else if (M.ice_free(mask_current) && M.icy(mask_neighbor)) {
+    } else if (ice_free(mask_current) && icy(mask_neighbor)) {
 
       // Case 3: ice-free cell next to icy cell
       if (direction == East || direction == West)
@@ -361,7 +360,7 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
       else
         out_SSA_velocity[direction] = in_SSA_velocity[direction].v;
 
-    } else if (M.ice_free(mask_current) && M.ice_free(mask_neighbor)) {
+    } else if (ice_free(mask_current) && ice_free(mask_neighbor)) {
 
       // Case 4: both sides of the interface are ice-free
       out_SSA_velocity[direction] = 0.0;

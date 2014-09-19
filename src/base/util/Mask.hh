@@ -33,11 +33,7 @@ enum MaskValue {
   MASK_ICE_FREE_OCEAN   = 4
 };
 
-class Mask
-{
-public:
-  Mask() {}
-  ~Mask() {}
+namespace mask {
   //! \brief An ocean cell (floating ice or ice-free).
   inline bool ocean(int M) { return M >= MASK_FLOATING; }
   //! \brief Grounded cell (grounded ice or ice-free).
@@ -50,7 +46,7 @@ public:
   inline bool ice_free(int M) { return !icy(M); }
   inline bool ice_free_ocean(int M) { return ocean(M) && ice_free(M); }
   inline bool ice_free_land(int M) { return grounded(M) && ice_free(M); }
-};
+}
 
 class GeometryCalculator
 {
@@ -118,26 +114,26 @@ protected:
   bool is_dry_simulation;
 };
 
-class MaskQuery : private Mask
+class MaskQuery
 {
 public:
   MaskQuery(IceModelVec2Int &m) : mask(m) {}
   
-  inline bool ocean(int i, int j) { return Mask::ocean(mask.as_int(i, j)); }
+  inline bool ocean(int i, int j) { return mask::ocean(mask.as_int(i, j)); }
 
   inline bool grounded(int i, int j) { return !ocean(i, j); }
 
-  inline bool icy(int i, int j) { return Mask::icy(mask.as_int(i, j)); }
+  inline bool icy(int i, int j) { return mask::icy(mask.as_int(i, j)); }
 
-  inline bool grounded_ice(int i, int j) { return Mask::grounded_ice(mask.as_int(i, j)); }
+  inline bool grounded_ice(int i, int j) { return mask::grounded_ice(mask.as_int(i, j)); }
 
-  inline bool floating_ice(int i, int j) { return Mask::floating_ice(mask.as_int(i, j)); }
+  inline bool floating_ice(int i, int j) { return mask::floating_ice(mask.as_int(i, j)); }
 
-  inline bool ice_free(int i, int j) { return Mask::ice_free(mask.as_int(i, j)); }
+  inline bool ice_free(int i, int j) { return mask::ice_free(mask.as_int(i, j)); }
 
-  inline bool ice_free_ocean(int i, int j) { return Mask::ice_free_ocean(mask.as_int(i, j)); }
+  inline bool ice_free_ocean(int i, int j) { return mask::ice_free_ocean(mask.as_int(i, j)); }
 
-  inline bool ice_free_land(int i, int j) { return Mask::ice_free_land(mask.as_int(i, j)); }
+  inline bool ice_free_land(int i, int j) { return mask::ice_free_land(mask.as_int(i, j)); }
 
   //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
   inline bool ice_margin(int i, int j)
