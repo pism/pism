@@ -1407,6 +1407,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
   list.add(m_work);
   list.add(m_velocity);
 
+  assert(m_velocity.get_stencil_width() >= 2);
+  assert(mask->get_stencil_width()      >= 2);
+  assert(m_work.get_stencil_width()     >= 1);
+
   for (PointsWithGhosts p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

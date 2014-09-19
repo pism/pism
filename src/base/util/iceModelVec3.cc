@@ -25,8 +25,9 @@
 #include "PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
-#include <assert.h>
+#include <cassert>
 
 namespace pism {
 
@@ -388,7 +389,7 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, double z) {
   double    **slice_val;
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   IceModelVec::AccessList list(*this);
   ierr = DMDAVecGetArray(da2->get(), gslice, &slice_val); CHKERRQ(ierr);

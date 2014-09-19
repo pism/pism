@@ -84,22 +84,24 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
 
   GeometryCalculator gc(sea_level, config);
 
-  IceModelVec::AccessList list;
-  list.add(thickness);
+  IceModelVec::AccessList list(result);
   list.add(bed);
-  list.add(result);
+  list.add(thickness);
 
-  int GHOSTS = result.get_stencil_width();
+  unsigned int GHOSTS = result.get_stencil_width();
+  assert(bed.get_stencil_width() >= result.get_stencil_width());
+  assert(thickness.get_stencil_width() >= result.get_stencil_width());
+
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j) = gc.mask(bed(i, j), thickness(i,j));
+    result(i, j) = gc.mask(bed(i, j), thickness(i, j));
   }
 
   return 0;
 }
 
-/** 
+/**
  * Update ice surface elevation using the floatation criterion, sea
  * level elevation, ice thickness, and bed topography.
  *
@@ -123,12 +125,15 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
 
   GeometryCalculator gc(sea_level, config);
 
-  IceModelVec::AccessList list;
-  list.add(result);
-  list.add(thickness);
+  IceModelVec::AccessList list(result);
   list.add(bed);
+  list.add(thickness);
 
-  int GHOSTS = result.get_stencil_width();
+  unsigned int GHOSTS = result.get_stencil_width();
+
+  assert(bed.get_stencil_width() >= result.get_stencil_width());
+  assert(thickness.get_stencil_width() >= result.get_stencil_width());
+
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 

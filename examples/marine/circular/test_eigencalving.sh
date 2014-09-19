@@ -36,5 +36,6 @@ pismopts="-boot_file $infile $grid $stressbalance $calving $viewers $extra $ts $
 
 doit="mpiexec -n $N pismr $pismopts"
 
+set -x
 # run with CFBC and part_grid
 $doit $pismopts -y $length -o ${output_basename}_o.nc

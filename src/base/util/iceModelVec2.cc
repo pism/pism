@@ -26,8 +26,9 @@
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
 #include "iceModelVec_helpers.hh"
+#include "PISMConfig.hh"
 
-#include <assert.h>
+#include <cassert>
 
 namespace pism {
 
@@ -92,7 +93,7 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, V
   assert(v != NULL);
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
@@ -167,7 +168,7 @@ PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) {
   }
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMGetGlobalVector(da2->get(), &tmp); CHKERRQ(ierr);
 
@@ -201,7 +202,7 @@ PetscErrorCode IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   assert(v != NULL);
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   Vec tmp;                      // a temporary one-component vector,
                                 // distributed across processors the same way v is
@@ -238,7 +239,7 @@ PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   }
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   Vec tmp;                      // a temporary one-component vector,
                                 // distributed across processors the same way v is
@@ -294,7 +295,7 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) {
   Vec tmp;
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMGetGlobalVector(da2->get(), &tmp); CHKERRQ(ierr);
 
@@ -329,7 +330,7 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   Vec tmp;
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMGetGlobalVector(da2->get(), &tmp); CHKERRQ(ierr);
 
@@ -544,7 +545,7 @@ PetscErrorCode IceModelVec2::get_component(unsigned int N, Vec result) {
     SETERRQ(grid->com, 1, "invalid argument (N)");
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMDAVecGetArray(da2->get(), result, &tmp_res); CHKERRQ(ierr);
   double **res = static_cast<double**>(tmp_res);
@@ -575,7 +576,7 @@ PetscErrorCode IceModelVec2::set_component(unsigned int N, Vec source) {
     SETERRQ(grid->com, 1, "invalid argument (N)");
 
   PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMDAVecGetArray(da2->get(), source, &tmp_src); CHKERRQ(ierr);
   double **src = static_cast<double**>(tmp_src);
@@ -620,10 +621,10 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const std::string & my_na
   m_dof  = my_dof;
   grid = &my_grid;
 
-  if ((m_dof != 1) || (stencil_width > grid->max_stencil_width)) {
+  if ((m_dof != 1) || (stencil_width > grid->config.get("grid_max_stencil_width"))) {
     m_da_stencil_width = stencil_width;
   } else {
-    m_da_stencil_width = grid->max_stencil_width;
+    m_da_stencil_width = grid->config.get("grid_max_stencil_width");
   }
 
   // initialize the da member:

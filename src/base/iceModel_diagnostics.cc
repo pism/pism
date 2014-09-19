@@ -1738,7 +1738,7 @@ PetscErrorCode IceModel_ivolg::update(double a, double b) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j))
-      volume += model->cell_area(i,j) * model->ice_thickness(i,j);;
+      volume += model->cell_area(i,j) * model->ice_thickness(i,j);
   }
 
   ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
@@ -1774,7 +1774,7 @@ PetscErrorCode IceModel_ivolf::update(double a, double b) {
     const int i = p.i(), j = p.j();
 
     if (mask.floating_ice(i,j))
-      volume += model->cell_area(i,j) * model->ice_thickness(i,j);;
+      volume += model->cell_area(i,j) * model->ice_thickness(i,j);
   }
 
   ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);

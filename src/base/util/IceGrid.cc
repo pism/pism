@@ -104,8 +104,6 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   initial_Mz = 0;               // will be set to a correct value in
                                 // IceModel::check_maximum_thickness()
 
-  max_stencil_width = 2;
-
   Mz_fine = 0;
 
   compute_vertical_levels();
@@ -419,6 +417,8 @@ PetscErrorCode IceGrid::allocate() {
   }
 
   PISMDM::Ptr tmp;
+
+  unsigned int max_stencil_width = (int)config.get("grid_max_stencil_width");
 
   ierr = this->get_dm(1, max_stencil_width, tmp);
   if (ierr != 0) {

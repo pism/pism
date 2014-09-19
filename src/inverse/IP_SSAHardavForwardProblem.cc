@@ -389,7 +389,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   PetscErrorCode ierr;
   double **dzeta_a;
   PISMDM::Ptr da2;
-  ierr = m_grid.get_dm(1, m_grid.max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = m_grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMDAVecGetArray(da2->get(), dzeta, &dzeta_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design_transpose(u, du, dzeta_a); CHKERRQ(ierr);

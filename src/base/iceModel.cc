@@ -193,7 +193,8 @@ IceModel::~IceModel() {
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
-  int WIDE_STENCIL = grid.max_stencil_width;
+
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   ierr = verbPrintf(3, grid.com,
                     "Allocating memory...\n"); CHKERRQ(ierr);
@@ -285,13 +286,7 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
-  if (calving_methods.find("eigen_calving") != calving_methods.end()) {
-    ierr = vMask.create(grid, "mask", WITH_GHOSTS, 3); CHKERRQ(ierr);
-    // This wider stencil is required by the calving code when asking
-    // for mask values at the ice margin (offset+1)
-  } else {
-    ierr = vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  }
+  ierr = vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vMask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                          "", ""); CHKERRQ(ierr);
   std::vector<double> mask_values(4);

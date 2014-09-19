@@ -70,7 +70,7 @@ PetscErrorCode PBLingleClark::transfer_to_proc0(IceModelVec2S *source, Vec resul
   ierr = source->copy_to_vec(g2);
 
   PISMDM::Ptr da2;
-  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMDAGlobalToNaturalBegin(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
   ierr =   DMDAGlobalToNaturalEnd(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
@@ -88,7 +88,7 @@ PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2S *res
   ierr =   VecScatterEnd(scatter, source, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
   PISMDM::Ptr da2;
-  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMDANaturalToGlobalBegin(da2->get(), g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
   ierr =   DMDANaturalToGlobalEnd(da2->get(), g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
@@ -101,7 +101,7 @@ PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2S *res
 PetscErrorCode PBLingleClark::allocate() {
   PetscErrorCode ierr;
   PISMDM::Ptr da2;
-  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMCreateGlobalVector(da2->get(), &g2); CHKERRQ(ierr);
 
@@ -225,7 +225,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
                     boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr);
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
-  int WIDE_STENCIL = grid.max_stencil_width;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
   ierr = topg_tmp.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                             "m", "bedrock_altitude"); CHKERRQ(ierr);

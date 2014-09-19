@@ -22,6 +22,7 @@
 #include "pism_options.hh"
 #include "Mask.hh"
 #include <cmath>
+#include <cassert>
 
 namespace pism {
 
@@ -71,14 +72,14 @@ MohrCoulombYieldStress::~MohrCoulombYieldStress() {
 PetscErrorCode MohrCoulombYieldStress::allocate() {
   PetscErrorCode ierr;
 
-  ierr = m_till_phi.create(grid, "tillphi", WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = m_till_phi.create(grid, "tillphi", WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
   ierr = m_till_phi.set_attrs("model_state",
                               "friction angle for till under grounded ice sheet",
                               "degrees", ""); CHKERRQ(ierr);
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
-  ierr = m_tauc.create(grid, "tauc", WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
+  ierr = m_tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
   ierr = m_tauc.set_attrs("diagnostic",
                           "yield stress for basal till (plastic or pseudo-plastic model)",
                           "Pa", ""); CHKERRQ(ierr);
@@ -86,7 +87,7 @@ PetscErrorCode MohrCoulombYieldStress::allocate() {
   // internal working space; stencil width needed because redundant computation
   // on overlaps
   ierr = m_tillwat.create(grid, "tillwat_for_MohrCoulomb",
-                          WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
+                          WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
   ierr = m_tillwat.set_attrs("internal",
                              "copy of till water thickness held by MohrCoulombYieldStress",
                              "m", ""); CHKERRQ(ierr);
@@ -98,7 +99,7 @@ PetscErrorCode MohrCoulombYieldStress::allocate() {
                             "m", ""); CHKERRQ(ierr);
   }
   ierr = m_Po.create(grid, "overburden_pressure_for_MohrCoulomb",
-                     WITH_GHOSTS, grid.max_stencil_width); CHKERRQ(ierr);
+                     WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
   ierr = m_Po.set_attrs("internal",
                         "copy of overburden pressure held by MohrCoulombYieldStress",
                         "Pa", ""); CHKERRQ(ierr);
@@ -548,7 +549,13 @@ PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
 
   MaskQuery m(*m_mask);
 
-  int GHOSTS = m_till_phi.get_stencil_width();
+  // make sure that we have enough ghosts:
+  unsigned int GHOSTS = m_till_phi.get_stencil_width();
+  assert(m_mask->get_stencil_width()   >= GHOSTS);
+  assert(m_tauc.get_stencil_width()    >= GHOSTS);
+  assert(m_tillwat.get_stencil_width() >= GHOSTS);
+  assert(m_Po.get_stencil_width()      >= GHOSTS);
+
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 

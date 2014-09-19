@@ -220,9 +220,6 @@ public:
 
   unsigned int initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
 
-  unsigned int max_stencil_width;
-  //!< maximum stencil width supported by the DA in this IceGrid object
-
   Time *time;               //!< The time management object (hides calendar computations)
 
   //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`

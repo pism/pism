@@ -32,7 +32,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 {
   PetscErrorCode ierr;
 
-  const int WIDE_STENCIL = 2;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
   
   // ice surface elevation
   ierr = surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
@@ -69,7 +69,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  ierr = vel_bc.create(grid, "_bc", WITH_GHOSTS,WIDE_STENCIL); CHKERRQ(ierr); // u_bc and v_bc
+  ierr = vel_bc.create(grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // u_bc and v_bc
   ierr = vel_bc.set_attrs("intent", 
             "X-component of the SSA velocity boundary conditions", 
             "m s-1", "", 0); CHKERRQ(ierr);
