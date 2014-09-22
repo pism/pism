@@ -42,7 +42,7 @@ public:
                 double my_dx,  double my_dy,
                 double my_dt,  double my_dz,
                 int my_Mz, const std::string &my_prefix,
-                EnthalpyConverter *my_EC);
+                const EnthalpyConverter &my_EC);
   virtual ~enthSystemCtx();
 
   PetscErrorCode initThisColumn(int i, int j, bool my_ismarginal,
@@ -85,7 +85,7 @@ protected:
   std::vector<double> R; // values of k \Delta t / (\rho c \Delta x^2)
 
   IceModelVec3 *Enth3;
-  EnthalpyConverter *EC;  // conductivity has known dependence on T, not enthalpy
+  const EnthalpyConverter &EC;  // conductivity has known dependence on T, not enthalpy
 
   PetscErrorCode compute_enthalpy_CTS();
   double compute_lambda();

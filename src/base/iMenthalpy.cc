@@ -228,7 +228,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   std::vector<double> Enthnew(grid.Mz_fine); // new enthalpy in column
 
   enthSystemCtx esys(config, Enth3, grid.dx, grid.dy, dt_TempAge,
-                     grid.dz_fine, grid.Mz_fine, "enth", EC);
+                     grid.dz_fine, grid.Mz_fine, "enth", *EC);
 
   if (getVerbosityLevel() >= 4) {  // view: all column-independent constants correct?
     ierr = EC->viewConstants(NULL); CHKERRQ(ierr);
@@ -284,7 +284,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   for (Points pt(grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
-
 
     // ignore advection and strain heating in ice if isMarginal
     const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
