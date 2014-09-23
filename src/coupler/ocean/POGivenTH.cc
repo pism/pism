@@ -198,6 +198,8 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
 
 
 //* Evaluate the parameterization of the melting point temperature.
+/** The value returned is in degrees Celsius.
+ */
 static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
                                         double salinity, double ice_thickness) {
   return c.a[0] * salinity + c.a[1] + c.a[2] * ice_thickness;
