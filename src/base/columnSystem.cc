@@ -317,6 +317,8 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vect
   if (D[0] == 0.0)
     return 1;
 
+  x.resize(m_nmax);
+
   double b = D[0];
 
   x[0] = rhs[0] / b;
