@@ -366,7 +366,7 @@ PetscErrorCode IceModel::createVecs() {
   vLatitude.metadata().set_double("valid_max",  90.0);
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
-  if (config.get_flag("part_grid") == true) {
+  if (config.get_flag("part_grid")) {
     // Href
     ierr = vHref.create(grid, "Href", WITH_GHOSTS); CHKERRQ(ierr);
     ierr = vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
@@ -947,33 +947,42 @@ PetscErrorCode IceModel::init() {
   //! The IceModel initialization sequence is this:
 
   //! 1) Initialize the computational grid:
+printf("IceModel::init() 1\n");
   ierr = grid_setup(); CHKERRQ(ierr);
 
   //! 2) Process the options:
+printf("IceModel::init() 2\n");
   ierr = setFromOptions(); CHKERRQ(ierr);
 
   //! 3) Memory allocation:
+printf("IceModel::init() 3\n");
   ierr = createVecs(); CHKERRQ(ierr);
 
   //! 4) Allocate PISM components modeling some physical processes.
+printf("IceModel::init() 4\n");
   ierr = allocate_submodels(); CHKERRQ(ierr);
 
   //! 5) Allocate work vectors:
+printf("IceModel::init() 5\n");
   ierr = allocate_internal_objects(); CHKERRQ(ierr);
 
   //! 6) Initialize coupler models and fill the model state variables
   //! (from a PISM output file, from a bootstrapping file using some
   //! modeling choices or using formulas). Calls IceModel::regrid()
+printf("IceModel::init() 6\n");
   ierr = model_state_setup(); CHKERRQ(ierr);
 
   //! 7) Report grid parameters:
+printf("IceModel::init() 7\n");
   ierr = grid.report_parameters(); CHKERRQ(ierr);
 
   //! 8) Miscellaneous stuff: set up the bed deformation model, initialize the
   //! basal till model, initialize snapshots. This has to happen *after*
   //! regridding.
+printf("IceModel::init() 8\n");
   ierr = misc_setup();
 
+printf("IceModel::init() 9\n");
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   //! The following flow-chart illustrates the process.
@@ -991,6 +1000,7 @@ PetscErrorCode IceModel::init() {
     MPI_Allreduce(&my_start_time, &start_time, 1, mpi_type, MPI_MAX, grid.com);
 
   }
+printf("IceModel::init() 10\n");
   return 0;
 }
 

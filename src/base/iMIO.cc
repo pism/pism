@@ -408,7 +408,7 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
     bool href_exists;
     ierr = nc.inq_var("Href", href_exists); CHKERRQ(ierr);
 
-    if (href_exists == true) {
+    if (href_exists) {
       ierr = vHref.read(filename, last_record); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, grid.com,

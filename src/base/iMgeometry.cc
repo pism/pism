@@ -536,6 +536,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2S &vHnew = vWork2d[0];
   ierr = ice_thickness.copy_to(vHnew); CHKERRQ(ierr);
 
+  /** Ice being taken away from this grid cell, to be distributed to
+  neighboring partially-filled cells. */
   IceModelVec2S &H_residual = vWork2d[1];
 
   IceModelVec2Stag *Qdiff;

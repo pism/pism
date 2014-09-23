@@ -129,9 +129,9 @@ PetscErrorCode IceModel::Href_cleanup() {
  *
  * @return 0 on success
  */
-PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
+PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,	// ice_thickness
                                                      IceModelVec2S &thickness_old,
-                                                     IceModelVec2S &Href,
+                                                     IceModelVec2S &Href,	// vHref
                                                      IceModelVec2S &Href_old) {
   PetscErrorCode ierr;
 
