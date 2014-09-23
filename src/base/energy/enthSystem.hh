@@ -61,7 +61,7 @@ public:
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
   PetscErrorCode viewSystem(PetscViewer viewer, unsigned int M) const;
 
-  PetscErrorCode solveThisColumn(std::vector<double> &x);
+  PetscErrorCode solveThisColumn(std::vector<double> &result);
 
   double lambda()
   { return m_lambda; }
