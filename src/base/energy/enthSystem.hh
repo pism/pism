@@ -67,10 +67,23 @@ public:
   { return m_lambda; }
 public:
   // arrays must be filled before calling solveThisColumn():
-  double  *Enth,   // enthalpy in ice at prev time step
-    *Enth_s; // enthalpy level for CTS; function only of pressure
+
+  // enthalpy in ice at previous time step
+  std::vector<double> Enth;
+  // enthalpy level for CTS; function only of pressure
+  std::vector<double> Enth_s;
 protected:
-  double *u, *v, *w, *strain_heating;
+  //! u-component if the ice velocity
+  std::vector<double> u;
+  //! v-component if the ice velocity
+  std::vector<double> v;
+  //! w-component if the ice velocity
+  std::vector<double> w;
+  //! strain heating in the ice column
+  std::vector<double> strain_heating;
+
+  //! values of @f$ k \Delta t / (\rho c \Delta x^2) @f$
+  std::vector<double> R;
 
   unsigned int Mz;
 
@@ -80,9 +93,8 @@ protected:
   double ice_thickness,
     m_lambda,              //!< implicit FD method parameter
     Enth_ks;             //!< top surface Dirichlet B.C.
-  double a0, a1, b;   // coefficients of the first (basal) equation
+  double D0, U0, B0;   // coefficients of the first (basal) equation
   bool ismarginal, c_depends_on_T, k_depends_on_T;
-  std::vector<double> R; // values of k \Delta t / (\rho c \Delta x^2)
 
   IceModelVec3 *Enth3;
   const EnthalpyConverter &EC;  // conductivity has known dependence on T, not enthalpy

@@ -34,29 +34,27 @@ enthSystemCtx::enthSystemCtx(const Config &config,
   Mz = my_Mz;
 
   // set some values so we can check if init was called
-  nu       = -1.0;
   R_cold   = -1.0;
   R_temp   = -1.0;
   m_lambda = -1.0;
   D0 = GSL_NAN;
   U0 = GSL_NAN;
-  B0  = GSL_NAN;
+  B0 = GSL_NAN;
 
   ice_rho = config.get("ice_density");
   ice_c   = config.get("ice_specific_heat_capacity");
   ice_k   = config.get("ice_thermal_conductivity");
   p_air   = config.get("surface_pressure");
 
-  ice_K   = ice_k / ice_c;
-  ice_K0  = ice_K * config.get("enthalpy_temperate_conductivity_ratio");
+  ice_K  = ice_k / ice_c;
+  ice_K0 = ice_K * config.get("enthalpy_temperate_conductivity_ratio");
 
-  u = new double[Mz];
-  v = new double[Mz];
-  w = new double[Mz];
-  Enth   = new double[Mz];
-  Enth_s = new double[Mz]; // enthalpy of pressure-melting-point
-  strain_heating = new double[Mz];
-
+  u.resize(Mz);
+  v.resize(Mz);
+  w.resize(Mz);
+  Enth.resize(Mz);
+  Enth_s.resize(Mz);
+  strain_heating.resize(Mz);
   R.resize(Mz);
 
   Enth3 = &my_Enth3;  // points to IceModelVec3
@@ -87,12 +85,6 @@ enthSystemCtx::enthSystemCtx(const Config &config,
 
 
 enthSystemCtx::~enthSystemCtx() {
-  delete [] u;
-  delete [] v;
-  delete [] w;
-  delete [] strain_heating;
-  delete [] Enth_s;
-  delete [] Enth;
 }
 
 /*!
@@ -124,12 +116,12 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
     return 0;
   }
 
-  ierr = u3->getValColumn(m_i, m_j, m_ks, u); CHKERRQ(ierr);
-  ierr = v3->getValColumn(m_i, m_j, m_ks, v); CHKERRQ(ierr);
-  ierr = w3->getValColumn(m_i, m_j, m_ks, w); CHKERRQ(ierr);
-  ierr = strain_heating3->getValColumn(m_i, m_j, m_ks, strain_heating); CHKERRQ(ierr);
+  ierr = u3->getValColumn(m_i, m_j, m_ks, &u[0]); CHKERRQ(ierr);
+  ierr = v3->getValColumn(m_i, m_j, m_ks, &v[0]); CHKERRQ(ierr);
+  ierr = w3->getValColumn(m_i, m_j, m_ks, &w[0]); CHKERRQ(ierr);
+  ierr = strain_heating3->getValColumn(m_i, m_j, m_ks, &strain_heating[0]); CHKERRQ(ierr);
 
-  ierr = Enth3->getValColumn(m_i, m_j, m_ks, Enth); CHKERRQ(ierr);
+  ierr = Enth3->getValColumn(m_i, m_j, m_ks, &Enth[0]); CHKERRQ(ierr);
   ierr = compute_enthalpy_CTS(); CHKERRQ(ierr);
 
   m_lambda = compute_lambda();
@@ -153,7 +145,7 @@ PetscErrorCode enthSystemCtx::compute_enthalpy_CTS() {
   }
 
   const double Es_air = EC.getEnthalpyCTS(p_air);
-  for (unsigned int k = m_ks+1; k < Mz; k++) {
+  for (unsigned int k = m_ks+1; k < Enth_s.size(); k++) {
     Enth_s[k] = Es_air;
   }
   return 0;
@@ -279,7 +271,7 @@ PetscErrorCode enthSystemCtx::setDirichletBasal(double Y) {
 This method generates the Neumann boundary condition for the linear system.
 
 The Neumann boundary condition is
-   \f[ \frac{\partial E}{\partial z} = - \frac{\phi}{K} \f]
+   @f[ \frac{\partial E}{\partial z} = - \frac{\phi}{K} @f]
 where \f$\phi\f$ is the heat flux.  Here \f$K\f$ is allowed to vary, and takes
 its value from the value computed in assemble_R().
 
@@ -287,10 +279,27 @@ The boundary condition is combined with the partial differential equation by the
 technique of introducing an imaginary point at \f$z=-\Delta z\f$ and then
 eliminating it.
 
-The error in the pure conductive and smooth conductivity case is \f$O(\Delta z^2)\f$.
+In other words, we combine the centered finite difference approximation
+@f[ \frac{ E_{1} - E_{-1} }{2\dz}  = -\frac{\phi}{K} @f]
+with
+
+@f[ -R_{k-\frac12} E_{k-1} + \left( 1 + R_{k-\frac12} + R_{k+\frac12} \right) E_{k} - R_{k+\frac12} E_{k+1} + \text{advective terms} = \dots @f]
+
+to get
+
+@f{align*}{
+   \frac{E_{1}-E_{-1}}{2\,\Delta z} & = -\frac{\phi}{K_{0}}, \\
+   E_{1}-E_{-1} & = -\frac{2\,\Delta z\,\phi}{K_{0}}, \\
+    E_{-1}\,R_{-\frac12}-R_{-\frac12}\,E_{1} & = \frac{2\,R_{-\frac12}\,\Delta z\,\phi}{K_{0}}, \\
+    -R_{\frac12}\,E_{1}+E_{0}\,\left(R_{\frac12}+R_{-\frac12}+1\right)-E_{-1}\,R_{-\frac12} + \text{advective terms} & = \dots, \\
+    \left(-R_{\frac12}-R_{-\frac12}\right)\,E_{1}+E_{0}\,\left(R_{\frac12}+R_{-\frac12}+1\right) + \text{advective terms} & = \frac{2\,R_{-\frac12}\,\Delta z\,\phi}{K_{0}}+\dots.
+@f}
+
+The error in the pure conductive and smooth conductivity case is @f$ O(\dz^2) @f$.
 
 This method should only be called if everything but the basal boundary condition
 is already set.
+
  */
 PetscErrorCode enthSystemCtx::setBasalHeatFlux(double heat_flux) {
  PetscErrorCode ierr;
@@ -303,22 +312,19 @@ PetscErrorCode enthSystemCtx::setBasalHeatFlux(double heat_flux) {
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_rho) * dt / PetscSqr(dz)
   const double
-    K = (ice_rho * PetscSqr(dz) * R[0]) / dt,
-    Y = - heat_flux / K;
-  const double
-    Rc = R[0],
-    Rr = R[1],
+    K      = (ice_rho * PetscSqr(dz) * R[0]) / dt,
+    Rc     = R[0],
+    Rr     = R[1],
     Rminus = Rc,
     Rplus  = 0.5 * (Rc + Rr);
-  D0 = 1.0 + Rminus + Rplus;  // = D[0]
-  U0 = - Rminus - Rplus;      // = U[0]
-  // next line says 
-  //   (E(+dz) - E(-dz)) / (2 dz) = Y
-  // or equivalently
-  //   E(-dz) = E(+dz) + X
-  const double X = - 2.0 * dz * Y;
-  // zero vertical velocity contribution
-  B0 = Enth[0] + Rminus * X;   // = rhs[0]
+  D0 = 1.0 + Rminus + Rplus;
+  // modified upper-diagonal term:
+  U0 = - Rminus - Rplus;
+  // Enth[0] (below) is there due to the fully-implicit discretization
+  // in time, the second term is the modification of the right-hand
+  // side implementing the Neumann B.C. (see the doxygen comment)
+  B0 = Enth[0] + 2.0 * Rminus * dz * heat_flux / K;
+  // treat vertical velocity using first-order upwinding:
   if (not ismarginal) {
     planeStar<double> ss;
     ierr = Enth3->getPlaneStar_fine(m_i,m_j,0,&ss); CHKERRQ(ierr);
@@ -375,7 +381,7 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 
   // R[k] for k > m_ks are never used
 #if (PISM_DEBUG==1)
-  for (unsigned int k = m_ks + 1; k < Mz; ++k)
+  for (unsigned int k = m_ks + 1; k < R.size(); ++k)
     R[k] = GSL_NAN;
 #endif
 
@@ -385,6 +391,38 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 
 /*! \brief Solve the tridiagonal system, in a single column, which
  *  determines the new values of the ice enthalpy.
+ *
+ * To discretize
+ * @f[ \diff{}{z} \left( K(E) \diff{E}{z}\right) = \diff{E}{t} @f]
+ *
+ * at a location @f$ k @f$ of the vertical grid, we use centered
+ * finite differences and evaluate @f$ K(E) @f$ at
+ * staggered-grid locations:
+ *
+ * @f[ \frac{K_{k+\frac12}\frac{E_{k+1} - E_{k}}{\dz} - K_{k-\frac12}\frac{E_{k} - E_{k-1}}{\dz}}{\dz}, @f]
+ *
+ * where @f$ K_{k\pm \frac12} = K(E_{k\pm \frac12}) @f$.
+ *
+ * We define
+ *
+ * @f[ R_i = \frac{\dt\, K_i}{\dz^2}, @f]
+ *
+ * and the discretization takes form
+ *
+ * @f[ -R_{k-\frac12} E_{k-1} + \left( 1 + R_{k-\frac12} + R_{k+\frac12} \right) E_{k} - R_{k+\frac12} E_{k+1} = @f].
+ *
+ * In the assembly of the tridiagonal system, this corresponds to
+ *
+ * @f{align*}{
+ * L_i &= - \frac12 (R_{i} + R_{i-1}),\\
+ * D_i &= 1 + \frac12 (R_{i} + R_{i-1}) + \frac12 (R_{i} + R_{i+1}),\\
+ * U_i &= - \frac12 (R_{i} + R_{i+1}),
+ * @f}
+ *
+ * where @f$ L_i, D_i, U_i @f$ are lower-diagonal, diagonal, and
+ * upper-diagonal entries corresponding to an equation @f$ i @f$.
+ * (Staggered-grid values are approximated by interpolating from the
+ * regular grid).
  */
 PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   PetscErrorCode ierr;
@@ -455,7 +493,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   }
 
   // air above
-  for (unsigned int k = m_ks+1; k < Mz; k++) {
+  for (unsigned int k = m_ks+1; k < x.size(); k++) {
     x[k] = Enth_ks;
   }
 
