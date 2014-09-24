@@ -93,9 +93,10 @@ PetscErrorCode  IceModelVec3D::isLegalLevel(double z) const {
   (`double`).  Upon completion, internal storage will hold values derived from 
   linearly interpolating the input values.
  */
-PetscErrorCode  IceModelVec3::setValColumnPL(int i, int j, double *source) {
+PetscErrorCode  IceModelVec3::setValColumnPL(int i, int j, std::vector<double> &source) {
 #if (PISM_DEBUG==1)
   assert(v != NULL);
+  assert(source.size() == grid->Mz_fine);
   check_array_indices(i, j, 0);
 #endif
 

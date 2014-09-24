@@ -687,7 +687,7 @@ public:
   PetscErrorCode  getValColumnQUAD(int i, int j, unsigned int ks, double *valsOUT) const;
   PetscErrorCode  getValColumnPL(int i, int j, unsigned int ks, double *valsOUT) const;
 
-  PetscErrorCode  setValColumnPL(int i, int j, double *valsIN);
+  PetscErrorCode  setValColumnPL(int i, int j, std::vector<double> &values_fine);
 
   PetscErrorCode  getPlaneStarZ(int i, int j, double z,
                                 planeStar<double> *star) const;

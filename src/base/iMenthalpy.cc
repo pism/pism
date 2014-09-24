@@ -478,7 +478,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       } // end of the grounded case
     } // end of the basal melt rate computation
 
-    ierr = vWork3d.setValColumnPL(i, j, &Enthnew[0]); CHKERRQ(ierr);
+    ierr = vWork3d.setValColumnPL(i, j, Enthnew); CHKERRQ(ierr);
 
   }
 
