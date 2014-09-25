@@ -134,18 +134,6 @@ endmacro()
 macro(pism_find_prerequisites)
   # PETSc
   find_package (PETSc)
-  if (NOT PETSC_FOUND)
-    get_filename_component(pcc ${PETSC_COMPILER} REALPATH)
-    get_filename_component(cc ${CMAKE_C_COMPILER} REALPATH)
-    if (NOT ${pcc} STREQUAL ${cc})
-      message(WARNING
-        "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
-	"  PETSC_COMPILER=${PETSC_COMPILER}\n"
-	"  CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\n"
-	"Try running \n"
-	"  rm CMakeCache.txt && cmake -DCMAKE_C_COMPILER=${PETSC_COMPILER} ${CMAKE_SOURCE_DIR}")
-    endif()
-    message(FATAL_ERROR  "PISM configuration failed: PETSc was not found.")
   endif()
 
   if ((DEFINED PETSC_VERSION) AND (PETSC_VERSION VERSION_LESS 3.3))
