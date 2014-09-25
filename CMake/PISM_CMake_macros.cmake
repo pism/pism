@@ -133,18 +133,11 @@ endmacro()
 macro(pism_find_prerequisites)
   # PETSc
   find_package (PETSc)
-  if (NOT PETSC_FOUND)
-    get_filename_component(pcc ${PETSC_COMPILER} REALPATH)
-    get_filename_component(cc ${CMAKE_C_COMPILER} REALPATH)
-    if (NOT ${pcc} STREQUAL ${cc})
-      message(WARNING
-        "PETSC_COMPILER does not match CMAKE_C_COMPILER\n"
-	"  PETSC_COMPILER=${PETSC_COMPILER}\n"
-	"  CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\n"
-	"Try running \n"
-	"  rm CMakeCache.txt && cmake -DCMAKE_C_COMPILER=${PETSC_COMPILER} ${CMAKE_SOURCE_DIR}")
-    endif()
-    message(FATAL_ERROR  "PISM configuration failed: PETSc was not found.")
+  if (DEFINED PETSC_VERSION)
+    # FindPETSc.cmake does not put PETSC_VERSION into the CMake cache,
+    # so we save it here.
+    set(Pism_PETSC_VERSION ${PETSC_VERSION} CACHE STRING "PETSc version")
+    mark_as_advanced(Pism_PETSC_VERSION)
   endif()
 
   if ((DEFINED PETSC_VERSION) AND (PETSC_VERSION VERSION_LESS 3.3))
@@ -181,7 +174,14 @@ macro(pism_find_prerequisites)
   find_package (PNetCDF)
   find_package (FFTW REQUIRED)
   find_package (PROJ4)
-  find_package (TAO)
+
+  # Look for TAO if PETSc is < 3.5.0.
+  if (Pism_PETSC_VERSION VERSION_LESS "3.5")
+    find_package (TAO)
+  else()
+    message(STATUS "PETSc 3.5 and later includes TAO; using it...")
+  endif()
+
   # Try to find netcdf_par.h. We assume that NetCDF was compiled with
   # parallel I/O if this header is present.
   find_file(NETCDF_PAR_H netcdf_par.h HINTS ${NETCDF_INCLUDES} NO_DEFAULT_PATH)
@@ -200,7 +200,7 @@ macro(pism_find_prerequisites)
     set (Pism_USE_PROJ4 OFF CACHE BOOL "Use Proj.4 to compute cell areas, longitude, and latitude." FORCE)
   endif()
 
-  if (NOT TAO_FOUND)
+  if ((NOT TAO_FOUND) AND (Pism_PETSC_VERSION VERSION_LESS "3.5"))
     set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
     message(STATUS  "TAO not found. Inverse solvers using the TAO library will not be built.")
   endif()
