@@ -172,6 +172,9 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
   return 0;
 }
 
+const IceModelVec2S& BedSmoother::get_smoothed_bed() {
+  return topgsmooth;
+}
 
 /*!
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the

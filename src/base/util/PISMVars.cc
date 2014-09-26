@@ -23,11 +23,8 @@
 namespace pism {
 
 //! \brief Add an IceModelVec v using the name `name`.
-PetscErrorCode Vars::add(IceModelVec &v, const std::string &name) {
-
+void Vars::add(IceModelVec &v, const std::string &name) {
   variables[name] = &v;
-
-  return 0;
 }
 
 //!Add an IceModelVec to the dictionary.
@@ -38,7 +35,7 @@ PetscErrorCode Vars::add(IceModelVec &v, const std::string &name) {
  */
 PetscErrorCode Vars::add(IceModelVec &v) {
 
-  NCSpatialVariable &m = v.metadata();
+  const NCSpatialVariable &m = v.metadata();
   std::string name = v.name();
 
   if (m.has_attribute("standard_name")) {
@@ -64,7 +61,7 @@ PetscErrorCode Vars::add(IceModelVec &v) {
 //! Removes a variable with the key `name` from the dictionary.
 void Vars::remove(const std::string &name) {
   IceModelVec *v = variables[name];
-  NCSpatialVariable &m = v->metadata();
+  const NCSpatialVariable &m = v->metadata();
 
   if (v != NULL) {              // the argument is a "short" name
     if (m.has_attribute("standard_name")) {
@@ -103,6 +100,22 @@ IceModelVec* Vars::get(const std::string &name) const {
   return NULL;
 }
 
+IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
+  return dynamic_cast<IceModelVec2S*>(this->get(name));
+}
+
+IceModelVec2V* Vars::get_2d_vector(const std::string &name) const{
+  return dynamic_cast<IceModelVec2V*>(this->get(name));
+}
+
+IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const{
+  return dynamic_cast<IceModelVec2Int*>(this->get(name));
+}
+
+IceModelVec3* Vars::get_3d_scalar(const std::string &name) const{
+  return dynamic_cast<IceModelVec3*>(this->get(name));
+}
+
 //! \brief Returns the set of keys (variable names) in the dictionary.
 /*!
  * Provides one (short) name per variable.
@@ -114,9 +127,11 @@ IceModelVec* Vars::get(const std::string &name) const {
 std::set<std::string> Vars::keys() const {
   std::set<std::string> result;
 
-  std::map<std::string,IceModelVec*>::iterator i = variables.begin();
-  while (i != variables.end())
-    result.insert((*i++).first);
+  std::map<std::string,IceModelVec*>::const_iterator i = variables.begin();
+  while (i != variables.end()) {
+    result.insert(i->first);
+    ++i;
+  }
 
   return result;
 }
@@ -130,7 +145,7 @@ PetscErrorCode Vars::check_for_nan() const {
   while (i != names.end()) {
     IceModelVec *var = get(*i);
     ierr = var->has_nan(); CHKERRQ(ierr);
-    i++;
+    ++i;
   }
 
   return 0;

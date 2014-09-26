@@ -91,12 +91,12 @@ IceModelVec::~IceModelVec() {
 }
 
 //! Returns true if create() was called and false otherwise.
-bool IceModelVec::was_created() {
+bool IceModelVec::was_created() const {
   return (v != NULL);
 }
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
-unsigned int IceModelVec::get_ndims() {
+unsigned int IceModelVec::get_ndims() const {
   if (zlevels.size() > 1) return 3;
 
   return 2;
@@ -143,7 +143,7 @@ GlobalMax,GlobalMin \e are needed, when m_has_ghosts==true, to get correct
 values because Vecs created with DACreateLocalVector() are of type
 VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
  */
-PetscErrorCode IceModelVec::range(double &min, double &max) {
+PetscErrorCode IceModelVec::range(double &min, double &max) const {
   double my_min = 0.0, my_max = 0.0, gmin = 0.0, gmax = 0.0;
   PetscErrorCode ierr;
   assert(v != NULL);
@@ -171,7 +171,7 @@ PetscErrorCode IceModelVec::range(double &min, double &max) {
  *
  * @return norm type as PETSc's `NormType`.
  */
-NormType IceModelVec::int_to_normtype(int input) {
+NormType IceModelVec::int_to_normtype(int input) const {
   assert(input == NORM_1 || input == NORM_2 || input == NORM_INFINITY);
 
   switch (input) {
@@ -194,7 +194,7 @@ D@\note This method works for all IceModelVecs, including ones with
 dof > 1. You might want to use norm_all() for IceModelVec2Stag,
 though.
  */
-PetscErrorCode IceModelVec::norm(int n, double &out) {
+PetscErrorCode IceModelVec::norm(int n, double &out) const {
   PetscErrorCode ierr;
   double my_norm, gnorm;
   assert(v != NULL);
@@ -278,7 +278,7 @@ PetscErrorCode IceModelVec::scale(double alpha) {
 /*! This is potentially dangerous: make sure that `destination` has the same
     dimensions as the current IceModelVec.
  */
-PetscErrorCode  IceModelVec::copy_to_vec(Vec destination) {
+PetscErrorCode  IceModelVec::copy_to_vec(Vec destination) const {
   PetscErrorCode ierr;
   assert(v != NULL);
 
@@ -309,7 +309,7 @@ PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
 }
 
 //! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
-PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
+PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) const {
   PetscErrorCode ierr;
   assert(v != NULL && destination.v != NULL);
 
@@ -321,7 +321,7 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
 }
 
 //! Result: v <- source.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
-PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
+PetscErrorCode  IceModelVec::copy_from(const IceModelVec &source) {
   PetscErrorCode ierr;
   ierr = source.copy_to(*this); CHKERRQ(ierr);
   return 0;
@@ -485,7 +485,7 @@ PetscErrorCode IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an IceModelVec in a file opened using `nc`.
-PetscErrorCode IceModelVec::define(const PIO &nc, IO_Type output_datatype) {
+PetscErrorCode IceModelVec::define(const PIO &nc, IO_Type output_datatype) const {
   PetscErrorCode ierr;
 
   for (unsigned int j = 0; j < m_dof; ++j) {
@@ -517,11 +517,17 @@ PetscErrorCode IceModelVec::read_attributes(const std::string &filename, int N) 
 //! @brief Returns a reference to the NCSpatialVariable object
 //! containing metadata for the compoment N.
 NCSpatialVariable& IceModelVec::metadata(unsigned int N) {
+  assert(N < m_dof);
+  return m_metadata[N];
+}
+
+const NCSpatialVariable& IceModelVec::metadata(unsigned int N) const {
+  assert(N < m_dof);
   return m_metadata[N];
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) {
+PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -548,7 +554,7 @@ PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) {
 }
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
-PetscErrorCode IceModelVec::dump(const char filename[]) {
+PetscErrorCode IceModelVec::dump(const char filename[]) const {
   PetscErrorCode ierr;
   PIO nc(*grid, grid->config.get_string("output_format"));
 
@@ -567,7 +573,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
 }
 
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
-PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &other) {
+PetscErrorCode IceModelVec::checkCompatibility(const char* func, const IceModelVec &other) const {
   PetscErrorCode ierr;
   int X_size, Y_size;
 
@@ -588,7 +594,7 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 }
 
 //! Checks if an IceModelVec is allocated and calls DAVecGetArray.
-PetscErrorCode  IceModelVec::begin_access() {
+PetscErrorCode  IceModelVec::begin_access() const {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   assert(v != NULL);
@@ -612,7 +618,7 @@ PetscErrorCode  IceModelVec::begin_access() {
 }
 
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
-PetscErrorCode  IceModelVec::end_access() {
+PetscErrorCode  IceModelVec::end_access() const {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   assert(v != NULL);
@@ -651,7 +657,7 @@ PetscErrorCode  IceModelVec::update_ghosts() {
 }
 
 //! Scatters ghost points to IceModelVec destination.
-PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) {
+PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) const {
   PetscErrorCode ierr;
 
   assert(v != NULL);
@@ -694,7 +700,7 @@ PetscErrorCode  IceModelVec::set(const double c) {
 
 //! Checks if the current IceModelVec has NANs and reports if it does.
 /*! Both prints and error message at stdout and returns nonzero. */
-PetscErrorCode IceModelVec::has_nan() {
+PetscErrorCode IceModelVec::has_nan() const {
   PetscErrorCode ierr;
   double tmp;
 
@@ -708,7 +714,7 @@ PetscErrorCode IceModelVec::has_nan() {
   return 0;
 }
 
-void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
+void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   double ghost_width = 0;
   if (m_has_ghosts) {
     ghost_width = m_da_stencil_width;
@@ -739,8 +745,8 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
  * "ghosts" is the width of the stencil that can be updated locally.
  * "scatter" is false if all ghosts can be updated locally.
  */
-void compute_params(IceModelVec* const x, IceModelVec* const y,
-		    IceModelVec* const z, int &ghosts, bool &scatter) {
+void compute_params(const IceModelVec* const x, const IceModelVec* const y,
+		    const IceModelVec* const z, int &ghosts, bool &scatter) {
 
   // We have 2^3=8 cases here (x,y,z having or not having ghosts).
   if (z->has_ghosts() == false) {
@@ -773,7 +779,7 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
 }
 
 //! \brief Computes the norm of all components.
-PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
+PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
   PetscErrorCode ierr;
 
   assert(n == NORM_1 || n == NORM_2 || n == NORM_INFINITY);
@@ -825,7 +831,7 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::write(const std::string &filename, IO_Type nctype) {
+PetscErrorCode IceModelVec::write(const std::string &filename, IO_Type nctype) const {
   PetscErrorCode ierr;
 
   PIO nc(*grid, grid->config.get_string("output_format"));
@@ -909,7 +915,7 @@ PetscErrorCode IceModelVec::read(const PIO &nc, const unsigned int time) {
   return 0;
 }
 
-PetscErrorCode IceModelVec::write(const PIO &nc, IO_Type nctype) {
+PetscErrorCode IceModelVec::write(const PIO &nc, IO_Type nctype) const {
   PetscErrorCode ierr;
   ierr = write_impl(nc, nctype); CHKERRQ(ierr);
   return 0;
@@ -921,17 +927,16 @@ IceModelVec::AccessList::AccessList() {
 
 IceModelVec::AccessList::~AccessList() {
   while (m_vecs.empty() == false) {
-    IceModelVec *vec = m_vecs.back();
-    vec->end_access();
+    m_vecs.back()->end_access();
     m_vecs.pop_back();
   }
 }
 
-IceModelVec::AccessList::AccessList(IceModelVec &vec) {
+IceModelVec::AccessList::AccessList(const IceModelVec &vec) {
   add(vec);
 }
 
-void IceModelVec::AccessList::add(IceModelVec &vec) {
+void IceModelVec::AccessList::add(const IceModelVec &vec) {
   vec.begin_access();
   m_vecs.push_back(&vec);
 }

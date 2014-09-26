@@ -57,7 +57,7 @@ PetscErrorCode IceModelVec2S::get_array(double** &a) {
  <li> g2natural is a preallocated temporary global vector with natural ordering.
  </ul>
 */
-PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) const {
   PetscErrorCode ierr;
   assert(v != NULL);
 
@@ -153,7 +153,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) {
+PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
   PetscErrorCode ierr;
 
   assert(v != NULL);
@@ -263,7 +263,7 @@ PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 }
 
 //! \brief View a 2D field.
-PetscErrorCode IceModelVec2::view(int viewer_size) {
+PetscErrorCode IceModelVec2::view(int viewer_size) const {
   PetscErrorCode ierr;
   PetscViewer viewers[2] = {NULL, NULL};
 
@@ -290,7 +290,7 @@ PetscErrorCode IceModelVec2::view(int viewer_size) {
 //! \brief View a 2D vector field using existing PETSc viewers.
 //! Allocates and de-allocates g2, the temporary global vector; performance
 //! should not matter here.
-PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) {
+PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
   PetscErrorCode ierr;
   Vec tmp;
 
@@ -324,7 +324,7 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
+PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) const {
   PetscErrorCode ierr;
   std::string long_name = metadata().get_string("long_name");
   Vec tmp;
@@ -363,7 +363,7 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
 //! Checks if the current IceModelVec2S has NANs and reports if it does.
 /*! Up to a fixed number of messages are printed at stdout.  Returns the full
  count of NANs (which is a nonzero) on this rank. */
-PetscErrorCode IceModelVec2S::has_nan() {
+PetscErrorCode IceModelVec2S::has_nan() const {
   PetscErrorCode ierr;
   const int max_print_this_rank=10;
   int retval=0;
@@ -395,40 +395,40 @@ PetscErrorCode IceModelVec2S::has_nan() {
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
-double IceModelVec2S::diff_x(int i, int j) {
+double IceModelVec2S::diff_x(int i, int j) const {
   return ((*this)(i + 1,j) - (*this)(i - 1,j)) / (2 * grid->dx);
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences.
-double IceModelVec2S::diff_y(int i, int j) {
+double IceModelVec2S::diff_y(int i, int j) const {
   return ((*this)(i,j + 1) - (*this)(i,j - 1)) / (2 * grid->dy);
 }
 
 
 //! \brief Returns the x-derivative at East staggered point i+1/2,j approximated 
 //! using centered (obvious) finite differences.
-double IceModelVec2S::diff_x_stagE(int i, int j) {
+double IceModelVec2S::diff_x_stagE(int i, int j) const {
   return ((*this)(i+1,j) - (*this)(i,j)) / (grid->dx);
 }
 
 //! \brief Returns the y-derivative at East staggered point i+1/2,j approximated 
 //! using centered finite differences.
-double IceModelVec2S::diff_y_stagE(int i, int j) {
+double IceModelVec2S::diff_y_stagE(int i, int j) const {
   return ((*this)(i+1,j+1) + (*this)(i,j+1)
            - (*this)(i+1,j-1) - (*this)(i,j-1)) / (4* grid->dy);
 }
 
 //! \brief Returns the x-derivative at North staggered point i,j+1/2 approximated 
 //! using centered finite differences.
-double IceModelVec2S::diff_x_stagN(int i, int j) {
+double IceModelVec2S::diff_x_stagN(int i, int j) const {
   return ((*this)(i+1,j+1) + (*this)(i+1,j)
            - (*this)(i-1,j+1) - (*this)(i-1,j)) / (4* grid->dx);
 }
 
 //! \brief Returns the y-derivative at North staggered point i,j+1/2 approximated 
 //! using centered (obvious) finite differences.
-double IceModelVec2S::diff_y_stagN(int i, int j) {
+double IceModelVec2S::diff_y_stagN(int i, int j) const {
   return ((*this)(i,j+1) - (*this)(i,j)) / (grid->dy);
 }
 
@@ -436,7 +436,7 @@ double IceModelVec2S::diff_y_stagN(int i, int j) {
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
-double IceModelVec2S::diff_x_p(int i, int j) {
+double IceModelVec2S::diff_x_p(int i, int j) const {
   if (grid->periodicity & X_PERIODIC)
     return diff_x(i,j);
   
@@ -451,7 +451,7 @@ double IceModelVec2S::diff_x_p(int i, int j) {
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
-double IceModelVec2S::diff_y_p(int i, int j) {
+double IceModelVec2S::diff_y_p(int i, int j) const {
   if (grid->periodicity & Y_PERIODIC)
     return diff_y(i,j);
   
@@ -485,7 +485,7 @@ PetscErrorCode IceModelVec2S::sum(double &result) {
 
 
 //! Finds maximum over all the values in an IceModelVec2S object.  Ignores ghosts.
-PetscErrorCode IceModelVec2S::max(double &result) {
+PetscErrorCode IceModelVec2S::max(double &result) const {
   PetscErrorCode ierr;
   IceModelVec::AccessList list(*this);
 
@@ -500,7 +500,7 @@ PetscErrorCode IceModelVec2S::max(double &result) {
 
 
 //! Finds maximum over all the absolute values in an IceModelVec2S object.  Ignores ghosts.
-PetscErrorCode IceModelVec2S::absmax(double &result) {
+PetscErrorCode IceModelVec2S::absmax(double &result) const {
   PetscErrorCode ierr;
 
   IceModelVec::AccessList list(*this);
@@ -515,7 +515,7 @@ PetscErrorCode IceModelVec2S::absmax(double &result) {
 
 
 //! Finds minimum over all the values in an IceModelVec2S object.  Ignores ghosts.
-PetscErrorCode IceModelVec2S::min(double &result) {
+PetscErrorCode IceModelVec2S::min(double &result) const {
   PetscErrorCode ierr;
   IceModelVec::AccessList list(*this);
 
@@ -537,7 +537,7 @@ PetscErrorCode IceModelVec2S::min(double &result) {
  * global.
  */
 
-PetscErrorCode IceModelVec2::get_component(unsigned int N, Vec result) {
+PetscErrorCode IceModelVec2::get_component(unsigned int N, Vec result) const {
   PetscErrorCode ierr;
   void *tmp_res = NULL, *tmp_v;
 
@@ -596,7 +596,7 @@ PetscErrorCode IceModelVec2::set_component(unsigned int N, Vec source) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) {
+PetscErrorCode IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
   PetscErrorCode ierr;
 
   ierr = IceModelVec2::get_component(n, result.v); CHKERRQ(ierr);
@@ -661,11 +661,11 @@ PetscErrorCode IceModelVec2S::add(double alpha, IceModelVec &x) {
   return add_2d<IceModelVec2S>(this, alpha, &x, this);
 }
 
-PetscErrorCode IceModelVec2S::add(double alpha, IceModelVec &x, IceModelVec &result) {
+PetscErrorCode IceModelVec2S::add(double alpha, const IceModelVec &x, IceModelVec &result) const {
   return add_2d<IceModelVec2S>(this, alpha, &x, &result);
 }
 
-PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) {
+PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) const {
   return copy_2d<IceModelVec2S>(this, &destination);
 }
 
@@ -683,7 +683,7 @@ PetscErrorCode IceModelVec2Stag::create(IceGrid &my_grid, const std::string &my_
 /*!
  * The current IceModelVec needs to have ghosts.
  */
-PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
+PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) const {
   IceModelVec::AccessList list(*this);
   list.add(result);
 
@@ -702,7 +702,7 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
 /*!
  * The current IceModelVec needs to have ghosts.
  */
-PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
+PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) const {
   IceModelVec::AccessList list(*this);
   list.add(result);
 
@@ -721,7 +721,7 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
 /*!
 Assumes z is allocated.
  */
-PetscErrorCode IceModelVec2Stag::absmaxcomponents(double* z) {
+PetscErrorCode IceModelVec2Stag::absmaxcomponents(double* z) const {
   PetscErrorCode ierr;
   double my_z[2] = {0.0, 0.0};
 

@@ -100,20 +100,21 @@ int main(int argc, char *argv[]) {
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
     ierr = smoother.get_theta(usurf, &theta); CHKERRQ(ierr);
 
+    const IceModelVec2S &topg_smoothed = smoother.get_smoothed_bed();
     if (show) {
       const int  window = 400;
       ierr = topg.view(window);  CHKERRQ(ierr);
-      ierr = smoother.topgsmooth.view(window);  CHKERRQ(ierr);
+      ierr = topg_smoothed.view(window);  CHKERRQ(ierr);
       ierr = theta.view(window);  CHKERRQ(ierr);
-      printf("[showing topg, smoother.topgsmooth, theta in X windows for 10 seconds ...]\n");
+      printf("[showing topg, topg_smoothed, theta in X windows for 10 seconds ...]\n");
       ierr = PetscSleep(10); CHKERRQ(ierr);
     }
 
     double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
     ierr = topg.min(topg_min); CHKERRQ(ierr);
     ierr = topg.max(topg_max); CHKERRQ(ierr);
-    ierr = smoother.topgsmooth.min(topgs_min); CHKERRQ(ierr);
-    ierr = smoother.topgsmooth.max(topgs_max); CHKERRQ(ierr);
+    ierr = topg_smoothed.min(topgs_min); CHKERRQ(ierr);
+    ierr = topg_smoothed.max(topgs_max); CHKERRQ(ierr);
     ierr = theta.min(theta_min); CHKERRQ(ierr);
     ierr = theta.max(theta_max); CHKERRQ(ierr);
     PetscPrintf(grid.com,

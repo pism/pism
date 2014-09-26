@@ -82,7 +82,7 @@ PetscErrorCode SIAFD_topgsmooth::compute(IceModelVec* &output) {
   ierr = result->create(grid, "topgsmooth", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  ierr = result->copy_from(model->bed_smoother->topgsmooth); CHKERRQ(ierr);
+  ierr = result->copy_from(model->bed_smoother->get_smoothed_bed()); CHKERRQ(ierr);
 
   output = result;
   return 0;
