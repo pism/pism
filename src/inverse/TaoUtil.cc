@@ -20,6 +20,7 @@
 
 namespace pism {
 
+#if PETSC_VERSION_LT(3,5,0)
 TaoInitializer::TaoInitializer(int *argc, char ***argv, char *file, char *help) {
   PetscErrorCode ierr = TaoInitialize(argc,argv,file,help);
   CHKERRCONTINUE(ierr);
@@ -55,7 +56,32 @@ TaoInitializer::~TaoInitializer() {
     PISMEnd();
   }
 }
+#else
+TaoInitializer::TaoInitializer(int *argc, char ***argv, char *file, char *help) {
+  (void) argc;
+  (void) argv;
+  (void) file;
+  (void) help;
+  // noop
+}
 
+TaoInitializer::TaoInitializer(int *argc, char ***argv, char *help) {
+  (void) argc;
+  (void) argv;
+  (void) help;
+  // noop
+}
+
+TaoInitializer::TaoInitializer(int *argc, char ***argv) {
+  (void) argc;
+  (void) argv;
+  // noop
+}
+
+TaoInitializer::~TaoInitializer() {
+  // noop
+}
+#endif
 // TAO failure codes are negative and success codes are positive.  We declare 
 // associated description strings as an array and then point to the middle 
 // of the array so that we can look up description strings via the error code.
@@ -80,7 +106,7 @@ const char *TaoConvergedReasonsShifted[] = {
   "TAO_CONVERGED_USER" };
 const char *const* TaoConvergedReasons = TaoConvergedReasonsShifted + 10;
 
-TAOTerminationReason::TAOTerminationReason(TaoSolverTerminationReason r)  {
+TAOTerminationReason::TAOTerminationReason(tao::ConvergedReason r)  {
   m_reason = r;
 }
 void TAOTerminationReason::get_description(std::ostream &desc, int indent_level) {
