@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014 David Maxwell
+// Copyright (C) 2011, 2012, 2014 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -123,6 +123,7 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
 
   // mimic IceGrid::createDA() with TRANSPOSE :
   int stencil_width=1;
+#if PETSC_VERSION_LT(3,5,0)
   ierr = DMDACreate2d(m_grid.com,
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                       DMDA_STENCIL_BOX,
@@ -131,6 +132,16 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
                       DOF, stencil_width,
                       &m_grid.procs_y[0], &m_grid.procs_x[0],
                       &m_DA); CHKERRQ(ierr);
+#else
+  ierr = DMDACreate2d(m_grid.com,
+                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+                      DMDA_STENCIL_BOX,
+                      m_grid.My, m_grid.Mx,
+                      m_grid.Ny, m_grid.Nx,
+                      DOF, stencil_width,
+                      &m_grid.procs_y[0], &m_grid.procs_x[0],
+                      &m_DA); CHKERRQ(ierr);
+#endif
 
   ierr = DMCreateGlobalVector(m_DA, &m_X); CHKERRQ(ierr);
 
@@ -141,11 +152,23 @@ PetscErrorCode SNESProblem<DOF,U>::initialize()
   m_callbackData.da = m_DA;
   m_callbackData.solver = this;
 #if PETSC_VERSION_LT(3,4,0)  
+  // PETSc 3.3
   ierr = DMDASetLocalFunction(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalFunction);CHKERRQ(ierr);
   ierr = DMDASetLocalJacobian(m_DA,(DMDALocalFunction1)SNESProblem<DOF,U>::LocalJacobian);CHKERRQ(ierr);
+#elif PETSC_VERSION_LT(3,5,0)
+  // PETSc 3.4
+  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES,
+                                  (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,
+                                  &m_callbackData); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,
+                                  &m_callbackData); CHKERRQ(ierr);
 #else
-  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES, (DMDASNESFunctionLocal)SNESProblem<DOF,U>::LocalFunction,&m_callbackData);CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobianLocal)SNESProblem<DOF,U>::LocalJacobian,&m_callbackData);CHKERRQ(ierr);
+  // PETSc 3.5
+  ierr = DMDASNESSetFunctionLocal(m_DA,INSERT_VALUES,
+                                  (DMDASNESFunction)SNESProblem<DOF,U>::LocalFunction,
+                                  &m_callbackData); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(m_DA,(DMDASNESJacobian)SNESProblem<DOF,U>::LocalJacobian,
+                                  &m_callbackData); CHKERRQ(ierr);
 #endif
 
   ierr = DMSetMatType(m_DA, "baij"); CHKERRQ(ierr);

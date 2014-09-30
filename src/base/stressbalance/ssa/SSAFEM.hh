@@ -47,11 +47,18 @@ struct SSAFEM_SNESCallbackData {
 
 //! SNES callbacks.  
 /*! These simply forward the call on to the SSAFEM memeber of the SSAFEM_SNESCallbackData */
+#if PETSC_VERSION_LT(3,5,0)
 PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, 
                              PISMVector2 **, SSAFEM_SNESCallbackData *);
 PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
                              Mat A, Mat J,
                              MatStructure *str, SSAFEM_SNESCallbackData *fe);
+#else
+PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **,
+                             PISMVector2 **, SSAFEM_SNESCallbackData *);
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+                             Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
+#endif
 
 //! Factory function for constructing a new SSAFEM.
 SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const PISMConfig &);
@@ -63,10 +70,18 @@ The SSAFEM duplicates most of the functionality of SSAFD, using the finite eleme
 */
 class SSAFEM : public SSA
 {
-  friend PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
+#if PETSC_VERSION_LT(3,5,0)
+  friend PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **,
+                                      PISMVector2 **, SSAFEM_SNESCallbackData *);
   friend PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
                                       Mat A, Mat J,
                                       MatStructure *str, SSAFEM_SNESCallbackData *fe);
+#else
+  friend PetscErrorCode SSAFEFunction(DMDALocalInfo *, const PISMVector2 **,
+                                      PISMVector2 **, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
+                                      Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
+#endif
 public:
   SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c);
 

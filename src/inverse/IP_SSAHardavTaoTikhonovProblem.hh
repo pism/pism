@@ -54,10 +54,10 @@ public:
 
   virtual ~IP_SSAHardavTaoTikhonovProblem() {};
 
-  virtual PetscErrorCode connect(TaoSolver tao);
+  virtual PetscErrorCode connect(Tao tao);
 
   //! Callback to TAO to set bounds on \f$\tau_c\f$ for constrained minimization algorithms.
-  virtual PetscErrorCode getVariableBounds(TaoSolver tao, Vec lo, Vec hi); 
+  virtual PetscErrorCode getVariableBounds(Tao tao, Vec lo, Vec hi); 
 
 };
 

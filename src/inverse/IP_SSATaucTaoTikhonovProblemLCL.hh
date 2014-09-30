@@ -100,19 +100,19 @@ public:
 
   virtual PetscErrorCode setInitialGuess( DesignVec &d0);
 
-  PetscErrorCode connect(TaoSolver tao);
+  PetscErrorCode connect(Tao tao);
 
-  PetscErrorCode monitorTao(TaoSolver tao);
+  PetscErrorCode monitorTao(Tao tao);
 
-  virtual PetscErrorCode evaluateObjectiveAndGradient(TaoSolver tao, Vec x, double *value, Vec gradient);
+  virtual PetscErrorCode evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
   
   virtual PetscErrorCode formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode evaluateConstraints(TaoSolver, Vec x, Vec r);
+  virtual PetscErrorCode evaluateConstraints(Tao, Vec x, Vec r);
 
-  virtual PetscErrorCode evaluateConstraintsJacobianState(TaoSolver, Vec x, Mat *Jstate, Mat *Jpc, Mat *Jinv, MatStructure *s);
+  virtual PetscErrorCode evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat Jpc, Mat Jinv, MatStructure *s);
   
-  virtual PetscErrorCode evaluateConstraintsJacobianDesign(TaoSolver, Vec x, Mat* /*Jdesign*/);
+  virtual PetscErrorCode evaluateConstraintsJacobianDesign(Tao, Vec x, Mat Jdesign);
 
   virtual PetscErrorCode applyConstraintsJacobianDesign(Vec x, Vec y);
   virtual PetscErrorCode applyConstraintsJacobianDesignTranspose(Vec x, Vec y);

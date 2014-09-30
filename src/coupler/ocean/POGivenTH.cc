@@ -181,7 +181,7 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
                               &shelf_base_mass_flux); CHKERRQ(ierr);
 
       // convert from Celsius into Kelvin:
-      shelfbtemp(i,j)     = shelf_base_temperature + 273.15;
+      shelfbtemp(i,j)     = shelf_base_temperature_celsius + 273.15;
       shelfbmassflux(i,j) = shelf_base_mass_flux;
     }
   }
