@@ -21,6 +21,7 @@
 #include "PISMConfig.hh"
 #include "PISMVars.hh"
 #include "PISMStressBalance_diagnostics.hh"
+#include "enthalpyConverter.hh"
 
 namespace pism {
 
@@ -104,7 +105,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       double P = weights[0] * p0 + weights[1] * p1 + weights[2] * p2 + weights[3] * p3;
 
       double E = 90e3, T = 0.0;
-      ierr = EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
+      ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
     }
   }
 
