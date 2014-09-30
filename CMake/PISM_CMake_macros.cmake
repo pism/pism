@@ -16,6 +16,7 @@ macro(pism_use_rpath)
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
   # Mac OS X install_name fix:
+  set(CMAKE_MACOSX_RPATH 1)
   set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
 endmacro(pism_use_rpath)
 
