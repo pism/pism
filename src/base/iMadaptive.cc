@@ -26,6 +26,7 @@
 #include "PISMOcean.hh"
 #include "PISMSurface.hh"
 #include "PISMHydrology.hh"
+#include "PISMFEvoR.hh"
 #include <sstream>
 #include <algorithm>
 
@@ -307,6 +308,14 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
       double max_dt_diffusivity = 0.0;
       ierr = max_timestep_diffusivity(max_dt_diffusivity); CHKERRQ(ierr);
       dt_restrictions["diffusivity"] = max_dt_diffusivity;
+    }
+
+    if (m_fevor != NULL) {
+      double m_fevor_dt = 0.0;
+      ierr = m_fevor->max_timestep(current_time, m_fevor_dt, restrict_dt); CHKERRQ(ierr);
+      if (restrict_dt) {
+        dt_restrictions["FEvoR"] = m_fevor_dt;
+      }
     }
   }
 

@@ -909,7 +909,7 @@ PetscErrorCode IceModel::allocate_submodels() {
 PetscErrorCode IceModel::allocate_fevor() {
   if (m_fevor == NULL &&
       config.get_string("stress_balance_model") == "sia_fevor") {
-    m_fevor = new PISMFEvoR(grid, config);
+    m_fevor = new PISMFEvoR(grid, config, EC, stress_balance);
   } else {
     m_fevor = NULL;
   }

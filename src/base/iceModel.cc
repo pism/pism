@@ -674,10 +674,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = update_floatation_mask(); CHKERRQ(ierr);
   }
 
-  if (m_fevor != NULL) {
-    ierr = m_fevor->update(grid.time->current(), dt); CHKERRQ(ierr);
-  }
-
   double sea_level = 0;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 
@@ -715,6 +711,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
   ierr = max_timestep(dt, skipCountDown); CHKERRQ(ierr);
+
+  if (m_fevor != NULL) {
+    ierr = m_fevor->update(grid.time->current(), dt); CHKERRQ(ierr);
+  }
 
   //! \li Update surface and ocean models.
   ierr = surface->update(grid.time->current(), dt); CHKERRQ(ierr);

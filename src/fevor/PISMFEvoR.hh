@@ -22,12 +22,19 @@
 
 namespace pism {
 
+class EnthalpyConverter;
+class StressBalance;
+class PSB_pressure;
+class PSB_tauxz;
+class PSB_tauyz;
+
 /*! PISM-side wrapper around the FEvoR code. Provides the
  *  spatially-variable enhancement factor field.
  */
 class PISMFEvoR : public Component_TS {
 public:
-  PISMFEvoR(IceGrid &g, const Config &conf);
+  PISMFEvoR(IceGrid &g, const Config &conf,
+            EnthalpyConverter *EC, StressBalance *stress_balance);
   virtual ~PISMFEvoR();
 
   PetscErrorCode init(Vars &vars);
@@ -45,6 +52,12 @@ private:
   PetscErrorCode allocate();
 
   IceModelVec3 m_enhancement_factor;
+  IceModelVec3 *m_enthalpy;
+  StressBalance *m_stress_balance;
+  PSB_pressure *m_pressure;
+  PSB_tauxz *m_tauxz;
+  PSB_tauyz *m_tauyz;
+  EnthalpyConverter *m_EC;
 };
 
 } // end of namespace pism
