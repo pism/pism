@@ -22,18 +22,25 @@
 #include "PISMVars.hh"
 #include "PISMStressBalance_diagnostics.hh"
 #include "enthalpyConverter.hh"
+#include <cassert>
 
 namespace pism {
 
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
                      StressBalance *stress_balance)
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC) {
+
+  assert(m_EC != NULL);
+  assert(m_stress_balance != NULL);
+
   PetscErrorCode ierr = allocate(); CHKERRCONTINUE(ierr);
 
+  // will be allocated in init()
   m_pressure = NULL;
-  m_tauxz = NULL;
-  m_tauyz = NULL;
+  m_tauxz    = NULL;
+  m_tauyz    = NULL;
 
+  // points to storage owned by IceModel
   m_enthalpy = NULL;
 }
 
@@ -41,7 +48,6 @@ PISMFEvoR::~PISMFEvoR() {
   delete m_pressure;
   delete m_tauxz;
   delete m_tauyz;
-  // empty
 }
 
 PetscErrorCode PISMFEvoR::max_timestep(double t, double &dt, bool &restrict) {
@@ -58,15 +64,18 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   IceModelVec3 *u = NULL, *v = NULL, *w = NULL;
   ierr = m_stress_balance->get_3d_velocity(u, v, w); CHKERRQ(ierr);
 
-  IceModelVec* pressure = NULL;
+  assert(m_pressure != NULL);
+  IceModelVec* pressure = NULL; // FIXME: use a smart pointer
   ierr = m_pressure->compute(pressure); CHKERRQ(ierr);
   IceModelVec3 *pressure3 = static_cast<IceModelVec3*>(pressure);
 
-  IceModelVec* tauxz = NULL;
+  assert(m_tauxz != NULL);
+  IceModelVec* tauxz = NULL;    // FIXME: use a smart pointer
   ierr = m_tauxz->compute(tauxz); CHKERRQ(ierr);
   IceModelVec3 *tauxz3 = static_cast<IceModelVec3*>(tauxz);
 
-  IceModelVec* tauyz = NULL;
+  assert(m_tauyz != NULL);
+  IceModelVec* tauyz = NULL;    // FIXME: use a smart pointer
   ierr = m_tauyz->compute(tauyz); CHKERRQ(ierr);
   IceModelVec3 *tauyz3 = static_cast<IceModelVec3*>(tauyz);
 
@@ -80,18 +89,24 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         y = 0.0,
         z = 0.0;
 
-      int I, J;
+      // check if the point (x,y,z) is within the domain:
+      assert(0.0 <= z && z <= grid.Lz);
+      assert(-grid.Lx <= x && x <= grid.Lx);
+      assert(-grid.Ly <= y && y <= grid.Ly);
+
+      int I = 0, J = 0;
       grid.compute_point_neighbors(x, y, I, J);
       std::vector<double> weights = grid.compute_interp_weights(x, y);
 
-      double *column0, *column1, *column2, *column3;
+      double *column0 = NULL, *column1 = NULL, *column2 = NULL, *column3 = NULL;
       ierr = pressure3->getInternalColumn(I,   J,   &column0); CHKERRQ(ierr);
       ierr = pressure3->getInternalColumn(I+1, J,   &column1); CHKERRQ(ierr);
       ierr = pressure3->getInternalColumn(I+1, J+1, &column2); CHKERRQ(ierr);
-      ierr = pressure3->getInternalColumn(I,   J+1, &column3); CHKERRQ(ierr); 
+      ierr = pressure3->getInternalColumn(I,   J+1, &column3); CHKERRQ(ierr);
 
       unsigned int k = 0;
-      while (grid.zlevels[k+1] < z) {
+      // k + 1 (used below) should be at most Mz - 1
+      while (k + 1 < grid.Mz - 1 && grid.zlevels[k + 1] < z) {
         k++;
       }
 
@@ -171,16 +186,22 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
     SETERRQ(grid.com, 1, "enthalpy field is not available");
   }
 
+  // It would be nice to be able to allocate these in
+  // PISMFEvoR::allocate() or in the constructor, but pism::Vars is
+  // not available there...
   if (m_pressure == NULL) {
     m_pressure = new PSB_pressure(m_stress_balance, grid, vars);
+    assert(m_pressure != NULL);
   }
 
   if (m_tauxz == NULL) {
     m_tauxz = new PSB_tauxz(m_stress_balance, grid, vars);
+    assert(m_tauxz != NULL);
   }
 
   if (m_tauyz == NULL) {
     m_tauyz = new PSB_tauyz(m_stress_balance, grid, vars);
+    assert(m_tauyz != NULL);
   }
 
   return 0;
