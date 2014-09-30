@@ -530,6 +530,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   assert(ocean != NULL);
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+  // convert from [kg m-2 s-1] to [m s-1]:
+  ierr = shelfbmassflux.scale(1.0 / ice_density); CHKERRQ(ierr);
 
   IceModelVec2S &vHnew = vWork2d[0];
   ierr = ice_thickness.copy_to(vHnew); CHKERRQ(ierr);
@@ -621,8 +623,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         nonneg_rule_flux     = 0.0; // units: [m]
 
       if (include_bmr_in_continuity) {
-        // convert from [kg m-2 s-1] to [m s-1]:
-        meltrate_floating = shelfbmassflux(i, j) / ice_density;
+        meltrate_floating = shelfbmassflux(i, j);
         // basal melt rate is computed by PISM itself and has units of
         // [m s-1] already
         meltrate_grounded = basal_melt_rate(i, j);

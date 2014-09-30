@@ -167,19 +167,21 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      // convert from Kelvin into Celsius:
       double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
 
       double
-        shelf_base_temperature = 0.0,
+        shelf_base_temperature_celsius = 0.0,
         shelf_base_mass_flux   = 0.0;
       ierr = pointwise_update(c,
                               (*salinity_ocean)(i,j),
                               potential_temperature_celsius,
                               (*ice_thickness)(i,j),
-                              &shelf_base_temperature,
+                              &shelf_base_temperature_celsius,
                               &shelf_base_mass_flux); CHKERRQ(ierr);
 
-      shelfbtemp(i,j)     = shelf_base_temperature;
+      // convert from Celsius into Kelvin:
+      shelfbtemp(i,j)     = shelf_base_temperature + 273.15;
       shelfbmassflux(i,j) = shelf_base_mass_flux;
     }
   }
@@ -361,8 +363,8 @@ static double shelf_base_melt_rate(POGivenTH::POGivenTHConstants c,
  * @param[in] sea_water_salinity sea water salinity
  * @param[in] sea_water_potential_temperature sea water potential temperature
  * @param[in] thickness ice shelf thickness
- * @param[out] shelf_base_temperature_out resulting basal temperature
- * @param[out] shelf_base_melt_rate_out resulting basal melt rate
+ * @param[out] shelf_base_temperature_out resulting basal temperature, in Celsius
+ * @param[out] shelf_base_melt_rate_out resulting basal melt rate, in m/second
  *
  * @return 0 on success
  */
