@@ -302,7 +302,7 @@ PetscErrorCode IceModel::ageStep() {
       }
 
       // put solution in IceModelVec3
-      ierr = vWork3d.setValColumnPL(i,j,&x[0]); CHKERRQ(ierr);
+      ierr = vWork3d.setValColumnPL(i, j, x); CHKERRQ(ierr);
     }
   }
 

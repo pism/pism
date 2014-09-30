@@ -64,6 +64,7 @@
 #include "pism_options.hh"
 #include "SIAFD.hh"
 #include "regional/regional.hh"
+#include "enthSystem.hh"
 
 using namespace pism;
 %}
@@ -559,6 +560,11 @@ using namespace pism;
 %template(Diag_SIAFD) pism::Diag<pism::SIAFD>;
 %include "stressbalance/sia/SIAFD.hh"
 %include "flowlaw_factory.hh"
+
+ /* wrap the enthalpy solver to make testing easier */
+%include "columnSystem.hh"
+%rename pism::enthSystemCtx::lambda get_lambda;
+%include "enthSystem.hh"
 
 %include "iceModel.hh"
 

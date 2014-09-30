@@ -183,19 +183,21 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
                             &shelf_base_temp,
                             &shelf_base_massflux); CHKERRQ(ierr);
 
-    shelfbtemp(i,j)     = shelf_base_temp;
+    shelfbtemp(i,j)     = shelf_base_temp + 273.15;
     shelfbmassflux(i,j) = shelf_base_massflux;
   }
 
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
-  ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);
+  ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr); //FIXME: This line needs to be commented in stable0.6!
 
   return 0;
 }
 
 
 //* Evaluate the parameterization of the melting point temperature.
+/** The value returned is in degrees Celsius.
+ */
 static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
                                         double salinity, double ice_thickness) {
   return c.a[0] * salinity + c.a[1] + c.a[2] * ice_thickness;

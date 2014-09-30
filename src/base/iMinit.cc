@@ -1007,7 +1007,7 @@ PetscErrorCode IceModel::init_step_couplers() {
 //! Allocates work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
-  int WIDE_STENCIL = grid.max_stencil_width;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   // various internal quantities
   // 2d work vectors
