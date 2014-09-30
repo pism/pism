@@ -1014,7 +1014,7 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
 
   for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+        int ks = grid.kBelowHeight((*thickness)(i,j));
         ierr = result->getInternalColumn(i,j,&P_out_ij); CHKERRQ(ierr);
         const double H = (*thickness)(i,j);
         // within the ice:
@@ -1079,7 +1079,7 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-        unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+        int ks = grid.kBelowHeight((*thickness)(i,j));
         ierr = result->getInternalColumn(i,j,&tauxz_out_ij); CHKERRQ(ierr);
         const double H    = (*thickness)(i,j),
                      dhdx = surface->diff_x_p(i,j);
@@ -1146,7 +1146,7 @@ PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-        unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
+        int ks = grid.kBelowHeight((*thickness)(i,j));
         ierr = result->getInternalColumn(i,j,&tauyz_out_ij); CHKERRQ(ierr);
         const double H    = (*thickness)(i,j),
                      dhdy = surface->diff_y_p(i,j);

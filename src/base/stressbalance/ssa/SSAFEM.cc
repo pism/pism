@@ -22,6 +22,9 @@
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
 
+typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
+typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
+
 SSA *SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
 {
   return new SSAFEM(g,ec,c);
@@ -56,9 +59,8 @@ PetscErrorCode SSAFEM::allocate_fem() {
   // methods via SSAFEFunction and SSAFEJ
   callback_data.da = SSADA;
   callback_data.ssa = this;
-
-  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunction)SSAFEFunction, &callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobian)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
 
   ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
   ierr = DMSetApplicationContext(SSADA, &callback_data); CHKERRQ(ierr);
@@ -570,12 +572,8 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
                                        i,j,xg[i][j].u,xg[i][j].v,yg[i][j].u,yg[i][j].v);CHKERRQ(ierr);
       }
     }
-  }
-#if PETSC_VERSION_LT(3,5,0)
     ierr = PetscSynchronizedFlush(grid.com);CHKERRQ(ierr);
-#else
-    ierr = PetscSynchronizedFlush(grid.com, PETSC_STDOUT); CHKERRQ(ierr);
-#endif
+  }
 
   return 0;
 }
@@ -770,7 +768,6 @@ PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
   return fe->ssa->compute_local_function(info,xg,yg);
 }
 
-#if PETSC_VERSION_LT(3,5,0)
 PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
                              Mat /*A*/, Mat J,
                              MatStructure *str, SSAFEM_SNESCallbackData *fe)
@@ -781,13 +778,4 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
 
   return 0;
 }
-#else
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
-                             Mat /*A*/, Mat J, SSAFEM_SNESCallbackData *fe)
-{
-  PetscErrorCode ierr = fe->ssa->compute_local_jacobian(info, xg, J); CHKERRQ(ierr);
-  return 0;
-}
-#endif
-
 

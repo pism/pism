@@ -573,8 +573,6 @@ in fact be equal to PETSC_NULL, and this is OK. */
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
 %template(PISMDiag_SSA) PISMDiag<SSA>;
-%ignore SSAFEJacobian;
-%ignore SSAFEFunction;
 %include "stressbalance/ssa/SSA.hh"
 %include "stressbalance/ssa/SSAFEM.hh"
 %template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
