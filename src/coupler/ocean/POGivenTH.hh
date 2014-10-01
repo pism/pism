@@ -33,6 +33,13 @@ public:
   virtual PetscErrorCode init(Vars &vars);
   virtual PetscErrorCode update(double my_t, double my_dt);
 
+  virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
+
+  virtual PetscErrorCode define_variables(const std::set<std::string> &vars,
+                                          const PIO &nc, IO_Type nctype);
+
+  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
+
   virtual PetscErrorCode sea_level_elevation(double &result);
 
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
