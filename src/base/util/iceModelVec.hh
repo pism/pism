@@ -235,7 +235,7 @@ protected:
   std::vector<double> zlevels;
   unsigned int m_n_levels;                 //!< number of vertical levels
 
-  Vec  v;                       //!< Internal storage
+  Vec  m_v;                       //!< Internal storage
   std::string m_name;
 
   //! stores metadata (NetCDF variable attributes)

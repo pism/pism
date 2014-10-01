@@ -363,7 +363,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
 
   for (unsigned int j = 0; j < missing; ++j) {
     ierr = m_metadata[0].regrid(nc, start + j,
-                                CRITICAL, m_report_range, 0.0, v); CHKERRQ(ierr);
+                                CRITICAL, m_report_range, 0.0, m_v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
                       m_name.c_str(),
