@@ -540,8 +540,8 @@ PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalBegin(m_da->get(), m_v, INSERT_VALUES, tmp); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(m_da->get(), m_v, INSERT_VALUES, tmp); CHKERRQ(ierr);
+
+    ierr = this->copy_to_vec(tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).write(nc, nctype, write_in_glaciological_units, tmp); CHKERRQ(ierr);
 
@@ -679,8 +679,7 @@ PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) const {
   }
 
   if (m_has_ghosts == true && destination.m_has_ghosts == false) {
-    ierr = DMLocalToGlobalBegin(m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
+    ierr = this->copy_to_vec(destination.m_v); CHKERRQ(ierr);
     return 0;
   }
 

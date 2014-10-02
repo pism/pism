@@ -64,12 +64,7 @@ PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec
   PISMDM::Ptr da2;
   ierr = grid->get_dm(1, this->get_stencil_width(), da2); CHKERRQ(ierr);
 
-  if (m_has_ghosts == true) {
-    ierr = DMLocalToGlobalBegin(m_da->get(), m_v, INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr =   DMLocalToGlobalEnd(m_da->get(), m_v, INSERT_VALUES, g2); CHKERRQ(ierr);
-  } else {
-    ierr = this->copy_to_vec(g2); CHKERRQ(ierr);
-  }
+  ierr = this->copy_to_vec(g2); CHKERRQ(ierr);
 
   ierr = DMDAGlobalToNaturalBegin(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
   ierr =   DMDAGlobalToNaturalEnd(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
