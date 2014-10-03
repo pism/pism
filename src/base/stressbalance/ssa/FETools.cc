@@ -85,8 +85,10 @@ FEElementMap::FEElementMap(const IceGrid &g) {
 FEDOFMap::FEDOFMap() {
   m_i = 0;
   m_j = 0;
-  PetscMemzero(m_row, Nk*sizeof(MatStencil));
-  PetscMemzero(m_col, Nk*sizeof(MatStencil));
+  for (unsigned int k = 0; k < Nk; ++k) {
+    m_row[k].i = m_row[k].j = 0;
+    m_col[k].i = m_col[k].j = 0;
+  }
 }
 
 FEDOFMap::~FEDOFMap() {
@@ -179,7 +181,10 @@ void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
   m_col[2].j = i + 1;
   m_col[3].j = i;
 
-  memcpy(m_row, m_col, Nk*sizeof(m_col[0]));
+  for (unsigned int k = 0; k < Nk; ++k) {
+    m_row[k].i = m_col[k].i;
+    m_row[k].i = m_col[k].j;
+  }
 
   // We do not ever sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < Nk; k++) {

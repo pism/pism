@@ -575,7 +575,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) const {
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
 PetscErrorCode IceModelVec::checkCompatibility(const char* func, const IceModelVec &other) const {
   PetscErrorCode ierr;
-  int X_size, Y_size;
+  PetscInt X_size, Y_size;
 
   if (m_dof != other.m_dof) {
     SETERRQ1(grid->com, 1, "IceModelVec::%s(...): operands have different numbers of degrees of freedom",
