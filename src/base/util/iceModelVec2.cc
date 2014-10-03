@@ -329,11 +329,7 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) const {
 
   ierr = DMGetGlobalVector(da2->get(), &tmp); CHKERRQ(ierr);
 
-  if (m_has_ghosts) {
-    ierr = copy_to_vec(tmp); CHKERRQ(ierr);
-  } else {
-    ierr = VecCopy(m_v, tmp); CHKERRQ(ierr);
-  }
+  ierr = copy_to_vec(tmp); CHKERRQ(ierr);
 
   ierr = convert_vec(tmp,
                      metadata().get_units(),
