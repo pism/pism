@@ -329,7 +329,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
 template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProblem>::monitorTao(tao::Solver tao) {
   PetscErrorCode ierr;
   
-  int its;
+  PetscInt its;
   ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
   
   int nListeners = m_listeners.size();
