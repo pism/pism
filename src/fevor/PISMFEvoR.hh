@@ -42,6 +42,10 @@ public:
   virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
   virtual PetscErrorCode update(double t, double dt);
 
+  virtual PetscErrorCode interp_field_point( double &x, double &y, double &z, 
+                                            IceModelVec3 &field3, 
+                                            double &feildValue );
+
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,

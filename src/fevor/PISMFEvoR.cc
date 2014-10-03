@@ -80,47 +80,44 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   IceModelVec3 *tauyz3 = static_cast<IceModelVec3*>(tauyz);
 
   {
-    // FIXME: put real code here
     ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
 
-    unsigned int n_particles = 20;
+    unsigned int n_particles = 1;
+        /* terminology:
+         *  particles exist in pism and contain one or more distrobutions 
+         * of crystals that are tracked through time. They essentially are 
+         * infinitesimely small. Distributions exist in FEvoR and contain 
+         * sets of independent crystals (or in the case of NNI weakly 
+         * dependant). In PISM-FEvoR you will likely not need to access the
+         * crystals directly. Methods should be provided through FEvoR's 
+         * distribution class fevor_distribution. 
+         */
+        
     for (unsigned int i = 0; i < n_particles; ++i) {
       double x = 0.0,
-        y = 0.0,
-        z = 0.0;
+             y = 0.0,
+             z = 0.0;
+             
+      double P   = 0.0, 
+             txz = 0.0,
+             tyz = 0.0;
+             
+      double E = 90e3, 
+             T = 0.0;
 
       // check if the point (x,y,z) is within the domain:
       assert(0.0 <= z && z <= grid.Lz);
       assert(-grid.Lx <= x && x <= grid.Lx);
       assert(-grid.Ly <= y && y <= grid.Ly);
 
-      int I = 0, J = 0;
-      grid.compute_point_neighbors(x, y, I, J);
-      std::vector<double> weights = grid.compute_interp_weights(x, y);
-
-      double *column0 = NULL, *column1 = NULL, *column2 = NULL, *column3 = NULL;
-      ierr = pressure3->getInternalColumn(I,   J,   &column0); CHKERRQ(ierr);
-      ierr = pressure3->getInternalColumn(I+1, J,   &column1); CHKERRQ(ierr);
-      ierr = pressure3->getInternalColumn(I+1, J+1, &column2); CHKERRQ(ierr);
-      ierr = pressure3->getInternalColumn(I,   J+1, &column3); CHKERRQ(ierr);
-
-      unsigned int k = 0;
-      // k + 1 (used below) should be at most Mz - 1
-      while (k + 1 < grid.Mz - 1 && grid.zlevels[k + 1] < z) {
-        k++;
-      }
-
-      double z_weight = (z - grid.zlevels[k]) / (grid.zlevels[k+1] - grid.zlevels[k]);
-
-      double p0 = column0[k] + z_weight * (column0[k+1] - column0[k]);
-      double p1 = column1[k] + z_weight * (column1[k+1] - column1[k]);
-      double p2 = column2[k] + z_weight * (column2[k+1] - column2[k]);
-      double p3 = column3[k] + z_weight * (column3[k+1] - column3[k]);
-
-      double P = weights[0] * p0 + weights[1] * p1 + weights[2] * p2 + weights[3] * p3;
-
-      double E = 90e3, T = 0.0;
+      ierr = interp_field_point( x, y, z, pressure3, P  );
+      ierr = interp_field_point( x, y, z, tauxz3   , txy);
+      ierr = interp_field_point( x, y, z, tauyz3   , txz);
+      
+      
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
+      
+      // TODO put in FEvoR step.
     }
   }
 
@@ -129,6 +126,40 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   delete tauyz;
 
   return 0;
+}
+
+virtual PetscErrorCode PISMFEvoR::interp_field_point( double &x, double &y, 
+                                                      double &z, 
+                                                      IceModelVec3 &field3, 
+                                                      double &feildValue) {
+    PetscErrorCode ierr;
+    
+    int I = 0, J = 0;
+    grid.compute_point_neighbors(x, y, I, J);
+    std::vector<double> weights = grid.compute_interp_weights(x, y);
+
+    double *column0 = NULL, *column1 = NULL, *column2 = NULL, *column3 = NULL;
+    ierr = field3->getInternalColumn(I,   J,   &column0); CHKERRQ(ierr);
+    ierr = field3->getInternalColumn(I+1, J,   &column1); CHKERRQ(ierr);
+    ierr = field3->getInternalColumn(I+1, J+1, &column2); CHKERRQ(ierr);
+    ierr = field3->getInternalColumn(I,   J+1, &column3); CHKERRQ(ierr);
+
+    unsigned int K = 0;
+    // K + 1 (used below) should be at most Mz - 1
+    while (K + 1 < grid.Mz - 1 && grid.zlevels[K + 1] < z) {
+    K++;
+    }
+
+    double z_weight = (z - grid.zlevels[K]) / (grid.zlevels[K+1] - grid.zlevels[K]);
+
+    double f0 = column0[K] + z_weight * (column0[K+1] - column0[K]);
+    double f1 = column1[K] + z_weight * (column1[K+1] - column1[K]);
+    double f2 = column2[K] + z_weight * (column2[K+1] - column2[K]);
+    double f3 = column3[K] + z_weight * (column3[K+1] - column3[K]);
+
+    feildValue = weights[0] * f0 + weights[1] * f1 + weights[2] * f2 + weights[3] * f3;
+    
+    return 0;
 }
 
 void PISMFEvoR::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
