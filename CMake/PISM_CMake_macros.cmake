@@ -170,6 +170,7 @@ macro(pism_find_prerequisites)
   find_package (UDUNITS2 REQUIRED)
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
+  find_package (FEvoR REQUIRED)
 
   # Optional libraries
   find_package (PNetCDF)
