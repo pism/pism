@@ -49,22 +49,17 @@ PetscErrorCode IceModelVec2V::get_array(Vector2** &a) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  Vector2** a;
-  double **mag;
-
-  ierr = result.get_array(mag); CHKERRQ(ierr);
-  ierr = get_array(a);
+PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) const {
+  IceModelVec::AccessList list;
+  list.add(*this);
+  list.add(result);
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    mag[i][j] = a[i][j].magnitude();
+    result(i, j) = (*this)(i, j).magnitude();
   }
 
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = end_access();
   return 0;
 }
 
@@ -143,11 +138,11 @@ PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }
 
-PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) {
+PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &result) const {
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 
-PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) {
+PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) const {
   return copy_2d<IceModelVec2V>(this, &destination);
 }
 

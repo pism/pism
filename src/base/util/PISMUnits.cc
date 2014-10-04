@@ -190,7 +190,7 @@ bool Unit::is_valid() const {
 PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {
   PetscErrorCode ierr;
 
-  int data_size = 0;
+  PetscInt data_size = 0;
   ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
 
   double *data = NULL;

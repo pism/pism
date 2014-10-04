@@ -21,8 +21,8 @@
 
 namespace pism {
 
-void compute_params(IceModelVec* const x, IceModelVec* const y,
-                    IceModelVec* const z, int &ghosts, bool &scatter);
+void compute_params(const IceModelVec* const x, const IceModelVec* const y,
+                    const IceModelVec* const z, int &ghosts, bool &scatter);
 
 //! \brief Computes result = x + alpha * y, where x, y, and z are 2D
 //! IceModelVecs (scalar or vector).
@@ -40,13 +40,15 @@ void compute_params(IceModelVec* const x, IceModelVec* const y,
  * Note: this code uses overloaded operators (Vector2::operator*, etc).
  */
 template<class V>
-PetscErrorCode add_2d(IceModelVec* const x_in, double alpha, IceModelVec* const y_in,
+PetscErrorCode add_2d(const IceModelVec* const x_in, double alpha,
+                      const IceModelVec* const y_in,
                       IceModelVec* const result) {
   PetscErrorCode ierr;
 
-  V *x = dynamic_cast<V*>(x_in),
-    *y = dynamic_cast<V*>(y_in),
-    *z = dynamic_cast<V*>(result);
+  const V *x = dynamic_cast<const V*>(x_in),
+    *y = dynamic_cast<const V*>(y_in);
+
+  V *z = dynamic_cast<V*>(result);
 
   if (x == NULL || y == NULL || z == NULL) {
     SETERRQ(PETSC_COMM_SELF, 1, "incompatible arguments");
@@ -78,12 +80,13 @@ PetscErrorCode add_2d(IceModelVec* const x_in, double alpha, IceModelVec* const 
 }
 
 template<class V>
-PetscErrorCode copy_2d(IceModelVec* const source,
+PetscErrorCode copy_2d(const IceModelVec* const source,
                        IceModelVec* const destination) {
   PetscErrorCode ierr;
 
-  V *x = dynamic_cast<V*>(source),
-    *z = dynamic_cast<V*>(destination);
+  const V *x = dynamic_cast<const V*>(source);
+
+  V *z = dynamic_cast<V*>(destination);
 
   if (x == NULL || z == NULL) {
     SETERRQ(PETSC_COMM_SELF, 1, "incompatible arguments");

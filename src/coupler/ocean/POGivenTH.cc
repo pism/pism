@@ -130,6 +130,48 @@ PetscErrorCode POGivenTH::init(Vars &vars) {
   return 0;
 }
 
+void POGivenTH::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
+  PGivenClimate<POModifier,OceanModel>::add_vars_to_output(keyword, result);
+
+  if (keyword != "none" && keyword != "small") {
+    result.insert("shelfbtemp");
+    result.insert("shelfbmassflux");
+  }
+}
+
+PetscErrorCode POGivenTH::define_variables(const std::set<std::string> &vars,
+                                           const PIO &nc, IO_Type nctype) {
+  PetscErrorCode ierr;
+
+  ierr = PGivenClimate<POModifier,OceanModel>::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  if (set_contains(vars, "shelfbtemp")) {
+    ierr = shelfbtemp.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "shelfbmassflux")) {
+    ierr = shelfbmassflux.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode POGivenTH::write_variables(const std::set<std::string> &vars, const PIO& nc) {
+  PetscErrorCode ierr;
+
+  ierr = PGivenClimate<POModifier,OceanModel>::write_variables(vars, nc); CHKERRQ(ierr);
+
+  if (set_contains(vars, "shelfbtemp")) {
+    ierr = shelfbtemp.write(nc); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "shelfbmassflux")) {
+    ierr = shelfbmassflux.write(nc); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 PetscErrorCode POGivenTH::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr = shelfbtemp.copy_to(result); CHKERRQ(ierr);
   return 0;
@@ -174,19 +216,20 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
     double potential_temperature_celsius = (*theta_ocean)(i,j) - 273.15;
 
     double
-      shelf_base_temp        = 0.0,
-      shelf_base_massflux   = 0.0;
+      shelf_base_temp_celsius = 0.0,
+      shelf_base_massflux     = 0.0;
+
     ierr = pointwise_update(c,
                             (*salinity_ocean)(i,j),
                             potential_temperature_celsius,
                             (*ice_thickness)(i,j),
-                            &shelf_base_temp,
+                            &shelf_base_temp_celsius,
                             &shelf_base_massflux); CHKERRQ(ierr);
 
-    shelfbtemp(i,j)     = shelf_base_temp;
+    // Convert from Celsius to Kelvin:
+    shelfbtemp(i,j)     = shelf_base_temp_celsius + 273.15;
     shelfbmassflux(i,j) = shelf_base_massflux;
   }
-
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
   ierr = shelfbmassflux.scale(config.get("ice_density")); CHKERRQ(ierr);
@@ -196,6 +239,8 @@ PetscErrorCode POGivenTH::update(double my_t, double my_dt) {
 
 
 //* Evaluate the parameterization of the melting point temperature.
+/** The value returned is in degrees Celsius.
+ */
 static double melting_point_temperature(POGivenTH::POGivenTHConstants c,
                                         double salinity, double ice_thickness) {
   return c.a[0] * salinity + c.a[1] + c.a[2] * ice_thickness;
@@ -370,7 +415,7 @@ PetscErrorCode POGivenTH::pointwise_update(const POGivenTHConstants &constants,
                                            double *shelf_base_melt_rate_out) {
   PetscErrorCode ierr = 0;
 
-  assert(thickness > 0.0);
+  assert(thickness >= 0.0);
 
   // This model works for sea water salinity in the range of [4, 40]
   // psu. Ensure that input salinity is in this range.
@@ -403,6 +448,11 @@ PetscErrorCode POGivenTH::pointwise_update(const POGivenTHConstants &constants,
   *shelf_base_temperature_out = melting_point_temperature(constants, basal_salinity, thickness);
 
   *shelf_base_melt_rate_out = shelf_base_melt_rate(constants, sea_water_salinity, basal_salinity);
+
+  // no melt if there is no ice
+  if (thickness == 0.0) {
+    *shelf_base_melt_rate_out = 0.0;
+  }
 
   return 0;
 }

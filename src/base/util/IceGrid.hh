@@ -208,7 +208,7 @@ public:
   int    Nx, //!< number of processors in the x-direction
     Ny;      //!< number of processors in the y-direction
 
-  std::vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
+  std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
   double dx,               //!< horizontal grid spacing
@@ -219,9 +219,6 @@ public:
   unsigned int Mz; //!< number of grid points in z-direction in the ice
 
   unsigned int initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
-
-  unsigned int max_stencil_width;
-  //!< maximum stencil width supported by the DA in this IceGrid object
 
   Time *time;               //!< The time management object (hides calendar computations)
 

@@ -57,7 +57,12 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   ierr = m_du_global.create(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS, stencil_width); CHKERRQ(ierr);
   ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencil_width); CHKERRQ(ierr);
 
+#if PETSC_VERSION_LT(3,5,0)
   ierr = DMCreateMatrix(SSADA->get(), "baij", &m_J_state); CHKERRQ(ierr);
+#else
+  ierr = DMSetMatType(SSADA->get(), MATBAIJ); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA->get(), &m_J_state); CHKERRQ(ierr);
+#endif
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
   double ksp_rtol = 1e-12;
@@ -289,9 +294,6 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  // Mask (query?) for determining where ice is grounded.
-  Mask M;
-
   // Loop through all elements.
   int xs = m_element_index.xs, xm = m_element_index.xm,
            ys = m_element_index.ys, ym = m_element_index.ym;
@@ -338,7 +340,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
         // Determine "dbeta / dzeta" at the quadrature point
         double dbeta = 0;
-        if (M.grounded_ice(coefficients->mask)) {
+        if (mask::grounded_ice(coefficients->mask)) {
           dbeta = basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
         }
 
@@ -381,7 +383,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   PetscErrorCode ierr;
   double **dzeta_a;
   PISMDM::Ptr da2;
-  ierr = m_grid.get_dm(1, m_grid.max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = m_grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   ierr = DMDAVecGetArray(da2->get(), dzeta, &dzeta_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design_transpose(u, du, dzeta_a); CHKERRQ(ierr);
@@ -442,9 +444,6 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
   // Jacobian times weights for quadrature.
   const double* JxW = m_quadrature.getWeightedJacobian();
 
-  // Mask query for determining where ice is grounded.
-  Mask M;
-
   // Zero out the portion of the function we are responsible for computing.
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -485,7 +484,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
 
         // Determine "dbeta/dtauc" at the quadrature point
         double dbeta_dtauc = 0;
-        if (M.grounded_ice(coefficients->mask)) {
+        if (mask::grounded_ice(coefficients->mask)) {
           dbeta_dtauc = basal_sliding_law->drag(1., u_qq.u, u_qq.v);
         }
 
@@ -543,7 +542,12 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzet
   ierr = m_du_global.scale(-1); CHKERRQ(ierr);
 
   // call PETSc to solve linear system by iterative method.
+#if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+#else
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
+#endif
+
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
 
   KSPConvergedReason  reason;
@@ -605,7 +609,11 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   ierr = m_du_global.end_access(); CHKERRQ(ierr);
 
   // call PETSc to solve linear system by iterative method.
+#if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+#else
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
+#endif
   ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
 
   KSPConvergedReason  reason;

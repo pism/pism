@@ -164,7 +164,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
     // remove the bcflag variable from the dictionary
     variables.remove("bcflag");
 
-    ierr = variables.add(no_model_mask, "bcflag"); CHKERRQ(ierr);
+    variables.add(no_model_mask, "bcflag");
   }
 
   return 0;

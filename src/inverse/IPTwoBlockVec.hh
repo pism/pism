@@ -57,7 +57,7 @@ protected:
 
   Vec m_ab;
   
-  int m_na_local, m_na_global, m_nb_local, m_nb_global;
+  PetscInt m_na_local, m_na_global, m_nb_local, m_nb_global;
   
   IS m_a_in_ab;
   IS m_b_in_ab;

@@ -119,7 +119,7 @@ PetscErrorCode IceModel::init_viewers() {
                            "Options controlling run-time diagnostic viewers",
                            NULL); CHKERRQ(ierr);
 
-  int viewer_size = (int)config.get("viewer_size");
+  PetscInt viewer_size = (int)config.get("viewer_size");
   ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
                          "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 

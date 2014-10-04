@@ -387,17 +387,17 @@ def logging_test():
 
     PISM.setVerbosityLevel(2)
 
-    L.log("log message", L.kError)
+    L.log("log message\n", L.kError)
 
-    L.logError("message")
+    L.logError("error message\n")
 
-    L.logWarning("message")
+    L.logWarning("warning message\n")
 
-    L.logMessage("message")
+    L.logMessage("log message (again)\n")
 
-    L.logDebug("message")
+    L.logDebug("debug message\n")
 
-    L.logPrattle("message")
+    L.logPrattle("prattle message\n")
 
     c.write()                   # default arguments
     c.readOldLog()

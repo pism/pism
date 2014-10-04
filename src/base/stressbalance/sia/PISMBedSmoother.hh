@@ -86,10 +86,11 @@ public:
                                           IceModelVec2Int &mask, IceModelVec2S *thksmooth);
   virtual PetscErrorCode get_theta(IceModelVec2S &usurf, IceModelVec2S *theta);
 
-  //! smoothed bed elevation; publicly-available; set by calling preprocess_bed()
+  const IceModelVec2S& get_smoothed_bed();
+protected:
+  //! smoothed bed elevation; set by calling preprocess_bed()
   IceModelVec2S topgsmooth;
 
-protected:
   IceGrid &grid;
   const Config &config;
   IceModelVec2S maxtl, C2, C3, C4;

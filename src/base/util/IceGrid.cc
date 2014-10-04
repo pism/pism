@@ -104,8 +104,6 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   initial_Mz = 0;               // will be set to a correct value in
                                 // IceModel::check_maximum_thickness()
 
-  max_stencil_width = 2;
-
   Mz_fine = 0;
 
   compute_vertical_levels();
@@ -419,6 +417,8 @@ PetscErrorCode IceGrid::allocate() {
   }
 
   PISMDM::Ptr tmp;
+
+  unsigned int max_stencil_width = (int)config.get("grid_max_stencil_width");
 
   ierr = this->get_dm(1, max_stencil_width, tmp);
   if (ierr != 0) {
@@ -867,6 +867,7 @@ PetscErrorCode IceGrid::create_dm(int da_dof, int stencil_width, DM &result) {
                     "* Creating a DM with dof=%d and stencil_width=%d...\n",
                     da_dof, stencil_width); CHKERRQ(ierr);
 
+#if PETSC_VERSION_LT(3,5,0)
   ierr = DMDACreate2d(com,
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                       DMDA_STENCIL_BOX,
@@ -875,6 +876,16 @@ PetscErrorCode IceGrid::create_dm(int da_dof, int stencil_width, DM &result) {
                       da_dof, stencil_width,
                       &procs_y[0], &procs_x[0], // ly, lx
                       &result); CHKERRQ(ierr);
+#else
+  ierr = DMDACreate2d(com,
+                      DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+                      DMDA_STENCIL_BOX,
+                      My, Mx, // N, M
+                      Ny, Nx, // n, m
+                      da_dof, stencil_width,
+                      &procs_y[0], &procs_x[0], // ly, lx
+                      &result); CHKERRQ(ierr);
+#endif
 
   return 0;
 }

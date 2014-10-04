@@ -37,6 +37,8 @@ SIAFD::~SIAFD() {
 PetscErrorCode SIAFD::allocate() {
   PetscErrorCode ierr;
 
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
+
   // 2D temporary storage:
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
@@ -218,7 +220,9 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
   IceModelVec::AccessList list(eta);
   list.add(*thickness);
 
-  int GHOSTS = eta.get_stencil_width();
+  unsigned int GHOSTS = eta.get_stencil_width();
+  assert(thickness->get_stencil_width() >= GHOSTS);
+
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -227,11 +231,16 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
 
   list.add(h_x);
   list.add(h_y);
+  list.add(*bed);
 
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-  list.add(*bed);
-  list.add(eta);
+
+  assert(bed->get_stencil_width() >= 2);
+  assert(eta.get_stencil_width()  >= 2);
+  assert(h_x.get_stencil_width()  >= 1);
+  assert(h_y.get_stencil_width()  >= 1);
+
   for (int o=0; o<2; o++) {
 
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -285,6 +294,12 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
   list.add(h_x);
   list.add(h_y);
   list.add(*surface);
+
+  // h_x and h_y have to have ghosts
+  assert(h_x.get_stencil_width() >= 1);
+  assert(h_y.get_stencil_width() >= 1);
+  // surface elevation needs more ghosts
+  assert(surface->get_stencil_width() >= 2);
 
   for (int o=0; o<2; o++) {
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -370,6 +385,14 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
   list.add(h);
   list.add(*mask);
   list.add(b);
+
+  assert(bed->get_stencil_width()     >= 2);
+  assert(mask->get_stencil_width()    >= 2);
+  assert(surface->get_stencil_width() >= 2);
+  assert(h_x.get_stencil_width()      >= 1);
+  assert(h_y.get_stencil_width()      >= 1);
+  assert(w_i.get_stencil_width()      >= 1);
+  assert(w_j.get_stencil_width()      >= 1);
 
   for (PointsWithGhosts p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -571,6 +594,18 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
   double *E_ij, *E_offset;
   list.add(*enthalpy);
+
+  assert(theta.get_stencil_width()      >= 2);
+  assert(thk_smooth.get_stencil_width() >= 2);
+  assert(result.get_stencil_width()     >= 1);
+  assert(h_x.get_stencil_width()        >= 1);
+  assert(h_y.get_stencil_width()        >= 1);
+  if (use_age) {
+    assert(age->get_stencil_width() >= 2);
+  }
+  assert(enthalpy->get_stencil_width() >= 2);
+  assert(delta[0].get_stencil_width()  >= 1);
+  assert(delta[1].get_stencil_width()  >= 1);
 
   double my_D_max = 0.0;
   for (int o=0; o<2; o++) {
@@ -793,6 +828,12 @@ PetscErrorCode SIAFD::compute_I() {
   list.add(I[0]);
   list.add(I[1]);
   list.add(thk_smooth);
+
+  assert(I[0].get_stencil_width()     >= 1);
+  assert(I[1].get_stencil_width()     >= 1);
+  assert(delta[0].get_stencil_width() >= 1);
+  assert(delta[1].get_stencil_width() >= 1);
+  assert(thk_smooth.get_stencil_width() >= 2);
 
   for (int o = 0; o < 2; ++o) {
     for (PointsWithGhosts p(grid); p; p.next()) {

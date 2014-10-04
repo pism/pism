@@ -55,7 +55,7 @@ class SIAFD : public SSB_Modifier
   friend class SIAFD_h_y;
 public:
   SIAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
-    : SSB_Modifier(g, e, c), WIDE_STENCIL(2) { allocate(); }
+    : SSB_Modifier(g, e, c) { allocate(); }
 
   virtual ~SIAFD();
 
@@ -120,7 +120,6 @@ protected:
   // on the staggered grid
 
   BedSmoother *bed_smoother;
-  const int WIDE_STENCIL;
   int bed_state_counter;
 
   // profiling

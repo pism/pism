@@ -21,7 +21,7 @@
 
 namespace pism {
 
-PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(TaoSolver tao) {
+PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(tao::Solver tao) {
   PetscErrorCode ierr;
 
   ierr = IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>::connect(tao); CHKERRQ(ierr);
@@ -35,7 +35,7 @@ PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(TaoSolver tao) {
 }
 
 
-PetscErrorCode IP_SSAHardavTaoTikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
+PetscErrorCode IP_SSAHardavTaoTikhonovProblem::getVariableBounds(tao::Solver /*tao*/, Vec lo, Vec hi) {
   PetscErrorCode ierr;
   double zeta_min, zeta_max, hardav_min, hardav_max;
 

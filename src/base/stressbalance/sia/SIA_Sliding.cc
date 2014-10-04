@@ -26,7 +26,7 @@ namespace pism {
 
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
-  int WIDE_STENCIL = grid.max_stencil_width;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
@@ -304,7 +304,9 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
   list.add(*thickness);
   list.add(eta);
 
-  int GHOSTS = eta.get_stencil_width();
+  unsigned int GHOSTS = eta.get_stencil_width();
+  assert(thickness->get_stencil_width() >= GHOSTS);
+
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -313,14 +315,19 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
 
   list.add(h_x);
   list.add(h_y);
-
-  // now use Mahaffy on eta to get grad h on staggered;
-  // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
   list.add(*bed);
-  list.add(eta);
+
+  // now use Mahaffy on eta to get grad h on the staggered grid;
+  // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
+
+  assert(h_x.get_stencil_width()  >= 1);
+  assert(h_y.get_stencil_width()  >= 1);
+  assert(eta.get_stencil_width()  >= 2);
+  assert(bed->get_stencil_width() >= 2);
+
   for (int o=0; o<2; o++) {
 
-    for (PointsWithGhosts p(grid); p; p.next()) {
+    for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (o==0) {     // If I-offset
@@ -378,6 +385,13 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
   list.add(*bed);
   list.add(*thickness);
   list.add(*surface);
+
+  assert(h_x.get_stencil_width() >= 1);
+  assert(h_y.get_stencil_width() >= 1);
+  assert(bed->get_stencil_width()       >= 2);
+  assert(thickness->get_stencil_width() >= 2);
+  assert(surface->get_stencil_width()   >= 2);
+
   for (int o=0; o<2; o++) {
 
     for (PointsWithGhosts p(grid); p; p.next()) {
@@ -455,6 +469,10 @@ PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceM
   list.add(h_x);
   list.add(h_y);
   list.add(*surface);
+
+  assert(h_x.get_stencil_width() >= 1);
+  assert(h_y.get_stencil_width() >= 1);
+  assert(surface->get_stencil_width() >= 2);
 
   for (int o=0; o<2; o++) {
     for (PointsWithGhosts p(grid); p; p.next()) {
