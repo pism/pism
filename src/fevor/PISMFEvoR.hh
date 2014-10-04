@@ -43,7 +43,7 @@ public:
   virtual PetscErrorCode update(double t, double dt);
 
   virtual PetscErrorCode interp_field_point( double &x, double &y, double &z, 
-                                            IceModelVec3 &field3, 
+                                            IceModelVec3 *field3, 
                                             double &feildValue );
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);

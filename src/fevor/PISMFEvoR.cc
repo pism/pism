@@ -110,9 +110,9 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       assert(-grid.Lx <= x && x <= grid.Lx);
       assert(-grid.Ly <= y && y <= grid.Ly);
 
-      ierr = interp_field_point( x, y, z, pressure3, P  );
-      ierr = interp_field_point( x, y, z, tauxz3   , txy);
-      ierr = interp_field_point( x, y, z, tauyz3   , txz);
+      ierr = PISMFEvoR::interp_field_point( x, y, z, pressure3, P  );
+      ierr = PISMFEvoR::interp_field_point( x, y, z, tauxz3   , txz);
+      ierr = PISMFEvoR::interp_field_point( x, y, z, tauyz3   , tyz);
       
       
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
@@ -128,9 +128,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   return 0;
 }
 
-virtual PetscErrorCode PISMFEvoR::interp_field_point( double &x, double &y, 
-                                                      double &z, 
-                                                      IceModelVec3 &field3, 
+PetscErrorCode PISMFEvoR::interp_field_point( double &x, double &y, double &z, 
+                                                      IceModelVec3 *field3, 
                                                       double &feildValue) {
     PetscErrorCode ierr;
     
