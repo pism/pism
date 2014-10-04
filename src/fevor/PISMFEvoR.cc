@@ -23,6 +23,8 @@
 #include "PISMStressBalance_diagnostics.hh"
 #include "enthalpyConverter.hh"
 #include <cassert>
+#include <vector>
+#include <fevor_distribution.hh>
 
 namespace pism {
 
@@ -85,20 +87,54 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
 
     unsigned int n_particles = 1;
         /* terminology:
-         *  particles exist in pism and contain one or more distrobutions 
-         * of crystals that are tracked through time. They essentially are 
-         * infinitesimely small. Distributions exist in FEvoR and contain 
-         * sets of independent crystals (or in the case of NNI weakly 
-         * dependant). In PISM-FEvoR you will likely not need to access the
-         * crystals directly. Methods should be provided through FEvoR's 
-         * distribution class fevor_distribution. 
+         *   particles exist in pism and contain one or more distrobutions 
+         *   of crystals that are tracked through time. They essentially are 
+         *   infinitesimely small. Distributions exist in FEvoR and contain 
+         *   sets of independent crystals (or in the case of NNI weakly 
+         *   dependant). In PISM-FEvoR you will likely not need to access the
+         *   crystals directly. Methods should be provided through FEvoR's 
+         *   distribution class fevor_distribution. 
          */
         
     for (unsigned int i = 0; i < n_particles; ++i) {
+      
+      /* TODO method to load in our cloud of particles. Will need the values
+       * below for each particle.
+       */
       double x = 0.0,
              y = 0.0,
              z = 0.0;
+      std::vector<unsigned int> packingDimensions(3, 3);
+        // should be at minimum 10x10x10 to get an accurate result!
+      
+      /* FIXME this should load in the appropriate distribuion! FEvoR will need 
+       * a method for this. Likely need to add netCDF support in FEvoR.
+       * Currently we can load distros from .csv files.
+       * 
+       * Just create one from a Watson concentration parameter. 
+       */
+      double w_i = -1001.0; // perfect bi-polar (single maximum) -- end case
+      fevor_distribution d_i(packingDimensions, w_i);
+      
+      /* Make an isotropic distribution for calculating enhancement factor. The 
+       * enhancement factor is defined as ratio of ice's resonse relative to 
+       * isotropic ice. Since we need isotropic ice's responce to any input
+       * stress, this is the easiest way to provide it but it may be the most 
+       * computationally heavy. Possible efficienty improvement here. 
+       */
+      fevor_distribution d_iso(packingDimensions, 0.0);
+      
+      // Diagnostics from distributions. Can be saved or thrown away.
+      unsigned int nMigRe = 0,
+                   nPoly  = 0;
+      std::vector<double> bulkEdot(9, 0.0);
+      
+      unsigned int nMigRe_iso = 0,
+                   nPoly_iso  = 0;
+      std::vector<double> bulkEdot_iso(9, 0.0);
              
+      
+      // interpolate these values from PISM
       double P   = 0.0, 
              txz = 0.0,
              tyz = 0.0;
@@ -115,13 +151,26 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = PISMFEvoR::interp_field_point( x, y, z, tauxz3   , txz);
       ierr = PISMFEvoR::interp_field_point( x, y, z, tauyz3   , tyz);
       
+      /*std::vector<double> stress = {   P,   0, txz,
+       *                                 0,   P, tyz,
+       *                               txz, tyz,   P}; 
+       * Woops, no list initialization in c++98. 
+       */
+      std::vector<double> stress(9,0.0);
+      stress[1] = stress[5] = stress[9] = P;
+      stress[3] = stress[7] = txz;
+      stress[6] = stress[8] = tyz;
+       
+       // don't strictly need P here as we only need the deviatoric stress.
+      
       // FIXME I think this is right... It did compile! 
       ierr = PISMFEvoR::interp_field_point( x, y, z, m_enthalpy, E  );
-      
-      
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
       
-      // TODO put in FEvoR step.
+      d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe    , nPoly    , bulkEdot    );
+      d_iso.stepInTime(T, stress, m_t, m_dt, nMigRe_iso, nPoly_iso, bulkEdot_iso);
+      
+      // TODO compute enhancement factor from bulkEdot and bulkEdot_iso
     }
   }
 
