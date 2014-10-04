@@ -30,7 +30,7 @@ OceanKill::OceanKill(IceGrid &g, const Config &conf)
   PetscErrorCode ierr;
 
   ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
-                                  grid.max_stencil_width);
+                                  config.get("grid_max_stencil_width"));
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for OceanKill.\n");
     PISMEnd();
@@ -85,22 +85,19 @@ PetscErrorCode OceanKill::init(Vars &vars) {
     tmp = &thickness;
   }
 
-  ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  ierr = tmp->begin_access();              CHKERRQ(ierr);
-  ierr = mask->begin_access();             CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(m_ocean_kill_mask);
+  list.add(*tmp);
+  list.add(*mask);
 
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if ((*tmp)(i, j) > 0 || m.grounded(i, j)) // FIXME: use GeometryCalculator
-        m_ocean_kill_mask(i, j) = 0;
-      else
-        m_ocean_kill_mask(i, j) = 1;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*tmp)(i, j) > 0 || m.grounded(i, j)) // FIXME: use GeometryCalculator
+      m_ocean_kill_mask(i, j) = 0;
+    else
+      m_ocean_kill_mask(i, j) = 1;
   }
-
-  ierr = mask->end_access();             CHKERRQ(ierr);
-  ierr = tmp->end_access();              CHKERRQ(ierr);
-  ierr = m_ocean_kill_mask.end_access(); CHKERRQ(ierr);
 
   ierr = m_ocean_kill_mask.update_ghosts(); CHKERRQ(ierr);
 
@@ -109,23 +106,23 @@ PetscErrorCode OceanKill::init(Vars &vars) {
 
 // Updates mask and ice thickness, including ghosts.
 PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
+  IceModelVec::AccessList list;
+  list.add(m_ocean_kill_mask);
+  list.add(pism_mask);
+  list.add(ice_thickness);
 
-  ierr = m_ocean_kill_mask.begin_access(); CHKERRQ(ierr);
-  ierr = pism_mask.begin_access();         CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access();     CHKERRQ(ierr);
-  int GHOSTS = grid.max_stencil_width;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if (m_ocean_kill_mask(i, j) > 0.5) {
-        pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
-        ice_thickness(i, j) = 0.0;
-      }
+  unsigned int GHOSTS = pism_mask.get_stencil_width();
+  assert(m_ocean_kill_mask.get_stencil_width() >= GHOSTS);
+  assert(ice_thickness.get_stencil_width()     >= GHOSTS);
+
+  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m_ocean_kill_mask(i, j) > 0.5) {
+      pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
+      ice_thickness(i, j) = 0.0;
     }
   }
-  ierr = ice_thickness.end_access();     CHKERRQ(ierr);
-  ierr = pism_mask.end_access();         CHKERRQ(ierr);
-  ierr = m_ocean_kill_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

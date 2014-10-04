@@ -41,9 +41,9 @@ PetscErrorCode PA_delta_T::allocate_PA_delta_T() {
   offset_name   = "delta_T";
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Kelvin", "");
-  offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "near-surface air temperature offsets");
+  offset->get_metadata().set_units("Kelvin");
+  offset->get_metadata().set_string("long_name", "near-surface air temperature offsets");
+  offset->get_dimension_metadata().set_units(grid.time->units_string());
   
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -74,10 +74,10 @@ PetscErrorCode PA_delta_T::init(Vars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_delta_T::init_timeseries(double *ts, unsigned int N) {
+PetscErrorCode PA_delta_T::init_timeseries(const std::vector<double> &ts) {
   PetscErrorCode ierr;
 
-  ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
+  ierr = PAModifier::init_timeseries(ts); CHKERRQ(ierr);
 
   m_offset_values.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
@@ -92,11 +92,11 @@ PetscErrorCode PA_delta_T::mean_annual_temp(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PA_delta_T::temp_time_series(int i, int j, double *values) {
-  PetscErrorCode ierr = input_model->temp_time_series(i, j, values); CHKERRQ(ierr);
+PetscErrorCode PA_delta_T::temp_time_series(int i, int j, std::vector<double> &result) {
+  PetscErrorCode ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)
-    values[k] += m_offset_values[k];
+    result[k] += m_offset_values[k];
 
   return 0;
 }

@@ -1233,6 +1233,33 @@ temperature using a latitude and surface elevation-dependent formula.
 The parameterization is the same as in the \texttt{-surface pik} model,
 section~\ref{sec:surface-pik}.
 
+\subsection{One weather station}
+\label{sec:atmosphere-one-station}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    \index[options]{\atmosphere!\texttt{one_station}}
+    \index[options]{\atmosphere!\texttt{one_station}!\texttt{-atmosphere_one_station_file}}
+    Command-line options: & \texttt{-atmosphere~one_station},\\
+                          & \texttt{-atmosphere_one_station_file}\\
+    NetCDF variables:     & \variable{air_temp} [Kelvin],\\
+                          & \variable{precipitation} [m / s ice equivalent]\\
+    C++ class:            & \class{PAWeatherStation}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This model~component reads scalar time-series of the near-surface air
+temperature and precipitation from a file specified using the
+\mbox{\texttt{-atmosphere_one_station_file}} option and uses them at \emph{all}
+grid points in the domain. In other words, resulting climate fields
+are constant in space but not necessarily in time.
+
+The \texttt{-atmosphere~one_station} model should be used with a
+modifier such as \texttt{lapse_rate} (see section
+\ref{sec:atmosphere-lapse-rates}) to create spatial variablitity.
+
 \newcommand{\atmospheremods}{Atmosphere modifiers (\texttt{-atmosphere})}
 \subsection{Modifier: Scalar temperature offsets}
 \label{sec:atmosphere-delta-temp}
@@ -1254,7 +1281,7 @@ output of an atmosphere model. It takes the following command-line options.
 \item \fileopt{atmosphere_delta_T_file} sets the name of the
 file PISM will read \variable{delta_T} from.
 \item \txtopt{atmosphere_delta_T_period}{\emph{years}} sets the period of the
-  forcing data (section~\ref{sec:periodic-forcing})
+  forcing data (section~\ref{sec:periodic-forcing}).
 \item \intextoption{atmosphere_delta_T_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
 \end{itemize}
 
@@ -1281,8 +1308,35 @@ output of an atmosphere model. It takes the following command-line options.
 \item \fileopt{atmosphere_delta_P_file} sets the name of the
 file PISM will read \variable{delta_P} from.
 \item \txtopt{atmosphere_delta_P_period}{\emph{years}} sets the period of the
-  forcing data (section~\ref{sec:periodic-forcing})
+  forcing data (section~\ref{sec:periodic-forcing}).
 \item \intextoption{atmosphere_delta_P_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
+\end{itemize}
+
+\subsection{Modifier: Scalar precipitation scaling}
+\label{sec:atmosphere-frac-precip}
+\optsection{\atmospheremods!\texttt{frac_P}}
+
+\begin{center}
+  \begin{tabular}{rp{0.5\linewidth}}
+    \toprule
+    Command-line option: & \texttt{-atmosphere~...,frac_P} \index[options]{\atmospheremods!\texttt{frac_P}} \\
+    NetCDF variables: & \variable{frac_P} \mbox{[no unit]}\\
+    C++ class: & \class{PA_frac_P}\\
+    \bottomrule
+  \end{tabular}
+\end{center}
+
+This modifier scales precipitation output of an atmosphere model using a scalar
+time-dependent precipitation fraction, with a value of one corresponding to no
+change in precipitation. It takes the following command-line options:
+
+\begin{itemize}
+  \item \fileopt{atmosphere_frac_P_file}
+    sets the name of the file PISM will read \variable{frac_P} from.
+  \item \txtopt{atmosphere_frac_P_period}{\emph{years}}
+    sets the period of the forcing data (section~\ref{sec:periodic-forcing}).
+  \item \intextoption{atmosphere_frac_P_reference_year}
+    sets the reference year (section~\ref{sec:periodic-forcing}).
 \end{itemize}
 
 \subsection{Modifier: Paleo-precipitation correction using scalar temperature offsets}
@@ -1313,7 +1367,7 @@ It takes the following command-line options.
 \item \fileopt{atmosphere_paleo_precip_file} sets the name of the
 file PISM will read \variable{delta_T} from.
 \item \txtopt{atmosphere_paleo_precip_period}{\emph{years}} sets the period of the
-  forcing data (section~\ref{sec:periodic-forcing})
+  forcing data (section~\ref{sec:periodic-forcing}).
 \item \intextoption{atmosphere_paleo_precip_reference_year} sets the reference year (section~\ref{sec:periodic-forcing}).
 \end{itemize}
 
@@ -1351,7 +1405,7 @@ precipitation using elevation lapse rates. It uses the following options.
   If one record is provided, the reference surface elevation is assumed to be
   time-independent.
 \item \intextoption{atmosphere_lapse_rate_period} gives the period, in model
-  years; see section~\ref{sec:periodic-forcing}
+  years; see section~\ref{sec:periodic-forcing}.
 \item \intextoption{atmosphere_lapse_rate_reference_year} specifies the reference date; see section~\ref{sec:periodic-forcing}.
 \end{itemize}
 
@@ -1379,7 +1433,7 @@ It takes the following options:
   \variable{air_temp_anomaly} and
   \variable{precipitation_anomaly}.
 \item \txtopt{atmosphere_anomaly_period}{years} specifies the period of the
-  forcing data, in model years; section~\ref{sec:periodic-forcing}
+  forcing data, in model years; section~\ref{sec:periodic-forcing}.
 \item \intextoption{atmosphere_anomaly_reference_year} specifies the reference
   year; section~\ref{sec:periodic-forcing}.
 \end{itemize}

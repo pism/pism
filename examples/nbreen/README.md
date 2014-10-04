@@ -17,6 +17,7 @@ hydrology submodel.
 
 First do
 
+    ln -s ../../util/PISMNC.py
     ./preprocess.sh
 
 This builds PISM-readable NetCDF file `pismnbreen.nc` and it generates a
@@ -30,6 +31,21 @@ To see how to run examples, type
 
 This will generate a usage message.
 
+For a quick first run, try
+
+    ./run.sh 2 500 0.1 routing daily
+
+This uses 2 processors, a 500 m grid, a 0.1 year duration, the simpler "routing"
+model, and monthly reporting.  It should finish in under one minute.  View the
+time- and space-dependent output file:
+
+    ncview extras_nbreen_y0.1_500m_routing.nc
+
+Another visualization is with python,
+
+    python showhydrovel.py -t -s extras_nbreen_y0.1_500m_routing.nc
+
+This shows a quiver plot of the water velocity, among other things.
 
 ## Changing configuration constants
 

@@ -33,23 +33,18 @@ public:
   ageSystemCtx(int my_Mz, const std::string &my_prefix);
   PetscErrorCode initAllColumns();
 
-  PetscErrorCode solveThisColumn(double *x);
+  PetscErrorCode solveThisColumn(std::vector<double> &x);
 
 public:
   // constants which should be set before calling initForAllColumns()
-  double  dx,
-               dy,
-               dtAge,
-               dzEQ;
+  double  dx, dy, dtAge, dzEQ;
   // pointers which should be set before calling initForAllColumns()
-  double  *u,
-               *v,
-               *w;
+  double  *u, *v, *w;
   IceModelVec3 *tau3;
 
 protected: // used internally
   double nuEQ;
-  bool        initAllDone;
+  bool initAllDone;
 };
 
 
@@ -134,15 +129,15 @@ CODE STILL REFLECTS THE OLD SCHEME.
 
 FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
  */
-PetscErrorCode ageSystemCtx::solveThisColumn(double *x) {
+PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
      "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
 
-  // set up system: 0 <= k < ks
-  for (int k = 0; k < ks; k++) {
+  // set up system: 0 <= k < m_ks
+  for (unsigned int k = 0; k < m_ks; k++) {
     planeStar<double> ss;  // note ss.ij = tau[k]
-    ierr = tau3->getPlaneStar_fine(i,j,k,&ss); CHKERRQ(ierr);
+    ierr = tau3->getPlaneStar_fine(m_i,m_j,k,&ss); CHKERRQ(ierr);
     // do lowest-order upwinding, explicitly for horizontal
     rhs[k] =  (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx
                          : u[k] * (ss.ij  - ss.w) / dx;
@@ -177,24 +172,24 @@ PetscErrorCode ageSystemCtx::solveThisColumn(double *x) {
         // keep rhs[0] as is
       }
     }
-  }  // done "set up system: 0 <= k < ks"
+  }  // done "set up system: 0 <= k < m_ks"
       
-  // surface b.c. at ks
-  if (ks>0) {
-    L[ks] = 0;
-    D[ks] = 1.0;   // ignore U[ks]
-    rhs[ks] = 0.0;  // age zero at surface
+  // surface b.c. at m_ks
+  if (m_ks>0) {
+    L[m_ks] = 0;
+    D[m_ks] = 1.0;   // ignore U[m_ks]
+    rhs[m_ks] = 0.0;  // age zero at surface
   }
 
   // solve it
-  int pivoterr = solveTridiagonalSystem(ks+1,x);
+  int pivoterr = solveTridiagonalSystem(m_ks+1,x);
 
   if (pivoterr != 0) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "\n\ntridiagonal solve of ageSystemCtx in ageStep() FAILED at (%d,%d)\n"
                        " with zero pivot position %d; viewing system to m-file ... \n",
-                       i, j, pivoterr); CHKERRQ(ierr);
-    ierr = reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
+                       m_i, m_j, pivoterr); CHKERRQ(ierr);
+    ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
     SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in ageStep()\n");
   }
 
@@ -226,7 +221,7 @@ is upward (\f$w>0\f$) then we also apply a zero age boundary condition,
 either grounded basal ice freezing on stored water in till, or marine basal ice.
 (Note that the water that is frozen-on as ice might be quite "old" in the sense
 that its most recent time in the atmosphere was long ago; this comment is
-relevant to any analysis which relates isotope ratios to PISM's modeled age.)
+relevant to any analysis which relates isotope ratios to modeled age.)
 
 The numerical method is a conservative form of first-order upwinding, but the
 vertical advection term is computed implicitly.  Thus there is no CFL-type
@@ -244,8 +239,7 @@ PetscErrorCode IceModel::ageStep() {
   int    fMz = grid.Mz_fine;
   double fdz = grid.dz_fine;
 
-  double *x;  
-  x = new double[fMz]; // space for solution
+  std::vector<double> x(fMz);   // space for solution
 
   bool viewOneColumn;
   ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
@@ -267,57 +261,52 @@ PetscErrorCode IceModel::ageStep() {
   IceModelVec3 *u3, *v3, *w3;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
 
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = tau3.begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(ice_thickness);
+  list.add(tau3);
+  list.add(*u3);
+  list.add(*v3);
+  list.add(*w3);
+  list.add(vWork3d);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // this should *not* be replaced by a call to grid.kBelowHeight()
-      const int  fks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (fks == 0) { // if no ice, set the entire column to zero age
-        ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
-      } else { // general case: solve advection PDE; start by getting 3D velocity ...
+    // this should *not* be replaced by a call to grid.kBelowHeight()
+    const int  fks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
 
-        ierr = u3->getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
-        ierr = v3->getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
-        ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
+    if (fks == 0) { // if no ice, set the entire column to zero age
+      ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
+    } else { // general case: solve advection PDE; start by getting 3D velocity ...
 
-        ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
+      ierr = u3->getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
+      ierr = v3->getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
+      ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
 
-        // solve the system for this column; call checks that params set
-        ierr = system.solveThisColumn(x); CHKERRQ(ierr);
+      // this call will validate ks
+      ierr = system.setIndicesAndClearThisColumn(i,j, ice_thickness(i,j), fdz, fMz); CHKERRQ(ierr);
 
-        if (viewOneColumn && (i == id && j == jd)) {
-          ierr = PetscPrintf(PETSC_COMM_SELF,
-            "\n\nin ageStep(): viewing ageSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
-            i, j); CHKERRQ(ierr);
-          ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
-        }
+      // solve the system for this column; call checks that params set
+      ierr = system.solveThisColumn(x); CHKERRQ(ierr);
 
-        // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years
-        for (int k=fks+1; k<fMz; k++) {
-          x[k] = 0.0;
-        }
-
-        // put solution in IceModelVec3
-        ierr = vWork3d.setValColumnPL(i,j,x); CHKERRQ(ierr);
+      if (viewOneColumn && (i == id && j == jd)) {
+        ierr = PetscPrintf(PETSC_COMM_SELF,
+                           "\n\nin ageStep(): viewing ageSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
+                           i, j); CHKERRQ(ierr);
+        ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
       }
+
+      // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years
+      for (int k=fks+1; k<fMz; k++) {
+        x[k] = 0.0;
+      }
+
+      // put solution in IceModelVec3
+      ierr = vWork3d.setValColumnPL(i, j, x); CHKERRQ(ierr);
     }
   }
 
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = tau3.end_access();  CHKERRQ(ierr);
-  ierr = u3->end_access();  CHKERRQ(ierr);
-  ierr = v3->end_access();  CHKERRQ(ierr);
-  ierr = w3->end_access();  CHKERRQ(ierr);
-  ierr = vWork3d.end_access();  CHKERRQ(ierr);
 
-  delete [] x;
   delete [] system.u;  delete [] system.v;  delete [] system.w;
 
   ierr = vWork3d.update_ghosts(tau3); CHKERRQ(ierr);

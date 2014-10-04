@@ -196,31 +196,23 @@ protected:
 
   PetscErrorCode lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
   {
-    PetscErrorCode ierr;
-
     if (PetscAbs(lapse_rate) < 1e-12)
       return 0;
 
-    ierr = thk->begin_access(); CHKERRQ(ierr);
-    ierr = surface->begin_access(); CHKERRQ(ierr);
-    ierr = reference_surface.begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
+    IceModelVec::AccessList list;
+    list.add(*thk);
+    list.add(*surface);
+    list.add(reference_surface);
+    list.add(result);
 
-    IceGrid &g = Mod::grid;
+    for (Points p(Mod::grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    for (int   i = g.xs; i < g.xs + g.xm; ++i) {
-      for (int j = g.ys; j < g.ys + g.ym; ++j) {
-        if ((*thk)(i,j) > 0) {
-          const double correction = lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
-          result(i,j) -= correction;
-        }
+      if ((*thk)(i,j) > 0) {
+        const double correction = lapse_rate * ((*surface)(i,j) - reference_surface(i,j));
+        result(i,j) -= correction;
       }
     }
-
-    ierr = result.end_access(); CHKERRQ(ierr);
-    ierr = reference_surface.end_access(); CHKERRQ(ierr);
-    ierr = surface->end_access(); CHKERRQ(ierr);
-    ierr = thk->end_access(); CHKERRQ(ierr);
 
     return 0;
   }

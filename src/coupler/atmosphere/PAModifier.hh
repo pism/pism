@@ -62,7 +62,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode temp_time_series(int i, int j, double *result)
+  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &result)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
@@ -70,7 +70,7 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode precip_time_series(int i, int j, double *result)
+  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &result)
   {
     if (input_model != NULL) {
       PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
@@ -86,15 +86,13 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode init_timeseries(double *ts, unsigned int N)
+  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->init_timeseries(ts, N); CHKERRQ(ierr);
+      PetscErrorCode ierr = input_model->init_timeseries(ts); CHKERRQ(ierr);
     }
 
-    m_ts_times.resize(N);
-    for (unsigned int k = 0; k < N; ++k)
-      m_ts_times[k] = ts[k];
+    m_ts_times = ts;
 
     return 0;
   }

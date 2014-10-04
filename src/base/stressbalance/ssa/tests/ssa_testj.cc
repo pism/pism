@@ -97,36 +97,32 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ssa->strength_extension->set_notional_strength(nu0 * H0);
   ssa->strength_extension->set_min_thickness(800);
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = surface.begin_access(); CHKERRQ(ierr);
-  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(surface);
+  list.add(bc_mask);
+  list.add(vel_bc);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      double junk1, myu, myv, H;
-      const double myx = grid.x[i], myy = grid.y[j];
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // set H,h on regular grid
-      ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
+    double junk1, myu, myv, H;
+    const double myx = grid.x[i], myy = grid.y[j];
 
-      thickness(i,j) = H;
-      surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
+    // set H,h on regular grid
+    ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
 
-      // special case at center point: here we set vel_bc at (i,j) by marking
-      // this grid point as SHEET and setting vel_bc approriately
-      if ((i == (grid.Mx)/2) && (j == (grid.My)/2)) {
-        bc_mask(i,j) = 1;
-        vel_bc(i,j).u = myu;
-        vel_bc(i,j).v = myv;
-      }
+    thickness(i,j) = H;
+    surface(i,j) = (1.0 - ice_rho / ocean_rho) * H; // FIXME issue #15
+
+    // special case at center point: here we set vel_bc at (i,j) by marking
+    // this grid point as SHEET and setting vel_bc approriately
+    if ((i == (grid.Mx)/2) && (j == (grid.My)/2)) {
+      bc_mask(i,j) = 1;
+      vel_bc(i,j).u = myu;
+      vel_bc(i,j).v = myv;
     }
   }
-
-  ierr = surface.end_access(); CHKERRQ(ierr);
-  ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = bc_mask.end_access(); CHKERRQ(ierr);
-  ierr = vel_bc.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
   ierr = surface.update_ghosts(); CHKERRQ(ierr);
@@ -154,13 +150,13 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm    com;
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
@@ -168,8 +164,8 @@ int main(int argc, char *argv[]) {
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
     PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(PETSC_NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(PETSC_NULL, "-help", &help_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"

@@ -10,7 +10,7 @@ files="flowtable-20.txt diff-20.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -flow_law gpbld > flowtable-20.txt
+$PISM_PATH/flowlaw_test -sia_flow_law gpbld > flowtable-20.txt
 # compare results
 diff flowtable-20.txt - > diff-20.txt <<END-OF-OUTPUT
 flow law:   "Glen-Paterson-Budd-Lliboutry-Duval"

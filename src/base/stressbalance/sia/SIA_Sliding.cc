@@ -26,7 +26,7 @@ namespace pism {
 
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
-  int WIDE_STENCIL = grid.max_stencil_width;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   for (int i = 0; i < 2; ++i) {
     char namestr[30];
@@ -124,64 +124,58 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
 
   MaskQuery m(*mask);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
 
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  list.add(*mask);
+  list.add(*surface);
+  list.add(*bed);
+  list.add(*enthalpy);
 
-  ierr = m_velocity.begin_access(); CHKERRQ(ierr);
-  ierr = basal_frictional_heating.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (m.ocean(i,j)) {
-        m_velocity(i,j).u = 0.0;
-        m_velocity(i,j).v = 0.0;
-        basal_frictional_heating(i,j) = 0.0;
-      } else {
-        // basal velocity from SIA-type sliding law: not recommended!
-        const double
-          myx = grid.x[i],
-          myy = grid.y[j],
-          myhx = 0.25 * (h_x(i,j,0) + h_x(i-1,j,0)
-                           + h_x(i,j,1) + h_x(i,j-1,1)),
-          myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)
-                           + h_y(i,j,1) + h_y(i,j-1,1)),
-          alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
-        double T, basalC;
+  list.add(m_velocity);
+  list.add(basal_frictional_heating);
 
-        // change r1200: new meaning of H
-        const double H = (*surface)(i,j) - (*bed)(i,j);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-        ierr = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0),
-                             EC.getPressureFromDepth(H), T); CHKERRQ(ierr);
+    if (m.ocean(i,j)) {
+      m_velocity(i,j).u = 0.0;
+      m_velocity(i,j).v = 0.0;
+      basal_frictional_heating(i,j) = 0.0;
+    } else {
+      // basal velocity from SIA-type sliding law: not recommended!
+      const double
+        myx = grid.x[i],
+        myy = grid.y[j],
+        myhx = 0.25 * (h_x(i,j,0) + h_x(i-1,j,0)
+                       + h_x(i,j,1) + h_x(i,j-1,1)),
+        myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)
+                       + h_y(i,j,1) + h_y(i,j-1,1)),
+        alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
+      double T, basalC;
 
-        basalC = basalVelocitySIA(myx, myy, H, T,
-                                  alpha, mu_sliding,
-                                  minimum_temperature_for_sliding);
-        m_velocity(i,j).u = - basalC * myhx;
-        m_velocity(i,j).v = - basalC * myhy;
-        // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
-        // in ice streams this result will be *overwritten* by
-        //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-        const double P = ice_rho * standard_gravity * H;
-        basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
-      }
+      // change r1200: new meaning of H
+      const double H = (*surface)(i,j) - (*bed)(i,j);
+
+      ierr = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0),
+                           EC.getPressureFromDepth(H), T); CHKERRQ(ierr);
+
+      basalC = basalVelocitySIA(myx, myy, H, T,
+                                alpha, mu_sliding,
+                                minimum_temperature_for_sliding);
+      m_velocity(i,j).u = - basalC * myhx;
+      m_velocity(i,j).v = - basalC * myhy;
+      // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
+      // in ice streams this result will be *overwritten* by
+      //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
+      const double P = ice_rho * standard_gravity * H;
+      basal_frictional_heating(i,j) = - (P * myhx) * m_velocity(i,j).u - (P * myhy) * m_velocity(i,j).v;
     }
   }
 
-  ierr = m_velocity.end_access(); CHKERRQ(ierr);
-  ierr = basal_frictional_heating.end_access(); CHKERRQ(ierr);
 
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
-  ierr = surface->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
   ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
@@ -297,8 +291,6 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
 PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
-
   const double n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -307,66 +299,68 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
   IceModelVec2S &eta = work_2d;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = eta.begin_access(); CHKERRQ(ierr);
-  int GHOSTS = 2;
-  for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      eta(i,j) = pow((*thickness)(i,j), etapow);
-    }
+
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(eta);
+
+  unsigned int GHOSTS = eta.get_stencil_width();
+  assert(thickness->get_stencil_width() >= GHOSTS);
+
+  for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    eta(i,j) = pow((*thickness)(i,j), etapow);
   }
-  ierr = eta.end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
 
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  list.add(h_x);
+  list.add(h_y);
+  list.add(*bed);
 
-  // now use Mahaffy on eta to get grad h on staggered;
+  // now use Mahaffy on eta to get grad h on the staggered grid;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = eta.begin_access(); CHKERRQ(ierr);
+
+  assert(h_x.get_stencil_width()  >= 1);
+  assert(h_y.get_stencil_width()  >= 1);
+  assert(eta.get_stencil_width()  >= 2);
+  assert(bed->get_stencil_width() >= 2);
+
   for (int o=0; o<2; o++) {
 
-    GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (o==0) {     // If I-offset
-          const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
-          if (mean_eta > 0.0) {
-            const double factor = invpow * pow(mean_eta, dinvpow);
-            h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
-            h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
-                                   - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
-          } else {
-            h_x(i,j,o) = 0.0;
-            h_y(i,j,o) = 0.0;
-          }
-          // now add bed slope to get actual h_x,h_y
-          h_x(i,j,o) += bed->diff_x_stagE(i,j);
-          h_y(i,j,o) += bed->diff_y_stagE(i,j);
-        } else {        // J-offset
-          const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
-          if (mean_eta > 0.0) {
-            const double factor = invpow * pow(mean_eta, dinvpow);
-            h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
-            h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
-                                   - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
-          } else {
-            h_y(i,j,o) = 0.0;
-            h_x(i,j,o) = 0.0;
-          }
-          // now add bed slope to get actual h_x,h_y
-          h_y(i,j,o) += bed->diff_y_stagN(i,j);
-          h_x(i,j,o) += bed->diff_x_stagN(i,j);
+    for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (o==0) {     // If I-offset
+        const double mean_eta = 0.5 * (eta(i+1,j) + eta(i,j));
+        if (mean_eta > 0.0) {
+          const double factor = invpow * pow(mean_eta, dinvpow);
+          h_x(i,j,o) = factor * (eta(i+1,j) - eta(i,j)) / dx;
+          h_y(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i,j+1)
+                                 - eta(i+1,j-1) - eta(i,j-1)) / (4.0*dy);
+        } else {
+          h_x(i,j,o) = 0.0;
+          h_y(i,j,o) = 0.0;
         }
+        // now add bed slope to get actual h_x,h_y
+        h_x(i,j,o) += bed->diff_x_stagE(i,j);
+        h_y(i,j,o) += bed->diff_y_stagE(i,j);
+      } else {        // J-offset
+        const double mean_eta = 0.5 * (eta(i,j+1) + eta(i,j));
+        if (mean_eta > 0.0) {
+          const double factor = invpow * pow(mean_eta, dinvpow);
+          h_y(i,j,o) = factor * (eta(i,j+1) - eta(i,j)) / dy;
+          h_x(i,j,o) = factor * (+ eta(i+1,j+1) + eta(i+1,j)
+                                 - eta(i-1,j+1) - eta(i-1,j)) / (4.0*dx);
+        } else {
+          h_y(i,j,o) = 0.0;
+          h_x(i,j,o) = 0.0;
+        }
+        // now add bed slope to get actual h_x,h_y
+        h_y(i,j,o) += bed->diff_y_stagN(i,j);
+        h_x(i,j,o) += bed->diff_x_stagN(i,j);
       }
     }
   }
-  ierr = eta.end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -377,8 +371,6 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
  * above the surface of the ice
  */
 PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
-
   const double Hicefree = 0.0;  // standard for ice-free, in Haseloff
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
@@ -387,79 +379,81 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
     &H = *thickness,
     &h = *surface;
 
-  ierr = h_x.begin_access();        CHKERRQ(ierr);
-  ierr = h_y.begin_access();        CHKERRQ(ierr);
-  ierr = bed->begin_access();       CHKERRQ(ierr);
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access();   CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
+  list.add(*bed);
+  list.add(*thickness);
+  list.add(*surface);
+
+  assert(h_x.get_stencil_width() >= 1);
+  assert(h_y.get_stencil_width() >= 1);
+  assert(bed->get_stencil_width()       >= 2);
+  assert(thickness->get_stencil_width() >= 2);
+  assert(surface->get_stencil_width()   >= 2);
+
   for (int o=0; o<2; o++) {
 
-    int GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (o==0) {     // If I-offset
-          const bool icefreeP  = (H(i,j)     <= Hicefree),
-            icefreeE  = (H(i+1,j)   <= Hicefree),
-            icefreeN  = (H(i,j+1)   <= Hicefree),
-            icefreeS  = (H(i,j-1)   <= Hicefree),
-            icefreeNE = (H(i+1,j+1) <= Hicefree),
-            icefreeSE = (H(i+1,j-1) <= Hicefree);
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-          double hhE = h(i+1,j);  // east pseudo-surface elevation
-          if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
-          h_x(i,j,o) = (hhE - h(i,j)) / dx;
+      if (o==0) {     // If I-offset
+        const bool icefreeP  = (H(i,j)     <= Hicefree),
+          icefreeE  = (H(i+1,j)   <= Hicefree),
+          icefreeN  = (H(i,j+1)   <= Hicefree),
+          icefreeS  = (H(i,j-1)   <= Hicefree),
+          icefreeNE = (H(i+1,j+1) <= Hicefree),
+          icefreeSE = (H(i+1,j-1) <= Hicefree);
 
-          double hhN  = h(i,j+1);  // north pseudo-surface elevation
-          if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
-          double hhS  = h(i,j-1);  // south pseudo-surface elevation
-          if (icefreeS  && (b(i,j-1)   > h(i,j)))  hhS  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i,j-1)))  hhS  = h(i,j);
-          double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
-          if (icefreeNE && (b(i+1,j+1) > h(i+1,j)))  hhNE = h(i+1,j);
-          if (icefreeE  && (b(i+1,j)   > h(i+1,j+1)))  hhNE = h(i+1,j);
-          double hhSE = h(i+1,j-1);// southeast pseudo-surface elevation
-          if (icefreeSE && (b(i+1,j-1) > h(i+1,j)))  hhSE = h(i+1,j);
-          if (icefreeE  && (b(i+1,j)   > h(i+1,j-1)))  hhSE = h(i+1,j);
-          h_y(i,j,o) = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
-        } else {        // J-offset
-          const bool icefreeP  = (H(i,j)     <= Hicefree),
-            icefreeN  = (H(i,j+1)   <= Hicefree),
-            icefreeE  = (H(i+1,j)   <= Hicefree),
-            icefreeW  = (H(i-1,j)   <= Hicefree),
-            icefreeNE = (H(i+1,j+1) <= Hicefree),
-            icefreeNW = (H(i-1,j+1) <= Hicefree);
+        double hhE = h(i+1,j);  // east pseudo-surface elevation
+        if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
+        if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
+        h_x(i,j,o) = (hhE - h(i,j)) / dx;
 
-          double hhN  = h(i,j+1);  // north pseudo-surface elevation
-          if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
-          h_y(i,j,o) = (hhN - h(i,j)) / dy;
+        double hhN  = h(i,j+1);  // north pseudo-surface elevation
+        if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
+        if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
+        double hhS  = h(i,j-1);  // south pseudo-surface elevation
+        if (icefreeS  && (b(i,j-1)   > h(i,j)))  hhS  = h(i,j);
+        if (icefreeP  && (b(i,j)     > h(i,j-1)))  hhS  = h(i,j);
+        double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
+        if (icefreeNE && (b(i+1,j+1) > h(i+1,j)))  hhNE = h(i+1,j);
+        if (icefreeE  && (b(i+1,j)   > h(i+1,j+1)))  hhNE = h(i+1,j);
+        double hhSE = h(i+1,j-1);// southeast pseudo-surface elevation
+        if (icefreeSE && (b(i+1,j-1) > h(i+1,j)))  hhSE = h(i+1,j);
+        if (icefreeE  && (b(i+1,j)   > h(i+1,j-1)))  hhSE = h(i+1,j);
+        h_y(i,j,o) = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
+      } else {        // J-offset
+        const bool icefreeP  = (H(i,j)     <= Hicefree),
+          icefreeN  = (H(i,j+1)   <= Hicefree),
+          icefreeE  = (H(i+1,j)   <= Hicefree),
+          icefreeW  = (H(i-1,j)   <= Hicefree),
+          icefreeNE = (H(i+1,j+1) <= Hicefree),
+          icefreeNW = (H(i-1,j+1) <= Hicefree);
 
-          double hhE  = h(i+1,j);  // east pseudo-surface elevation
-          if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
-          double hhW  = h(i-1,j);  // west pseudo-surface elevation
-          if (icefreeW  && (b(i-1,j)   > h(i,j)))  hhW  = h(i,j);
-          if (icefreeP  && (b(i,j)     > h(i-1,j)))  hhW  = h(i,j);
-          double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
-          if (icefreeNE && (b(i+1,j+1) > h(i,j+1)))  hhNE = h(i,j+1);
-          if (icefreeN  && (b(i,j+1)   > h(i+1,j+1)))  hhNE = h(i,j+1);
-          double hhNW = h(i-1,j+1);// northwest pseudo-surface elevation
-          if (icefreeNW && (b(i-1,j+1) > h(i,j+1)))  hhNW = h(i,j+1);
-          if (icefreeN  && (b(i,j+1)   > h(i-1,j+1)))  hhNW = h(i,j+1);
-          h_x(i,j,o) = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
-        }
+        double hhN  = h(i,j+1);  // north pseudo-surface elevation
+        if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
+        if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
+        h_y(i,j,o) = (hhN - h(i,j)) / dy;
 
-      } // j
-    }   // i
+        double hhE  = h(i+1,j);  // east pseudo-surface elevation
+        if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
+        if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
+        double hhW  = h(i-1,j);  // west pseudo-surface elevation
+        if (icefreeW  && (b(i-1,j)   > h(i,j)))  hhW  = h(i,j);
+        if (icefreeP  && (b(i,j)     > h(i-1,j)))  hhW  = h(i,j);
+        double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
+        if (icefreeNE && (b(i+1,j+1) > h(i,j+1)))  hhNE = h(i,j+1);
+        if (icefreeN  && (b(i,j+1)   > h(i+1,j+1)))  hhNE = h(i,j+1);
+        double hhNW = h(i-1,j+1);// northwest pseudo-surface elevation
+        if (icefreeNW && (b(i-1,j+1) > h(i,j+1)))  hhNW = h(i,j+1);
+        if (icefreeN  && (b(i,j+1)   > h(i-1,j+1)))  hhNW = h(i,j+1);
+        h_x(i,j,o) = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
+      }
+
+    }
   }     // o
 
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access();       CHKERRQ(ierr);
-  ierr = surface->end_access();   CHKERRQ(ierr);
-  ierr = h_y.end_access();        CHKERRQ(ierr);
-  ierr = h_x.end_access();        CHKERRQ(ierr);
 
   return 0;
 }
@@ -467,34 +461,35 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
   IceModelVec2S &h = *surface;
-  ierr = h_x.begin_access(); CHKERRQ(ierr);
-  ierr = h_y.begin_access(); CHKERRQ(ierr);
-  ierr = surface->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(h_x);
+  list.add(h_y);
+  list.add(*surface);
+
+  assert(h_x.get_stencil_width() >= 1);
+  assert(h_y.get_stencil_width() >= 1);
+  assert(surface->get_stencil_width() >= 2);
 
   for (int o=0; o<2; o++) {
-    int GHOSTS = 1;
-    for (int   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-      for (int j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (o==0) {     // If I-offset
-          h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
-          h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
-                        - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
-        } else {        // J-offset
-          h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
-          h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
-                        - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
-        }
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (o==0) {     // If I-offset
+        h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
+        h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
+                      - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
+      } else {        // J-offset
+        h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
+        h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
+                      - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
       }
     }
   }
 
-  ierr = surface->end_access(); CHKERRQ(ierr);
-  ierr = h_y.end_access(); CHKERRQ(ierr);
-  ierr = h_x.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

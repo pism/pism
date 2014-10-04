@@ -1,5 +1,13 @@
 project (Pism)
 cmake_minimum_required (VERSION 2.8.0) # 2.8.0 is almost 3 years old, so this should be OK
+if (NOT ${CMAKE_VERSION} VERSION_LESS 3.0.0)
+  message(STATUS "CMAKE_VERSION >= 3.0.0. Setting policy 0026 behavior to 'old'...")
+  # This has to do with the way we compute dependencies of PISM's
+  # Python bindings. Enabling the "old" behavior allows us to support
+  # both old and new (>= 3.0) CMake versions.
+  cmake_policy(SET CMP0026 OLD)
+endif()
+
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
@@ -31,6 +39,7 @@ option (Pism_USE_PARALLEL_HDF5 "Enables parallel HDF5 I/O." ON)
 option (Pism_USE_TAO "Use TAO in inverse solvers." ON)
 
 option (Pism_TEST_USING_VALGRIND "Add extra regression tests using valgrind" OFF)
+mark_as_advanced (Pism_TEST_USING_VALGRIND)
 
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 option (Pism_LINK_STATICALLY "Set CMake flags to try to ensure that everything is linked statically")
@@ -152,4 +161,5 @@ endif()
 # PISM regression testing
 ENABLE_TESTING()
 include(CTest)
+add_subdirectory (test)
 add_subdirectory (test/regression)

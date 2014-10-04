@@ -82,7 +82,6 @@ PetscErrorCode NCVariable::set_units(const std::string &new_units) {
   and for standard out reports.
  */
 PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units) {
-  std::string units = new_units;
   // Save the human-friendly version of the string; this is to avoid getting
   // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
   // (and thus violating the CF conventions).
@@ -90,19 +89,9 @@ PetscErrorCode NCVariable::set_glaciological_units(const std::string &new_units)
   // Do not use NCVariable::set_string here, because it is written in
   // a way that forces users to use set_glaciological_units() to set
   // "glaciological" units.
-  m_strings["glaciological_units"] = units;
+  m_strings["glaciological_units"] = new_units;
 
-  /*!
-    \note This method finds the string "since" in the units_string and
-    terminates it on the first 's' of "since", if this sub-string was found.
-    This is done to ignore the reference date in the time units string (the
-    reference date specification always starts with this word).
-  */
-  size_t n = units.find("since");
-  if (n != std::string::npos)
-    units.resize(n);
-
-  int errcode = m_glaciological_units.parse(units);
+  int errcode = m_glaciological_units.parse(new_units);
 
   assert(errcode == 0 && "invalid units specification");
 
@@ -307,7 +296,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   Defines a variable and converts the units if needed.
  */
 PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
-                                        bool write_in_glaciological_units, Vec v) {
+                                        bool write_in_glaciological_units, Vec v) const {
   PetscErrorCode ierr;
 
   // find or define the variable
@@ -338,7 +327,10 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
 
 //! \brief Regrid from a NetCDF file into a \b global Vec `v`.
 /*!
-  - if `flag` is `CRITICAL`, stops if the variable was not found in the input file
+  - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
+    variable was not found in the input file
+  - if `flag` is one of `CRITICAL_FILL_MISSING` and
+    `OPTIONAL_FILL_MISSING`, replace _FillValue with `default_value`.
   - sets `v` to `default_value` if `flag` is `OPTIONAL` and the
     variable was not found in the input file
   - uses the last record in the file
@@ -370,7 +362,20 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                     exists, name_found, found_by_standard_name); CHKERRQ(ierr);
 
   if (exists == true) {                      // the variable was found successfully
-    ierr = nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, v); CHKERRQ(ierr);
+
+    if (flag == OPTIONAL_FILL_MISSING ||
+        flag == CRITICAL_FILL_MISSING) {
+      ierr = verbPrintf(2, m_com,
+                        "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+                        default_value, get_string("units").c_str(), get_name().c_str(),
+                        nc.inq_filename().c_str()); CHKERRQ(ierr);
+
+      ierr = nc.regrid_vec_fill_missing(m_grid, name_found, m_zlevels,
+                                        t_start, default_value,
+                                        v); CHKERRQ(ierr);
+    } else {
+      ierr = nc.regrid_vec(m_grid, name_found, m_zlevels, t_start, v); CHKERRQ(ierr);
+    }
 
     // Now we need to get the units string from the file and convert the units,
     // because check_range and report_range expect the data to be in PISM (MKS)
@@ -409,7 +414,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
       ierr = this->report_range(v, found_by_standard_name); CHKERRQ(ierr);
     }
   } else {                // couldn't find the variable
-    if (flag == CRITICAL) {             // if it's critical, print an error message and stop
+    if (flag == CRITICAL ||
+        flag == CRITICAL_FILL_MISSING) { // if it's critical, print an error message and stop
       ierr = PetscPrintf(m_com,
                          "PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
                          get_name().c_str(), nc.inq_filename().c_str());
@@ -444,8 +450,8 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   PetscErrorCode ierr;
   double min, max;
 
-  ierr = VecMin(v, PETSC_NULL, &min); CHKERRQ(ierr);
-  ierr = VecMax(v, PETSC_NULL, &max); CHKERRQ(ierr);
+  ierr = VecMin(v, NULL, &min); CHKERRQ(ierr);
+  ierr = VecMax(v, NULL, &max); CHKERRQ(ierr);
 
   cv_converter *c = get_glaciological_units().get_converter_from(get_units());
   assert(c != NULL);
@@ -541,7 +547,7 @@ PetscErrorCode NCSpatialVariable::check_range(const std::string &filename, Vec v
 }
 
 //! \brief Define dimensions a variable depends on.
-PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
+PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
   PetscErrorCode ierr;
   bool exists;
 
@@ -575,7 +581,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
 PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
-                                         bool write_in_glaciological_units) {
+                                         bool write_in_glaciological_units) const {
   int ierr;
   std::vector<std::string> dims;
   bool exists;
@@ -585,12 +591,12 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
     return 0;
 
   ierr = define_dimensions(nc); CHKERRQ(ierr);
-
+  std::string variable_order = m_variable_order;
   // "..._bounds" should be stored with grid corners (corresponding to
   // the "z" dimension here) last, so we override the variable storage
   // order here
-  if (ends_with(get_name(), "_bounds") && m_variable_order == "zyx")
-    m_variable_order = "yxz";
+  if (ends_with(get_name(), "_bounds") && variable_order == "zyx")
+    variable_order = "yxz";
 
   std::string x = get_x().get_name(),
     y = get_y().get_name(),
@@ -605,14 +611,14 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
 
   // Use t,x,y,z(zb) variable order: it is weird, but matches the in-memory
   // storage order and so is *a lot* faster.
-  if (m_variable_order == "xyz") {
+  if (variable_order == "xyz") {
     dims.push_back(x);
     dims.push_back(y);
   }
 
   // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
   // are stored in the "natural" order.
-  if (m_variable_order == "yxz") {
+  if (variable_order == "yxz") {
     dims.push_back(y);
     dims.push_back(x);
   }
@@ -623,7 +629,7 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
 
   // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
   // but requires transposing data while writing and is *a lot* slower.
-  if (m_variable_order == "zyx") {
+  if (variable_order == "zyx") {
     dims.push_back(y);
     dims.push_back(x);
   }
@@ -644,6 +650,18 @@ NCVariable& NCSpatialVariable::get_y() {
 }
 
 NCVariable& NCSpatialVariable::get_z() {
+  return m_z;
+}
+
+const NCVariable& NCSpatialVariable::get_x() const {
+  return m_x;
+}
+
+const NCVariable& NCSpatialVariable::get_y() const {
+  return m_y;
+}
+
+const NCVariable& NCSpatialVariable::get_z() const {
   return m_z;
 }
 

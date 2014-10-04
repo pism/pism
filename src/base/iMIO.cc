@@ -397,9 +397,9 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
     }
   }
 
-  if (config.get_flag("do_cold_ice_methods")) {
-    ierr = verbPrintf(3,grid.com,"  setting enthalpy from temperature...\n");
-    CHKERRQ(ierr);
+  if (config.get_flag("do_energy") && config.get_flag("do_cold_ice_methods")) {
+    ierr = verbPrintf(3, grid.com,
+                      "  setting enthalpy from temperature...\n"); CHKERRQ(ierr);
     ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
   }
 
@@ -475,8 +475,8 @@ PetscErrorCode IceModel::regrid(int dimensions) {
          dimensions == 3))
     SETERRQ(grid.com, 1, "dimensions can only be 0, 2 or 3");
 
-  ierr = PetscOptionsBegin(grid.com, PETSC_NULL, "Options controlling regridding",
-                           PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, NULL, "Options controlling regridding",
+                           NULL); CHKERRQ(ierr);
   {
     ierr = OptionsString("-regrid_file", "Specifies the file to regrid from",
                              filename, regrid_file_set); CHKERRQ(ierr);
@@ -663,8 +663,8 @@ PetscErrorCode IceModel::init_snapshots() {
     ierr = OptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
                             split); CHKERRQ(ierr);
 
-    ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
-                           "small", snapshot_vars); CHKERRQ(ierr);
+    ierr = output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
+                                   "small", snapshot_vars); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -821,8 +821,8 @@ PetscErrorCode IceModel::init_backups() {
     ierr = OptionsReal("-backup_interval", "Automatic backup interval, hours",
                            backup_interval, o_set); CHKERRQ(ierr);
 
-    ierr = set_output_size("-backup_size", "Sets the 'size' of a backup file.",
-                           "small", backup_vars); CHKERRQ(ierr);
+    ierr = output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
+                                   "small", backup_vars); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

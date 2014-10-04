@@ -1,21 +1,6 @@
 #!/usr/bin/env python
-from numpy import sort
-try:
-    from netCDF4 import *
-except:
-    print "ERROR: netCDF4 is required!"
-    import sys
-    sys.exit(1)
 
-input = "pism_config.nc"
-
-allowed_boolean_values = ["yes", "true", "on", "no", "false", "off"]
-
-nc = Dataset(input, 'r')
-
-var = nc.variables['pism_config']
-
-print """
+intro = """
 Configuration flags and parameters {#config}
 =============
 
@@ -81,81 +66,101 @@ John von Neumann
   \endcode
 """
 
-print """
-\section flags Boolean flags
-<table style="width: 100%">
-<tr> <td class="indexkey"> Flag name </td> <td class="indexvalue"> <b> Default value </b> </td> <td class="indexvalue"> <b> Description </b> </td> </tr>"""
+try:
+    import netCDF4
+except:
+    print "ERROR: netCDF4 is required!"
+    import sys
+    sys.exit(1)
 
-for attr in sort(var.ncattrs()):
-    if attr.endswith("_doc"):
-        continue
+input = "pism_config.nc"
 
-    value = getattr(var, attr)
-    try:
-      docstring = getattr(var, attr + "_doc", "[missing]")
-    except:
-      docstring = "[missing]"
+allowed_boolean_values = ["yes", "true", "on", "no", "false", "off"]
 
-    # ignore anything that does not represent a boolean:
-    if (value not in allowed_boolean_values):
-        continue
+def print_header(titles):
+    "Print the header of a table. 'title' is a tuple with three strings, the titles for table columns."
+    print '<table style="width: 100%">\n' + \
+    '<tr> <td class="indexkey"> %s </td> <td class="indexvalue"> <b> %s </b> </td> <td class="indexvalue"> <b> %s </b> </td> </tr>' % titles
 
-    print '<tr><td class="indexkey">%s</td><td class="indexvalue">\"%s\"</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
+def print_row(name, value, docstring):
+    "Print a row of a table."
+    print '<tr><td class="indexkey">%s</td><td class="indexvalue"> %s </td><td class="indexvalue">%s</td></tr>' % (name, value, docstring)
 
-print "</table>"
+def print_footer():
+    print "</table>"
 
-print """
-\section params Scalar parameters
-<table style="width: 100%">
-<tr> <td class="indexkey"> <b>Parameter name </b> </td> <td class="indexvalue"> <b> Default value </b> </td> <td class="indexvalue"> <b> Description </b> </td> </tr>"""
+def get_docstring(name):
+    "Get the documenting string for a parameter."
+    global var
+    return getattr(var, name + "_doc", "[missing]")
 
-for attr in sort(var.ncattrs()):
-    if attr.endswith("_doc"):
-        continue
+def is_special(name):
+    "Check if the name is 'special' and should not be included."
+    global var
+    return (name in ("long_name")) or name.endswith("_doc")
 
-    value = getattr(var, attr)
-    try:
-      docstring = getattr(var, attr + "_doc", "[missing]")
-    except:
-      docstring = "[missing]"
+def is_boolean(name):
+    "Check if a name corresponds to a boolean flag."
+    global var
+    return (not is_special(name)) and (getattr(var, name) in allowed_boolean_values)
 
-    if isinstance(value, (str, unicode)):
-        continue
+def is_number(name):
+    "Check if a name corresponds to a scalar parameter."
+    global var
+    return (not is_special(name)) and isinstance(getattr(var, name), (int, float))
 
-    print '<tr><td class="indexkey">%s</td>' % attr
+def is_string(name):
+    "Check if a name corresponds to a string."
+    global var
+    return (not is_special(name)) and isinstance(getattr(var, name), (str, unicode)) and (not is_boolean(name))
 
-    if (abs(value) >= 1e7):
-        print '<td class="indexvalue">%e</td>' % value, # use scientific notation if a number is big
-    elif (int(value) == value):
-        print '<td class="indexvalue">%d</td>' % int(value), # remove zeros after the decimal point
-    elif (abs(value) <= 1e-5):
-        print '<td class="indexvalue">%e</td>' % value, # use scientific notation if small (and not zero; prev case)
+def print_parameters(parameter_list, transform=lambda x: "\"%s\"" % x):
+    "Print table rows corresponding to parameters in a list."
+    global var
+    for name in sorted(parameter_list):
+        print_row(name, transform(getattr(var, name)), get_docstring(name))
+
+def number_to_string(number):
+    "Format a number as a string. Use scientific notation for large and small numbers, remove '.0' from integers."
+    if (abs(number) >= 1e7):
+        return '%e' % number # use scientific notation if a number is big
+    elif (int(number) == number):
+        return '%d' % int(number) # remove zeros after the decimal point
+    elif (abs(number) <= 1e-5):
+        return '%e' % number # use scientific notation if small (and not zero; previous case)
     else:
-        print '<td class="indexvalue">%f</td>' % value,
+        return '%f' % number
 
-    print unicode('<td class="indexvalue">%s</td></tr>' % docstring).encode('utf8')
+def print_booleans():
+    global var
+    print "\section flags Boolean flags"
+    print_header(("Flag name", "Default value", "Description"))
+    print_parameters(filter(is_boolean, var.ncattrs()))
+    print_footer()
 
-print "</table>"
+def print_scalars():
+    global var
+    print "\section params Scalar parameters"
+    print_header(("Parameter name", "Default value", "Description"))
+    print_parameters(filter(is_number, var.ncattrs()), number_to_string)
+    print_footer()
 
-print """
-\section strings String parameters
-<table style="width: 100%">
-<tr> <td class="indexkey"> <b> Parameter name </b> </td> <td class="indexvalue"> <b> Default value </b> </td> <td class="indexvalue"> <b> Description </b> </td> </tr>"""
+def print_strings():
+    global var
+    print "\section strings String parameters"
+    print_header(("Parameter name", "Default value", "Description"))
+    print_parameters(filter(is_string, var.ncattrs()))
+    print_footer()
 
-for attr in sort(var.ncattrs()):
-    if attr.endswith("_doc"):
-        continue
+if __name__ == "__main__":
+    print intro
 
-    value = getattr(var, attr)
-    try:
-      docstring = getattr(var, attr + "_doc", "[missing]")
-    except:
-      docstring = "[missing]"
+    nc = netCDF4.Dataset(input, 'r')
 
-    # ignore non-strings and strings representing booleans
-    if (not isinstance(value, (str, unicode))) or (value in allowed_boolean_values):
-        continue
+    var = nc.variables['pism_config']
 
-    print '<tr><td class="indexkey">%s</td><td class="indexvalue">\'%s\'</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
+    print_booleans()
 
-print "</table>"
+    print_scalars()
+
+    print_strings()

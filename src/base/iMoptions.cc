@@ -93,34 +93,43 @@ PetscErrorCode  IceModel::setFromOptions() {
   return 0;
 }
 
-//! Assembles a list of variables corresponding to an output file size.
-PetscErrorCode IceModel::set_output_size(const std::string &option,
-                                         const std::string &description,
-                                         const std::string &default_value,
-                                         std::set<std::string> &result) {
+//! Set the output file size using a command-line option.
+PetscErrorCode IceModel::output_size_from_option(const std::string &option,
+                                                 const std::string &description,
+                                                 const std::string &default_value,
+                                                 std::set<std::string> &result) {
   PetscErrorCode ierr;
+
   std::set<std::string> choices;
   std::string keyword;
   bool flag;
-
-  result.clear();
-
-  if (keyword == "none") {
-    return 0;
-  }
 
   choices.insert("none");
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
   ierr = OptionsList(grid.com, option,
-                         description, choices,
-                         default_value, keyword, flag); CHKERRQ(ierr);
+                     description, choices,
+                     default_value, keyword, flag); CHKERRQ(ierr);
+
+  ierr = set_output_size(keyword, result); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Assembles a list of variables corresponding to an output file size.
+PetscErrorCode IceModel::set_output_size(const std::string &keyword,
+                                         std::set<std::string> &result) {
+  result.clear();
+
+  if (keyword == "none") {
+    return 0;
+  }
 
   // Add all the model-state variables:
   std::set<std::string> vars = variables.keys();
 
-  std::set<std::string>::iterator i = vars.begin();
+  std::set<std::string>::const_iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
     NCSpatialVariable &m = var->metadata();
@@ -129,7 +138,7 @@ PetscErrorCode IceModel::set_output_size(const std::string &option,
     if ((intent == "model_state") || (intent == "mapping") || (intent == "climate_steady")) {
       result.insert(*i);
     }
-    i++;
+    ++i;
   }
 
   // add cumulative quantities to ensure continuity after restarting

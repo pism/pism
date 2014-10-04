@@ -50,7 +50,7 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
                                           const std::vector<double> &my_zlevels,
                                           const std::map<std::string, std::string> &z_attrs) {
   PetscErrorCode ierr;
-  assert(v == NULL);
+  assert(m_v == NULL);
 
   m_has_ghosts = false;
   grid         = &mygrid;
@@ -62,7 +62,7 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
 
   ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(m_da, &v); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(m_da->get(), &m_v); CHKERRQ(ierr);
 
   m_dof = 1;
 

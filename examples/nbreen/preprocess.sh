@@ -15,7 +15,7 @@ ncks -O -v outline -x $DATA $PISMDATA
 # surface climate for "-surface given" just has placeholders
 ncap2 -O -s "climatic_mass_balance=0.0*topg" $PISMDATA $PISMDATA
 ncatted -O -a units,climatic_mass_balance,o,c,"kg m-2 year-1" $PISMDATA
-ncatted -O -a standard_name,climatic_mass_balance,o,c,"land_ice_surface_specific_mass_balance" $PISMDATA
+ncatted -O -a standard_name,climatic_mass_balance,o,c,"land_ice_surface_specific_mass_balance_flux" $PISMDATA
 ncap2 -O -s "ice_surface_temp=0.0*topg+260.0" $PISMDATA $PISMDATA
 ncatted -O -a units,ice_surface_temp,o,c,"K" $PISMDATA
 ncatted -O -a standard_name,ice_surface_temp,d,c, $PISMDATA
@@ -45,11 +45,6 @@ ncap2 -O -s "bcflag=0.0*topg+1.0" $PISMDATA $PISMDATA
 ncatted -O -a units,bcflag,d,c, $PISMDATA
 ncatted -O -a long_name,bcflag,o,c,"equals one where (u_ssa_bc,v_ssa_bc) should be applied as sliding seen by hydrology" $PISMDATA
 ncatted -O -a standard_name,bcflag,d,c, $PISMDATA
-
-CONF=nbreen_config
-echo "creating PISM-readable config override file $CONF.nc ..."
-rm -f $CONF.nc
-ncgen -o $CONF.nc $CONF.cdl
 
 INTOBED=fakesummerevent.nc
 echo "calling fake-inputtobed.py to create PISM-readable -input_to_bed file $INTOBED ..."

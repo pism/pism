@@ -78,18 +78,17 @@ PetscErrorCode Hydrology_bwprel::compute(IceModelVec* &output) {
   ierr = model->subglacial_water_pressure(*result); CHKERRQ(ierr);
   ierr = model->overburden_pressure(*Po); CHKERRQ(ierr);
 
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = Po->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((*Po)(i,j) > 0.0)
-        (*result)(i,j) /= (*Po)(i,j);
-      else
-        (*result)(i,j) = fill;
-    }
+  IceModelVec::AccessList list;
+  list.add(*result);
+  list.add(*Po);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if ((*Po)(i,j) > 0.0)
+      (*result)(i,j) /= (*Po)(i,j);
+    else
+      (*result)(i,j) = fill;
   }
-  ierr = result->end_access(); CHKERRQ(ierr);
-  ierr = Po->end_access(); CHKERRQ(ierr);
 
   output = result;
   return 0;
@@ -116,6 +115,27 @@ PetscErrorCode Hydrology_effbwp::compute(IceModelVec* &output) {
   ierr = model->overburden_pressure(*result); CHKERRQ(ierr);
   ierr = result->add(-1.0,*P); CHKERRQ(ierr);  // result <-- result + (-1.0) P = Po - P
 
+  output = result;
+  return 0;
+}
+
+
+Hydrology_hydrobmelt::Hydrology_hydrobmelt(Hydrology *m, IceGrid &g, Vars &my_vars)
+    : Diag<Hydrology>(m, g, my_vars) {
+  vars[0].init_2d("hydrobmelt", grid);
+  set_attrs("the version of bmelt seen by the hydrology model",
+            "", "m s-1", "m/year", 0);
+}
+
+
+PetscErrorCode Hydrology_hydrobmelt::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "hydrobmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->metadata() = vars[0];
+  result->write_in_glaciological_units = true;
+  // the value reported diagnostically is merely the last value filled
+  ierr = (model->bmelt_local).copy_to(*result); CHKERRQ(ierr);
   output = result;
   return 0;
 }

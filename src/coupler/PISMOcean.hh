@@ -33,6 +33,8 @@ public:
     : Component_TS(g, conf), sea_level(0) {}
   virtual ~OceanModel() {};
 
+  virtual PetscErrorCode init(Vars &vars) = 0;
+
   virtual PetscErrorCode sea_level_elevation(double &result) = 0;
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result) = 0;
   virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result) = 0;

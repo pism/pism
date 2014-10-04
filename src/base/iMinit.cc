@@ -108,7 +108,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     }
 
     if (grid_info_found) {
-      ierr = nc.inq_grid_info(names[i], input); CHKERRQ(ierr);
+      ierr = nc.inq_grid_info(names[i], grid.periodicity, input); CHKERRQ(ierr);
       break;
     }
   }
@@ -135,10 +135,10 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = nc.close(); CHKERRQ(ierr);
 
   // Set the grid center and horizontal extent:
-  grid.x0 = (input.x_max + input.x_min) / 2.0;
-  grid.y0 = (input.y_max + input.y_min) / 2.0;
-  grid.Lx = (input.x_max - input.x_min) / 2.0;
-  grid.Ly = (input.y_max - input.y_min) / 2.0;
+  grid.x0 = input.x0;
+  grid.y0 = input.y0;
+  grid.Lx = input.Lx;
+  grid.Ly = input.Ly;
 
   // read current time if no option overrides it (avoids unnecessary reporting)
   bool ys_set;
@@ -186,21 +186,21 @@ PetscErrorCode IceModel::set_grid_from_options() {
 
   // Read -Lx and -Ly.
   ierr = OptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
-                         y_scale,  Ly_set); CHKERRQ(ierr);
+                     y_scale,  Ly_set); CHKERRQ(ierr);
   ierr = OptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
-                         x_scale,  Lx_set); CHKERRQ(ierr);
+                     x_scale,  Lx_set); CHKERRQ(ierr);
   // Vertical extent (in the ice):
   ierr = OptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
-                         z_scale,  Lz_set); CHKERRQ(ierr);
+                     z_scale,  Lz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz.
   int tmp_Mx = grid.Mx, tmp_My = grid.My, tmp_Mz = grid.Mz;
   ierr = OptionsInt("-My", "Number of grid points in the X direction",
-                        tmp_My, My_set); CHKERRQ(ierr);
+                    tmp_My, My_set); CHKERRQ(ierr);
   ierr = OptionsInt("-Mx", "Number of grid points in the Y direction",
-                        tmp_Mx, Mx_set); CHKERRQ(ierr);
+                    tmp_Mx, Mx_set); CHKERRQ(ierr);
   ierr = OptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
-                        tmp_Mz, Mz_set); CHKERRQ(ierr);
+                    tmp_Mz, Mz_set); CHKERRQ(ierr);
 
 
   if (tmp_Mx > 0 && tmp_My > 0 && tmp_Mz > 0) {
@@ -217,9 +217,9 @@ PetscErrorCode IceModel::set_grid_from_options() {
   std::vector<double> x_range, y_range;
   bool x_range_set, y_range_set;
   ierr = OptionsRealArray("-x_range", "min,max x coordinate values",
-                              x_range, x_range_set); CHKERRQ(ierr);
+                          x_range, x_range_set); CHKERRQ(ierr);
   ierr = OptionsRealArray("-y_range", "min,max y coordinate values",
-                              y_range, y_range_set); CHKERRQ(ierr);
+                          y_range, y_range_set); CHKERRQ(ierr);
 
   std::string keyword;
   std::set<std::string> z_spacing_choices;
@@ -361,7 +361,7 @@ PetscErrorCode IceModel::grid_setup() {
       ierr = nc.inq_var(names[i], var_exists); CHKERRQ(ierr);
 
       if (var_exists == true) {
-        ierr = nc.inq_grid(names[i], &grid, NOT_PERIODIC); CHKERRQ(ierr);
+        ierr = nc.inq_grid(names[i], &grid, grid.periodicity); CHKERRQ(ierr);
         break;
       }
     }
@@ -387,7 +387,6 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = ignore_option(grid.com, "-Ly");    CHKERRQ(ierr);
     ierr = ignore_option(grid.com, "-Lz");    CHKERRQ(ierr);
     ierr = ignore_option(grid.com, "-z_spacing"); CHKERRQ(ierr);
-    ierr = ignore_option(grid.com, "-zb_spacing"); CHKERRQ(ierr);
   } else {
     ierr = set_grid_defaults(); CHKERRQ(ierr);
     ierr = set_grid_from_options(); CHKERRQ(ierr);
@@ -538,12 +537,20 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    // update surface and ocean models so that we can get the
-    // temperature at the top of the bedrock
-    ierr = init_step_couplers(); CHKERRQ(ierr);
+    bool bootstrapping_needed = false;
+    ierr = btu->init(variables, bootstrapping_needed); CHKERRQ(ierr);
 
-    ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
-    ierr = btu->init(variables); CHKERRQ(ierr);
+    if (bootstrapping_needed == true) {
+      // update surface and ocean models so that we can get the
+      // temperature at the top of the bedrock
+      ierr = verbPrintf(2, grid.com,
+                        "getting surface B.C. from couplers...\n"); CHKERRQ(ierr);
+      ierr = init_step_couplers(); CHKERRQ(ierr);
+
+      ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+
+      ierr = btu->bootstrap(); CHKERRQ(ierr);
+    }
   }
 
   if (subglacial_hydrology) {
@@ -919,10 +926,10 @@ PetscErrorCode IceModel::init_couplers() {
   ierr = verbPrintf(3, grid.com,
                     "Initializing boundary models...\n"); CHKERRQ(ierr);
 
-  assert(surface != PETSC_NULL);
+  assert(surface != NULL);
   ierr = surface->init(variables); CHKERRQ(ierr);
 
-  assert(ocean != PETSC_NULL);
+  assert(ocean != NULL);
   ierr = ocean->init(variables); CHKERRQ(ierr);
 
   return 0;
@@ -975,7 +982,7 @@ PetscErrorCode IceModel::init_step_couplers() {
 //! Allocates work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
-  int WIDE_STENCIL = grid.max_stencil_width;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   // various internal quantities
   // 2d work vectors
@@ -1002,8 +1009,8 @@ PetscErrorCode IceModel::misc_setup() {
 
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
-  ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
-                         "medium", output_vars); CHKERRQ(ierr);
+  ierr = output_size_from_option("-o_size", "Sets the 'size' of an output file.",
+                                 "medium", output_vars); CHKERRQ(ierr);
 
   // Quietly re-initialize couplers (they might have done one
   // time-step during initialization)
@@ -1105,34 +1112,23 @@ PetscErrorCode IceModel::init_calving() {
 }
 
 PetscErrorCode IceModel::allocate_bed_deformation() {
-  PetscErrorCode ierr;
   std::string model = config.get_string("bed_deformation_model");
-  std::set<std::string> choices;
 
-  choices.insert("none");
-  choices.insert("iso");
-  choices.insert("lc");
+  if (beddef == NULL) {
+    if (model == "none") {
+      beddef = NULL;
+      return 0;
+    }
 
-  ierr = PetscOptionsBegin(grid.com, "", "Bed deformation model", ""); CHKERRQ(ierr);
-  {
-    bool dummy;
-    ierr = OptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
-                         choices, model, model, dummy); CHKERRQ(ierr);
+    if (model == "iso") {
+      beddef = new PBPointwiseIsostasy(grid, config);
+      return 0;
+    }
 
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (model == "none")
-    return 0;
-
-  if ((model == "iso") && (beddef == NULL)) {
-    beddef = new PBPointwiseIsostasy(grid, config);
-    return 0;
-  }
-
-  if ((model == "lc") && (beddef == NULL)) {
-    beddef = new PBLingleClark(grid, config);
-    return 0;
+    if (model == "lc") {
+      beddef = new PBLingleClark(grid, config);
+      return 0;
+    }
   }
 
   return 0;

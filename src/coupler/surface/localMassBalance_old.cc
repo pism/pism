@@ -334,9 +334,8 @@ PetscErrorCode FaustoGrevePDDObject_Old::setDegreeDayFactors(PetscInt i, PetscIn
                                                          PetscScalar lat, PetscScalar /* lon */,
                                                          DegreeDayFactors_Old &ddf) {
 
-  PetscErrorCode ierr = temp_mj.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list(temp_mj);
   const PetscScalar T_mj = temp_mj(i,j);
-  ierr = temp_mj.end_access(); CHKERRQ(ierr);
 
   if (lat < pdd_fausto_latitude_beta_w) { // case lat < 72 deg N
     ddf.ice  = beta_ice_w;
@@ -371,9 +370,8 @@ PetscErrorCode FaustoGrevePDDObject_Old::setDegreeDayFactors(PetscInt i, PetscIn
 /*!
 Unfortunately this duplicates code in PA_SeaRISE_Greenland::update();
  */
-PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(
-    IceModelVec2S *surfelev, IceModelVec2S *lat, IceModelVec2S *lon) {
-  PetscErrorCode ierr;
+PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(IceModelVec2S *surfelev,
+                                                        IceModelVec2S *lat, IceModelVec2S *lon) {
 
   const PetscReal 
     d_mj     = config.get("snow_temp_fausto_d_mj"),      // K
@@ -381,21 +379,16 @@ PetscErrorCode FaustoGrevePDDObject_Old::update_temp_mj(
     c_mj     = config.get("snow_temp_fausto_c_mj"),      // K (degN)-1
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");  // K (degW)-1
   
-  ierr = surfelev->begin_access(); CHKERRQ(ierr);
-  ierr = lat->begin_access();      CHKERRQ(ierr);
-  ierr = lon->begin_access();      CHKERRQ(ierr);
-  ierr = temp_mj.begin_access();   CHKERRQ(ierr); 
+  IceModelVec::AccessList list;
+  list.add(*surfelev);
+  list.add(*lat);
+  list.add(*lon);
+  list.add(temp_mj);
 
-  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      temp_mj(i,j) = d_mj + gamma_mj * (*surfelev)(i, j) + c_mj * (*lat)(i, j) + kappa_mj * (-(*lon)(i, j));
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    temp_mj(i,j) = d_mj + gamma_mj * (*surfelev)(i, j) + c_mj * (*lat)(i, j) + kappa_mj * (-(*lon)(i, j));
   }
-  
-  ierr = surfelev->end_access(); CHKERRQ(ierr);
-  ierr = lat->end_access();      CHKERRQ(ierr);
-  ierr = lon->end_access();      CHKERRQ(ierr);
-  ierr = temp_mj.end_access();   CHKERRQ(ierr); 
 
   return 0;
 }

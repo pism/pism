@@ -36,10 +36,17 @@ public:
 /** Initialize the unit system by reading from an XML unit
  * definition file.
  */
-UnitSystem::UnitSystem(const char *path) {
+UnitSystem::UnitSystem(const std::string &path) {
   ut_system *tmp;
+
   ut_set_error_message_handler(ut_ignore);
-  tmp = ut_read_xml(path);
+
+  if (path.empty() == false) {
+    tmp = ut_read_xml(path.c_str());
+  } else {
+    tmp = ut_read_xml(NULL);
+  }
+
   if (tmp == NULL) {
     PetscPrintf(PETSC_COMM_SELF, "PISM ERROR: UDUNITS-2 initialization failed.\n");
     PetscEnd();
@@ -183,7 +190,7 @@ bool Unit::is_valid() const {
 PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {
   PetscErrorCode ierr;
 
-  int data_size = 0;
+  PetscInt data_size = 0;
   ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
 
   double *data = NULL;

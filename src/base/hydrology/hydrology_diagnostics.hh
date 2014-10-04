@@ -76,6 +76,15 @@ public:
 };
 
 
+//! \brief Reports the values of bmelt seen by the Hydrology model.
+class Hydrology_hydrobmelt : public Diag<Hydrology>
+{
+public:
+  Hydrology_hydrobmelt(Hydrology *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 //! \brief Reports the total input rate of water into the subglacial layer.
 class Hydrology_hydroinput : public Diag<Hydrology>
 {
@@ -100,6 +109,15 @@ class RoutingHydrology_bwatvel : public Diag<RoutingHydrology>
 {
 public:
   RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the values of velbase_mag seen by the Hydrology model.
+/*! Only available for DistributedHydrology. */
+class DistributedHydrology_hydrovelbase_mag : public Diag<DistributedHydrology>
+{
+public:
+  DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

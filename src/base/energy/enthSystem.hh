@@ -42,7 +42,7 @@ public:
                 double my_dx,  double my_dy,
                 double my_dt,  double my_dz,
                 int my_Mz, const std::string &my_prefix,
-                EnthalpyConverter *my_EC);
+                const EnthalpyConverter &my_EC);
   virtual ~enthSystemCtx();
 
   PetscErrorCode initThisColumn(int i, int j, bool my_ismarginal,
@@ -59,23 +59,33 @@ public:
   PetscErrorCode setBasalHeatFlux(double hf);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
-  PetscErrorCode viewSystem(PetscViewer viewer) const;
+  PetscErrorCode viewSystem(PetscViewer viewer, unsigned int M) const;
 
-  PetscErrorCode solveThisColumn(double *x);
-
-  int ks()
-  { return m_ks; }
+  PetscErrorCode solveThisColumn(std::vector<double> &result);
 
   double lambda()
   { return m_lambda; }
 public:
   // arrays must be filled before calling solveThisColumn():
-  double  *Enth,   // enthalpy in ice at prev time step
-    *Enth_s; // enthalpy level for CTS; function only of pressure
-protected:
-  double *u, *v, *w, *strain_heating;
 
-  int Mz, m_ks;
+  // enthalpy in ice at previous time step
+  std::vector<double> Enth;
+  // enthalpy level for CTS; function only of pressure
+  std::vector<double> Enth_s;
+protected:
+  //! u-component if the ice velocity
+  std::vector<double> u;
+  //! v-component if the ice velocity
+  std::vector<double> v;
+  //! w-component if the ice velocity
+  std::vector<double> w;
+  //! strain heating in the ice column
+  std::vector<double> strain_heating;
+
+  //! values of @f$ k \Delta t / (\rho c \Delta x^2) @f$
+  std::vector<double> R;
+
+  unsigned int Mz;
 
   double ice_rho, ice_c, ice_k, ice_K, ice_K0, p_air,
     dx, dy, dz, dt, nu, R_cold, R_temp, R_factor;
@@ -83,12 +93,11 @@ protected:
   double ice_thickness,
     m_lambda,              //!< implicit FD method parameter
     Enth_ks;             //!< top surface Dirichlet B.C.
-  double a0, a1, b;   // coefficients of the first (basal) equation
+  double D0, U0, B0;   // coefficients of the first (basal) equation
   bool ismarginal, c_depends_on_T, k_depends_on_T;
-  std::vector<double> R; // values of k \Delta t / (\rho c \Delta x^2)
 
   IceModelVec3 *Enth3;
-  EnthalpyConverter *EC;  // conductivity has known dependence on T, not enthalpy
+  const EnthalpyConverter &EC;  // conductivity has known dependence on T, not enthalpy
 
   PetscErrorCode compute_enthalpy_CTS();
   double compute_lambda();

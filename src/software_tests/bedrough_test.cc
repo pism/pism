@@ -35,13 +35,13 @@ using namespace pism;
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   MPI_Comm com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
     grid.My = 81;
     grid.Lx = 1200e3;
     grid.Ly = grid.Lx;
+    grid.periodicity = NOT_PERIODIC;
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
@@ -79,14 +80,13 @@ int main(int argc, char *argv[]) {
     // put in bed elevations, a la this Matlab:
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
     //            100 * sin(2 * pi * (xx + 1.5 * yy) / 40e3);
-    ierr = topg.begin_access(); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x[i] / 600.0e3) +
-          100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
-      }
+    IceModelVec::AccessList list(topg);
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      topg(i,j) = 400.0 * sin(2.0 * M_PI * grid.x[i] / 600.0e3) +
+        100.0 * sin(2.0 * M_PI * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
     }
-    ierr = topg.end_access(); CHKERRQ(ierr);
 
     ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
 
@@ -100,20 +100,21 @@ int main(int argc, char *argv[]) {
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
     ierr = smoother.get_theta(usurf, &theta); CHKERRQ(ierr);
 
+    const IceModelVec2S &topg_smoothed = smoother.get_smoothed_bed();
     if (show) {
       const int  window = 400;
       ierr = topg.view(window);  CHKERRQ(ierr);
-      ierr = smoother.topgsmooth.view(window);  CHKERRQ(ierr);
+      ierr = topg_smoothed.view(window);  CHKERRQ(ierr);
       ierr = theta.view(window);  CHKERRQ(ierr);
-      printf("[showing topg, smoother.topgsmooth, theta in X windows for 10 seconds ...]\n");
+      printf("[showing topg, topg_smoothed, theta in X windows for 10 seconds ...]\n");
       ierr = PetscSleep(10); CHKERRQ(ierr);
     }
 
     double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
     ierr = topg.min(topg_min); CHKERRQ(ierr);
     ierr = topg.max(topg_max); CHKERRQ(ierr);
-    ierr = smoother.topgsmooth.min(topgs_min); CHKERRQ(ierr);
-    ierr = smoother.topgsmooth.max(topgs_max); CHKERRQ(ierr);
+    ierr = topg_smoothed.min(topgs_min); CHKERRQ(ierr);
+    ierr = topg_smoothed.max(topgs_max); CHKERRQ(ierr);
     ierr = theta.min(theta_min); CHKERRQ(ierr);
     ierr = theta.max(theta_max); CHKERRQ(ierr);
     PetscPrintf(grid.com,
@@ -125,6 +126,14 @@ int main(int argc, char *argv[]) {
     PetscPrintf(grid.com,
                 "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
                 theta_min, theta_max);
+
+    bool dump = false;
+    ierr = OptionsIsSet("-dump", dump); CHKERRQ(ierr);
+    if (dump) {
+      ierr = topg.dump("bedrough_test_topg.nc"); CHKERRQ(ierr);
+      ierr = topg_smoothed.dump("bedrough_test_topg_smoothed.nc"); CHKERRQ(ierr);
+      ierr = theta.dump("bedrough_test_theta.nc"); CHKERRQ(ierr);
+    }
 
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);

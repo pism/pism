@@ -24,6 +24,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "iceModelVec.hh"
 #include <assert.h>
 
 namespace pism {

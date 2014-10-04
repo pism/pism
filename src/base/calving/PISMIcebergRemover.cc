@@ -67,31 +67,33 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
   {
     ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
 
-    ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
-    ierr = pism_mask.begin_access(); CHKERRQ(ierr);
-    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if (M.grounded_ice(i,j) == true)
-          iceberg_mask[i][j] = mask_grounded_ice;
-        else if (M.floating_ice(i,j) == true)
-          iceberg_mask[i][j] = mask_floating_ice;
-      }
+    ierr = DMDAVecGetArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
+
+    IceModelVec::AccessList list;
+    list.add(pism_mask);
+
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (M.grounded_ice(i,j) == true)
+        iceberg_mask[i][j] = mask_grounded_ice;
+      else if (M.floating_ice(i,j) == true)
+        iceberg_mask[i][j] = mask_floating_ice;
     }
 
     // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
     // don't want them removed.
     if (m_bcflag) {
-      ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
-      for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-        for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-          if (m_bcflag->as_int(i,j) == 1 && M.icy(i,j))
-            iceberg_mask[i][j] = mask_grounded_ice;
-        }
+      list.add(*m_bcflag);
+
+      for (Points p(grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        if (m_bcflag->as_int(i,j) == 1 && M.icy(i,j))
+          iceberg_mask[i][j] = mask_grounded_ice;
       }
-      ierr = m_bcflag->end_access(); CHKERRQ(ierr);
     }
-    ierr = pism_mask.end_access(); CHKERRQ(ierr);
-    ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
   }
 
   // identify icebergs using serial code on processor 0:
@@ -113,36 +115,37 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:
   {
-    ierr = DMDAVecGetArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
-    ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-    ierr = pism_mask.begin_access(); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
+
+    IceModelVec::AccessList list;
+    list.add(ice_thickness);
+    list.add(pism_mask);
 
     if (m_bcflag != NULL) {
       // if SSA Dirichlet B.C. are in use, do not modify mask and ice
       // thickness at Dirichlet B.C. locations
-      ierr = m_bcflag->begin_access(); CHKERRQ(ierr);
-      for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-        for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-          if (iceberg_mask[i][j] > 0.5 && (*m_bcflag)(i,j) < 0.5) {
-            ice_thickness(i,j) = 0.0;
-            pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
-          }
+      list.add(*m_bcflag);
+
+      for (Points p(grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        if (iceberg_mask[i][j] > 0.5 && (*m_bcflag)(i,j) < 0.5) {
+          ice_thickness(i,j) = 0.0;
+          pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
         }
       }
-      ierr = m_bcflag->end_access(); CHKERRQ(ierr);
     } else {
-      for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-        for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-          if (iceberg_mask[i][j] > 0.5) {
-            ice_thickness(i,j) = 0.0;
-            pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
-          }
+
+      for (Points p(grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        if (iceberg_mask[i][j] > 0.5) {
+          ice_thickness(i,j) = 0.0;
+          pism_mask(i,j)     = MASK_ICE_FREE_OCEAN;
         }
       }
     }
-    ierr = pism_mask.end_access(); CHKERRQ(ierr);
-    ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-    ierr = DMDAVecRestoreArray(m_da2, m_g2, &iceberg_mask); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArray(m_da2->get(), m_g2, &iceberg_mask); CHKERRQ(ierr);
   }
 
   // update ghosts of the mask and the ice thickness (then surface
@@ -160,11 +163,11 @@ PetscErrorCode IcebergRemover::allocate() {
                      1,         // stencil width
                      m_da2); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(m_da2, &m_g2); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(m_da2->get(), &m_g2); CHKERRQ(ierr);
 
   // We want a global Vec but reordered in the natural ordering so
   // when it is scattered to proc zero it is not all messed up
-  ierr = DMDACreateNaturalVector(m_da2, &m_g2natural); CHKERRQ(ierr);
+  ierr = DMDACreateNaturalVector(m_da2->get(), &m_g2natural); CHKERRQ(ierr);
 
   // Get scatter context *and* allocate mask on processor 0:
   ierr = VecScatterCreateToZero(m_g2natural, &m_scatter, &m_mask_p0); CHKERRQ(ierr);
@@ -189,8 +192,8 @@ PetscErrorCode IcebergRemover::deallocate() {
 PetscErrorCode IcebergRemover::transfer_to_proc0() {
   PetscErrorCode ierr;
 
-  ierr = DMDAGlobalToNaturalBegin(m_da2, m_g2, INSERT_VALUES, m_g2natural); CHKERRQ(ierr);
-  ierr =   DMDAGlobalToNaturalEnd(m_da2, m_g2, INSERT_VALUES, m_g2natural); CHKERRQ(ierr);
+  ierr = DMDAGlobalToNaturalBegin(m_da2->get(), m_g2, INSERT_VALUES, m_g2natural); CHKERRQ(ierr);
+  ierr =   DMDAGlobalToNaturalEnd(m_da2->get(), m_g2, INSERT_VALUES, m_g2natural); CHKERRQ(ierr);
 
   ierr = VecScatterBegin(m_scatter, m_g2natural, m_mask_p0,
                          INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
@@ -212,8 +215,8 @@ PetscErrorCode IcebergRemover::transfer_from_proc0() {
   ierr =   VecScatterEnd(m_scatter, m_mask_p0, m_g2natural,
                          INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = DMDANaturalToGlobalBegin(m_da2, m_g2natural, INSERT_VALUES, m_g2); CHKERRQ(ierr);
-  ierr =   DMDANaturalToGlobalEnd(m_da2, m_g2natural, INSERT_VALUES, m_g2); CHKERRQ(ierr);
+  ierr = DMDANaturalToGlobalBegin(m_da2->get(), m_g2natural, INSERT_VALUES, m_g2); CHKERRQ(ierr);
+  ierr =   DMDANaturalToGlobalEnd(m_da2->get(), m_g2natural, INSERT_VALUES, m_g2); CHKERRQ(ierr);
 
   return 0;
 }

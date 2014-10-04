@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm    com;  // won't be used except for rank,size
   int rank, size;
 
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
 
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
     ierr = init_config(com, config, overrides); CHKERRQ(ierr);
@@ -114,11 +114,19 @@ int main(int argc, char *argv[]) {
       ierr = VecDuplicate(H, &uplift); CHKERRQ(ierr);
 
       // in order to show bed elevation as a picture, create a da 
+#if PETSC_VERSION_LT(3,5,0)
       ierr = DMDACreate2d(PETSC_COMM_SELF,
                           DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+                          NULL, NULL, &da2); CHKERRQ(ierr);
+#else
+      ierr = DMDACreate2d(PETSC_COMM_SELF,
+                          DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+                          DMDA_STENCIL_STAR,
+                          My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
+                          NULL, NULL, &da2); CHKERRQ(ierr);
+#endif
       ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0); CHKERRQ(ierr);
       ierr = DMCreateGlobalVector(da2, &bed); CHKERRQ(ierr);
 
@@ -127,7 +135,7 @@ int main(int argc, char *argv[]) {
       PetscDraw   draw;
       const int  windowx = 500,
                       windowy = (int) (((float) windowx) * Ly / Lx);
-      ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, PETSC_NULL, "bed elev (m)",
+      ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, NULL, "bed elev (m)",
            PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &viewer);  CHKERRQ(ierr);
       // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
       // there is a no-titles bug

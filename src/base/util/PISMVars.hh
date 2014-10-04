@@ -22,24 +22,34 @@
 #include <map>
 #include <set>
 #include <string>
-#include "iceModelVec.hh"
+#include <petscsys.h>
 
 namespace pism {
 
+class IceModelVec;
+class IceModelVec2S;
+class IceModelVec2V;
+class IceModelVec2Int;
+class IceModelVec3;
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
+// FIXME: 1) make Vars take and return "const IceModelVec*" 2) use smart pointers
 class Vars {
 public:
   PetscErrorCode add(IceModelVec &);
-  PetscErrorCode add(IceModelVec &, const std::string &name);
-  void remove(const std::string &);
-  IceModelVec* get(const std::string &) const;
+  void add(IceModelVec &, const std::string &name);
+  void remove(const std::string &name);
+  IceModelVec* get(const std::string &name) const;
+  IceModelVec2S* get_2d_scalar(const std::string &name) const;
+  IceModelVec2V* get_2d_vector(const std::string &name) const;
+  IceModelVec2Int* get_2d_mask(const std::string &name) const;
+  IceModelVec3* get_3d_scalar(const std::string &name) const;
+
   std::set<std::string> keys() const;
   PetscErrorCode check_for_nan() const;
-
-protected:
-  mutable std::map<std::string, IceModelVec*> variables,
+private:
+  std::map<std::string, IceModelVec*> variables,
     standard_names;             //!< stores standard names of variables that
   //! have standard names, allowing looking them
   //! up using either short or standard names and

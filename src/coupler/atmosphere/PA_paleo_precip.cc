@@ -39,9 +39,9 @@ PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
   option_prefix = "-atmosphere_paleo_precip";
   offset_name = "delta_T";
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
-  offset->set_units("Kelvin", "Kelvin");
-  offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "air temperature offsets");
+  offset->get_metadata().set_units("Kelvin");
+  offset->get_metadata().set_string("long_name", "air temperature offsets");
+  offset->get_dimension_metadata().set_units(grid.time->units_string());
 
   air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
@@ -79,10 +79,12 @@ PetscErrorCode PA_paleo_precip::init(Vars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_paleo_precip::init_timeseries(double *ts, unsigned int N) {
+PetscErrorCode PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
   PetscErrorCode ierr;
 
-  ierr = PAModifier::init_timeseries(ts, N); CHKERRQ(ierr);
+  ierr = PAModifier::init_timeseries(ts); CHKERRQ(ierr);
+
+  size_t N = ts.size();
 
   m_scaling_values.resize(N);
   for (unsigned int k = 0; k < N; ++k)
@@ -97,7 +99,7 @@ PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, double *result) {
+PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k)

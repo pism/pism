@@ -79,30 +79,45 @@ public:
   columnSystemCtx(unsigned int my_nmax, const std::string &my_prefix);
   virtual ~columnSystemCtx();
 
-  PetscErrorCode setIndicesAndClearThisColumn(int i, int j, int ks);  
+  PetscErrorCode setIndicesAndClearThisColumn(int my_i, int my_j,
+                                              double ice_thickness, double dz,
+                                              unsigned int Mz);  
 
   double    norm1(unsigned int n) const;
   double    ddratio(unsigned int n) const;
 
   PetscErrorCode viewVectorValues(PetscViewer viewer,
-                                  const double *v, int m, const char* info) const;
-  PetscErrorCode viewMatrix(PetscViewer viewer, const char* info) const;
-  virtual PetscErrorCode viewSystem(PetscViewer viewer) const;
+                                  const std::vector<double> &v,
+                                  unsigned int M,
+                                  const std::string &info) const;
+  PetscErrorCode viewMatrix(PetscViewer viewer,
+                            unsigned int M,
+                            const std::string &info) const;
+  virtual PetscErrorCode viewSystem(PetscViewer viewer,
+                                    unsigned int M) const;
 
-  PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex);
-  PetscErrorCode viewColumnInfoMFile(double *x, unsigned int n);
-  PetscErrorCode viewColumnInfoMFile(char *filename, double *x, unsigned int n);
+  PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex,
+                                                 unsigned int M);
+  PetscErrorCode viewColumnInfoMFile(const std::vector<double> &x,
+                                     unsigned int M);
+  PetscErrorCode viewColumnInfoMFile(const std::string &filename,
+                                     unsigned int M,
+                                     const std::vector<double> &x);
 
+  unsigned int ks() const;
 protected:
-  unsigned int nmax;
-  double *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
+  unsigned int m_nmax;
+  std::vector<double> L, D, U, rhs, work; // vectors for tridiagonal system
 
-  int    i, j, ks;
+  int m_i, m_j;
+  unsigned int m_ks;
 
   // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(unsigned int n, double *x);
-  
-  std::string      prefix;
+  PetscErrorCode solveTridiagonalSystem(unsigned int n, std::vector<double> &x);
+  PetscErrorCode createViewer(const std::string &filename,
+                              unsigned int M,
+                              PetscViewer &result);
+  std::string prefix;
 private:
   bool        indicesValid;
   PetscErrorCode resetColumn();

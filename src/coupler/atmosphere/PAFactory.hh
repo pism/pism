@@ -31,7 +31,7 @@ public:
     : PCFactory<AtmosphereModel,PAModifier>(g, conf)
   {
     add_standard_types();
-    option = "atmosphere";
+    m_option = "atmosphere";
   }
   virtual ~PAFactory() {}
   virtual void add_standard_types();

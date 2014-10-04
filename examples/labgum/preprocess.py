@@ -144,7 +144,7 @@ thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
 smb_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", fill_value)
-smb_var.standard_name = "land_ice_surface_specific_mass_balance"
+smb_var.standard_name = "land_ice_surface_specific_mass_balance_flux"
 smb_var[:] = smb
 
 artm_var = def_var(nc, "ice_surface_temp", "K", fill_value)

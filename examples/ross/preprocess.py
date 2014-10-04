@@ -131,7 +131,7 @@ def preprocess_albmap():
     # fix acab
     rho_ice = 910.0             # kg m-3
     acab = nc.variables[smb_name]
-    acab.standard_name = "land_ice_surface_specific_mass_balance"
+    acab.standard_name = "land_ice_surface_specific_mass_balance_flux"
     SMB = acab[:]
     SMB[SMB == -9999] = 0
     # convert from m/year to kg m-2 / year:

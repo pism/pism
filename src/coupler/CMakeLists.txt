@@ -10,8 +10,10 @@ add_library (pismboundary
   ./atmosphere/PALapseRates.cc
   ./atmosphere/PA_delta_T.cc
   ./atmosphere/PA_delta_P.cc
+  ./atmosphere/PA_frac_P.cc
   ./atmosphere/PA_paleo_precip.cc
   ./atmosphere/PAAnomaly.cc
+  ./atmosphere/PAWeatherStation.cc
   ./ocean/PISMOceanModel.cc
   ./ocean/POCache.cc
   ./ocean/POConstantPIK.cc

@@ -38,7 +38,6 @@ public:
   BTU_Test(IceGrid &g, const Config &conf)
     : BedThermalUnit(g, conf) {}
   virtual ~BTU_Test() {}
-protected:
   /** Initialize the bedrock temperature field at the beginning of the run. */
   virtual PetscErrorCode bootstrap();
 };
@@ -50,19 +49,18 @@ PetscErrorCode BTU_Test::bootstrap() {
   if (Mbz > 1) {
     std::vector<double> zlevels = temp.get_levels();
 
-    ierr = temp.begin_access(); CHKERRQ(ierr);
+    IceModelVec::AccessList list(temp);
     double *Tb; // columns of these values
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-        for (unsigned int k=0; k < Mbz; k++) {
-          const double z = zlevels[k];
-          double FF; // Test K:  use Tb[k], ignore FF
-          ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
-        }
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+      for (unsigned int k=0; k < Mbz; k++) {
+        const double z = zlevels[k];
+        double FF; // Test K:  use Tb[k], ignore FF
+        ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
       }
     }
-    ierr = temp.end_access(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -109,12 +107,12 @@ int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
   MPI_Comm    com;
-  ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
+  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    UnitSystem unit_system(NULL);
+    UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
 
@@ -214,7 +212,9 @@ int main(int argc, char *argv[]) {
     // initialize BTU object:
     BTU_Test btu(grid, config);
 
-    ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
+    bool bootstrapping_needed = true; // we know it's true
+    ierr = btu.init(variables, bootstrapping_needed); CHKERRQ(ierr);
+    ierr = btu.bootstrap();
 
     double dt_seconds = unit_system.convert(dt_years, "years", "seconds");
 
@@ -239,15 +239,14 @@ int main(int argc, char *argv[]) {
       const double time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
 
       // compute exact ice temperature at z=0 at time y
-      ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
-      for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-        for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          double TT, FF; // Test K:  use TT, ignore FF
-          ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
-          (*bedtoptemp)(i,j) = TT;
-        }
+      IceModelVec::AccessList list(*bedtoptemp);
+      for (Points p(grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        double TT, FF; // Test K:  use TT, ignore FF
+        ierr = exactK(time, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+        (*bedtoptemp)(i,j) = TT;
       }
-      ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
       // we are not communicating anything, which is fine
 
       // update the temperature inside the thermal layer using bedtoptemp

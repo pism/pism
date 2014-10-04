@@ -104,8 +104,15 @@ protected:
     return 0;
   }
 
+  //! Apply offset as an offset
   PetscErrorCode offset_data(IceModelVec2S &result) {
     PetscErrorCode ierr = result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
+    return 0;
+  }
+
+  //! Apply offset as a scaling factor
+  PetscErrorCode scale_data(IceModelVec2S &result) {
+    PetscErrorCode ierr = result.scale((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
     return 0;
   }
 

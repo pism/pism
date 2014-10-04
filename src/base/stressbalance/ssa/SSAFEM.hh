@@ -52,11 +52,18 @@ struct SSAFEM_SNESCallbackData {
 
 //! SNES callbacks.  
 /*! These simply forward the call on to the SSAFEM memeber of the SSAFEM_SNESCallbackData */
+#if PETSC_VERSION_LT(3,5,0)
 PetscErrorCode SSAFEFunction(DMDALocalInfo *, const Vector2 **, 
                              Vector2 **, SSAFEM_SNESCallbackData *);
 PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
                              Mat A, Mat J,
                              MatStructure *str, SSAFEM_SNESCallbackData *fe);
+#else
+PetscErrorCode SSAFEFunction(DMDALocalInfo *, const Vector2 **,
+                             Vector2 **, SSAFEM_SNESCallbackData *);
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
+                             Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
+#endif
 
 //! Factory function for constructing a new SSAFEM.
 SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const Config &);
@@ -68,10 +75,18 @@ SSA * SSAFEMFactory(IceGrid &, EnthalpyConverter &, const Config &);
 */
 class SSAFEM : public SSA
 {
-  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const Vector2 **, Vector2 **, SSAFEM_SNESCallbackData *);
+#if PETSC_VERSION_LT(3,5,0)
+  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const Vector2 **,
+                                            Vector2 **, SSAFEM_SNESCallbackData *);
   friend PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
                                             Mat A, Mat J,
                                             MatStructure *str, SSAFEM_SNESCallbackData *fe);
+#else
+  friend PetscErrorCode pism::SSAFEFunction(DMDALocalInfo *, const Vector2 **,
+                                            Vector2 **, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode pism::SSAFEJacobian(DMDALocalInfo *info, const Vector2 **xg,
+                                            Mat A, Mat J, SSAFEM_SNESCallbackData *fe);
+#endif
 public:
   SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c);
 

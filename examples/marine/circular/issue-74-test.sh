@@ -2,7 +2,7 @@
 
 # This script uses the circular very similar to the one in
 # run_noshelf.sh to confirm the issue #74
-# (https://github.com/pism/pism/issues/74), i.e. that when -float_kill
+# (https://github.com/pism/pism/issues/74), i.e. that when -calving float_kill
 # is used the sub-shelf ice flux reported by PISM (the
 # sub_shelf_ice_flux variable) can be non-zero even when the total
 # area of the floating ice (variable iareaf) is zero.
@@ -35,4 +35,4 @@ doit="mpiexec -n $N pismr $pismopts"
 extra="-extra_times 10 -extra_vars thk,mask,velbar_mag,Href,velbar,usurf -extra_file issue-74_ex.nc"
 ts="-ts_file issue-74_ts.nc -ts_times 1"
 
-$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o issue-74_o.nc $extra $ts -float_kill
+$doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -part_redist -o issue-74_o.nc $extra $ts -calving float_kill

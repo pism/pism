@@ -152,7 +152,7 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Reports the volumetric strain heating.
+//! \brief Reports the volumetric strain heating (3D).
 class PSB_strainheat : public Diag<StressBalance>
 {
 public:
@@ -160,7 +160,7 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Reports the principal strain rates.
+//! \brief Reports the vertically-integrated (2D) principal strain rates.
 class PSB_strain_rates : public Diag<StressBalance>
 {
 public:
@@ -168,13 +168,38 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Reports deviatoric stresses.
+//! \brief Reports the vertically-integrated (2D) deviatoric stresses.
 class PSB_deviatoric_stresses : public Diag<StressBalance>
 {
 public:
   PSB_deviatoric_stresses(StressBalance *m, IceGrid &g, Vars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
+
+//! \brief Reports the pressure within the ice (3D).
+class PSB_pressure : public Diag<StressBalance>
+{
+public:
+  PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the xz component of the shear stress within the ice (3D), according to the SIA formula.
+class PSB_tauxz : public Diag<StressBalance>
+{
+public:
+  PSB_tauxz(StressBalance *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Reports the yz component of the shear stress within the ice (3D), according to the SIA formula.
+class PSB_tauyz : public Diag<StressBalance>
+{
+public:
+  PSB_tauyz(StressBalance *m, IceGrid &g, Vars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
 
 } // end of namespace pism
 

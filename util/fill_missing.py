@@ -243,7 +243,6 @@ if __name__ == "__main__":
         print "Processing %s..." % name
         try:
             var = nc.variables[name]
-            data = asarray(squeeze(var[:]))
 
             attributes = ["valid_range", "valid_min", "valid_max",
                           "_FillValue", "missing_value"]
@@ -257,70 +256,144 @@ if __name__ == "__main__":
                 else:
                     print "not found"
 
-            if adict.has_key("valid_range"):
-                range = adict["valid_range"]
-                mask = ((data >= range[0]) & (data <= range[1]))
-                print "Using the valid_range attribute; range = ", range
+            if (var.ndim == 3):
+                nt = var.shape[0]
+                for t in range(0, nt):
+                    print("\nInterpolating time step %i of %i\n" % (t, nt))
 
-            elif adict.has_key("valid_min") and adict.has_key("valid_max"):
-                valid_min = adict["valid_min"]
-                valid_max = adict["valid_max"]
-                mask = ((data < valid_min) | (data > valid_max))
-                print """Using valid_min and valid_max attributes.
-valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max)
+                    data = asarray(squeeze(var[t,:,:].data))
 
-            elif adict.has_key("valid_min"):
-                valid_min = adict["valid_min"]
-                mask = data < valid_min
-                print "Using the valid_min attribute; valid_min = %10f" % valid_min
+                    if adict.has_key("valid_range"):
+                        range = adict["valid_range"]
+                        mask = ((data >= range[0]) & (data <= range[1]))
+                        print "Using the valid_range attribute; range = ", range
 
-            elif adict.has_key("valid_max"):
-                valid_max = adict["valid_max"]
-                mask = data > valid_max
-                print "Using the valid_max attribute; valid_max = %10f" % valid_max
+                    elif adict.has_key("valid_min") and adict.has_key("valid_max"):
+                        valid_min = adict["valid_min"]
+                        valid_max = adict["valid_max"]
+                        mask = ((data < valid_min) | (data > valid_max))
+                        print """Using valid_min and valid_max attributes.
+        valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max)
 
-            elif adict.has_key("_FillValue"):
-                fill_value = adict["_FillValue"]
-                if fill_value <= 0:
-                    mask = data <= fill_value + 2*finfo(float).eps
+                    elif adict.has_key("valid_min"):
+                        valid_min = adict["valid_min"]
+                        mask = data < valid_min
+                        print "Using the valid_min attribute; valid_min = %10f" % valid_min
+
+                    elif adict.has_key("valid_max"):
+                        valid_max = adict["valid_max"]
+                        mask = data > valid_max
+                        print "Using the valid_max attribute; valid_max = %10f" % valid_max
+
+                    elif adict.has_key("_FillValue"):
+                        fill_value = adict["_FillValue"]
+                        if fill_value <= 0:
+                            mask = data <= fill_value + 2*finfo(float).eps
+                        else:
+                            mask = data >= fill_value - 2*finfo(float).eps
+                        print "Using the _FillValue attribute; _FillValue = %10f" % fill_value
+
+                    elif adict.has_key("missing_value"):
+                        missing = adict["missing_value"]
+                        mask = abs(data - missing) < 2*finfo(float).eps
+                        print """Using the missing_value attribute; missing_value = %10f
+        Warning: this attribute is deprecated by the NUG.""" % missing
+
+                    else:
+                        print "No missing values found. Skipping this variable..."
+                        continue
+
+                    count = int(sum(mask))
+                    if count == 0:
+                        print "No missing values found. Skipping this variable..."
+                        continue
+                    print "Filling in %5d missing values..." % count
+                    t0 = time()
+                    laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
+                    var[t,:,:] = data
+
+                    # now REMOVE missing_value and _FillValue attributes
+                    try:
+                        delattr(var, '_FillValue')
+                    except:
+                        pass
+                    try:
+                        delattr(var, 'missing_value')
+                    except:
+                        pass
+                    print "This took %5f seconds." % (time() - t0)
+
+            elif (var.ndim == 2):
+
+                data = asarray(squeeze(var[:]))
+
+                if adict.has_key("valid_range"):
+                    range = adict["valid_range"]
+                    mask = ((data >= range[0]) & (data <= range[1]))
+                    print "Using the valid_range attribute; range = ", range
+
+                elif adict.has_key("valid_min") and adict.has_key("valid_max"):
+                    valid_min = adict["valid_min"]
+                    valid_max = adict["valid_max"]
+                    mask = ((data < valid_min) | (data > valid_max))
+                    print """Using valid_min and valid_max attributes.
+    valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max)
+
+                elif adict.has_key("valid_min"):
+                    valid_min = adict["valid_min"]
+                    mask = data < valid_min
+                    print "Using the valid_min attribute; valid_min = %10f" % valid_min
+
+                elif adict.has_key("valid_max"):
+                    valid_max = adict["valid_max"]
+                    mask = data > valid_max
+                    print "Using the valid_max attribute; valid_max = %10f" % valid_max
+
+                elif adict.has_key("_FillValue"):
+                    fill_value = adict["_FillValue"]
+                    if fill_value <= 0:
+                        mask = data <= fill_value + 2*finfo(float).eps
+                    else:
+                        mask = data >= fill_value - 2*finfo(float).eps
+                    print "Using the _FillValue attribute; _FillValue = %10f" % fill_value
+
+                elif adict.has_key("missing_value"):
+                    missing = adict["missing_value"]
+                    mask = abs(data - missing) < 2*finfo(float).eps
+                    print """Using the missing_value attribute; missing_value = %10f
+    Warning: this attribute is deprecated by the NUG.""" % missing
+
                 else:
-                    mask = data >= fill_value - 2*finfo(float).eps
-                print "Using the _FillValue attribute; _FillValue = %10f" % fill_value
+                    print "No missing values found. Skipping this variable..."
+                    continue
 
-            elif adict.has_key("missing_value"):
-                missing = adict["missing_value"]
-                mask = abs(data - missing) < 2*finfo(float).eps
-                print """Using the missing_value attribute; missing_value = %10f
-Warning: this attribute is deprecated by the NUG.""" % missing
+                count = int(sum(mask))
+                if count == 0:
+                    print "No missing values found. Skipping this variable..."
+                    continue
+                print "Filling in %5d missing values..." % count
+                t0 = time()
+                laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
+                var[:] = data
 
+                # now REMOVE missing_value and _FillValue attributes
+                try:
+                    delattr(var, '_FillValue')
+                except:
+                    pass
+                try:
+                    delattr(var, 'missing_value')
+                except:
+                    pass
+                print "This took %5f seconds." % (time() - t0)
             else:
-                print "No missing values found. Skipping this variable..."
-                continue
+                print('wrong shape')
 
-            count = int(sum(mask))
-            if count == 0:
-                print "No missing values found. Skipping this variable..."
-                continue
-            print "Filling in %5d missing values..." % count
-            t0 = time()
-            laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
-            var[:] = data
-            
-            # now REMOVE missing_value and _FillValue attributes
-            try:
-                delattr(var, '_FillValue')
-            except:
-                pass
-            try:
-                delattr(var, 'missing_value')
-            except:
-                pass
-
-            print "This took %5f seconds." % (time() - t0)
         except Exception, message:
             print "ERROR:", message
             print "Note: %s was not modified." % output_filename
             exit(-1)
+
 
     print "Processing all the variables took %5f seconds." % (time() - t_zero)
     nc.close()

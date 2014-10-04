@@ -24,10 +24,19 @@
 
 namespace pism {
 
-//! A class defining the interface of a PISM ocean model modifier.
-
-//! \brief A class implementing an ocean model.
-//! Parameterization of sub-shelf melting with respect to sub-shelf heat flux like in Beckmann_Goosse 2003
+//! \brief Implements the ocean model used in [@ref Martinetal2011].
+//!
+//! Uses a parameterization of sub-shelf melting with respect to
+//! sub-shelf heat flux like in [@ref BeckmannGoosse2003].
+//!
+//! Models heat flux into the base of the shelf as
+//!
+//! @f[ Q_{\text{heat}} = \rho_{o} c_{p_{o}} \gamma_{T} (T_{o} - T_{f}), @f]
+//!
+//! where @f$\rho_{o}@f$ is the density of ocean water, @f$c_{p_{o}}@f$ and
+//! @f$T_{o}@f$ are the heat capacity and temperature of the ocean mixed
+//! layer, @f$T_{f}@f$ is the freezing temperature of ocean water at the
+//! shelf bottom.
 class POConstantPIK : public OceanModel {
 public:
   POConstantPIK(IceGrid &g, const Config &conf);
@@ -48,6 +57,8 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 private:
   PetscErrorCode allocate_POConstantPIK();
+
+  //! @f$ F_{\text{melt}} @f$ of [@ref Martinetal2011]
   double meltfactor;
 };
 

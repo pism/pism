@@ -32,7 +32,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 {
   PetscErrorCode ierr;
 
-  const int WIDE_STENCIL = 2;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
   
   // ice surface elevation
   ierr = surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
@@ -69,7 +69,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
-  ierr = vel_bc.create(grid, "_bc", WITH_GHOSTS,WIDE_STENCIL); CHKERRQ(ierr); // u_bc and v_bc
+  ierr = vel_bc.create(grid, "_bc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // u_bc and v_bc
   ierr = vel_bc.set_attrs("intent", 
             "X-component of the SSA velocity boundary conditions", 
             "m s-1", "", 0); CHKERRQ(ierr);
@@ -201,32 +201,33 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
 
   IceModelVec2V *vel_ssa;
   ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
-  ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
+
+  IceModelVec::AccessList list;
+  list.add(*vel_ssa);
 
   double exactvelmax = 0, gexactvelmax = 0;
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      double uexact, vexact;
-      double myx = grid.x[i], myy = grid.y[j];
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      exactSolution(i,j,myx,myy,&uexact,&vexact);
+    double uexact, vexact;
+    double myx = grid.x[i], myy = grid.y[j];
 
-      double exactnormsq=sqrt(uexact*uexact+vexact*vexact);
-      exactvelmax = PetscMax(exactnormsq,exactvelmax);
+    exactSolution(i,j,myx,myy,&uexact,&vexact);
 
-      // compute maximum errors
-      const double uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
-      const double verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
-      avuerr = avuerr + uerr;
-      avverr = avverr + verr;
-      maxuerr = PetscMax(maxuerr,uerr);
-      maxverr = PetscMax(maxverr,verr);
-      const double vecerr = sqrt(uerr * uerr + verr * verr);
-      maxvecerr = PetscMax(maxvecerr,vecerr);
-      avvecerr = avvecerr + vecerr;
-    }
+    double exactnormsq=sqrt(uexact*uexact+vexact*vexact);
+    exactvelmax = PetscMax(exactnormsq,exactvelmax);
+
+    // compute maximum errors
+    const double uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
+    const double verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
+    avuerr = avuerr + uerr;
+    avverr = avverr + verr;
+    maxuerr = PetscMax(maxuerr,uerr);
+    maxverr = PetscMax(maxverr,verr);
+    const double vecerr = sqrt(uerr * uerr + verr * verr);
+    maxvecerr = PetscMax(maxvecerr,vecerr);
+    avvecerr = avvecerr + vecerr;
   }
-  ierr = vel_ssa->end_access(); CHKERRQ(ierr);
 
 
   ierr = GlobalMax(&exactvelmax, &gexactvelmax,grid.com); CHKERRQ(ierr);
@@ -407,14 +408,13 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   ierr = exact.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   exact.write_in_glaciological_units = true;
 
-  ierr = exact.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; i++) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; j++) {
-      double myx = grid.x[i], myy = grid.y[j];
-      exactSolution(i,j,myx,myy,&(exact(i,j).u),&(exact(i,j).v));
-    }
+  IceModelVec::AccessList list(exact);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    exactSolution(i, j, grid.x[i], grid.y[j],
+                  &(exact(i,j).u), &(exact(i,j).v));
   }
-  ierr = exact.end_access(); CHKERRQ(ierr);
   ierr = exact.write(pio); CHKERRQ(ierr);
 
   ierr = pio.close(); CHKERRQ(ierr);

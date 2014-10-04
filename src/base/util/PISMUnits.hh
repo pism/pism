@@ -52,7 +52,7 @@ namespace pism {
 class UnitSystem {
   friend class Unit;
 public:
-  UnitSystem(const char *path);
+  UnitSystem(const std::string &path = "");
 #ifdef PISM_USE_TR1
   typedef std::tr1::shared_ptr<ut_system> Ptr;
 #else

@@ -10,7 +10,7 @@ files="flowtable-21.txt diff-21.txt"
 
 rm -f $files
 
-$PISM_PATH/flowlaw_test -flow_law pb > flowtable-21.txt
+$PISM_PATH/flowlaw_test -sia_flow_law pb > flowtable-21.txt
 # compare results
 diff flowtable-21.txt - > diff-21.txt <<END-OF-OUTPUT
 flow law:   "Paterson-Budd"

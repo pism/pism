@@ -210,6 +210,7 @@ void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, grid, *variables);
   dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
   // add diagnostic that only makes sense if transport is modeled
@@ -219,20 +220,20 @@ void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
 
 //! Check thk >= 0 and fails with message if not satisfied.
 PetscErrorCode RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
-  PetscErrorCode ierr;
-  ierr = waterthk.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (waterthk(i,j) < 0.0) {
-        PetscPrintf(grid.com,
-           "RoutingHydrology ERROR: disallowed negative water layer thickness\n"
-           "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", waterthk(i,j),i,j);
-        PISMEnd();
-      }
+  IceModelVec::AccessList list;
+  list.add(waterthk);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (waterthk(i,j) < 0.0) {
+      PetscPrintf(grid.com,
+                  "RoutingHydrology ERROR: disallowed negative water layer thickness\n"
+                  "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
+                  "ENDING ... \n\n", waterthk(i,j),i,j);
+      PISMEnd();
     }
   }
-  ierr = waterthk.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -260,29 +261,28 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
   MaskQuery M(*mask);
 
-  ierr = newthk.begin_access(); CHKERRQ(ierr);
-  ierr = cellarea->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (newthk(i,j) < 0.0) {
-        my_negativegain += -newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
-      if (M.ice_free_land(i,j) && (newthk(i,j) > 0.0)) {
-        my_icefreelost += newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
-      if (M.ocean(i,j) && (newthk(i,j) > 0.0)) {
-        my_oceanlost += newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
+  IceModelVec::AccessList list;
+  list.add(newthk);
+  list.add(*cellarea);
+  list.add(*mask);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    if (newthk(i,j) < 0.0) {
+      my_negativegain += -newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
+    }
+    if (M.ice_free_land(i,j) && (newthk(i,j) > 0.0)) {
+      my_icefreelost += newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
+    }
+    if (M.ocean(i,j) && (newthk(i,j) > 0.0)) {
+      my_oceanlost += newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
     }
   }
-  ierr = newthk.end_access(); CHKERRQ(ierr);
-  ierr = cellarea->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
   ierr = GlobalSum(&my_icefreelost, &icefreelost, grid.com); CHKERRQ(ierr);
@@ -293,20 +293,17 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
     nullstriplost = 0.0;
     return 0;
   }
-  ierr = newthk.begin_access(); CHKERRQ(ierr);
-  ierr = cellarea->begin_access(); CHKERRQ(ierr);
+
   double my_nullstriplost = 0.0;
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
-      if (grid.in_null_strip(i, j, stripwidth)) {
-        my_nullstriplost += newthk(i,j) * dmassdz;
-        newthk(i,j) = 0.0;
-      }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    const double dmassdz = (*cellarea)(i,j) * fresh_water_density; // kg m-1
+    if (grid.in_null_strip(i, j, stripwidth)) {
+      my_nullstriplost += newthk(i,j) * dmassdz;
+      newthk(i,j) = 0.0;
     }
   }
-  ierr = newthk.end_access(); CHKERRQ(ierr);
-  ierr = cellarea->end_access(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&my_nullstriplost, &nullstriplost, grid.com); CHKERRQ(ierr);
 
@@ -346,18 +343,18 @@ PetscErrorCode RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &r
   // now mask: psi = P_o if ocean
   MaskQuery M(*mask);
   ierr = overburden_pressure(Pover); CHKERRQ(ierr);
-  ierr = Pover.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (M.ocean(i,j))
-        result(i,j) = Pover(i,j);
-    }
+
+  IceModelVec::AccessList list;
+  list.add(Pover);
+  list.add(*mask);
+  list.add(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ocean(i,j))
+      result(i,j) = Pover(i,j);
   }
-  ierr = Pover.end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -366,41 +363,39 @@ PetscErrorCode RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &r
 /*! Uses mask values to avoid averaging using water thickness values from
 either ice-free or floating areas. */
 PetscErrorCode RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
-  PetscErrorCode ierr;
-
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      // east
-      if (M.grounded_ice(i,j))
-        if (M.grounded_ice(i+1,j))
-          result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j));
-        else
-          result(i,j,0) = W(i,j);
+
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(W);
+  list.add(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // east
+    if (M.grounded_ice(i,j))
+      if (M.grounded_ice(i+1,j))
+        result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j));
       else
-        if (M.grounded_ice(i+1,j))
-          result(i,j,0) = W(i+1,j);
-        else
-          result(i,j,0) = 0.0;
-      // north
-      if (M.grounded_ice(i,j))
-        if (M.grounded_ice(i,j+1))
-          result(i,j,1) = 0.5 * (W(i,j) + W(i,j+1));
-        else
-          result(i,j,1) = W(i,j);
+        result(i,j,0) = W(i,j);
+    else
+      if (M.grounded_ice(i+1,j))
+        result(i,j,0) = W(i+1,j);
       else
-        if (M.grounded_ice(i,j+1))
-          result(i,j,1) = W(i,j+1);
-        else
-          result(i,j,1) = 0.0;
-    }
+        result(i,j,0) = 0.0;
+    // north
+    if (M.grounded_ice(i,j))
+      if (M.grounded_ice(i,j+1))
+        result(i,j,1) = 0.5 * (W(i,j) + W(i,j+1));
+      else
+        result(i,j,1) = W(i,j);
+    else
+      if (M.grounded_ice(i,j+1))
+        result(i,j,1) = W(i,j+1);
+      else
+        result(i,j,1) = 0.0;
   }
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -416,8 +411,8 @@ stencil of width 1.
 
 Also returns the maximum over all staggered points of \f$ K W \f$.
  */
-PetscErrorCode RoutingHydrology::conductivity_staggered(
-                       IceModelVec2Stag &result, double &maxKW) {
+PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
+                                                        double &maxKW) {
   PetscErrorCode ierr;
   const double
     k     = config.get("hydrology_hydraulic_conductivity"),
@@ -426,10 +421,12 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
   if (alpha < 1.0) {
     PetscPrintf(grid.com,
-           "PISM ERROR: alpha = %f < 1 which is not allowed\n"
-           "ENDING ... \n\n", alpha);
+                "PISM ERROR: alpha = %f < 1 which is not allowed\n"
+                "ENDING ... \n\n", alpha);
     PISMEnd();
   }
+
+  IceModelVec::AccessList list(result);
 
   // the following calculation is bypassed if beta == 2.0 exactly; it puts
   // the squared norm of the gradient of the simplified hydrolic potential
@@ -439,46 +436,41 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(
     ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
     ierr = R.update_ghosts(); CHKERRQ(ierr);
 
-    double dRdx, dRdy;
-    ierr = R.begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
-    for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        dRdx = (R(i+1,j) - R(i,j)) / grid.dx;
-        dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy);
-        result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
-        dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx);
-        dRdy = (R(i,j+1) - R(i,j)) / grid.dy;
-        result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
-      }
+    list.add(R);
+    for (Points p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      double dRdx, dRdy;
+      dRdx = (R(i+1,j) - R(i,j)) / grid.dx;
+      dRdy = (R(i+1,j+1) + R(i,j+1) - R(i+1,j-1) - R(i,j-1)) / (4.0 * grid.dy);
+      result(i,j,0) = dRdx * dRdx + dRdy * dRdy;
+      dRdx = (R(i+1,j+1) + R(i+1,j) - R(i-1,j+1) - R(i-1,j)) / (4.0 * grid.dx);
+      dRdy = (R(i,j+1) - R(i,j)) / grid.dy;
+      result(i,j,1) = dRdx * dRdx + dRdy * dRdy;
     }
-    ierr = R.end_access(); CHKERRQ(ierr);
-    ierr = result.end_access(); CHKERRQ(ierr);
   }
 
   double betapow = (beta-2.0)/2.0, mymaxKW = 0.0;
-  ierr = Wstag.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      for (int o = 0; o < 2; ++o) {
-        double Ktmp = k * pow(Wstag(i,j,o),alpha-1.0);
-        if (beta < 2.0) {
-          // regularize negative power |\grad psi|^{beta-2} by adding eps because
-          //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
-          const double eps = 1.0;   // Pa m-1
-          result(i,j,o) = Ktmp * pow(result(i,j,o) + eps * eps,betapow);
-        } else if (beta > 2.0) {
-          result(i,j,o) = Ktmp * pow(result(i,j,o),betapow);
-        } else { // beta == 2.0
-          result(i,j,o) = Ktmp;
-        }
-        mymaxKW = PetscMax(mymaxKW, result(i,j,o) * Wstag(i,j,o));
+
+  list.add(Wstag);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    for (int o = 0; o < 2; ++o) {
+      double Ktmp = k * pow(Wstag(i,j,o),alpha-1.0);
+      if (beta < 2.0) {
+        // regularize negative power |\grad psi|^{beta-2} by adding eps because
+        //   large head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m
+        const double eps = 1.0;   // Pa m-1
+        result(i,j,o) = Ktmp * pow(result(i,j,o) + eps * eps,betapow);
+      } else if (beta > 2.0) {
+        result(i,j,o) = Ktmp * pow(result(i,j,o),betapow);
+      } else { // beta == 2.0
+        result(i,j,o) = Ktmp;
       }
+      mymaxKW = PetscMax(mymaxKW, result(i,j,o) * Wstag(i,j,o));
     }
   }
-  ierr = Wstag.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   ierr = GlobalMax(&mymaxKW, &maxKW, grid.com); CHKERRQ(ierr);
 
@@ -524,35 +516,34 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
   ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
   ierr = R.update_ghosts(); CHKERRQ(ierr);
 
-  double dRdx, dRdy;
-  ierr = R.begin_access(); CHKERRQ(ierr);
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (W(i,j) > 0.0) {
-        dRdx = 0.0;
-        if (W(i+1,j) > 0.0) {
-          dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx);
-        }
-        if (W(i-1,j) > 0.0) {
-          dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx);
-        }
-        dRdy = 0.0;
-        if (W(i,j+1) > 0.0) {
-          dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy);
-        }
-        if (W(i,j-1) > 0.0) {
-          dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy);
-        }
-        result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
-      } else
-        result(i,j) = 0.0;
-    }
+  IceModelVec::AccessList list;
+  list.add(R);
+  list.add(W);
+  list.add(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    double dRdx, dRdy;
+
+    if (W(i,j) > 0.0) {
+      dRdx = 0.0;
+      if (W(i+1,j) > 0.0) {
+        dRdx =  (R(i+1,j) - R(i,j)) / (2.0 * grid.dx);
+      }
+      if (W(i-1,j) > 0.0) {
+        dRdx += (R(i,j) - R(i-1,j)) / (2.0 * grid.dx);
+      }
+      dRdy = 0.0;
+      if (W(i,j+1) > 0.0) {
+        dRdy =  (R(i,j+1) - R(i,j)) / (2.0 * grid.dy);
+      }
+      if (W(i,j-1) > 0.0) {
+        dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy);
+      }
+      result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
+    } else
+      result(i,j) = 0.0;
   }
-  ierr = R.end_access(); CHKERRQ(ierr);
-  ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -585,36 +576,33 @@ PetscErrorCode RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
 
   ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // R=P; yes, it updates ghosts
 
-  ierr = R.begin_access(); CHKERRQ(ierr);
-  ierr = Wstag.begin_access(); CHKERRQ(ierr);
-  ierr = Kstag.begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (Wstag(i,j,0) > 0.0) {
-        dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
-        dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
-        result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
-      } else
-        result(i,j,0) = 0.0;
-      if (Wstag(i,j,1) > 0.0) {
-        dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
-        dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
-        result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
-      } else
-        result(i,j,1) = 0.0;
-      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth))
-        result(i,j,0) = 0.0;
-      if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth))
-        result(i,j,1) = 0.0;
-    }
+  IceModelVec::AccessList list;
+  list.add(R);
+  list.add(Wstag);
+  list.add(Kstag);
+  list.add(*bed);
+  list.add(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (Wstag(i,j,0) > 0.0) {
+      dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
+      dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
+      result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
+    } else
+      result(i,j,0) = 0.0;
+    if (Wstag(i,j,1) > 0.0) {
+      dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
+      dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
+      result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
+    } else
+      result(i,j,1) = 0.0;
+    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth))
+      result(i,j,0) = 0.0;
+    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth))
+      result(i,j,1) = 0.0;
   }
-  ierr = R.end_access(); CHKERRQ(ierr);
-  ierr = Wstag.end_access(); CHKERRQ(ierr);
-  ierr = Kstag.end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -626,19 +614,17 @@ The field W must have valid ghost values, but V does not need them.
 FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
  */
 PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
-  PetscErrorCode ierr;
-  ierr = W.begin_access(); CHKERRQ(ierr);
-  ierr = V.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j);
-      result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
-    }
+  IceModelVec::AccessList list;
+  list.add(W);
+  list.add(V);
+  list.add(result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j);
+    result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
   }
-  ierr = W.end_access(); CHKERRQ(ierr);
-  ierr = V.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -671,87 +657,72 @@ PetscErrorCode RoutingHydrology::adaptive_for_W_evolution(
 
 //! The computation of Wtilnew, called by update().
 /*!
-Does an implicit (backward Euler) step of the integration
-  \f[ \frac{\partial W_{til}}{\partial t} = \mu \left(\min\{\omega W,W_{til}^{max}\} - W_{til}\right)\f]
-where \f$\mu=\f$`hydrology_tillwat_rate`, \f$\omega=\f$`hydrology_tillwat_transfer_proportion`,
-and \f$W_{til}^{max}\f$=`hydrology_tillwat_max`.  There is no time-step restriction.
-The solution satisfies the inequalities
-  \f[ 0 \le W_{til} \le W_{til}^{max}.\f]
+Does a step of the trivial integration
+  \f[ \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C\f]
+where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
+\f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
+`hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
+
+Compare NullTransportHydrology::update().  The current code is not quite "code
+duplication" because the code here: (1) computes `Wtilnew` instead of updating
+`Wtil` in place; (2) uses time steps determined by the rest of the
+RoutingHydrology model; (3) does not check mask because the boundary_mass_changes()
+call addresses that.  Otherwise this is the same physical model with the
+same configurable parameters.
  */
 PetscErrorCode RoutingHydrology::raw_update_Wtil(double hdt) {
-    PetscErrorCode ierr;
-    double tmpmin;
+  const double tillwat_max = config.get("hydrology_tillwat_max"),
+               C           = config.get("hydrology_tillwat_decay_rate");
 
-    const double
-      tillwat_max = config.get("hydrology_tillwat_max"),
-      mu          = config.get("hydrology_tillwat_rate"),
-      omega       = config.get("hydrology_tillwat_transfer_proportion"),
-      denom       = 1.0 + mu * hdt;
+  IceModelVec::AccessList list;
+  list.add(Wtil);
+  list.add(Wtilnew);
+  list.add(total_input);
 
-    if ((tillwat_max < 0.0) || (mu < 0.0) || (omega < 0.0)) {
-      PetscPrintf(grid.com,
-         "RoutingHydrology ERROR: scalar config parameter is negative in raw_update_Wtil();\n"
-         "            this is not allowed ... ENDING ... \n\n");
-      PISMEnd();
-    }
-    ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = Wtil.begin_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        tmpmin = PetscMin(omega * W(i,j), tillwat_max);
-        Wtilnew(i,j) = (Wtil(i,j) + mu * hdt * tmpmin) / denom;
-      }
-    }
-    ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = Wtil.end_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-    return 0;
+    Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
+    Wtilnew(i,j) = PetscMin(PetscMax(0.0, Wtilnew(i,j)), tillwat_max);
+  }
+  return 0;
 }
 
 
 //! The computation of Wnew, called by update().
 PetscErrorCode RoutingHydrology::raw_update_W(double hdt) {
-    PetscErrorCode ierr;
-    const double
-      wux  = 1.0 / (grid.dx * grid.dx),
-      wuy  = 1.0 / (grid.dy * grid.dy),
-      rg   = config.get("standard_gravity") * config.get("fresh_water_density");
-    double divadflux, diffW;
+  const double
+    wux  = 1.0 / (grid.dx * grid.dx),
+    wuy  = 1.0 / (grid.dy * grid.dy),
+    rg   = config.get("standard_gravity") * config.get("fresh_water_density");
+  double divadflux, diffW;
 
-    ierr = W.begin_access(); CHKERRQ(ierr);
-    ierr = Wtil.begin_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.begin_access(); CHKERRQ(ierr);
-    ierr = Wstag.begin_access(); CHKERRQ(ierr);
-    ierr = Kstag.begin_access(); CHKERRQ(ierr);
-    ierr = Qstag.begin_access(); CHKERRQ(ierr);
-    ierr = total_input.begin_access(); CHKERRQ(ierr);
-    ierr = Wnew.begin_access(); CHKERRQ(ierr);
-    for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
-                    + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
-        const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
-                         Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
-                         Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
-                         Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
-        diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
-                + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
-        Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
-                    + hdt * (- divadflux + diffW + total_input(i,j));
-      }
-    }
-    ierr = W.end_access(); CHKERRQ(ierr);
-    ierr = Wtil.end_access(); CHKERRQ(ierr);
-    ierr = Wtilnew.end_access(); CHKERRQ(ierr);
-    ierr = Wstag.end_access(); CHKERRQ(ierr);
-    ierr = Kstag.end_access(); CHKERRQ(ierr);
-    ierr = Qstag.end_access(); CHKERRQ(ierr);
-    ierr = total_input.end_access(); CHKERRQ(ierr);
-    ierr = Wnew.end_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(W);
+  list.add(Wtil);
+  list.add(Wtilnew);
+  list.add(Wstag);
+  list.add(Kstag);
+  list.add(Qstag);
+  list.add(total_input);
+  list.add(Wnew);
 
-    return 0;
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    divadflux =   (Qstag(i,j,0) - Qstag(i-1,j  ,0)) / grid.dx
+      + (Qstag(i,j,1) - Qstag(i,  j-1,1)) / grid.dy;
+    const double  De = rg * Kstag(i,  j,0) * Wstag(i,  j,0),
+      Dw = rg * Kstag(i-1,j,0) * Wstag(i-1,j,0),
+      Dn = rg * Kstag(i,j  ,1) * Wstag(i,j  ,1),
+      Ds = rg * Kstag(i,j-1,1) * Wstag(i,j-1,1);
+    diffW =   wux * (De * (W(i+1,j) - W(i,j)) - Dw * (W(i,j) - W(i-1,j)))
+      + wuy * (Dn * (W(i,j+1) - W(i,j)) - Ds * (W(i,j) - W(i,j-1)));
+    Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
+      + hdt * (- divadflux + diffW + total_input(i,j));
+  }
+
+  return 0;
 }
 
 
@@ -776,6 +747,13 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
   m_t = icet;
   m_dt = icedt;
 
+  if (config.get("hydrology_tillwat_max") < 0.0) {
+    PetscPrintf(grid.com,
+       "RoutingHydrology ERROR: hydrology_tillwat_max is negative\n"
+       "            this is not allowed ... ENDING ... \n\n");
+    PISMEnd();
+  }
+
   // make sure W has valid ghosts before starting hydrology steps
   ierr = W.update_ghosts(); CHKERRQ(ierr);
 
@@ -793,15 +771,6 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
     ierr = check_water_thickness_nonnegative(W); CHKERRQ(ierr);
     ierr = check_Wtil_bounds(); CHKERRQ(ierr);
 #endif
-
-    // update Wtilnew (the actual step) from W and Wtil
-    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
-    icefreelost  += delta_icefree;
-    oceanlost    += delta_ocean;
-    negativegain += delta_neggain;
-    nullstriplost+= delta_nullstrip;
 
     ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
     ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
@@ -822,7 +791,16 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
       ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
     }
 
-    // update Wnew (the actual step) from W, Wtil, Wtilnew, Wstag, Qstag, total_input
+    // update Wtilnew from Wtil
+    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
+    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    icefreelost  += delta_icefree;
+    oceanlost    += delta_ocean;
+    negativegain += delta_neggain;
+    nullstriplost+= delta_nullstrip;
+
+    // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
     ierr = raw_update_W(hdt); CHKERRQ(ierr);
     ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
                                  delta_neggain, delta_nullstrip); CHKERRQ(ierr);
@@ -843,8 +821,8 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
                       " 'routing' hydrology summary:\n"
                       "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
                       "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-                      "     ice free land lost = %.3e kg, ocean lost = %.3e kg\n"
-                      "     negative bmelt gain = %.3e kg, null strip lost = %.3e kg\n",
+                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
+                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
                       hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
                       maxV, maxD,
                       icefreelost, oceanlost,

@@ -120,7 +120,7 @@ public:
     m_reason = code;
   };
 
-  GenericTerminationReason(int code, const char*desc) :
+  GenericTerminationReason(int code, const std::string &desc) :
     m_description(desc) {
     m_reason = code;
   };

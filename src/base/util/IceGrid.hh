@@ -25,6 +25,14 @@
 #include <map>
 #include "PISMUnits.hh"
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
+
+#include <cassert>
+
 namespace pism {
 
 class Time;
@@ -33,6 +41,29 @@ class Config;
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+
+/** Wrapper around PETSc's DM. Simplifies memory management.
+ *
+ * The constructor takes ownership of the dm argument passed to it.
+ *
+ * The destructor call DMDestroy().
+ */
+class PISMDM {
+public:
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<PISMDM> Ptr;
+  typedef std::tr1::weak_ptr<PISMDM> WeakPtr;
+#else
+  typedef std::shared_ptr<PISMDM> Ptr;
+  typedef std::weak_ptr<PISMDM> WeakPtr;
+#endif
+  PISMDM(DM dm);
+  ~PISMDM();
+  DM get() const;
+private:
+  DM m_dm;
+};
+
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
@@ -91,11 +122,18 @@ typedef enum {NONE = 0, NOT_PERIODIC =0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERI
   double loop above can be modified to look like
 
   \code
-  int GHOSTS = 1;
-  for (int i=grid.xs - GHOSTS; i<grid.xs+grid.xm + GHOSTS; ++i) {
-  for (int j=grid.ys - GHOSTS; j<grid.ys+grid.ym + GHOSTS; ++j) {
-  // compute something at i,j
+  for (PointsWithGhosts p(grid, ghost_width); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    field(i,j) = value;
   }
+  \endcode
+
+  to iterate over points without ghosts, do
+
+  \code
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    field(i,j) = value;
   }
   \endcode
 
@@ -124,9 +162,9 @@ public:
   PetscErrorCode printVertLevels(int verbosity); 
   unsigned int kBelowHeight(double height);
   PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
-  double      radius(int i, int j);
-  PetscErrorCode get_dm(int dm_dof, int stencil_width, DM &result);
-  double convert(double, const char*, const char*) const;
+  double radius(int i, int j);
+  PetscErrorCode get_dm(int dm_dof, int stencil_width, PISMDM::Ptr &result);
+  double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
 
   const Config &config;
@@ -170,7 +208,7 @@ public:
   int    Nx, //!< number of processors in the x-direction
     Ny;      //!< number of processors in the y-direction
 
-  std::vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
+  std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
   double dx,               //!< horizontal grid spacing
@@ -181,9 +219,6 @@ public:
   unsigned int Mz; //!< number of grid points in z-direction in the ice
 
   unsigned int initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
-
-  unsigned int max_stencil_width;
-  //!< maximum stencil width supported by the DA in this IceGrid object
 
   Time *time;               //!< The time management object (hides calendar computations)
 
@@ -197,8 +232,8 @@ public:
             y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
   }
 protected:
-  std::map<int,DM> dms;
-  double lambda;         //!< quadratic vertical spacing parameter
+  std::map<int,PISMDM::WeakPtr> m_dms;
+  double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
@@ -207,7 +242,6 @@ protected:
   PetscErrorCode init_interpolation();
 
   PetscErrorCode create_dm(int da_dof, int stencil_width, DM &result);
-  void destroy_dms();
 
   int dm_key(int, int);
   PetscErrorCode init_calendar(std::string &result);
@@ -217,7 +251,59 @@ private:
   IceGrid & operator=(IceGrid const &);
 };
 
+/** Iterator class for traversing the grid, including ghost points.
+ *
+ * Usage:
+ *
+ * `for (PointsWithGhosts p(grid, stencil_width); p; p.next()) { ... }`
+ */
+class PointsWithGhosts {
+public:
+  PointsWithGhosts(IceGrid &g, unsigned int stencil_width = 1) {
+    m_i_first = g.xs - stencil_width;
+    m_i_last  = g.xs + g.xm + stencil_width - 1;
+    m_j_first = g.ys - stencil_width;
+    m_j_last  = g.ys + g.ym + stencil_width - 1;
+
+    m_i = m_i_first;
+    m_j = m_j_first;
+    m_done = false;
+  }
+
+  int i() const { return m_i; }
+  int j() const { return m_j; }
+
+  void next() {
+    assert(m_done == false);
+    m_j += 1;
+    if (m_j > m_j_last) {
+      m_j = m_j_first;        // wrap around
+      m_i += 1;
+    }
+    if (m_i > m_i_last) {
+      m_i = m_i_first;        // ensure that indexes are valid
+      m_done = true;
+    }
+  }
+
+  operator bool() const { return m_done == false; }
+private:
+  int m_i, m_j;
+  int m_i_first, m_i_last, m_j_first, m_j_last;
+  bool m_done;
+};
+
+/** Iterator class for traversing the grid (without ghost points).
+ *
+ * Usage:
+ *
+ * `for (Points p(grid); p; p.next()) { double foo = p.i(); ... }`
+ */
+class Points : public PointsWithGhosts {
+public:
+  Points(IceGrid &g) : PointsWithGhosts(g, 0) {}
+};
+
 } // end of namespace pism
 
 #endif  /* __grid_hh */
-

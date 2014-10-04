@@ -39,8 +39,11 @@ SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c)
   }
 }
 
+#if PETSC_VERSION_LT(3,5,0)
+// FIXME: we should never define PETSc objects!
 typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
 typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
+#endif
 
 SSA* SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const Config &c) {
   return new SSAFEM(g, ec, c);
@@ -63,15 +66,24 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  m_callback_data.da = SSADA;
+  m_callback_data.da = SSADA->get();
   m_callback_data.ssa = this;
-  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
+#if PETSC_VERSION_LT(3,5,0)
+  ierr = DMDASNESSetFunctionLocal(SSADA->get(), INSERT_VALUES,
+                                  (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA->get(),
+                                  (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
+#else
+  ierr = DMDASNESSetFunctionLocal(SSADA->get(), INSERT_VALUES,
+                                  (DMDASNESFunction)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA->get(),
+                                  (DMDASNESJacobian)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
+#endif
 
-  ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(SSADA, &m_callback_data); CHKERRQ(ierr);
+  ierr = DMSetMatType(SSADA->get(), "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(SSADA->get(), &m_callback_data); CHKERRQ(ierr);
 
-  ierr = SNESSetDM(m_snes, SSADA); CHKERRQ(ierr);
+  ierr = SNESSetDM(m_snes, SSADA->get()); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   int snes_max_it = 200;
@@ -261,21 +273,22 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
 
   GeometryCalculator gc(sea_level, config);
 
-  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*enthalpy);
   bool driving_stress_explicit;
   if ((driving_stress_x != NULL) && (driving_stress_y != NULL)) {
     driving_stress_explicit = true;
-    ierr = driving_stress_x->begin_access(); CHKERRQ(ierr);
-    ierr = driving_stress_y->begin_access(); CHKERRQ(ierr);
+    list.add(*driving_stress_x);
+    list.add(*driving_stress_y);
   } else {
     // The class SSA ensures in this case that 'surface' is available
     driving_stress_explicit = false;
-    ierr = surface->begin_access(); CHKERRQ(ierr);
+    list.add(*surface);
   }
 
-  ierr = thickness->begin_access(); CHKERRQ(ierr);
-  ierr = bed->begin_access(); CHKERRQ(ierr);
-  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  list.add(*thickness);
+  list.add(*bed);
+  list.add(*tauc);
 
   int xs = m_element_index.xs, xm = m_element_index.xm,
     ys   = m_element_index.ys, ym = m_element_index.ym;
@@ -334,33 +347,24 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
       const FEFunctionGerm (*test)[FEQuadrature::Nk] = m_quadrature.testFunctionValues();
       for (unsigned int k = 0; k < grid.Mz; k++) {
         Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
-        for (int q = 0; q < FEQuadrature::Nq; q++) {
-          for (int p = 0; p < FEQuadrature::Nk; p++) {
+        for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
+          for (unsigned int p = 0; p < FEQuadrature::Nk; p++) {
             Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
           }
         }
       }
 
       // Now, for each column over a quadrature point, find the averaged_hardness.
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         coefficients[q].B = flow_law->averaged_hardness(coefficients[q].H, grid.kBelowHeight(coefficients[q].H),
                                                         &grid.zlevels[0], Enth_q[q]);
       }
-    }
-  }
-  if (driving_stress_explicit) {
-    ierr = driving_stress_x->end_access(); CHKERRQ(ierr);
-    ierr = driving_stress_y->end_access(); CHKERRQ(ierr);
-  } else {
-    ierr = surface->end_access(); CHKERRQ(ierr);
-  }
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);
-  ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  for (int q = 0; q < FEQuadrature::Nq; q++)
+    } // j-loop
+  } // i-loop
+
+  for (unsigned int q = 0; q < FEQuadrature::Nq; q++)
   {
     delete [] Enth_q[q];
   }
@@ -391,8 +395,6 @@ PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
                                            double *nuH, double *dnuH,
                                            double *beta, double *dbeta) {
 
-  Mask M;
-
   if (coefficients.H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dnuH) {
@@ -409,12 +411,12 @@ PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const SSACoefficients &coefficients,
     }
   }
 
-  if (M.grounded_ice(coefficients.mask)) {
+  if (mask::grounded_ice(coefficients.mask)) {
     basal_sliding_law->drag_with_derivative(coefficients.tauc, u.u, u.v, beta, dbeta);
   } else {
     *beta = 0;
 
-    if (M.ice_free_land(coefficients.mask)) {
+    if (mask::ice_free_land(coefficients.mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
 
@@ -441,14 +443,13 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info,
   (void) info; // Avoid compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      residual_global[i][j].u = 0.0;
-      residual_global[i][j].v = 0.0;
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    residual_global[i][j].u = 0.0;
+    residual_global[i][j].v = 0.0;
   }
 
-  // Start access of Dirichlet data, if present.
   // Start access to Dirichlet data if present.
   DirichletData_Vector dirichlet_data;
   ierr = dirichlet_data.init(bc_locations, m_vel_bc, m_dirichletScale); CHKERRQ(ierr);
@@ -560,17 +561,22 @@ PetscErrorCode SSAFEM::monitor_function(const Vector2 **velocity_global,
   ierr = PetscPrintf(grid.com,
                      "SSA Solution and Function values (pointwise residuals)\n"); CHKERRQ(ierr);
 
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      ierr = PetscSynchronizedPrintf(grid.com,
-                                     "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
-                                     i, j,
-                                     velocity_global[i][j].u, velocity_global[i][j].v,
-                                     residual_global[i][j].u, residual_global[i][j].v);
-      CHKERRQ(ierr);
-    }
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = PetscSynchronizedPrintf(grid.com,
+                                   "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
+                                   i, j,
+                                   velocity_global[i][j].u, velocity_global[i][j].v,
+                                   residual_global[i][j].u, residual_global[i][j].v);
+    CHKERRQ(ierr);
   }
+
+#if PETSC_VERSION_LT(3,5,0)
   ierr = PetscSynchronizedFlush(grid.com); CHKERRQ(ierr);
+#else
+  ierr = PetscSynchronizedFlush(grid.com, NULL); CHKERRQ(ierr);
+#endif
 
   return 0;
 }
@@ -652,7 +658,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 
       // Build the element-local Jacobian.
       ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
-      for (int q = 0; q < FEQuadrature::Nq; q++) {
+      for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
         const double
           jw           = JxW[q],
           U            = u[q].u,
@@ -665,7 +671,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
         ierr = PointwiseNuHAndBeta(coefficients[q], u[q], Du[q],
                                    &eta, &deta, &beta, &dbeta); CHKERRQ(ierr);
 
-        for (int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
+        for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions
 
           // Current trial function and its derivatives:
           const double
@@ -690,7 +696,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
             taub_yu = -dbeta * V * U * phi,              // y-component, derivative with respect to v_l
             taub_yv = -dbeta * V * V * phi - beta * phi; // y-component, derivative with respect to v_l
 
-          for (int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
+          for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
 
             // Current test function and its derivatives:
             const double
@@ -745,20 +751,20 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DMDALocalInfo *info,
 }
 
 PetscErrorCode SSAFEM::monitor_jacobian(Mat Jac) {
-  bool monitor_jacobian = false;
-  PetscErrorCode ierr = OptionsIsSet("-ssa_monitor_jacobian", monitor_jacobian); CHKERRQ(ierr);
+  bool mon_jac = false;
+  PetscErrorCode ierr = OptionsIsSet("-ssa_monitor_jacobian", mon_jac); CHKERRQ(ierr);
 
-  if (monitor_jacobian == false) {
+  if (mon_jac == false) {
     return 0;
   }
 
   PetscViewer viewer;
 
   char file_name[PETSC_MAX_PATH_LEN];
-  int iter = 0;
+  PetscInt iter = 0;
   ierr = SNESGetIterationNumber(m_snes, &iter);
 
-  snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", iter);
+  snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", (int)iter);
 
   ierr = verbPrintf(2, grid.com,
                     "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
@@ -782,6 +788,7 @@ PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
   return fe->ssa->compute_local_function(info, velocity, residual);
 }
 
+#if PETSC_VERSION_LT(3,5,0)
 PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **velocity,
 			     Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
 
@@ -793,5 +800,15 @@ PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **velocity,
 
   return 0;
 }
+#else
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const Vector2 **velocity,
+			     Mat A, Mat J, SSAFEM_SNESCallbackData *fe) {
 
+  (void) A;
+
+  PetscErrorCode ierr = fe->ssa->compute_local_jacobian(info, velocity, J); CHKERRQ(ierr);
+
+  return 0;
+}
+#endif
 } // end of namespace pism

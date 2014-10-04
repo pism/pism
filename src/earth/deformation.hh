@@ -82,7 +82,7 @@ private:
   int      i0_plate,  j0_plate; // indices into fat array for corner of thin
   double   Lx, Ly;         // half-lengths of the physical domain
   double   Lx_fat, Ly_fat; // half-lengths of the FFT (spectral) computational domain
-  double  *cx, *cy;        // coeffs of derivatives in Fourier space
+  std::vector<double>  cx, cy;        // coeffs of derivatives in Fourier space
   Vec          *H, *bed, *H_start, *bed_start, *uplift; // pointers to sequential
   Vec           Hdiff, dbedElastic, // sequential; working space
     U, U_start,     // sequential and fat

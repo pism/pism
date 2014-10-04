@@ -34,7 +34,7 @@ class BasalTillStrength:
     
     self.hydrology_pressure_fraction = config.get("hydrology_pressure_fraction")
     self.till_c_0 = config.get("till_c_0") * 1e3 # convert from kPa to Pa
-    self.bwat_max = config.get("bwat_max");
+    self.bwat_max = config.get("bwat_max")
 
     self.usebmr        = config.get_flag("bmr_enhance_basal_water_pressure")
     self.usethkeff     = config.get_flag("thk_eff_basal_water_pressure")
@@ -50,7 +50,7 @@ class BasalTillStrength:
       # // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
       # // from the thickness of the basal melt water bwat
       # // Note: option is given in kPa.
-      config.scalar_from_option("plastic_c0", "till_c_0");
+      config.scalar_from_option("plastic_c0", "till_c_0")
 
       # // hydrology_pressure_fraction is a parameter in the computation of the till yield stress tau_c
       # // from the thickness of the basal melt water bwat
@@ -69,7 +69,7 @@ class BasalTillStrength:
     config = PISM.Context().config
     hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
-    bwat_max = self.bwat_max#config.get("bwat_max");
+    bwat_max = self.bwat_max#config.get("bwat_max")
 
     rho_g = self.rho_g
 
@@ -77,14 +77,14 @@ class BasalTillStrength:
     Nmin = 1e45
     with PISM.vec.Access(nocomm=[mask,thickness,bwat,bmr,tillphi],comm=tauc):
       mq = PISM.MaskQuery(mask)
-      GHOSTS = self.grid.max_stencil_width;
+      GHOSTS = int(self.grid.config.get("grid_max_stencil_width"))
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
         if mq.floating_ice(i,j):
           tauc[i,j] = 0
 
         H_ij = thickness[i,j]
         if H_ij == 0:
-          tauc[i,j] = 1000.0e3;  #// large yield stress of 1000 kPa = 10 bar if no ice
+          tauc[i,j] = 1000.0e3  #// large yield stress of 1000 kPa = 10 bar if no ice
         else: # grounded and there is some ice
           p_over = rho_g * H_ij
           p_w    = self.getBasalWaterPressure(H_ij,
@@ -99,7 +99,7 @@ class BasalTillStrength:
     config = PISM.Context().config
     hydrology_pressure_fraction = self.hydrology_pressure_fraction#config.get("hydrology_pressure_fraction")
     till_c_0 = self.till_c_0#config.get("till_c_0") * 1e3 # convert from kPa to Pa
-    bwat_max = self.bwat_max#config.get("bwat_max");
+    bwat_max = self.bwat_max#config.get("bwat_max")
 
     rho_g = self.rho_g
 
@@ -110,7 +110,7 @@ class BasalTillStrength:
       vars.append(tillphi_prev)
     with PISM.vec.Access(nocomm=vars,comm=tillphi):
       mq = PISM.MaskQuery(mask)
-      GHOSTS = self.grid.max_stencil_width;
+      GHOSTS = int(self.grid.config.get("grid_max_stencil_width"))
       for (i,j) in self.grid.points_with_ghosts(nGhosts = GHOSTS):
         if mq.floating_ice(i,j):
           if not tillphi_prev is None:
@@ -137,20 +137,20 @@ class BasalTillStrength:
     if (bwat > bwat_max + 1.0e-6):
       verbPrintf(1,grid.com,
         "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n" +
-        "  in IceModel::getBasalWaterPressure()\n", bwat, bwat_max);
-      PISM.PISMEnd();
+        "  in IceModel::getBasalWaterPressure()\n", bwat, bwat_max)
+      PISM.PISMEnd()
 
     # the model; note  0 <= p_pw <= frac * p_overburden
     #   because  0 <= bwat <= bwat_max
-    p_overburden = self.rho_g * thk; #// FIXME task #7297
-    p_pw = frac * (bwat / bwat_max) * p_overburden;
+    p_overburden = self.rho_g * thk #// FIXME task #7297
+    p_pw = frac * (bwat / bwat_max) * p_overburden
 
     if (self.usebmr):
-      # add to pressure from instantaneous basal melt rate;
+      # add to pressure from instantaneous basal melt rate
       #   note  (additional) <= (1.0 - frac) * p_overburden so
       #   0 <= p_pw <= p_overburden
       p_pw += (1.0 - math.exp(- max(0.0,bmr) / self.bmr_scale)) \
-              * (1.0 - frac) * p_overburden;
+              * (1.0 - frac) * p_overburden
     if self.usethkeff:
       # ice thickness is surrogate for distance to margin; near margin the till
       #   is presumably better drained so we reduce the water pressure
@@ -162,8 +162,8 @@ class BasalTillStrength:
           #   to (Hhigh, 1.0 * p_w)
           p_pw *= self.thkeff_reduce\
                   + (1.0 - self.thkeff_reduce)\
-                      * (thk - self.thkeff_H_low) / (self.thkeff_H_high - self.thkeff_H_low);
-    return p_pw;
+                      * (thk - self.thkeff_H_low) / (self.thkeff_H_high - self.thkeff_H_low)
+    return p_pw
 
 
 context = PISM.Context()
@@ -190,14 +190,14 @@ for o in PISM.OptionsGroup(context.com,"","tauc2tillphi"):
 
 grid = PISM.Context().newgrid()
 PISM.model.initGridFromFile(grid,bootfile,
-                                periodicity=PISM.XY_PERIODIC);
+                                periodicity=PISM.XY_PERIODIC)
 
 enthalpyconverter = PISM.EnthalpyConverter(config)
 if PISM.getVerbosityLevel() >3:
   enthalpyconverter.viewConstants(PETSc.Viewer.STDOUT())
 
 if PISM.optionsIsSet("-ssa_glen"):
-  B_schoof = 3.7e8;     # Pa s^{1/3}; hardness
+  B_schoof = 3.7e8     # Pa s^{1/3}; hardness
   config.set_string("ssa_flow_law", "isothermal_glen")
   config.set_double("ice_softness", pow(B_schoof, -config.get("Glen_exponent")))
 else:

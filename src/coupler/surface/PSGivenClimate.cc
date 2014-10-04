@@ -48,7 +48,7 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
   ierr = process_options(); CHKERRQ(ierr);
 
   std::map<std::string, std::string> standard_names;
-  standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance";
+  standard_names["climatic_mass_balance"] = "land_ice_surface_specific_mass_balance_flux";
   ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
 
   ierr = ice_surface_temp->create(grid, "ice_surface_temp", false); CHKERRQ(ierr);
@@ -59,7 +59,7 @@ PetscErrorCode PSGivenClimate::allocate_PSGivenClimate() {
                                      "Kelvin", ""); CHKERRQ(ierr);
   ierr = climatic_mass_balance->set_attrs("climate_forcing",
                                           "surface mass balance (accumulation/ablation) rate",
-                                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+                                          "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
   ierr = climatic_mass_balance->set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance->write_in_glaciological_units = true;
 

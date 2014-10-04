@@ -42,6 +42,7 @@ if [ $# -lt 5 ] ; then
   echo "                   tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'"
   echo "                   plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid"
   echo "    NODIAGS      if set, DON'T use -ts_file or -extra_file"
+  echo "    USEPIK       if set, add -pik -subgl"
   echo "    PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ"
   echo "                   [default=0.25]"
   echo "    PARAM_SIAE   sets option -sia_e \$PARAM_SIAE   [default=3.0]"
@@ -156,6 +157,10 @@ if [ -n "${PARAM_SIAE:+1}" ] ; then  # check if env var is already set
 else
   PHYS="-calving ocean_kill -ocean_kill_file ${PISM_DATANAME} -sia_e 3.0"
 fi
+if [ -n "${USEPIK:+1}" ] ; then  # check if env var is already set
+  PHYS="${PHYS} -pik -subgl"
+fi
+
 # done forming $PHYS if "$5" = "sia"
 if [ "$5" = "hybrid" ]; then
   if [ -z "${PARAM_TTPHI}" ] ; then  # check if env var is NOT set

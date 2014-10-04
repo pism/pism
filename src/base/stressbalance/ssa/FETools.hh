@@ -274,10 +274,20 @@ public:
 
   PetscErrorCode addLocalJacobianBlock(const double *K, Mat J);
 
-  static const int Nk = 4; //<! The number of test functions defined on an element.
+  static const unsigned int Nk = 4; //<! The number of test functions defined on an element.
   
 private:
-  static const int kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
+  void reset(int i, int j);
+
+  //! Constant for marking invalid row/columns.
+  //!
+  //! Has to be negative because MatSetValuesBlockedStencil supposedly
+  //! ignores negative indexes. Seems like it has to be negative and
+  //! below the smallest allowed index, i.e. -2 and below with the
+  //! stencil of width 1 (-1 *is* an allowed index). We use -2^30 and
+  //! *don't* use PETSC_MIN_INT, because PETSC_MIN_INT depends on
+  //! PETSc's configuration flags.
+  static const int kDofInvalid = -1073741824;
   static const int kIOffset[Nk];
   static const int kJOffset[Nk];
 
@@ -385,8 +395,8 @@ class FEQuadrature
 public:
   FEQuadrature(const IceGrid &g, double L=1.0); // FIXME Allow a length scale to be specified.
 
-  static const int Nq = 4;  //!< Number of quadrature points.
-  static const int Nk = 4;  //!< Number of test functions on the element.
+  static const unsigned int Nq = 4;  //!< Number of quadrature points.
+  static const unsigned int Nk = 4;  //!< Number of test functions on the element.
   
   // define FEFunctionGermArray, which is an array of FEQuadrature::Nq
   // FEFunctionGerms

@@ -40,7 +40,7 @@ PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &confi
                                        EnthalpyConverter *EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
-  ThermoGlenArrIce cpb(PETSC_COMM_SELF, NULL, config, EC); // This is unmodified cold Paterson-Budd
+  ThermoGlenArrIce cpb(PETSC_COMM_SELF, "sia_", config, EC); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
     const double left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
                     right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
@@ -51,29 +51,27 @@ PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &confi
   return PETSC_TRUE;
 }
 
-IceFlowLaw::IceFlowLaw(MPI_Comm c, const char pre[], const Config &config,
+IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
                        EnthalpyConverter *my_EC) : EC(my_EC), e(1), com(c) {
-  PetscMemzero(prefix, sizeof(prefix));
-  if (pre) PetscStrncpy(prefix, pre, sizeof(prefix));
+
+  prefix = pre;
 
   standard_gravity   = config.get("standard_gravity");
   ideal_gas_constant = config.get("ideal_gas_constant");
 
-  rho          = config.get("ice_density");
-  beta_CC_grad = config.get("beta_CC") * rho * standard_gravity;
+  rho                = config.get("ice_density");
+  beta_CC_grad       = config.get("beta_CC") * rho * standard_gravity;
   melting_point_temp = config.get("water_melting_point_temperature");
-  n            = config.get("Glen_exponent");
-  viscosity_power = (1.0 - n) / (2.0 * n);
-  hardness_power  = -1.0 / n;
+  e                  = config.get(prefix + "enhancement_factor");
+  n                  = config.get(prefix + "Glen_exponent");
+  viscosity_power    = (1.0 - n) / (2.0 * n);
+  hardness_power     = -1.0 / n;
 
-  if (strlen(prefix) > 0)
-    e = config.get(std::string(prefix) + "enhancement_factor");
-
-  A_cold = config.get("Paterson-Budd_A_cold");
-  A_warm = config.get("Paterson-Budd_A_warm");
-  Q_cold = config.get("Paterson-Budd_Q_cold");
-  Q_warm = config.get("Paterson-Budd_Q_warm");
-  crit_temp = config.get("Paterson-Budd_critical_temperature");
+  A_cold = config.get("Paterson_Budd_A_cold");
+  A_warm = config.get("Paterson_Budd_A_warm");
+  Q_cold = config.get("Paterson_Budd_Q_cold");
+  Q_warm = config.get("Paterson_Budd_Q_warm");
+  crit_temp = config.get("Paterson_Budd_critical_temperature");
   schoofLen = config.get("Schoof_regularizing_length", "km", "m"); // convert to meters
   schoofVel = config.get("Schoof_regularizing_velocity", "m/year", "m/s"); // convert to m/s
   schoofReg = PetscSqr(schoofVel/schoofLen);
@@ -109,29 +107,23 @@ PetscErrorCode IceFlowLaw::averaged_hardness_vec(IceModelVec2S &thickness,
 
   IceGrid *grid = thickness.get_grid();
 
-  ierr = thickness.begin_access(); CHKERRQ(ierr);
-  ierr = hardav.begin_access();    CHKERRQ(ierr);
-  ierr = enthalpy.begin_access();  CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(thickness);
+  list.add(hardav);
+  list.add(enthalpy);
 
-  for (int i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (int j=grid->ys; j<grid->ys+grid->ym; ++j) {
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      // Evaluate column integrals in flow law at every quadrature point's column
-      double H = thickness(i,j);
-      double *enthColumn;
-      ierr = enthalpy.getInternalColumn(i, j, &enthColumn); CHKERRQ(ierr);
-      hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
-                                            &(grid->zlevels[0]), enthColumn);
-    }
+    // Evaluate column integrals in flow law at every quadrature point's column
+    double H = thickness(i,j);
+    double *enthColumn;
+    ierr = enthalpy.getInternalColumn(i, j, &enthColumn); CHKERRQ(ierr);
+    hardav(i,j) = this->averaged_hardness(H, grid->kBelowHeight(H),
+                                                &(grid->zlevels[0]), enthColumn);
   }
 
-  ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = hardav.end_access();    CHKERRQ(ierr);
-  ierr = enthalpy.end_access();  CHKERRQ(ierr);
-
-  if (hardav.has_ghosts()) {
-    ierr = hardav.update_ghosts(); CHKERRQ(ierr);
-  }
+  ierr = hardav.update_ghosts(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -158,7 +150,7 @@ double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
         E1 = enthalpy[i], // enthalpy at the right endpoint
         h1 = hardness_parameter(E1, p1); // ice hardness at the right endpoint
 
-      // The midpoint rule sans the "1/2":
+      // The trapezoid rule sans the "1/2":
       B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
 
       h0 = h1;
@@ -190,7 +182,7 @@ double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
 This constructor just sets flow law factor for nonzero water content, from
 \ref AschwandenBlatter and \ref LliboutryDuval1985.
  */
-GPBLDIce::GPBLDIce(MPI_Comm c, const char pre[],
+GPBLDIce::GPBLDIce(MPI_Comm c, const std::string &pre,
                    const Config &config, EnthalpyConverter *my_EC)
   : IceFlowLaw(c, pre, config, my_EC) {
   T_0              = config.get("water_melting_point_temperature");    // K
@@ -263,7 +255,7 @@ double ThermoGlenIce::flow_from_temp(double stress, double temp,
 
 // IsothermalGlenIce
 
-IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const char pre[],
+IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const std::string &pre,
                                      const Config &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   softness_A = config.get("ice_softness");
@@ -272,7 +264,7 @@ IsothermalGlenIce::IsothermalGlenIce(MPI_Comm c, const char pre[],
 
 // HookeIce
 
-HookeIce::HookeIce(MPI_Comm c, const char pre[],
+HookeIce::HookeIce(MPI_Comm c, const std::string &pre,
                    const Config &config, EnthalpyConverter *my_EC)
   : ThermoGlenIce(c, pre, config, my_EC) {
   Q_Hooke  = config.get("Hooke_Q");
@@ -289,7 +281,7 @@ double HookeIce::softness_parameter_from_temp(double T_pa) const {
 
 // Goldsby-Kohlstedt (forward) ice flow law
 
-GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const char pre[],
+GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const std::string &pre,
                      const Config &config, EnthalpyConverter *my_EC)
   : IceFlowLaw(c, pre, config, my_EC) {
 
@@ -459,7 +451,7 @@ GKparts GoldsbyKohlstedtIce::flowParts(double stress, double temp, double pressu
 }
 /*****************/
 
-GoldsbyKohlstedtIceStripped::GoldsbyKohlstedtIceStripped(MPI_Comm c, const char pre[],
+GoldsbyKohlstedtIceStripped::GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &pre,
                                                          const Config &config,
                                                          EnthalpyConverter *my_EC)
   : GoldsbyKohlstedtIce(c, pre, config, my_EC) {

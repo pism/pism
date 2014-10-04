@@ -40,9 +40,10 @@ PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
   option_prefix = "-ocean_delta_mass_flux";
   offset_name   = "delta_mass_flux";
 
-  offset->set_units("m s-1", "");
-  offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
+  offset->get_metadata().set_units("m s-1");
+  offset->get_dimension_metadata().set_units(grid.time->units_string());
+  offset->get_metadata().set_string("long_name",
+                                    "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
 
   shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");

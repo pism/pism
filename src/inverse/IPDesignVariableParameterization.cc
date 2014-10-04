@@ -32,7 +32,7 @@ parameters that are follow the naming convention \a design_param_foo_*.
 \param config          The config file to read the scale parameters from.
 \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
 */
-PetscErrorCode IPDesignVariableParameterization::set_scales(const Config & config, const char *design_var_name) {
+PetscErrorCode IPDesignVariableParameterization::set_scales(const Config & config, const std::string &design_var_name) {
   std::string key("design_param_");
   key += design_var_name;
   key += "_scale";
@@ -46,19 +46,18 @@ PetscErrorCode IPDesignVariableParameterization::convertToDesignVariable(IceMode
                                                                          bool communicate) {
   PetscErrorCode ierr;
 
-  ierr = zeta.begin_access(); CHKERRQ(ierr);
-  ierr = d.begin_access(); CHKERRQ(ierr);
-  IceGrid &grid = *zeta.get_grid();
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      ierr = this->toDesignVariable(zeta(i, j), &d(i, j), NULL); CHKERRQ(ierr);
-      if (std::isnan(d(i, j))) {
-        PetscPrintf(PETSC_COMM_WORLD, "made a d nan zeta = %g d = %g\n", zeta(i, j), d(i, j));
-      }
+  IceModelVec::AccessList list;
+  list.add(zeta);
+  list.add(d);
+
+  for (Points p(*zeta.get_grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = this->toDesignVariable(zeta(i, j), &d(i, j), NULL); CHKERRQ(ierr);
+    if (std::isnan(d(i, j))) {
+      PetscPrintf(PETSC_COMM_WORLD, "made a d nan zeta = %g d = %g\n", zeta(i, j), d(i, j));
     }
   }
-  ierr = zeta.end_access(); CHKERRQ(ierr);
-  ierr = d.end_access(); CHKERRQ(ierr);
   if (communicate) {
     ierr = d.update_ghosts(); CHKERRQ(ierr);
   }
@@ -70,19 +69,18 @@ PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable(IceMo
                                                                             IceModelVec2S &zeta,
                                                                             bool communicate) {
   PetscErrorCode ierr;
-  ierr = zeta.begin_access(); CHKERRQ(ierr);
-  ierr = d.begin_access(); CHKERRQ(ierr);
-  IceGrid &grid = *zeta.get_grid();
-  for (int i = grid.xs; i < grid.xs + grid.xm; i++) {
-    for (int j = grid.ys; j < grid.ys + grid.ym; j++) {
-      ierr = this->fromDesignVariable(d(i, j), &zeta(i, j)); CHKERRQ(ierr);
-      if (std::isnan(zeta(i, j))) {
-        PetscPrintf(PETSC_COMM_WORLD, "made a zeta nan d = %g zeta = %g\n", d(i, j), zeta(i, j));
-      }
+  IceModelVec::AccessList list;
+  list.add(zeta);
+  list.add(d);
+
+  for (Points p(*zeta.get_grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = this->fromDesignVariable(d(i, j), &zeta(i, j)); CHKERRQ(ierr);
+    if (std::isnan(zeta(i, j))) {
+      PetscPrintf(PETSC_COMM_WORLD, "made a zeta nan d = %g zeta = %g\n", d(i, j), zeta(i, j));
     }
   }
-  ierr = zeta.end_access(); CHKERRQ(ierr);
-  ierr = d.end_access(); CHKERRQ(ierr);
   if (communicate) {
     ierr = zeta.update_ghosts(); CHKERRQ(ierr);
   }
@@ -121,7 +119,7 @@ PetscErrorCode IPDesignVariableParamSquare::fromDesignVariable(double d, double 
   return 0;
 }
 
-PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const char *design_var_name) {
+PetscErrorCode IPDesignVariableParamExp::set_scales(const Config &config, const std::string &design_var_name) {
   PetscErrorCode ierr;
   ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
 
@@ -156,7 +154,7 @@ PetscErrorCode IPDesignVariableParamExp::fromDesignVariable(double d, double *OU
 
 
 PetscErrorCode IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
-                                                               const char *design_var_name) {
+                                                               const std::string &design_var_name) {
   PetscErrorCode ierr;
   ierr = IPDesignVariableParameterization::set_scales(config, design_var_name); CHKERRQ(ierr);
 

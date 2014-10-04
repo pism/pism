@@ -71,7 +71,7 @@ PetscErrorCode IceModel::update_viewers() {
       std::string name = v->metadata().get_string("short_name");
       PetscViewer viewer = viewers[name];
 
-      if (viewer == PETSC_NULL) {
+      if (viewer == NULL) {
         ierr = grid.create_viewer(viewer_size, name, viewer); CHKERRQ(ierr);
         viewers[name] = viewer;
       }
@@ -79,7 +79,7 @@ PetscErrorCode IceModel::update_viewers() {
       IceModelVec2S *v2d = dynamic_cast<IceModelVec2S*>(v);
       if (v2d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
 
-      ierr = v2d->view(viewer, PETSC_NULL); CHKERRQ(ierr);
+      ierr = v2d->view(viewer, NULL); CHKERRQ(ierr);
 
     } else if (v->get_dof() == 2) { // vector fields
       std::string name_1 = v->metadata().get_string("short_name"),
@@ -87,12 +87,12 @@ PetscErrorCode IceModel::update_viewers() {
       PetscViewer v1 = viewers[name_1],
         v2 = viewers[name_2];
 
-      if (v1 == PETSC_NULL) {
+      if (v1 == NULL) {
         ierr = grid.create_viewer(viewer_size, name_1, v1); CHKERRQ(ierr);
         viewers[name_1] = v1;
       }
 
-      if (v2 == PETSC_NULL) {
+      if (v2 == NULL) {
         ierr = grid.create_viewer(viewer_size, name_2, v2); CHKERRQ(ierr);
         viewers[name_2] = v2;
       }
@@ -115,11 +115,11 @@ PetscErrorCode IceModel::init_viewers() {
   PetscBool flag;
   char tmp[TEMPORARY_STRING_LENGTH];
 
-  ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
+  ierr = PetscOptionsBegin(grid.com, NULL,
                            "Options controlling run-time diagnostic viewers",
-                           PETSC_NULL); CHKERRQ(ierr);
+                           NULL); CHKERRQ(ierr);
 
-  int viewer_size = (int)config.get("viewer_size");
+  PetscInt viewer_size = (int)config.get("viewer_size");
   ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
                          "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 

@@ -127,6 +127,9 @@ netcdf pism_config {
     pism_config:tauc_add_transportable_water = "no";
     pism_config:tauc_add_transportable_water_doc = "If 'yes' then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
 
+    pism_config:till_use_topg_to_phi = "no";
+    pism_config:till_use_topg_to_phi_doc = "If THE OPTION -topg_to_phi IS SET THEN THIS WILL BE SET TO 'yes', and then MohrCoulombYieldStress will initialize the tillphi field using a piece-wise linear function of depth described by four parameters.";
+
 
     // parameters:
 
@@ -211,6 +214,9 @@ netcdf pism_config {
     pism_config:constant_nu_strength_extension_ssa = 9.48680701906572e+14;
     pism_config:constant_nu_strength_extension_ssa_doc = "Pa s; The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 Pa s^(1/3) [@ref MacAyealetal] and a typical strain rate of 0.001 year-1:  nu = (bar B) / (2 * 0.001^(2/3)).  Compare the value of 9.45e14 Pa s = 30 MPa yr in [@ref Ritzetal2001].";
 
+    pism_config:energy_advection_ice_thickness_threshold = 100.0;
+    pism_config:energy_advection_ice_thickness_threshold_doc = "m; ignore advection and strain heating in ice columns thinner than this";
+
     pism_config:yield_stress_model = "mohr_coulomb";
     pism_config:yield_stress_model_doc = "The basal yield stress model to use when sliding is active; choose from 'mohr_coulomb' and 'constant'";
 
@@ -235,19 +241,13 @@ netcdf pism_config {
     pism_config:hydrology_tillwat_max = 2.0;
     pism_config:hydrology_tillwat_max_doc = "m; maximum effective thickness of the water stored in till";
 
-    pism_config:hydrology_tillwat_rate = 1.0e-6;
-    pism_config:hydrology_tillwat_rate_doc = "s-1; exponential rate at which tillwat approaches tillwat_max";
+    pism_config:hydrology_tillwat_decay_rate = 3.16887646154128e-11;
+    pism_config:hydrology_tillwat_decay_rate_doc = "m s-1; = 1 mm per year; rate at which tillwat is reduced to zero, in absence of other effects like input";
 
-    pism_config:hydrology_tillwat_transfer_proportion = 100.0;
-    pism_config:hydrology_tillwat_transfer_proportion_doc = "; tillwat should be comparable to this multiple of bwat";
-
-    pism_config:hydrology_tillwat_decay_rate_null = 3.16887646154128e-11;
-    pism_config:hydrology_tillwat_decay_rate_null_doc = "m s-1; = 1 mm per year; rate at which tillwat is reduced to zero, in absence of other effects like input; only used by -hydrology null model";
-
-    pism_config:hydrology_hydraulic_conductivity = 0.01;
+    pism_config:hydrology_hydraulic_conductivity = 0.001;
     pism_config:hydrology_hydraulic_conductivity_doc = "m^{2 beta - alpha} s^{2 beta - 3} kg^{1-beta}; = k in notes; lateral conductivity, in Darcy's law, for subglacial water layer; units depend on powers alpha = hydrology_thickness_power_in_flux and beta = hydrology_potential_gradient_power_in_flux; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
-    pism_config:hydrology_thickness_power_in_flux = 1.2;
+    pism_config:hydrology_thickness_power_in_flux = 1.25;
     pism_config:hydrology_thickness_power_in_flux_doc = "; = alpha in notes; power alpha in Darcy's law q = - k W^alpha |grad psi|^{beta-2} grad psi, for subglacial water layer; used by PISMRoutingHydrology and PISMDistributedHydrology";
 
     pism_config:hydrology_gradient_power_in_flux = 1.5;
@@ -280,8 +280,11 @@ netcdf pism_config {
     pism_config:default_till_phi = 30.0;
     pism_config:default_till_phi_doc = "degrees; fill value for till friction angle";
 
-    pism_config:till_c_0 = 0.0;
-    pism_config:till_c_0_doc = "Pa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
+    pism_config:till_cohesion = 0.0;
+    pism_config:till_cohesion_doc = "Pa; cohesion of till; = c_0 in most references; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
+
+    pism_config:till_reference_effective_pressure = 1000.0;
+    pism_config:till_reference_effective_pressure_doc = "Pa; reference effective pressure N_0; value from [@ref Tulaczyketal2000]";
 
     pism_config:till_reference_void_ratio = 0.69;
     pism_config:till_reference_void_ratio_doc = "[pure]; void ratio at reference effective pressure N_0; value from [@ref Tulaczyketal2000]";
@@ -294,6 +297,18 @@ netcdf pism_config {
 
     pism_config:till_log_factor_transportable_water = 0.1;
     pism_config:till_log_factor_transportable_water_doc = "m; If tauc_add_transportable_water = yes then the water amount in the transport system is added to tillwat in determining tauc.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.";
+
+    pism_config:till_topg_to_phi_phi_min = 5.0;
+    pism_config:till_topg_to_phi_phi_min_doc = "degrees; lower value of the till friction angle; see the implementation of MohrCoulombYieldStress";
+
+    pism_config:till_topg_to_phi_phi_max = 15.0;
+    pism_config:till_topg_to_phi_phi_max_doc = "degrees; upper value of the till friction angle; see the implementation of MohrCoulombYieldStress";
+
+    pism_config:till_topg_to_phi_topg_min = -1000.0;
+    pism_config:till_topg_to_phi_topg_min_doc = "m; the elevation at which the lower value of the till friction angle is used; see the implementation of MohrCoulombYieldStress";
+
+    pism_config:till_topg_to_phi_topg_max = 1000.0;
+    pism_config:till_topg_to_phi_topg_max_doc = "m; the elevation at which the upper value of the till friction angle is used; see the implementation of MohrCoulombYieldStress";
 
     pism_config:mu_sliding = 0.0;
     pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. *This kind of sliding is not recommended, which is why it is used in IceEISModel and IceCompModel only. Changing this parameter will not affect regular PISM runs.*  See Appendix B of [@ref BBssasliding] for the dangers in this mechanism.";
@@ -333,6 +348,9 @@ netcdf pism_config {
 
     pism_config:ssafd_relative_convergence = 1.0e-4;
     pism_config:ssafd_relative_convergence_doc = "Relative change tolerance for the effective viscosity in the SSAFD object";
+
+    pism_config:ssafd_nuH_iter_failure_underrelaxation = 0.8;
+    pism_config:ssafd_nuH_iter_failure_underrelaxation_doc = "In event of 'Effective viscosity not converged' failure, use outer iteration rule nuH <- nuH + f (nuH - nuH_old), where f is this parameter.";
 
 
    // PISMAtmosphereModel and PISMSurfaceModel and PSModifier and LocalMassBalance constants
@@ -445,7 +463,10 @@ netcdf pism_config {
     // PISMOceanModel constants
 
     pism_config:ocean_sub_shelf_heat_flux_into_ice = 0.5;
-    pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/PISMOcean.cc";
+    pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in @ref pism::POConstant::shelf_base_mass_flux().";
+
+    pism_config:ocean_pik_melt_factor = 5e-3;
+    pism_config:ocean_pik_melt_factor_doc = "1; dimensionless tuning parameter in the '-ocean pik' ocean heat flux parameterization; see [@ref Martinetal2011]";
 
     // SSA inversion constants
     
@@ -555,8 +576,11 @@ netcdf pism_config {
     pism_config:ice_specific_heat_capacity = 2009.0;
     pism_config:ice_specific_heat_capacity_doc = "J kg-1 K-1; at melting point T_0";
 
-    pism_config:Glen_exponent = 3.0;
-    pism_config:Glen_exponent_doc = "; Glen exponent in ice flow law";
+    pism_config:sia_Glen_exponent = 3.0;
+    pism_config:sia_Glen_exponent_doc = "; Glen exponent in ice flow law for SIA";
+
+    pism_config:ssa_Glen_exponent = 3.0;
+    pism_config:ssa_Glen_exponent_doc = "; Glen exponent in ice flow law for SSA";
 
     pism_config:ice_softness = 3.1689e-24;
     pism_config:ice_softness_doc = "Pa-3 s-1; ice softness used by IsothermalGlenIce [@ref EISMINT96]";
@@ -582,20 +606,20 @@ netcdf pism_config {
     pism_config:Schoof_regularizing_velocity = 1.0;
     pism_config:Schoof_regularizing_velocity_doc = "m/year; Regularizing velocity (Schoof definition)";
 
-    pism_config:Paterson-Budd_A_cold = 3.61e-13;
-    pism_config:Paterson-Budd_A_cold_doc = "Pa^-3 / s; Paterson-Budd A_cold, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_A_cold = 3.61e-13;
+    pism_config:Paterson_Budd_A_cold_doc = "Pa^-3 / s; Paterson-Budd A_cold, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_A_warm = 1.73e3;
-    pism_config:Paterson-Budd_A_warm_doc = "Pa^-3 / s; Paterson-Budd A_warm, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_A_warm = 1.73e3;
+    pism_config:Paterson_Budd_A_warm_doc = "Pa^-3 / s; Paterson-Budd A_warm, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_Q_cold = 6.0e4;
-    pism_config:Paterson-Budd_Q_cold_doc = "J/mol; Paterson-Budd Q_cold, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_Q_cold = 6.0e4;
+    pism_config:Paterson_Budd_Q_cold_doc = "J/mol; Paterson-Budd Q_cold, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_Q_warm = 13.9e4;
-    pism_config:Paterson-Budd_Q_warm_doc = "J/mol; Paterson-Budd Q_warm, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_Q_warm = 13.9e4;
+    pism_config:Paterson_Budd_Q_warm_doc = "J/mol; Paterson-Budd Q_warm, see [@ref PatersonBudd]";
 
-    pism_config:Paterson-Budd_critical_temperature = 263.15;
-    pism_config:Paterson-Budd_critical_temperature_doc = "Kelvin; Paterson-Budd critical temperature, see [@ref PatersonBudd]";
+    pism_config:Paterson_Budd_critical_temperature = 263.15;
+    pism_config:Paterson_Budd_critical_temperature_doc = "Kelvin; Paterson-Budd critical temperature, see [@ref PatersonBudd]";
 
     pism_config:sia_sliding_verification_mode = "no";
     pism_config:sia_sliding_verification_mode_doc = "; Enable 'verification mode' of the SIA sliding code.";
@@ -719,7 +743,10 @@ netcdf pism_config {
    pism_config:surface_gradient_method = "haseloff";
    pism_config:surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points; possible values are 'mahaffy', 'eta', 'haseloff' (lowercase)";
 
-   pism_config:grid_periodicity = "none";
+   pism_config:grid_max_stencil_width = 2;
+   pism_config:grid_max_stencil_width_doc = "; Maximum width of the finite-difference stencil used in PISM.";
+
+   pism_config:grid_periodicity = "xy";
    pism_config:grid_periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
 
    pism_config:grid_ice_vertical_spacing = "quadratic";
@@ -767,7 +794,7 @@ netcdf pism_config {
    pism_config:output_variable_order = "xyz";
    pism_config:output_variable_order_doc = "Variable order to use in output files. Possible values are 'zyx' (slowest), 'yxz' and 'xyz' (fastest).";
 
-   pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux_mag climatic_mass_balance velsurf_mag diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taub_mag taud_mag temp_pa tillwat topgsmooth usurf wvelsurf";
+   pism_config:output_medium = "IcebergMask bwat bwatvel velbar_mag velbase_mag flux_mag climatic_mass_balance velsurf_mag diffusivity edot_1 edot_2 enthalpy ice_surface_temp liqfrac mask schoofs_theta tauc taub_mag taud_mag temp_pa tillwat topgsmooth usurf velsurf wvelsurf";
 
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size (the default) is selected. Does not include fields written by boundary models.";
 
@@ -780,4 +807,7 @@ netcdf pism_config {
 
    pism_config:fill_value = -2e9;
    pism_config:fill_value_doc = "_FillValue used when saving diagnostic quantities";
+
+   pism_config:long_name = "PISM configuration flags and parameters.";
+   pism_config:long_name_doc = "The 'long_name' attribute is required by CF conventions. It is not used by PISM itself.";
 }

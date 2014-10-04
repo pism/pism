@@ -54,14 +54,18 @@ PetscErrorCode NullTransportHydrology::subglacial_water_pressure(IceModelVec2S &
 
 //! Update the till water thickness by simply integrating the melt input.
 /*!
-Does an explicit (Euler) step of the integration
+Does a step of the trivial integration
   \f[ \frac{\partial W_{til}}{\partial t} = \frac{m}{\rho_w} - C\f]
-where \f$C=\f$`hydrology_tillwat_decay_rate_null`.  Enforces bounds
+where \f$C=\f$`hydrology_tillwat_decay_rate`.  Enforces bounds
 \f$0 \le W_{til} \le W_{til}^{max}\f$ where the upper bound is
 `hydrology_tillwat_max`.  Here \f$m/\rho_w\f$ is `total_input`.
 
-There is no attempt to report on conservation errors because the model does
-not conserve water.
+Uses the current mass-continuity timestep `icedt`.  (Compare
+RoutingHydrology::raw_update_Wtil() which will generally be taking time steps
+determined by the evolving transportable water layer in that model.)
+
+There is no attempt to report on conservation errors because this
+NullTransportHydrology model does not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
@@ -77,7 +81,7 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
   ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
 
   const double tillwat_max = config.get("hydrology_tillwat_max"),
-                  C           = config.get("hydrology_tillwat_decay_rate_null");
+               C           = config.get("hydrology_tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
     PetscPrintf(grid.com,
@@ -87,22 +91,20 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
   }
 
   MaskQuery M(*mask);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
-  ierr = total_input.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (M.ocean(i,j)) {
-        Wtil(i,j) = 0.0;
-      } else {
-        Wtil(i,j) += icedt * (total_input(i,j) - C);
-        Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
-      }
+  IceModelVec::AccessList list;
+  list.add(*mask);
+  list.add(Wtil);
+  list.add(total_input);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (M.ocean(i,j) || M.ice_free(i,j)) {
+      Wtil(i,j) = 0.0;
+    } else {
+      Wtil(i,j) += icedt * (total_input(i,j) - C);
+      Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
     }
   }
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
-  ierr = total_input.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

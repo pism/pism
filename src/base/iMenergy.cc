@@ -31,24 +31,24 @@ namespace pism {
 
 //! Manage the solution of the energy equation, and related parallel communication.
 /*!
-This method updates three fields:
+  This method updates three fields:
   - IceModelVec3 Enth3
   - IceModelVec2 basal_melt_rate
   - IceModelVec2 vHmelt
-That is, energyStep() is in charge of calling other methods that actually update, and
-then it is in charge of doing the ghost communication as needed.  If
-do_cold_ice_methods == true, then energyStep() must also update this field
+  That is, energyStep() is in charge of calling other methods that actually update, and
+  then it is in charge of doing the ghost communication as needed.  If
+  do_cold_ice_methods == true, then energyStep() must also update this field
   - IceModelVec3 T3
 
-Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
-do_cold_ice_methods == true.
- */
+  Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
+  do_cold_ice_methods == true.
+*/
 PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
 
   double  myCFLviolcount = 0.0,   // these are counts but they are type "double"
-               myVertSacrCount = 0.0,  //   because that type works with GlobalSum()
-               myBulgeCount = 0.0;
+    myVertSacrCount = 0.0,  //   because that type works with GlobalSum()
+    myBulgeCount = 0.0;
   double gVertSacrCount, gBulgeCount;
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
@@ -84,14 +84,10 @@ PetscErrorCode IceModel::energyStep() {
     ierr = GlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
       ierr = verbPrintf(1,grid.com,
-        "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
-        gLiquifiedVol / 1.0e9); CHKERRQ(ierr);
+                        "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
+                        gLiquifiedVol / 1.0e9); CHKERRQ(ierr);
     }
   }
-
-  // Both cases above update the basal melt rate field; here we update its
-  // ghosts, which are needed to compute tauc locally
-  ierr = basal_melt_rate.update_ghosts(); CHKERRQ(ierr);
 
   ierr = GlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 
@@ -118,6 +114,61 @@ PetscErrorCode IceModel::energyStep() {
   return 0;
 }
 
+//! @brief Combine basal melt rate in grounded and floating areas.
+/**
+ * Grounded basal melt rate is computed as a part of the energy
+ * (enthalpy or temperature) step; floating basal melt rate is
+ * provided by an ocean model.
+ *
+ * This method updates IceModel::basal_melt_rate (in meters per second
+ * ice-equivalent).
+ *
+ * The sub shelf mass flux provided by an ocean model is in [kg m-2
+ * s-1], so we divide by the ice density to convert to [m/s].
+ */
+PetscErrorCode IceModel::combine_basal_melt_rate() {
+  PetscErrorCode ierr;
+
+  assert(ocean != NULL);
+  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+
+  const bool sub_gl = config.get_flag("sub_groundingline");
+
+  IceModelVec::AccessList list;
+
+  if (sub_gl == true) {
+    list.add(gl_mask);
+  }
+
+  MaskQuery mask(vMask);
+
+  double ice_density = config.get("ice_density");
+
+  list.add(vMask);
+  list.add(basal_melt_rate);
+  list.add(shelfbmassflux);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double lambda = 1.0;      // 1.0 corresponds to the grounded case
+    // Note: here we convert shelf base mass flux from [kg m-2 s-1] to [m s-1]:
+    const double
+      M_grounded   = basal_melt_rate(i,j),
+      M_shelf_base = shelfbmassflux(i,j) / ice_density;
+
+    // Use the fractional floatation mask to adjust the basal melt
+    // rate near the grounding line:
+    if (sub_gl == true) {
+      lambda = gl_mask(i,j);
+    } else if (mask.ocean(i,j)) {
+      lambda = 0.0;
+    }
+    basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
+  }
+
+  return 0;
+}
 
 //! \brief Extract from enthalpy field (Enth3) the temperature which the top of
 //! the bedrock thermal layer will see.
@@ -140,35 +191,31 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   MaskQuery mask(vMask);
 
-  ierr = bed_topography.begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = ice_thickness.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (int j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask.grounded(i,j)) {
-        if (mask.ice_free(i,j)) { // no ice: sees air temp
-          result(i,j) = ice_surface_temp(i,j);
-        } else { // ice: sees temp of base of ice
-          const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
-          double temp;
-          // ignore return code when getting temperature: we are committed to
-          //   this enthalpy field; getAbsTemp() only returns temperatures at or
-          //   below pressure melting
-          EC->getAbsTemp(result(i,j), pressure, temp);
-          result(i,j) = temp;
-        }
-      } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
+  IceModelVec::AccessList list;
+  list.add(bed_topography);
+  list.add(result);
+  list.add(ice_thickness);
+  list.add(vMask);
+  list.add(ice_surface_temp);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.grounded(i,j)) {
+      if (mask.ice_free(i,j)) { // no ice: sees air temp
+        result(i,j) = ice_surface_temp(i,j);
+      } else { // ice: sees temp of base of ice
+        const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
+        double temp;
+        // ignore return code when getting temperature: we are committed to
+        //   this enthalpy field; getAbsTemp() only returns temperatures at or
+        //   below pressure melting
+        EC->getAbsTemp(result(i,j), pressure, temp);
+        result(i,j) = temp;
       }
+    } else { // floating: apply pressure melting temp as top of bedrock temp
+      result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
     }
   }
-  ierr = ice_thickness.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = bed_topography.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

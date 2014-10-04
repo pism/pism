@@ -27,6 +27,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 #include "IceGrid.hh"
+#include "PISMDiagnostic.hh"
+#include "bedrockThermalUnit.hh"
 
 namespace pism {
 
@@ -144,6 +146,14 @@ PetscErrorCode IceModel::update_run_stats() {
   run_stats.set_double("processor_hours", proc_hours);
   run_stats.set_double("model_years_per_processor_hour", mypph);
   run_stats.set_double("PETSc_MFlops", flops * 1.0e-6);
+  run_stats.set_double("grid_dx_meters", grid.dx);
+  run_stats.set_double("grid_dy_meters", grid.dy);
+  run_stats.set_double("grid_dz_min_meters", grid.dzMIN);
+  run_stats.set_double("grid_dz_max_meters", grid.dzMAX);
+  if (btu != NULL) {
+    run_stats.set_double("grid_dzb_meters", btu->get_vertical_spacing());
+  }
+  run_stats.set_string("source", std::string("PISM ") + PISM_Revision);
 
   run_stats.set_double("grounded_basal_ice_flux_cumulative", grounded_basal_ice_flux_cumulative);
   run_stats.set_double("nonneg_rule_flux_cumulative", nonneg_rule_flux_cumulative);
@@ -259,29 +269,28 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // We use surface temperatures to extend T3. We get them from the
   // SurfaceModel.
 
-  if (surface != PETSC_NULL) {
+  if (surface != NULL) {
     ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
   } else {
-    SETERRQ(grid.com, 1,"PISM ERROR: surface == PETSC_NULL");
+    SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
   }
 
   // for extending the variables Enth3 and vWork3d vertically, put into
   //   vWork2d[0] the enthalpy of the air
   double p_air = EC->getPressureFromDepth(0.0);
-  ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
-                                   vWork2d[0](i,j));
-         CHKERRQ(ierr);
-    }
+
+  IceModelVec::AccessList list;
+  list.add(liqfrac_surface);
+  list.add(vWork2d[0]);
+  list.add(ice_surface_temp);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
+                                 vWork2d[0](i,j));
+    CHKERRQ(ierr);
   }
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
   // Model state 3D vectors:
   ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
@@ -290,7 +299,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
-    ierr =    T3.extend_vertically(old_Mz, ice_surface_temp); CHKERRQ(ierr);
+    ierr = T3.extend_vertically(old_Mz, ice_surface_temp); CHKERRQ(ierr);
   }
 
   // deal with 3D age conditionally
@@ -303,7 +312,16 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   
   ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
 
-  if (save_snapshots && (!split_snapshots)) {
+  // Now update z levels used for diagnostic quantities:
+  std::map<std::string,Diagnostic*>::iterator j = diagnostics.begin();
+  while (j != diagnostics.end()) {
+    if (j->second != NULL) {
+      (j->second)->set_zlevels(grid.zlevels);
+    }
+    ++j;
+  }
+
+  if (save_snapshots && (not split_snapshots)) {
     char tmp[20];
     snprintf(tmp, 20, "%d", grid.Mz);
     
@@ -313,6 +331,18 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     ierr = verbPrintf(2, grid.com,
                       "NOTE: Further snapshots will be saved to '%s'...\n",
                       snapshots_filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (save_extra && (not split_extra)) {
+    char tmp[20];
+    snprintf(tmp, 20, "%d", grid.Mz);
+
+    extra_filename = pism_filename_add_suffix(extra_filename, "-Mz", tmp);
+    extra_file_is_ready = false;
+
+    ierr = verbPrintf(2, grid.com,
+                      "NOTE: Further spatially-variable time-series will be saved to '%s'...\n",
+                      extra_filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;

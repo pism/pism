@@ -42,9 +42,9 @@ PetscErrorCode PO_delta_T::allocate_PO_delta_T() {
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
-  offset->set_units("Kelvin", "");
-  offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "ice-shelf-base temperature offsets");
+  offset->get_metadata().set_units("Kelvin");
+  offset->get_metadata().set_string("long_name", "ice-shelf-base temperature offsets");
+  offset->get_dimension_metadata().set_units(grid.time->units_string());
 
   shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");

@@ -153,7 +153,7 @@ IceModel::~IceModel() {
   // de-allocate viewers
   std::map<std::string,PetscViewer>::iterator k = viewers.begin();
   while (k != viewers.end()) {
-    if ((*k).second != PETSC_NULL) {
+    if ((*k).second != NULL) {
       PetscViewerDestroy(&(*k).second);
       ++k;
     }
@@ -193,7 +193,8 @@ IceModel::~IceModel() {
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
-  int WIDE_STENCIL = grid.max_stencil_width;
+
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   ierr = verbPrintf(3, grid.com,
                     "Allocating memory...\n"); CHKERRQ(ierr);
@@ -221,11 +222,16 @@ PetscErrorCode IceModel::createVecs() {
   if (config.get_flag("do_cold_ice_methods")) {
     // ice temperature
     ierr = T3.create(grid, "temp", WITH_GHOSTS); CHKERRQ(ierr);
-    ierr = T3.set_attrs("model_state", "ice temperature", "K", "land_ice_temperature"); CHKERRQ(ierr);
+    ierr = T3.set_attrs("model_state",
+                        "ice temperature", "K", "land_ice_temperature"); CHKERRQ(ierr);
     T3.metadata().set_double("valid_min", 0.0);
     ierr = variables.add(T3); CHKERRQ(ierr);
 
-    Enth3.metadata().set_string("pism_intent", "diagnostic");
+    if (config.get_flag("do_energy") == true) {
+      Enth3.metadata().set_string("pism_intent", "diagnostic");
+    } else {
+      T3.metadata().set_string("pism_intent", "diagnostic");
+    }
   }
 
   // age of ice but only if age will be computed
@@ -280,13 +286,7 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   // grounded_dragging_floating integer mask
-  if (calving_methods.find("eigen_calving") != calving_methods.end()) {
-    ierr = vMask.create(grid, "mask", WITH_GHOSTS, 3); CHKERRQ(ierr);
-    // This wider stencil is required by the calving code when asking
-    // for mask values at the ice margin (offset+1)
-  } else {
-    ierr = vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  }
+  ierr = vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vMask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                          "", ""); CHKERRQ(ierr);
   std::vector<double> mask_values(4);
@@ -336,7 +336,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(bed_uplift_rate); CHKERRQ(ierr);
 
   // basal melt rate
-  ierr = basal_melt_rate.create(grid, "bmelt", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = basal_melt_rate.create(grid, "bmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
   // ghosted to allow the "redundant" computation of tauc
   ierr = basal_melt_rate.set_attrs("model_state",
                                    "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
@@ -496,7 +496,7 @@ PetscErrorCode IceModel::createVecs() {
                         "climate_from_SurfaceModel",  // FIXME: can we do better?
                         "ice-equivalent surface mass balance (accumulation/ablation) rate",
                         "kg m-2 s-1",
-                        "land_ice_surface_specific_mass_balance");  // CF standard_name
+                        "land_ice_surface_specific_mass_balance_flux");  // CF standard_name
   CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   climatic_mass_balance.write_in_glaciological_units = true;
@@ -731,6 +731,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
+
+  // Combine basal melt rate in grounded (computed during the energy
+  // step) and floating (provided by an ocean model) areas.
+  ierr = combine_basal_melt_rate(); CHKERRQ(ierr);
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)

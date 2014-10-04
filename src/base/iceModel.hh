@@ -171,14 +171,17 @@ public:
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const std::string &fname);
   virtual PetscErrorCode bootstrap_2d(const std::string &fname);
-  virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_output_size(const std::string &option, const std::string &description,
-                                         const std::string &default_value, std::set<std::string> &result);
-  virtual std::string         get_output_size(const std::string &option);
+  virtual PetscErrorCode output_size_from_option(const std::string &option,
+                                                 const std::string &description,
+                                                 const std::string &default_value,
+                                                 std::set<std::string> &result);
+  virtual PetscErrorCode set_output_size(const std::string &keyword,
+                                         std::set<std::string> &result);
+  virtual std::string get_output_size(const std::string &option);
 
   // see iMutil.cc
   virtual PetscErrorCode additionalAtStartTimestep();
@@ -326,6 +329,8 @@ protected:
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
   virtual bool checkThinNeigh(IceModelVec2S &thickness, int i, int j, const double threshold);
+
+  virtual PetscErrorCode combine_basal_melt_rate();
 
   // see iMenthalpy.cc
   virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);

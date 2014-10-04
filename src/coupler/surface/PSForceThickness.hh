@@ -45,6 +45,7 @@ private:
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
   IceModelVec2S *m_ice_thickness; //!< current ice thickness produced by IceModel.
   IceModelVec2S m_target_thickness, m_ftt_mask;
+  IceModelVec2Int *m_pism_mask;
   NCSpatialVariable m_climatic_mass_balance, m_climatic_mass_balance_original, m_ice_surface_temp;
   PetscErrorCode allocate_PSForceThickness();
 };

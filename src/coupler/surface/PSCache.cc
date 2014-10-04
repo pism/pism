@@ -45,7 +45,7 @@ PetscErrorCode PSCache::allocate_PSCache() {
   ierr = m_mass_flux.set_attrs("climate_state",
                                "surface mass balance (accumulation/ablation) rate",
                                "kg m-2 s-1",
-                               "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+                               "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
   ierr = m_mass_flux.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   m_mass_flux.write_in_glaciological_units = true;
 

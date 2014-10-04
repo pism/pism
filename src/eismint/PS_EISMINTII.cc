@@ -40,7 +40,7 @@ PetscErrorCode PS_EISMINTII::allocate() {
   ierr = m_climatic_mass_balance.set_attrs("internal",
                                            "ice-equivalent surface mass balance (accumulation/ablation) rate",
                                            "kg m-2 s-1",
-                                           "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
+                                           "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
   ierr = m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
   m_climatic_mass_balance.write_in_glaciological_units = true;
   m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
@@ -146,21 +146,21 @@ PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
   }
 
   // now fill in accum and surface temp
-  ierr = m_ice_surface_temp.begin_access(); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // r is distance from center of grid; if E then center is shifted (above)
-      const double r = sqrt(PetscSqr(-cx + grid.dx*i)
-                            + PetscSqr(-cy + grid.dy*j));
-      // set accumulation from formula (7) in (Payne et al 2000)
-      m_climatic_mass_balance(i,j) = PetscMin(m_M_max, m_S_b * (m_R_el-r));
-      // set surface temperature
-      m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;  // formula (8) in (Payne et al 2000)
-    }
+  IceModelVec::AccessList list;
+  list.add(m_ice_surface_temp);
+  list.add(m_climatic_mass_balance);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    // r is distance from center of grid; if E then center is shifted (above)
+    const double r = sqrt(PetscSqr(-cx + grid.dx*i)
+                          + PetscSqr(-cy + grid.dy*j));
+    // set accumulation from formula (7) in (Payne et al 2000)
+    m_climatic_mass_balance(i,j) = PetscMin(m_M_max, m_S_b * (m_R_el-r));
+    // set surface temperature
+    m_ice_surface_temp(i,j) = m_T_min + m_S_T * r;  // formula (8) in (Payne et al 2000)
   }
-  ierr = m_ice_surface_temp.end_access(); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.end_access(); CHKERRQ(ierr);
 
   // convert from [m/s] to [kg m-2 s-1]
   ierr = m_climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);

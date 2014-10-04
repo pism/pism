@@ -44,16 +44,16 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
 
   offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
-  offset->set_units("Kelvin", "");
-  offset->set_dimension_units(grid.time->units_string(), "");
-  offset->set_attr("long_name", "ice-surface temperature offsets");
+  offset->get_metadata().set_units("Kelvin");
+  offset->get_metadata().set_string("long_name", "ice-surface temperature offsets");
+  offset->get_dimension_metadata().set_units(grid.time->units_string());
 
   climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
                                    "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-                                   "land_ice_surface_specific_mass_balance");
+                                   "land_ice_surface_specific_mass_balance_flux");
   climatic_mass_balance.set_units("kg m-2 s-1");
   climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 

@@ -84,16 +84,14 @@ public:
   double average(double t, double dt, unsigned int N);
   PetscErrorCode append(double value, double a, double b);
   int length();
-  PetscErrorCode set_attr(const std::string &name, double value);
-  PetscErrorCode set_attr(const std::string &name, const std::string &value);
-  PetscErrorCode set_units(const std::string &units, const std::string &glaciological_units);
-  PetscErrorCode set_dimension_units(const std::string &units, const std::string &glaciological_units);
-  std::string get_string(const std::string &name);
+  NCTimeseries& get_metadata();
+  NCTimeseries& get_dimension_metadata();
 
   void scale(double scaling_factor);
 
   std::string short_name;
 protected:
+  void set_bounds_units();
   UnitSystem m_unit_system;
   NCTimeseries dimension, var;
   MPI_Comm com;

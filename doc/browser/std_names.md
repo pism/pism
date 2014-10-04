@@ -30,7 +30,7 @@ Because of the use of UDUNITS, PISM input files do not have to have fields alrea
   <tr><td>land_ice_lwe_calving_rate</td><td>m s-1</td><td></td><td></td></tr>
   <tr><td>land_ice_lwe_surface_specific_mass_balance</td><td>m s-1</td><td></td><td></td></tr>
   <tr><td>land_ice_sigma_coordinate</td><td>1</td><td></td><td></td>
-  <tr><td>land_ice_surface_specific_mass_balance</td><td>m s-1</td><td>acab</td><td>acab [IceModelVec2S]</td>
+  <tr><td>land_ice_surface_specific_mass_balance_flux</td><td>kg m-2 s-1</td><td>climatic_mass_balance</td><td>acab [IceModelVec2S]</td>
   <tr><td>land_ice_temperature</td><td>K</td><td>temp</td><td>T3 [IceModelVec3]</td>
   <tr><td>land_ice_thickness</td><td>m</td><td>thk</td><td>vH [IceModelVec2S]</td></tr>
   <tr><td>land_ice_vertical_mean_x_velocity</td><td>m s-1</td><td>ubar</td><td>vel_bar.u [IceModelVec2V]</td></tr>

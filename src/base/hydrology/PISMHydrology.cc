@@ -34,11 +34,12 @@ Hydrology::Hydrology(IceGrid &g, const Config &conf)
   mask  = NULL;
   inputtobed = NULL;
   variables = NULL;
+  hold_bmelt = false;
 
   PetscErrorCode ierr1, ierr2;
-  ierr1 = total_input.create(grid, "total_input_hydro", WITHOUT_GHOSTS);
+  ierr1 = total_input.create(grid, "total_input", WITHOUT_GHOSTS);
   ierr2 = total_input.set_attrs("internal",
-                         "workspace for total input rate into subglacial water layer",
+                         "hydrology model workspace for total input rate into subglacial water layer",
                          "m s-1", "");
   if ((ierr1 != 0) || (ierr2 != 0)) {
       PetscPrintf(grid.com,
@@ -46,7 +47,17 @@ Hydrology::Hydrology(IceGrid &g, const Config &conf)
       PISMEnd();
   }
 
-  // *all* Hydrology classes have layer of water stored in till
+  ierr1 = bmelt_local.create(grid, "bmelt", WITHOUT_GHOSTS);
+  ierr2 = bmelt_local.set_attrs("internal",
+                         "hydrology model workspace for bmelt",
+                         "m s-1", "");
+  if ((ierr1 != 0) || (ierr2 != 0)) {
+      PetscPrintf(grid.com,
+        "PISM ERROR: memory allocation failed in Hydrology constructor (bmelt_local).\n");
+      PISMEnd();
+  }
+
+  // *all* Hydrology classes have layer of water stored in till as a state variable
   ierr1 = Wtil.create(grid, "tillwat", WITHOUT_GHOSTS);
   ierr2 = Wtil.set_attrs("model_state",
                      "effective thickness of subglacial water stored in till",
@@ -59,14 +70,17 @@ Hydrology::Hydrology(IceGrid &g, const Config &conf)
   }
 }
 
+
 Hydrology::~Hydrology() {
   // empty
 }
 
+
 PetscErrorCode Hydrology::init(Vars &vars) {
   PetscErrorCode ierr;
-  std::string itbfilename;  // itb = input_to_bed
-  bool itbfile_set, itbperiod_set, itbreference_set;
+  std::string itbfilename,  // itb = input_to_bed
+              bmeltfilename;
+  bool bmeltfile_set, itbfile_set, itbperiod_set, itbreference_set;
   bool i_set, bootstrap;
   double itbperiod_years = 0.0, itbreference_year = 0.0;
 
@@ -76,14 +90,17 @@ PetscErrorCode Hydrology::init(Vars &vars) {
   ierr = PetscOptionsBegin(grid.com, "",
             "Options controlling the base class Hydrology", ""); CHKERRQ(ierr);
   {
-    ierr = OptionsString("-input_to_bed_file",
-      "A time- and space-dependent file with amount of water (depth per time) which should be put at the ice sheet bed at the given location at the given time",
+    ierr = OptionsString("-hydrology_bmelt_file",
+      "Read time-independent values for bmelt from a file; replaces bmelt computed through conservation of energy",
+      bmeltfilename, bmeltfile_set); CHKERRQ(ierr);
+    ierr = OptionsString("-hydrology_input_to_bed_file",
+      "A time- and space-dependent file with amount of water (depth per time) which should be added to the amount of water at the ice sheet bed at the given location at the given time; adds to bmelt",
       itbfilename, itbfile_set); CHKERRQ(ierr);
-    ierr = OptionsReal("-input_to_bed_period",
-      "The period (i.e. duration before repeat), in years, of -input_to_bed_file data",
+    ierr = OptionsReal("-hydrology_input_to_bed_period",
+      "The period (i.e. duration before repeat), in years, of -hydrology_input_to_bed_file data",
       itbperiod_years, itbperiod_set); CHKERRQ(ierr);
-    ierr = OptionsReal("-input_to_bed_reference_year",
-      "The reference year for periodizing the -input_to_bed_file data",
+    ierr = OptionsReal("-hydrology_input_to_bed_reference_year",
+      "The reference year for periodizing the -hydrology_input_to_bed_file data",
       itbreference_year, itbreference_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
@@ -111,7 +128,13 @@ PetscErrorCode Hydrology::init(Vars &vars) {
   mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available to Hydrology");
 
-  // the following inputtobed is not related to IceModel; we must read it ourselves
+  if (bmeltfile_set) {
+    ierr = verbPrintf(2, grid.com,
+       "  option -hydrology_bmelt_file seen; reading bmelt from '%s'.\n", bmeltfilename.c_str()); CHKERRQ(ierr);
+    ierr = bmelt_local.regrid(bmeltfilename, CRITICAL); CHKERRQ(ierr);
+    hold_bmelt = true;
+  }
+
 
   if (itbfile_set) {
     inputtobed_period = (itbperiod_set) ? itbperiod_years : 0.0;
@@ -133,13 +156,13 @@ PetscErrorCode Hydrology::init(Vars &vars) {
     }
 
     if (n_records == 0) {
-      PetscPrintf(grid.com, "PISM ERROR: can't find 'inputtobed' in -input_to_bed file with name '%s'.\n",
+      PetscPrintf(grid.com, "PISM ERROR: can't find 'inputtobed' in -hydrology_input_to_bed file with name '%s'.\n",
                   itbfilename.c_str());
       PISMEnd();
     }
 
     ierr = verbPrintf(2,grid.com,
-      "    option -input_to_bed_file seen ... creating 'inputtobed' variable ...\n"); CHKERRQ(ierr);
+      "    option -hydrology_input_to_bed_file seen ... creating 'inputtobed' variable ...\n"); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
       "    allocating buffer space for n = %d 'inputtobed' records ...\n", n_records); CHKERRQ(ierr);
     inputtobed = new IceModelVec2T;
@@ -184,6 +207,7 @@ void Hydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["bwp"] = new Hydrology_bwp(this, grid, *variables);
   dict["bwprel"] = new Hydrology_bwprel(this, grid, *variables);
   dict["effbwp"] = new Hydrology_effbwp(this, grid, *variables);
+  dict["hydrobmelt"] = new Hydrology_hydrobmelt(this, grid, *variables);
   dict["hydroinput"] = new Hydrology_hydroinput(this, grid, *variables);
   dict["wallmelt"] = new Hydrology_wallmelt(this, grid, *variables);
 }
@@ -246,28 +270,27 @@ PetscErrorCode Hydrology::wall_melt(IceModelVec2S &result) {
 Checks \f$0 \le W_{til} \le W_{til}^{max} =\f$hydrology_tillwat_max.
  */
 PetscErrorCode Hydrology::check_Wtil_bounds() {
-  PetscErrorCode ierr;
   double tillwat_max = config.get("hydrology_tillwat_max");
-  ierr = Wtil.begin_access(); CHKERRQ(ierr);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (Wtil(i,j) < 0.0) {
-        PetscPrintf(grid.com,
-           "Hydrology ERROR: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
-           "            at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", Wtil(i,j), i, j);
-        PISMEnd();
-      }
-      if (Wtil(i,j) > tillwat_max) {
-        PetscPrintf(grid.com,
-           "Hydrology ERROR: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
-           "            hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)\n"
-           "ENDING ... \n\n", Wtil(i,j), tillwat_max, i, j);
-        PISMEnd();
-      }
+
+  IceModelVec::AccessList list(Wtil);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (Wtil(i,j) < 0.0) {
+      PetscPrintf(grid.com,
+                  "Hydrology ERROR: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
+                  "            at (i,j)=(%d,%d)\n"
+                  "ENDING ... \n\n", Wtil(i,j), i, j);
+      PISMEnd();
+    }
+    if (Wtil(i,j) > tillwat_max) {
+      PetscPrintf(grid.com,
+                  "Hydrology ERROR: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
+                  "            hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)\n"
+                  "ENDING ... \n\n", Wtil(i,j), tillwat_max, i, j);
+      PISMEnd();
     }
   }
-  ierr = Wtil.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -275,7 +298,7 @@ PetscErrorCode Hydrology::check_Wtil_bounds() {
 //! Compute the total water input rate into the basal hydrology layer in the ice-covered region, allowing time-varying input from a file.
 /*!
 The user can specify the total of en- and supra-glacial drainage contributions
-to subglacial hydrology in a time-dependent input file using option -input_to_bed.
+to subglacial hydrology in a time-dependent input file using option -hydrology_input_to_bed.
 This method includes that possible input along with `bmelt` to get the total water
 input into the subglacial hydrology.
 
@@ -286,37 +309,37 @@ Call this method using the current \e hydrology time step.  This method
 may be called many times per IceModel time step.  See update() method
 in derived classes of Hydrology.
  */
-PetscErrorCode Hydrology::get_input_rate(
-                  double hydro_t, double hydro_dt, IceModelVec2S &result) {
+PetscErrorCode Hydrology::get_input_rate(double hydro_t, double hydro_dt,
+                                         IceModelVec2S &result) {
   PetscErrorCode ierr;
-  bool      use_const   = config.get_flag("hydrology_use_const_bmelt");
+  bool   use_const   = config.get_flag("hydrology_use_const_bmelt");
   double const_bmelt = config.get("hydrology_const_bmelt");
 
+  IceModelVec::AccessList list;
   if (inputtobed != NULL) {
     ierr = inputtobed->update(hydro_t, hydro_dt); CHKERRQ(ierr);
     ierr = inputtobed->interp(hydro_t + hydro_dt/2.0); CHKERRQ(ierr);
-    ierr = inputtobed->begin_access(); CHKERRQ(ierr);
+    list.add(*inputtobed);
   }
-  ierr = bmelt->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+
+  if (!hold_bmelt) {
+    ierr = bmelt->copy_to(bmelt_local); CHKERRQ(ierr);
+  }
+
+  list.add(bmelt_local);
+  list.add(*mask);
+  list.add(result);
   MaskQuery m(*mask);
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (m.icy(i, j)) {
-        result(i,j) = (use_const) ? const_bmelt : (*bmelt)(i,j);
-        if (inputtobed != NULL) {
-          result(i,j) += (*inputtobed)(i,j);
-        }
-      } else
-        result(i,j) = 0.0;
-    }
-  }
-  ierr = bmelt->end_access(); CHKERRQ(ierr);
-  ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  if (inputtobed != NULL) {
-    ierr = inputtobed->end_access(); CHKERRQ(ierr);
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (m.icy(i, j)) {
+      result(i,j) = (use_const) ? const_bmelt : bmelt_local(i,j);
+      if (inputtobed != NULL) {
+        result(i,j) += (*inputtobed)(i,j);
+      }
+    } else
+      result(i,j) = 0.0;
   }
   return 0;
 }

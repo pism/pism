@@ -20,6 +20,7 @@
 #include "PISMTime.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+#include "PISMConfig.hh"
 
 namespace pism {
 
@@ -41,7 +42,7 @@ BedDef::BedDef(IceGrid &g, const Config &conf)
 
 PetscErrorCode BedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
-  int WIDE_STENCIL = grid.max_stencil_width;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   ierr = topg_initial.create(grid, "topg_initial", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",

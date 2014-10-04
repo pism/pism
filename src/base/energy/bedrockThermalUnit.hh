@@ -32,7 +32,7 @@ public:
   IceModelVec3BTU() : Lbz(-1.0) {}
   virtual ~IceModelVec3BTU() {}
 
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
+  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name, bool local,
                                 int myMbz, double myLbz, int stencil_width = 1);
                                 
   PetscErrorCode get_layer_depth(double &depth); //!< Return -Lbz value.
@@ -101,13 +101,12 @@ private:
   values of \f$G_0\f$.
 */
 class BedThermalUnit : public Component_TS {
-
 public:
   BedThermalUnit(IceGrid &g, const Config &conf);
 
   virtual ~BedThermalUnit() { }
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual PetscErrorCode init(Vars &vars, bool &bootstrapping_needed);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
@@ -118,14 +117,18 @@ public:
   virtual PetscErrorCode update(double my_t, double my_dt);
 
   virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
-protected:
-  PetscErrorCode allocate();
 
   virtual PetscErrorCode bootstrap();
 
-  IceModelVec3BTU  temp;     //!< storage for bedrock thermal layer temperature;
-  //!    part of state; units K; equally-spaced layers;
-  //!    This IceModelVec is only created if Mbz > 1.
+  double get_vertical_spacing();
+protected:
+  PetscErrorCode allocate();
+
+
+  IceModelVec3BTU temp;
+  //!< storage for bedrock thermal layer temperature; part of state;
+  //!< units K; equally-spaced layers; This IceModelVec is only
+  //!< created if Mbz > 1.
 
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
   double bed_rho, //!< bedrock density

@@ -168,7 +168,7 @@ PetscErrorCode SSA::allocate() {
   int dof=2, stencil_width=1;
   ierr = grid.get_dm(dof, stencil_width, SSADA); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(SSADA->get(), &SSAX); CHKERRQ(ierr);
 
   {
     IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
@@ -187,7 +187,7 @@ PetscErrorCode SSA::allocate() {
 PetscErrorCode SSA::deallocate() {
   PetscErrorCode ierr;
 
-  if (SSAX != PETSC_NULL) {
+  if (SSAX != NULL) {
     ierr = VecDestroy(&SSAX); CHKERRQ(ierr);
   }
 
@@ -235,8 +235,6 @@ minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
 PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
-  PetscErrorCode ierr;
-
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
   const double n = flow_law->exponent(), // frequently n = 3
@@ -250,126 +248,121 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
-  ierr =   surface->begin_access();    CHKERRQ(ierr);
-  ierr =       bed->begin_access();  CHKERRQ(ierr);
-  ierr =      mask->begin_access();  CHKERRQ(ierr);
-  ierr =        thk.begin_access();  CHKERRQ(ierr);
-
   MaskQuery m(*mask);
 
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  IceModelVec::AccessList list;
+  list.add(*surface);
+  list.add(*bed);
+  list.add(*mask);
+  list.add(thk);
+  list.add(result);
 
-  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const double pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
-      if (pressure <= 0.0) {
-        result(i,j).u = 0.0;
-        result(i,j).v = 0.0;
-      } else {
-        double h_x = 0.0, h_y = 0.0;
-        // FIXME: we need to handle grid periodicity correctly.
-        if (m.grounded(i,j) && (use_eta == true)) {
-                // in grounded case, differentiate eta = H^{8/3} by chain rule
-          if (thk(i,j) > 0.0) {
-            const double myH = (thk(i,j) < minThickEtaTransform ?
-                                     minThickEtaTransform : thk(i,j));
-            const double eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
-            h_x = factor * (pow(thk(i+1,j),etapow) - pow(thk(i-1,j),etapow)) / (2*dx);
-            h_y = factor * (pow(thk(i,j+1),etapow) - pow(thk(i,j-1),etapow)) / (2*dy);
-          }
-          // now add bed slope to get actual h_x,h_y
-          // FIXME: there is no reason to assume user's bed is periodized
-          h_x += bed->diff_x(i,j);
-          h_y += bed->diff_y(i,j);
-        } else {  // floating or eta transformation is not used
-          if (compute_surf_grad_inward_ssa) {
-            // Special case for verification tests.
-            h_x = surface->diff_x_p(i,j);
-            h_y = surface->diff_y_p(i,j);
-          } else {              // general case
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-            // To compute the x-derivative we use
-            // * away from the grounding line -- 2nd order centered difference
-            //
-            // * at the grounded cell near the grounding line -- 1st order
-            //   one-sided difference using the grounded neighbor
-            //
-            // * at the floating cell near the grounding line -- 1st order
-            //   one-sided difference using the floating neighbor
-            //
-            // All three cases can be combined by writing h_x as the weighted
-            // average of one-sided differences, with weights of 0 if a finite
-            // difference is not used and 1 if it is.
-            //
-            // The y derivative is handled the same way.
+    const double pressure = EC.getPressureFromDepth(thk(i,j)); // FIXME issue #15
+    if (pressure <= 0.0) {
+      result(i,j).u = 0.0;
+      result(i,j).v = 0.0;
+    } else {
+      double h_x = 0.0, h_y = 0.0;
+      // FIXME: we need to handle grid periodicity correctly.
+      if (m.grounded(i,j) && (use_eta == true)) {
+        // in grounded case, differentiate eta = H^{8/3} by chain rule
+        if (thk(i,j) > 0.0) {
+          const double myH = (thk(i,j) < minThickEtaTransform ?
+                              minThickEtaTransform : thk(i,j));
+          const double eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
+          h_x = factor * (pow(thk(i+1,j),etapow) - pow(thk(i-1,j),etapow)) / (2*dx);
+          h_y = factor * (pow(thk(i,j+1),etapow) - pow(thk(i,j-1),etapow)) / (2*dy);
+        }
+        // now add bed slope to get actual h_x,h_y
+        // FIXME: there is no reason to assume user's bed is periodized
+        h_x += bed->diff_x(i,j);
+        h_y += bed->diff_y(i,j);
+      } else {  // floating or eta transformation is not used
+        if (compute_surf_grad_inward_ssa) {
+          // Special case for verification tests.
+          h_x = surface->diff_x_p(i,j);
+          h_y = surface->diff_y_p(i,j);
+        } else {              // general case
 
-            // x-derivative
-            {
-              double west = 1, east = 1;
-              if ((m.grounded(i,j) && m.floating_ice(i+1,j)) || (m.floating_ice(i,j) && m.grounded(i+1,j)) ||
-                  (m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)))
+          // To compute the x-derivative we use
+          // * away from the grounding line -- 2nd order centered difference
+          //
+          // * at the grounded cell near the grounding line -- 1st order
+          //   one-sided difference using the grounded neighbor
+          //
+          // * at the floating cell near the grounding line -- 1st order
+          //   one-sided difference using the floating neighbor
+          //
+          // All three cases can be combined by writing h_x as the weighted
+          // average of one-sided differences, with weights of 0 if a finite
+          // difference is not used and 1 if it is.
+          //
+          // The y derivative is handled the same way.
+
+          // x-derivative
+          {
+            double west = 1, east = 1;
+            if ((m.grounded(i,j) && m.floating_ice(i+1,j)) || (m.floating_ice(i,j) && m.grounded(i+1,j)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)))
+              east = 0;
+            if ((m.grounded(i,j) && m.floating_ice(i-1,j)) || (m.floating_ice(i,j) && m.grounded(i-1,j)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i-1,j)))
+              west = 0;
+
+            // This driving stress computation has to match the calving front
+            // stress boundary condition in SSAFD::assemble_rhs().
+            if (cfbc) {
+              if (m.icy(i,j) && m.ice_free(i+1,j))
                 east = 0;
-              if ((m.grounded(i,j) && m.floating_ice(i-1,j)) || (m.floating_ice(i,j) && m.grounded(i-1,j)) ||
-                  (m.floating_ice(i,j) && m.ice_free_ocean(i-1,j)))
+              if (m.icy(i,j) && m.ice_free(i-1,j))
                 west = 0;
-
-              // This driving stress computation has to match the calving front
-              // stress boundary condition in SSAFD::assemble_rhs().
-              if (cfbc) {
-                if (m.icy(i,j) && m.ice_free(i+1,j))
-                  east = 0;
-                if (m.icy(i,j) && m.ice_free(i-1,j))
-                  west = 0;
-              }
-
-              if (east + west > 0)
-                h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
-                                             east * surface->diff_x_stagE(i,j));
-              else
-                h_x = 0.0;
             }
 
-            // y-derivative
-            {
-              double south = 1, north = 1;
-              if ((m.grounded(i,j) && m.floating_ice(i,j+1)) || (m.floating_ice(i,j) && m.grounded(i,j+1)) ||
-                  (m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)))
+            if (east + west > 0)
+              h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
+                                           east * surface->diff_x_stagE(i,j));
+            else
+              h_x = 0.0;
+          }
+
+          // y-derivative
+          {
+            double south = 1, north = 1;
+            if ((m.grounded(i,j) && m.floating_ice(i,j+1)) || (m.floating_ice(i,j) && m.grounded(i,j+1)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)))
+              north = 0;
+            if ((m.grounded(i,j) && m.floating_ice(i,j-1)) || (m.floating_ice(i,j) && m.grounded(i,j-1)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i,j-1)))
+              south = 0;
+
+            // This driving stress computation has to match the calving front
+            // stress boundary condition in SSAFD::assemble_rhs().
+            if (cfbc) {
+              if (m.icy(i,j) && m.ice_free(i,j+1))
                 north = 0;
-              if ((m.grounded(i,j) && m.floating_ice(i,j-1)) || (m.floating_ice(i,j) && m.grounded(i,j-1)) ||
-                  (m.floating_ice(i,j) && m.ice_free_ocean(i,j-1)))
+              if (m.icy(i,j) && m.ice_free(i,j-1))
                 south = 0;
-
-              // This driving stress computation has to match the calving front
-              // stress boundary condition in SSAFD::assemble_rhs().
-              if (cfbc) {
-                if (m.icy(i,j) && m.ice_free(i,j+1))
-                  north = 0;
-                if (m.icy(i,j) && m.ice_free(i,j-1))
-                  south = 0;
-              }
-
-              if (north + south > 0)
-                h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +
-                                               north * surface->diff_y_stagN(i,j));
-              else
-                h_y = 0.0;
             }
 
-          } // end of "general case"
+            if (north + south > 0)
+              h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +
+                                             north * surface->diff_y_stagN(i,j));
+            else
+              h_y = 0.0;
+          }
 
-        } // end of "floating or eta transformation is not used"
+        } // end of "general case"
 
-        result(i,j).u = - pressure * h_x;
-        result(i,j).v = - pressure * h_y;
-      } // end of "(pressure > 0)"
-    } // inner loop (j)
-  } // outer loop (i)
+      } // end of "floating or eta transformation is not used"
 
-  ierr =        thk.end_access(); CHKERRQ(ierr);
-  ierr =       bed->end_access(); CHKERRQ(ierr);
-  ierr =   surface->end_access(); CHKERRQ(ierr);
-  ierr =      mask->end_access(); CHKERRQ(ierr);
-  ierr =     result.end_access(); CHKERRQ(ierr);
+      result(i,j).u = - pressure * h_x;
+      result(i,j).v = - pressure * h_y;
+    } // end of "(pressure > 0)"
+  }
+
   return 0;
 }
 
