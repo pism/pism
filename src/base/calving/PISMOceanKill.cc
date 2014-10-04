@@ -30,7 +30,7 @@ OceanKill::OceanKill(IceGrid &g, const Config &conf)
   PetscErrorCode ierr;
 
   ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
-                                  grid.max_stencil_width);
+                                  config.get("grid_max_stencil_width"));
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for OceanKill.\n");
     PISMEnd();
@@ -111,7 +111,10 @@ PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
   list.add(pism_mask);
   list.add(ice_thickness);
 
-  int GHOSTS = pism_mask.get_stencil_width();
+  unsigned int GHOSTS = pism_mask.get_stencil_width();
+  assert(m_ocean_kill_mask.get_stencil_width() >= GHOSTS);
+  assert(ice_thickness.get_stencil_width()     >= GHOSTS);
+
   for (PointsWithGhosts p(grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
 

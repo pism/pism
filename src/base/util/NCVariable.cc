@@ -291,7 +291,7 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
   Defines a variable and converts the units if needed.
  */
 PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
-                                        bool write_in_glaciological_units, Vec v) {
+                                        bool write_in_glaciological_units, Vec v) const {
   PetscErrorCode ierr;
 
   // find or define the variable
@@ -538,7 +538,7 @@ PetscErrorCode NCSpatialVariable::check_range(const std::string &filename, Vec v
 }
 
 //! \brief Define dimensions a variable depends on.
-PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
+PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
   PetscErrorCode ierr;
   bool exists;
 
@@ -572,7 +572,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) {
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
 PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
-                                         bool write_in_glaciological_units) {
+                                         bool write_in_glaciological_units) const {
   int ierr;
   std::vector<std::string> dims;
   bool exists;
@@ -582,12 +582,12 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
     return 0;
 
   ierr = define_dimensions(nc); CHKERRQ(ierr);
-
+  std::string variable_order = m_variable_order;
   // "..._bounds" should be stored with grid corners (corresponding to
   // the "z" dimension here) last, so we override the variable storage
   // order here
-  if (ends_with(get_name(), "_bounds") && m_variable_order == "zyx")
-    m_variable_order = "yxz";
+  if (ends_with(get_name(), "_bounds") && variable_order == "zyx")
+    variable_order = "yxz";
 
   std::string x = get_x().get_name(),
     y = get_y().get_name(),
@@ -602,14 +602,14 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
 
   // Use t,x,y,z(zb) variable order: it is weird, but matches the in-memory
   // storage order and so is *a lot* faster.
-  if (m_variable_order == "xyz") {
+  if (variable_order == "xyz") {
     dims.push_back(x);
     dims.push_back(y);
   }
 
   // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
   // are stored in the "natural" order.
-  if (m_variable_order == "yxz") {
+  if (variable_order == "yxz") {
     dims.push_back(y);
     dims.push_back(x);
   }
@@ -620,7 +620,7 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
 
   // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
   // but requires transposing data while writing and is *a lot* slower.
-  if (m_variable_order == "zyx") {
+  if (variable_order == "zyx") {
     dims.push_back(y);
     dims.push_back(x);
   }
@@ -641,6 +641,18 @@ NCVariable& NCSpatialVariable::get_y() {
 }
 
 NCVariable& NCSpatialVariable::get_z() {
+  return m_z;
+}
+
+const NCVariable& NCSpatialVariable::get_x() const {
+  return m_x;
+}
+
+const NCVariable& NCSpatialVariable::get_y() const {
+  return m_y;
+}
+
+const NCVariable& NCSpatialVariable::get_z() const {
   return m_z;
 }
 

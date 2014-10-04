@@ -19,12 +19,32 @@
 #ifndef TAOUTIL_HH_W42GJNRO
 #define TAOUTIL_HH_W42GJNRO
 
+#include <petsc.h>
+
+#if PETSC_VERSION_LT(3,5,0)
 #include <tao.h>
+#else
+#include <petsctao.h>
+#endif
+
 #include <string>
 #include "pism_const.hh"
 #include "TerminationReason.hh"
 
 namespace pism {
+
+namespace tao {
+#if PETSC_VERSION_LT(3,5,0)
+typedef ::TaoSolver Solver;
+typedef ::TaoSolverTerminationReason ConvergedReason;
+#define TaoGetConvergedReason TaoGetTerminationReason
+#define TaoSetConvergedReason TaoSetTerminationReason
+#else
+typedef ::Tao Solver;
+typedef ::TaoConvergedReason ConvergedReason;
+#endif
+}
+
 
 extern const char *const* TaoConvergedReasons;
 
@@ -44,7 +64,7 @@ private:
 //! Encapsulate TAO's TaoSolverTerminationReason codes as a PISM TerminationReason.
 class TAOTerminationReason: public TerminationReason {
 public:
-  TAOTerminationReason(TaoSolverTerminationReason r);
+  TAOTerminationReason(tao::ConvergedReason r);
   virtual void get_description(std::ostream &desc,int indent_level=0);
 };
 
@@ -111,7 +131,7 @@ public:
     ierr = this->construct(tao_type);
     if (ierr) {
       CHKERRCONTINUE(ierr);
-      PetscPrintf(m_comm, "FATAL ERROR: TaoBasicProblem allocation failed.\n");
+      PetscPrintf(m_comm, "FATAL ERROR: TaoBasicSolver allocation failed.\n");
       PISMEnd();
     }    
   }
@@ -121,7 +141,7 @@ public:
     ierr = this->destruct();
     if (ierr) {
       CHKERRCONTINUE(ierr);
-      PetscPrintf(m_comm, "FATAL ERROR: TaoBasicProblem deallocation failed.\n");
+      PetscPrintf(m_comm, "FATAL ERROR: TaoBasicSolver deallocation failed.\n");
       PISMEnd();
     }
   };
@@ -142,8 +162,8 @@ public:
     ierr = TaoSetInitialVector(m_tao, x0); CHKERRQ(ierr);
     ierr = TaoSolve(m_tao); CHKERRQ(ierr);  
 
-    TaoSolverTerminationReason tao_reason;
-    ierr = TaoGetTerminationReason(m_tao, &tao_reason); CHKERRQ(ierr);
+    tao::ConvergedReason tao_reason;
+    ierr = TaoGetConvergedReason(m_tao, &tao_reason); CHKERRQ(ierr);
     reason.reset(new TAOTerminationReason(tao_reason));
 
     return 0;
@@ -181,7 +201,7 @@ protected:
   }
   
   MPI_Comm m_comm;
-  TaoSolver m_tao;
+  tao::Solver m_tao;
   Problem  &m_problem;
 };
 
@@ -209,7 +229,7 @@ template<class Problem>
 class TaoObjectiveCallback {
 public:
 
-  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+  static PetscErrorCode connect(tao::Solver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveRoutine(tao,
                                   TaoObjectiveCallback<Problem>::evaluateObjectiveCallback,
@@ -219,7 +239,7 @@ public:
 
 protected:
 
-  static PetscErrorCode evaluateObjectiveCallback(TaoSolver tao,
+  static PetscErrorCode evaluateObjectiveCallback(tao::Solver tao,
                                                   Vec x, double *value, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
@@ -234,10 +254,10 @@ protected:
   This class makes it convenient to associate a TAO Monitor callback
   with a C++ object method. To assign 
   \code
-  PetscErrorCode MyObject::monitorTao(TaoSolver tao)
+  PetscErrorCode MyObject::monitorTao(tao::Solver tao)
   \endcode
 
-  as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `tao::Solver` `tao`, 
 
   \code
   MyObject obj;
@@ -252,7 +272,7 @@ template<class Problem>
 class TaoMonitorCallback {
 public:
 
-  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+  static PetscErrorCode connect(tao::Solver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetMonitor(tao,
                          TaoMonitorCallback<Problem>::monitorTao,
@@ -262,7 +282,7 @@ public:
 
 protected:
 
-  static PetscErrorCode monitorTao(TaoSolver tao, void *ctx) {
+  static PetscErrorCode monitorTao(tao::Solver tao, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->monitorTao(tao); CHKERRQ(ierr);
@@ -275,10 +295,10 @@ protected:
   This class makes it convenient to associate a TAO VariableBounds callback
   with a C++ object method. To assign 
   \code
-  PetscErrorCode MyObject::getVariableBounds(TaoSolver tao,Vec lo, Vec hi);
+  PetscErrorCode MyObject::getVariableBounds(tao::Solver tao,Vec lo, Vec hi);
   \endcode
 
-  as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `tao::Solver` `tao`, 
 
   \code
   MyObject obj;
@@ -293,7 +313,7 @@ template<class Problem>
 class TaoGetVariableBoundsCallback {
 public:
 
-  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+  static PetscErrorCode connect(tao::Solver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetVariableBoundsRoutine(tao,
                                        TaoGetVariableBoundsCallback<Problem>::getVariableBounds,
@@ -303,7 +323,7 @@ public:
 
 protected:
 
-  static PetscErrorCode getVariableBounds(TaoSolver tao, Vec lo, Vec hi, void *ctx) {
+  static PetscErrorCode getVariableBounds(tao::Solver tao, Vec lo, Vec hi, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->getVariableBounds(tao,lo,hi); CHKERRQ(ierr);
@@ -316,10 +336,10 @@ protected:
   This class makes it convenient to associate a TAO Objective Gradient callback
   with a C++ object method. To assign 
   \code
-  PetscErrorCode MyObject::evaluateGradient(TaoSolver tao,Vec x, Vec gradient);
+  PetscErrorCode MyObject::evaluateGradient(tao::Solver tao,Vec x, Vec gradient);
   \endcode
 
-  as the objective function to a `TaoSolver` `tao`, 
+  as the objective function to a `tao::Solver` `tao`, 
 
   \code
   MyObject obj;
@@ -334,7 +354,7 @@ template<class Problem>
 class TaoGradientCallback {
 public:
 
-  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+  static PetscErrorCode connect(tao::Solver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetGradientRoutine(tao,
                                  TaoGradientCallback<Problem>::evaluateGradient,
@@ -344,7 +364,7 @@ public:
 
 protected:
 
-  static PetscErrorCode evaluateGradient(TaoSolver tao,
+  static PetscErrorCode evaluateGradient(tao::Solver tao,
                                          Vec x, Vec gradient, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
@@ -358,10 +378,10 @@ protected:
   This class makes it convenient to associate a TAO convergence monitoring callback
   with a C++ object method. To assign 
   \code
-  PetscErrorCode MyObject::convergenceTest(TaoSolver tao);
+  PetscErrorCode MyObject::convergenceTest(tao::Solver tao);
   \endcode
 
-  as the convergence test function to a `TaoSolver` `tao`, 
+  as the convergence test function to a `tao::Solver` `tao`, 
 
   \code
   MyObject obj;
@@ -376,7 +396,7 @@ template<class Problem>
 class TaoConvergenceCallback {
 public:
 
-  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+  static PetscErrorCode connect(tao::Solver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetConvergenceTest(tao,
                                  TaoConvergenceCallback<Problem>::convergenceTestCallback,
@@ -386,7 +406,7 @@ public:
 
 protected:
 
-  static PetscErrorCode convergenceTestCallback(TaoSolver tao, void *ctx) {
+  static PetscErrorCode convergenceTestCallback(tao::Solver tao, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->convergenceTest(tao); CHKERRQ(ierr);
@@ -400,10 +420,10 @@ protected:
   This class makes it convenient to associate a TAO combined objective value and gradient 
   callback with a C++ object method. To assign 
   \code
-  PetscErrorCode MyObject::someObjectiveFunction(TaoSolver tao,Vec x, double *value, Vec gradient);
+  PetscErrorCode MyObject::someObjectiveFunction(tao::Solver tao,Vec x, double *value, Vec gradient);
   \endcode
 
-  as the convergence test function to a `TaoSolver` `tao`, 
+  as the convergence test function to a `tao::Solver` `tao`, 
 
   \code
   MyObject obj;
@@ -413,11 +433,11 @@ protected:
 
   Note that the method name for the callback must be specified explicitly via a template argument.
 */
-template<class Problem, PetscErrorCode (Problem::*Callback)(TaoSolver,Vec,double*,Vec) >
+template<class Problem, PetscErrorCode (Problem::*Callback)(tao::Solver,Vec,double*,Vec) >
 class TaoObjGradCallback {
 public:
 
-  static PetscErrorCode connect(TaoSolver tao, Problem &p) {
+  static PetscErrorCode connect(tao::Solver tao, Problem &p) {
     PetscErrorCode ierr;
     ierr = TaoSetObjectiveAndGradientRoutine(tao,
                                              TaoObjGradCallback<Problem,Callback>::evaluateObjectiveAndGradientCallback,
@@ -427,7 +447,7 @@ public:
   
 protected:
 
-  static PetscErrorCode evaluateObjectiveAndGradientCallback(TaoSolver tao,
+  static PetscErrorCode evaluateObjectiveAndGradientCallback(tao::Solver tao,
                                                              Vec x, double *value, Vec gradient, void *ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
@@ -441,11 +461,11 @@ protected:
   This class makes it convenient to associate a TAO Linearly Constrained Augmented Lagrangian (LCL)
   callbacks with C++ object methods. To assign 
   \code
-  PetscErrorCode MyObject::evaluateConstraints(TaoSolver tao,Vec x,Vec c);
-  PetscErrorCode MyObject::evaluateConstraintsJacobianState(TaoSolver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure);
-  PetscErrorCode MyObject::evaluateConstraintsJacobianDesign(TaoSolver tao, Vec x, Mat *J);
+  PetscErrorCode MyObject::evaluateConstraints(tao::Solver tao,Vec x,Vec c);
+  PetscErrorCode MyObject::evaluateConstraintsJacobianState(tao::Solver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure);
+  PetscErrorCode MyObject::evaluateConstraintsJacobianDesign(tao::Solver tao, Vec x, Mat *J);
   \endcode
-  as the LCL callbacks to a `TaoSolver` `tao`, 
+  as the LCL callbacks to a `tao::Solver` `tao`, 
 
   \code
   MyObject obj;
@@ -457,36 +477,63 @@ protected:
 template<class Problem>
 class TaoLCLCallbacks {
 public:
-  static PetscErrorCode connect(TaoSolver tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc=NULL, Mat Jcinv=NULL) {
+  static PetscErrorCode connect(tao::Solver tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc=NULL, Mat Jcinv=NULL) {
     PetscErrorCode ierr;
     ierr = TaoSetConstraintsRoutine(tao,c,TaoLCLCallbacks<Problem>::evaluateConstraintsCallback,&p); CHKERRQ(ierr);
-    if (Jcpc==NULL) Jcpc = Jc;
-    ierr = TaoSetJacobianStateRoutine(tao,Jc,Jcpc,Jcinv,TaoLCLCallbacks<Problem>::evaluateJacobianStateCallback,&p); CHKERRQ(ierr);
+    if (Jcpc==NULL) {
+      Jcpc = Jc;
+    }
+    ierr = TaoSetJacobianStateRoutine(tao,Jc,Jcpc,Jcinv,
+                                      TaoLCLCallbacks<Problem>::evaluateJacobianStateCallback,&p); CHKERRQ(ierr);
+
     ierr = TaoSetJacobianDesignRoutine(tao,Jd,TaoLCLCallbacks<Problem>::evaluateJacobianDesignCallback,&p); CHKERRQ(ierr);
     return 0;
   }
 protected:
-  static PetscErrorCode evaluateConstraintsCallback(TaoSolver tao, Vec x,Vec c, void*ctx) {
+  static PetscErrorCode evaluateConstraintsCallback(tao::Solver tao, Vec x,Vec c, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
     ierr = p->evaluateConstraints(tao,x,c); CHKERRQ(ierr);
     return 0;
   }
 
-  static PetscErrorCode evaluateJacobianStateCallback(TaoSolver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure, void*ctx) {
+#if PETSC_VERSION_LT(3,5,0)
+  static PetscErrorCode evaluateJacobianStateCallback(tao::Solver tao, Vec x, Mat *J, Mat *Jpc, Mat *Jinv, MatStructure *structure, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
-    ierr = p->evaluateConstraintsJacobianState(tao,x,J,Jpc,Jinv,structure);
+    ierr = p->evaluateConstraintsJacobianState(tao,x, *J, *Jpc, *Jinv, structure);
     CHKERRQ(ierr);
     return 0;
   }
-
-  static PetscErrorCode evaluateJacobianDesignCallback(TaoSolver tao, Vec x, Mat *J, void*ctx) {
+#else
+  static PetscErrorCode evaluateJacobianStateCallback(tao::Solver tao, Vec x, Mat J, Mat Jpc, Mat Jinv, void*ctx) {
     PetscErrorCode ierr;
     Problem *p = reinterpret_cast<Problem *>(ctx);
-    ierr = p->evaluateConstraintsJacobianDesign(tao,x,J); CHKERRQ(ierr);
+    // The MatStructure argument is not used in PETSc 3.5, but I want
+    // to preserve the signature of
+    // evaluateConstraintsJacobianState(...) for now -- (CK)
+    MatStructure structure;
+    ierr = p->evaluateConstraintsJacobianState(tao,x,J,Jpc,Jinv, &structure);
+    CHKERRQ(ierr);
     return 0;
   }
+#endif
+
+#if PETSC_VERSION_LT(3,5,0)
+  static PetscErrorCode evaluateJacobianDesignCallback(tao::Solver tao, Vec x, Mat *J, void*ctx) {
+    PetscErrorCode ierr;
+    Problem *p = reinterpret_cast<Problem *>(ctx);
+    ierr = p->evaluateConstraintsJacobianDesign(tao, x, *J); CHKERRQ(ierr);
+    return 0;
+  }
+#else
+  static PetscErrorCode evaluateJacobianDesignCallback(tao::Solver tao, Vec x, Mat J, void*ctx) {
+    PetscErrorCode ierr;
+    Problem *p = reinterpret_cast<Problem *>(ctx);
+    ierr = p->evaluateConstraintsJacobianDesign(tao, x, J); CHKERRQ(ierr);
+    return 0;
+  }
+#endif
 };
 
 } // end of namespace pism

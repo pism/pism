@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 #
-# Copyright (C) 2012 David Maxwell
+# Copyright (C) 2012, 2014 David Maxwell
 # 
 # This file is part of PISM.
 # 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
   # Convert tauc_prior -> zeta_prior
   zeta = PISM.IceModelVec2S();
-  WIDE_STENCIL=2
+  WIDE_STENCIL = int(grid.config.get("grid_max_stencil_width"))
   zeta.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
   ssarun.tauc_param.convertFromDesignVariable(tauc_prior,zeta)
   ssarun.ssa.linearize_at(zeta)

@@ -44,7 +44,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Elevation-dependent surface model options", ""); CHKERRQ(ierr);
   {
-    int T_param_number = 4;
+    PetscInt T_param_number = 4;
     double T_array[4] = {-5, 0, 1325, 1350};
 
     ierr = PetscOptionsGetRealArray(NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
@@ -55,7 +55,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     z_T_min = T_array[2];
     z_T_max = T_array[3];
 
-    int m_param_number = 5;
+    PetscInt m_param_number = 5;
     double m_array[5] = {-3, 4, 1100, 1450, 1700};
 
     ierr = PetscOptionsGetRealArray(NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
@@ -67,7 +67,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     z_ELA = m_array[3];
     z_m_max = m_array[4];
 
-    int Nlimitsparam= 2;
+    PetscInt Nlimitsparam= 2;
     double limitsarray[2] = {0, 0};
 
     ierr = PetscOptionsGetRealArray(NULL,

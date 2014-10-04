@@ -237,7 +237,7 @@ if __name__ == "__main__":
   com = context.com
   PISM.set_abort_on_sigint(True)
 
-  WIDE_STENCIL = 2
+  WIDE_STENCIL = int(config.get("grid_max_stencil_width"))
 
   usage = \
   """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model] 

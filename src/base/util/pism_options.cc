@@ -57,7 +57,7 @@ See verbPrintf().
  */
 PetscErrorCode verbosityLevelFromOptions() {
   PetscErrorCode ierr;
-  int       myLevel;
+  PetscInt       myLevel;
   PetscBool     verbose, levelSet;
 
   ierr = setVerbosityLevel(2);
@@ -877,6 +877,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
 
   if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos) {
     config.set_flag_from_option("part_grid", true);
+    // eigen-calving requires a wider stencil:
+    config.set_double("grid_max_stencil_width", 3);
   }
 
   // all calving mechanisms require iceberg removal

@@ -135,7 +135,7 @@ public:
 
   PetscErrorCode read(const PIO &file, unsigned int time, Vec v);
   PetscErrorCode write(const PIO &file, IO_Type nctype,
-                       bool write_in_glaciological_units, Vec v);
+                       bool write_in_glaciological_units, Vec v) const;
 
   PetscErrorCode regrid(const PIO &file,
                         RegriddingFlag flag,
@@ -148,11 +148,15 @@ public:
                         double default_value, Vec v);
 
   PetscErrorCode define(const PIO &nc, IO_Type nctype,
-                        bool write_in_glaciological_units);
+                        bool write_in_glaciological_units) const;
 
   NCVariable& get_x();
   NCVariable& get_y();
   NCVariable& get_z();
+
+  const NCVariable& get_x() const;
+  const NCVariable& get_y() const;
+  const NCVariable& get_z() const;
 
 private:
   MPI_Comm m_com;
@@ -163,7 +167,7 @@ private:
   IceGrid *m_grid;
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode check_range(const std::string &filename, Vec v);
-  PetscErrorCode define_dimensions(const PIO &nc);
+  PetscErrorCode define_dimensions(const PIO &nc) const;
 };
 
 //! An internal class for reading, writing and converting time-series.

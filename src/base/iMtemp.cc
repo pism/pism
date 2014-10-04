@@ -168,14 +168,13 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   //   or bedrock can be lower than surface temperature
   const double bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
 
-  double *Tnew;
+  std::vector<double> Tnew(grid.Mz_fine);
   // pointers to values in current column
   system.u     = new double[grid.Mz_fine];
   system.v     = new double[grid.Mz_fine];
   system.w     = new double[grid.Mz_fine];
   system.strain_heating = new double[grid.Mz_fine];
   system.T     = new double[grid.Mz_fine];
-  Tnew         = new double[grid.Mz_fine];
 
   // system needs access to T3 for T3.getPlaneStar_fine()
   system.T3 = &T3;
@@ -377,7 +376,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
   delete [] system.T;  delete [] system.strain_heating;
   delete [] system.u;  delete [] system.v;  delete [] system.w;
-  delete [] Tnew;
   return 0;
 }
 

@@ -13,9 +13,9 @@ Accuracy is necessarily a second goal.  Our shallow scheme has truncation error 
 
 The conservation of energy problem for the ice is in terms of an enthalpy field [@ref AschwandenBuelerKhroulevBlatter].  The current scheme supercedes the cold-ice, temperature-based scheme described in the appendices of [@ref BBL] and in [@ref BBssasliding].  Compared to a cold-ice scheme, the enthalpy formulation does a better job of conserving energy, has a more-physical model for basal melt rate and drainage, and can model polythermal ice with any CTS topology [@ref AschwandenBuelerKhroulevBlatter].  The finite difference implementation of the enthalpy method is robust and avoids the CFL condition on vertical advection which was present in the older, cold-ice scheme.
 
-The bedrock thermal problem is solved by splitting the timestep into an update of the bedrock temperature field, assuming the ice base is as constant temperature, and an update of the ice enthalpy field, by the BOMBPROOF scheme here, assuming the upward heat flux from the bedrock layer is constant during the timestep.  For more on the implementation, see the PISMBedThermalUnit class.
+The bedrock thermal problem is solved by splitting the timestep into an update of the bedrock temperature field, assuming the ice base is as constant temperature, and an update of the ice enthalpy field, by the BOMBPROOF scheme here, assuming the upward heat flux from the bedrock layer is constant during the timestep.  For more on the implementation, see the pism::BedThermalUnit class.
 
-The region in which the conservation of energy equation needs to be solved changes over time.  This is an essential complicating factor in ice sheet modeling.  Also relevant is that the velocity field has a complicated provenance as it comes from different stress balance equations chosen at runtime.  These stress balances, especially with transitions in flow type, for instance at grounding lines, are incompletely understood when thermomechanically-coupled.  (The ShallowStressBalance instance owned by IceModel could be the SIA, the SSA, a hybrid of these, or other stress balances in future PISM versions.)  We will therefore not make, in proving stability, assumptions about the regularity of the velocity field in space or time other than boundedness.
+The region in which the conservation of energy equation needs to be solved changes over time.  This is an essential complicating factor in ice sheet modeling.  Also relevant is that the velocity field has a complicated provenance as it comes from different stress balance equations chosen at runtime.  These stress balances, especially with transitions in flow type, for instance at grounding lines, are incompletely understood when thermomechanically-coupled.  (The pism::ShallowStressBalance instance owned by pism::IceModel could be the SIA, the SSA, a hybrid of these, or other stress balances in future PISM versions.)  We will therefore not make, in proving stability, assumptions about the regularity of the velocity field in space or time other than boundedness.
 
 Nor do we want the numerical scheme for advection to need any information about the velocity except its value at the beginning of the time step.  Thus the conservation of energy timestep is assumed to be split from the mass continuity time step and its associated stress balance solve.  We have not considered implementing a scheme which requires the Jacobian of the velocity field with respect to changes in enthalpy, for example.  At very least such a fully-implicit scheme would require blind iteration (%e.g. with no guarantee of convergence of the iteration).  The scheme we propose involves no such iteration.
 
@@ -48,13 +48,13 @@ The additive quantity @f$Q@f$ is the dissipation (strain-rate) heating,
 
     @f[ Q = \sum_{i,j=1}^3 D_{ij} \tau_{ij} @f]
 
-where @f$D_{ij}@f$ is the strain rate tensor and @f$\tau_{ij}@f$ is the deviatoric stress tensor.  Reference [@ref BBssasliding] addresses how this term is computed in PISM, according to the shallow stress balance approximations; see method PISMStressBalance::get_volumetric_strain_heating().  (@f$Q@f$ is called @f$\Sigma@f$ in [@ref BBL, @ref BBssasliding] and in many places in the source code.)
+where @f$D_{ij}@f$ is the strain rate tensor and @f$\tau_{ij}@f$ is the deviatoric stress tensor.  Reference [@ref BBssasliding] addresses how this term is computed in PISM, according to the shallow stress balance approximations; see method pism::StressBalance::get_volumetric_strain_heating().  (@f$ Q @f$ is called @f$ \Sigma @f$ in [@ref BBL, @ref BBssasliding] and in many places in the source code.)
 
 Friction from sliding also is a source of heating.  It has units of W m-2 = J s-1 m-2, that is, the same units as the heat flux @f$\mathbf{q}@f$ above.  In formulas we write
 
     @f[ F_b = - \tau_b \cdot \mathbf{u}_b, @f]
 
-where @f$\tau_b@f$ is the basal shear stress and @f$\mathbf{u}_b@f$ is the basal sliding velocity; the basal shear stress is oppositely-directed to the basal velocity.  For example, in the plastic case @f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|@f$ where @f$\tau_c@f$ is a positive scalar, the yield stress.  See method PISMStressBalance::get_basal_frictional_heating().  The friction heating is concentrated at @f$z=0@f$, and it enters into the basal boundary condition and melt rate calculation, addressed in section @ref melt below.
+where @f$\tau_b@f$ is the basal shear stress and @f$\mathbf{u}_b@f$ is the basal sliding velocity; the basal shear stress is oppositely-directed to the basal velocity.  For example, in the plastic case @f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|@f$ where @f$\tau_c@f$ is a positive scalar, the yield stress.  See method pism::StressBalance::get_basal_frictional_heating().  The friction heating is concentrated at @f$z=0@f$, and it enters into the basal boundary condition and melt rate calculation, addressed in section @ref melt below.
 
 We use a shallow approximation of equation (@ref basicEnergy) which lacks horizontal
 conduction terms  [@ref Fowler].  For the initial analysis of the core BOMBPROOF
@@ -88,7 +88,7 @@ where
 
 We assume that the surface enthalpy
 @f$E_s(t,x,y)@f$ (K) and the geothermal flux @f$G(t,x,y)@f$ (W m-2) at @f$z=0@f$
-are given.  (The latter is the output of the PISMBedThermalUnit object, and it may
+are given.  (The latter is the output of the pism::BedThermalUnit object, and it may
 come from an evolving temperature field within the upper crust, the bedrock layer.
 If a surface temperature is given then it will be converted to enthalpy by the
 EnthalpyConverter class.)  Thus the boundary conditions to problem (@ref vertProblem)
@@ -428,9 +428,9 @@ Nonetheless the maximum principle is a highly-desirable form of stability becaus
 
 @section melt Temperate basal boundary condition, and computing the basal melt rate
 
-At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  On the one hand, see the documentation for PISMBedThermalUnit for the model of how much comes out of the earth.  On the other hand, [@ref AschwandenBuelerKhroulevBlatter] includes a careful analysis of the subglacial layer equation and the corresponding boundary conditions and basal melt rate calculation, and the reader should consult that reference.
+At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  On the one hand, see the documentation for pism::BedThermalUnit for the model of how much comes out of the earth.  On the other hand, [@ref AschwandenBuelerKhroulevBlatter] includes a careful analysis of the subglacial layer equation and the corresponding boundary conditions and basal melt rate calculation, and the reader should consult that reference.
 
 @subsection refloating Regarding the floating case
 
-The shelf base temperature @f$ T_{sb} @f$ is supplied by PISMOceanModel::shelf_base_temperature().  The melt rate @f$M@f$ is supplied as a boundary condition from the ocean model by PISMOceanModel::shelf_base_mass_flux().  Note that we make the possibly-peculiar physical choice that the shelf base temperature is used as the temperature at the *top of the bedrock*, which is actually the bottom of the ocean.  This choice means that there should be no abrupt changes in top-of-bedrock heat flux as the grounding line moves.  This choice also means that the conservation of energy code does not need to know about the bedrock topography or the elevation of sea level.  (In the future there could be a PISMOceanModel::subshelf_bed_temperature() routine.)
+The shelf base temperature @f$ T_{sb} @f$ is supplied by pism::OceanModel::shelf_base_temperature().  The melt rate @f$M@f$ is supplied as a boundary condition from the ocean model by pism::OceanModel::shelf_base_mass_flux().  Note that we make the possibly-peculiar physical choice that the shelf base temperature is used as the temperature at the *top of the bedrock*, which is actually the bottom of the ocean.  This choice means that there should be no abrupt changes in top-of-bedrock heat flux as the grounding line moves.  This choice also means that the conservation of energy code does not need to know about the bedrock topography or the elevation of sea level.  (In the future there could be a `pism::OceanModel::subshelf_bed_temperature()` routine.)
 

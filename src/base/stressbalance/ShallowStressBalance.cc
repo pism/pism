@@ -26,6 +26,8 @@
 
 namespace pism {
 
+using mask::ice_free;
+
 ShallowStressBalance::ShallowStressBalance(IceGrid &g, EnthalpyConverter &e, const Config &conf)
   : Component(g, conf), basal_sliding_law(NULL), flow_law(NULL), EC(e) {
 
@@ -44,7 +46,7 @@ ShallowStressBalance::~ShallowStressBalance() {
 //! \brief Allocate a shallow stress balance object.
 PetscErrorCode ShallowStressBalance::allocate() {
   PetscErrorCode ierr;
-  unsigned int WIDE_STENCIL = 2;
+  const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
   if (config.get_flag("do_pseudo_plastic_till") == true)
     basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(config);
@@ -185,7 +187,6 @@ update_ghosts() to ensure that ghost values are up to date.
 PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
-  Mask M;
 
   if (result.get_dof() != 2)
     SETERRQ(grid.com, 1, "result.dof() == 2 is required");
@@ -198,7 +199,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(mask.as_int(i,j))) {
+    if (ice_free(mask.as_int(i,j))) {
       result(i,j,0) = 0.0;
       result(i,j,1) = 0.0;
       continue;
@@ -229,13 +230,13 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
     // x-derivative is set to zero (see u_x, v_x initialization above).
     //
     // Similarly in other directions.
-    if (M.ice_free(m.e))
+    if (ice_free(m.e))
       east = 0;
-    if (M.ice_free(m.w))
+    if (ice_free(m.w))
       west = 0;
-    if (M.ice_free(m.n))
+    if (ice_free(m.n))
       north = 0;
-    if (M.ice_free(m.s))
+    if (ice_free(m.s))
       south = 0;
 
     if (west + east > 0) {
@@ -266,7 +267,6 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
 PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
-  Mask M;
 
   if (result.get_dof() != 3)
     SETERRQ(grid.com, 1, "result.get_dof() == 3 is required");
@@ -282,7 +282,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(mask.as_int(i,j))) {
+    if (ice_free(mask.as_int(i,j))) {
       result(i,j,0) = 0.0;
       result(i,j,1) = 0.0;
       result(i,j,2) = 0.0;
@@ -314,13 +314,13 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
     // x-derivative is set to zero (see u_x, v_x initialization above).
     //
     // Similarly in y-direction.
-    if (M.ice_free(m.e))
+    if (ice_free(m.e))
       east = 0;
-    if (M.ice_free(m.w))
+    if (ice_free(m.w))
       west = 0;
-    if (M.ice_free(m.n))
+    if (ice_free(m.n))
       north = 0;
-    if (M.ice_free(m.s))
+    if (ice_free(m.s))
       south = 0;
 
     if (west + east > 0) {
