@@ -157,11 +157,10 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
        * Woops, no list initialization in c++98. 
        */
       std::vector<double> stress(9,0.0);
-      stress[1] = stress[5] = stress[9] = P;
-      stress[3] = stress[7] = txz;
-      stress[6] = stress[8] = tyz;
-       
-       // don't strictly need P here as we only need the deviatoric stress.
+      stress[1] = stress[5] = stress[9] = P; // FIXME correct sign?
+      stress[3] = stress[7] = txz;           // FIXME correct sign?
+      stress[6] = stress[8] = tyz;           // FIXME correct sign?
+        // don't strictly need P here as we only need the deviatoric stress.
       
       // FIXME I think this is right... It did compile! 
       ierr = PISMFEvoR::interp_field_point( x, y, z, m_enthalpy, E  );
