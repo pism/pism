@@ -78,6 +78,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   IceModelVec* tauyz = NULL;    // FIXME: use a smart pointer
   ierr = m_tauyz->compute(tauyz); CHKERRQ(ierr);
   IceModelVec3 *tauyz3 = static_cast<IceModelVec3*>(tauyz);
+  
 
   {
     ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
@@ -102,7 +103,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
              txz = 0.0,
              tyz = 0.0;
              
-      double E = 90e3, 
+      double E = 0.0,
              T = 0.0;
 
       // check if the point (x,y,z) is within the domain:
@@ -113,6 +114,9 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = PISMFEvoR::interp_field_point( x, y, z, pressure3, P  );
       ierr = PISMFEvoR::interp_field_point( x, y, z, tauxz3   , txz);
       ierr = PISMFEvoR::interp_field_point( x, y, z, tauyz3   , tyz);
+      
+      // FIXME I think this is right... It did compile! 
+      ierr = PISMFEvoR::interp_field_point( x, y, z, m_enthalpy, E  );
       
       
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
