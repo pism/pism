@@ -74,9 +74,9 @@ BlatterStressBalance::~BlatterStressBalance()
 
 PetscErrorCode BlatterStressBalance::allocate_blatter() {
   PetscErrorCode ierr;
-  DM da2;
+
   int blatter_Mz = (int)config.get("blatter_Mz");
-  ierr = grid.get_dm(1, grid.max_stencil_width, da2); CHKERRQ(ierr);
+  ierr = grid.get_dm(1, (int)config.get("grid_max_stencil_width"), m_da2); CHKERRQ(ierr);
 
   ctx.Lx = 2.0 * grid.Lx;
   ctx.Ly = 2.0 * grid.Ly;
@@ -89,7 +89,8 @@ PetscErrorCode BlatterStressBalance::allocate_blatter() {
   initialize_Q12D(ctx.Q12D.chi, ctx.Q12D.dchi);
   initialize_Q13D(ctx.Q13D.chi, ctx.Q13D.dchi);
 
-  ierr = BlatterQ1_create(grid.com, da2, blatter_Mz, &this->ctx, &this->snes); CHKERRQ(ierr);
+  ierr = BlatterQ1_create(grid.com, m_da2->get(), blatter_Mz,
+                          &this->ctx, &this->snes); CHKERRQ(ierr);
 
   // now allocate u, v, and strain_heating (strain heating)
   ierr =     u.create(grid, "uvel", WITH_GHOSTS); CHKERRQ(ierr);

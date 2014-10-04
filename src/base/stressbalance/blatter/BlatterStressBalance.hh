@@ -142,6 +142,8 @@ protected:
   BlatterQ1Ctx ctx;
   SNES snes;
 
+  PISMDM::Ptr m_da2;
+
   double min_thickness; 	// FIXME: this should be used to set boundary conditions at ice margins
   std::string stdout_blatter;
 };
