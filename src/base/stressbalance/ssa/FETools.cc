@@ -83,12 +83,7 @@ FEElementMap::FEElementMap(const IceGrid &g) {
 }
 
 FEDOFMap::FEDOFMap() {
-  m_i = 0;
-  m_j = 0;
-  for (unsigned int k = 0; k < Nk; ++k) {
-    m_row[k].i = m_row[k].j = 0;
-    m_col[k].i = m_col[k].j = 0;
-  }
+  reset(0, 0);
 }
 
 FEDOFMap::~FEDOFMap() {
@@ -164,9 +159,7 @@ void FEDOFMap::localToGlobal(int k, int *i, int *j) {
   *j = m_j + kJOffset[k];
 }
 
-/*!@brief Initialize the FEDOFMap to element (`i`, `j`) for the purposes of inserting into
-  global residual and Jacobian arrays. */
-void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
+void FEDOFMap::reset(int i, int j) {
   m_i = i; m_j = j;
   // The meaning of i and j for a PISM IceGrid and for a Petsc DA are swapped (the so-called
   // fundamental transpose.  The interface between PISM and Petsc is the stencils, so all
@@ -183,9 +176,16 @@ void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
 
   for (unsigned int k = 0; k < Nk; ++k) {
     m_row[k].i = m_col[k].i;
-    m_row[k].i = m_col[k].j;
+    m_row[k].j = m_col[k].j;
+    m_row[k].k = m_col[k].k = 0;
   }
+}
 
+
+/*!@brief Initialize the FEDOFMap to element (`i`, `j`) for the purposes of inserting into
+  global residual and Jacobian arrays. */
+void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
+  reset(i, j);
   // We do not ever sum into rows that are not owned by the local rank.
   for (unsigned int k = 0; k < Nk; k++) {
     int pism_i = m_row[k].j, pism_j = m_row[k].i;
@@ -200,12 +200,18 @@ void FEDOFMap::reset(int i, int j, const IceGrid &grid) {
   when inserting into the global residual or Jacobian arrays. */
 void FEDOFMap::markRowInvalid(int k) {
   m_row[k].i = m_row[k].j = kDofInvalid;
+  // We are solving a 2D system, so MatStencil::k is not used. Here we
+  // use it to mark invalid rows.
+  m_row[k].k = 1;
 }
 
 /*!@brief Mark that the column corresponding to local degree of freedom `k` should not be updated
   when inserting into the global Jacobian arrays. */
 void FEDOFMap::markColInvalid(int k) {
   m_col[k].i = m_col[k].j = kDofInvalid;
+  // We are solving a 2D system, so MatStencil::k is not used. Here we
+  // use it to mark invalid columns.
+  m_col[k].k = 1;
 }
 
 /*!@brief Add the values of element-local residual contributions `y` to the global residual
@@ -213,7 +219,8 @@ void FEDOFMap::markColInvalid(int k) {
 /*! The element-local residual should be an array of Nk values.*/
 void FEDOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
+    if (m_row[k].k == 1)
+      continue;
     yg[m_row[k].j][m_row[k].i].u += y[k].u;
     yg[m_row[k].j][m_row[k].i].v += y[k].v;
   }
@@ -221,14 +228,16 @@ void FEDOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
 
 void FEDOFMap::addLocalResidualBlock(const double *y, double **yg) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
+    if (m_row[k].k == 1)
+      continue;
     yg[m_row[k].j][m_row[k].i] += y[k];
   }
 }
 
 void FEDOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
+    if (m_row[k].k == 1)
+      continue;
     y_global(m_row[k].j, m_row[k].i).u += y[k].u;
     y_global(m_row[k].j, m_row[k].i).v += y[k].v;
   }
@@ -236,7 +245,8 @@ void FEDOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) 
 
 void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
+    if (m_row[k].k == 1)
+      continue;
     y_global(m_row[k].j, m_row[k].i) += y[k];
   }
 }
