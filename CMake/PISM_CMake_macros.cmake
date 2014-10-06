@@ -171,6 +171,7 @@ macro(pism_find_prerequisites)
   find_package (GSL REQUIRED)
   find_package (NetCDF REQUIRED)
   find_package (FEvoR REQUIRED)
+  find_package (CGAL REQUIRED COMPONENTS)
 
   # Optional libraries
   find_package (PNetCDF)
