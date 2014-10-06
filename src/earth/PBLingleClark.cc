@@ -44,60 +44,6 @@ PBLingleClark::~PBLingleClark() {
 
 }
 
-/* the following is from the PETSc FAQ page:
-
-How do I collect all the values from a parallel PETSc vector into a vector
-on the zeroth processor?
-
-    * Create the scatter context that will do the communication
-          o VecScatterCreateToZero(v,&ctx,&w);
-    * Actually do the communication; this can be done repeatedly as needed
-          o VecScatterBegin(ctx,v,w,INSERT_VALUES,SCATTER_FORWARD);
-          o VecScatterEnd(ctx,v,w,INSERT_VALUES,SCATTER_FORWARD);
-    * Remember to free the scatter context when no longer needed
-          o VecScatterDestroy(ctx);
-
-Note that this simply concatenates in the parallel ordering of the vector.
-If you are using a vector from DACreateGlobalVector() you likely want to
-first call DAGlobalToNaturalBegin/End() to scatter the original vector into
-the natural ordering in a new global vector before calling
-VecScatterBegin/End() to scatter the natural vector onto process 0.
-*/
-
-PetscErrorCode PBLingleClark::transfer_to_proc0(IceModelVec2S *source, Vec result) {
-  PetscErrorCode ierr;
-
-  ierr = source->copy_to_vec(g2);
-
-  PISMDM::Ptr da2;
-  ierr = grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
-
-  ierr = DMDAGlobalToNaturalBegin(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-  ierr =   DMDAGlobalToNaturalEnd(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-
-  ierr = VecScatterBegin(scatter, g2natural, result, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(scatter, g2natural, result, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2S *result) {
-  PetscErrorCode ierr;
-
-  ierr = VecScatterBegin(scatter, source, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(scatter, source, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-
-  PISMDM::Ptr da2;
-  ierr = grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
-
-  ierr = DMDANaturalToGlobalBegin(da2->get(), g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DMDANaturalToGlobalEnd(da2->get(), g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-
-  ierr = result->copy_from_vec(g2); CHKERRQ(ierr);
-
-  return 0;
-}
-
 PetscErrorCode PBLingleClark::allocate() {
   PetscErrorCode ierr;
   PISMDM::Ptr da2;
@@ -160,9 +106,9 @@ PetscErrorCode PBLingleClark::init(Vars &vars) {
 
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
 
-  ierr = transfer_to_proc0(thk,    Hstartp0); CHKERRQ(ierr);
-  ierr = transfer_to_proc0(topg,   bedstartp0); CHKERRQ(ierr);
-  ierr = transfer_to_proc0(uplift, upliftp0); CHKERRQ(ierr);
+  ierr = thk->put_on_proc0(Hstartp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = topg->put_on_proc0(bedstartp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = uplift->put_on_proc0(upliftp0, scatter, g2, g2natural); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
     ierr = bdLC.init(); CHKERRQ(ierr);
@@ -273,8 +219,8 @@ PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
 
   t_beddef_last = t_final;
 
-  ierr = transfer_to_proc0(thk,  Hp0);   CHKERRQ(ierr);
-  ierr = transfer_to_proc0(topg, bedp0); CHKERRQ(ierr);
+  ierr = thk->put_on_proc0(Hp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = topg->put_on_proc0(bedp0, scatter, g2, g2natural); CHKERRQ(ierr);
 
   if (grid.rank == 0) {  // only processor zero does the step
     ierr = bdLC.step(dt_beddef, // time step, in seconds
@@ -282,7 +228,7 @@ PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
     CHKERRQ(ierr);
   }
 
-  ierr = transfer_from_proc0(bedp0, topg); CHKERRQ(ierr);
+  ierr = topg->get_from_proc0(bedp0, scatter, g2, g2natural); CHKERRQ(ierr);
 
   //! Finally, we need to update bed uplift and topg_last.
   ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);
