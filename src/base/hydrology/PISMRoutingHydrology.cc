@@ -619,6 +619,8 @@ PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
   list.add(V);
   list.add(result);
 
+  assert(V.get_stencil_width() >= 1);
+
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -852,7 +854,7 @@ PetscErrorCode RoutingHydrology_bwatvel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "bwatvel", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = result->create(grid, "bwatvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata(0) = vars[0];
   result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
