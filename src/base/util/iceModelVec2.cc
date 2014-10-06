@@ -325,37 +325,6 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
   return 0;
 }
 
-PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) const {
-  PetscErrorCode ierr;
-  std::string long_name = metadata().get_string("long_name");
-  Vec tmp;
-
-  PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
-
-  ierr = DMGetGlobalVector(da2->get(), &tmp); CHKERRQ(ierr);
-
-  ierr = copy_to_vec(tmp); CHKERRQ(ierr);
-
-  ierr = convert_vec(tmp,
-                     metadata().get_units(),
-                     metadata().get_glaciological_units()); CHKERRQ(ierr);
-
-  // add Matlab comment before listing, using short title
-
-  ierr = PetscViewerASCIIPrintf(my_viewer, "\n%%%% %s = %s\n",
-                                m_name.c_str(), long_name.c_str()); CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) tmp, m_name.c_str()); CHKERRQ(ierr);
-
-  ierr = VecView(tmp, my_viewer); CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(my_viewer,"\n%s = reshape(%s,%d,%d);\n\n",
-                                m_name.c_str(), m_name.c_str(), grid->My, grid->Mx); CHKERRQ(ierr);
-
-  ierr = DMRestoreGlobalVector(da2->get(), &tmp); CHKERRQ(ierr);
-
-  return 0;
-}
 
 //! Checks if the current IceModelVec2S has NANs and reports if it does.
 /*! Up to a fixed number of messages are printed at stdout.  Returns the full

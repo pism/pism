@@ -388,7 +388,6 @@ public:
   virtual double diff_y_stagN(int i, int j) const;
   virtual double diff_x_p(int i, int j) const;
   virtual double diff_y_p(int i, int j) const;
-  virtual PetscErrorCode view_matlab(PetscViewer my_viewer) const;
   virtual PetscErrorCode has_nan() const;
 
   //! Provides access (both read and write) to the internal double array.

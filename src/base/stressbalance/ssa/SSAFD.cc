@@ -1722,22 +1722,6 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
             -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");  CHKERRQ(ierr);
 
-  // also save thickness and effective viscosity
-  ierr = thickness->view_matlab(viewer); CHKERRQ(ierr);
-  ierr = surface->view_matlab(viewer); CHKERRQ(ierr);
-
-  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
-  ierr = component.set_name("nuH_0"); CHKERRQ(ierr);
-  component.metadata().set_string("long_name",
-                                  "effective viscosity times thickness (i offset) at current time step");
-  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
-
-  ierr = nuH.get_component(1, component); CHKERRQ(ierr);
-  ierr = component.set_name("nuH_1"); CHKERRQ(ierr);
-  component.metadata().set_string("long_name",
-                                  "effective viscosity times thickness (j offset) at current time step");
-  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
-
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
