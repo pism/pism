@@ -76,10 +76,9 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
 PetscErrorCode SIAFD_topgsmooth::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result;
-  const unsigned int WIDE_STENCIL = grid.config.get("grid_max_stencil_width");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "topgsmooth", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = result->create(grid, "topgsmooth", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   ierr = result->copy_from(model->bed_smoother->get_smoothed_bed()); CHKERRQ(ierr);
