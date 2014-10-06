@@ -665,7 +665,10 @@ PetscErrorCode  IceModelVec::update_ghosts() {
 PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) const {
   PetscErrorCode ierr;
 
+  // Make sure it is allocated:
   assert(m_v != NULL);
+  // Make sure "destination" has ghosts to update.
+  assert(destination.m_has_ghosts == true);
 
   if (m_has_ghosts == true && destination.m_has_ghosts == true) {
 #if PETSC_VERSION_LT(3,5,0)
@@ -678,20 +681,10 @@ PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) const {
     return 0;
   }
 
-  if (m_has_ghosts == true && destination.m_has_ghosts == false) {
-    ierr = this->copy_to_vec(destination.m_v); CHKERRQ(ierr);
-    return 0;
-  }
-
   if (m_has_ghosts == false && destination.m_has_ghosts == true) {
     ierr = DMGlobalToLocalBegin(destination.m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
     ierr = DMGlobalToLocalEnd(destination.m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
     return 0;
-  }
-
-  if (m_has_ghosts == false && destination.m_has_ghosts == false) {
-    SETERRQ2(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs!"
-             " (name1='%s', name2='%s')", m_name.c_str(), destination.m_name.c_str());
   }
 
   destination.inc_state_counter();          // mark as modified
