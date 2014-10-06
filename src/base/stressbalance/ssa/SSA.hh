@@ -171,7 +171,7 @@ protected:
   IceModelVec2S *thickness, *tauc, *surface, *bed;
   IceModelVec2S *driving_stress_x;
   IceModelVec2S *driving_stress_y;
-  IceModelVec2V taud, m_velocity_old;
+  IceModelVec2V taud;
   IceModelVec3 *enthalpy;
   IceModelVec2S *gl_mask;
 

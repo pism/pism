@@ -150,6 +150,11 @@ PetscErrorCode SSAFD::allocate_fd() {
   // Use non-zero initial guess (i.e. SSA velocities from the last
   // solve() call).
   ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE); CHKERRQ(ierr);
+
+  ierr = m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = m_velocity_old.set_attrs("internal",
+                                  "old SSA velocity field; used for re-trying with a different epsilon",
+                                  "m s-1", ""); CHKERRQ(ierr);
   
   const double power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];

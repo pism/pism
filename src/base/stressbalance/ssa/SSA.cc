@@ -154,10 +154,6 @@ PetscErrorCode SSA::allocate() {
                         "Y-component of the driving shear stress at the base of ice",
                         "Pa", "", 1); CHKERRQ(ierr);
 
-  ierr = m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = m_velocity_old.set_attrs("internal",
-                                  "old SSA velocity field; used for re-trying with a different epsilon",
-                                  "m s-1", ""); CHKERRQ(ierr);
 
   // override velocity metadata
   std::vector<std::string> long_names;

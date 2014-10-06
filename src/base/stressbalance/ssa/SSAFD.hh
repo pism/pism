@@ -95,6 +95,7 @@ protected:
   double m_scaling;
 
   IceModelVec2S *fracture_density, *m_melange_back_pressure;
+  IceModelVec2V m_velocity_old;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;
