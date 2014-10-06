@@ -94,7 +94,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
-  int  Nparamf=4;
+  PetscInt  Nparamf=4;
   double inarrayf[4] = {1.0, 7.0e4, 0.0, 2.0e-10};
   PetscBool  fractures_set;
   ierr = PetscOptionsGetRealArray(NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);

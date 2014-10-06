@@ -127,6 +127,14 @@ int main(int argc, char *argv[]) {
                 "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
                 theta_min, theta_max);
 
+    bool dump = false;
+    ierr = OptionsIsSet("-dump", dump); CHKERRQ(ierr);
+    if (dump) {
+      ierr = topg.dump("bedrough_test_topg.nc"); CHKERRQ(ierr);
+      ierr = topg_smoothed.dump("bedrough_test_topg_smoothed.nc"); CHKERRQ(ierr);
+      ierr = theta.dump("bedrough_test_theta.nc"); CHKERRQ(ierr);
+    }
+
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

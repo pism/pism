@@ -208,7 +208,7 @@ public:
   int    Nx, //!< number of processors in the x-direction
     Ny;      //!< number of processors in the y-direction
 
-  std::vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
+  std::vector<PetscInt> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
     procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
   double dx,               //!< horizontal grid spacing

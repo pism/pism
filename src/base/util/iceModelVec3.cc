@@ -49,7 +49,7 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_
                                         unsigned int stencil_width) {
   PetscErrorCode ierr;
 
-  assert(v == NULL);
+  assert(m_v == NULL);
   
   grid = &my_grid;
 
@@ -62,9 +62,9 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
 
   if (m_has_ghosts == true) {
-    ierr = DMCreateLocalVector(m_da->get(), &v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(m_da->get(), &m_v); CHKERRQ(ierr);
   } else {
-    ierr = DMCreateGlobalVector(m_da->get(), &v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(m_da->get(), &m_v); CHKERRQ(ierr);
   }
 
   m_name = my_name;
@@ -95,7 +95,7 @@ PetscErrorCode  IceModelVec3D::isLegalLevel(double z) const {
  */
 PetscErrorCode  IceModelVec3::setValColumnPL(int i, int j, std::vector<double> &source) {
 #if (PISM_DEBUG==1)
-  assert(v != NULL);
+  assert(m_v != NULL);
   assert(source.size() == grid->Mz_fine);
   check_array_indices(i, j, 0);
 #endif
@@ -264,7 +264,7 @@ PetscErrorCode IceModelVec3::getPlaneStar_fine(int i, int j, unsigned int k,
 PetscErrorCode IceModelVec3::getValColumnPL(int i, int j, unsigned int ks,
                                             double *result) const {
 #if (PISM_DEBUG==1)
-  assert(v != NULL);
+  assert(m_v != NULL);
   check_array_indices(i, j, 0);
 #endif
 
@@ -485,14 +485,14 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, double fill_value) {
 
   // Fill the new layer:
   double ***a;
-  ierr = DMDAVecGetArrayDOF(m_da->get(), v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (unsigned int k = old_Mz; k < m_n_levels; k++)
       a[i][j][k] = fill_value;
   }
-  ierr = DMDAVecRestoreArrayDOF(m_da->get(), v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
   // only happens when the grid is extended it should not matter.
@@ -513,7 +513,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
 
   // Fill the new layer:
   double ***a, **filler;
-  ierr = DMDAVecGetArrayDOF(m_da->get(), v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
   ierr = fill_values.get_array(filler); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -521,7 +521,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
     for (unsigned int k = old_Mz; k < m_n_levels; k++)
       a[i][j][k] = filler[i][j];
   }
-  ierr = DMDAVecRestoreArrayDOF(m_da->get(), v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
   ierr = fill_values.end_access(); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
@@ -557,7 +557,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   // Copy all the values from the old Vec to the new one:
   double ***a_new;
   double ***a_old;
-  ierr = DMDAVecGetArrayDOF(m_da->get(), v, &a_old); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(m_da->get(), m_v, &a_old); CHKERRQ(ierr);
   ierr = DMDAVecGetArrayDOF(da_new->get(), v_new, &a_new); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -565,12 +565,12 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
     for (int k=0; k < old_Mz; k++)
       a_new[i][j][k] = a_old[i][j][k];
   }
-  ierr = DMDAVecRestoreArrayDOF(m_da->get(), v, &a_old); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(m_da->get(), m_v, &a_old); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArrayDOF(da_new->get(), v_new, &a_new); CHKERRQ(ierr);
 
   // Deallocate old Vec:
-  ierr = VecDestroy(&v); CHKERRQ(ierr);
-  v = v_new;
+  ierr = VecDestroy(&m_v); CHKERRQ(ierr);
+  m_v = v_new;
   m_da = da_new;
 
   // IceGrid will dispose of the old DA

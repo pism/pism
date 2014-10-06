@@ -137,7 +137,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::connect(tao::Solver tao) {
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(tao::Solver tao) {
   PetscErrorCode ierr;
   
-  int its;
+  PetscInt its;
   ierr =  TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL); CHKERRQ(ierr);
   
   int nListeners = m_listeners.size();

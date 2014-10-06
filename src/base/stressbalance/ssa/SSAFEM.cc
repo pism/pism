@@ -761,10 +761,10 @@ PetscErrorCode SSAFEM::monitor_jacobian(Mat Jac) {
   PetscViewer viewer;
 
   char file_name[PETSC_MAX_PATH_LEN];
-  int iter = 0;
+  PetscInt iter = 0;
   ierr = SNESGetIterationNumber(m_snes, &iter);
 
-  snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", iter);
+  snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", (int)iter);
 
   ierr = verbPrintf(2, grid.com,
                     "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",

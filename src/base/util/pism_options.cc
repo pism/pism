@@ -57,7 +57,7 @@ See verbPrintf().
  */
 PetscErrorCode verbosityLevelFromOptions() {
   PetscErrorCode ierr;
-  int       myLevel;
+  PetscInt       myLevel;
   PetscBool     verbose, levelSet;
 
   ierr = setVerbosityLevel(2);

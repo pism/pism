@@ -916,7 +916,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
                                        double nuH_iter_failure_underrelax) {
   PetscErrorCode ierr;
   double   nuH_norm, nuH_norm_change;
-  int    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
+  PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
   char tempstr[100] = "";
@@ -983,7 +983,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     ksp_iterations_total += ksp_iterations;
 
     if (very_verbose) {
-      snprintf(tempstr, 100, "S:%d,%d: ", ksp_iterations, reason);
+      snprintf(tempstr, 100, "S:%d,%d: ", (int)ksp_iterations, reason);
       stdout_ssa += tempstr;
     }
 
@@ -1040,13 +1040,13 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 
   if (very_verbose) {
     snprintf(tempstr, 100, "... =%5d outer iterations, ~%3.1f KSP iterations each\n",
-             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
+             (int)outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
 
     stdout_ssa += tempstr;
   } else if (verbose) {
     // at default verbosity, just record last nuH_norm_change and iterations
     snprintf(tempstr, 100, "%5d outer iterations, ~%3.1f KSP iterations each\n",
-             outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
+             (int)outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
 
     stdout_ssa += tempstr;
   }
