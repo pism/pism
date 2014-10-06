@@ -51,56 +51,62 @@ PetscErrorCode IceModelVec2S::get_array(double** &a) {
 
 //! Puts a local IceModelVec2S on processor 0.
 /*!
- <ul>
- <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
- <li> g2 is a preallocated temporary global vector,
- <li> g2natural is a preallocated temporary global vector with natural ordering.
- </ul>
+ - onp0 and ctx should be created by calling VecScatterCreateToZero or
+   be identical to one,
+ - g2 is a preallocated temporary global vector (not used and can be
+   NULL if this IceModelVec has no ghosts)
+ - g2natural is a preallocated temporary global vector with natural
+   ordering.
 */
-PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) const {
+PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter scatter, Vec global_work,
+                                           Vec natural_work) const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
   PISMDM::Ptr da2;
   ierr = grid->get_dm(1, this->get_stencil_width(), da2); CHKERRQ(ierr);
 
-  ierr = this->copy_to_vec(g2); CHKERRQ(ierr);
+  Vec global = m_has_ghosts ? global_work : m_v;
 
-  ierr = DMDAGlobalToNaturalBegin(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-  ierr =   DMDAGlobalToNaturalEnd(da2->get(), g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+  if (m_has_ghosts) {
+    ierr = this->copy_to_vec(global); CHKERRQ(ierr);
+  }
 
-  ierr = VecScatterBegin(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = DMDAGlobalToNaturalBegin(da2->get(), global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
+  ierr =   DMDAGlobalToNaturalEnd(da2->get(), global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
+
+  ierr = VecScatterBegin(scatter, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(scatter, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Gets a local IceModelVec2 from processor 0.
 /*!
- <ul>
- <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
- <li> g2 is a preallocated temporary global vector,
- <li> g2natural is a preallocated temporary global vector with natural ordering.
- </ul>
+ - onp0 and ctx should be created by calling VecScatterCreateToZero or
+   be identical to one,
+ - g2 is a preallocated temporary global vector (not used if this
+   IceModelVec has no ghosts)
+ - g2natural is a preallocated temporary global vector with natural
+   ordering.
 */
-PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter scatter, Vec global_work, Vec natural_work) {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
   PISMDM::Ptr da2;
   ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
-  ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(scatter, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(scatter, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = DMDANaturalToGlobalBegin(da2->get(), g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DMDANaturalToGlobalEnd(da2->get(), g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
+  Vec global = m_has_ghosts ? global_work : m_v;
 
-  if (m_has_ghosts == true) {
-    ierr =   DMGlobalToLocalBegin(m_da->get(), g2, INSERT_VALUES, m_v); CHKERRQ(ierr);
-    ierr =     DMGlobalToLocalEnd(m_da->get(), g2, INSERT_VALUES, m_v); CHKERRQ(ierr);
-  } else {
-    ierr = this->copy_from_vec(g2); CHKERRQ(ierr);
+  ierr = DMDANaturalToGlobalBegin(da2->get(), natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
+  ierr =   DMDANaturalToGlobalEnd(da2->get(), natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
+
+  if (m_has_ghosts) {
+    ierr = this->copy_from_vec(global); CHKERRQ(ierr);
   }
 
   inc_state_counter();          // mark as modified
