@@ -25,6 +25,7 @@
 #include <cassert>
 #include <vector>
 #include <fevor_distribution.hh>
+#include <vector_tensor_operations.hh>
 
 namespace pism {
 
@@ -104,6 +105,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       double x = 0.0,
              y = 0.0,
              z = 0.0;
+      double enhancement = 1; 
       std::vector<unsigned int> packingDimensions(3, 3);
         // should be at minimum 10x10x10 to get an accurate result!
       
@@ -113,7 +115,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
        * 
        * Just create one from a Watson concentration parameter. 
        */
-      double w_i = -1001.0; // perfect bi-polar (single maximum) -- end case
+      double w_i = -3.0; // This makes a weak bi-polar (single maximum)
       fevor_distribution d_i(packingDimensions, w_i);
       
       /* Make an isotropic distribution for calculating enhancement factor. The 
@@ -169,7 +171,18 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe    , nPoly    , bulkEdot    );
       d_iso.stepInTime(T, stress, m_t, m_dt, nMigRe_iso, nPoly_iso, bulkEdot_iso);
       
-      // TODO compute enhancement factor from bulkEdot and bulkEdot_iso
+      enhancement = tensorMagnitude(bulkEdot)/tensorMagnitude(bulkEdot_iso);
+      
+      // some bounds for the enhancement factor
+      if (enhancement < 1.0) {
+          enhancement = 1.0;
+          // Enhance, not diminish.
+      } else if (enhancement > 10.0) {
+          enhancement = 10.0;
+          // upper bound.
+      }
+      
+      
     }
   }
 
