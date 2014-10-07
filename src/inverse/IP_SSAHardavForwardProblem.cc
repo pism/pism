@@ -57,10 +57,10 @@ PetscErrorCode IP_SSAHardavForwardProblem::construct() {
   ierr = m_du_local.create(m_grid, "linearization work vector (with ghosts)", WITH_GHOSTS, stencilWidth); CHKERRQ(ierr);
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(SSADA->get(), "baij", &m_J_state); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(m_da->get(), "baij", &m_J_state); CHKERRQ(ierr);
 #else
-  ierr = DMSetMatType(SSADA->get(), MATBAIJ); CHKERRQ(ierr);
-  ierr = DMCreateMatrix(SSADA->get(), &m_J_state); CHKERRQ(ierr);
+  ierr = DMSetMatType(m_da->get(), MATBAIJ); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(m_da->get(), &m_J_state); CHKERRQ(ierr);
 #endif
 
   ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
@@ -162,12 +162,12 @@ PetscErrorCode IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, V
   Vector2 **u_a, **rhs_a;
 
   ierr = u.get_array(u_a); CHKERRQ(ierr);
-  ierr = DMDAVecGetArray(SSADA->get(), RHS, &rhs_a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(m_da->get(), RHS, &rhs_a); CHKERRQ(ierr);
 
   DMDALocalInfo *info = NULL;
   ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
 
-  ierr = DMDAVecRestoreArray(SSADA->get(), RHS, &rhs_a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(m_da->get(), RHS, &rhs_a); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);
 
   return 0;
@@ -215,9 +215,9 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
 PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du) {
   PetscErrorCode ierr;
   Vector2 **du_a;
-  ierr = DMDAVecGetArray(SSADA->get(), du, &du_a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(m_da->get(), du, &du_a); CHKERRQ(ierr);
   ierr = this->apply_jacobian_design(u, dzeta, du_a);
-  ierr = DMDAVecRestoreArray(SSADA->get(), du, &du_a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(m_da->get(), du, &du_a); CHKERRQ(ierr);
   return 0;
 }
 
