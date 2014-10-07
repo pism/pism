@@ -300,7 +300,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
   // upward geothermal flux at bedrock surface
-  ierr = geothermal_flux.create(grid, "bheatflx", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = geothermal_flux.create(grid, "bheatflx", WITHOUT_GHOSTS); CHKERRQ(ierr);
   // PROPOSED standard_name = lithosphere_upward_heat_flux
   ierr = geothermal_flux.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
                         "W m-2", ""); CHKERRQ(ierr);
