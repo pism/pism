@@ -619,7 +619,7 @@ PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
   list.add(V);
   list.add(result);
 
-  assert(V.get_stencil_width() >= 1);
+  assert(W.get_stencil_width() >= 1);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
