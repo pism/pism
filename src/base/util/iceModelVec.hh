@@ -185,7 +185,8 @@ public:
   PetscErrorCode copy_from_vec(Vec source);
   virtual PetscErrorCode copy_to(IceModelVec &destination) const;
   PetscErrorCode copy_from(const IceModelVec &source);
-  virtual Vec get_vec();
+  Vec get_vec();
+  PISMDM::Ptr get_dm() const;
   virtual PetscErrorCode  has_nan() const;
   virtual PetscErrorCode  set_name(const std::string &name, int component = 0);
   virtual std::string name() const;

@@ -339,6 +339,10 @@ Vec IceModelVec::get_vec() {
   return m_v;
 }
 
+PISMDM::Ptr IceModelVec::get_dm() const {
+  return m_da;
+}
+
 //! Sets the variable name to `name` and resets metadata.
 PetscErrorCode  IceModelVec::set_name(const std::string &new_name, int N) {
   reset_attrs(N);
