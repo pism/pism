@@ -410,7 +410,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   ierr = m_grad.scale(1./m_eta); CHKERRQ(ierr);    
   ierr = m_grad.add(1,m_grad_state); CHKERRQ(ierr);
 
-  ierr = m_grad.copy_to_vec(gradient); CHKERRQ(ierr);      
+  ierr = m_grad.copy_to_vec(gradient); CHKERRQ(ierr); // global-to-global copy
 
   double valDesign, valState;
   ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);

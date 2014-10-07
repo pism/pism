@@ -152,7 +152,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   ierr = m_designFunctional.interior_product(m_x,tmp_gD); CHKERRQ(ierr);
   ierr = GNx.add(m_alpha,tmp_gD); CHKERRQ(ierr);
 
-  ierr = GNx.copy_to_vec(y); CHKERRQ(ierr);
+  ierr = GNx.copy_to_vec(y); CHKERRQ(ierr); // global-to-global copy
 
   return 0;
 }
