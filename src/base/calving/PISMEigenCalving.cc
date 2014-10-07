@@ -219,8 +219,6 @@ PetscErrorCode EigenCalving::update(double dt,
 
   ierr = m_thk_loss.update_ghosts(); CHKERRQ(ierr);
 
-  list.add(m_thk_loss);
-
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     double thk_loss_ij = 0.0;
@@ -240,7 +238,6 @@ PetscErrorCode EigenCalving::update(double dt,
       ice_thickness(i, j) = 0.0;
       pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
     }
-
   }
 
   ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
