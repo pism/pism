@@ -169,7 +169,7 @@ public:
   unsigned int get_ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
   unsigned int get_dof() const { return m_dof; }
-  unsigned int get_stencil_width() const { return m_da_stencil_width; }
+  unsigned int get_stencil_width() const;
   int nlevels() const { return m_n_levels; }
   std::vector<double>  get_levels() const { return zlevels; }
   bool has_ghosts() const { return m_has_ghosts; }

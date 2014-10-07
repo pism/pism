@@ -327,6 +327,14 @@ PetscErrorCode  IceModelVec::copy_from(const IceModelVec &source) {
   return 0;
 }
 
+unsigned int IceModelVec::get_stencil_width() const {
+  if (m_has_ghosts) {
+    return m_da_stencil_width;
+  } else {
+    return 0;
+  }
+}
+
 Vec IceModelVec::get_vec() {
   return m_v;
 }
