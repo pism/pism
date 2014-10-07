@@ -154,15 +154,13 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
 PetscErrorCode IcebergRemover::allocate() {
   PetscErrorCode ierr;
 
-  ierr = grid.get_dm(1,         // dof
-                     1,         // stencil width
-                     m_da2); CHKERRQ(ierr);
-
   ierr = m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
+
+  PISMDM::Ptr da2 = m_iceberg_mask.get_dm();
 
   // We want a global Vec but reordered in the natural ordering so
   // when it is scattered to proc zero it is not all messed up
-  ierr = DMDACreateNaturalVector(m_da2->get(), &m_g2natural); CHKERRQ(ierr);
+  ierr = DMDACreateNaturalVector(da2->get(), &m_g2natural); CHKERRQ(ierr);
 
   // Get scatter context *and* allocate mask on processor 0:
   ierr = VecScatterCreateToZero(m_g2natural, &m_scatter, &m_mask_p0); CHKERRQ(ierr);
