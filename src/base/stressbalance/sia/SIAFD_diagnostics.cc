@@ -53,8 +53,7 @@ PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "schoofs_theta", WITH_GHOSTS,
-                        surface->get_stencil_width()); CHKERRQ(ierr);
+  ierr = result->create(grid, "schoofs_theta", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   ierr = model->bed_smoother->get_theta(*surface, result); CHKERRQ(ierr);
@@ -111,8 +110,7 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "thksmooth", WITH_GHOSTS,
-                        surface->get_stencil_width()); CHKERRQ(ierr);
+  ierr = result->create(grid, "thksmooth", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
   ierr = model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
