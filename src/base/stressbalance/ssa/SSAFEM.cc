@@ -66,24 +66,24 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  m_callback_data.da = m_da->get();
+  m_callback_data.da = *m_da;
   m_callback_data.ssa = this;
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDASNESSetFunctionLocal(m_da->get(), INSERT_VALUES,
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
                                   (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_da->get(),
+  ierr = DMDASNESSetJacobianLocal(*m_da,
                                   (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
 #else
-  ierr = DMDASNESSetFunctionLocal(m_da->get(), INSERT_VALUES,
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
                                   (DMDASNESFunction)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(m_da->get(),
+  ierr = DMDASNESSetJacobianLocal(*m_da,
                                   (DMDASNESJacobian)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
 #endif
 
-  ierr = DMSetMatType(m_da->get(), "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(m_da->get(), &m_callback_data); CHKERRQ(ierr);
+  ierr = DMSetMatType(*m_da, "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(*m_da, &m_callback_data); CHKERRQ(ierr);
 
-  ierr = SNESSetDM(m_snes, m_da->get()); CHKERRQ(ierr);
+  ierr = SNESSetDM(m_snes, *m_da); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   int snes_max_it = 200;

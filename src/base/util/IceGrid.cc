@@ -45,6 +45,10 @@ DM PISMDM::get() const {
   return m_dm;
 }
 
+PISMDM::operator DM() const {
+  return m_dm;
+}
+
 IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c), m_unit_system(config.get_unit_system()) {
 
@@ -430,7 +434,7 @@ PetscErrorCode IceGrid::allocate() {
   }
 
   DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(tmp->get(), &info); CHKERRQ(ierr);
+  ierr = DMDAGetLocalInfo(*tmp, &info); CHKERRQ(ierr);
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;

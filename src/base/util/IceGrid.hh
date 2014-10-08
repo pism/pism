@@ -60,6 +60,7 @@ public:
   PISMDM(DM dm);
   ~PISMDM();
   DM get() const;
+  operator DM() const;
 private:
   DM m_dm;
 };

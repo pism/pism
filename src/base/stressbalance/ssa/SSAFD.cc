@@ -135,10 +135,10 @@ PetscErrorCode SSAFD::allocate_fd() {
   m_melange_back_pressure = NULL;
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(m_da->get(), MATAIJ, &m_A); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(*m_da, MATAIJ, &m_A); CHKERRQ(ierr);
 #else
-  ierr = DMSetMatType(m_da->get(), MATAIJ); CHKERRQ(ierr);
-  ierr = DMCreateMatrix(m_da->get(), &m_A); CHKERRQ(ierr);
+  ierr = DMSetMatType(*m_da, MATAIJ); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(*m_da, &m_A); CHKERRQ(ierr);
 #endif
 
   ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
