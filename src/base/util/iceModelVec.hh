@@ -354,8 +354,8 @@ protected:
   virtual PetscErrorCode regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
   virtual PetscErrorCode write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
-  PetscErrorCode get_component(unsigned int n, Vec result) const;
-  PetscErrorCode set_component(unsigned int n, Vec source);
+  PetscErrorCode get_component(unsigned int n, PISMDM::Ptr da_result, Vec result) const;
+  PetscErrorCode set_component(unsigned int n, PISMDM::Ptr da_source,Vec source);
 };
 
 /** A class for storing and accessing scalar 2D fields.
