@@ -46,21 +46,12 @@ PBLingleClark::~PBLingleClark() {
 
 PetscErrorCode PBLingleClark::allocate() {
   PetscErrorCode ierr;
-  PISMDM::Ptr da2;
-  ierr = grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(da2->get(), &g2); CHKERRQ(ierr);
-
-  // note we want a global Vec but reordered in the natural ordering so when it is
-  // scattered to proc zero it is not all messed up; see above
-  ierr = DMDACreateNaturalVector(da2->get(), &g2natural); CHKERRQ(ierr);
-  // next get context *and* allocate samplep0 (on proc zero only, naturally)
-  ierr = VecScatterCreateToZero(g2natural, &scatter, &Hp0); CHKERRQ(ierr);
-
-  ierr = VecDuplicate(Hp0,&bedp0); CHKERRQ(ierr);
-  ierr = VecDuplicate(Hp0,&Hstartp0); CHKERRQ(ierr);
-  ierr = VecDuplicate(Hp0,&bedstartp0); CHKERRQ(ierr);
-  ierr = VecDuplicate(Hp0,&upliftp0); CHKERRQ(ierr);
+  ierr = topg_initial.allocate_proc0_copy(Hp0); CHKERRQ(ierr);
+  ierr = topg_initial.allocate_proc0_copy(bedp0); CHKERRQ(ierr);
+  ierr = topg_initial.allocate_proc0_copy(Hstartp0); CHKERRQ(ierr);
+  ierr = topg_initial.allocate_proc0_copy(bedstartp0); CHKERRQ(ierr);
+  ierr = topg_initial.allocate_proc0_copy(upliftp0); CHKERRQ(ierr);
 
   bool use_elastic_model = config.get_flag("bed_def_lc_elastic_model");
 
@@ -79,10 +70,6 @@ PetscErrorCode PBLingleClark::allocate() {
 
 PetscErrorCode PBLingleClark::deallocate() {
   PetscErrorCode ierr;
-
-  ierr = VecDestroy(&g2); CHKERRQ(ierr);
-  ierr = VecDestroy(&g2natural); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
 
   ierr = VecDestroy(&Hp0); CHKERRQ(ierr);
   ierr = VecDestroy(&bedp0); CHKERRQ(ierr);
@@ -106,9 +93,9 @@ PetscErrorCode PBLingleClark::init(Vars &vars) {
 
   ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
 
-  ierr = thk->put_on_proc0(Hstartp0, scatter, g2, g2natural); CHKERRQ(ierr);
-  ierr = topg->put_on_proc0(bedstartp0, scatter, g2, g2natural); CHKERRQ(ierr);
-  ierr = uplift->put_on_proc0(upliftp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = thk->put_on_proc0(Hstartp0); CHKERRQ(ierr);
+  ierr = topg->put_on_proc0(bedstartp0); CHKERRQ(ierr);
+  ierr = uplift->put_on_proc0(upliftp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
     ierr = bdLC.init(); CHKERRQ(ierr);
@@ -219,8 +206,8 @@ PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
 
   t_beddef_last = t_final;
 
-  ierr = thk->put_on_proc0(Hp0, scatter, g2, g2natural); CHKERRQ(ierr);
-  ierr = topg->put_on_proc0(bedp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = thk->put_on_proc0(Hp0); CHKERRQ(ierr);
+  ierr = topg->put_on_proc0(bedp0); CHKERRQ(ierr);
 
   if (grid.rank == 0) {  // only processor zero does the step
     ierr = bdLC.step(dt_beddef, // time step, in seconds
@@ -228,7 +215,7 @@ PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
     CHKERRQ(ierr);
   }
 
-  ierr = topg->get_from_proc0(bedp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = topg->get_from_proc0(bedp0); CHKERRQ(ierr);
 
   //! Finally, we need to update bed uplift and topg_last.
   ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);

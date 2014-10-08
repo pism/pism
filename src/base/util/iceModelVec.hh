@@ -369,8 +369,9 @@ public:
   using IceModelVec2::create;
   virtual PetscErrorCode  create(IceGrid &my_grid, const std::string &my_name,
                                  IceModelVecKind ghostedp, int width = 1);
-  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) const;
-  virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
+  PetscErrorCode allocate_proc0_copy(Vec &result) const;
+  PetscErrorCode put_on_proc0(Vec onp0) const;
+  PetscErrorCode get_from_proc0(Vec onp0);
   virtual PetscErrorCode  copy_to(IceModelVec &destination) const;
   PetscErrorCode  get_array(double** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
