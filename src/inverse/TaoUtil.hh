@@ -36,9 +36,8 @@
 #define TaoConvergedReason TaoSolverTerminationReason
 #define TaoGetConvergedReason TaoGetTerminationReason
 #define TaoSetConvergedReason TaoSetTerminationReason
-#endif
-
 extern const char *const* TaoConvergedReasons;
+#endif
 
 //! Class to initialize the TAO library using the Resource Allocation Is Initialization (RAII) paradigm.
 /*! Declare a TaoInitializer on the stack to initialize the library in, e.g. `main`. When its destructor is called,
