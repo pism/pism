@@ -177,11 +177,16 @@ macro(pism_find_prerequisites)
   find_package (FFTW REQUIRED)
   find_package (PROJ4)
 
-  # Look for TAO if PETSc is < 3.5.0.
+  # Use TAO included in PETSc 3.5.
   if (Pism_PETSC_VERSION VERSION_LESS "3.5")
-    find_package (TAO)
+    set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
+    message(STATUS "Disabling TAO-based inversion tools. Install PETSc 3.5 or later to use them.")
   else()
-    message(STATUS "PETSc 3.5 and later includes TAO; using it...")
+    if (Pism_USE_TAO)
+      message(STATUS "PETSc 3.5 and later includes TAO; using it...")
+    else()
+      message(STATUS "Pism_USE_TAO is OFF. Inverse solvers using the TAO library will not be built.")
+    endif()
   endif()
 
   # Try to find netcdf_par.h. We assume that NetCDF was compiled with
@@ -209,9 +214,8 @@ macro(pism_find_prerequisites)
     set (Pism_USE_PROJ4 OFF CACHE BOOL "Use Proj.4 to compute cell areas, longitude, and latitude." FORCE)
   endif()
 
-  if ((NOT TAO_FOUND) AND (Pism_PETSC_VERSION VERSION_LESS "3.5"))
-    set (Pism_USE_TAO OFF CACHE BOOL "Use TAO in inverse solvers." FORCE)
-    message(STATUS  "TAO not found. Inverse solvers using the TAO library will not be built.")
+  if (Pism_PETSC_VERSION VERSION_LESS "3.5")
+
   endif()
 
   # Use option values to set compiler and linker flags
@@ -234,11 +238,6 @@ macro(pism_find_prerequisites)
   if (Pism_USE_PNETCDF)
     include_directories (${PNETCDF_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
-  endif()
-
-  if (Pism_USE_TAO)
-    include_directories (${TAO_INCLUDE_DIRS})
-    list (APPEND Pism_EXTERNAL_LIBS ${TAO_LIBRARIES})
   endif()
 
 endmacro()
@@ -266,6 +265,6 @@ macro(pism_set_dependencies)
   # Hide distracting CMake variables
   mark_as_advanced(file_cmd MPI_LIBRARY MPI_EXTRA_LIBRARY
     CMAKE_OSX_ARCHITECTURES CMAKE_OSX_DEPLOYMENT_TARGET CMAKE_OSX_SYSROOT
-    MAKE_EXECUTABLE HDF5_DIR TAO_DIR TAO_INCLUDE_DIRS NETCDF_PAR_H)
+    MAKE_EXECUTABLE HDF5_DIR NETCDF_PAR_H)
 
 endmacro()
