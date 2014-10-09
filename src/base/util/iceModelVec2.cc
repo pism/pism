@@ -114,7 +114,7 @@ PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0) const {
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &global); CHKERRQ(ierr);
-    ierr = this->copy_to_vec(global); CHKERRQ(ierr);
+    ierr = this->copy_to_vec(m_da, global); CHKERRQ(ierr);
   } else {
     global = m_v;
   }
@@ -242,7 +242,7 @@ PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
   }
 
   for (unsigned int j = 0; j < m_dof; ++j) {
-    ierr = IceModelVec2::get_component(da2, tmp, j); CHKERRQ(ierr);
+    ierr = IceModelVec2::get_dof(da2, tmp, j); CHKERRQ(ierr);
 
     ierr = m_metadata[j].write(nc, nctype, write_in_glaciological_units, tmp);
   }
@@ -277,7 +277,7 @@ PetscErrorCode IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     ierr = m_metadata[j].read(nc, time, tmp); CHKERRQ(ierr);
-    ierr = IceModelVec2::set_component(da2, tmp, j); CHKERRQ(ierr);
+    ierr = IceModelVec2::set_dof(da2, tmp, j); CHKERRQ(ierr);
   }
   
   // The calls above only set the values owned by a processor, so we need to
@@ -315,7 +315,7 @@ PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     ierr = m_metadata[j].regrid(nc, flag, m_report_range, default_value, tmp); CHKERRQ(ierr);
-    ierr = IceModelVec2::set_component(da2, tmp, j); CHKERRQ(ierr);
+    ierr = IceModelVec2::set_dof(da2, tmp, j); CHKERRQ(ierr);
   }
 
   // The calls above only set the values owned by a processor, so we need to
@@ -380,7 +380,7 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
     ierr = PetscViewerDrawGetDraw(viewers[i], 0, &draw); CHKERRQ(ierr);
     ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
 
-    ierr = IceModelVec2::get_component(da2, tmp, i); CHKERRQ(ierr);
+    ierr = IceModelVec2::get_dof(da2, tmp, i); CHKERRQ(ierr);
 
     ierr = convert_vec(tmp,
                        m_metadata[i].get_units(),
@@ -570,74 +570,10 @@ PetscErrorCode IceModelVec2S::min(double &result) const {
 
 // IceModelVec2
 
-/*!
- * This could be implemented using VecStrideGather, but our code is more
- * flexible: `source` and the current IceModelVec2 need not be both local or
- * global.
- */
-PetscErrorCode IceModelVec2::get_component(PISMDM::Ptr da_result, Vec result,
-                                           unsigned int start, unsigned int count) const {
-  PetscErrorCode ierr;
-  void *tmp_res = NULL, *tmp_v = NULL;
-
-  if (start >= m_dof)
-    SETERRQ(grid->com, 1, "invalid argument (start)");
-
-  ierr = DMDAVecGetArrayDOF(*da_result, result, &tmp_res); CHKERRQ(ierr);
-  double ***result_a = static_cast<double***>(tmp_res);
-
-  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
-  double ***source_a = static_cast<double***>(tmp_v);
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
-                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
-  }
-
-  ierr = DMDAVecRestoreArray(*da_result, result, &tmp_res); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
-
-  return 0;
-}
-
-/*!
- * This could be implemented using VecStrideScatter, but our code is more
- * flexible: `source` and the current IceModelVec2 need not be both local or
- * global.
- */
-PetscErrorCode IceModelVec2::set_component(PISMDM::Ptr da_source, Vec source,
-                                           unsigned int start, unsigned int count) {
-  PetscErrorCode ierr;
-  void *tmp_src = NULL, *tmp_v = NULL;
-
-  if (start >= m_dof)
-    SETERRQ(grid->com, 1, "invalid argument (start)");
-
-  ierr = DMDAVecGetArrayDOF(*da_source, source, &tmp_src); CHKERRQ(ierr);
-  double ***source_a = static_cast<double***>(tmp_src);
-
-  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
-  double ***result_a = static_cast<double***>(tmp_v);
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
-                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
-  }
-
-  ierr = DMDAVecRestoreArray(*da_source, source, &tmp_src); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
-
-  inc_state_counter();          // mark as modified
-
-  return 0;
-}
-
 PetscErrorCode IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) const {
   PetscErrorCode ierr;
 
-  ierr = IceModelVec2::get_component(result.get_dm(), result.m_v, n); CHKERRQ(ierr);
+  ierr = IceModelVec2::get_dof(result.get_dm(), result.m_v, n); CHKERRQ(ierr);
 
   return 0;
 }
@@ -645,7 +581,7 @@ PetscErrorCode IceModelVec2::get_component(unsigned int n, IceModelVec2S &result
 PetscErrorCode IceModelVec2::set_component(unsigned int n, IceModelVec2S &source) {
   PetscErrorCode ierr;
 
-  ierr = IceModelVec2::set_component(source.get_dm(), source.m_v, n); CHKERRQ(ierr);
+  ierr = IceModelVec2::set_dof(source.get_dm(), source.m_v, n); CHKERRQ(ierr);
 
   return 0;
 }

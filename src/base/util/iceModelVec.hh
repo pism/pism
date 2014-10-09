@@ -168,7 +168,7 @@ public:
   IceGrid* get_grid() const { return grid; }
   unsigned int get_ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
-  unsigned int get_dof() const { return m_dof; }
+  unsigned int get_ndof() const { return m_dof; }
   unsigned int get_stencil_width() const;
   int nlevels() const { return m_n_levels; }
   std::vector<double>  get_levels() const { return zlevels; }
@@ -181,7 +181,7 @@ public:
   virtual PetscErrorCode  squareroot();
   virtual PetscErrorCode  shift(double alpha);
   virtual PetscErrorCode  scale(double alpha);
-  PetscErrorCode copy_to_vec(Vec destination) const;
+  PetscErrorCode copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const;
   PetscErrorCode copy_from_vec(Vec source);
   virtual PetscErrorCode copy_to(IceModelVec &destination) const;
   PetscErrorCode copy_from(const IceModelVec &source);
@@ -267,6 +267,11 @@ protected:
   void check_array_indices(int i, int j, unsigned int k) const;
   virtual PetscErrorCode reset_attrs(unsigned int N);
   NormType int_to_normtype(int input) const;
+
+  PetscErrorCode get_dof(PISMDM::Ptr da_result, Vec result, unsigned int n,
+                         unsigned int count=1) const;
+  PetscErrorCode set_dof(PISMDM::Ptr da_source, Vec source, unsigned int n,
+                         unsigned int count=1);
 private:
   // disable copy constructor and the assignment operator:
   IceModelVec(const IceModelVec &other);
@@ -354,10 +359,6 @@ protected:
   virtual PetscErrorCode regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
   virtual PetscErrorCode write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
-  PetscErrorCode get_component(PISMDM::Ptr da_result, Vec result, unsigned int n,
-                               unsigned int count=1) const;
-  PetscErrorCode set_component(PISMDM::Ptr da_source, Vec source, unsigned int n,
-                               unsigned int count=1);
 };
 
 /** A class for storing and accessing scalar 2D fields.

@@ -277,22 +277,31 @@ PetscErrorCode IceModelVec::scale(double alpha) {
 //! Copies v to a global vector 'destination'. Ghost points are discarded.
 /*! This is potentially dangerous: make sure that `destination` has the same
     dimensions as the current IceModelVec.
+
+    DMLocalToGlobalBegin/End is broken in PETSc 3.5, so we roll our
+    own.
  */
-PetscErrorCode  IceModelVec::copy_to_vec(Vec destination) const {
+PetscErrorCode  IceModelVec::copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  if (m_has_ghosts) {
-    ierr = DMLocalToGlobalBegin(*m_da, m_v, INSERT_VALUES, destination); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(*m_da, m_v, INSERT_VALUES, destination); CHKERRQ(ierr);
-  } else {
-    ierr = VecCopy(m_v, destination); CHKERRQ(ierr);
-  }
+  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // m_n_levels == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and m_n_levels corresponds to dof of the underlying PETSc
+  // DM object. So we want the bigger of the two numbers here.
+  unsigned int N = std::max(m_dof, m_n_levels);
+
+  ierr = this->get_dof(destination_da, destination, 0, N); CHKERRQ(ierr);
+
   return 0;
 }
 
 //! \brief Copies data from a Vec `source` to this IceModelVec. Updates ghost
 //! points if necessary.
+/*!
+  Unlike DMLocalToGlobalBegin/End, DMGlobalToLocalBegin/End is *not*
+  broken in PETSc 3.5 (and ealier), so we can use it here.
+ */
 PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
   PetscErrorCode ierr;
   assert(m_v != NULL);
@@ -305,6 +314,61 @@ PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
   }
 
   inc_state_counter();          // mark as modified
+  return 0;
+}
+
+
+PetscErrorCode IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
+                                    unsigned int start, unsigned int count) const {
+  PetscErrorCode ierr;
+  void *tmp_res = NULL, *tmp_v = NULL;
+
+  if (start >= m_dof)
+    SETERRQ(grid->com, 1, "invalid argument (start)");
+
+  ierr = DMDAVecGetArrayDOF(*da_result, result, &tmp_res); CHKERRQ(ierr);
+  double ***result_a = static_cast<double***>(tmp_res);
+
+  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+  double ***source_a = static_cast<double***>(tmp_v);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
+                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
+  }
+
+  ierr = DMDAVecRestoreArray(*da_result, result, &tmp_res); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
+                                    unsigned int start, unsigned int count) {
+  PetscErrorCode ierr;
+  void *tmp_src = NULL, *tmp_v = NULL;
+
+  if (start >= m_dof)
+    SETERRQ(grid->com, 1, "invalid argument (start)");
+
+  ierr = DMDAVecGetArrayDOF(*da_source, source, &tmp_src); CHKERRQ(ierr);
+  double ***source_a = static_cast<double***>(tmp_src);
+
+  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+  double ***result_a = static_cast<double***>(tmp_v);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
+                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
+  }
+
+  ierr = DMDAVecRestoreArray(*da_source, source, &tmp_src); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
+
   return 0;
 }
 
@@ -553,7 +617,7 @@ PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
 
-    ierr = this->copy_to_vec(tmp); CHKERRQ(ierr);
+    ierr = this->copy_to_vec(m_da, tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).write(nc, nctype, write_in_glaciological_units, tmp); CHKERRQ(ierr);
 
