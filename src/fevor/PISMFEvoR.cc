@@ -17,15 +17,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
+#include <vector>
+
+#include <fevor_distribution.hh>
+#include <vector_tensor_operations.hh>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Interpolation_traits_2.h>
+#include <CGAL/natural_neighbor_coordinates_2.h>
+#include <CGAL/interpolation_functions.h>
+
 #include "PISMFEvoR.hh"
 #include "PISMConfig.hh"
 #include "PISMVars.hh"
 #include "PISMStressBalance_diagnostics.hh"
 #include "enthalpyConverter.hh"
-#include <cassert>
-#include <vector>
-#include <fevor_distribution.hh>
-#include <vector_tensor_operations.hh>
 
 namespace pism {
 
@@ -223,6 +231,29 @@ PetscErrorCode PISMFEvoR::interp_field_point( double &x, double &y, double &z,
 
     feildValue = weights[0] * f0 + weights[1] * f1 + weights[2] * f2 + weights[3] * f3;
     
+    return 0;
+}
+
+PetscErrorCode interp_grid_point(/*GRID, particles, enhancements*/) {
+    Delaunay_triangulation D_TRI;
+    
+    /* get the points for our convex hull
+     */
+    // loop through particles and get x,z from them
+        Point p(x,z);
+        D_TRI.insert( p );
+        function_values.insert( std::make_pair(p, /*enhancement value*/) );
+            
+    // loop through each grid point to interp it -- get x,z
+        Point INTERP(XX,ZZ);
+        
+        // make a vector of the iterpolation point and type
+        std::vector< std::pair< Point, Field_type > > coord;
+        Field_type norm = CGAL::natural_neighbor_coordinates_2 (D_TRI, INTERP, std::back_inserter(coord) ).second;
+        Field_type res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm, Value_access(function_values));
+        
+        // set m_enhancement_factor for all grid point at INTERP(x,z), y
+        
     return 0;
 }
 

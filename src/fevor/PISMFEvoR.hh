@@ -46,6 +46,8 @@ public:
                                             IceModelVec3 *field3, 
                                             double &feildValue );
 
+  virtual PetscErrorCode interp_grid_point();
+
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
@@ -62,6 +64,21 @@ private:
   PSB_tauxz *m_tauxz;
   PSB_tauyz *m_tauyz;
   EnthalpyConverter *m_EC;
+  
+  // typedefs for interp_grid_point()
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+    typedef CGAL::Delaunay_triangulation_2<K> Delaunay_triangulation;
+    typedef CGAL::Interpolation_traits_2<K>   Traits;
+    // type to represent 2D points
+    typedef K::Point_2 Point;
+    // how to compare our 2D points
+    typedef K::Less_xy_2 Map_compare;
+    // field number type -- has models for what we construct our points out of
+    typedef K::FT Field_type;
+    // map our points to our function values
+    std::map<Point, Field_type, Map_compare> function_values; 
+    // function to access our data
+    typedef CGAL::Data_access< std::map<Point, Field_type, Map_compare > > Value_access;
 };
 
 } // end of namespace pism

@@ -1,6 +1,4 @@
-#~ include_directories(${FEvoR_INCLUDES})
 include_directories(${FEvoR_INCLUDES} ${CGAL_INCLUDE_DIR})
-# FIXME actually including CGAL_INCLUDE_DIR causes a weird crash
 
 add_library(pismfevor
   PISMFEvoR.cc)
