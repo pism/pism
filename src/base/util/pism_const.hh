@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <map>
 
 namespace pism {
 
@@ -72,6 +73,19 @@ inline PetscErrorCode GlobalSum(double *local, double *result, MPI_Comm comm)
 {
   return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_SUM,comm);
 }
+
+class Profiling {
+public:
+  Profiling();
+  void begin(const char *name);
+  void end(const char *name);
+  void stage_begin(const char *name);
+  void stage_end(const char *name);
+private:
+  PetscClassId m_classid;
+  std::map<std::string, PetscLogEvent> m_events;
+  std::map<std::string, PetscLogStage> m_stages;
+};
 
 } // end of namespace pism
 

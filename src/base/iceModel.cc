@@ -654,7 +654,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (updateAtDepth && basal_yield_stress_model) {
+    profiling.begin("basal yield stress");
     ierr = basal_yield_stress_model->update(grid.time->current(), dt); CHKERRQ(ierr);
+    profiling.end("basal yield stress");
     ierr = basal_yield_stress_model->basal_material_yield_stress(basal_yield_stress); CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
@@ -673,9 +675,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   ierr = ocean->melange_back_pressure_fraction(melange_back_pressure); CHKERRQ(ierr);
 
+  profiling.begin("stress balance");
   ierr = stress_balance->update(updateAtDepth == false,
                                 sea_level,
                                 melange_back_pressure);
+  profiling.end("stress balance");
   if (ierr != 0) {
     std::string o_file = "stressbalance_failed.nc";
     bool o_file_set;
@@ -705,8 +709,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = max_timestep(dt, skipCountDown); CHKERRQ(ierr);
 
   //! \li Update surface and ocean models.
+  profiling.begin("surface");
   ierr = surface->update(grid.time->current(), dt); CHKERRQ(ierr);
+  profiling.end("surface");
+
+  profiling.begin("ocean");
   ierr = ocean->update(grid.time->current(),   dt); CHKERRQ(ierr);
+  profiling.end("ocean");
 
   dt_TempAge += dt;
   // IceModel::dt,dtTempAge are now set correctly according to
@@ -716,7 +725,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li update the age of the ice (if appropriate)
   if (do_age && updateAtDepth) {
+    profiling.begin("age");
     ierr = ageStep(); CHKERRQ(ierr);
+    profiling.end("age");
     stdout_flags += "a";
   } else {
     stdout_flags += "$";
@@ -726,7 +737,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //!  energy model based (especially) on the new velocity field; see
   //!  energyStep()
   if (do_energy_step) { // do the energy step
+    profiling.begin("energy");
     ierr = energyStep(); CHKERRQ(ierr);
+    profiling.end("energy");
     stdout_flags += "E";
   } else {
     stdout_flags += "$";
@@ -738,18 +751,24 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li update the state variables in the subglacial hydrology model (typically
   //!  water thickness and sometimes pressure)
+  profiling.begin("basal hydrology");
   ierr = subglacial_hydrology->update(grid.time->current(), dt); CHKERRQ(ierr);
+  profiling.end("basal hydrology");
 
   //! \li update the fracture density field; see calculateFractureDensity()
   if (config.get_flag("do_fracture_density")) {
+    profiling.begin("fracture density");
     ierr = calculateFractureDensity(); CHKERRQ(ierr);
+    profiling.end("fracture density");
   }
 
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
+    profiling.begin("mass transport");
     ierr = massContExplicitStep(); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
+    profiling.end("mass transport");
 
     // Note that there are three adaptive time-stepping criteria. Two of them
     // (using max. diffusion and 2D CFL) are limiting the mass-continuity
@@ -770,7 +789,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
+  profiling.begin("calving");
   ierr = do_calving(); CHKERRQ(ierr);
+  profiling.end("calving");
 
   ierr = Href_cleanup(); CHKERRQ(ierr);
 
@@ -779,7 +800,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   if (beddef) {
     int topg_state_counter = bed_topography.get_state_counter();
 
+    profiling.begin("bed deformation");
     ierr = beddef->update(grid.time->current(), dt); CHKERRQ(ierr);
+    profiling.end("bed deformation");
 
     if (bed_topography.get_state_counter() != topg_state_counter) {
       stdout_flags += "b";
@@ -868,6 +891,7 @@ PetscErrorCode IceModel::run() {
   // main loop for time evolution
   // IceModel::step calls grid.time->step(dt), ensuring that this while loop
   // will terminate
+  profiling.stage_begin("time-stepping loop");
   while (grid.time->current() < grid.time->end()) {
 
     stdout_flags.erase();  // clear it out
@@ -884,16 +908,20 @@ PetscErrorCode IceModel::run() {
     ierr = summary(show_step); CHKERRQ(ierr);
 
     // writing these fields here ensures that we do it after the last time-step
+    profiling.begin("I/O during run");
     ierr = write_snapshot(); CHKERRQ(ierr);
     ierr = write_timeseries(); CHKERRQ(ierr);
     ierr = write_extras(); CHKERRQ(ierr);
     ierr = write_backup(); CHKERRQ(ierr);
+    profiling.end("I/O during run");
 
     ierr = update_viewers(); CHKERRQ(ierr);
 
     if (stepcount >= 0) stepcount++;
     if (endOfTimeStepHook() != 0) break;
   } // end of the time-stepping loop
+
+  profiling.stage_end("time-stepping loop");
 
   bool flag;
   int pause_time = 0;
