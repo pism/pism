@@ -243,6 +243,17 @@ PetscErrorCode PISMFEvoR::interp_field_point( double &x, double &y, double &z,
     return 0;
 }
 
+// typedefs for interp_grid_point()
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Delaunay_triangulation_2<K> Delaunay_triangulation;
+typedef CGAL::Interpolation_traits_2<K>   Traits;
+// type to represent 2D points
+typedef K::Point_2 Point;
+// how to compare our 2D points
+typedef K::Less_xy_2 Map_compare;
+// field number type -- has models for what we construct our points out of
+typedef K::FT Field_type;
+
 PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles, 
                                             const std::vector<double> &x, 
                                             const std::vector<double> &z, 

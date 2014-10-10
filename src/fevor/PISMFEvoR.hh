@@ -17,12 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Interpolation_traits_2.h>
-#include <CGAL/natural_neighbor_coordinates_2.h>
-#include <CGAL/interpolation_functions.h>
-
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 
@@ -70,17 +64,6 @@ private:
   PSB_tauxz *m_tauxz;
   PSB_tauyz *m_tauyz;
   EnthalpyConverter *m_EC;
-  
-  // typedefs for interp_grid_point()
-    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-    typedef CGAL::Delaunay_triangulation_2<K> Delaunay_triangulation;
-    typedef CGAL::Interpolation_traits_2<K>   Traits;
-    // type to represent 2D points
-    typedef K::Point_2 Point;
-    // how to compare our 2D points
-    typedef K::Less_xy_2 Map_compare;
-    // field number type -- has models for what we construct our points out of
-    typedef K::FT Field_type;
 };
 
 } // end of namespace pism
