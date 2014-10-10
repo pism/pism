@@ -118,15 +118,15 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
          */
       std::vector<double> p_x, p_y, p_z, p_e;
       for (double pn=0.0; pn < n_pd; ++pn) {
-        px_x.push_back(pn < n_pd/2.0 ? -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd)
-                                     : -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd-1)) );
+        p_x.push_back(pn < n_pd/2.0 ? -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd)
+                                     : -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd-1) );
         p_y.push_back(0.0);
         p_z.push_back(pn < n_pd/2.0 ? 0.0 : grid.Lz );
         
         p_e.push_back(1.0);
       }
       // Diagnostics -- total number of recrystallization events in time step
-      std::vector<unsigned int> nMigre(n_particles, 0), nPoly(n_particles, 0);    
+      std::vector<unsigned int> nMigRe(n_particles, 0), nPoly(n_particles, 0);    
     
     // get enhancement factor for every particle!
     for (unsigned int i = 0; i < n_particles; ++i) {
@@ -199,7 +199,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     }
     
     // set the enhancement factor for every grid point from our particle cloud
-    ierr PISMFEvoR::interp_grid_point(n_particles, p_x, p_z, p_e); CHKERRQ(ierr);
+    ierr = PISMFEvoR::interp_grid_point(n_particles, p_x, p_z, p_e); CHKERRQ(ierr);
     
   }
 
@@ -255,7 +255,7 @@ PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles,
   typedef CGAL::Data_access< std::map<Point, Field_type, Map_compare > > Value_access;
     
   // get the points for our convex hull
-  for (unsigned int pn = 0, pn < n_particles; ++pn) {
+  for (unsigned int pn = 0; pn < n_particles; ++pn) {
     Point p(x[pn],z[pn]);
     D_TRI.insert( p );
     function_values.insert( std::make_pair(p, e[pn]) );
@@ -263,7 +263,7 @@ PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles,
         
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {    
     for (unsigned int k=0; k<grid.Mz; ++k) {
-      Point INTERP( grid.x(i),grid.zlevels(k) );
+      Point INTERP( grid.x[i],grid.zlevels[k] );
       
       // make a vector of the iterpolation point and type
       std::vector< std::pair< Point, Field_type > > coord;
@@ -271,7 +271,7 @@ PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles,
       Field_type res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm, Value_access(function_values));
       
       // set m_enhancement_factor for all y grid points at INTERP(x,z)
-      for (int j=grid.ys; j<grid.ys+grid.my; ++j) {
+      for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
           m_enhancement_factor(i,j,k) = double(res);
       }
     }
