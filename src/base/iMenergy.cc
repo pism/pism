@@ -88,7 +88,7 @@ PetscErrorCode IceModel::energyStep() {
 
     ierr = vWork3d.update_ghosts(Enth3); CHKERRQ(ierr);
 
-    ierr = GlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &myLiquifiedVol,  &gLiquifiedVol); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
       ierr = verbPrintf(1,grid.com,
                         "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
@@ -96,9 +96,9 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  ierr = GlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &myCFLviolcount,  &CFLviolcount); CHKERRQ(ierr);
 
-  ierr = GlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount); CHKERRQ(ierr);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
@@ -110,7 +110,7 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  ierr = GlobalSum(&myBulgeCount, &gBulgeCount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &myBulgeCount,  &gBulgeCount); CHKERRQ(ierr);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";

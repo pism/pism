@@ -285,9 +285,9 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
   }
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
-  ierr = GlobalSum(&my_icefreelost, &icefreelost, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&my_oceanlost, &oceanlost, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&my_negativegain, &negativegain, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_icefreelost,  &icefreelost); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_oceanlost,  &oceanlost); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_negativegain,  &negativegain); CHKERRQ(ierr);
 
   if (stripwidth <= 0.0) {
     nullstriplost = 0.0;
@@ -305,7 +305,7 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
     }
   }
 
-  ierr = GlobalSum(&my_nullstriplost, &nullstriplost, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_nullstriplost,  &nullstriplost); CHKERRQ(ierr);
 
   return 0;
 }
@@ -472,7 +472,7 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result
     }
   }
 
-  ierr = GlobalMax(&mymaxKW, &maxKW, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &mymaxKW,  &maxKW); CHKERRQ(ierr);
 
   return 0;
 }

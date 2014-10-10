@@ -765,14 +765,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    ierr = GlobalSum(&proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux, grid.com); CHKERRQ(ierr);
-    ierr = GlobalSum(&proc_nonneg_rule_flux,   &total_nonneg_rule_flux,   grid.com); CHKERRQ(ierr);
-    ierr = GlobalSum(&proc_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
-    ierr = GlobalSum(&proc_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
-    ierr = GlobalSum(&proc_sum_divQ_SIA,       &total_sum_divQ_SIA,       grid.com); CHKERRQ(ierr);
-    ierr = GlobalSum(&proc_sum_divQ_SSA,       &total_sum_divQ_SSA,       grid.com); CHKERRQ(ierr);
-    ierr = GlobalSum(&proc_Href_to_H_flux,     &total_Href_to_H_flux,     grid.com); CHKERRQ(ierr);
-    ierr = GlobalSum(&proc_H_to_Href_flux,     &total_H_to_Href_flux,     grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux); CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_nonneg_rule_flux,        &total_nonneg_rule_flux);        CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_sub_shelf_ice_flux,      &total_sub_shelf_ice_flux);      CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_surface_ice_flux,        &total_surface_ice_flux);        CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_sum_divQ_SIA,            &total_sum_divQ_SIA);            CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_sum_divQ_SSA,            &total_sum_divQ_SSA);            CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_Href_to_H_flux,          &total_Href_to_H_flux);          CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &proc_H_to_Href_flux,          &total_H_to_Href_flux);          CHKERRQ(ierr); 
 
     grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux;
     sub_shelf_ice_flux_cumulative      += total_sub_shelf_ice_flux;

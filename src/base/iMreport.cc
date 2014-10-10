@@ -68,7 +68,7 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
   }
 
   // communication
-  ierr = GlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &meltarea,  &gmeltfrac); CHKERRQ(ierr);
 
   // normalize fraction correctly
   if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
@@ -123,7 +123,7 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
 
 
   // communicate to turn into global original fraction
-  ierr = GlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &origvol,   &gorigfrac); CHKERRQ(ierr);
 
   // normalize fraction correctly
   if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
@@ -329,7 +329,7 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
   }
 
 
-  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &volume,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -368,7 +368,7 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   const double oceanarea=3.61e14;//in square meters
   volume /= oceanarea;
 
-  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &volume,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -402,7 +402,7 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(double &result) {
     }
   }
 
-  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &volume,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -436,7 +436,7 @@ PetscErrorCode IceModel::compute_ice_volume_cold(double &result) {
     }
   }
 
-  ierr = GlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &volume,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -458,7 +458,7 @@ PetscErrorCode IceModel::compute_ice_area(double &result) {
       area += cell_area(i,j);
   }
 
-  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -486,7 +486,7 @@ PetscErrorCode IceModel::compute_ice_area_temperate(double &result) {
     }
   }
 
-  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -514,7 +514,7 @@ PetscErrorCode IceModel::compute_ice_area_cold(double &result) {
     }
   }
 
-  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -535,7 +535,7 @@ PetscErrorCode IceModel::compute_ice_area_grounded(double &result) {
       area += cell_area(i,j);
   }
 
-  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -556,7 +556,7 @@ PetscErrorCode IceModel::compute_ice_area_floating(double &result) {
       area += cell_area(i,j);
   }
 
-  ierr = GlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -594,7 +594,7 @@ PetscErrorCode IceModel::compute_ice_enthalpy(double &result) {
 
   enthalpysum *= config.get("ice_density") * (grid.dx * grid.dy);
 
-  ierr = GlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &enthalpysum,  &result); CHKERRQ(ierr);
   return 0;
 }
 

@@ -517,7 +517,7 @@ PetscErrorCode IceModelVec2S::sum(double &result) {
   }
 
   // find the global sum:
-  ierr = GlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid->com, &my_result,  &result); CHKERRQ(ierr);
 
   return 0;
 }
@@ -533,7 +533,7 @@ PetscErrorCode IceModelVec2S::max(double &result) const {
     my_result = PetscMax(my_result,(*this)(p.i(), p.j()));
   }
 
-  ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid->com, &my_result, &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -548,7 +548,7 @@ PetscErrorCode IceModelVec2S::absmax(double &result) const {
     my_result = PetscMax(my_result,PetscAbs((*this)(p.i(), p.j())));
   }
 
-  ierr = GlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid->com, &my_result,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -563,7 +563,7 @@ PetscErrorCode IceModelVec2S::min(double &result) const {
     my_result = PetscMin(my_result,(*this)(p.i(), p.j()));
   }
 
-  ierr = GlobalMin(&my_result, &result, grid->com); CHKERRQ(ierr);
+  ierr = GlobalMin(grid->com, &my_result,  &result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -707,8 +707,8 @@ PetscErrorCode IceModelVec2Stag::absmaxcomponents(double* z) const {
     my_z[1] = PetscMax(my_z[1],PetscAbs((*this)(i,j,1)));
   }
 
-  ierr = GlobalMax(&(my_z[0]), &(z[0]), grid->com); CHKERRQ(ierr);
-  ierr = GlobalMax(&(my_z[1]), &(z[1]), grid->com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid->com, &(my_z[0]), &(z[0])); CHKERRQ(ierr);
+  ierr = GlobalMax(grid->com, &(my_z[1]), &(z[1])); CHKERRQ(ierr);
   return 0;
 }
 

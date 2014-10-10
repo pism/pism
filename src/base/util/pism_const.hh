@@ -59,19 +59,19 @@ inline bool set_contains(std::set<std::string> S, std::string name) {
   return (S.find(name) != S.end());
 }
 
-inline PetscErrorCode GlobalMin(double *local, double *result, MPI_Comm comm)
+inline PetscErrorCode GlobalMin(MPI_Comm comm, double *local, double *result, int count = 1)
 {
-  return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MIN,comm);
+  return MPI_Allreduce(local, result, count, MPIU_REAL, MPI_MIN, comm);
 }
 
-inline PetscErrorCode GlobalMax(double *local, double *result, MPI_Comm comm)
+inline PetscErrorCode GlobalMax(MPI_Comm comm, double *local, double *result, int count = 1)
 {
-  return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_MAX,comm);
+  return MPI_Allreduce(local, result, count, MPIU_REAL, MPI_MAX, comm);
 }
 
-inline PetscErrorCode GlobalSum(double *local, double *result, MPI_Comm comm)
+inline PetscErrorCode GlobalSum(MPI_Comm comm, double *local, double *result, int count = 1)
 {
-  return MPI_Allreduce(local,result,1,MPIU_REAL,MPI_SUM,comm);
+  return MPI_Allreduce(local, result, count, MPIU_REAL, MPI_SUM, comm);
 }
 
 class Profiling {

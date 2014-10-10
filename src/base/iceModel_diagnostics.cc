@@ -1741,7 +1741,7 @@ PetscErrorCode IceModel_ivolg::update(double a, double b) {
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);
   }
 
-  ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &volume,  &value); CHKERRQ(ierr);
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 
@@ -1777,7 +1777,7 @@ PetscErrorCode IceModel_ivolf::update(double a, double b) {
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);
   }
 
-  ierr = GlobalSum(&volume, &value, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &volume,  &value); CHKERRQ(ierr);
 
   ierr = ts->append(value, a, b); CHKERRQ(ierr);
 

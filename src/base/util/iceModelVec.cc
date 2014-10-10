@@ -153,8 +153,8 @@ PetscErrorCode IceModelVec::range(double &min, double &max) const {
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax;
-    ierr = GlobalMin(&my_min, &gmin, grid->com); CHKERRQ(ierr);
-    ierr = GlobalMax(&my_max, &gmax, grid->com); CHKERRQ(ierr);
+    ierr = GlobalMin(grid->com, &my_min,  &gmin); CHKERRQ(ierr);
+    ierr = GlobalMax(grid->com, &my_max,  &gmax); CHKERRQ(ierr);
     min = gmin;
     max = gmax;
   } else {
@@ -211,13 +211,13 @@ PetscErrorCode IceModelVec::norm(int n, double &out) const {
          "IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
          m_name.c_str());
     } else if (n == NORM_1) {
-      ierr = GlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalSum(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
     } else if (n == NORM_2) {
       my_norm = PetscSqr(my_norm);  // undo sqrt in VecNorm before sum
-      ierr = GlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalSum(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
       gnorm = sqrt(gnorm);
     } else if (n == NORM_INFINITY) {
-      ierr = GlobalMax(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalMax(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
     } else {
       SETERRQ1(grid->com, 2, "IceModelVec::norm(...): unknown norm type (called as %s.norm(...))\n",
          m_name.c_str());
@@ -870,7 +870,7 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
   ierr = VecStrideNormAll(m_v, type, &norm_result[0]); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
-    // needs a reduce operation; use GlobalMax if NORM_INFINITY,
+    // needs a reduce operation; use GlobalMax() if NORM_INFINITY,
     //   otherwise GlobalSum; carefully in NORM_2 case
     if (n == NORM_1_AND_2) {
       SETERRQ1(grid->com, 1, 
@@ -879,20 +879,20 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
     } else if (n == NORM_1) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
-        ierr = GlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalSum(grid->com, &norm_result[k], &result[k]); CHKERRQ(ierr);
       }
 
     } else if (n == NORM_2) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
         norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
-        ierr = GlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalSum(grid->com, &norm_result[k], &result[k]); CHKERRQ(ierr);
         result[k] = sqrt(result[k]);
       }
 
     } else if (n == NORM_INFINITY) {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        ierr = GlobalMax(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalMax(grid->com, &norm_result[k], &result[k]); CHKERRQ(ierr);
       }
     } else {
       SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))\n",
