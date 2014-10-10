@@ -71,7 +71,7 @@ protected:
 
   virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
 
-  virtual PetscErrorCode assemble_rhs(Vec rhs);
+  virtual PetscErrorCode assemble_rhs();
 
   virtual PetscErrorCode write_system_petsc(const std::string &namepart);
 
@@ -91,10 +91,11 @@ protected:
   IceModelVec2 m_work;
   KSP m_KSP;
   Mat m_A;
-  Vec m_b;
+  IceModelVec2V m_b;            // right hand side
   double m_scaling;
 
   IceModelVec2S *fracture_density, *m_melange_back_pressure;
+  IceModelVec2V m_velocity_old;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;

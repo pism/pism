@@ -256,8 +256,8 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
   }
 
   // check if redistribution should be run once more
-  ierr = GlobalSum(&remaining_residual_thickness,
-                       &remaining_residual_thickness_global, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &remaining_residual_thickness,
+                   &remaining_residual_thickness_global); CHKERRQ(ierr);
 
   if (remaining_residual_thickness_global > 0.0) {
     done = false;

@@ -96,10 +96,10 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  ierr = GlobalMax(&max_strain_heating_error, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&av_strain_heating_error, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &max_strain_heating_error,  &gmax_strain_heating_err); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &av_strain_heating_error,  &gav_strain_heating_err); CHKERRQ(ierr);
   double  gavcount;
-  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avcount,  &gavcount); CHKERRQ(ierr);
   gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -152,11 +152,11 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
     }
   }
 
-  ierr = GlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxUerr,  &gmaxUerr); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxWerr,  &gmaxWerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avUerr,  &gavUerr); CHKERRQ(ierr);
   gavUerr = gavUerr/(grid.Mx*grid.My);
-  ierr = GlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avWerr,  &gavWerr); CHKERRQ(ierr);
   gavWerr = gavWerr/(grid.Mx*grid.My);
   return 0;
 }

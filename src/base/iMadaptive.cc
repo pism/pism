@@ -86,11 +86,11 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   }
 
 
-  ierr = GlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&maxv, &gmaxv, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&maxw, &gmaxw, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxu,  &gmaxu); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxv,  &gmaxv); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxw,  &gmaxw); CHKERRQ(ierr);
 
-  ierr = GlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMin(grid.com, &maxtimestep,  &dt_result); CHKERRQ(ierr);
 
   return 0;
 }
@@ -129,7 +129,7 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
     }
   }
 
-  ierr = GlobalMin(&maxtimestep, &dt_result, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMin(grid.com, &maxtimestep,  &dt_result); CHKERRQ(ierr);
   return 0;
 }
 

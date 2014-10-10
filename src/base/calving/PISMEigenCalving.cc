@@ -219,8 +219,6 @@ PetscErrorCode EigenCalving::update(double dt,
 
   ierr = m_thk_loss.update_ghosts(); CHKERRQ(ierr);
 
-  list.add(m_thk_loss);
-
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     double thk_loss_ij = 0.0;
@@ -240,7 +238,6 @@ PetscErrorCode EigenCalving::update(double dt,
       ice_thickness(i, j) = 0.0;
       pism_mask(i, j) = MASK_ICE_FREE_OCEAN;
     }
-
   }
 
   ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
@@ -359,9 +356,9 @@ PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
 
 
   double calving_rate_max = 0.0, calving_rate_mean = 0.0, calving_rate_counter = 0.0;
-  ierr = GlobalSum(&my_calving_rate_mean, &calving_rate_mean, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&my_calving_rate_counter, &calving_rate_counter, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&my_calving_rate_max, &calving_rate_max, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_calving_rate_mean,  &calving_rate_mean); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_calving_rate_counter,  &calving_rate_counter); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &my_calving_rate_max,  &calving_rate_max); CHKERRQ(ierr);
 
   calving_rate_mean /= calving_rate_counter;
 

@@ -33,6 +33,8 @@
 
 #include <cassert>
 
+#include "pism_const.hh"
+
 namespace pism {
 
 class Time;
@@ -60,6 +62,7 @@ public:
   PISMDM(DM dm);
   ~PISMDM();
   DM get() const;
+  operator DM() const;
 private:
   DM m_dm;
 };
@@ -167,6 +170,8 @@ public:
   double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
 
+  Profiling profiling;
+
   const Config &config;
   MPI_Comm    com;
   int rank, size;
@@ -231,10 +236,15 @@ public:
     return (x[i] <= x[0] + strip_width || x[i] >= x[Mx-1] - strip_width ||
             y[j] <= y[0] + strip_width || y[j] >= y[My-1] - strip_width);
   }
-protected:
+private:
   std::map<int,PISMDM::WeakPtr> m_dms;
   double m_lambda;         //!< quadratic vertical spacing parameter
   UnitSystem m_unit_system;
+
+  // This DM is used for I/O operations and is not owned by any
+  // IceModelVec (so far, anyway). We keep a pointer to it here to
+  // avoid re-allocating it many times.
+  PISMDM::Ptr m_dm_scalar_global;
 
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_horizontal_coordinates();
@@ -245,7 +255,7 @@ protected:
 
   int dm_key(int, int);
   PetscErrorCode init_calendar(std::string &result);
-private:
+
   // Hide copy constructor / assignment operator.
   IceGrid(IceGrid const &);
   IceGrid & operator=(IceGrid const &);
