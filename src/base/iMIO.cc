@@ -126,7 +126,7 @@ PetscErrorCode IceModel::dumpToFile(const std::string &filename) {
   PetscErrorCode ierr;
   PIO nc(grid, config.get_string("output_format"));
 
-  profiling.begin("saving model state");
+  profiling.begin("model state dump");
 
   // Prepare the file
   std::string time_name = config.get_string("time_dimension_name");
@@ -142,7 +142,7 @@ PetscErrorCode IceModel::dumpToFile(const std::string &filename) {
 
   ierr = nc.close(); CHKERRQ(ierr);
 
-  profiling.end("saving model state");
+  profiling.end("model state dump");
 
   return 0;
 }

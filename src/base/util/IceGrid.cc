@@ -433,8 +433,12 @@ PetscErrorCode IceGrid::allocate() {
     PISMEnd();
   }
 
+  // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
+  // be needed for I/O operations)
+  ierr = this->get_dm(1, 0, m_dm_scalar_global); CHKERRQ(ierr);
+
   DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(*tmp, &info); CHKERRQ(ierr);
+  ierr = DMDAGetLocalInfo(*m_dm_scalar_global, &info); CHKERRQ(ierr);
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
