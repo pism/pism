@@ -8,6 +8,8 @@ if (NOT ${CMAKE_VERSION} VERSION_LESS 3.0.0)
   cmake_policy(SET CMP0026 OLD)
 endif()
 
+set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true )
+
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 

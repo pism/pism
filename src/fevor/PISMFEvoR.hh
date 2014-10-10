@@ -17,6 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Interpolation_traits_2.h>
+#include <CGAL/natural_neighbor_coordinates_2.h>
+#include <CGAL/interpolation_functions.h>
+
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 
