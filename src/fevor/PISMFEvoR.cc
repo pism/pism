@@ -94,32 +94,43 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   {
     ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
 
-    unsigned int n_particles = 1;
-        /* terminology:
-         *   particles exist in pism and contain one or more distrobutions 
-         *   of crystals that are tracked through time. They essentially are 
-         *   infinitesimely small. Distributions exist in FEvoR and contain 
-         *   sets of independent crystals (or in the case of NNI weakly 
-         *   dependant). In PISM-FEvoR you will likely not need to access the
-         *   crystals directly. Methods should be provided through FEvoR's 
-         *   distribution class fevor_distribution. 
-         */
-        
-    for (unsigned int i = 0; i < n_particles; ++i) {
-      
-      /* TODO method to load in our cloud of particles. Will need the values
-       * below for each particle.
+    unsigned int n_particles = 10;
+    double n_pd = double(n_particles);
+      /* terminology:
+       *   particles exist in pism and contain one or more distrobutions 
+       *   of crystals that are tracked through time. They essentially are 
+       *   infinitesimely small. Distributions exist in FEvoR and contain 
+       *   sets of independent crystals (or in the case of NNI weakly 
+       *   dependant). In PISM-FEvoR you will likely not need to access the
+       *   crystals directly. Methods should be provided through FEvoR's 
+       *   distribution class fevor_distribution. 
        */
-      double x = 0.0,
-             y = 0.0,
-             z = 0.0;
-      double enhancement = 1; 
-      std::vector<unsigned int> packingDimensions(3, 3);
-        // should be at minimum 10x10x10 to get an accurate result!
       
-      /* FIXME this should load in the appropriate distribuion! FEvoR will need 
-       * a method for this. Likely need to add netCDF support in FEvoR.
-       * Currently we can load distros from .csv files.
+    /* TODO method to load in our cloud of particles. Will need the values
+     * below for each particle.
+     * 
+     * Just making a fake one:
+     */
+      std::vector<unsigned int> packingDimensions(3, 3); 
+        /* This should be the same for each distribution, but a loaded parameter.
+         * 
+         * Also, should be at minimum 10x10x10 to get an accurate result! low here for testing
+         */
+      std::vector<double> p_x, p_y, p_z, p_e;
+      for (double pn=0.0; pn < n_pd; ++pn) {
+        px_x.push_back(pn < n_pd/2.0 ? -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd)
+                                     : -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd-1)) );
+        p_y.push_back(0.0);
+        p_z.push_back(pn < n_pd/2.0 ? 0.0 : grid.Lz );
+        
+        p_e.push_back(1.0);
+      }
+      // Diagnostics -- total number of recrystallization events in time step
+      std::vector<unsigned int> nMigre(n_particles, 0), nPoly(n_particles, 0);    
+    
+    // get enhancement factor for every particle!
+    for (unsigned int i = 0; i < n_particles; ++i) {
+      /* FIXME this should get the appropriate distribuion! 
        * 
        * Just create one from a Watson concentration parameter. 
        */
@@ -134,9 +145,6 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
        */
       fevor_distribution d_iso(packingDimensions, 0.0);
       
-      // Diagnostics from distributions. Can be saved or thrown away.
-      unsigned int nMigRe = 0,
-                   nPoly  = 0;
       std::vector<double> bulkEdot(9, 0.0);
       
       unsigned int nMigRe_iso = 0,
@@ -153,13 +161,13 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
              T = 0.0;
 
       // check if the point (x,y,z) is within the domain:
-      assert(0.0 <= z && z <= grid.Lz);
-      assert(-grid.Lx <= x && x <= grid.Lx);
-      assert(-grid.Ly <= y && y <= grid.Ly);
+      assert(     0.0 <= p_z[i] && p_z[i] <= grid.Lz);
+      assert(-grid.Lx <= p_x[i] && p_x[i] <= grid.Lx);
+      assert(-grid.Ly <= p_y[i] && p_y[i] <= grid.Ly);
 
-      ierr = PISMFEvoR::interp_field_point( x, y, z, pressure3, P  );
-      ierr = PISMFEvoR::interp_field_point( x, y, z, tauxz3   , txz);
-      ierr = PISMFEvoR::interp_field_point( x, y, z, tauyz3   , tyz);
+      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], pressure3, P  ); CHKERRQ(ierr);
+      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], tauxz3   , txz); CHKERRQ(ierr);
+      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], tauyz3   , tyz); CHKERRQ(ierr);
       
       /*std::vector<double> stress = {   P,   0, txz,
        *                                 0,   P, tyz,
@@ -172,26 +180,27 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       stress[6] = stress[8] = tyz;           // FIXME correct sign?
         // don't strictly need P here as we only need the deviatoric stress.
       
-      // FIXME I think this is right... It did compile! 
-      ierr = PISMFEvoR::interp_field_point( x, y, z, m_enthalpy, E  );
+      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], m_enthalpy, E  ); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
       
-      d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe    , nPoly    , bulkEdot    );
+      d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe[i] , nPoly[i] , bulkEdot    );
       d_iso.stepInTime(T, stress, m_t, m_dt, nMigRe_iso, nPoly_iso, bulkEdot_iso);
       
-      enhancement = tensorMagnitude(bulkEdot)/tensorMagnitude(bulkEdot_iso);
-      
+      p_e[i] = tensorMagnitude(bulkEdot)/tensorMagnitude(bulkEdot_iso);
+        
       // some bounds for the enhancement factor
-      if (enhancement < 1.0) {
-          enhancement = 1.0;
+      if (p_e[i] < 1.0) {
+          p_e[i] = 1.0;
           // Enhance, not diminish.
-      } else if (enhancement > 10.0) {
-          enhancement = 10.0;
+      } else if (p_e[i] > 10.0) {
+          p_e[i] = 10.0;
           // upper bound.
       }
-      
-      
     }
+    
+    // set the enhancement factor for every grid point from our particle cloud
+    ierr PISMFEvoR::interp_grid_point(n_particles, p_x, p_z, p_e); CHKERRQ(ierr);
+    
   }
 
   delete pressure;
@@ -234,27 +243,41 @@ PetscErrorCode PISMFEvoR::interp_field_point( double &x, double &y, double &z,
     return 0;
 }
 
-PetscErrorCode interp_grid_point(/*GRID, particles, enhancements*/) {
-    Delaunay_triangulation D_TRI;
+PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles, 
+                                            const std::vector<double> &x, 
+                                            const std::vector<double> &z, 
+                                            const std::vector<double> &e) {
+  Delaunay_triangulation D_TRI;
+  
+  // map our points to our function values
+  std::map<Point, Field_type, Map_compare> function_values; 
+  // function to access our data
+  typedef CGAL::Data_access< std::map<Point, Field_type, Map_compare > > Value_access;
     
-    /* get the points for our convex hull
-     */
-    // loop through particles and get x,z from them
-        Point p(x,z);
-        D_TRI.insert( p );
-        function_values.insert( std::make_pair(p, /*enhancement value*/) );
-            
-    // loop through each grid point to interp it -- get x,z
-        Point INTERP(XX,ZZ);
+  // get the points for our convex hull
+  for (unsigned int pn = 0, pn < n_particles; ++pn) {
+    Point p(x[pn],z[pn]);
+    D_TRI.insert( p );
+    function_values.insert( std::make_pair(p, e[pn]) );
+  }
         
-        // make a vector of the iterpolation point and type
-        std::vector< std::pair< Point, Field_type > > coord;
-        Field_type norm = CGAL::natural_neighbor_coordinates_2 (D_TRI, INTERP, std::back_inserter(coord) ).second;
-        Field_type res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm, Value_access(function_values));
-        
-        // set m_enhancement_factor for all grid point at INTERP(x,z), y
-        
-    return 0;
+  for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {    
+    for (unsigned int k=0; k<grid.Mz; ++k) {
+      Point INTERP( grid.x(i),grid.zlevels(k) );
+      
+      // make a vector of the iterpolation point and type
+      std::vector< std::pair< Point, Field_type > > coord;
+      Field_type norm = CGAL::natural_neighbor_coordinates_2 (D_TRI, INTERP, std::back_inserter(coord) ).second;
+      Field_type res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm, Value_access(function_values));
+      
+      // set m_enhancement_factor for all y grid points at INTERP(x,z)
+      for (int j=grid.ys; j<grid.ys+grid.my; ++j) {
+          m_enhancement_factor(i,j,k) = double(res);
+      }
+    }
+  }
+    
+  return 0;
 }
 
 void PISMFEvoR::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -305,7 +328,7 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
                     " (FEvoR) model...\n"); CHKERRQ(ierr);
 
   // make enhancement factor available to other PISM components:
-  ierr = vars.add(m_enhancement_factor); CHKERRQ(ierr);
+  ierr = vars.add(m_enhancement_factor); CHKERRQ(ierr); //IceModelVec
 
   m_enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
   if (m_enthalpy == NULL) {

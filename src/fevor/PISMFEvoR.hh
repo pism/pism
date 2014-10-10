@@ -46,7 +46,7 @@ public:
                                             IceModelVec3 *field3, 
                                             double &feildValue );
 
-  virtual PetscErrorCode interp_grid_point();
+  virtual PetscErrorCode interp_grid_point(const unsigned int &n_particles, const std::vector<double> &x, const std::vector<double> &z, const std::vector<double> &e);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
@@ -75,10 +75,6 @@ private:
     typedef K::Less_xy_2 Map_compare;
     // field number type -- has models for what we construct our points out of
     typedef K::FT Field_type;
-    // map our points to our function values
-    std::map<Point, Field_type, Map_compare> function_values; 
-    // function to access our data
-    typedef CGAL::Data_access< std::map<Point, Field_type, Map_compare > > Value_access;
 };
 
 } // end of namespace pism
