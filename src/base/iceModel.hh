@@ -500,7 +500,6 @@ protected:
 
 private:
   PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
-  Profiling profiling;
 };
 
 } // end of namespace pism

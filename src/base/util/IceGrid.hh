@@ -33,6 +33,8 @@
 
 #include <cassert>
 
+#include "pism_const.hh"
+
 namespace pism {
 
 class Time;
@@ -167,6 +169,8 @@ public:
   PetscErrorCode get_dm(int dm_dof, int stencil_width, PISMDM::Ptr &result);
   double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
+
+  Profiling profiling;
 
   const Config &config;
   MPI_Comm    com;

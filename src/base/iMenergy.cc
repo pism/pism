@@ -60,15 +60,15 @@ PetscErrorCode IceModel::energyStep() {
   //   enthalpyAndDrainageStep()
   ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
 
-  profiling.begin("BTU");
+  grid.profiling.begin("BTU");
   ierr = btu->update(t_TempAge, dt_TempAge); CHKERRQ(ierr);  // has ptr to bedtoptemp
-  profiling.end("BTU");
+  grid.profiling.end("BTU");
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
-    profiling.begin("temp step");
+    grid.profiling.begin("temp step");
     ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);
-    profiling.end("temp step");
+    grid.profiling.end("temp step");
 
     ierr = vWork3d.update_ghosts(T3); CHKERRQ(ierr);
 
@@ -81,10 +81,10 @@ PetscErrorCode IceModel::energyStep() {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
-    profiling.begin("enth step");
+    grid.profiling.begin("enth step");
     ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
     CHKERRQ(ierr);
-    profiling.end("enth step");
+    grid.profiling.end("enth step");
 
     ierr = vWork3d.update_ghosts(Enth3); CHKERRQ(ierr);
 
