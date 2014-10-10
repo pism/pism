@@ -110,23 +110,21 @@ PetscErrorCode StressBalance::update(bool fast, double sea_level,
 
   ierr = m_stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);
 
-  grid.profiling.begin("SSB modifier");
+  grid.profiling.begin("SB modifier");
   ierr = m_modifier->update(velocity_2d, fast); CHKERRQ(ierr);
-  grid.profiling.end("SSB modifier");
+  grid.profiling.end("SB modifier");
 
   if (fast == false) {
 
-    grid.profiling.begin("SSB 3D hor. vel.");
     ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
-    grid.profiling.end("SSB 3D hor. vel.");
 
-    grid.profiling.begin("SSB strain heat");
+    grid.profiling.begin("SB strain heat");
     ierr = this->compute_volumetric_strain_heating(); CHKERRQ(ierr);
-    grid.profiling.end("SSB strain heat");
+    grid.profiling.end("SB strain heat");
 
-    grid.profiling.begin("SSB vert. vel.");
+    grid.profiling.begin("SB vert. vel.");
     ierr = this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w); CHKERRQ(ierr);
-    grid.profiling.end("SSB vert. vel.");
+    grid.profiling.end("SB vert. vel.");
   }
 
   return 0;

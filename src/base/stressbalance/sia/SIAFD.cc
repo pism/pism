@@ -127,16 +127,24 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
+    grid.profiling.begin("SIA bed smoother");
     ierr = bed_smoother->preprocess_bed(*bed); CHKERRQ(ierr);
+    grid.profiling.end("SIA bed smoother");
     bed_state_counter = bed->get_state_counter();
   }
 
+  grid.profiling.begin("SIA gradient");
   ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+  grid.profiling.end("SIA gradient");
 
+  grid.profiling.begin("SIA flux");
   ierr = compute_diffusive_flux(h_x, h_y, diffusive_flux, fast); CHKERRQ(ierr);
+  grid.profiling.end("SIA flux");
 
   if (!fast) {
+    grid.profiling.begin("SIA 3D hor. vel.");
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
+    grid.profiling.end("SIA 3D hor. vel.");
   }
 
   return 0;
