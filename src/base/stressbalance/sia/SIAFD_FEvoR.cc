@@ -214,7 +214,7 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
     }
   } // o-loop
 
-  ierr = GlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &my_D_max, &D_max); CHKERRQ(ierr);
 
   return 0;
 }
