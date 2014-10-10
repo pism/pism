@@ -765,14 +765,26 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   // flux accounting
   {
-    ierr = GlobalSum(grid.com, &proc_grounded_basal_ice_flux, &total_grounded_basal_ice_flux); CHKERRQ(ierr);
-    ierr = GlobalSum(grid.com, &proc_nonneg_rule_flux,        &total_nonneg_rule_flux);        CHKERRQ(ierr);
-    ierr = GlobalSum(grid.com, &proc_sub_shelf_ice_flux,      &total_sub_shelf_ice_flux);      CHKERRQ(ierr);
-    ierr = GlobalSum(grid.com, &proc_surface_ice_flux,        &total_surface_ice_flux);        CHKERRQ(ierr);
-    ierr = GlobalSum(grid.com, &proc_sum_divQ_SIA,            &total_sum_divQ_SIA);            CHKERRQ(ierr);
-    ierr = GlobalSum(grid.com, &proc_sum_divQ_SSA,            &total_sum_divQ_SSA);            CHKERRQ(ierr);
-    ierr = GlobalSum(grid.com, &proc_Href_to_H_flux,          &total_Href_to_H_flux);          CHKERRQ(ierr);
-    ierr = GlobalSum(grid.com, &proc_H_to_Href_flux,          &total_H_to_Href_flux);          CHKERRQ(ierr); 
+    // combine data to perform one reduction call instead of 8:
+    double tmp_local[8] = {proc_grounded_basal_ice_flux,
+                           proc_nonneg_rule_flux,
+                           proc_sub_shelf_ice_flux,
+                           proc_surface_ice_flux,
+                           proc_sum_divQ_SIA,
+                           proc_sum_divQ_SSA,
+                           proc_Href_to_H_flux,
+                           proc_H_to_Href_flux};
+    double tmp_global[8];
+    ierr = GlobalSum(grid.com, tmp_local, tmp_global, 8); CHKERRQ(ierr);
+
+    proc_grounded_basal_ice_flux = tmp_global[0];
+    proc_nonneg_rule_flux        = tmp_global[1];
+    proc_sub_shelf_ice_flux      = tmp_global[2];
+    proc_surface_ice_flux        = tmp_global[3];
+    proc_sum_divQ_SIA            = tmp_global[4];
+    proc_sum_divQ_SSA            = tmp_global[5];
+    proc_Href_to_H_flux          = tmp_global[6];
+    proc_H_to_Href_flux          = tmp_global[7];
 
     grounded_basal_ice_flux_cumulative += total_grounded_basal_ice_flux;
     sub_shelf_ice_flux_cumulative      += total_sub_shelf_ice_flux;
