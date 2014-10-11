@@ -42,12 +42,6 @@ public:
   virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
   virtual PetscErrorCode update(double t, double dt);
 
-  virtual PetscErrorCode interp_field_point( double &x, double &y, double &z, 
-                                            IceModelVec3 *field3, 
-                                            double &feildValue );
-
-  virtual PetscErrorCode interp_grid_point(const unsigned int &n_particles, const std::vector<double> &x, const std::vector<double> &z, const std::vector<double> &e);
-
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
@@ -56,6 +50,15 @@ public:
   virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
 private:
   PetscErrorCode allocate();
+
+  PetscErrorCode evaluate_at_point(IceModelVec3 &input,
+                                   double x, double y, double z, 
+                                   double &result);
+
+  PetscErrorCode pointcloud_to_grid(const std::vector<double> &x,
+                                    const std::vector<double> &z,
+                                    const std::vector<double> &values,
+                                    IceModelVec3 &result);
 
   IceModelVec3 m_enhancement_factor;
   IceModelVec3 *m_enthalpy;

@@ -95,42 +95,42 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
 
     unsigned int n_particles = 10;
-    double n_pd = double(n_particles);
-      /* terminology:
-       *   particles exist in pism and contain one or more distrobutions 
-       *   of crystals that are tracked through time. They essentially are 
-       *   infinitesimely small. Distributions exist in FEvoR and contain 
-       *   sets of independent crystals (or in the case of NNI weakly 
-       *   dependant). In PISM-FEvoR you will likely not need to access the
-       *   crystals directly. Methods should be provided through FEvoR's 
-       *   distribution class fevor_distribution. 
-       */
+    /* terminology:
+     *   particles exist in pism and contain one or more distrobutions 
+     *   of crystals that are tracked through time. They essentially are 
+     *   infinitesimely small. Distributions exist in FEvoR and contain 
+     *   sets of independent crystals (or in the case of NNI weakly 
+     *   dependant). In PISM-FEvoR you will likely not need to access the
+     *   crystals directly. Methods should be provided through FEvoR's 
+     *   distribution class fevor_distribution. 
+     */
       
     /* TODO method to load in our cloud of particles. Will need the values
      * below for each particle.
      * 
      * Just making a fake one:
      */
-      std::vector<unsigned int> packingDimensions(3, 3); 
-        /* This should be the same for each distribution, but a loaded parameter.
-         * 
-         * Also, should be at minimum 10x10x10 to get an accurate result! low here for testing
-         */
-      std::vector<double> p_x, p_y, p_z, p_e;
-      for (double pn=0.0; pn < n_pd; ++pn) {
-        p_x.push_back(pn < n_pd/2.0 ? -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd)
-                                     : -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd-1) );
-        p_y.push_back(0.0);
-        p_z.push_back(pn < n_pd/2.0 ? 0.0 : grid.Lz );
+    std::vector<unsigned int> packingDimensions(3, 3); 
+    /* This should be the same for each distribution, but a loaded parameter.
+     * 
+     * Also, should be at minimum 10x10x10 to get an accurate result! low here for testing
+     */
+    std::vector<double> p_x, p_y, p_z, p_e;
+    double n_pd = double(n_particles);
+    for (double pn=0.0; pn < n_pd; ++pn) {
+      p_x.push_back(pn < n_pd/2.0 ? -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd)
+                    : -grid.Lx+ 2.0*grid.Lx*(2*pn/n_pd-1) );
+      p_y.push_back(0.0);
+      p_z.push_back(pn < n_pd/2.0 ? 0.0 : grid.Lz );
         
-        p_e.push_back(1.0);
-      }
-      // Diagnostics -- total number of recrystallization events in time step
-      std::vector<unsigned int> nMigRe(n_particles, 0), nPoly(n_particles, 0);    
+      p_e.push_back(1.0);
+    }
+    // Diagnostics -- total number of recrystallization events in time step
+    std::vector<unsigned int> nMigRe(n_particles, 0), nPoly(n_particles, 0);    
     
     // get enhancement factor for every particle!
     for (unsigned int i = 0; i < n_particles; ++i) {
-      /* FIXME this should get the appropriate distribuion! 
+      /* FIXME this should get the appropriate distribution! 
        * 
        * Just create one from a Watson concentration parameter. 
        */
@@ -148,39 +148,43 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       std::vector<double> bulkEdot(9, 0.0);
       
       unsigned int nMigRe_iso = 0,
-                   nPoly_iso  = 0;
+        nPoly_iso  = 0;
       std::vector<double> bulkEdot_iso(9, 0.0);
              
       
       // interpolate these values from PISM
       double P   = 0.0, 
-             txz = 0.0,
-             tyz = 0.0;
+        txz = 0.0,
+        tyz = 0.0;
              
       double E = 0.0,
-             T = 0.0;
+        T = 0.0;
 
       // check if the point (x,y,z) is within the domain:
       assert(     0.0 <= p_z[i] && p_z[i] <= grid.Lz);
       assert(-grid.Lx <= p_x[i] && p_x[i] <= grid.Lx);
       assert(-grid.Ly <= p_y[i] && p_y[i] <= grid.Ly);
 
-      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], pressure3, P  ); CHKERRQ(ierr);
-      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], tauxz3   , txz); CHKERRQ(ierr);
-      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], tauyz3   , tyz); CHKERRQ(ierr);
+      ierr = PISMFEvoR::evaluate_at_point(*pressure3, p_x[i], p_y[i], p_z[i], P);   CHKERRQ(ierr);
+      ierr = PISMFEvoR::evaluate_at_point(*tauxz3,    p_x[i], p_y[i], p_z[i], txz); CHKERRQ(ierr);
+      ierr = PISMFEvoR::evaluate_at_point(*tauyz3,    p_x[i], p_y[i], p_z[i], tyz); CHKERRQ(ierr); 
       
       /*std::vector<double> stress = {   P,   0, txz,
        *                                 0,   P, tyz,
        *                               txz, tyz,   P}; 
        * Woops, no list initialization in c++98. 
+       *
+       * Indexing: {0, 1, 2,
+       *            3, 4, 5,
+       *            6, 7, 8}
        */
       std::vector<double> stress(9,0.0);
-      stress[1] = stress[5] = stress[9] = P; // FIXME correct sign?
-      stress[3] = stress[7] = txz;           // FIXME correct sign?
-      stress[6] = stress[8] = tyz;           // FIXME correct sign?
-        // don't strictly need P here as we only need the deviatoric stress.
+      stress[0] = stress[4] = stress[8] = P; // FIXME correct sign?
+      stress[2] = stress[6] = txz;           // FIXME correct sign?
+      stress[5] = stress[7] = tyz;           // FIXME correct sign?
+      // don't strictly need P here as we only need the deviatoric stress.
       
-      ierr = PISMFEvoR::interp_field_point( p_x[i], p_y[i], p_z[i], m_enthalpy, E  ); CHKERRQ(ierr);
+      ierr = PISMFEvoR::evaluate_at_point(*m_enthalpy, p_x[i], p_y[i], p_z[i], E); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
       
       d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe[i] , nPoly[i] , bulkEdot    );
@@ -190,16 +194,17 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         
       // some bounds for the enhancement factor
       if (p_e[i] < 1.0) {
-          p_e[i] = 1.0;
-          // Enhance, not diminish.
+        p_e[i] = 1.0;
+        // Enhance, not diminish.
       } else if (p_e[i] > 10.0) {
-          p_e[i] = 10.0;
-          // upper bound.
+        p_e[i] = 10.0;
+        // upper bound.
       }
     }
     
     // set the enhancement factor for every grid point from our particle cloud
-    ierr = PISMFEvoR::interp_grid_point(n_particles, p_x, p_z, p_e); CHKERRQ(ierr);
+    ierr = PISMFEvoR::pointcloud_to_grid(p_x, p_z, p_e,
+                                         m_enhancement_factor); CHKERRQ(ierr);
     
   }
 
@@ -210,40 +215,49 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   return 0;
 }
 
-PetscErrorCode PISMFEvoR::interp_field_point( double &x, double &y, double &z, 
-                                                      IceModelVec3 *field3, 
-                                                      double &feildValue) {
-    PetscErrorCode ierr;
+/** 
+ * Evaluate a 3D field at a given point.
+ *
+ * @param input a 3D field
+ * @param x, y, z coordinates of a point within the domain 
+ * @param result interpolated value
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMFEvoR::evaluate_at_point(IceModelVec3 &input,
+                                            double x, double y, double z, 
+                                            double &result) {
+  PetscErrorCode ierr;
     
-    int I = 0, J = 0;
-    grid.compute_point_neighbors(x, y, I, J);
-    std::vector<double> weights = grid.compute_interp_weights(x, y);
+  int I = 0, J = 0;
+  grid.compute_point_neighbors(x, y, I, J);
+  std::vector<double> weights = grid.compute_interp_weights(x, y);
 
-    double *column0 = NULL, *column1 = NULL, *column2 = NULL, *column3 = NULL;
-    ierr = field3->getInternalColumn(I,   J,   &column0); CHKERRQ(ierr);
-    ierr = field3->getInternalColumn(I+1, J,   &column1); CHKERRQ(ierr);
-    ierr = field3->getInternalColumn(I+1, J+1, &column2); CHKERRQ(ierr);
-    ierr = field3->getInternalColumn(I,   J+1, &column3); CHKERRQ(ierr);
+  double *column0 = NULL, *column1 = NULL, *column2 = NULL, *column3 = NULL;
+  ierr = input.getInternalColumn(I,   J,   &column0); CHKERRQ(ierr);
+  ierr = input.getInternalColumn(I+1, J,   &column1); CHKERRQ(ierr);
+  ierr = input.getInternalColumn(I+1, J+1, &column2); CHKERRQ(ierr);
+  ierr = input.getInternalColumn(I,   J+1, &column3); CHKERRQ(ierr);
 
-    unsigned int K = 0;
-    // K + 1 (used below) should be at most Mz - 1
-    while (K + 1 < grid.Mz - 1 && grid.zlevels[K + 1] < z) {
+  unsigned int K = 0;
+  // K + 1 (used below) should be at most Mz - 1
+  while (K + 1 < grid.Mz - 1 && grid.zlevels[K + 1] < z) {
     K++;
-    }
+  }
 
-    double z_weight = (z - grid.zlevels[K]) / (grid.zlevels[K+1] - grid.zlevels[K]);
+  double z_weight = (z - grid.zlevels[K]) / (grid.zlevels[K+1] - grid.zlevels[K]);
 
-    double f0 = column0[K] + z_weight * (column0[K+1] - column0[K]);
-    double f1 = column1[K] + z_weight * (column1[K+1] - column1[K]);
-    double f2 = column2[K] + z_weight * (column2[K+1] - column2[K]);
-    double f3 = column3[K] + z_weight * (column3[K+1] - column3[K]);
+  double f0 = column0[K] + z_weight * (column0[K+1] - column0[K]);
+  double f1 = column1[K] + z_weight * (column1[K+1] - column1[K]);
+  double f2 = column2[K] + z_weight * (column2[K+1] - column2[K]);
+  double f3 = column3[K] + z_weight * (column3[K+1] - column3[K]);
 
-    feildValue = weights[0] * f0 + weights[1] * f1 + weights[2] * f2 + weights[3] * f3;
+  result = weights[0] * f0 + weights[1] * f1 + weights[2] * f2 + weights[3] * f3;
     
-    return 0;
+  return 0;
 }
 
-// typedefs for interp_grid_point()
+// typedefs for pointcloud_to_grid()
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_2<K> Delaunay_triangulation;
 typedef CGAL::Interpolation_traits_2<K>   Traits;
@@ -254,10 +268,24 @@ typedef K::Less_xy_2 Map_compare;
 // field number type -- has models for what we construct our points out of
 typedef K::FT Field_type;
 
-PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles, 
-                                            const std::vector<double> &x, 
-                                            const std::vector<double> &z, 
-                                            const std::vector<double> &e) {
+/** 
+ * Interpolate values defined at locations (x, z) to the grid and store in result.
+ *
+ * @param x, z arrays of coordinates of points in the cloud.
+ * @param values values at locations (x, z)
+ * @param result output field
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x, 
+                                             const std::vector<double> &z, 
+                                             const std::vector<double> &values,
+                                             IceModelVec3 &result) {
+
+  assert(x.size() ==z.size() && z.size() == values.size());
+
+  const unsigned int n_particles = x.size();
+
   Delaunay_triangulation D_TRI;
   
   // map our points to our function values
@@ -269,8 +297,10 @@ PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles,
   for (unsigned int pn = 0; pn < n_particles; ++pn) {
     Point p(x[pn],z[pn]);
     D_TRI.insert( p );
-    function_values.insert( std::make_pair(p, e[pn]) );
+    function_values.insert( std::make_pair(p, values[pn]) );
   }
+
+  IceModelVec::AccessList list(result);
         
   for (int i=grid.xs; i<grid.xs+grid.xm; ++i) {    
     for (unsigned int k=0; k<grid.Mz; ++k) {
@@ -281,9 +311,9 @@ PetscErrorCode PISMFEvoR::interp_grid_point(const unsigned int &n_particles,
       Field_type norm = CGAL::natural_neighbor_coordinates_2 (D_TRI, INTERP, std::back_inserter(coord) ).second;
       Field_type res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm, Value_access(function_values));
       
-      // set m_enhancement_factor for all y grid points at INTERP(x,z)
+      // set result for all y grid points at INTERP(x,z)
       for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          m_enhancement_factor(i,j,k) = double(res);
+        result(i,j,k) = double(res);
       }
     }
   }
