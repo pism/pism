@@ -102,7 +102,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
      *   sets of independent crystals (or in the case of NNI weakly 
      *   dependant). In PISM-FEvoR you will likely not need to access the
      *   crystals directly. Methods should be provided through FEvoR's 
-     *   distribution class fevor_distribution. 
+     *   distribution class FEvoR::Distribution. 
      */
       
     /* TODO method to load in our cloud of particles. Will need the values
@@ -135,7 +135,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
        * Just create one from a Watson concentration parameter. 
        */
       double w_i = -3.0; // This makes a weak bi-polar (single maximum)
-      fevor_distribution d_i(packingDimensions, w_i);
+      FEvoR::Distribution d_i(packingDimensions, w_i);
       
       /* Make an isotropic distribution for calculating enhancement factor. The 
        * enhancement factor is defined as ratio of ice's resonse relative to 
@@ -143,7 +143,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
        * stress, this is the easiest way to provide it but it may be the most 
        * computationally heavy. Possible efficienty improvement here. 
        */
-      fevor_distribution d_iso(packingDimensions, 0.0);
+      FEvoR::Distribution d_iso(packingDimensions, 0.0);
       
       std::vector<double> bulkEdot(9, 0.0);
       
@@ -190,7 +190,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe[i] , nPoly[i] , bulkEdot    );
       d_iso.stepInTime(T, stress, m_t, m_dt, nMigRe_iso, nPoly_iso, bulkEdot_iso);
       
-      p_e[i] = tensorMagnitude(bulkEdot)/tensorMagnitude(bulkEdot_iso);
+      p_e[i] = FEvoR::tensorMagnitude(bulkEdot)/FEvoR::tensorMagnitude(bulkEdot_iso);
         
       // some bounds for the enhancement factor
       if (p_e[i] < 1.0) {
