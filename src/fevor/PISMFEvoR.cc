@@ -103,7 +103,6 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
      *   dependant). In PISM-FEvoR you will likely not need to access the
      *   crystals directly. Methods should be provided through FEvoR's 
      *   distribution class FEvoR::Distribution. 
-     *   distribution class FEvoR::Distribution.
      */
       
     /* TODO method to load in our cloud of particles. Will need the values
