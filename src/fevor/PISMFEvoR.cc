@@ -102,7 +102,11 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
      *   sets of independent crystals (or in the case of NNI weakly 
      *   dependant). In PISM-FEvoR you will likely not need to access the
      *   crystals directly. Methods should be provided through FEvoR's 
+<<<<<<< HEAD
      *   distribution class FEvoR::Distribution. 
+=======
+     *   distribution class FEvoR::Distribution.
+>>>>>>> 852e373df12c51a849c614e40309802bfd7e0a57
      */
       
     /* TODO method to load in our cloud of particles. Will need the values
@@ -190,7 +194,9 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe[i] , nPoly[i] , bulkEdot    );
       d_iso.stepInTime(T, stress, m_t, m_dt, nMigRe_iso, nPoly_iso, bulkEdot_iso);
       
-      p_e[i] = FEvoR::tensorMagnitude(bulkEdot)/FEvoR::tensorMagnitude(bulkEdot_iso);
+
+      p_e[i] = FEvoR::tensorMagnitude(bulkEdot) / FEvoR::tensorMagnitude(bulkEdot_iso);
+
         
       // some bounds for the enhancement factor
       if (p_e[i] < 1.0) {
