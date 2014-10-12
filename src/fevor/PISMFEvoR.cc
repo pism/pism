@@ -102,11 +102,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
      *   sets of independent crystals (or in the case of NNI weakly 
      *   dependant). In PISM-FEvoR you will likely not need to access the
      *   crystals directly. Methods should be provided through FEvoR's 
-<<<<<<< HEAD
      *   distribution class FEvoR::Distribution. 
-=======
      *   distribution class FEvoR::Distribution.
->>>>>>> 852e373df12c51a849c614e40309802bfd7e0a57
      */
       
     /* TODO method to load in our cloud of particles. Will need the values
