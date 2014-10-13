@@ -5,6 +5,8 @@ if ( NOT CGAL_FOUND )
   return()  
 endif()
 
+mark_as_advanced(CGAL_DIR CGAL_DONT_OVERRIDE_CMAKE_FLAGS)
+
 # include helper file
 include( ${CGAL_USE_FILE} )
 
