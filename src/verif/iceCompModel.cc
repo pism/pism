@@ -676,17 +676,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
     seawater_density = config.get("sea_water_density"),
     ice_density      = config.get("ice_density"),
     Glen_n           = config.get("sia_Glen_exponent"),
-    standard_gravity = config.get("standard_gravity"),
-    // enthalpy and pressure do not matter here
-    B0, C,
-    H0               = 600.0,
-    v0               = grid.convert(300.0, "m/year", "m/second"),
-    Q0               = H0 * v0;
-
-  if (testname == 'V') {
-    B0 = stress_balance->get_stressbalance()->get_flow_law()->hardness_parameter(0, 0);
-    C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
-  }
+    standard_gravity = config.get("standard_gravity");
 
   // area of grid square in square km:
   const double   a = grid.dx * grid.dy * 1e-3 * 1e-3;
@@ -748,6 +738,13 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
       break;
     case 'V':
       {
+        double
+          H0 = 600.0,
+          v0 = grid.convert(300.0, "m/year", "m/second"),
+          Q0 = H0 * v0,
+          B0 = stress_balance->get_stressbalance()->get_flow_law()->hardness_parameter(0, 0),
+          C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
+
         Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
       }
       break;

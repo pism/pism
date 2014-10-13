@@ -464,8 +464,10 @@ PetscErrorCode EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
       //   mask.ice_free(i,j) || (mask.grounded_ice(i,j) && (b(i,j) >= SL)))
       continue;
 
-    bool ice_free_N,  ice_free_E,  ice_free_S,  ice_free_W,
-      ice_free_NE, ice_free_NW, ice_free_SE, ice_free_SW;
+    bool ice_free_N = false,  ice_free_E = false,
+      ice_free_S = false, ice_free_W = false,
+      ice_free_NE = false, ice_free_NW = false,
+      ice_free_SE = false, ice_free_SW = false;
 
     if (mask.grounded_ice(i,j)) {
       // if (i,j) is grounded ice then we will remove it if it has
