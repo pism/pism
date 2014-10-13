@@ -28,8 +28,8 @@
 namespace pism {
 
 StressBalance_FEvoR::StressBalance_FEvoR(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                                         const Config &config)
-  : StressBalance(g, sb, ssb_mod, config) {
+                                         const Config &conf)
+  : StressBalance(g, sb, ssb_mod, conf) {
   // empty
 }
 
