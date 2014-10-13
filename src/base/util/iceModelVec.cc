@@ -797,12 +797,17 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   if (m_has_ghosts) {
     ghost_width = m_da_stencil_width;
   }
+  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // m_n_levels == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and m_n_levels corresponds to dof of the underlying PETSc
+  // DM object. So we want the bigger of the two numbers here.
+  unsigned int N = std::max(m_dof, m_n_levels);
 
   bool out_of_range = (i < grid->xs - ghost_width) ||
     (i > grid->xs + grid->xm + ghost_width) ||
     (j < grid->ys - ghost_width) ||
     (j > grid->ys + grid->ym + ghost_width) ||
-    (k >= m_dof);
+    (k >= N);
 
   assert(out_of_range == false);
 
