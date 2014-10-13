@@ -152,8 +152,9 @@ public:
   PetscErrorCode set_vertical_levels(const std::vector<double> &z_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
-  void compute_point_neighbors(double x, double y,
-                               int &i, int &j);
+  void compute_point_neighbors(double X, double Y,
+                               int &i_left, int &i_right,
+                               int &j_bottom, int &j_top);
   std::vector<double> compute_interp_weights(double x, double y);
 
   void check_parameters();
