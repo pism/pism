@@ -61,7 +61,7 @@ int get_quilt_size(pism::NC4_Serial &input, int &mpi_size) {
   int stat;
 
   std::vector<double> tmp;
-  stat = input.get_att_double("x_patch", "mpi_size", tmp);
+ input.get_att_double("x_patch", "mpi_size", tmp);
   if (stat != 0 || tmp.size() != 1) {
     printf("ERROR: x_patch:mpi_size does not exist or has the wrong length.\n");
     pism::PISMEnd();
@@ -77,25 +77,15 @@ int check_input_files(std::string filename) {
   pism::NC4_Serial nc(MPI_COMM_SELF, 0);
   int stat;
 
-  stat = nc.open(patch_filename(filename, 0), pism::PISM_READONLY);
-  if (stat != 0) {
-    printf("ERROR: Cannot open %s!\n", patch_filename(filename, 0).c_str());
-    pism::PISMEnd();
-  }
+  nc.open(patch_filename(filename, 0), pism::PISM_READONLY);
 
   int mpi_size;
-  stat = get_quilt_size(nc, mpi_size); check(stat);
+  stat = get_quilt_size(nc, mpi_size);
 
   nc.close();
 
   for (int j = 1; j < mpi_size; ++j) {
-    stat = nc.open(patch_filename(filename, j), pism::PISM_READONLY);
-
-    if (stat != 0) {
-      printf("ERROR: Cannot open %s!\n", patch_filename(filename, j).c_str());
-      pism::PISMEnd();
-    }
-
+    nc.open(patch_filename(filename, j), pism::PISM_READONLY);
     nc.close();
   }
 
@@ -109,22 +99,22 @@ int patch_geometry(pism::NC4_Serial &input, int &xs, int &ys,
   int stat;
   std::vector<double> tmp;
 
-  stat = input.get_att_double("x_patch", "patch_offset", tmp);
-  if (stat != 0 || tmp.size() != 1) {
+  input.get_att_double("x_patch", "patch_offset", tmp);
+  if (tmp.size() != 1) {
     printf("ERROR: x_patch:patch_offset does not exist or has the wrong length.\n");
     pism::PISMEnd();
   }
   xs = (int)tmp[0];
 
-  stat = input.get_att_double("y_patch", "patch_offset", tmp);
-  if (stat != 0 || tmp.size() != 1) {
+  input.get_att_double("y_patch", "patch_offset", tmp);
+  if (tmp.size() != 1) {
     printf("ERROR: y_patch:patch_offset does not exist or has the wrong length.\n");
     pism::PISMEnd();
   }
   ys = (int)tmp[0];
 
-  stat = input.inq_dimlen("x_patch", xm); check(stat);
-  stat = input.inq_dimlen("y_patch", ym); check(stat);
+  input.inq_dimlen("x_patch", xm);
+  input.inq_dimlen("y_patch", ym);
 
   return 0;
 }

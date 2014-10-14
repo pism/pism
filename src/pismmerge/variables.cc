@@ -23,17 +23,16 @@
  * This function processes coordinate variables and time bounds.
  */
 int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism::NC4_Serial &output) {
-  int stat;
   unsigned int dim1_len = 0, dim2_len = 0;
   std::vector<unsigned int> start, count;
   std::vector<std::string> dims;
   std::vector<double> data;
 
-  stat = input.inq_vardimid(var_name, dims); check(stat);
+  input.inq_vardimid(var_name, dims);
 
   if (dims.size() == 1) {
 
-    stat = input.inq_dimlen(dims[0], dim1_len); check(stat);
+    input.inq_dimlen(dims[0], dim1_len);
 
     start.push_back(0);
     count.push_back(dim1_len);
@@ -41,13 +40,13 @@ int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism
     assert(dim1_len > 0);
     data.resize(dim1_len);
 
-    stat = input.get_vara_double(var_name, start, count, &data[0]); check(stat);
-    stat = output.put_vara_double(var_name, start, count, &data[0]); check(stat);
+    input.get_vara_double(var_name, start, count, &data[0]);
+    output.put_vara_double(var_name, start, count, &data[0]);
 
   } else if (dims.size() == 2) {
 
-    stat = input.inq_dimlen(dims[0], dim1_len); check(stat);
-    stat = input.inq_dimlen(dims[1], dim2_len); check(stat);
+    input.inq_dimlen(dims[0], dim1_len);
+    input.inq_dimlen(dims[1], dim2_len);
 
     start.push_back(0);
     start.push_back(0);
@@ -57,8 +56,8 @@ int copy_coordinate_variable(pism::NC4_Serial &input, std::string var_name, pism
     assert(dim1_len*dim2_len > 0);
     data.resize(dim1_len*dim2_len);
 
-    stat = input.get_vara_double(var_name, start, count, &data[0]); check(stat);
-    stat = output.put_vara_double(var_name, start, count, &data[0]); check(stat);
+    input.get_vara_double(var_name, start, count, &data[0]);
+    output.put_vara_double(var_name, start, count, &data[0]);
 
   }
 
@@ -87,24 +86,24 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
   std::vector<std::string> dims;
   std::vector<unsigned int> in_start, out_start, count;
 
-  stat = output.inq_vardimid(var_name, dims); check(stat);
+  output.inq_vardimid(var_name, dims);
 
   for (unsigned int d = 0; d < dims.size(); ++d) {
     unsigned int tmp;
-    stat = output.inq_dimlen(dims[d], tmp); check(stat);
+    output.inq_dimlen(dims[d], tmp);
     dim_lengths[dims[d]] = tmp;
   }
 
   int mpi_size;
-  stat = input.open(patch_filename(filename, 0), pism::PISM_READONLY); check(stat);
+  input.open(patch_filename(filename, 0), pism::PISM_READONLY);
   stat = get_quilt_size(input, mpi_size); check(stat);
-  stat = input.close(); check(stat);
+  input.close();
 
   for (int r = 0; r < mpi_size; ++r) { // for each patch...
     int xs, ys;
     unsigned int xm, ym;
 
-    stat = input.open(patch_filename(filename, r), pism::PISM_READONLY); check(stat);
+    input.open(patch_filename(filename, r), pism::PISM_READONLY);
 
     stat = patch_geometry(input, xs, ys, xm, ym); check(stat);
 
@@ -164,9 +163,9 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
         out_start[time_idx] = time_start;
       }
 
-      stat = input.get_vara_double(var_name, in_start, count, data); check(stat);
+      input.get_vara_double(var_name, in_start, count, data);
 
-      stat = output.put_vara_double(var_name, out_start, count, data); check(stat);
+      output.put_vara_double(var_name, out_start, count, data);
     }
 
     free(data);
@@ -187,15 +186,15 @@ int copy_all_variables(std::string filename, pism::NC4_Serial &output) {
   pism::NC4_Serial input(MPI_COMM_SELF, 0);
   std::vector<std::string> dimensions, spatial_vars;
 
-  stat = input.open(patch_filename(filename, 0), pism::PISM_READONLY); check(stat);
+  input.open(patch_filename(filename, 0), pism::PISM_READONLY);
 
-  stat = output.inq_nvars(n_vars); check(stat);
+  output.inq_nvars(n_vars);
 
   for (int j = 0; j < n_vars; ++j) {
     std::string var_name;
 
-    stat = output.inq_varname(j, var_name); check(stat);
-    stat = output.inq_vardimid(var_name, dimensions); check(stat);
+    output.inq_varname(j, var_name);
+    output.inq_vardimid(var_name, dimensions);
 
     // copy coordinate variables from the rank 0 file:
     if (dimensions.size() == 1 || var_name == "time_bounds") {
@@ -205,7 +204,7 @@ int copy_all_variables(std::string filename, pism::NC4_Serial &output) {
     }
   }
 
-  stat = input.close(); check(stat);
+  input.close();
 
   for (unsigned int k = 0; k < spatial_vars.size(); ++k) {
     // 2D or 3D variables

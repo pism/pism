@@ -107,7 +107,7 @@ int NC4_Quilt::def_dim_impl(const std::string &name, size_t length) const {
   }
 
   if (length_local > 0) {
-    stat = this->def_dim(name + suffix, length_local); check(stat);
+    stat = this->def_dim_impl(name + suffix, length_local); check(stat);
   }
 
   stat = NC4File::def_dim_impl(name, length); check(stat);
@@ -124,15 +124,18 @@ int NC4_Quilt::def_var_impl(const std::string &name, IO_Type nctype,
   if (name == "x" || name == "y") {
     std::vector<std::string> dims_local;
     dims_local.push_back(name + suffix);
-    stat = this->def_var(name + suffix, nctype, dims_local); check(stat);
+    stat = this->def_var_impl(name + suffix, nctype, dims_local); check(stat);
 
-    stat = this->put_att_double(name + suffix, "patch_offset", PISM_INT,
-                                name == "x" ? m_xs : m_ys); check(stat);
+    std::vector<double> buffer(1, name == "x" ? m_xs : m_ys);
+    stat = this->put_att_double_impl(name + suffix, "patch_offset", PISM_INT,
+                                     buffer); check(stat);
 
     int size;
     MPI_Comm_size(m_com, &size);
-    stat = this->put_att_double(name + suffix, "mpi_rank", PISM_INT, rank); check(stat);
-    stat = this->put_att_double(name + suffix, "mpi_size", PISM_INT, size); check(stat);
+    buffer[0] = rank;
+    stat = this->put_att_double_impl(name + suffix, "mpi_rank", PISM_INT, buffer); check(stat);
+    buffer[0] = size;
+    stat = this->put_att_double_impl(name + suffix, "mpi_size", PISM_INT, buffer); check(stat);
   }
 
   // Replace "x|y" with "x|y" + suffix (for 2D and 3D variables).
@@ -151,7 +154,7 @@ int NC4_Quilt::put_att_double_impl(const std::string &name, const std::string &a
   int stat;
 
   if (name == "x" || name == "y") {
-    stat = this->put_att_double(name + suffix, att_name, xtype, data); check(stat);
+    stat = this->put_att_double_impl(name + suffix, att_name, xtype, data); check(stat);
   }
 
   stat = NC4File::put_att_double_impl(name, att_name, xtype, data); check(stat);
@@ -164,7 +167,7 @@ int NC4_Quilt::put_att_text_impl(const std::string &name, const std::string &att
   int stat;
 
   if (name == "x" || name == "y") {
-    stat = this->put_att_text(name + suffix, att_name, value); check(stat);
+    stat = this->put_att_text_impl(name + suffix, att_name, value); check(stat);
   }
 
   stat = NC4File::put_att_text_impl(name, att_name, value); check(stat);

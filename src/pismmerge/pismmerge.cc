@@ -36,62 +36,62 @@ int process_one_variable(std::string var_name, std::string input_file, std::stri
           var_name.c_str(), input_file.c_str(), output_file.c_str(), compression_level);
 
   // Fill the output file with metadata using the rank=0 "patch".
-  ierr = input.open(patch_filename(input_file, 0), PISM_READONLY); CHKERRQ(ierr);
+  input.open(patch_filename(input_file, 0), PISM_READONLY);
 
   // Create the output file
-  ierr = output.create(output_file); CHKERRQ(ierr);
+  output.create(output_file);
 
   // global attributes
   ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
 
   ierr = define_variable(input, output, var_name); CHKERRQ(ierr);
 
-  ierr = input.inq_varid("time_bounds", exists); CHKERRQ(ierr);
+  input.inq_varid("time_bounds", exists);
   if (exists) {
     ierr = define_variable(input, output, "time_bounds"); CHKERRQ(ierr);
   }
 
   // mapping
-  ierr = input.inq_varid("mapping", exists); CHKERRQ(ierr);
+  input.inq_varid("mapping", exists);
   if (exists) {
     ierr = define_variable(input, output, "mapping"); CHKERRQ(ierr);
   }
 
   // pism_override
-  ierr = input.inq_varid("pism_override", exists); CHKERRQ(ierr);
+  input.inq_varid("pism_override", exists);
   if (exists) {
     ierr = define_variable(input, output, "pism_override"); CHKERRQ(ierr);
   }
 
   // run_stats
-  ierr = input.inq_varid("run_stats", exists); CHKERRQ(ierr);
+  input.inq_varid("run_stats", exists);
   if (exists) {
     ierr = define_variable(input, output, "run_stats"); CHKERRQ(ierr);
   }
 
   // timestamp
-  ierr = input.inq_varid("timestamp", exists); CHKERRQ(ierr);
+  input.inq_varid("timestamp", exists);
   if (exists) {
     ierr = define_variable(input, output, "timestamp"); CHKERRQ(ierr);
   }
 
   // lat
-  ierr = input.inq_varid("lat", exists); CHKERRQ(ierr);
+  input.inq_varid("lat", exists);
   if (exists) {
     ierr = define_variable(input, output, "lat"); CHKERRQ(ierr);
   }
 
   // lon
-  ierr = input.inq_varid("lon", exists); CHKERRQ(ierr);
+  input.inq_varid("lon", exists);
   if (exists) {
     ierr = define_variable(input, output, "lon"); CHKERRQ(ierr);
   }
 
-  ierr = input.close(); CHKERRQ(ierr);
+  input.close();
 
   ierr = copy_all_variables(input_file, output); CHKERRQ(ierr);
 
-  ierr = output.close(); CHKERRQ(ierr);
+  output.close();
 
   fprintf(stderr, "Done.\n");
 
@@ -108,21 +108,21 @@ int process_all_variables(std::string input_file, std::string output_file,
           input_file.c_str(), output_file.c_str(), compression_level);
 
   // Fill the output file with metadata using the rank=0 "patch".
-  ierr = input.open(patch_filename(input_file, 0), PISM_READONLY); CHKERRQ(ierr);
+  input.open(patch_filename(input_file, 0), PISM_READONLY);
 
   // Create the output file
-  ierr = output.create(output_file); CHKERRQ(ierr);
+  output.create(output_file);
 
   // global attributes
   ierr = copy_attributes(input, output, "PISM_GLOBAL"); CHKERRQ(ierr);
 
   // define all variables (except for {x,y}_patch)
-  ierr = input.inq_nvars(n_vars); check(ierr);
+  input.inq_nvars(n_vars);
 
   for (int j = 0; j < n_vars; ++j) {
     std::string var_name;
 
-    ierr = input.inq_varname(j, var_name); check(ierr);
+    input.inq_varname(j, var_name);
 
     if (var_name == "x_patch" || var_name == "y_patch")
       continue;
@@ -132,7 +132,7 @@ int process_all_variables(std::string input_file, std::string output_file,
 
   ierr = copy_all_variables(input_file, output); CHKERRQ(ierr);
 
-  ierr = output.close(); CHKERRQ(ierr);
+  output.close();
 
   fprintf(stderr, "Done.\n");
 

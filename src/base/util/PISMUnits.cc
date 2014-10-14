@@ -51,7 +51,7 @@ UnitSystem::UnitSystem(const std::string &path) {
 
   if (tmp == NULL) {
     std::string message = std::string("ut_read_xml(") + path + ") failed";
-    throw std::runtime_error(message);
+    throw RuntimeError(message);
   }
   ut_set_error_message_handler(ut_write_to_stderr);
 
@@ -81,7 +81,7 @@ Unit::Unit(const UnitSystem &system, const std::string &spec)
   m_unit = ut_parse(m_system.get().get(), spec.c_str(), UT_ASCII);
   if (m_unit == NULL) {
     std::string message = "unit specification '" + spec + "' is unknown or invalid";
-    throw std::runtime_error(message);
+    throw RuntimeError(message);
   }
   m_unit_string = spec;
 }
@@ -91,7 +91,7 @@ Unit::Unit(const Unit &other)
 
   m_unit = ut_clone(other.m_unit);
   if (m_unit == NULL) {
-    throw std::runtime_error("ut_clone failed");
+    throw RuntimeError("ut_clone failed");
   }
 
   m_system      = other.m_system;
@@ -109,7 +109,7 @@ Unit& Unit::operator=(const Unit& other) {
 
   m_unit = ut_clone(other.m_unit);
   if (m_unit == NULL) {
-    throw std::runtime_error("ut_clone failed");
+    throw RuntimeError("ut_clone failed");
   }
 
   return *this;

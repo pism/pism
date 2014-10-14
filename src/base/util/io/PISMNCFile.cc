@@ -53,7 +53,8 @@ std::string NCFile::get_format() const {
 int NCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, double value) const {
   std::vector<double> tmp(1);
   tmp[0] = value;
-  return put_att_double(variable_name, att_name, nctype, tmp);
+  put_att_double(variable_name, att_name, nctype, tmp);
+  return 0;
 }
 
 //! \brief Prints an error message; for debugging.
@@ -150,152 +151,152 @@ int NCFile::remove_if_exists_impl(const std::string &file_to_remove, int rank_to
   return global_stat;
 }
 
-int NCFile::open(const std::string &filename, IO_Mode mode) {
-  return this->open_impl(filename, mode);
+void NCFile::open(const std::string &filename, IO_Mode mode) {
+  int stat = this->open_impl(filename, mode); check(stat);
 }
 
-int NCFile::create(const std::string &filename) {
-  return this->create_impl(filename);
+void NCFile::create(const std::string &filename) {
+  int stat = this->create_impl(filename); check(stat);
 }
 
-int NCFile::close() {
-  return this->close_impl();
+void NCFile::close() {
+  int stat = this->close_impl(); check(stat);
 }
 
-int NCFile::enddef() const {
-  return this->enddef_impl();
+void NCFile::enddef() const {
+  int stat = this->enddef_impl(); check(stat);
 }
 
-int NCFile::redef() const {
-  return this->redef_impl();
+void NCFile::redef() const {
+  int stat = this->redef_impl(); check(stat);
 }
 
-int NCFile::def_dim(const std::string &name, size_t length) const {
-  return this->def_dim_impl(name,length);
+void NCFile::def_dim(const std::string &name, size_t length) const {
+  int stat = this->def_dim_impl(name,length); check(stat);
 }
 
-int NCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
-  return this->inq_dimid_impl(dimension_name,exists);
+void NCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
+  int stat = this->inq_dimid_impl(dimension_name,exists); check(stat);
 }
 
-int NCFile::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
-  return this->inq_dimlen_impl(dimension_name,result);
+void NCFile::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
+  int stat = this->inq_dimlen_impl(dimension_name,result); check(stat);
 }
 
-int NCFile::inq_unlimdim(std::string &result) const {
-  return this->inq_unlimdim_impl(result);
+void NCFile::inq_unlimdim(std::string &result) const {
+  int stat = this->inq_unlimdim_impl(result); check(stat);
 }
 
-int NCFile::inq_dimname(int j, std::string &result) const {
-  return this->inq_dimname_impl(j,result);
+void NCFile::inq_dimname(int j, std::string &result) const {
+  int stat = this->inq_dimname_impl(j,result); check(stat);
 }
 
-int NCFile::inq_ndims(int &result) const {
-  return this->inq_ndims_impl(result);
+void NCFile::inq_ndims(int &result) const {
+  int stat = this->inq_ndims_impl(result); check(stat);
 }
 
-int NCFile::def_var(const std::string &name, IO_Type nctype,
+void NCFile::def_var(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const {
-  return this->def_var_impl(name, nctype, dims);
+  int stat = this->def_var_impl(name, nctype, dims); check(stat);
 }
 
-int NCFile::get_vara_double(const std::string &variable_name,
+void NCFile::get_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             double *ip) const {
-  return this->get_vara_double_impl(variable_name, start, count, ip);
+  int stat = this->get_vara_double_impl(variable_name, start, count, ip); check(stat);
 }
 
-int NCFile::put_vara_double(const std::string &variable_name,
+void NCFile::put_vara_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const double *op) const {
-  return this->put_vara_double_impl(variable_name, start, count, op);
+  int stat = this->put_vara_double_impl(variable_name, start, count, op); check(stat);
 }
 
-int NCFile::get_varm_double(const std::string &variable_name,
+void NCFile::get_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             double *ip) const {
-  return this->get_varm_double_impl(variable_name, start, count, imap, ip);
+  int stat = this->get_varm_double_impl(variable_name, start, count, imap, ip); check(stat);
 }
 
-int NCFile::put_varm_double(const std::string &variable_name,
+void NCFile::put_varm_double(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
                             const std::vector<unsigned int> &count,
                             const std::vector<unsigned int> &imap,
                             const double *op) const {
-  return this->put_varm_double_impl(variable_name, start, count, imap, op);
+  int stat = this->put_varm_double_impl(variable_name, start, count, imap, op); check(stat);
 }
 
-int NCFile::inq_nvars(int &result) const {
-  return this->inq_nvars_impl(result);
+void NCFile::inq_nvars(int &result) const {
+  int stat = this->inq_nvars_impl(result); check(stat);
 }
 
-int NCFile::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
-  return this->inq_vardimid_impl(variable_name, result);
+void NCFile::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
+  int stat = this->inq_vardimid_impl(variable_name, result); check(stat);
 }
 
-int NCFile::inq_varnatts(const std::string &variable_name, int &result) const {
-  return this->inq_varnatts_impl(variable_name, result);
+void NCFile::inq_varnatts(const std::string &variable_name, int &result) const {
+  int stat = this->inq_varnatts_impl(variable_name, result); check(stat);
 }
 
-int NCFile::inq_varid(const std::string &variable_name, bool &result) const {
-  return this->inq_varid_impl(variable_name, result);
+void NCFile::inq_varid(const std::string &variable_name, bool &result) const {
+  int stat = this->inq_varid_impl(variable_name, result); check(stat);
 }
 
-int NCFile::inq_varname(unsigned int j, std::string &result) const {
-  return this->inq_varname_impl(j, result);
+void NCFile::inq_varname(unsigned int j, std::string &result) const {
+  int stat = this->inq_varname_impl(j, result); check(stat);
 }
 
-int NCFile::inq_vartype(const std::string &variable_name, IO_Type &result) const {
-  return this->inq_vartype_impl(variable_name, result);
+void NCFile::inq_vartype(const std::string &variable_name, IO_Type &result) const {
+  int stat = this->inq_vartype_impl(variable_name, result); check(stat);
 }
 
-int NCFile::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
-  return this->get_att_double_impl(variable_name, att_name, result);
+void NCFile::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
+  int stat = this->get_att_double_impl(variable_name, att_name, result); check(stat);
 }
 
-int NCFile::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-  return this->get_att_text_impl(variable_name, att_name, result);
+void NCFile::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
+  int stat = this->get_att_text_impl(variable_name, att_name, result); check(stat);
 }
 
-int NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
-  return this->put_att_double_impl(variable_name, att_name, xtype, data);
+void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const {
+  int stat = this->put_att_double_impl(variable_name, att_name, xtype, data); check(stat);
 }
 
-int NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const {
-  return this->put_att_double_impl(variable_name, att_name, xtype, value);
+void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, double value) const {
+  int stat = this->put_att_double_impl(variable_name, att_name, xtype, value); check(stat);
 }
 
-int NCFile::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
-  return this->put_att_text_impl(variable_name, att_name, value);
+void NCFile::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
+  int stat = this->put_att_text_impl(variable_name, att_name, value); check(stat);
 }
 
-int NCFile::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
-  return this->inq_attname_impl(variable_name, n, result);
+void NCFile::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
+  int stat = this->inq_attname_impl(variable_name, n, result); check(stat);
 }
 
-int NCFile::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
-  return this->inq_atttype_impl(variable_name, att_name, result);
+void NCFile::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
+  int stat = this->inq_atttype_impl(variable_name, att_name, result); check(stat);
 }
 
-int NCFile::set_fill(int fillmode, int &old_modep) const {
-  return this->set_fill_impl(fillmode, old_modep);
+void NCFile::set_fill(int fillmode, int &old_modep) const {
+  int stat = this->set_fill_impl(fillmode, old_modep); check(stat);
 }
 
 void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
                               unsigned int ys, unsigned int ym) const {
-  return this->set_local_extent_impl(xs, xm, ys, ym);
+  this->set_local_extent_impl(xs, xm, ys, ym);
 }
 
-int NCFile::move_if_exists(const std::string &filename, int rank_to_use) {
-  return this->move_if_exists_impl(filename, rank_to_use);
+void NCFile::move_if_exists(const std::string &filename, int rank_to_use) {
+  int stat = this->move_if_exists_impl(filename, rank_to_use); check(stat);
 }
 
-int NCFile::remove_if_exists(const std::string &filename, int rank_to_use) {
-  return this->remove_if_exists_impl(filename, rank_to_use);
+void NCFile::remove_if_exists(const std::string &filename, int rank_to_use) {
+  int stat = this->remove_if_exists_impl(filename, rank_to_use); check(stat);
 }
 
 } // end of namespace pism

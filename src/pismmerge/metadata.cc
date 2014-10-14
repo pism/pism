@@ -27,23 +27,22 @@
  * the input file.
  */
 int define_dimension(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string dim_name) {
-  int stat;
   bool exists;
 
-  stat = input.inq_dimid(dim_name, exists); check(stat);
+  input.inq_dimid(dim_name, exists);
   if (exists == false)
     return 0;
 
-  stat = output.inq_dimid(dim_name, exists); check(stat);
+  output.inq_dimid(dim_name, exists);
   if (exists == true)
     return 0;
 
   if (dim_name == "time") {
-    stat = output.def_dim("time", pism::PISM_UNLIMITED); check(stat);
+    output.def_dim("time", pism::PISM_UNLIMITED);
   } else {
     unsigned int dim_len;
-    stat = input.inq_dimlen(dim_name, dim_len); check(stat);
-    stat = output.def_dim(dim_name, dim_len); check(stat);
+    input.inq_dimlen(dim_name, dim_len);
+    output.def_dim(dim_name, dim_len);
   }
 
   return 0;
@@ -61,15 +60,15 @@ int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
   bool exists;
   std::vector<std::string> dimensions;
 
-  stat = input.inq_varid(variable_name, exists); check(stat);
+  input.inq_varid(variable_name, exists);
   if (exists == false)
     return 0;
 
-  stat = output.inq_varid(variable_name, exists); check(stat);
+  output.inq_varid(variable_name, exists);
   if (exists == true)
     return 0;
 
-  stat = input.inq_vardimid(variable_name, dimensions); check(stat);
+  input.inq_vardimid(variable_name, dimensions);
 
   for (unsigned int k = 0; k < dimensions.size(); ++k) {
 
@@ -91,9 +90,9 @@ int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
   }
 
   pism::IO_Type var_type;
-  stat = input.inq_vartype(variable_name, var_type); check(stat);
+  input.inq_vartype(variable_name, var_type);
 
-  stat = output.def_var(variable_name, var_type, dimensions); check(stat);
+  output.def_var(variable_name, var_type, dimensions);
 
   stat = copy_attributes(input, output, variable_name); check(stat);
 
@@ -102,31 +101,30 @@ int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
 
 //! \brief Copies variable attributes.
 int copy_attributes(pism::NC4_Serial &input, pism::NC4_Serial &output, std::string var_name) {
-  int stat;
   int n_attrs;
 
-  stat = input.inq_varnatts(var_name, n_attrs); check(stat);
+  input.inq_varnatts(var_name, n_attrs);
 
   for (int j = 0; j < n_attrs; ++j) {
     std::string att_name;
     pism::IO_Type att_type;
 
-    stat = input.inq_attname(var_name, j, att_name); check(stat);
+    input.inq_attname(var_name, j, att_name);
 
-    stat = input.inq_atttype(var_name, att_name, att_type); check(stat);
+    input.inq_atttype(var_name, att_name, att_type);
 
     if (att_type == pism::PISM_CHAR) {
       std::string tmp;
 
-      stat = input.get_att_text(var_name, att_name, tmp); check(stat);
+      input.get_att_text(var_name, att_name, tmp);
 
-      stat = output.put_att_text(var_name, att_name, tmp); check(stat);
+      output.put_att_text(var_name, att_name, tmp);
     } else {
       std::vector<double> tmp;
 
-      stat = input.get_att_double(var_name, att_name, tmp); check(stat);
+      input.get_att_double(var_name, att_name, tmp);
 
-      stat = output.put_att_double(var_name, att_name, att_type, tmp); check(stat);
+      output.put_att_double(var_name, att_name, att_type, tmp);
     }
   }
 

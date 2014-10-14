@@ -840,7 +840,7 @@ int NC3File::put_att_double_impl(const std::string &variable_name, const std::st
 
   int stat = 0;
 
-  stat = redef(); check(stat);
+  stat = redef_impl(); check(stat);
 
   if (m_rank == 0) {
     int varid = -1;
@@ -870,7 +870,7 @@ int NC3File::put_att_double_impl(const std::string &variable_name, const std::st
 int NC3File::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0;
 
-  stat = redef(); check(stat);
+  stat = redef_impl(); check(stat);
 
   if (m_rank == 0) {
     int varid = -1;

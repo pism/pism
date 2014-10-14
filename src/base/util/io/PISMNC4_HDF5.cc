@@ -578,7 +578,7 @@ int NC4_HDF5::def_dim_impl(const std::string &name, size_t length) const {
  * variable exists.
  */
 int NC4_HDF5::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
-  int stat = this->inq_varid(dimension_name, exists);
+  int stat = this->inq_varid_impl(dimension_name, exists);
   return stat;
 }
 
