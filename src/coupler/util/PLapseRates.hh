@@ -185,11 +185,8 @@ protected:
 
     ierr = reference_surface.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
 
-    surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-    assert(surface != NULL);
-
-    thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-    assert(thk != NULL);
+    surface = vars.get_2d_scalar("surface_altitude");
+    thk     = vars.get_2d_scalar("land_ice_thickness");
 
     return 0;
   }

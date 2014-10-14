@@ -67,8 +67,7 @@ PetscErrorCode POConstantPIK::init(Vars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the constant (PIK) ocean model...\n"); CHKERRQ(ierr);
 
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!ice_thickness) { SETERRQ(grid.com, 1, "ERROR: ice thickness is not available"); }
+  ice_thickness = vars.get_2d_scalar("land_ice_thickness");
 
   double meltfactor_pik = meltfactor;
   bool meltfactorSet = false;

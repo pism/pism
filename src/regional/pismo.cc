@@ -133,7 +133,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
   no_model_mask.metadata().set_string("flag_meanings", "normal special_treatment");
   no_model_mask.set_time_independent(true);
   ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
-  ierr = variables.add(no_model_mask); CHKERRQ(ierr);
+  variables.add(no_model_mask);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   ierr = usurfstore.create(grid, "usurfstore", WITH_GHOSTS, 2); CHKERRQ(ierr);
@@ -142,7 +142,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
     "saved surface elevation for use to keep surface gradient constant in no_model strip",
     "m",
     ""); CHKERRQ(ierr); //  no standard name
-  ierr = variables.add(usurfstore); CHKERRQ(ierr);
+  variables.add(usurfstore);
 
   // stencil width of 1 needed for differentiation
   ierr = thkstore.create(grid, "thkstore", WITH_GHOSTS, 1); CHKERRQ(ierr);
@@ -151,7 +151,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
     "saved ice thickness for use to keep driving stress constant in no_model strip",
     "m",
     ""); CHKERRQ(ierr); //  no standard name
-  ierr = variables.add(thkstore); CHKERRQ(ierr);
+  variables.add(thkstore);
 
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of bmelt instead.

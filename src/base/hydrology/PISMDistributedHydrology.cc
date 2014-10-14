@@ -22,6 +22,7 @@
 #include "pism_options.hh"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -144,37 +145,42 @@ PetscErrorCode DistributedHydrology::init_bwp(Vars &vars) {
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady
   const double bwp_default = config.get("bootstrapping_bwp_value_no_var");
-  IceModelVec2S *P_input = dynamic_cast<IceModelVec2S*>(vars.get("bwp"));
+  IceModelVec2S *P_input = NULL;
 
-  if (P_input != NULL) { // a variable called "bwp" is already in context
+  try {
+    // FIXME: this is not an "exceptional" situation...
+    P_input = vars.get_2d_scalar("bwp");
     ierr = P.copy_from(*P_input); CHKERRQ(ierr);
-  } else if (i_set || bootstrap_set) {
-    std::string filename;
-    int start;
-    ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
-    if (i_set) {
-      bool bwp_exists = false;
-      PIO nc(grid, "guess_mode");
-      ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-      ierr = nc.inq_var("bwp", bwp_exists); CHKERRQ(ierr);
-      ierr = nc.close(); CHKERRQ(ierr);
-      if (bwp_exists == true) {
-        ierr = P.read(filename, start); CHKERRQ(ierr);
+  } catch (RuntimeError) {
+    if (i_set || bootstrap_set) {
+      std::string filename;
+      int start;
+      ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
+      if (i_set) {
+        bool bwp_exists = false;
+        PIO nc(grid, "guess_mode");
+        ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+        ierr = nc.inq_var("bwp", bwp_exists); CHKERRQ(ierr);
+        ierr = nc.close(); CHKERRQ(ierr);
+        if (bwp_exists == true) {
+          ierr = P.read(filename, start); CHKERRQ(ierr);
+        } else {
+          ierr = verbPrintf(2, grid.com,
+                            "PISM WARNING: bwp for hydrology model not found in '%s'."
+                            "  Setting it to %.2f ...\n",
+                            filename.c_str(), bwp_default); CHKERRQ(ierr);
+          ierr = P.set(bwp_default); CHKERRQ(ierr);
+        }
       } else {
-        ierr = verbPrintf(2, grid.com,
-                          "PISM WARNING: bwp for hydrology model not found in '%s'."
-                          "  Setting it to %.2f ...\n",
-                          filename.c_str(), bwp_default); CHKERRQ(ierr);
-        ierr = P.set(bwp_default); CHKERRQ(ierr);
+        ierr = P.regrid(filename, OPTIONAL, bwp_default); CHKERRQ(ierr);
       }
     } else {
-      ierr = P.regrid(filename, OPTIONAL, bwp_default); CHKERRQ(ierr);
+      ierr = P.set(bwp_default); CHKERRQ(ierr);
     }
-  } else {
-    ierr = P.set(bwp_default); CHKERRQ(ierr);
   }
 
   ierr = regrid("DistributedHydrology", &P); CHKERRQ(ierr); //  we could be asked to regrid from file
+
   return 0;
 }
 

@@ -210,11 +210,8 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
       "* Initializing the bedrock thermal unit... setting constants...\n"); CHKERRQ(ierr);
 
   // Get pointers to fields owned by IceModel.
-  bedtoptemp = dynamic_cast<IceModelVec2S*>(vars.get("bedtoptemp"));
-  if (bedtoptemp == NULL) SETERRQ(grid.com, 1, "bedtoptemp is not available");
-
-  ghf = dynamic_cast<IceModelVec2S*>(vars.get("bheatflx"));
-  if (ghf == NULL) SETERRQ(grid.com, 2, "bheatflx is not available");
+  bedtoptemp = vars.get_2d_scalar("bedtoptemp");
+  ghf = vars.get_2d_scalar("bheatflx");
 
   // If we're using a minimal model, then we're done:
   if (!temp.was_created()) {

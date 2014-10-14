@@ -20,6 +20,8 @@
 #include "NCVariable.hh"
 #include "iceModelVec.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! \brief Add an IceModelVec v using the name `name`.
@@ -32,8 +34,8 @@ void Vars::add(IceModelVec &v, const std::string &name) {
   Adds standard_name if present, otherwise uses short_name.
 
   This code will only work for IceModelVecs with dof == 1.
- */
-PetscErrorCode Vars::add(IceModelVec &v) {
+*/
+void Vars::add(IceModelVec &v) {
 
   const NCSpatialVariable &m = v.metadata();
   std::string name = v.name();
@@ -41,21 +43,18 @@ PetscErrorCode Vars::add(IceModelVec &v) {
   if (m.has_attribute("standard_name")) {
 
     std::string standard_name = m.get_string("standard_name");
-    if (standard_names[standard_name] == NULL)
+    if (standard_names[standard_name] == NULL) {
       standard_names[standard_name] = &v;
-    else
-      SETERRQ1(PETSC_COMM_SELF, 1, "Vars::add(): an IceModelVec with the standard_name '%s' was added already.",
-               standard_name.c_str());
-
+    } else {
+      throw RuntimeError("Vars::add(): an IceModelVec with the standard_name '" + standard_name + "' was added already.");
+    }
   }
 
   if (variables[name] == NULL)
     variables[name] = &v;
-  else
-    SETERRQ1(PETSC_COMM_SELF, 1, "Vars::add(): an IceModelVec with the short_name '%s' was added already.",
-             name.c_str());
-
-  return 0;
+  else {
+    throw RuntimeError("Vars::add(): an IceModelVec with the short_name '" + name + "' was added already.");
+  }
 }
 
 //! Removes a variable with the key `name` from the dictionary.
@@ -101,19 +100,35 @@ IceModelVec* Vars::get(const std::string &name) const {
 }
 
 IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
-  return dynamic_cast<IceModelVec2S*>(this->get(name));
+  IceModelVec2S *tmp = dynamic_cast<IceModelVec2S*>(this->get(name));
+  if (tmp == NULL) {
+    throw RuntimeError("2D scalar variable '" + name + "' is not available");
+  }
+  return tmp;
 }
 
-IceModelVec2V* Vars::get_2d_vector(const std::string &name) const{
-  return dynamic_cast<IceModelVec2V*>(this->get(name));
+IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
+  IceModelVec2V *tmp = dynamic_cast<IceModelVec2V*>(this->get(name));
+  if (tmp == NULL) {
+    throw RuntimeError("2D vector variable '" + name + "' is not available");
+  }
+  return tmp;
 }
 
-IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const{
-  return dynamic_cast<IceModelVec2Int*>(this->get(name));
+IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
+  IceModelVec2Int *tmp = dynamic_cast<IceModelVec2Int*>(this->get(name));
+  if (tmp == NULL) {
+    throw RuntimeError("2D mask variable '" + name + "' is not available");
+  }
+  return tmp;
 }
 
-IceModelVec3* Vars::get_3d_scalar(const std::string &name) const{
-  return dynamic_cast<IceModelVec3*>(this->get(name));
+IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
+  IceModelVec3* tmp = dynamic_cast<IceModelVec3*>(this->get(name));
+  if (tmp == NULL) {
+    throw RuntimeError("3D scalar variable '" + name + "' is not available");
+      }
+  return tmp;
 }
 
 //! \brief Returns the set of keys (variable names) in the dictionary.
@@ -137,18 +152,14 @@ std::set<std::string> Vars::keys() const {
 }
 
 //! Debugging: checks if IceModelVecs in the dictionary have NANs.
-PetscErrorCode Vars::check_for_nan() const {
-  PetscErrorCode ierr;
+void Vars::check_for_nan() const {
   std::set<std::string> names = keys();
 
   std::set<std::string>::iterator i = names.begin();
   while (i != names.end()) {
-    IceModelVec *var = get(*i);
-    ierr = var->has_nan(); CHKERRQ(ierr);
+    get(*i)->has_nan();
     ++i;
   }
-
-  return 0;
 }
 
 } // end of namespace pism

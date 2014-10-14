@@ -49,8 +49,7 @@ PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result, *surface;
 
-  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+  surface = variables.get_2d_scalar("surface_altitude");
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "schoofs_theta", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -100,14 +99,9 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   IceModelVec2S *result, *surface, *thickness;
   IceModelVec2Int *mask;
 
-  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  surface   = variables.get_2d_scalar("surface_altitude");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
+  mask      = variables.get_2d_mask("mask");
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "thksmooth", WITHOUT_GHOSTS); CHKERRQ(ierr);

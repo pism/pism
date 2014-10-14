@@ -61,8 +61,7 @@ PetscErrorCode OceanKill::init(Vars &vars) {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  assert(mask != NULL);
+  IceModelVec2Int *mask = vars.get_2d_mask("mask");
   MaskQuery m(*mask);
 
   IceModelVec2S thickness, *tmp;

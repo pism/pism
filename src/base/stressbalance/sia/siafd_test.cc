@@ -383,34 +383,34 @@ int main(int argc, char *argv[]) {
     ierr = ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
           "m", "surface_altitude"); CHKERRQ(ierr);
-    ierr = vars.add(ice_surface_elevation); CHKERRQ(ierr);
+    vars.add(ice_surface_elevation);
 
     // land ice thickness
     ierr = ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = ice_thickness.set_attrs("model_state", "land ice thickness",
           "m", "land_ice_thickness"); CHKERRQ(ierr);
     ice_thickness.metadata().set_double("valid_min", 0.0);
-    ierr = vars.add(ice_thickness); CHKERRQ(ierr);
+    vars.add(ice_thickness);
 
     // bedrock surface elevation
     ierr = bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = bed_topography.set_attrs("model_state", "bedrock surface elevation",
           "m", "bedrock_altitude"); CHKERRQ(ierr);
-    ierr = vars.add(bed_topography); CHKERRQ(ierr);
+    vars.add(bed_topography);
 
     // age of the ice; is not used here
     ierr = age.create(grid, "age", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = age.set_attrs("diagnostic", "age of the ice", "s", ""); CHKERRQ(ierr);
     ierr = age.set_glaciological_units("year"); CHKERRQ(ierr);
     age.write_in_glaciological_units = true;
-    ierr = vars.add(age); CHKERRQ(ierr);
+    vars.add(age);
 
     // enthalpy in the ice
     ierr = enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = enthalpy.set_attrs("model_state",
                               "ice enthalpy (includes sensible heat, latent heat, pressure)",
                               "J kg-1", ""); CHKERRQ(ierr);
-    ierr = vars.add(enthalpy); CHKERRQ(ierr);
+    vars.add(enthalpy);
 
     // grounded_dragging_floating integer mask
     ierr = vMask.create(grid, "mask", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
     vMask.metadata().set_doubles("flag_values", mask_values);
     vMask.metadata().set_string("flag_meanings",
                                 "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-    ierr = vars.add(vMask); CHKERRQ(ierr);
+    vars.add(vMask);
 
     // Create the SIA solver object:
 

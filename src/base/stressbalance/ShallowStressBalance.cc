@@ -382,11 +382,8 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
+  surface = variables.get_2d_scalar("surface_altitude");
 
   double standard_gravity = grid.config.get("standard_gravity"),
     ice_density = grid.config.get("ice_density");
@@ -484,10 +481,8 @@ PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
   ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
 
   IceModelVec2V &vel = *velocity;
-  IceModelVec2S *tauc = dynamic_cast<IceModelVec2S*>(variables.get("tauc"));
-  assert(tauc != NULL);
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  assert(mask != NULL);
+  IceModelVec2S *tauc = variables.get_2d_scalar("tauc");
+  IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 
@@ -617,8 +612,7 @@ PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
   result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
-  IceModelVec2S *tauc = dynamic_cast<IceModelVec2S*>(variables.get("tauc"));
-  assert(tauc != NULL);
+  IceModelVec2S *tauc = variables.get_2d_scalar("tauc");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 

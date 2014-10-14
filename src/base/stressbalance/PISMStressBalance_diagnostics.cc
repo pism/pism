@@ -81,7 +81,7 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec3 *u3, *v3, *w3;
-  IceModelVec2S *thickness;
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
   IceModelVec2V *result;
   double *u_ij, *v_ij;
   double icefree_thickness = grid.config.get("mask_icefree_thickness_standard");
@@ -90,9 +90,6 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   ierr = result->create(grid, "bar", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
@@ -161,11 +158,8 @@ PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec *tmp;
   IceModelVec2V *velbar_vec;
-  IceModelVec2S *thickness, *result;
-
-  // get the thickness
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness"),
+    *result = NULL;
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "velbar_mag", WITHOUT_GHOSTS);
@@ -203,12 +197,9 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
 
 PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  IceModelVec2S *thickness, *result;
-  IceModelVec *tmp;
-
-  // get the thickness
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness"),
+    *result = NULL;
+  IceModelVec *tmp = NULL;
 
   // Compute the vertically-average horizontal ice velocity:
   PSB_velbar_mag velbar_mag(model, grid, variables);
@@ -262,8 +253,7 @@ PetscErrorCode PSB_velbase_mag::compute(IceModelVec* &output) {
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
 
   ierr = u3->getHorSlice(*result, 0.0); CHKERRQ(ierr); // result = u_{z=0}
   ierr = v3->getHorSlice(tmp, 0.0); CHKERRQ(ierr);    // tmp = v_{z=0}
@@ -302,8 +292,7 @@ PetscErrorCode PSB_velsurf_mag::compute(IceModelVec* &output) {
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
 
   ierr = u3->getSurfaceValues(*result, *thickness); CHKERRQ(ierr);
   ierr = v3->getSurfaceValues(tmp, *thickness); CHKERRQ(ierr);
@@ -358,8 +347,7 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
 
   ierr = u3->getSurfaceValues(tmp, *thickness); CHKERRQ(ierr);
   ierr = result->set_component(0, tmp); CHKERRQ(ierr);
@@ -367,8 +355,7 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
   ierr = v3->getSurfaceValues(tmp, *thickness); CHKERRQ(ierr);
   ierr = result->set_component(1, tmp); CHKERRQ(ierr);
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -413,17 +400,10 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   ierr = result->create(grid, "wvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
-
-  bed = dynamic_cast<IceModelVec2S*>(variables.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
-
-  uplift = dynamic_cast<IceModelVec2S*>(variables.get("tendency_of_bedrock_altitude"));
-  if (uplift == NULL) SETERRQ(grid.com, 1, "tendency_of_bedrock_altitude is not available");
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  mask      = variables.get_2d_mask("mask");
+  bed       = variables.get_2d_scalar("bedrock_altitude");
+  uplift    = variables.get_2d_scalar("tendency_of_bedrock_altitude");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
 
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
@@ -510,13 +490,11 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   w3 = dynamic_cast<IceModelVec3*>(tmp);
   if (tmp == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
 
   ierr = w3->getSurfaceValues(*result, *thickness); CHKERRQ(ierr);
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -570,8 +548,7 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
 
   ierr = w3->getHorSlice(*result, 0.0); CHKERRQ(ierr);
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -638,8 +615,7 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
   ierr = v3->getHorSlice(tmp, 0.0); CHKERRQ(ierr);
   ierr = result->set_component(1, tmp); CHKERRQ(ierr);
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
   MaskQuery M(*mask);
 
@@ -706,9 +682,7 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
   ierr = result->create(grid, "uvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness;
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
@@ -759,9 +733,7 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
   ierr = result->create(grid, "vvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness;
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
@@ -812,9 +784,7 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
   ierr = result->create(grid, "wvel_rel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness;
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModelVec3 *u3, *v3, *w3;
   ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
@@ -903,8 +873,7 @@ PetscErrorCode PSB_strain_rates::compute(IceModelVec* &output) {
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
-  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  mask = variables.get_2d_mask("mask");
 
   ierr = diag.compute(velbar); CHKERRQ(ierr);
   IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
@@ -952,8 +921,7 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
   result->metadata(1) = vars[1];
   result->metadata(2) = vars[2];
 
-  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  mask = variables.get_2d_mask("mask");
 
   ierr = diag.compute(velbar); CHKERRQ(ierr);
   IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
@@ -989,9 +957,7 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
   ierr = result->create(grid, "pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness;
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModelVec::AccessList list;
   list.add(*result);
@@ -1049,11 +1015,8 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
 
   IceModelVec2S *thickness, *surface;
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
+  surface = variables.get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(*result);
@@ -1114,11 +1077,8 @@ PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
 
   IceModelVec2S *thickness, *surface;
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
+  thickness = variables.get_2d_scalar("land_ice_thickness");
+  surface = variables.get_2d_scalar("surface_altitude");
 
   IceModelVec::AccessList list;
   list.add(*result);

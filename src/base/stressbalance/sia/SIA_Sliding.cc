@@ -78,20 +78,11 @@ PetscErrorCode SIA_Sliding::init(Vars &vars) {
   if (config.is_set("EISMINT_II_experiment"))
     eisII_experiment = config.get_string("EISMINT_II_experiment");
 
-  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
-
-  surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
-
-  bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
+  thickness = vars.get_2d_scalar("land_ice_thickness");
+  mask      = vars.get_2d_mask("mask");
+  surface   = vars.get_2d_scalar("surface_altitude");
+  bed       = vars.get_2d_scalar("bedrock_altitude");
+  enthalpy  = vars.get_3d_scalar("enthalpy");
 
   return 0;
 }

@@ -63,6 +63,7 @@ void handle_fatal_errors() {
     std::vector<std::string>::const_iterator j = context.begin();
     while (j != context.end()) {
       PetscPrintf(com, "     while %s\n", j->c_str());
+      ++j;
     }
   }
   catch (std::exception &e) {

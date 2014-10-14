@@ -22,7 +22,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include <petscsys.h>
 
 namespace pism {
 
@@ -37,7 +36,7 @@ class IceModelVec3;
 // FIXME: 1) make Vars take and return "const IceModelVec*" 2) use smart pointers
 class Vars {
 public:
-  PetscErrorCode add(IceModelVec &);
+  void add(IceModelVec &);
   void add(IceModelVec &, const std::string &name);
   void remove(const std::string &name);
   IceModelVec* get(const std::string &name) const;
@@ -47,7 +46,7 @@ public:
   IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
-  PetscErrorCode check_for_nan() const;
+  void check_for_nan() const;
 private:
   std::map<std::string, IceModelVec*> variables,
     standard_names;             //!< stores standard names of variables that

@@ -422,14 +422,9 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, Vars &my
 
 PetscErrorCode IceModel_proc_ice_area::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  IceModelVec2S *thickness;
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  IceModelVec2Int *ice_mask;
-  ice_mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
-  if (ice_mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
+  IceModelVec2Int *ice_mask = variables.get_2d_mask("mask");
 
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "proc_ice_area", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -477,14 +472,8 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
   ierr = result->create(grid, "temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness;
-  IceModelVec3 *enthalpy;
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
+  IceModelVec3 *enthalpy = variables.get_3d_scalar("enthalpy");
 
   double *Tij, *Enthij; // columns of these values
 
@@ -540,14 +529,8 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   ierr = result->create(grid, "temp_pa", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness;
-  IceModelVec3 *enthalpy;
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
+  IceModelVec3  *enthalpy  = variables.get_3d_scalar("enthalpy");
 
   double *Tij, *Enthij; // columns of these values
 
@@ -608,14 +591,8 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   ierr = result->create(grid, "temp_pa_base", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata() = vars[0];
 
-  IceModelVec2S *thickness;
-  IceModelVec3 *enthalpy;
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
+  IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
+  IceModelVec3 *enthalpy = variables.get_3d_scalar("enthalpy");
 
   double *Enthij; // columns of these values
 
@@ -740,7 +717,8 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, Vars &my_vars)
 PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
-  IceModelVec2S *result, *thickness;
+  IceModelVec2S *result = NULL,
+    *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModel_enthalpybase enth(model, grid, variables);
 
@@ -750,9 +728,6 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
 
   // result contains basal enthalpy; note that it is allocated by
   // enth.compute().
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
   MaskQuery mask(model->vMask);
 
@@ -796,10 +771,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, Vars &my_vars)
 PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
-  IceModelVec2S *result, *thickness;
-
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  IceModelVec2S *result, *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModel_enthalpysurf enth(model, grid, variables);
 

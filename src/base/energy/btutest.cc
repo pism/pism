@@ -78,13 +78,13 @@ static PetscErrorCode createVecs(IceGrid &grid, Vars &variables) {
                        "upward geothermal flux at bedrock thermal layer base",
                        "W m-2", ""); CHKERRQ(ierr);
   ierr = ghf->set_glaciological_units("mW m-2");
-  ierr = variables.add(*ghf); CHKERRQ(ierr);
+  variables.add(*ghf);
 
   ierr = bedtoptemp->create(grid, "bedtoptemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = bedtoptemp->set_attrs("",
                        "temperature at top of bedrock thermal layer",
                        "K", ""); CHKERRQ(ierr);
-  ierr = variables.add(*bedtoptemp); CHKERRQ(ierr);
+  variables.add(*bedtoptemp);
 
   return 0;
 }
@@ -201,12 +201,10 @@ int main(int argc, char *argv[]) {
     IceModelVec2S *bedtoptemp, *ghf;
 
     // top of bedrock layer temperature; filled from Test K exact values
-    bedtoptemp = dynamic_cast<IceModelVec2S*>(variables.get("bedtoptemp"));
-    if (bedtoptemp == NULL) SETERRQ(com, 1, "bedtoptemp is not available");
-
+    bedtoptemp = variables.get_2d_scalar("bedtoptemp");
     // lithosphere (bottom of bedrock layer) heat flux; has constant value
-    ghf = dynamic_cast<IceModelVec2S*>(variables.get("bheatflx"));
-    if (ghf == NULL) SETERRQ(com, 2, "bheatflx is not available");
+    ghf = variables.get_2d_scalar("bheatflx");
+
     ierr = ghf->set(0.042); CHKERRQ(ierr);  // see Test K
 
     // initialize BTU object:

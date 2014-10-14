@@ -104,9 +104,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
                     grid.convert(m_limit_max, "m s-1", "m year-1"), z_ELA); CHKERRQ(ierr);
 
   // get access to ice upper surface elevation
-  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (!usurf) SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
-
+  usurf = vars.get_2d_scalar("surface_altitude");
 
   // NCSpatialVariables storing temperature and surface mass balance metadata
 

@@ -24,6 +24,7 @@
 #include "flowlaw_factory.hh"
 #include "PIO.hh"
 #include "enthalpyConverter.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -64,40 +65,22 @@ PetscErrorCode SSA::init(Vars &vars) {
                     "  [using the %s flow law]\n", flow_law->name().c_str()); CHKERRQ(ierr);
   
   if (config.get_flag("sub_groundingline")) {
-    gl_mask = dynamic_cast<IceModelVec2S*>(vars.get("gl_mask"));
-    if (gl_mask == NULL)
-      SETERRQ(grid.com, 1, "subgrid_grounding_line_position is not available");
+    gl_mask = vars.get_2d_scalar("gl_mask");
   }
 
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL)
-    SETERRQ(grid.com, 1, "mask is not available");
+  mask      = vars.get_2d_mask("mask");
+  thickness = vars.get_2d_scalar("land_ice_thickness");
+  tauc      = vars.get_2d_scalar("tauc");
 
-  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL)
-    SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  try {
+    surface = vars.get_2d_scalar("surface_altitude");
+  } catch (RuntimeError) {
+    driving_stress_x = vars.get_2d_scalar("ssa_driving_stress_x");
+    driving_stress_y = vars.get_2d_scalar("ssa_driving_stress_y");
+  }
 
-  tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
-  if (tauc == NULL)
-    SETERRQ(grid.com, 1, "tauc is not available");
-
-  surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  driving_stress_x = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_x"));
-  driving_stress_y = dynamic_cast<IceModelVec2S*>(vars.get("ssa_driving_stress_y"));
-  if ((driving_stress_x==NULL) || (driving_stress_y==NULL)) {
-    if (surface == NULL) {
-      SETERRQ(grid.com, 1,
-              "neither surface_altitude nor the pair ssa_driving_stress_x/y is available");
-    }
- }
-
-  bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL)
-    SETERRQ(grid.com, 1, "bedrock_altitude is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL)
-    SETERRQ(grid.com, 1, "enthalpy is not available");
+  bed      = vars.get_2d_scalar("bedrock_altitude");
+  enthalpy = vars.get_3d_scalar("enthalpy");
   
   // Check if PISM is being initialized from an output file from a previous run
   // and read the initial guess (unless asked not to).
@@ -132,11 +115,8 @@ PetscErrorCode SSA::init(Vars &vars) {
   }
 
   if (config.get_flag("ssa_dirichlet_bc")) {
-    bc_locations = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
-    if (bc_locations == NULL) SETERRQ(grid.com, 1, "bc_locations is not available");
-
-    m_vel_bc = dynamic_cast<IceModelVec2V*>(vars.get("vel_ssa_bc"));
-    if (m_vel_bc == NULL) SETERRQ(grid.com, 1, "vel_ssa_bc is not available");
+    bc_locations = vars.get_2d_mask("bcflag");
+    m_vel_bc = vars.get_2d_vector("vel_ssa_bc");
   }
 
   return 0;

@@ -21,6 +21,7 @@
 #include "Mask.hh"
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -113,20 +114,12 @@ PetscErrorCode Hydrology::init(Vars &vars) {
   // the following are IceModelVec pointers into IceModel generally and are read by code in the
   // update() method at the current Hydrology time
 
-  thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
-  if (thk == NULL) SETERRQ(grid.com, 1, "thk is not available to Hydrology");
+  thk      = vars.get_2d_scalar("thk");
+  bed      = vars.get_2d_scalar("topg");
+  bmelt    = vars.get_2d_scalar("bmelt");
+  cellarea = vars.get_2d_scalar("cell_area");
+  mask     = vars.get_2d_mask("mask");
 
-  bed = dynamic_cast<IceModelVec2S*>(vars.get("topg"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available to Hydrology");
-
-  bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available to Hydrology");
-
-  cellarea = dynamic_cast<IceModelVec2S*>(vars.get("cell_area"));
-  if (cellarea == NULL) SETERRQ(grid.com, 1, "cell_area is not available to Hydrology");
-
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available to Hydrology");
 
   if (bmeltfile_set) {
     ierr = verbPrintf(2, grid.com,
@@ -178,21 +171,26 @@ PetscErrorCode Hydrology::init(Vars &vars) {
 
   // initialize till water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
-  IceModelVec2S *Wtil_input = dynamic_cast<IceModelVec2S*>(vars.get("tillwat"));
-  if (Wtil_input != NULL) { // a variable called "tillwat" is already in context
+  IceModelVec2S *Wtil_input = NULL;
+
+  try {
+    // FIXME: this is not an exceptional situation...
+    Wtil_input = vars.get_2d_scalar("tillwat");
     ierr = Wtil.copy_from(*Wtil_input); CHKERRQ(ierr);
-  } else if (i_set || bootstrap) {
-    std::string filename;
-    int start;
-    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
-    if (i_set) {
-      ierr = Wtil.read(filename, start); CHKERRQ(ierr);
+  } catch (RuntimeError) {
+    if (i_set || bootstrap) {
+      std::string filename;
+      int start;
+      ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+      if (i_set) {
+        ierr = Wtil.read(filename, start); CHKERRQ(ierr);
+      } else {
+        ierr = Wtil.regrid(filename, OPTIONAL,
+                           config.get("bootstrapping_tillwat_value_no_var")); CHKERRQ(ierr);
+      }
     } else {
-      ierr = Wtil.regrid(filename, OPTIONAL,
-                             config.get("bootstrapping_tillwat_value_no_var")); CHKERRQ(ierr);
+      ierr = Wtil.set(config.get("bootstrapping_tillwat_value_no_var")); CHKERRQ(ierr);
     }
-  } else {
-    ierr = Wtil.set(config.get("bootstrapping_tillwat_value_no_var")); CHKERRQ(ierr);
   }
 
   // whether or not we could initialize from file, we could be asked to regrid from file

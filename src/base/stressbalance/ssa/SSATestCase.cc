@@ -38,34 +38,34 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = surface.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = surface.set_attrs("diagnostic", "ice upper surface elevation", "m", 
                                       "surface_altitude"); CHKERRQ(ierr);
-  ierr = vars.add(surface); CHKERRQ(ierr);
+  vars.add(surface);
   
   // land ice thickness
   ierr = thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = thickness.set_attrs("model_state", "land ice thickness", "m", 
                              "land_ice_thickness"); CHKERRQ(ierr);
   thickness.metadata().set_double("valid_min", 0.0);
-  ierr = vars.add(thickness); CHKERRQ(ierr);
+  vars.add(thickness);
 
   // bedrock surface elevation
   ierr = bed.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = bed.set_attrs("model_state", "bedrock surface elevation", "m", 
                                           "bedrock_altitude"); CHKERRQ(ierr);
-  ierr = vars.add(bed); CHKERRQ(ierr);
+  vars.add(bed);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   ierr = tauc.create(grid, "tauc", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = tauc.set_attrs("diagnostic",  
   "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
-      CHKERRQ(ierr);
-  ierr = vars.add(tauc); CHKERRQ(ierr);
+  CHKERRQ(ierr);
+  vars.add(tauc);
 
   // enthalpy
   ierr = enthalpy.create(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = enthalpy.set_attrs("model_state",
               "ice enthalpy (includes sensible heat, latent heat, pressure)",
               "J kg-1", ""); CHKERRQ(ierr);
-  ierr = vars.add(enthalpy); CHKERRQ(ierr);
+  vars.add(enthalpy);
 
 
   // dirichlet boundary condition (FIXME: perhaps unused!)
@@ -98,7 +98,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ice_mask.metadata().set_doubles("flag_values", mask_values);
   ice_mask.metadata().set_string("flag_meanings",
                                  "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  ierr = vars.add(ice_mask); CHKERRQ(ierr);
+  vars.add(ice_mask);
 
   ierr = ice_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
 
@@ -112,7 +112,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   bc_mask.metadata().set_doubles("flag_values", mask_values);
   bc_mask.metadata().set_string("flag_meanings",
                                 "no_data ssa_dirichlet_bc_location");
-  ierr = vars.add(bc_mask); CHKERRQ(ierr);
+  vars.add(bc_mask);
 
   ierr = melange_back_pressure.create(grid, "melange_back_pressure_fraction",
                                       WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);

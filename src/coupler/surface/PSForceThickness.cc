@@ -129,11 +129,8 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
                      "Specifies the ice thickness threshold used to determine whether a location is ice-free, in m",
                      m_ice_free_thickness_threshold, ftt_ice_free_thickness_threshold_set); CHKERRQ(ierr);
 
-  m_ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!m_ice_thickness) SETERRQ(grid.com, 1, "ERROR: land_ice_thickness is not available");
-
-  m_pism_mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (!m_pism_mask) SETERRQ(grid.com, 1, "ERROR: mask is not available");
+  m_ice_thickness = vars.get_2d_scalar("land_ice_thickness");
+  m_pism_mask     = vars.get_2d_mask("mask");
 
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}

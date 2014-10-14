@@ -231,9 +231,7 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
                                                         IceModelVec3 &result) {
   PetscErrorCode ierr;
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
-
+  IceModelVec2Int *mask = m_variables->get_2d_mask("mask");
   MaskQuery m(*mask);
 
   IceModelVec::AccessList list;
@@ -405,23 +403,18 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
  */
 PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
   PetscErrorCode ierr;
-  IceModelVec3 *u, *v, *enthalpy;
-  IceModelVec2S *thickness;
+
   const IceFlowLaw *flow_law = m_stress_balance->get_flow_law();
   EnthalpyConverter &EC = m_stress_balance->get_enthalpy_converter();
 
+  IceModelVec3 *u, *v;
   ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
-  IceModelVec2Int *mask = dynamic_cast<IceModelVec2Int*>(m_variables->get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  IceModelVec2S *thickness = m_variables->get_2d_scalar("land_ice_thickness");
+  IceModelVec3  *enthalpy  = m_variables->get_3d_scalar("enthalpy");
 
+  IceModelVec2Int *mask = m_variables->get_2d_mask("mask");
   MaskQuery m(*mask);
-
-  thickness = dynamic_cast<IceModelVec2S*>(m_variables->get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(m_variables->get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
 
   double
     enhancement_factor = flow_law->enhancement_factor(),

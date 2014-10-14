@@ -180,11 +180,8 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
 
   ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
 
-  m_bed_topography = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (m_bed_topography == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
-
-  m_mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (m_mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  m_bed_topography = vars.get_2d_scalar("bedrock_altitude");
+  m_mask = vars.get_2d_mask("mask");
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till yield stress model", ""); CHKERRQ(ierr);
   {
@@ -203,7 +200,7 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
 
   // Get the till friction angle from the the context and ignore options that
   // would be used to set it otherwise.
-  IceModelVec2S *till_phi_input = dynamic_cast<IceModelVec2S*>(vars.get("tillphi"));
+  IceModelVec2S *till_phi_input = vars.get_2d_scalar("tillphi");
   if (till_phi_input != NULL) {
     ierr = m_till_phi.copy_from(*till_phi_input); CHKERRQ(ierr);
 

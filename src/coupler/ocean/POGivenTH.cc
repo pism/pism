@@ -116,8 +116,7 @@ PetscErrorCode POGivenTH::init(Vars &vars) {
                     "* Initializing the 3eqn melting parameterization ocean model\n"
                     "  reading ocean temperature and salinity from a file...\n"); CHKERRQ(ierr);
 
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (ice_thickness == NULL) {SETERRQ(grid.com, 1, "ERROR: ice thickness is not available");}
+  ice_thickness = vars.get_2d_scalar("land_ice_thickness");
 
   ierr = theta_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
   ierr = salinity_ocean->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);

@@ -186,11 +186,8 @@ PetscErrorCode PAConstantPIK::init(Vars &vars) {
     ierr = precipitation.read(input_file, start); CHKERRQ(ierr); // fails if not found!
   }
 
-  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (usurf == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
-
-  lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (lat == NULL) SETERRQ(grid.com, 1, "latitude is not available");
+  usurf = vars.get_2d_scalar("surface_altitude");
+  lat   = vars.get_2d_scalar("latitude");
 
   return 0;
 }

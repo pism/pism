@@ -248,9 +248,7 @@ PetscErrorCode SSAFD::init(Vars &vars) {
   m_default_pc_failure_max_count = 5;
 
   if (config.get_flag("do_fracture_density")) {
-    fracture_density = dynamic_cast<IceModelVec2S*>(vars.get("fracture_density"));
-    if (fracture_density == NULL)
-      SETERRQ(grid.com, 1, "fracture density is not available");
+    fracture_density = vars.get_2d_scalar("fracture_density");
   }
 
   return 0;

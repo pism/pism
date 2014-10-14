@@ -21,6 +21,7 @@
 #include "Mask.hh"
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -142,33 +143,38 @@ PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   const PetscReal bwatdefault = config.get("bootstrapping_bwat_value_no_var");
-  IceModelVec2S *W_input = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
-  if (W_input != NULL) { // a variable called "bwat" is already in context
+  IceModelVec2S *W_input = NULL;
+  try {
+    // FIXME: this is not an "exceptional" situation...
+    // a variable called "bwat" is already in context
+    W_input = vars.get_2d_scalar("bwat");
     ierr = W.copy_from(*W_input); CHKERRQ(ierr);
-  } else if (i || bootstrap) {
-    std::string filename;
-    int start;
-    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
-    if (i) {
-      bool bwat_exists = false;
-      PIO nc(grid, "guess_mode");
-      ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-      ierr = nc.inq_var("bwat", bwat_exists); CHKERRQ(ierr);
-      if (bwat_exists == true) {
-        ierr = W.read(filename, start); CHKERRQ(ierr);
+  } catch (RuntimeError) {
+    if (i || bootstrap) {
+      std::string filename;
+      int start;
+      ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+      if (i) {
+        bool bwat_exists = false;
+        PIO nc(grid, "guess_mode");
+        ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+        ierr = nc.inq_var("bwat", bwat_exists); CHKERRQ(ierr);
+        if (bwat_exists == true) {
+          ierr = W.read(filename, start); CHKERRQ(ierr);
+        } else {
+          ierr = verbPrintf(2, grid.com,
+                            "PISM WARNING: bwat for hydrology model not found in '%s'."
+                            "  Setting it to %.2f ...\n",
+                            filename.c_str(), bwatdefault); CHKERRQ(ierr);
+          ierr = W.set(bwatdefault); CHKERRQ(ierr);
+        }
+        ierr = nc.close(); CHKERRQ(ierr);
       } else {
-        ierr = verbPrintf(2, grid.com,
-            "PISM WARNING: bwat for hydrology model not found in '%s'."
-            "  Setting it to %.2f ...\n",
-            filename.c_str(),bwatdefault); CHKERRQ(ierr);
-        ierr = W.set(bwatdefault); CHKERRQ(ierr);
+        ierr = W.regrid(filename, OPTIONAL, bwatdefault); CHKERRQ(ierr);
       }
-      ierr = nc.close(); CHKERRQ(ierr);
-    } else {
-      ierr = W.regrid(filename, OPTIONAL, bwatdefault); CHKERRQ(ierr);
+    } else { // not sure if this case can be reached, but ...
+      ierr = W.set(bwatdefault); CHKERRQ(ierr);
     }
-  } else { // not sure if this case can be reached, but ...
-    ierr = W.set(bwatdefault); CHKERRQ(ierr);
   }
 
   // however we initialized it, we could be asked to regrid from file

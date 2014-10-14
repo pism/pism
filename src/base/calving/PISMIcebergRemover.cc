@@ -43,7 +43,7 @@ IcebergRemover::~IcebergRemover() {
 }
 
 PetscErrorCode IcebergRemover::init(Vars &vars) {
-  m_bcflag = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
+  m_bcflag = vars.get_2d_mask("bcflag");
   return 0;
 }
 

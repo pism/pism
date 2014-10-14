@@ -218,12 +218,10 @@ PetscErrorCode PSTemperatureIndex::init(Vars &vars) {
     ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
   }
 
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  assert(mask != NULL);
+  mask = vars.get_2d_mask("mask");
 
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
-    lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-    assert(lat != NULL);
+    lat = vars.get_2d_scalar("latitude");
   } else {
     lat = NULL;
   }
@@ -235,15 +233,12 @@ PetscErrorCode PSTemperatureIndex::init(Vars &vars) {
 
     base_pddStdDev = 2.53;
 
-    lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-    assert(lon != NULL);
-
-    usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
-    assert(usurf != NULL);
+    lon   = vars.get_2d_scalar("longitude");
+    usurf = vars.get_2d_scalar("usurf");
   } else {
     // generally, this is the case in which degree day factors do not depend
     //   on location; we use base_ddf
-    lon = NULL;
+    lon   = NULL;
     usurf = NULL;
   }
 

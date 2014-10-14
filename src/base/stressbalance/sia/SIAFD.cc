@@ -90,24 +90,14 @@ PetscErrorCode SIAFD::init(Vars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "  [using the %s flow law]\n", flow_law->name().c_str()); CHKERRQ(ierr);
 
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
-
-  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(grid.com, 1, "surface_altitude is not available");
-
-  bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(grid.com, 1, "bedrock_altitude is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(grid.com, 1, "enthalpy is not available");
+  mask      = vars.get_2d_mask("mask");
+  thickness = vars.get_2d_scalar("land_ice_thickness");
+  surface   = vars.get_2d_scalar("surface_altitude");
+  bed       = vars.get_2d_scalar("bedrock_altitude");
+  enthalpy  = vars.get_3d_scalar("enthalpy");
 
   if (config.get_flag("do_age")) {
-    age = dynamic_cast<IceModelVec3*>(vars.get("age"));
-    if (age == NULL) SETERRQ(grid.com, 1, "age is not available");
+    age = vars.get_3d_scalar("age");
   } else {
     age = NULL;
   }

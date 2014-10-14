@@ -83,14 +83,9 @@ PetscErrorCode PA_SeaRISE_Greenland::init(Vars &vars) {
   }
 
   // initialize pointers to fields the parameterization depends on:
-  m_surfelev = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (!m_surfelev) SETERRQ(grid.com, 1, "ERROR: surface_altitude is not available");
-
-  m_lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-  if (!m_lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
-
-  m_lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-  if (!m_lon) SETERRQ(grid.com, 1, "ERROR: longitude is not available");
+  m_surfelev = vars.get_2d_scalar("surface_altitude");
+  m_lat      = vars.get_2d_scalar("latitude");
+  m_lon      = vars.get_2d_scalar("longitude");
 
   return 0;
 }

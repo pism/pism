@@ -160,9 +160,7 @@ PetscErrorCode PSTemperatureIndex_Old::init(Vars &vars) {
 
 
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
-    lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-    if (!lat)
-      SETERRQ(grid.com, 10, "ERROR: 'latitude' is not available or is wrong type in dictionary");
+    lat = vars.get_2d_scalar("latitude");
   } else
     lat = NULL;
 
@@ -175,12 +173,8 @@ PetscErrorCode PSTemperatureIndex_Old::init(Vars &vars) {
     //FIXME: this seems not to work because config is "const"?:  config.set("pdd_std_dev",2.53);
     base_pddStdDev = 2.53;
 
-    lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-    if (!lon)
-      SETERRQ(grid.com, 11, "ERROR: 'longitude' is not available or is wrong type in dictionary");
-    usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
-    if (!usurf)
-      SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+    lon   = vars.get_2d_scalar("longitude");
+    usurf = vars.get_2d_scalar("usurf");
 
   if (faustogreve == NULL) {
     faustogreve = new FaustoGrevePDDObject_Old(grid, config);

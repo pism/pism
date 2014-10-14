@@ -79,8 +79,7 @@ PetscErrorCode POConstant::init(Vars &vars) {
                       mymeltrate); CHKERRQ(ierr);
   }
 
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (!ice_thickness) { SETERRQ(grid.com, 1, "ERROR: ice thickness is not available"); }
+  ice_thickness = vars.get_2d_scalar("land_ice_thickness");
 
   return 0;
 }

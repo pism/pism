@@ -79,8 +79,7 @@ PetscErrorCode EigenCalving::init(Vars &vars) {
 
   ierr = m_strain_rates.set(0.0); CHKERRQ(ierr);
 
-  m_mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (m_mask == NULL) SETERRQ(grid.com, 1, "mask is not available");
+  m_mask = vars.get_2d_mask("mask");
 
   return 0;
 }

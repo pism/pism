@@ -217,7 +217,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Enth3.set_attrs("model_state",
                          "ice enthalpy (includes sensible heat, latent heat, pressure)",
                          "J kg-1", ""); CHKERRQ(ierr);
-  ierr = variables.add(Enth3); CHKERRQ(ierr);
+  variables.add(Enth3);
 
   if (config.get_flag("do_cold_ice_methods")) {
     // ice temperature
@@ -225,7 +225,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = T3.set_attrs("model_state",
                         "ice temperature", "K", "land_ice_temperature"); CHKERRQ(ierr);
     T3.metadata().set_double("valid_min", 0.0);
-    ierr = variables.add(T3); CHKERRQ(ierr);
+    variables.add(T3);
 
     if (config.get_flag("do_energy") == true) {
       Enth3.metadata().set_string("pism_intent", "diagnostic");
@@ -243,46 +243,46 @@ PetscErrorCode IceModel::createVecs() {
     ierr = tau3.set_glaciological_units("years");
     tau3.write_in_glaciological_units = true;
     tau3.metadata().set_double("valid_min", 0.0);
-    ierr = variables.add(tau3); CHKERRQ(ierr);
+    variables.add(tau3);
   }
 
   // ice upper surface elevation
   ierr = ice_surface_elevation.create(grid, "usurf", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
                       "m", "surface_altitude"); CHKERRQ(ierr);
-  ierr = variables.add(ice_surface_elevation); CHKERRQ(ierr);
+  variables.add(ice_surface_elevation);
 
   // land ice thickness
   ierr = ice_thickness.create(grid, "thk", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = ice_thickness.set_attrs("model_state", "land ice thickness",
                                  "m", "land_ice_thickness"); CHKERRQ(ierr);
   ice_thickness.metadata().set_double("valid_min", 0.0);
-  ierr = variables.add(ice_thickness); CHKERRQ(ierr);
+  variables.add(ice_thickness);
 
   // bedrock surface elevation
   ierr = bed_topography.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = bed_topography.set_attrs("model_state", "bedrock surface elevation",
                                   "m", "bedrock_altitude"); CHKERRQ(ierr);
-  ierr = variables.add(bed_topography); CHKERRQ(ierr);
+  variables.add(bed_topography);
 
   if (config.get_flag("sub_groundingline")) {
     ierr = gl_mask.create(grid, "gl_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask.set_attrs("internal",
                              "fractional grounded/floating mask (floating=0, grounded=1)",
                              "", ""); CHKERRQ(ierr);
-    ierr = variables.add(gl_mask); CHKERRQ(ierr);
+    variables.add(gl_mask);
 
     ierr = gl_mask_x.create(grid, "gl_mask_x", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_x.set_attrs("internal",
                                "fractional grounded/floating mask in x-direction (floating=0, grounded=1)",
                                "", ""); CHKERRQ(ierr);
-    ierr = variables.add(gl_mask_x); CHKERRQ(ierr);
+    variables.add(gl_mask_x);
 
     ierr = gl_mask_y.create(grid, "gl_mask_y", WITHOUT_GHOSTS); CHKERRQ(ierr);
     ierr = gl_mask_y.set_attrs("internal",
                                "fractional grounded/floating mask in y-direction (floating=0, grounded=1)",
                                "", ""); CHKERRQ(ierr);
-    ierr = variables.add(gl_mask_y); CHKERRQ(ierr);
+    variables.add(gl_mask_y);
   }
 
   // grounded_dragging_floating integer mask
@@ -297,7 +297,7 @@ PetscErrorCode IceModel::createVecs() {
   vMask.metadata().set_doubles("flag_values", mask_values);
   vMask.metadata().set_string("flag_meanings",
                               "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
-  ierr = variables.add(vMask); CHKERRQ(ierr);
+  variables.add(vMask);
 
   // upward geothermal flux at bedrock surface
   ierr = geothermal_flux.create(grid, "bheatflx", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -307,7 +307,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = geothermal_flux.set_glaciological_units("mW m-2");
   geothermal_flux.write_in_glaciological_units = true;
   geothermal_flux.set_time_independent(true);
-  ierr = variables.add(geothermal_flux); CHKERRQ(ierr);
+  variables.add(geothermal_flux);
 
   // temperature seen by top of bedrock thermal layer
   ierr = bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -315,7 +315,7 @@ PetscErrorCode IceModel::createVecs() {
                               "temperature of top of bedrock thermal layer",
                               "K", ""); CHKERRQ(ierr);
   ierr = bedtoptemp.set_glaciological_units("K");
-  ierr = variables.add(bedtoptemp); CHKERRQ(ierr);
+  variables.add(bedtoptemp);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
@@ -324,7 +324,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = basal_yield_stress.set_attrs("diagnostic",
                                         "yield stress for basal till (plastic or pseudo-plastic model)",
                                         "Pa", ""); CHKERRQ(ierr);
-    ierr = variables.add(basal_yield_stress); CHKERRQ(ierr);
+    variables.add(basal_yield_stress);
   }
 
   // bedrock uplift rate
@@ -333,7 +333,7 @@ PetscErrorCode IceModel::createVecs() {
                                    "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
   ierr = bed_uplift_rate.set_glaciological_units("m year-1");
   bed_uplift_rate.write_in_glaciological_units = true;
-  ierr = variables.add(bed_uplift_rate); CHKERRQ(ierr);
+  variables.add(bed_uplift_rate);
 
   // basal melt rate
   ierr = basal_melt_rate.create(grid, "bmelt", WITHOUT_GHOSTS); CHKERRQ(ierr);
@@ -344,7 +344,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = basal_melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   basal_melt_rate.write_in_glaciological_units = true;
   basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
-  ierr = variables.add(basal_melt_rate); CHKERRQ(ierr);
+  variables.add(basal_melt_rate);
 
   // longitude
   ierr = vLongitude.create(grid, "lon", WITH_GHOSTS); CHKERRQ(ierr);
@@ -354,7 +354,7 @@ PetscErrorCode IceModel::createVecs() {
   vLongitude.metadata().set_string("grid_mapping", "");
   vLongitude.metadata().set_double("valid_min", -180.0);
   vLongitude.metadata().set_double("valid_max",  180.0);
-  ierr = variables.add(vLongitude); CHKERRQ(ierr);
+  variables.add(vLongitude);
 
   // latitude
   ierr = vLatitude.create(grid, "lat", WITH_GHOSTS); CHKERRQ(ierr); // has ghosts so that we can compute cell areas
@@ -364,14 +364,14 @@ PetscErrorCode IceModel::createVecs() {
   vLatitude.metadata().set_string("grid_mapping", "");
   vLatitude.metadata().set_double("valid_min", -90.0);
   vLatitude.metadata().set_double("valid_max",  90.0);
-  ierr = variables.add(vLatitude); CHKERRQ(ierr);
+  variables.add(vLatitude);
 
   if (config.get_flag("part_grid") == true) {
     // Href
     ierr = vHref.create(grid, "Href", WITH_GHOSTS); CHKERRQ(ierr);
     ierr = vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
                            "m", ""); CHKERRQ(ierr);
-    ierr = variables.add(vHref); CHKERRQ(ierr);
+    variables.add(vHref);
   }
 
   if (config.get_string("calving_methods").find("eigen_calving") != std::string::npos ||
@@ -424,7 +424,7 @@ PetscErrorCode IceModel::createVecs() {
     bc_mask_values[1] = 1;
     vBCMask.metadata().set_doubles("flag_values", bc_mask_values);
     vBCMask.metadata().set_string("flag_meanings", "no_data bc_condition");
-    ierr = variables.add(vBCMask); CHKERRQ(ierr);
+    variables.add(vBCMask);
 
 
     // vel_bc
@@ -442,7 +442,7 @@ PetscErrorCode IceModel::createVecs() {
       vBCvel.metadata(j).set_double("_FillValue", config.get("fill_value", "m/year", "m/s"));
     }
     //just for diagnostics...
-    ierr = variables.add(vBCvel); CHKERRQ(ierr);
+    variables.add(vBCvel);
   }
 
   // fracture density field
@@ -451,29 +451,29 @@ PetscErrorCode IceModel::createVecs() {
     ierr = vFD.set_attrs("model_state", "fracture density in ice shelf", "", ""); CHKERRQ(ierr);
     vFD.metadata().set_double("valid_max", 1.0);
     vFD.metadata().set_double("valid_min", 0.0);
-    ierr = variables.add(vFD); CHKERRQ(ierr);
+    variables.add(vFD);
 
     if (config.get_flag("write_fd_fields")) {
       ierr = vFG.create(grid, "fracture_growth_rate", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
       ierr = vFG.set_attrs("model_state", "fracture growth rate",       "1/s", ""); CHKERRQ(ierr);
       vFG.metadata().set_double("valid_min", 0.0);
-      ierr = variables.add(vFG); CHKERRQ(ierr);
+      variables.add(vFG);
 
       ierr = vFH.create(grid, "fracture_healing_rate", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
       ierr = vFH.set_attrs("model_state", "fracture healing rate",      "1/s", ""); CHKERRQ(ierr);
-      ierr = variables.add(vFH); CHKERRQ(ierr);
+      variables.add(vFH);
 
       ierr = vFE.create(grid, "fracture_flow_enhancement", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
       ierr = vFE.set_attrs("model_state", "fracture-induced flow enhancement", "", ""); CHKERRQ(ierr);
-      ierr = variables.add(vFE); CHKERRQ(ierr);
+      variables.add(vFE);
 
       ierr = vFA.create(grid, "fracture_age", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
       ierr = vFA.set_attrs("model_state", "age since fracturing",       "years", ""); CHKERRQ(ierr);
-      ierr = variables.add(vFA); CHKERRQ(ierr);
+      variables.add(vFA);
       
       ierr = vFT.create(grid, "fracture_toughness", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); 
       ierr = vFT.set_attrs("model_state", "fracture toughness", "Pa", ""); CHKERRQ(ierr);
-      ierr = variables.add(vFT); CHKERRQ(ierr);
+      variables.add(vFT);
     }
   }
 
@@ -487,7 +487,7 @@ PetscErrorCode IceModel::createVecs() {
   cell_area.set_time_independent(true);
   ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);
   cell_area.write_in_glaciological_units = true;
-  ierr = variables.add(cell_area); CHKERRQ(ierr);
+  variables.add(cell_area);
 
   // fields owned by IceModel but filled by SurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
@@ -826,7 +826,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   stdout_flags += " " + m_adaptive_timestep_reason;
 
 #if (PISM_DEBUG==1)
-  ierr = variables.check_for_nan(); CHKERRQ(ierr);
+  variables.check_for_nan();
 #endif
 
   return 0;

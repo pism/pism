@@ -82,11 +82,8 @@ printf("BEGIN PSConstantGLINT2::init()\n");
 		 "	Ice upper-surface temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"
 		 "	Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n"); CHKERRQ(ierr);
 
-	usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-	 if (!usurf) SETERRQ(grid.com, 12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
-
-	lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-	if (!lat) SETERRQ(grid.com, 1, "ERROR: latitude is not available");
+        usurf = vars.get_2d_scalar("surface_altitude");
+        lat   = vars.get_2d_scalar("latitude");
 
 	// find PISM input file to read data from:
 	ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
