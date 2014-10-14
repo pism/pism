@@ -40,6 +40,7 @@
 #define TEMPORARY_STRING_LENGTH 32768
 
 #include "PISMNC4_HDF5.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -1179,6 +1180,7 @@ void NC4_HDF5::check(int return_code) const {
   if (return_code < 0) {
     H5Eprint(H5E_DEFAULT, stderr);
     H5Eclear(H5E_DEFAULT);
+    throw RuntimeError("HDF5 error; see stderr for more");
   }
 }
 

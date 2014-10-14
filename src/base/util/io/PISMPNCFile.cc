@@ -22,6 +22,8 @@
 
 #include "PISMPNCFile.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
@@ -39,7 +41,7 @@ PNCFile::~PNCFile() {
 
 void PNCFile::check(int return_code) const {
   if (return_code != NC_NOERR) {
-    fprintf(stderr, "NC_ERR: %s\n", ncmpi_strerror(return_code));
+    throw RuntimeError(ncmpi_strerror(return_code));
   }
 }
 

@@ -20,6 +20,7 @@
 
 #include <cstdio>               // fprintf, stderr, rename, remove
 #include "pism_const.hh"
+#include "error_handling.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -58,7 +59,7 @@ int NCFile::put_att_double_impl(const std::string &variable_name, const std::str
 //! \brief Prints an error message; for debugging.
 void NCFile::check(int return_code) const {
   if (return_code != NC_NOERR) {
-    fprintf(stderr, "NC_ERR: %s\n", nc_strerror(return_code));
+    throw RuntimeError(nc_strerror(return_code));
   }
 }
 
