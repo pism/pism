@@ -154,10 +154,6 @@ PetscErrorCode SSA::allocate() {
                         "Y-component of the driving shear stress at the base of ice",
                         "Pa", "", 1); CHKERRQ(ierr);
 
-  ierr = m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = m_velocity_old.set_attrs("internal",
-                                  "old SSA velocity field; used for re-trying with a different epsilon",
-                                  "m s-1", ""); CHKERRQ(ierr);
 
   // override velocity metadata
   std::vector<std::string> long_names;
@@ -165,10 +161,9 @@ PetscErrorCode SSA::allocate() {
   long_names.push_back("SSA model ice velocity in the Y direction");
   ierr = m_velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
 
-  int dof=2, stencil_width=1;
-  ierr = grid.get_dm(dof, stencil_width, SSADA); CHKERRQ(ierr);
+  ierr = m_velocity_global.create(grid, "bar", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
-  ierr = DMCreateGlobalVector(SSADA->get(), &SSAX); CHKERRQ(ierr);
+  m_da = m_velocity_global.get_dm();
 
   {
     IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
@@ -185,11 +180,6 @@ PetscErrorCode SSA::allocate() {
 
 
 PetscErrorCode SSA::deallocate() {
-  PetscErrorCode ierr;
-
-  if (SSAX != NULL) {
-    ierr = VecDestroy(&SSAX); CHKERRQ(ierr);
-  }
 
   if (flow_law != NULL) {
     delete flow_law;

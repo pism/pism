@@ -396,6 +396,8 @@ using namespace pism;
     }
 };
 
+%ignore pism::IceModelVec3D::getInternalColumn(int,int,double const **) const;
+
 %ignore pism::IceModelVec3D::operator();
 %extend pism::IceModelVec3D
 {
@@ -458,6 +460,7 @@ using namespace pism;
 
 /* This is needed to wrap IceGrid::get_dm() */
 %shared_ptr(pism::PISMDM)
+%ignore pism::PISMDM::operator DM;
 
 %typemap(in, numinputs=0, noblock=1) pism::PISMDM::Ptr & OUTPUT (pism::PISMDM::Ptr temp) {
   $1 = &temp;

@@ -87,7 +87,7 @@ public:
 
   //! Sets the default type name.
   PetscErrorCode set_default(std::string name) {
-    if (m_models[name] == NULL) {
+    if (m_models.find(name) == m_models.end()) {
       SETERRQ1(m_grid.com, 1,"ERROR: type %s is not registered", name.c_str());
     } else {
       m_default_type = name;
@@ -138,7 +138,7 @@ public:
     // create it:
     std::vector<std::string>::iterator j = choices.begin();
 
-    if (m_models[*j] == NULL) {
+    if (m_models.find(*j) == m_models.end()) {
       PetscPrintf(m_grid.com,
                   "ERROR: %s model \"%s\" is not available.\n"
                   "  Available models:    %s\n"
@@ -154,7 +154,7 @@ public:
 
     // process remaining arguments:
     while (j != choices.end()) {
-      if (m_modifiers[*j] == NULL) {
+      if (m_modifiers.find(*j) == m_modifiers.end()) {
         PetscPrintf(m_grid.com,
                     "ERROR: %s modifier \"%s\" is not available.\n"
                     "  Available modifiers: %s\n",

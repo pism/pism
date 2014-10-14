@@ -55,9 +55,9 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
 
   m_has_ghosts = local;
   if (local) {
-    ierr = DMCreateLocalVector(m_da->get(), &m_v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(*m_da, &m_v); CHKERRQ(ierr);
   } else {
-    ierr = DMCreateGlobalVector(m_da->get(), &m_v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(*m_da, &m_v); CHKERRQ(ierr);
   }
 
   m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));

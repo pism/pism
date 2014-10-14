@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014  David Maxwell
+// Copyright (C) 2013, 2014  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 namespace pism {
 
-PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(tao::Solver tao) {
+PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(Tao tao) {
   PetscErrorCode ierr;
 
   ierr = IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>::connect(tao); CHKERRQ(ierr);
@@ -35,7 +35,7 @@ PetscErrorCode IP_SSAHardavTaoTikhonovProblem::connect(tao::Solver tao) {
 }
 
 
-PetscErrorCode IP_SSAHardavTaoTikhonovProblem::getVariableBounds(tao::Solver /*tao*/, Vec lo, Vec hi) {
+PetscErrorCode IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec hi) {
   PetscErrorCode ierr;
   double zeta_min, zeta_max, hardav_min, hardav_max;
 

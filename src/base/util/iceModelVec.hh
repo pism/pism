@@ -168,8 +168,8 @@ public:
   IceGrid* get_grid() const { return grid; }
   unsigned int get_ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
-  unsigned int get_dof() const { return m_dof; }
-  unsigned int get_stencil_width() const { return m_da_stencil_width; }
+  unsigned int get_ndof() const { return m_dof; }
+  unsigned int get_stencil_width() const;
   int nlevels() const { return m_n_levels; }
   std::vector<double>  get_levels() const { return zlevels; }
   bool has_ghosts() const { return m_has_ghosts; }
@@ -181,11 +181,12 @@ public:
   virtual PetscErrorCode  squareroot();
   virtual PetscErrorCode  shift(double alpha);
   virtual PetscErrorCode  scale(double alpha);
-  PetscErrorCode copy_to_vec(Vec destination) const;
+  PetscErrorCode copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const;
   PetscErrorCode copy_from_vec(Vec source);
   virtual PetscErrorCode copy_to(IceModelVec &destination) const;
   PetscErrorCode copy_from(const IceModelVec &source);
-  virtual Vec get_vec();
+  Vec get_vec();
+  PISMDM::Ptr get_dm() const;
   virtual PetscErrorCode  has_nan() const;
   virtual PetscErrorCode  set_name(const std::string &name, int component = 0);
   virtual std::string name() const;
@@ -266,6 +267,11 @@ protected:
   void check_array_indices(int i, int j, unsigned int k) const;
   virtual PetscErrorCode reset_attrs(unsigned int N);
   NormType int_to_normtype(int input) const;
+
+  PetscErrorCode get_dof(PISMDM::Ptr da_result, Vec result, unsigned int n,
+                         unsigned int count=1) const;
+  PetscErrorCode set_dof(PISMDM::Ptr da_source, Vec source, unsigned int n,
+                         unsigned int count=1);
 private:
   // disable copy constructor and the assignment operator:
   IceModelVec(const IceModelVec &other);
@@ -353,8 +359,6 @@ protected:
   virtual PetscErrorCode regrid_impl(const PIO &nc, RegriddingFlag flag,
                                      double default_value = 0.0);
   virtual PetscErrorCode write_impl(const PIO &nc, IO_Type nctype = PISM_DOUBLE) const;
-  PetscErrorCode get_component(unsigned int n, Vec result) const;
-  PetscErrorCode set_component(unsigned int n, Vec source);
 };
 
 /** A class for storing and accessing scalar 2D fields.
@@ -368,8 +372,9 @@ public:
   using IceModelVec2::create;
   virtual PetscErrorCode  create(IceGrid &my_grid, const std::string &my_name,
                                  IceModelVecKind ghostedp, int width = 1);
-  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) const;
-  virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
+  PetscErrorCode allocate_proc0_copy(Vec &result) const;
+  PetscErrorCode put_on_proc0(Vec onp0) const;
+  PetscErrorCode get_from_proc0(Vec onp0);
   virtual PetscErrorCode  copy_to(IceModelVec &destination) const;
   PetscErrorCode  get_array(double** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
@@ -388,7 +393,6 @@ public:
   virtual double diff_y_stagN(int i, int j) const;
   virtual double diff_x_p(int i, int j) const;
   virtual double diff_y_p(int i, int j) const;
-  virtual PetscErrorCode view_matlab(PetscViewer my_viewer) const;
   virtual PetscErrorCode has_nan() const;
 
   //! Provides access (both read and write) to the internal double array.

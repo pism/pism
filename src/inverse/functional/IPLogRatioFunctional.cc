@@ -57,7 +57,7 @@ PetscErrorCode IPLogRatioFunctional::normalize(double scale) {
     value += w*v*v;
   }
 
-  ierr = GlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
 
   return 0;
 }
@@ -97,7 +97,7 @@ PetscErrorCode IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  
 
   value /= m_normalization;
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }

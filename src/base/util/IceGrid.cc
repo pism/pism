@@ -45,6 +45,10 @@ DM PISMDM::get() const {
   return m_dm;
 }
 
+PISMDM::operator DM() const {
+  return m_dm;
+}
+
 IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   : config(conf), com(c), m_unit_system(config.get_unit_system()) {
 
@@ -429,8 +433,12 @@ PetscErrorCode IceGrid::allocate() {
     PISMEnd();
   }
 
+  // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
+  // be needed for I/O operations)
+  ierr = this->get_dm(1, 0, m_dm_scalar_global); CHKERRQ(ierr);
+
   DMDALocalInfo info;
-  ierr = DMDAGetLocalInfo(tmp->get(), &info); CHKERRQ(ierr);
+  ierr = DMDAGetLocalInfo(*m_dm_scalar_global, &info); CHKERRQ(ierr);
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
@@ -722,7 +730,7 @@ PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title,
   return 0;
 }
 
-//! \brief Computes indices of a grid point to the lower left of the point (x,y).
+//! \brief Computes indices of grid points to the lower left and upper right from (X,Y).
 /*!
  * \code
  * 3       2
@@ -733,38 +741,60 @@ PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title,
  * 0       1
  * \endcode
  *
- * If "+" is the point (X,Y), this method returns indices of the grid point
- * "0".
+ * If "+" is the point (X,Y), then (i_left, j_bottom) corresponds to
+ * point "0" and (i_right, j_top) corresponds to point "2".
  *
- * Does not if the resulting i and j are valid or in the current processor's
- * domain.
+ * Does not check if the resulting indexes are in the current
+ * processor's domain. Ensures that computed indexes are within the
+ * grid.
  */
 void IceGrid::compute_point_neighbors(double X, double Y,
-                                      int &i, int &j) {
-  i = (int)floor((X - x[0])/dx);
-  j = (int)floor((Y - y[0])/dy);
+                                      int &i_left, int &i_right,
+                                      int &j_bottom, int &j_top) {
+  i_left = (int)floor((X - x[0])/dx);
+  j_bottom = (int)floor((Y - y[0])/dy);
+
+  i_right = i_left + 1;
+  j_top = j_bottom + 1;
+
+  if (i_left < 0) {
+    i_left = i_right;
+  }
+
+  if (i_right > Mx - 1) {
+    i_right = i_left;
+  }
+
+  if (j_bottom < 0) {
+    j_bottom = j_top;
+  }
+
+  if (j_top > My - 1) {
+    j_top = j_bottom;
+  }
 }
 
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
 std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
-  std::vector<double> result;
-  int i,j;
-  double alpha, beta;
+  int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
+  // these values (zeros) are used when interpolation is impossible
+  double alpha = 0.0, beta = 0.0;
 
-  compute_point_neighbors(X, Y, i, j);
+  compute_point_neighbors(X, Y, i_left, i_right, j_bottom, j_top);
 
-  result.resize(4);
+  if (i_left != i_right) {
+    assert(x[i_right] - x[i_left] != 0.0);
+    alpha = (X - x[i_left]) / (x[i_right] - x[i_left]);
+  }
 
-  if ((i >= 0) && (i < Mx))
-    alpha = (X - x[i]) / dx;
-  else alpha = 0;
+  if (j_bottom != j_top) {
+    assert(y[j_top] - y[j_bottom] != 0.0);
+    beta  = (Y - x[j_bottom]) / (y[j_top] - y[j_bottom]);
+  }
 
-  if ((i >= 0) && (j < My))
-    beta  = (Y - x[j]) / dy;
-  else beta = 0;
-
+  std::vector<double> result(4);
   result[0] = alpha * beta;
   result[1] = (1 - alpha) * beta;
   result[2] = (1 - alpha) * (1 - beta);

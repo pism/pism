@@ -188,7 +188,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
                                                                        IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
 
-  if (result.get_dof() != 2)
+  if (result.get_ndof() != 2)
     SETERRQ(grid.com, 1, "result.dof() == 2 is required");
 
   IceModelVec::AccessList list;
@@ -268,7 +268,7 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
                                                          IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
 
-  if (result.get_dof() != 3)
+  if (result.get_ndof() != 3)
     SETERRQ(grid.com, 1, "result.get_dof() == 3 is required");
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285

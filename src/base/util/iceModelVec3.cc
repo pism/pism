@@ -62,9 +62,9 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
 
   if (m_has_ghosts == true) {
-    ierr = DMCreateLocalVector(m_da->get(), &m_v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(*m_da, &m_v); CHKERRQ(ierr);
   } else {
-    ierr = DMCreateGlobalVector(m_da->get(), &m_v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(*m_da, &m_v); CHKERRQ(ierr);
   }
 
   m_name = my_name;
@@ -393,12 +393,12 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
   ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
 
   IceModelVec::AccessList list(*this);
-  ierr = DMDAVecGetArray(da2->get(), gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DMDAVecGetArray(*da2, gslice, &slice_val); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     slice_val[i][j] = getValZ(i,j,z);
   }
-  ierr = DMDAVecRestoreArray(da2->get(), gslice, &slice_val); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArray(*da2, gslice, &slice_val); CHKERRQ(ierr);
 
 
   return 0;
@@ -485,14 +485,14 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, double fill_value) {
 
   // Fill the new layer:
   double ***a;
-  ierr = DMDAVecGetArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &a); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (unsigned int k = old_Mz; k < m_n_levels; k++)
       a[i][j][k] = fill_value;
   }
-  ierr = DMDAVecRestoreArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &a); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
   // only happens when the grid is extended it should not matter.
@@ -513,7 +513,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
 
   // Fill the new layer:
   double ***a, **filler;
-  ierr = DMDAVecGetArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &a); CHKERRQ(ierr);
   ierr = fill_values.get_array(filler); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -521,7 +521,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
     for (unsigned int k = old_Mz; k < m_n_levels; k++)
       a[i][j][k] = filler[i][j];
   }
-  ierr = DMDAVecRestoreArrayDOF(m_da->get(), m_v, &a); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &a); CHKERRQ(ierr);
   ierr = fill_values.end_access(); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
@@ -549,24 +549,24 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, da_new); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
-    ierr = DMCreateLocalVector(da_new->get(), &v_new); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(*da_new, &v_new); CHKERRQ(ierr);
   } else {
-    ierr = DMCreateGlobalVector(da_new->get(), &v_new); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(*da_new, &v_new); CHKERRQ(ierr);
   }
 
   // Copy all the values from the old Vec to the new one:
   double ***a_new;
   double ***a_old;
-  ierr = DMDAVecGetArrayDOF(m_da->get(), m_v, &a_old); CHKERRQ(ierr);
-  ierr = DMDAVecGetArrayDOF(da_new->get(), v_new, &a_new); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &a_old); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(*da_new, v_new, &a_new); CHKERRQ(ierr);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int k=0; k < old_Mz; k++)
       a_new[i][j][k] = a_old[i][j][k];
   }
-  ierr = DMDAVecRestoreArrayDOF(m_da->get(), m_v, &a_old); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArrayDOF(da_new->get(), v_new, &a_new); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &a_old); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*da_new, v_new, &a_new); CHKERRQ(ierr);
 
   // Deallocate old Vec:
   ierr = VecDestroy(&m_v); CHKERRQ(ierr);

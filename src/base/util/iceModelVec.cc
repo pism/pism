@@ -153,8 +153,8 @@ PetscErrorCode IceModelVec::range(double &min, double &max) const {
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax;
-    ierr = GlobalMin(&my_min, &gmin, grid->com); CHKERRQ(ierr);
-    ierr = GlobalMax(&my_max, &gmax, grid->com); CHKERRQ(ierr);
+    ierr = GlobalMin(grid->com, &my_min,  &gmin); CHKERRQ(ierr);
+    ierr = GlobalMax(grid->com, &my_max,  &gmax); CHKERRQ(ierr);
     min = gmin;
     max = gmax;
   } else {
@@ -211,13 +211,13 @@ PetscErrorCode IceModelVec::norm(int n, double &out) const {
          "IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
          m_name.c_str());
     } else if (n == NORM_1) {
-      ierr = GlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalSum(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
     } else if (n == NORM_2) {
       my_norm = PetscSqr(my_norm);  // undo sqrt in VecNorm before sum
-      ierr = GlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalSum(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
       gnorm = sqrt(gnorm);
     } else if (n == NORM_INFINITY) {
-      ierr = GlobalMax(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
+      ierr = GlobalMax(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
     } else {
       SETERRQ1(grid->com, 2, "IceModelVec::norm(...): unknown norm type (called as %s.norm(...))\n",
          m_name.c_str());
@@ -277,34 +277,98 @@ PetscErrorCode IceModelVec::scale(double alpha) {
 //! Copies v to a global vector 'destination'. Ghost points are discarded.
 /*! This is potentially dangerous: make sure that `destination` has the same
     dimensions as the current IceModelVec.
+
+    DMLocalToGlobalBegin/End is broken in PETSc 3.5, so we roll our
+    own.
  */
-PetscErrorCode  IceModelVec::copy_to_vec(Vec destination) const {
+PetscErrorCode  IceModelVec::copy_to_vec(PISMDM::Ptr destination_da, Vec destination) const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  if (m_has_ghosts) {
-    ierr = DMLocalToGlobalBegin(m_da->get(), m_v, INSERT_VALUES, destination); CHKERRQ(ierr);
-    ierr = DMLocalToGlobalEnd(m_da->get(), m_v, INSERT_VALUES, destination); CHKERRQ(ierr);
-  } else {
-    ierr = VecCopy(m_v, destination); CHKERRQ(ierr);
-  }
+  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // m_n_levels == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and m_n_levels corresponds to dof of the underlying PETSc
+  // DM object. So we want the bigger of the two numbers here.
+  unsigned int N = std::max(m_dof, m_n_levels);
+
+  ierr = this->get_dof(destination_da, destination, 0, N); CHKERRQ(ierr);
+
   return 0;
 }
 
 //! \brief Copies data from a Vec `source` to this IceModelVec. Updates ghost
 //! points if necessary.
+/*!
+  Unlike DMLocalToGlobalBegin/End, DMGlobalToLocalBegin/End is *not*
+  broken in PETSc 3.5 (and ealier), so we can use it here.
+ */
 PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
   if (m_has_ghosts) {
-    ierr =   DMGlobalToLocalBegin(m_da->get(), source, INSERT_VALUES, m_v);  CHKERRQ(ierr);
-    ierr =     DMGlobalToLocalEnd(m_da->get(), source, INSERT_VALUES, m_v);  CHKERRQ(ierr);
+    ierr =   DMGlobalToLocalBegin(*m_da, source, INSERT_VALUES, m_v);  CHKERRQ(ierr);
+    ierr =     DMGlobalToLocalEnd(*m_da, source, INSERT_VALUES, m_v);  CHKERRQ(ierr);
   } else {
     ierr = VecCopy(source, m_v); CHKERRQ(ierr);
   }
 
   inc_state_counter();          // mark as modified
+  return 0;
+}
+
+
+PetscErrorCode IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
+                                    unsigned int start, unsigned int count) const {
+  PetscErrorCode ierr;
+  void *tmp_res = NULL, *tmp_v = NULL;
+
+  if (start >= m_dof)
+    SETERRQ(grid->com, 1, "invalid argument (start)");
+
+  ierr = DMDAVecGetArrayDOF(*da_result, result, &tmp_res); CHKERRQ(ierr);
+  double ***result_a = static_cast<double***>(tmp_res);
+
+  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+  double ***source_a = static_cast<double***>(tmp_v);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
+                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
+  }
+
+  ierr = DMDAVecRestoreArray(*da_result, result, &tmp_res); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
+                                    unsigned int start, unsigned int count) {
+  PetscErrorCode ierr;
+  void *tmp_src = NULL, *tmp_v = NULL;
+
+  if (start >= m_dof)
+    SETERRQ(grid->com, 1, "invalid argument (start)");
+
+  ierr = DMDAVecGetArrayDOF(*da_source, source, &tmp_src); CHKERRQ(ierr);
+  double ***source_a = static_cast<double***>(tmp_src);
+
+  ierr = DMDAVecGetArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+  double ***result_a = static_cast<double***>(tmp_v);
+
+  for (Points p(*grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
+                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
+  }
+
+  ierr = DMDAVecRestoreArray(*da_source, source, &tmp_src); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &tmp_v); CHKERRQ(ierr);
+
+  inc_state_counter();          // mark as modified
+
   return 0;
 }
 
@@ -327,8 +391,20 @@ PetscErrorCode  IceModelVec::copy_from(const IceModelVec &source) {
   return 0;
 }
 
+unsigned int IceModelVec::get_stencil_width() const {
+  if (m_has_ghosts) {
+    return m_da_stencil_width;
+  } else {
+    return 0;
+  }
+}
+
 Vec IceModelVec::get_vec() {
   return m_v;
+}
+
+PISMDM::Ptr IceModelVec::get_dm() const {
+  return m_da;
 }
 
 //! Sets the variable name to `name` and resets metadata.
@@ -441,14 +517,14 @@ PetscErrorCode IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1.");
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
+    ierr = DMGetGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).regrid(nc, flag, m_report_range, default_value, tmp); CHKERRQ(ierr);
 
-    ierr = DMGlobalToLocalBegin(m_da->get(), tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(m_da->get(), tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(*m_da, tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(*m_da, tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
 
-    ierr = DMRestoreGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
+    ierr = DMRestoreGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
   } else {
     ierr = metadata(0).regrid(nc, flag, m_report_range, default_value, m_v); CHKERRQ(ierr);
   }
@@ -469,14 +545,14 @@ PetscErrorCode IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1.");
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
+    ierr = DMGetGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).read(nc, time, tmp); CHKERRQ(ierr);
 
-    ierr = DMGlobalToLocalBegin(m_da->get(), tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(m_da->get(), tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(*m_da, tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(*m_da, tmp, INSERT_VALUES, m_v); CHKERRQ(ierr);
 
-    ierr = DMRestoreGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
+    ierr = DMRestoreGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
   } else {
     ierr = metadata(0).read(nc, time, m_v); CHKERRQ(ierr);
   }
@@ -539,13 +615,13 @@ PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
     SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1");
 
   if (m_has_ghosts) {
-    ierr = DMGetGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
+    ierr = DMGetGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
 
-    ierr = this->copy_to_vec(tmp); CHKERRQ(ierr);
+    ierr = this->copy_to_vec(m_da, tmp); CHKERRQ(ierr);
 
     ierr = metadata(0).write(nc, nctype, write_in_glaciological_units, tmp); CHKERRQ(ierr);
 
-    ierr = DMRestoreGlobalVector(m_da->get(), &tmp); CHKERRQ(ierr);
+    ierr = DMRestoreGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
   } else {
     ierr = metadata(0).write(nc, nctype, write_in_glaciological_units, m_v); CHKERRQ(ierr);
   }
@@ -606,9 +682,9 @@ PetscErrorCode  IceModelVec::begin_access() const {
   if (m_access_counter == 0) {
 
     if (begin_end_access_use_dof == true) {
-      ierr = DMDAVecGetArrayDOF(m_da->get(), m_v, &array); CHKERRQ(ierr);
+      ierr = DMDAVecGetArrayDOF(*m_da, m_v, &array); CHKERRQ(ierr);
     } else {
-      ierr = DMDAVecGetArray(m_da->get(), m_v, &array); CHKERRQ(ierr);
+      ierr = DMDAVecGetArray(*m_da, m_v, &array); CHKERRQ(ierr);
     }
   }
 
@@ -633,10 +709,10 @@ PetscErrorCode  IceModelVec::end_access() const {
   m_access_counter--;
   if (m_access_counter == 0) {
     if (begin_end_access_use_dof == true) {
-      ierr = DMDAVecRestoreArrayDOF(m_da->get(), m_v, &array);
+      ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &array);
       CHKERRQ(ierr);
     } else {
-      ierr = DMDAVecRestoreArray(m_da->get(), m_v, &array); CHKERRQ(ierr);
+      ierr = DMDAVecRestoreArray(*m_da, m_v, &array); CHKERRQ(ierr);
     }
     array = NULL;
   }
@@ -652,11 +728,11 @@ PetscErrorCode  IceModelVec::update_ghosts() {
 
   assert(m_v != NULL);
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDALocalToLocalBegin(m_da->get(), m_v, INSERT_VALUES, m_v);  CHKERRQ(ierr);
-  ierr = DMDALocalToLocalEnd(m_da->get(), m_v, INSERT_VALUES, m_v); CHKERRQ(ierr);
+  ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);  CHKERRQ(ierr);
+  ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v); CHKERRQ(ierr);
 #else
-  ierr = DMLocalToLocalBegin(m_da->get(), m_v, INSERT_VALUES, m_v);  CHKERRQ(ierr);
-  ierr = DMLocalToLocalEnd(m_da->get(), m_v, INSERT_VALUES, m_v); CHKERRQ(ierr);
+  ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, m_v);  CHKERRQ(ierr);
+  ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, m_v); CHKERRQ(ierr);
 #endif
   return 0;
 }
@@ -665,33 +741,26 @@ PetscErrorCode  IceModelVec::update_ghosts() {
 PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) const {
   PetscErrorCode ierr;
 
+  // Make sure it is allocated:
   assert(m_v != NULL);
+  // Make sure "destination" has ghosts to update.
+  assert(destination.m_has_ghosts == true);
 
   if (m_has_ghosts == true && destination.m_has_ghosts == true) {
 #if PETSC_VERSION_LT(3,5,0)
-    ierr = DMDALocalToLocalBegin(m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
-    ierr = DMDALocalToLocalEnd(m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
+    ierr = DMDALocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
+    ierr = DMDALocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
 #else
-    ierr = DMLocalToLocalBegin(m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
-    ierr = DMLocalToLocalEnd(m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
+    ierr = DMLocalToLocalBegin(*m_da, m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
+    ierr = DMLocalToLocalEnd(*m_da, m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
 #endif
     return 0;
   }
 
-  if (m_has_ghosts == true && destination.m_has_ghosts == false) {
-    ierr = this->copy_to_vec(destination.m_v); CHKERRQ(ierr);
-    return 0;
-  }
-
   if (m_has_ghosts == false && destination.m_has_ghosts == true) {
-    ierr = DMGlobalToLocalBegin(destination.m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
-    ierr = DMGlobalToLocalEnd(destination.m_da->get(), m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
+    ierr = DMGlobalToLocalBegin(*destination.m_da, m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
+    ierr = DMGlobalToLocalEnd(*destination.m_da, m_v, INSERT_VALUES, destination.m_v);  CHKERRQ(ierr);
     return 0;
-  }
-
-  if (m_has_ghosts == false && destination.m_has_ghosts == false) {
-    SETERRQ2(grid->com, 1, "makes no sense to communicate ghosts for two GLOBAL IceModelVecs!"
-             " (name1='%s', name2='%s')", m_name.c_str(), destination.m_name.c_str());
   }
 
   destination.inc_state_counter();          // mark as modified
@@ -728,12 +797,17 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   if (m_has_ghosts) {
     ghost_width = m_da_stencil_width;
   }
+  // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
+  // m_n_levels == 1. For 3D fields, m_dof == 1 (all 3D fields are
+  // scalar) and m_n_levels corresponds to dof of the underlying PETSc
+  // DM object. So we want the bigger of the two numbers here.
+  unsigned int N = std::max(m_dof, m_n_levels);
 
   bool out_of_range = (i < grid->xs - ghost_width) ||
     (i > grid->xs + grid->xm + ghost_width) ||
     (j < grid->ys - ghost_width) ||
     (j > grid->ys + grid->ym + ghost_width) ||
-    (k >= m_dof);
+    (k >= N);
 
   assert(out_of_range == false);
 
@@ -801,7 +875,7 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
   ierr = VecStrideNormAll(m_v, type, &norm_result[0]); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
-    // needs a reduce operation; use GlobalMax if NORM_INFINITY,
+    // needs a reduce operation; use GlobalMax() if NORM_INFINITY,
     //   otherwise GlobalSum; carefully in NORM_2 case
     if (n == NORM_1_AND_2) {
       SETERRQ1(grid->com, 1, 
@@ -810,20 +884,20 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
     } else if (n == NORM_1) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
-        ierr = GlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalSum(grid->com, &norm_result[k], &result[k]); CHKERRQ(ierr);
       }
 
     } else if (n == NORM_2) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
         norm_result[k] = PetscSqr(norm_result[k]);  // undo sqrt in VecNorm before sum
-        ierr = GlobalSum(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalSum(grid->com, &norm_result[k], &result[k]); CHKERRQ(ierr);
         result[k] = sqrt(result[k]);
       }
 
     } else if (n == NORM_INFINITY) {
       for (unsigned int k = 0; k < m_dof; ++k) {
-        ierr = GlobalMax(&norm_result[k], &result[k], grid->com); CHKERRQ(ierr);
+        ierr = GlobalMax(grid->com, &norm_result[k], &result[k]); CHKERRQ(ierr);
       }
     } else {
       SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))\n",

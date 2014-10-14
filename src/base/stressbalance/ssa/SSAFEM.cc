@@ -66,24 +66,24 @@ PetscErrorCode SSAFEM::allocate_fem() {
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
   // methods via SSAFEFunction and SSAFEJ
-  m_callback_data.da = SSADA->get();
+  m_callback_data.da = *m_da;
   m_callback_data.ssa = this;
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDASNESSetFunctionLocal(SSADA->get(), INSERT_VALUES,
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
                                   (DMDASNESFunctionLocal)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(SSADA->get(),
+  ierr = DMDASNESSetJacobianLocal(*m_da,
                                   (DMDASNESJacobianLocal)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
 #else
-  ierr = DMDASNESSetFunctionLocal(SSADA->get(), INSERT_VALUES,
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
                                   (DMDASNESFunction)SSAFEFunction, &m_callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(SSADA->get(),
+  ierr = DMDASNESSetJacobianLocal(*m_da,
                                   (DMDASNESJacobian)SSAFEJacobian, &m_callback_data); CHKERRQ(ierr);
 #endif
 
-  ierr = DMSetMatType(SSADA->get(), "baij"); CHKERRQ(ierr);
-  ierr = DMSetApplicationContext(SSADA->get(), &m_callback_data); CHKERRQ(ierr);
+  ierr = DMSetMatType(*m_da, "baij"); CHKERRQ(ierr);
+  ierr = DMSetApplicationContext(*m_da, &m_callback_data); CHKERRQ(ierr);
 
-  ierr = SNESSetDM(m_snes, SSADA->get()); CHKERRQ(ierr);
+  ierr = SNESSetDM(m_snes, *m_da); CHKERRQ(ierr);
 
   // Default of maximum 200 iterations; possibly overridded by commandline
   int snes_max_it = 200;
@@ -127,7 +127,7 @@ PetscErrorCode SSAFEM::init(Vars &vars) {
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears SSAX.
 
-  ierr = m_velocity.copy_to_vec(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to(m_velocity_global); CHKERRQ(ierr);
 
   // Store coefficient data at the quadrature points.
   ierr = cacheQuadPtValues(); CHKERRQ(ierr);
@@ -217,7 +217,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     ierr = SNESView(m_snes, viewer); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector before SSASolve_FE\n");
              CHKERRQ(ierr);
-    ierr = VecView(SSAX, viewer); CHKERRQ(ierr);
+    ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   }
 
@@ -226,7 +226,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     stdout_ssa = "  SSA: ";
 
   // Solve:
-  ierr = SNESSolve(m_snes, NULL, SSAX); CHKERRQ(ierr);
+  ierr = SNESSolve(m_snes, NULL, m_velocity_global.get_vec()); CHKERRQ(ierr);
 
   // See if it worked.
   SNESConvergedReason snes_reason;
@@ -237,7 +237,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   }
 
   // Extract the solution back from SSAX to velocity and communicate.
-  ierr = m_velocity.copy_from_vec(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity_global.copy_to(m_velocity); CHKERRQ(ierr);
   ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL, "-ssa_view_solution", &flg); CHKERRQ(ierr);
@@ -245,7 +245,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     ierr = PetscViewerASCIIOpen(grid.com, filename, &viewer); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
              CHKERRQ(ierr);
-    ierr = VecView(SSAX, viewer); CHKERRQ(ierr);
+    ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   }
   return 0;

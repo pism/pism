@@ -54,18 +54,13 @@ protected:
   PetscErrorCode allocate();
   PetscErrorCode deallocate();
 
-  PetscErrorCode transfer_to_proc0();
-  PetscErrorCode transfer_from_proc0();
-
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
   virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
   
-  Vec m_g2, m_g2natural;  //!< global Vecs used to transfer data to/from processor 0.
-  VecScatter m_scatter; //!< VecScatter used to transfer data to/from processor 0.
+  IceModelVec2S m_iceberg_mask;
   Vec m_mask_p0;
-  PISMDM::Ptr m_da2;
 
   IceModelVec2Int *m_bcflag;
 };

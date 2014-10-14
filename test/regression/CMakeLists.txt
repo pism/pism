@@ -146,7 +146,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
         set (Pism_HAS_SIPLE ${IMPORT_SIPLE_ERRCODE} EQUAL 0)
 
-        if( Pism_HAS_SIPLE OR Pism_USE_TAO)
+        if(Pism_HAS_SIPLE OR Pism_USE_TAO)
           # Copy over commonly used files
           foreach (FILE
               ${PROJECT_SOURCE_DIR}/examples/inverse/make_synth_ssa.py
@@ -168,6 +168,7 @@ if(Pism_BUILD_PYTHON_BINDINGS)
         endif()
 
         if (Pism_USE_TAO)
+
           message (STATUS "Enabling regression tests that use TAO")
 
           pism_python_test (simple_inversion_test_tikhonov  inverse/tiny_tikhonov_lmvm.sh)

@@ -126,6 +126,8 @@ PetscErrorCode IceModel::dumpToFile(const std::string &filename) {
   PetscErrorCode ierr;
   PIO nc(grid, config.get_string("output_format"));
 
+  grid.profiling.begin("model state dump");
+
   // Prepare the file
   std::string time_name = config.get_string("time_dimension_name");
   ierr = nc.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
@@ -139,6 +141,8 @@ PetscErrorCode IceModel::dumpToFile(const std::string &filename) {
   ierr = write_model_state(nc);  CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
+
+  grid.profiling.end("model state dump");
 
   return 0;
 }
