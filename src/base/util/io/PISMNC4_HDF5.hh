@@ -113,7 +113,7 @@ protected:
   virtual int integer_open_mode(IO_Mode input) const;
   virtual void check(int return_code) const;
 
-  hid_t file_id;
+  hid_t m_hdf5_file_id;
 };
 
 } // end of namespace pism

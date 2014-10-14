@@ -59,9 +59,9 @@ int PNCFile::open(const std::string &fname, IO_Mode mode) {
   m_filename = fname;
 
   int nc_mode = integer_open_mode(mode);
-  stat = ncmpi_open(com, m_filename.c_str(), nc_mode, mpi_info, &ncid); check(stat);
+  stat = ncmpi_open(m_com, m_filename.c_str(), nc_mode, mpi_info, &m_file_id); check(stat);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return stat;
 }
@@ -74,18 +74,18 @@ int PNCFile::create(const std::string &fname) {
 
   m_filename = fname;
 
-  stat = ncmpi_create(com, m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
-                      mpi_info, &ncid); check(stat);
-  define_mode = true;
+  stat = ncmpi_create(m_com, m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET,
+                      mpi_info, &m_file_id); check(stat);
+  m_define_mode = true;
 
   return stat;
 }
 
 
 int PNCFile::close() {
-  int stat = ncmpi_close(ncid); check(stat);
+  int stat = ncmpi_close(m_file_id); check(stat);
 
-  ncid = -1;
+  m_file_id = -1;
 
   m_filename.clear();
 
@@ -95,12 +95,12 @@ int PNCFile::close() {
 
 int PNCFile::enddef() const {
 
-  if (define_mode == false)
+  if (m_define_mode == false)
     return 0;
 
-  int stat = ncmpi_enddef(ncid); check(stat);
+  int stat = ncmpi_enddef(m_file_id); check(stat);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return stat;
 }
@@ -108,12 +108,12 @@ int PNCFile::enddef() const {
 
 int PNCFile::redef() const {
 
-  if (define_mode == true)
+  if (m_define_mode == true)
     return 0;
 
-  int stat = ncmpi_redef(ncid); check(stat);
+  int stat = ncmpi_redef(m_file_id); check(stat);
 
-  define_mode = true;
+  m_define_mode = true;
 
   return stat;
 }
@@ -122,7 +122,7 @@ int PNCFile::redef() const {
 int PNCFile::def_dim(const std::string &name, size_t length) const {
   int dimid = 0, stat;
 
-  stat = ncmpi_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
+  stat = ncmpi_def_dim(m_file_id, name.c_str(), length, &dimid); check(stat);
 
   return stat;
 }
@@ -131,7 +131,7 @@ int PNCFile::def_dim(const std::string &name, size_t length) const {
 int PNCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
   int tmp, stat;
 
-  stat = ncmpi_inq_dimid(ncid, dimension_name.c_str(), &tmp);
+  stat = ncmpi_inq_dimid(m_file_id, dimension_name.c_str(), &tmp);
 
   if (stat == NC_NOERR) {
     exists = true;
@@ -147,9 +147,9 @@ int PNCFile::inq_dimlen(const std::string &dimension_name, unsigned int &result)
   int stat, dimid = -1;
   MPI_Offset len;
 
-  stat = ncmpi_inq_dimid(ncid, dimension_name.c_str(), &dimid);
+  stat = ncmpi_inq_dimid(m_file_id, dimension_name.c_str(), &dimid);
 
-  stat = ncmpi_inq_dimlen(ncid, dimid, &len); check(stat);
+  stat = ncmpi_inq_dimlen(m_file_id, dimid, &len); check(stat);
 
   result = static_cast<unsigned int>(len);
 
@@ -161,12 +161,12 @@ int PNCFile::inq_unlimdim(std::string &result) const {
   int stat, dimid;
   char dimname[NC_MAX_NAME];
 
-  stat = ncmpi_inq_unlimdim(ncid, &dimid); check(stat);
+  stat = ncmpi_inq_unlimdim(m_file_id, &dimid); check(stat);
 
   if (dimid == -1) {
     result.clear();
   } else {
-    stat = ncmpi_inq_dimname(ncid, dimid, dimname); check(stat);
+    stat = ncmpi_inq_dimname(m_file_id, dimid, dimname); check(stat);
 
     result = dimname;
   }
@@ -179,7 +179,7 @@ int PNCFile::inq_dimname(int j, std::string &result) const {
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
 
-  stat = ncmpi_inq_dimname(ncid, j, dimname); check(stat);
+  stat = ncmpi_inq_dimname(m_file_id, j, dimname); check(stat);
 
   result = dimname;
 
@@ -190,7 +190,7 @@ int PNCFile::inq_dimname(int j, std::string &result) const {
 int PNCFile::inq_ndims(int &result) const {
   int stat;
 
-  stat = ncmpi_inq_ndims(ncid, &result); check(stat);
+  stat = ncmpi_inq_ndims(m_file_id, &result); check(stat);
 
   return stat;
 }
@@ -202,11 +202,11 @@ int PNCFile::def_var(const std::string &name, IO_Type nctype, const std::vector<
   std::vector<std::string>::const_iterator j;
   for (j = dims.begin(); j != dims.end(); ++j) {
     int dimid = -1;
-    stat = ncmpi_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
+    stat = ncmpi_inq_dimid(m_file_id, j->c_str(), &dimid); check(stat);
     dimids.push_back(dimid);
   }
 
-  stat = ncmpi_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
+  stat = ncmpi_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
                        static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
 
 #if (PISM_DEBUG==1)
@@ -267,7 +267,7 @@ int PNCFile::put_varm_double(const std::string &variable_name,
 int PNCFile::inq_nvars(int &result) const {
   int stat;
 
-  stat = ncmpi_inq_nvars(ncid, &result); check(stat);
+  stat = ncmpi_inq_nvars(m_file_id, &result); check(stat);
 
   return stat;
 }
@@ -277,9 +277,9 @@ int PNCFile::inq_vardimid(const std::string &variable_name, std::vector<std::str
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
-  stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
-  stat = ncmpi_inq_varndims(ncid, varid, &ndims); check(stat);
+  stat = ncmpi_inq_varndims(m_file_id, varid, &ndims); check(stat);
 
   if (ndims == 0) {
     result.clear();
@@ -289,13 +289,13 @@ int PNCFile::inq_vardimid(const std::string &variable_name, std::vector<std::str
   result.resize(ndims);
   dimids.resize(ndims);
 
-  stat = ncmpi_inq_vardimid(ncid, varid, &dimids[0]); check(stat);
+  stat = ncmpi_inq_vardimid(m_file_id, varid, &dimids[0]); check(stat);
 
   for (int k = 0; k < ndims; ++k) {
     char name[NC_MAX_NAME];
     memset(name, 0, NC_MAX_NAME);
 
-    stat = ncmpi_inq_dimname(ncid, dimids[k], name); check(stat);
+    stat = ncmpi_inq_dimname(m_file_id, dimids[k], name); check(stat);
 
     result[k] = name;
   }
@@ -310,10 +310,10 @@ int PNCFile::inq_varnatts(const std::string &variable_name, int &result) const {
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_inq_varnatts(ncid, varid, &result); check(stat);
+  stat = ncmpi_inq_varnatts(m_file_id, varid, &result); check(stat);
 
   return 0;
 }
@@ -322,7 +322,7 @@ int PNCFile::inq_varnatts(const std::string &variable_name, int &result) const {
 int PNCFile::inq_varid(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
-  stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &flag);
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
   if (stat == NC_NOERR)
     flag = 1;
@@ -340,7 +340,7 @@ int PNCFile::inq_varname(unsigned int j, std::string &result) const {
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
 
-  stat = ncmpi_inq_varname(ncid, j, varname); check(stat);
+  stat = ncmpi_inq_varname(m_file_id, j, varname); check(stat);
 
   result = varname;
 
@@ -351,9 +351,9 @@ int PNCFile::inq_vartype(const std::string &variable_name, IO_Type &result) cons
   int stat, varid;
   nc_type var_type;
 
-  stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
-  stat = ncmpi_inq_vartype(ncid, varid, &var_type); check(stat);
+  stat = ncmpi_inq_vartype(m_file_id, varid, &var_type); check(stat);
 
   result = nc_type_to_pism_type(var_type);
 
@@ -369,10 +369,10 @@ int PNCFile::get_att_double(const std::string &variable_name, const std::string 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
   if (stat == NC_NOERR)
     len = static_cast<int>(attlen);
@@ -391,7 +391,7 @@ int PNCFile::get_att_double(const std::string &variable_name, const std::string 
   result.resize(len);
 
   // Now read data and broadcast stat to see if we succeeded:
-  stat = ncmpi_get_att_double(ncid, varid, att_name.c_str(), &result[0]); check(stat);
+  stat = ncmpi_get_att_double(m_file_id, varid, att_name.c_str(), &result[0]); check(stat);
 
   // On error, print a message and stop.
   if (stat != NC_NOERR) {
@@ -413,10 +413,10 @@ int PNCFile::get_att_text(const std::string &variable_name, const std::string &a
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
   if (stat == NC_NOERR)
     len = static_cast<int>(attlen);
   else
@@ -432,7 +432,7 @@ int PNCFile::get_att_text(const std::string &variable_name, const std::string &a
   memset(str, 0, len + 1);
 
   // Now read the string and see if we succeeded:
-  stat = ncmpi_get_att_text(ncid, varid, att_name.c_str(), str);
+  stat = ncmpi_get_att_text(m_file_id, varid, att_name.c_str(), str);
 
   // On success, broadcast the string. On error, set str to "".
   if (stat != NC_NOERR) {
@@ -460,10 +460,10 @@ int PNCFile::put_att_double(const std::string &variable_name, const std::string 
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_put_att_double(ncid, varid, att_name.c_str(),
+  stat = ncmpi_put_att_double(m_file_id, varid, att_name.c_str(),
                               pism_type_to_nc_type(nctype), data.size(), &data[0]); check(stat);
 
   return stat;
@@ -478,10 +478,10 @@ int PNCFile::put_att_text(const std::string &variable_name, const std::string &a
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_put_att_text(ncid, varid, att_name.c_str(), value.size(), value.c_str()); check(stat);
+  stat = ncmpi_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str()); check(stat);
 
   return stat;
 }
@@ -497,10 +497,10 @@ int PNCFile::inq_attname(const std::string &variable_name, unsigned int n, std::
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_inq_attname(ncid, varid, n, name); check(stat);
+  stat = ncmpi_inq_attname(m_file_id, varid, n, name); check(stat);
 
   result = name;
 
@@ -515,10 +515,10 @@ int PNCFile::inq_atttype(const std::string &variable_name, const std::string &at
   if (variable_name == "PISM_GLOBAL") {
     varid = NC_GLOBAL;
   } else {
-    stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
   }
 
-  stat = ncmpi_inq_atttype(ncid, varid, att_name.c_str(), &tmp);
+  stat = ncmpi_inq_atttype(m_file_id, varid, att_name.c_str(), &tmp);
   if (stat == NC_ENOTATT) {
     tmp = NC_NAT;
   } else {
@@ -534,7 +534,7 @@ int PNCFile::inq_atttype(const std::string &variable_name, const std::string &at
 int PNCFile::set_fill(int fillmode, int &old_modep) const {
   int stat;
 
-  stat = ncmpi_set_fill(ncid, fillmode, &old_modep); check(stat);
+  stat = ncmpi_set_fill(m_file_id, fillmode, &old_modep); check(stat);
 
   return stat;
 }
@@ -569,7 +569,7 @@ int PNCFile::get_var_double(const std::string &variable_name,
   std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
     nc_imap(ndims), nc_stride(ndims);
 
-  stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
   for (int j = 0; j < ndims; ++j) {
     nc_start[j] = start[j];
@@ -579,11 +579,11 @@ int PNCFile::get_var_double(const std::string &variable_name,
   }
 
   if (mapped) {
-    stat = ncmpi_get_varm_double_all(ncid, varid,
+    stat = ncmpi_get_varm_double_all(m_file_id, varid,
                                      &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                                      ip); check(stat);
   } else {
-    stat = ncmpi_get_vara_double_all(ncid, varid,
+    stat = ncmpi_get_vara_double_all(m_file_id, varid,
                                      &nc_start[0], &nc_count[0],
                                      ip); check(stat);
   }
@@ -620,7 +620,7 @@ int PNCFile::put_var_double(const std::string &variable_name,
   std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
     nc_imap(ndims), nc_stride(ndims);
 
-  stat = ncmpi_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+  stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
   for (int j = 0; j < ndims; ++j) {
     nc_start[j] = start[j];
@@ -630,11 +630,11 @@ int PNCFile::put_var_double(const std::string &variable_name,
   }
 
   if (mapped) {
-    stat = ncmpi_put_varm_double_all(ncid, varid,
+    stat = ncmpi_put_varm_double_all(m_file_id, varid,
                                      &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                                      op); check(stat);
   } else {
-    stat = ncmpi_put_vara_double_all(ncid, varid,
+    stat = ncmpi_put_vara_double_all(m_file_id, varid,
                                      &nc_start[0], &nc_count[0],
                                      op); check(stat);
   }
@@ -662,7 +662,7 @@ void PNCFile::init_hints() {
                    const_cast<char*>(words[1].c_str()));
     } else {
       int rank = 0;
-      MPI_Comm_rank(com, &rank);
+      MPI_Comm_rank(m_com, &rank);
       if (rank == 0) {
         printf("PISM WARNING: invalid MPI I/O hint: %s. Ignoring it...\n",
                j->c_str());

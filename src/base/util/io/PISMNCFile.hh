@@ -177,11 +177,11 @@ protected:
   virtual int integer_open_mode(IO_Mode input) const = 0;
   virtual void check(int return_code) const;
 
-  MPI_Comm com;
+  MPI_Comm m_com;
 
-  int ncid;
+  int m_file_id;
   std::string m_filename;
-  mutable bool define_mode;
+  mutable bool m_define_mode;
   mutable unsigned int m_xs, m_xm, m_ys, m_ym;
 };
 

@@ -31,9 +31,9 @@
 namespace pism {
 
 NCFile::NCFile(MPI_Comm c)
-  : com(c) {
-  ncid = -1;
-  define_mode = false;
+  : m_com(c) {
+  m_file_id = -1;
+  m_define_mode = false;
   m_xs = m_xm = m_ys = m_ym = -1;
 }
 
@@ -72,7 +72,7 @@ void NCFile::set_local_extent(unsigned int xs, unsigned int xm,
  */
 int NCFile::move_if_exists(const std::string &file_to_move, int rank_to_use) {
   int stat, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
   if (rank == rank_to_use) {
     bool exists = false;
@@ -112,7 +112,7 @@ int NCFile::move_if_exists(const std::string &file_to_move, int rank_to_use) {
  */
 int NCFile::remove_if_exists(const std::string &file_to_remove, int rank_to_use) {
   int stat, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
   if (rank == rank_to_use) {
     bool exists = false;

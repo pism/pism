@@ -56,14 +56,14 @@ int NC4_Quilt::integer_open_mode(IO_Mode input) const {
 
 int NC4_Quilt::open(const std::string &fname, IO_Mode mode) {
   int stat, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
   m_filename = patch_filename(fname, rank);
 
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open(m_filename.c_str(), nc_mode, &ncid); check(stat);
+  stat = nc_open(m_filename.c_str(), nc_mode, &m_file_id); check(stat);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return global_stat(stat);
 }
@@ -72,12 +72,12 @@ int NC4_Quilt::open(const std::string &fname, IO_Mode mode) {
 int NC4_Quilt::create(const std::string &fname) {
   int stat = 0, rank = 0;
 
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
   m_filename = patch_filename(fname, rank);
 
-  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &ncid); check(stat);
+  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &m_file_id); check(stat);
 
-  define_mode = true;
+  m_define_mode = true;
 
   return global_stat(stat);
 }
@@ -85,9 +85,9 @@ int NC4_Quilt::create(const std::string &fname) {
 int NC4_Quilt::close() {
   int stat;
 
-  stat = nc_close(ncid); check(stat);
+  stat = nc_close(m_file_id); check(stat);
 
-  ncid = -1;
+  m_file_id = -1;
 
   m_filename.clear();
 
@@ -119,7 +119,7 @@ int NC4_Quilt::def_var(const std::string &name, IO_Type nctype,
                        const std::vector<std::string> &dims_input) const {
   std::vector<std::string> dims = dims_input;
   int stat = 0, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
   if (name == "x" || name == "y") {
     std::vector<std::string> dims_local;
@@ -130,7 +130,7 @@ int NC4_Quilt::def_var(const std::string &name, IO_Type nctype,
                                 name == "x" ? m_xs : m_ys); check(stat);
 
     int size;
-    MPI_Comm_size(com, &size);
+    MPI_Comm_size(m_com, &size);
     stat = this->put_att_double(name + suffix, "mpi_rank", PISM_INT, rank); check(stat);
     stat = this->put_att_double(name + suffix, "mpi_size", PISM_INT, size); check(stat);
   }
@@ -246,14 +246,14 @@ int NC4_Quilt::get_put_var_double(const std::string &name,
 int NC4_Quilt::global_stat(int stat) const {
   int tmp;
 
-  MPI_Allreduce(&stat, &tmp, 1, MPI_INT, MPI_SUM, com);
+  MPI_Allreduce(&stat, &tmp, 1, MPI_INT, MPI_SUM, m_com);
 
   return tmp != 0;
 }
 
 int NC4_Quilt::move_if_exists(const std::string &file, int /*rank_to_use*/) {
   int stat = 0, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
   stat = NCFile::move_if_exists(patch_filename(file, rank), rank);
 
