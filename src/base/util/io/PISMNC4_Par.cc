@@ -34,7 +34,7 @@ int NC4_Par::integer_open_mode(IO_Mode input) const {
   }
 }
 
-int NC4_Par::open(const std::string &fname, IO_Mode mode) {
+int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -50,7 +50,7 @@ int NC4_Par::open(const std::string &fname, IO_Mode mode) {
   return stat;
 }
 
-int NC4_Par::create(const std::string &fname) {
+int NC4_Par::create_impl(const std::string &fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 

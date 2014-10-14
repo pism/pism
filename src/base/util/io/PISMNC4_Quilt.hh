@@ -32,34 +32,38 @@ public:
   }
   virtual ~NC4_Quilt() {}
 
+protected:
+  // implementations:
+
   // open/create/close
-  virtual int open(const std::string &filename, IO_Mode mode);
+  int open_impl(const std::string &filename, IO_Mode mode);
 
-  virtual int create(const std::string &filename);
+  int create_impl(const std::string &filename);
 
-  virtual int close();
+  int close_impl();
 
   // dim
-  virtual int def_dim(const std::string &name, size_t length) const;
+  int def_dim_impl(const std::string &name, size_t length) const;
 
   // var
-  virtual int def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  int def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   // att
   using NCFile::put_att_double;
-  virtual int put_att_double(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
+  int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
 
-  virtual int put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
+  int put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
 
-  virtual int move_if_exists(const std::string &filename, int rank_to_use = 0);
-protected:
-  virtual int integer_open_mode(IO_Mode input) const;
+  int move_if_exists_impl(const std::string &filename, int rank_to_use = 0);
+
 private:
-  virtual int get_put_var_double(const std::string &variable_name,
-                                 const std::vector<unsigned int> &start,
-                                 const std::vector<unsigned int> &count,
-                                 const std::vector<unsigned int> &imap, double *ip,
-                                 bool get,
-                                 bool mapped) const;
+  int integer_open_mode(IO_Mode input) const;
+
+  int get_put_var_double(const std::string &variable_name,
+                         const std::vector<unsigned int> &start,
+                         const std::vector<unsigned int> &count,
+                         const std::vector<unsigned int> &imap, double *ip,
+                         bool get,
+                         bool mapped) const;
   
   void correct_start_and_count(const std::string &name,
                                std::vector<unsigned int> &start,

@@ -57,7 +57,7 @@ int NC3File::integer_open_mode(IO_Mode input) const {
 }
 
 // open/create/close
-int NC3File::open(const std::string &fname, IO_Mode mode) {
+int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
   int stat;
 
   m_filename = fname;
@@ -77,7 +77,7 @@ int NC3File::open(const std::string &fname, IO_Mode mode) {
 }
 
 //! \brief Create a NetCDF file.
-int NC3File::create(const std::string &fname) {
+int NC3File::create_impl(const std::string &fname) {
   int stat;
 
   m_filename = fname;
@@ -96,7 +96,7 @@ int NC3File::create(const std::string &fname) {
 }
 
 //! \brief Close a NetCDF file.
-int NC3File::close() {
+int NC3File::close_impl() {
   int stat;
 
   if (m_rank == 0) {
@@ -115,7 +115,7 @@ int NC3File::close() {
 
 
 //! \brief Exit define mode.
-int NC3File::enddef() const {
+int NC3File::enddef_impl() const {
   int stat;
 
   if (m_define_mode == false)
@@ -136,7 +136,7 @@ int NC3File::enddef() const {
 }
 
 //! \brief Enter define mode.
-int NC3File::redef() const {
+int NC3File::redef_impl() const {
   int stat;
 
   if (m_define_mode == true)
@@ -156,7 +156,7 @@ int NC3File::redef() const {
 
 
 //! \brief Define a dimension.
-int NC3File::def_dim(const std::string &name, size_t length) const {
+int NC3File::def_dim_impl(const std::string &name, size_t length) const {
   int stat;
 
   if (m_rank == 0) {
@@ -170,7 +170,7 @@ int NC3File::def_dim(const std::string &name, size_t length) const {
   return stat;
 }
 
-int NC3File::inq_dimid(const std::string &dimension_name, bool &exists) const {
+int NC3File::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
@@ -192,7 +192,7 @@ int NC3File::inq_dimid(const std::string &dimension_name, bool &exists) const {
 
 
 //! \brief Get a dimension length.
-int NC3File::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
+int NC3File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -214,7 +214,7 @@ int NC3File::inq_dimlen(const std::string &dimension_name, unsigned int &result)
 }
 
 //! \brief Get an unlimited dimension.
-int NC3File::inq_unlimdim(std::string &result) const {
+int NC3File::inq_unlimdim_impl(std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
@@ -238,7 +238,7 @@ int NC3File::inq_unlimdim(std::string &result) const {
   return stat;
 }
 
-int NC3File::inq_dimname(int j, std::string &result) const {
+int NC3File::inq_dimname_impl(int j, std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
@@ -258,7 +258,7 @@ int NC3File::inq_dimname(int j, std::string &result) const {
 }
 
 
-int NC3File::inq_ndims(int &result) const {
+int NC3File::inq_ndims_impl(int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -274,7 +274,7 @@ int NC3File::inq_ndims(int &result) const {
 
 
 //! \brief Define a variable.
-int NC3File::def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+int NC3File::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   int stat;
 
   if (m_rank == 0) {
@@ -298,7 +298,7 @@ int NC3File::def_var(const std::string &name, IO_Type nctype, const std::vector<
   return stat;
 }
 
-int NC3File::get_varm_double(const std::string &variable_name,
+int NC3File::get_varm_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<unsigned int> &imap, double *op) const {
@@ -306,7 +306,7 @@ int NC3File::get_varm_double(const std::string &variable_name,
                               start, count, imap, op, true);
 }
 
-int NC3File::get_vara_double(const std::string &variable_name,
+int NC3File::get_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  double *op) const {
@@ -317,10 +317,10 @@ int NC3File::get_vara_double(const std::string &variable_name,
 
 //! \brief Get variable data.
 int NC3File::get_var_double(const std::string &variable_name,
-                                const std::vector<unsigned int> &start_input,
-                                const std::vector<unsigned int> &count_input,
-                                const std::vector<unsigned int> &imap_input, double *ip,
-                                bool mapped) const {
+                            const std::vector<unsigned int> &start_input,
+                            const std::vector<unsigned int> &count_input,
+                            const std::vector<unsigned int> &imap_input, double *ip,
+                            bool mapped) const {
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
   std::vector<unsigned int> imap = imap_input;
@@ -432,7 +432,7 @@ int NC3File::get_var_double(const std::string &variable_name,
   return stat;
 }
 
-int NC3File::put_varm_double(const std::string &variable_name,
+int NC3File::put_varm_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<unsigned int> &imap, const double *op) const {
@@ -440,7 +440,7 @@ int NC3File::put_varm_double(const std::string &variable_name,
                               start, count, imap, op, true);
 }
 
-int NC3File::put_vara_double(const std::string &variable_name,
+int NC3File::put_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const double *op) const {
@@ -452,10 +452,10 @@ int NC3File::put_vara_double(const std::string &variable_name,
 
 //! \brief Put variable data (mapped).
 int NC3File::put_var_double(const std::string &variable_name,
-                                const std::vector<unsigned int> &start_input,
-                                const std::vector<unsigned int> &count_input,
-                                const std::vector<unsigned int> &imap_input, const double *op,
-                                bool mapped) const {
+                            const std::vector<unsigned int> &start_input,
+                            const std::vector<unsigned int> &count_input,
+                            const std::vector<unsigned int> &imap_input, const double *op,
+                            bool mapped) const {
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
   std::vector<unsigned int> imap = imap_input;
@@ -579,7 +579,7 @@ int NC3File::put_var_double(const std::string &variable_name,
 }
 
 //! \brief Get the number of variables.
-int NC3File::inq_nvars(int &result) const {
+int NC3File::inq_nvars_impl(int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -592,7 +592,7 @@ int NC3File::inq_nvars(int &result) const {
 }
 
 //! \brief Get dimensions a variable depends on.
-int NC3File::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
+int NC3File::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
@@ -638,7 +638,7 @@ int NC3File::inq_vardimid(const std::string &variable_name, std::vector<std::str
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::inq_varnatts(const std::string &variable_name, int &result) const {
+int NC3File::inq_varnatts_impl(const std::string &variable_name, int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -659,7 +659,7 @@ int NC3File::inq_varnatts(const std::string &variable_name, int &result) const {
 }
 
 //! \brief Finds a variable and sets the "exists" flag.
-int NC3File::inq_varid(const std::string &variable_name, bool &exists) const {
+int NC3File::inq_varid_impl(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
@@ -679,7 +679,7 @@ int NC3File::inq_varid(const std::string &variable_name, bool &exists) const {
   return 0;
 }
 
-int NC3File::inq_varname(unsigned int j, std::string &result) const {
+int NC3File::inq_varname_impl(unsigned int j, std::string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
@@ -698,7 +698,7 @@ int NC3File::inq_varname(unsigned int j, std::string &result) const {
   return stat;
 }
 
-int NC3File::inq_vartype(const std::string &variable_name, IO_Type &result) const {
+int NC3File::inq_vartype_impl(const std::string &variable_name, IO_Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
@@ -725,7 +725,7 @@ int NC3File::inq_vartype(const std::string &variable_name, IO_Type &result) cons
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
+int NC3File::get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
   int stat, len, varid = -1;
 
   // Read and broadcast the attribute length:
@@ -779,7 +779,7 @@ int NC3File::get_att_double(const std::string &variable_name, const std::string 
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
+int NC3File::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
   char *str = NULL;
   int stat, len, varid = -1;
 
@@ -835,7 +835,7 @@ int NC3File::get_att_text(const std::string &variable_name, const std::string &a
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::put_att_double(const std::string &variable_name, const std::string &att_name,
+int NC3File::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
                                IO_Type nctype, const std::vector<double> &data) const {
 
   int stat = 0;
@@ -867,7 +867,7 @@ int NC3File::put_att_double(const std::string &variable_name, const std::string 
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
+int NC3File::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0;
 
   stat = redef(); check(stat);
@@ -894,7 +894,7 @@ int NC3File::put_att_text(const std::string &variable_name, const std::string &a
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
+int NC3File::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
@@ -923,7 +923,7 @@ int NC3File::inq_attname(const std::string &variable_name, unsigned int n, std::
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
+int NC3File::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
@@ -955,7 +955,7 @@ int NC3File::inq_atttype(const std::string &variable_name, const std::string &at
 
 
 //! \brief Sets the fill mode.
-int NC3File::set_fill(int fillmode, int &old_modep) const {
+int NC3File::set_fill_impl(int fillmode, int &old_modep) const {
   int stat;
 
   if (m_rank == 0) {
@@ -969,7 +969,7 @@ int NC3File::set_fill(int fillmode, int &old_modep) const {
   return stat;
 }
 
-std::string NC3File::get_format() const {
+std::string NC3File::get_format_impl() const {
   int format;
 
   if (m_rank == 0) {

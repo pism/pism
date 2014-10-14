@@ -29,13 +29,13 @@ public:
   NC4_Serial(MPI_Comm c, unsigned int compression_level)
     : NC4File(c, compression_level) {}
   virtual ~NC4_Serial() {}
-
-  // open/create/close
-  virtual int open(const std::string &filename, IO_Mode mode);
-
-  virtual int create(const std::string &filename);
 protected:
-  virtual int integer_open_mode(IO_Mode input) const;
+  // open/create/close
+  int open_impl(const std::string &filename, IO_Mode mode);
+
+  int create_impl(const std::string &filename);
+protected:
+  int integer_open_mode(IO_Mode input) const;
 };
 
 
