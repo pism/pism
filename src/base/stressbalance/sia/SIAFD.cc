@@ -127,16 +127,24 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, bool fast) {
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (bed->get_state_counter() > bed_state_counter) {
+    grid.profiling.begin("SIA bed smoother");
     ierr = bed_smoother->preprocess_bed(*bed); CHKERRQ(ierr);
+    grid.profiling.end("SIA bed smoother");
     bed_state_counter = bed->get_state_counter();
   }
 
+  grid.profiling.begin("SIA gradient");
   ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+  grid.profiling.end("SIA gradient");
 
+  grid.profiling.begin("SIA flux");
   ierr = compute_diffusive_flux(h_x, h_y, diffusive_flux, fast); CHKERRQ(ierr);
+  grid.profiling.end("SIA flux");
 
   if (!fast) {
+    grid.profiling.begin("SIA 3D hor. vel.");
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
+    grid.profiling.end("SIA 3D hor. vel.");
   }
 
   return 0;
@@ -301,22 +309,18 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
   // surface elevation needs more ghosts
   assert(surface->get_stencil_width() >= 2);
 
-  for (int o=0; o<2; o++) {
-    for (PointsWithGhosts p(grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
+  for (PointsWithGhosts p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      if (o==0) {     // If I-offset
-        h_x(i,j,o) = (h(i+1,j) - h(i,j)) / dx;
-        h_y(i,j,o) = (+ h(i+1,j+1) + h(i,j+1)
-                      - h(i+1,j-1) - h(i,j-1)) / (4.0*dy);
-      } else {        // J-offset
-        h_y(i,j,o) = (h(i,j+1) - h(i,j)) / dy;
-        h_x(i,j,o) = (+ h(i+1,j+1) + h(i+1,j)
-                      - h(i-1,j+1) - h(i-1,j)) / (4.0*dx);
-      }
-    }
+    // I-offset
+    h_x(i, j, 0) = (h(i + 1, j) - h(i, j)) / dx;
+    h_y(i, j, 0) = (+ h(i + 1, j + 1) + h(i, j + 1)
+                    - h(i + 1, j - 1) - h(i, j - 1)) / (4.0*dy);
+    // J-offset
+    h_y(i, j, 1) = (h(i, j + 1) - h(i, j)) / dy;
+    h_x(i, j, 1) = (+ h(i + 1, j + 1) + h(i + 1, j)
+                    - h(i - 1, j + 1) - h(i - 1, j)) / (4.0*dx);
   }
-
 
   return 0;
 }
@@ -698,7 +702,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     }
   } // i
 
-  ierr = GlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &my_D_max,  &D_max); CHKERRQ(ierr);
 
   return 0;
 }

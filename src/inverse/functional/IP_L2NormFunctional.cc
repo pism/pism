@@ -52,7 +52,7 @@ PetscErrorCode IP_L2NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) 
     } // j
   } // i
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -90,7 +90,7 @@ PetscErrorCode IP_L2NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, do
     } // j
   } // i
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -176,7 +176,7 @@ PetscErrorCode IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) 
     } // j
   } // i
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -214,7 +214,7 @@ PetscErrorCode IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, do
     } // j
   } // i
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }

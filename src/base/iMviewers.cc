@@ -67,7 +67,7 @@ PetscErrorCode IceModel::update_viewers() {
       PISMEnd();
     }
 
-    if (v->get_dof() == 1) {    // scalar fields
+    if (v->get_ndof() == 1) {    // scalar fields
       std::string name = v->metadata().get_string("short_name");
       PetscViewer viewer = viewers[name];
 
@@ -81,7 +81,7 @@ PetscErrorCode IceModel::update_viewers() {
 
       ierr = v2d->view(viewer, NULL); CHKERRQ(ierr);
 
-    } else if (v->get_dof() == 2) { // vector fields
+    } else if (v->get_ndof() == 2) { // vector fields
       std::string name_1 = v->metadata().get_string("short_name"),
         name_2 = v->metadata(1).get_string("short_name");
       PetscViewer v1 = viewers[name_1],

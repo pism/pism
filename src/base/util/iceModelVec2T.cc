@@ -74,7 +74,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const std::string &my_sho
   ierr = grid->get_dm(this->n_records, this->m_da_stencil_width, m_da3); CHKERRQ(ierr);
 
   // allocate the 3D Vec:
-  ierr = DMCreateGlobalVector(m_da3->get(), &m_v3); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(*m_da3, &m_v3); CHKERRQ(ierr);
 
   return 0;
 }
@@ -101,7 +101,7 @@ PetscErrorCode IceModelVec2T::get_array3(double*** &a3) {
 PetscErrorCode IceModelVec2T::begin_access() const {
   PetscErrorCode ierr;
   if (m_access_counter == 0) {
-    ierr = DMDAVecGetArrayDOF(m_da3->get(), m_v3, &array3); CHKERRQ(ierr);
+    ierr = DMDAVecGetArrayDOF(*m_da3, m_v3, &array3); CHKERRQ(ierr);
   }
 
   // this call will increment the m_access_counter
@@ -115,7 +115,7 @@ PetscErrorCode IceModelVec2T::end_access() const {
   PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
 
   if (m_access_counter == 0) {
-    ierr = DMDAVecRestoreArrayDOF(m_da3->get(), m_v3, &array3); CHKERRQ(ierr);
+    ierr = DMDAVecRestoreArrayDOF(*m_da3, m_v3, &array3); CHKERRQ(ierr);
     array3 = NULL;
   }
 

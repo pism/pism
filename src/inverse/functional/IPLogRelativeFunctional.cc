@@ -55,7 +55,7 @@ PetscErrorCode IPLogRelativeFunctional::normalize(double scale) {
     value += log(1 + w*scale_sq/obsMagSq);
   }
 
-  ierr = GlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
   return 0;
 }
 
@@ -88,7 +88,7 @@ PetscErrorCode IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT
 
   value /= m_normalization;
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }
