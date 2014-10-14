@@ -24,6 +24,13 @@ namespace pism {
 BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
     : grid(g), config(conf) {
 
+  topgp0 = NULL;
+  topgsmoothp0 = NULL;
+  maxtlp0 = NULL;
+  C2p0 = NULL;
+  C3p0 = NULL;
+  C4p0 = NULL;
+
   if (allocate(MAX_GHOSTS) != 0) {
     PetscPrintf(grid.com, "BedSmoother constructor: allocate() failed\n");
     PISMEnd();
@@ -49,50 +56,8 @@ BedSmoother::~BedSmoother() {
   }
 }
 
-
-/* the following is from the PETSc FAQ page:
-
-How do I collect all the values from a parallel PETSc vector into a vector
-on the zeroth processor?
-
-    * Create the scatter context that will do the communication
-          o VecScatterCreateToZero(v,&ctx,&w);
-    * Actually do the communication; this can be done repeatedly as needed
-          o VecScatterBegin(ctx,v,w,INSERT_VALUES,SCATTER_FORWARD);
-          o VecScatterEnd(ctx,v,w,INSERT_VALUES,SCATTER_FORWARD);
-    * Remember to free the scatter context when no longer needed
-          o VecScatterDestroy(ctx);
-
-Note that this simply concatenates in the parallel ordering of the vector.
-If you are using a vector from DACreateGlobalVector() you likely want to
-first call DAGlobalToNaturalBegin/End() to scatter the original vector into
-the natural ordering in a new global vector before calling
-VecScatterBegin/End() to scatter the natural vector onto process 0.
-*/
-
-
 PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
   PetscErrorCode ierr;
-  PISMDM::Ptr da2;
-  // FIXME: this relies on the fact that IceModel::bed_topography has
-  // max_stencil_width ghosts. We should *not* use
-  // IceModel::bed_topography directly (i.e. we should use a copy).
-  ierr = grid.get_dm(1, config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
-
-  ierr = DMCreateGlobalVector(da2->get(), &g2); CHKERRQ(ierr);
-
-  // note we want a global Vec but reordered in the natural ordering so when it
-  // is scattered to proc zero it is not all messed up; see above
-  ierr = DMDACreateNaturalVector(da2->get(), &g2natural); CHKERRQ(ierr);
-  // next get scatter context *and* allocate one of Vecs on proc zero
-  ierr = VecScatterCreateToZero(g2natural, &scatter, &topgp0); CHKERRQ(ierr);
-
-  // allocate Vecs that live on proc 0
-  ierr = VecDuplicate(topgp0,&topgsmoothp0); CHKERRQ(ierr);
-  ierr = VecDuplicate(topgp0,&maxtlp0); CHKERRQ(ierr);
-  ierr = VecDuplicate(topgp0,&C2p0); CHKERRQ(ierr);
-  ierr = VecDuplicate(topgp0,&C3p0); CHKERRQ(ierr);
-  ierr = VecDuplicate(topgp0,&C4p0); CHKERRQ(ierr);
 
   // allocate Vecs that live on all procs; all have to be as "wide" as any of
   //   their prospective uses
@@ -121,16 +86,21 @@ PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
      "bed_smoother_tool",
      "polynomial coeff of H^-4, in bed roughness parameterization",
      "m4", ""); CHKERRQ(ierr);
+
+  // allocate Vecs that live on processor 0:
+  ierr = topgsmooth.allocate_proc0_copy(topgp0); CHKERRQ(ierr);
+  ierr = topgsmooth.allocate_proc0_copy(topgsmoothp0); CHKERRQ(ierr);
+  ierr = maxtl.allocate_proc0_copy(maxtlp0); CHKERRQ(ierr);
+  ierr = C2.allocate_proc0_copy(C2p0); CHKERRQ(ierr);
+  ierr = C3.allocate_proc0_copy(C3p0); CHKERRQ(ierr);
+  ierr = C4.allocate_proc0_copy(C4p0); CHKERRQ(ierr);
+
   return 0;
 }
 
 
 PetscErrorCode BedSmoother::deallocate() {
   PetscErrorCode ierr;
-
-  ierr = VecDestroy(&g2); CHKERRQ(ierr);
-  ierr = VecDestroy(&g2natural); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(&scatter); CHKERRQ(ierr);
 
   ierr = VecDestroy(&topgp0); CHKERRQ(ierr);
   ierr = VecDestroy(&topgsmoothp0); CHKERRQ(ierr);
@@ -191,17 +161,17 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg,
   }
   Nx = Nx_in; Ny = Ny_in;
 
-  ierr = topg.put_on_proc0(topgp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = topg.put_on_proc0(topgp0); CHKERRQ(ierr);
   ierr = smooth_the_bed_on_proc0(); CHKERRQ(ierr);
   // next call *does indeed* fill ghosts in topgsmooth
-  ierr = topgsmooth.get_from_proc0(topgsmoothp0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = topgsmooth.get_from_proc0(topgsmoothp0); CHKERRQ(ierr);
 
   ierr = compute_coefficients_on_proc0(); CHKERRQ(ierr);
   // following calls *do* fill the ghosts
-  ierr = maxtl.get_from_proc0(maxtlp0, scatter, g2, g2natural); CHKERRQ(ierr);
-  ierr = C2.get_from_proc0(C2p0, scatter, g2, g2natural); CHKERRQ(ierr);
-  ierr = C3.get_from_proc0(C3p0, scatter, g2, g2natural); CHKERRQ(ierr);
-  ierr = C4.get_from_proc0(C4p0, scatter, g2, g2natural); CHKERRQ(ierr);
+  ierr = maxtl.get_from_proc0(maxtlp0); CHKERRQ(ierr);
+  ierr = C2.get_from_proc0(C2p0); CHKERRQ(ierr);
+  ierr = C3.get_from_proc0(C3p0); CHKERRQ(ierr);
+  ierr = C4.get_from_proc0(C4p0); CHKERRQ(ierr);
   return 0;
 }
 

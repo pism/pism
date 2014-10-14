@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -102,19 +102,19 @@ public:
 
   virtual PetscErrorCode setInitialGuess(DesignVec &d0);
 
-  PetscErrorCode connect(tao::Solver tao);
+  PetscErrorCode connect(Tao tao);
 
-  PetscErrorCode monitorTao(tao::Solver tao);
+  PetscErrorCode monitorTao(Tao tao);
 
-  virtual PetscErrorCode evaluateObjectiveAndGradient(tao::Solver tao, Vec x, double *value, Vec gradient);
+  virtual PetscErrorCode evaluateObjectiveAndGradient(Tao tao, Vec x, double *value, Vec gradient);
   
   virtual PetscErrorCode formInitialGuess(Vec *x,TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode evaluateConstraints(tao::Solver, Vec x, Vec r);
+  virtual PetscErrorCode evaluateConstraints(Tao, Vec x, Vec r);
 
-  virtual PetscErrorCode evaluateConstraintsJacobianState(tao::Solver, Vec x, Mat Jstate, Mat Jpc, Mat Jinv, MatStructure *s);
+  virtual PetscErrorCode evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat Jpc, Mat Jinv, MatStructure *s);
   
-  virtual PetscErrorCode evaluateConstraintsJacobianDesign(tao::Solver, Vec x, Mat Jdesign);
+  virtual PetscErrorCode evaluateConstraintsJacobianDesign(Tao, Vec x, Mat Jdesign);
 
   virtual PetscErrorCode applyConstraintsJacobianDesign(Vec x, Vec y);
   virtual PetscErrorCode applyConstraintsJacobianDesignTranspose(Vec x, Vec y);

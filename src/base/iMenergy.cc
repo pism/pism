@@ -59,11 +59,16 @@ PetscErrorCode IceModel::energyStep() {
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
   ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+
+  grid.profiling.begin("BTU");
   ierr = btu->update(t_TempAge, dt_TempAge); CHKERRQ(ierr);  // has ptr to bedtoptemp
+  grid.profiling.end("BTU");
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
+    grid.profiling.begin("temp step");
     ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);
+    grid.profiling.end("temp step");
 
     ierr = vWork3d.update_ghosts(T3); CHKERRQ(ierr);
 
@@ -76,12 +81,14 @@ PetscErrorCode IceModel::energyStep() {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
+    grid.profiling.begin("enth step");
     ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
     CHKERRQ(ierr);
+    grid.profiling.end("enth step");
 
     ierr = vWork3d.update_ghosts(Enth3); CHKERRQ(ierr);
 
-    ierr = GlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
+    ierr = GlobalSum(grid.com, &myLiquifiedVol,  &gLiquifiedVol); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
       ierr = verbPrintf(1,grid.com,
                         "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
@@ -89,9 +96,9 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  ierr = GlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &myCFLviolcount,  &CFLviolcount); CHKERRQ(ierr);
 
-  ierr = GlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount); CHKERRQ(ierr);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
@@ -103,7 +110,7 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  ierr = GlobalSum(&myBulgeCount, &gBulgeCount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &myBulgeCount,  &gBulgeCount); CHKERRQ(ierr);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";

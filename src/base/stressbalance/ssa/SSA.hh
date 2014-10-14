@@ -165,21 +165,21 @@ protected:
 
   virtual PetscErrorCode deallocate();
 
-  virtual PetscErrorCode solve()  = 0;
+  virtual PetscErrorCode solve() = 0;
 
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;
   IceModelVec2S *driving_stress_x;
   IceModelVec2S *driving_stress_y;
-  IceModelVec2V taud, m_velocity_old;
+  IceModelVec2V taud;
   IceModelVec3 *enthalpy;
   IceModelVec2S *gl_mask;
 
   std::string stdout_ssa;
 
   // objects used by the SSA solver (internally)
-  PISMDM::Ptr  SSADA;                    // dof=2 DA (grid.da2 has dof=1)
-  Vec SSAX;  // global vector for solution
+  PISMDM::Ptr  m_da;               // dof=2 DA
+  IceModelVec2V m_velocity_global; // global vector for solution
 
   // profiling
   int event_ssa;

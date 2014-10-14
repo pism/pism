@@ -309,10 +309,10 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   delete [] Tex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  ierr = GlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxTerr,  &gmaxTerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avTerr,  &gavTerr); CHKERRQ(ierr);
   double  gavcount;
-  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avcount,  &gavcount); CHKERRQ(ierr);
   gavTerr = gavTerr/PetscMax(gavcount, 1.0);  // avoid div by zero
   return 0;
 }
@@ -393,16 +393,16 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
 
   delete [] Tex;  delete [] Tbex;
 
-  ierr = GlobalMax(&maxTerr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxTerr,  &gmaxTerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avTerr,  &gavTerr); CHKERRQ(ierr);
   double  gavcount;
-  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avcount,  &gavcount); CHKERRQ(ierr);
   gavTerr = gavTerr/PetscMax(gavcount,1.0);  // avoid div by zero
 
-  ierr = GlobalMax(&maxTberr, &gmaxTberr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avTberr, &gavTberr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxTberr,  &gmaxTberr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avTberr,  &gavTberr); CHKERRQ(ierr);
   double  gavbcount;
-  ierr = GlobalSum(&avbcount, &gavbcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avbcount,  &gavbcount); CHKERRQ(ierr);
   gavTberr = gavTberr/PetscMax(gavbcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -461,11 +461,11 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 
   double gdomeT, gdomeTexact;
 
-  ierr = GlobalMax(&Terr, &gmaxTerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avTerr, &gavTerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &Terr,  &gmaxTerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avTerr,  &gavTerr); CHKERRQ(ierr);
   gavTerr = gavTerr/(grid.Mx*grid.My);
-  ierr = GlobalMax(&domeT, &gdomeT, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&domeTexact, &gdomeTexact, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &domeT,  &gdomeT); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &domeTexact,  &gdomeTexact); CHKERRQ(ierr);
   centerTerr = PetscAbsReal(gdomeT - gdomeTexact);
 
   return 0;
@@ -531,10 +531,10 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
   delete [] strain_heating_exact;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
 
-  ierr = GlobalMax(&max_strain_heating_err, &gmax_strain_heating_err, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&av_strain_heating_err, &gav_strain_heating_err, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &max_strain_heating_err,  &gmax_strain_heating_err); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &av_strain_heating_err,  &gav_strain_heating_err); CHKERRQ(ierr);
   double  gavcount;
-  ierr = GlobalSum(&avcount, &gavcount, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avcount,  &gavcount); CHKERRQ(ierr);
   gav_strain_heating_err = gav_strain_heating_err/PetscMax(gavcount,1.0);  // avoid div by zero
   return 0;
 }
@@ -589,11 +589,11 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, doub
     }
   }
 
-  ierr = GlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avUerr, &gavUerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxUerr,  &gmaxUerr); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxWerr,  &gmaxWerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avUerr,  &gavUerr); CHKERRQ(ierr);
   gavUerr = gavUerr/(grid.Mx*grid.My);
-  ierr = GlobalSum(&avWerr, &gavWerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avWerr,  &gavWerr); CHKERRQ(ierr);
   gavWerr = gavWerr/(grid.Mx*grid.My);
   return 0;
 }
@@ -621,8 +621,8 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
     minbmelterr = PetscMin(minbmelterr, err);
   }
 
-  ierr = GlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxbmelterr,  &gmaxbmelterr); CHKERRQ(ierr);
+  ierr = GlobalMin(grid.com, &minbmelterr,  &gminbmelterr); CHKERRQ(ierr);
   return 0;
 }
 

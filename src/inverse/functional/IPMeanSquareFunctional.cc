@@ -46,7 +46,7 @@ PetscErrorCode IPMeanSquareFunctional2V::normalize(double scale) {
     }
   }
 
-  ierr = GlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
   m_normalization *= (scale*scale);
   return 0;
 }
@@ -78,7 +78,7 @@ PetscErrorCode IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPU
   }
   value /= m_normalization;
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum( m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -113,7 +113,7 @@ PetscErrorCode IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b,
   }
   value /= m_normalization;
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum( m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -170,7 +170,7 @@ PetscErrorCode IPMeanSquareFunctional2S::normalize(double scale) {
     }
   }
 
-  ierr = GlobalSum(&value, &m_normalization, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  &m_normalization); CHKERRQ(ierr);
   m_normalization *= (scale*scale);
   return 0;
 }
@@ -201,7 +201,7 @@ PetscErrorCode IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPU
   }
   value /= m_normalization;
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -232,7 +232,7 @@ PetscErrorCode IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b,
   }
   value /= m_normalization;
 
-  ierr = GlobalSum(&value, OUTPUT, m_grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(m_grid.com, &value,  OUTPUT); CHKERRQ(ierr);
 
   return 0;
 }

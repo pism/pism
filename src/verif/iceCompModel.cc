@@ -676,17 +676,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
     seawater_density = config.get("sea_water_density"),
     ice_density      = config.get("ice_density"),
     Glen_n           = config.get("sia_Glen_exponent"),
-    standard_gravity = config.get("standard_gravity"),
-    // enthalpy and pressure do not matter here
-    B0, C,
-    H0               = 600.0,
-    v0               = grid.convert(300.0, "m/year", "m/second"),
-    Q0               = H0 * v0;
-
-  if (testname == 'V') {
-    B0 = stress_balance->get_stressbalance()->get_flow_law()->hardness_parameter(0, 0);
-    C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
-  }
+    standard_gravity = config.get("standard_gravity");
 
   // area of grid square in square km:
   const double   a = grid.dx * grid.dy * 1e-3 * 1e-3;
@@ -748,6 +738,13 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
       break;
     case 'V':
       {
+        double
+          H0 = 600.0,
+          v0 = grid.convert(300.0, "m/year", "m/second"),
+          Q0 = H0 * v0,
+          B0 = stress_balance->get_stressbalance()->get_flow_law()->hardness_parameter(0, 0),
+          C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
+
         Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
       }
       break;
@@ -772,21 +769,21 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
 
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;
-  ierr = GlobalSum(&volexact, &gvolexact, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&domeHexact, &gdomeHexact, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&areaexact, &gareaexact, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &volexact,  &gvolexact); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &domeHexact,  &gdomeHexact); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &areaexact,  &gareaexact); CHKERRQ(ierr);
 
-  ierr = GlobalSum(&vol, &gvol, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &vol,  &gvol); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &area,  &garea); CHKERRQ(ierr);
   volerr = PetscAbsReal(gvol - gvolexact);
   areaerr = PetscAbsReal(garea - gareaexact);
 
-  ierr = GlobalMax(&Herr, &gmaxHerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avHerr, &gavHerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &Herr,  &gmaxHerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avHerr,  &gavHerr); CHKERRQ(ierr);
   gavHerr = gavHerr/(grid.Mx*grid.My);
-  ierr = GlobalMax(&etaerr, &gmaxetaerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &etaerr,  &gmaxetaerr); CHKERRQ(ierr);
 
-  ierr = GlobalMax(&domeH, &gdomeH, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &domeH,  &gdomeH); CHKERRQ(ierr);
   centerHerr = PetscAbsReal(gdomeH - gdomeHexact);
 
   return 0;
@@ -830,11 +827,11 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
     }
   }
 
-  ierr = GlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxuberr,  &gmaxuberr); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxvberr,  &gmaxvberr); CHKERRQ(ierr);
 
-  ierr = GlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avvecerr,  &gavvecerr); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
   const double xpeak = 450e3 * cos(25.0*(M_PI/180.0)),

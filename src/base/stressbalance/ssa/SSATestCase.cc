@@ -230,15 +230,15 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
   }
 
 
-  ierr = GlobalMax(&exactvelmax, &gexactvelmax,grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &exactvelmax,  &gexactvelmax); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxuerr,  &gmaxuerr); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxverr,  &gmaxverr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avuerr,  &gavuerr); CHKERRQ(ierr);
   gavuerr = gavuerr/(grid.Mx*grid.My);
-  ierr = GlobalSum(&avverr, &gavverr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avverr,  &gavverr); CHKERRQ(ierr);
   gavverr = gavverr/(grid.Mx*grid.My);
-  ierr = GlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &avvecerr,  &gavvecerr); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
   ierr = verbPrintf(1,grid.com, 

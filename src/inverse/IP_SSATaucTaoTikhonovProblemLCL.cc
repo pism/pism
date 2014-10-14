@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -72,12 +72,8 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::construct() {
 
   DM da;
   ierr = m_ssaforward.get_da(&da); CHKERRQ(ierr);
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(da, "baij", &m_Jstate); CHKERRQ(ierr);
-#else
   ierr = DMSetMatType(da, MATBAIJ); CHKERRQ(ierr);
   ierr = DMCreateMatrix(da, &m_Jstate); CHKERRQ(ierr);
-#endif
 
   int nLocalNodes  = grid.xm*grid.ym;
   int nGlobalNodes = grid.Mx*grid.My;
@@ -125,7 +121,7 @@ IP_SSATaucTaoTikhonovProblemLCL::DesignVec &IP_SSATaucTaoTikhonovProblemLCL::des
   return m_d;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::connect(tao::Solver tao) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::connect(Tao tao) {
   PetscErrorCode ierr;
   ierr = TaoSetStateDesignIS(tao, m_x->blockBIndexSet() /*state*/ , m_x->blockAIndexSet() /*design*/); CHKERRQ(ierr);
   ierr = TaoObjGradCallback<IP_SSATaucTaoTikhonovProblemLCL,&IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient>::connect(tao,*this); CHKERRQ(ierr);
@@ -134,7 +130,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::connect(tao::Solver tao) {
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(tao::Solver tao) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(Tao tao) {
   PetscErrorCode ierr;
   
   PetscInt its;
@@ -152,7 +148,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::monitorTao(tao::Solver tao) {
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(tao::Solver /*tao*/, Vec x, double *value, Vec gradient) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao /*tao*/, Vec x, double *value, Vec gradient) {
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
@@ -202,7 +198,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x,Terminat
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(tao::Solver, Vec x, Vec r) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, Vec r) {
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
@@ -220,7 +216,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(tao::Solver,
   return 0;
 }
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(tao::Solver, Vec x, Mat Jstate, Mat /*Jpc*/, Mat /*Jinv*/, MatStructure *s) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState(Tao, Vec x, Mat Jstate, Mat /*Jpc*/, Mat /*Jinv*/, MatStructure *s) {
   PetscErrorCode ierr;
 
   ierr = m_x->scatter(x,m_dGlobal.get_vec(),m_uGlobal.get_vec()); CHKERRQ(ierr);
@@ -238,7 +234,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianState
   return 0;
 }
 
-PetscErrorCode  IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(tao::Solver, Vec x, Mat /*Jdesign*/) {
+PetscErrorCode  IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec x, Mat /*Jdesign*/) {
   PetscErrorCode ierr;
   // I'm not sure if the following are necessary (i.e. will the copies that happen
   // in evaluateObjectiveAndGradient be sufficient) but we'll do them here

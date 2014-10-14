@@ -134,14 +134,11 @@ PetscErrorCode SSAFD::allocate_fd() {
   fracture_density = NULL;
   m_melange_back_pressure = NULL;
 
-  // note SSADA and SSAX are allocated in SSA::allocate()
-  ierr = VecDuplicate(SSAX, &m_b); CHKERRQ(ierr);
-
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(SSADA->get(), MATAIJ, &m_A); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(*m_da, MATAIJ, &m_A); CHKERRQ(ierr);
 #else
-  ierr = DMSetMatType(SSADA->get(), MATAIJ); CHKERRQ(ierr);
-  ierr = DMCreateMatrix(SSADA->get(), &m_A); CHKERRQ(ierr);
+  ierr = DMSetMatType(*m_da, MATAIJ); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(*m_da, &m_A); CHKERRQ(ierr);
 #endif
 
   ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
@@ -150,6 +147,13 @@ PetscErrorCode SSAFD::allocate_fd() {
   // Use non-zero initial guess (i.e. SSA velocities from the last
   // solve() call).
   ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE); CHKERRQ(ierr);
+
+  ierr = m_b.create(grid, "right_hand_side", WITHOUT_GHOSTS); CHKERRQ(ierr);
+
+  ierr = m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = m_velocity_old.set_attrs("internal",
+                                  "old SSA velocity field; used for re-trying with a different epsilon",
+                                  "m s-1", ""); CHKERRQ(ierr);
   
   const double power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
@@ -198,10 +202,6 @@ PetscErrorCode SSAFD::deallocate_fd() {
 
   if (m_A != NULL) {
     ierr = MatDestroy(&m_A); CHKERRQ(ierr);
-  }
-
-  if (m_b != NULL) {
-    ierr = VecDestroy(&m_b); CHKERRQ(ierr);
   }
 
   return 0;
@@ -282,9 +282,8 @@ In the case of Dirichlet boundary conditions, the entries on the right-hand side
 come from known velocity values.  The fields vel_bc and bc_locations are used for
 this.
  */
-PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
+PetscErrorCode SSAFD::assemble_rhs() {
   PetscErrorCode ierr;
-  Vector2 **rhs_uv;
   const double dx = grid.dx, dy = grid.dy;
 
   const double ice_free_default_velocity = 0.0;
@@ -297,16 +296,14 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = config.get_flag("ssa_dirichlet_bc");
 
-  ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
+  ierr = m_b.set(0.0); CHKERRQ(ierr);
 
   // get driving stress components
   ierr = compute_driving_stress(taud); CHKERRQ(ierr);
 
-
-  ierr = DMDAVecGetArray(SSADA->get(), rhs, &rhs_uv); CHKERRQ(ierr);
-
   IceModelVec::AccessList list;
   list.add(taud);
+  list.add(m_b);
 
   if (m_vel_bc && bc_locations) {
     list.add(*m_vel_bc);
@@ -328,8 +325,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
     if (m_vel_bc != NULL &&
         bc_locations->as_int(i, j) == 1) {
-      rhs_uv[i][j].u = m_scaling * (*m_vel_bc)(i, j).u;
-      rhs_uv[i][j].v = m_scaling * (*m_vel_bc)(i, j).v;
+      m_b(i, j).u = m_scaling * (*m_vel_bc)(i, j).u;
+      m_b(i, j).v = m_scaling * (*m_vel_bc)(i, j).v;
       continue;
     }
 
@@ -346,8 +343,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
       if (ice_free(M_ij)) {
-        rhs_uv[i][j].u = m_scaling * ice_free_default_velocity;
-        rhs_uv[i][j].v = m_scaling * ice_free_default_velocity;
+        m_b(i, j).u = m_scaling * ice_free_default_velocity;
+        m_b(i, j).v = m_scaling * ice_free_default_velocity;
         continue;
       }
 
@@ -398,8 +395,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         // Note that if the current cell is "marginal" but not a CFBC
         // location, the following two lines are equaivalent to the "usual
         // case" below.
-        rhs_uv[i][j].u = taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
-        rhs_uv[i][j].v = taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
+        m_b(i, j).u = taud(i,j).u + (aMM - aPP) * ocean_pressure / dx;
+        m_b(i, j).v = taud(i,j).v + (bMM - bPP) * ocean_pressure / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
@@ -410,11 +407,9 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     }   // end of "if (use_cfbc)"
 
     // usual case: use already computed driving stress
-    rhs_uv[i][j].u = taud(i, j).u;
-    rhs_uv[i][j].v = taud(i, j).v;
+    m_b(i, j).u = taud(i, j).u;
+    m_b(i, j).v = taud(i, j).v;
   }
-
-  ierr = DMDAVecRestoreArray(SSADA->get(), rhs, &rhs_uv); CHKERRQ(ierr);
 
   return 0;
 }
@@ -843,7 +838,7 @@ PetscErrorCode SSAFD::solve() {
   {
     // These computations do not depend on the solution, so they need
     // to be done once.
-    ierr = assemble_rhs(m_b); CHKERRQ(ierr);
+    ierr = assemble_rhs(); CHKERRQ(ierr);
     ierr = compute_hardav_staggered(); CHKERRQ(ierr);
   }
 
@@ -924,7 +919,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     very_verbose = getVerbosityLevel() > 2;
 
   // set the initial guess:
-  ierr = m_velocity.copy_to_vec(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to(m_velocity_global); CHKERRQ(ierr);
 
   stdout_ssa.clear();
 
@@ -960,7 +955,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 #else
     ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
 #endif
-    ierr = KSPSolve(m_KSP, m_b, SSAX); CHKERRQ(ierr); // SOLVE
+    ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec()); CHKERRQ(ierr); // SOLVE
 
     // Check if diverged; report to standard out about iteration
     ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
@@ -990,7 +985,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     // Communicate so that we have stencil width for evaluation of effective
     // viscosity on next "outer" iteration (and geometry etc. if done):
     // Note that copy_from() updates ghosts of m_velocity.
-    ierr = m_velocity.copy_from_vec(SSAX); CHKERRQ(ierr);
+    ierr = m_velocity_global.copy_to(m_velocity); CHKERRQ(ierr);
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc == true) {
@@ -1651,7 +1646,7 @@ PetscErrorCode SSAFD::write_system_petsc(const std::string &namepart) {
   ierr = PetscViewerBinaryOpen(grid.com, filename.c_str(), FILE_MODE_WRITE,
                                &viewer); CHKERRQ(ierr);
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
-  ierr = VecView(m_b, viewer); CHKERRQ(ierr);
+  ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   return 0;
@@ -1707,10 +1702,10 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");  CHKERRQ(ierr);
 
-  ierr = PetscObjectSetName((PetscObject) m_b,"rhs"); CHKERRQ(ierr);
-  ierr = VecView(m_b, viewer); CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) SSAX,"uv"); CHKERRQ(ierr);
-  ierr = VecView(SSAX, viewer); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs"); CHKERRQ(ierr);
+  ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv"); CHKERRQ(ierr);
+  ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",
@@ -1721,22 +1716,6 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
             "y=%12.3f + (0:%d)*%12.3f;\n",
             -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");  CHKERRQ(ierr);
-
-  // also save thickness and effective viscosity
-  ierr = thickness->view_matlab(viewer); CHKERRQ(ierr);
-  ierr = surface->view_matlab(viewer); CHKERRQ(ierr);
-
-  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
-  ierr = component.set_name("nuH_0"); CHKERRQ(ierr);
-  component.metadata().set_string("long_name",
-                                  "effective viscosity times thickness (i offset) at current time step");
-  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
-
-  ierr = nuH.get_component(1, component); CHKERRQ(ierr);
-  ierr = component.set_name("nuH_1"); CHKERRQ(ierr);
-  component.metadata().set_string("long_name",
-                                  "effective viscosity times thickness (j offset) at current time step");
-  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);

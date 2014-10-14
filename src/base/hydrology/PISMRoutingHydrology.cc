@@ -285,9 +285,9 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
   }
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
-  ierr = GlobalSum(&my_icefreelost, &icefreelost, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&my_oceanlost, &oceanlost, grid.com); CHKERRQ(ierr);
-  ierr = GlobalSum(&my_negativegain, &negativegain, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_icefreelost,  &icefreelost); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_oceanlost,  &oceanlost); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_negativegain,  &negativegain); CHKERRQ(ierr);
 
   if (stripwidth <= 0.0) {
     nullstriplost = 0.0;
@@ -305,7 +305,7 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
     }
   }
 
-  ierr = GlobalSum(&my_nullstriplost, &nullstriplost, grid.com); CHKERRQ(ierr);
+  ierr = GlobalSum(grid.com, &my_nullstriplost,  &nullstriplost); CHKERRQ(ierr);
 
   return 0;
 }
@@ -472,7 +472,7 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result
     }
   }
 
-  ierr = GlobalMax(&mymaxKW, &maxKW, grid.com); CHKERRQ(ierr);
+  ierr = GlobalMax(grid.com, &mymaxKW,  &maxKW); CHKERRQ(ierr);
 
   return 0;
 }
@@ -618,6 +618,8 @@ PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
   list.add(W);
   list.add(V);
   list.add(result);
+
+  assert(W.get_stencil_width() >= 1);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -852,7 +854,7 @@ PetscErrorCode RoutingHydrology_bwatvel::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "bwatvel", WITH_GHOSTS); CHKERRQ(ierr);
+  ierr = result->create(grid, "bwatvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata(0) = vars[0];
   result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
