@@ -37,13 +37,13 @@ NC3File::NC3File(MPI_Comm c)
 }
 
 NC3File::~NC3File() {
-  if (ncid >= 0) {
+  if (m_file_id >= 0) {
     if (m_rank == 0) {
-      nc_close(ncid);
+      nc_close(m_file_id);
       fprintf(stderr, "NC3File::~NC3File: NetCDF file %s is still open\n",
               m_filename.c_str());
     }
-    ncid = -1;
+    m_file_id = -1;
   }
 }
 
@@ -57,56 +57,56 @@ int NC3File::integer_open_mode(IO_Mode input) const {
 }
 
 // open/create/close
-int NC3File::open(const std::string &fname, IO_Mode mode) {
+int NC3File::open_impl(const std::string &fname, IO_Mode mode) {
   int stat;
 
   m_filename = fname;
 
   if (m_rank == 0) {
     int nc_mode = integer_open_mode(mode);
-    stat = nc_open(m_filename.c_str(), nc_mode, &ncid);
+    stat = nc_open(m_filename.c_str(), nc_mode, &m_file_id);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&ncid, 1, MPI_INT, 0, com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&m_file_id, 1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return stat;
 }
 
 //! \brief Create a NetCDF file.
-int NC3File::create(const std::string &fname) {
+int NC3File::create_impl(const std::string &fname) {
   int stat;
 
   m_filename = fname;
 
   if (m_rank == 0) {
-    stat = nc_create(m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &ncid);
+    stat = nc_create(m_filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &m_file_id);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&ncid, 1, MPI_INT, 0, com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&m_file_id, 1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  define_mode = true;
+  m_define_mode = true;
 
   return stat;
 }
 
 //! \brief Close a NetCDF file.
-int NC3File::close() {
+int NC3File::close_impl() {
   int stat;
 
   if (m_rank == 0) {
-    stat = nc_close(ncid);
-    ncid = -1;
+    stat = nc_close(m_file_id);
+    m_file_id = -1;
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&ncid, 1, MPI_INT, 0, com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&m_file_id, 1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   m_filename.clear();
 
@@ -115,66 +115,66 @@ int NC3File::close() {
 
 
 //! \brief Exit define mode.
-int NC3File::enddef() const {
+int NC3File::enddef_impl() const {
   int stat;
 
-  if (define_mode == false)
+  if (m_define_mode == false)
     return 0;
 
   if (m_rank == 0) {
     //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
     //! created by PISM.
-    stat = nc__enddef(ncid, 50000, 4, 0, 4); check(stat);
+    stat = nc__enddef(m_file_id, 50000, 4, 0, 4); check(stat);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return stat;
 }
 
 //! \brief Enter define mode.
-int NC3File::redef() const {
+int NC3File::redef_impl() const {
   int stat;
 
-  if (define_mode == true)
+  if (m_define_mode == true)
     return 0;
 
   if (m_rank == 0) {
-    stat = nc_redef(ncid);
+    stat = nc_redef(m_file_id);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
-  define_mode = true;
+  m_define_mode = true;
 
   return stat;
 }
 
 
 //! \brief Define a dimension.
-int NC3File::def_dim(const std::string &name, size_t length) const {
+int NC3File::def_dim_impl(const std::string &name, size_t length) const {
   int stat;
 
   if (m_rank == 0) {
     int dimid;
-    stat = nc_def_dim(ncid, name.c_str(), length, &dimid); check(stat);
+    stat = nc_def_dim(m_file_id, name.c_str(), length, &dimid); check(stat);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   return stat;
 }
 
-int NC3File::inq_dimid(const std::string &dimension_name, bool &exists) const {
+int NC3File::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
-    stat = nc_inq_dimid(ncid, dimension_name.c_str(), &flag);
+    stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &flag);
 
     if (stat == NC_NOERR)
       flag = 1;
@@ -182,8 +182,8 @@ int NC3File::inq_dimid(const std::string &dimension_name, bool &exists) const {
       flag = 0;
 
   }
-  MPI_Barrier(com);
-  MPI_Bcast(&flag, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&flag, 1, MPI_INT, 0, m_com);
 
   exists = (flag == 1);
 
@@ -192,65 +192,65 @@ int NC3File::inq_dimid(const std::string &dimension_name, bool &exists) const {
 
 
 //! \brief Get a dimension length.
-int NC3File::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
+int NC3File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int stat;
 
   if (m_rank == 0) {
     int dimid;
     size_t length;
 
-    stat = nc_inq_dimid(ncid, dimension_name.c_str(), &dimid); check(stat);
+    stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid); check(stat);
     if (stat == NC_NOERR) {
-      stat = nc_inq_dimlen(ncid, dimid, &length); check(stat);
+      stat = nc_inq_dimlen(m_file_id, dimid, &length); check(stat);
       result = static_cast<unsigned int>(length);
     }
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&result, 1, MPI_UNSIGNED, 0, com);
-  MPI_Bcast(&stat,   1, MPI_INT,      0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&result, 1, MPI_UNSIGNED, 0, m_com);
+  MPI_Bcast(&stat,   1, MPI_INT,      0, m_com);
 
   return stat;
 }
 
 //! \brief Get an unlimited dimension.
-int NC3File::inq_unlimdim(std::string &result) const {
+int NC3File::inq_unlimdim_impl(std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
 
   if (m_rank == 0) {
     int dimid;
-    stat = nc_inq_unlimdim(ncid, &dimid); check(stat);
+    stat = nc_inq_unlimdim(m_file_id, &dimid); check(stat);
 
     if (dimid != -1) {
-      stat = nc_inq_dimname(ncid, dimid, dimname); check(stat);
+      stat = nc_inq_dimname(m_file_id, dimid, dimname); check(stat);
     }
   }
 
-  MPI_Barrier(com);
+  MPI_Barrier(m_com);
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
-  MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, com);
+  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, m_com);
 
   result = dimname;
 
   return stat;
 }
 
-int NC3File::inq_dimname(int j, std::string &result) const {
+int NC3File::inq_dimname_impl(int j, std::string &result) const {
   int stat;
   char dimname[NC_MAX_NAME];
   memset(dimname, 0, NC_MAX_NAME);
 
   if (m_rank == 0) {
-    stat = nc_inq_dimname(ncid, j, dimname); check(stat);
+    stat = nc_inq_dimname(m_file_id, j, dimname); check(stat);
   }
 
-  MPI_Barrier(com);
+  MPI_Barrier(m_com);
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
-  MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, com);
+  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(dimname, NC_MAX_NAME, MPI_CHAR, 0, m_com);
 
   result = dimname;
 
@@ -258,23 +258,23 @@ int NC3File::inq_dimname(int j, std::string &result) const {
 }
 
 
-int NC3File::inq_ndims(int &result) const {
+int NC3File::inq_ndims_impl(int &result) const {
   int stat;
 
   if (m_rank == 0) {
-    stat = nc_inq_ndims(ncid, &result); check(stat);
+    stat = nc_inq_ndims(m_file_id, &result); check(stat);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&result, 1, MPI_INT, 0, com);
-  MPI_Bcast(&stat,   1, MPI_INT,      0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&result, 1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat,   1, MPI_INT,      0, m_com);
 
   return stat;
 }
 
 
 //! \brief Define a variable.
-int NC3File::def_var(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+int NC3File::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   int stat;
 
   if (m_rank == 0) {
@@ -284,21 +284,21 @@ int NC3File::def_var(const std::string &name, IO_Type nctype, const std::vector<
     std::vector<std::string>::const_iterator j;
     for (j = dims.begin(); j != dims.end(); ++j) {
       int dimid;
-      stat = nc_inq_dimid(ncid, j->c_str(), &dimid); check(stat);
+      stat = nc_inq_dimid(m_file_id, j->c_str(), &dimid); check(stat);
       dimids.push_back(dimid);
     }
 
-    stat = nc_def_var(ncid, name.c_str(), pism_type_to_nc_type(nctype),
+    stat = nc_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
                       static_cast<int>(dims.size()), &dimids[0], &varid); check(stat);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
 
   return stat;
 }
 
-int NC3File::get_varm_double(const std::string &variable_name,
+int NC3File::get_varm_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<unsigned int> &imap, double *op) const {
@@ -306,7 +306,7 @@ int NC3File::get_varm_double(const std::string &variable_name,
                               start, count, imap, op, true);
 }
 
-int NC3File::get_vara_double(const std::string &variable_name,
+int NC3File::get_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  double *op) const {
@@ -317,10 +317,10 @@ int NC3File::get_vara_double(const std::string &variable_name,
 
 //! \brief Get variable data.
 int NC3File::get_var_double(const std::string &variable_name,
-                                const std::vector<unsigned int> &start_input,
-                                const std::vector<unsigned int> &count_input,
-                                const std::vector<unsigned int> &imap_input, double *ip,
-                                bool mapped) const {
+                            const std::vector<unsigned int> &start_input,
+                            const std::vector<unsigned int> &count_input,
+                            const std::vector<unsigned int> &imap_input, double *ip,
+                            bool mapped) const {
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
   std::vector<unsigned int> imap = imap_input;
@@ -354,7 +354,7 @@ int NC3File::get_var_double(const std::string &variable_name,
     imap.resize(ndims);
 
   // get the size of the communicator
-  MPI_Comm_size(com, &com_size);
+  MPI_Comm_size(m_com, &com_size);
 
   // compute the size of a local chunk
   for (int k = 0; k < ndims; ++k)
@@ -362,7 +362,7 @@ int NC3File::get_var_double(const std::string &variable_name,
 
   // compute the maximum and send it to processor 0; this is the size of the
   // buffer processor 0 will need
-  MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
+  MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, m_com);
 
   // now we need to send start, count and imap data to processor 0 and receive data
   if (m_rank == 0) {
@@ -378,17 +378,17 @@ int NC3File::get_var_double(const std::string &variable_name,
     std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
     int varid;
 
-    stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
     for (int r = 0; r < com_size; ++r) {
 
       if (r != 0) {
         // Note: start, count, imap, and local_chunk_size on processor zero are
         // used *before* they get overwritten by these calls
-        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      com, &mpi_stat);
-        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      com, &mpi_stat);
-        MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       com, &mpi_stat);
-        MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, com, &mpi_stat);
+        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
+        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
+        MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       m_com, &mpi_stat);
+        MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
       }
 
       // This for loop uses start, count and imap passed in as arguments when r
@@ -403,15 +403,15 @@ int NC3File::get_var_double(const std::string &variable_name,
       }
 
       if (mapped) {
-        stat = nc_get_varm_double(ncid, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+        stat = nc_get_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                                   processor_0_buffer); check(stat);
       } else {
-        stat = nc_get_vara_double(ncid, varid, &nc_start[0], &nc_count[0],
+        stat = nc_get_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
                                   processor_0_buffer); check(stat);
       }
 
       if (r != 0) {
-        MPI_Send(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, com);
+        MPI_Send(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k)
           ip[k] = processor_0_buffer[k];
@@ -421,18 +421,18 @@ int NC3File::get_var_double(const std::string &variable_name,
 
     delete[] processor_0_buffer;
   } else {
-    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      com);
-    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      com);
-    MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       com);
-    MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, com);
+    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
+    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
+    MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       m_com);
+    MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
-    MPI_Recv(ip, local_chunk_size, MPI_DOUBLE, 0, data_tag, com, &mpi_stat);
+    MPI_Recv(ip, local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com, &mpi_stat);
   }
 
   return stat;
 }
 
-int NC3File::put_varm_double(const std::string &variable_name,
+int NC3File::put_varm_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<unsigned int> &imap, const double *op) const {
@@ -440,7 +440,7 @@ int NC3File::put_varm_double(const std::string &variable_name,
                               start, count, imap, op, true);
 }
 
-int NC3File::put_vara_double(const std::string &variable_name,
+int NC3File::put_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  const double *op) const {
@@ -452,10 +452,10 @@ int NC3File::put_vara_double(const std::string &variable_name,
 
 //! \brief Put variable data (mapped).
 int NC3File::put_var_double(const std::string &variable_name,
-                                const std::vector<unsigned int> &start_input,
-                                const std::vector<unsigned int> &count_input,
-                                const std::vector<unsigned int> &imap_input, const double *op,
-                                bool mapped) const {
+                            const std::vector<unsigned int> &start_input,
+                            const std::vector<unsigned int> &count_input,
+                            const std::vector<unsigned int> &imap_input, const double *op,
+                            bool mapped) const {
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
   std::vector<unsigned int> imap = imap_input;
@@ -489,7 +489,7 @@ int NC3File::put_var_double(const std::string &variable_name,
     imap.resize(ndims);
 
   // get the size of the communicator
-  MPI_Comm_size(com, &com_size);
+  MPI_Comm_size(m_com, &com_size);
 
   // compute the size of a local chunk
   for (int k = 0; k < ndims; ++k)
@@ -497,7 +497,7 @@ int NC3File::put_var_double(const std::string &variable_name,
 
   // compute the maximum and send it to processor 0; this is the size of the
   // buffer processor 0 will need
-  MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, com);
+  MPI_Reduce(&local_chunk_size, &processor_0_chunk_size, 1, MPI_UNSIGNED, MPI_MAX, 0, m_com);
 
   // now we need to send start, count and imap data to processor 0 and receive data
   if (m_rank == 0) {
@@ -510,19 +510,19 @@ int NC3File::put_var_double(const std::string &variable_name,
     std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);
     int varid;
 
-    stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
     for (int r = 0; r < com_size; ++r) {
 
       if (r != 0) {
         // Note: start, count, imap, and local_chunk_size on processor zero are
         // used *before* they get overwritten by these calls
-        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      com, &mpi_stat);
-        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      com, &mpi_stat);
-        MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       com, &mpi_stat);
-        MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, com, &mpi_stat);
+        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
+        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
+        MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       m_com, &mpi_stat);
+        MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
 
-        MPI_Recv(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, com, &mpi_stat);
+        MPI_Recv(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k)
           processor_0_buffer[k] = op[k];
@@ -540,10 +540,10 @@ int NC3File::put_var_double(const std::string &variable_name,
       }
 
       if (mapped) {
-        stat = nc_put_varm_double(ncid, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+        stat = nc_put_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
                                   processor_0_buffer); check(stat);
       } else {
-        stat = nc_put_vara_double(ncid, varid, &nc_start[0], &nc_count[0],
+        stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
                                   processor_0_buffer); check(stat);
       }
 
@@ -567,41 +567,41 @@ int NC3File::put_var_double(const std::string &variable_name,
 
     delete[] processor_0_buffer;
   } else {
-    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      com);
-    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      com);
-    MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       com);
-    MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, com);
+    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
+    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
+    MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       m_com);
+    MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
-    MPI_Send(const_cast<double*>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, com);
+    MPI_Send(const_cast<double*>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
   }
 
   return stat;
 }
 
 //! \brief Get the number of variables.
-int NC3File::inq_nvars(int &result) const {
+int NC3File::inq_nvars_impl(int &result) const {
   int stat;
 
   if (m_rank == 0) {
-    stat = nc_inq_nvars(ncid, &result); check(stat);
+    stat = nc_inq_nvars(m_file_id, &result); check(stat);
   }
-  MPI_Barrier(com);
-  MPI_Bcast(&result, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&result, 1, MPI_INT, 0, m_com);
 
   return 0;
 }
 
 //! \brief Get dimensions a variable depends on.
-int NC3File::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
+int NC3File::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
   int stat, ndims, varid = -1;
   std::vector<int> dimids;
 
   if (m_rank == 0) {
-    stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
 
-    stat = nc_inq_varndims(ncid, varid, &ndims); check(stat);
+    stat = nc_inq_varndims(m_file_id, varid, &ndims); check(stat);
   }
-  MPI_Bcast(&ndims, 1, MPI_INT, 0, com);
+  MPI_Bcast(&ndims, 1, MPI_INT, 0, m_com);
 
   if (ndims == 0) {
     result.clear();
@@ -612,21 +612,21 @@ int NC3File::inq_vardimid(const std::string &variable_name, std::vector<std::str
   dimids.resize(ndims);
 
   if (m_rank == 0) {
-    stat = nc_inq_vardimid(ncid, varid, &dimids[0]); check(stat);
+    stat = nc_inq_vardimid(m_file_id, varid, &dimids[0]); check(stat);
   }
 
-  MPI_Barrier(com);
+  MPI_Barrier(m_com);
 
   for (int k = 0; k < ndims; ++k) {
     char name[NC_MAX_NAME];
     memset(name, 0, NC_MAX_NAME);
 
     if (m_rank == 0) {
-      stat = nc_inq_dimname(ncid, dimids[k], name); check(stat);
+      stat = nc_inq_dimname(m_file_id, dimids[k], name); check(stat);
     }
 
-    MPI_Barrier(com);
-    MPI_Bcast(name, NC_MAX_NAME, MPI_CHAR, 0, com);
+    MPI_Barrier(m_com);
+    MPI_Bcast(name, NC_MAX_NAME, MPI_CHAR, 0, m_com);
 
     result[k] = name;
   }
@@ -638,7 +638,7 @@ int NC3File::inq_vardimid(const std::string &variable_name, std::vector<std::str
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::inq_varnatts(const std::string &variable_name, int &result) const {
+int NC3File::inq_varnatts_impl(const std::string &variable_name, int &result) const {
   int stat;
 
   if (m_rank == 0) {
@@ -647,23 +647,23 @@ int NC3File::inq_varnatts(const std::string &variable_name, int &result) const {
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_inq_varnatts(ncid, varid, &result); check(stat);
+    stat = nc_inq_varnatts(m_file_id, varid, &result); check(stat);
   }
-  MPI_Barrier(com);
-  MPI_Bcast(&result, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&result, 1, MPI_INT, 0, m_com);
 
   return 0;
 }
 
 //! \brief Finds a variable and sets the "exists" flag.
-int NC3File::inq_varid(const std::string &variable_name, bool &exists) const {
+int NC3File::inq_varid_impl(const std::string &variable_name, bool &exists) const {
   int stat, flag = -1;
 
   if (m_rank == 0) {
-    stat = nc_inq_varid(ncid, variable_name.c_str(), &flag);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
     if (stat == NC_NOERR)
       flag = 1;
@@ -671,48 +671,48 @@ int NC3File::inq_varid(const std::string &variable_name, bool &exists) const {
       flag = 0;
 
   }
-  MPI_Barrier(com);
-  MPI_Bcast(&flag, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&flag, 1, MPI_INT, 0, m_com);
 
   exists = (flag == 1);
 
   return 0;
 }
 
-int NC3File::inq_varname(unsigned int j, std::string &result) const {
+int NC3File::inq_varname_impl(unsigned int j, std::string &result) const {
   int stat;
   char varname[NC_MAX_NAME];
   memset(varname, 0, NC_MAX_NAME);
 
   if (m_rank == 0) {
-    stat = nc_inq_varname(ncid, j, varname); check(stat);
+    stat = nc_inq_varname(m_file_id, j, varname); check(stat);
   }
 
-  MPI_Barrier(com);
+  MPI_Barrier(m_com);
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
-  MPI_Bcast(varname, NC_MAX_NAME, MPI_CHAR, 0, com);
+  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(varname, NC_MAX_NAME, MPI_CHAR, 0, m_com);
 
   result = varname;
 
   return stat;
 }
 
-int NC3File::inq_vartype(const std::string &variable_name, IO_Type &result) const {
+int NC3File::inq_vartype_impl(const std::string &variable_name, IO_Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
     nc_type var_type;
-    stat = nc_inq_varid(ncid, variable_name.c_str(), &tmp); check(stat);
-    stat = nc_inq_vartype(ncid, tmp, &var_type); check(stat);
+    stat = nc_inq_varid(m_file_id, variable_name.c_str(), &tmp); check(stat);
+    stat = nc_inq_vartype(m_file_id, tmp, &var_type); check(stat);
 
     tmp = var_type;
   }
 
-  MPI_Barrier(com);
+  MPI_Barrier(m_com);
 
-  MPI_Bcast(&stat,   1, MPI_INT, 0, com);
-  MPI_Bcast(&tmp,    1, MPI_INT, 0, com);
+  MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
+  MPI_Bcast(&tmp,    1, MPI_INT, 0, m_com);
 
   result = nc_type_to_pism_type(tmp);
 
@@ -725,7 +725,7 @@ int NC3File::inq_vartype(const std::string &variable_name, IO_Type &result) cons
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::get_att_double(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
+int NC3File::get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const {
   int stat, len, varid = -1;
 
   // Read and broadcast the attribute length:
@@ -735,10 +735,10 @@ int NC3File::get_att_double(const std::string &variable_name, const std::string 
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+    stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
     if (stat == NC_NOERR)
       len = static_cast<int>(attlen);
@@ -749,7 +749,7 @@ int NC3File::get_att_double(const std::string &variable_name, const std::string 
       len = 0;
     }
   }
-  MPI_Bcast(&len, 1, MPI_INT, 0, com);
+  MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
 
   if (len == 0) {
     result.clear();
@@ -760,13 +760,13 @@ int NC3File::get_att_double(const std::string &variable_name, const std::string 
 
   // Now read data and broadcast stat to see if we succeeded:
   if (m_rank == 0) {
-    stat = nc_get_att_double(ncid, varid, att_name.c_str(), &result[0]); check(stat);
+    stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), &result[0]); check(stat);
   }
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   // On success, broadcast the data. On error, stop.
   if (stat == NC_NOERR) {
-    MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, com);
+    MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, m_com);
   } else {
     fprintf(stderr, "Error reading the %s attribute; (varid %d, NetCDF error %s)",
             att_name.c_str(), varid, nc_strerror(stat));
@@ -779,7 +779,7 @@ int NC3File::get_att_double(const std::string &variable_name, const std::string 
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::get_att_text(const std::string &variable_name, const std::string &att_name, std::string &result) const {
+int NC3File::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
   char *str = NULL;
   int stat, len, varid = -1;
 
@@ -790,16 +790,16 @@ int NC3File::get_att_text(const std::string &variable_name, const std::string &a
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+    stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
     if (stat == NC_NOERR)
       len = static_cast<int>(attlen);
     else
       len = 0;
   }
-  MPI_Bcast(&len, 1, MPI_INT, 0, com);
+  MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
 
   // Allocate some memory or clear result and return:
   if (len == 0) {
@@ -814,13 +814,13 @@ int NC3File::get_att_text(const std::string &variable_name, const std::string &a
 
   // Now read the string and broadcast stat to see if we succeeded:
   if (m_rank == 0) {
-    stat = nc_get_att_text(ncid, varid, att_name.c_str(), str);
+    stat = nc_get_att_text(m_file_id, varid, att_name.c_str(), str);
   }
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   // On success, broadcast the string. On error, set str to "".
   if (stat == NC_NOERR) {
-    MPI_Bcast(str, len + 1, MPI_CHAR, 0, com);
+    MPI_Bcast(str, len + 1, MPI_CHAR, 0, m_com);
   } else {
     strcpy(str, "");
   }
@@ -835,7 +835,7 @@ int NC3File::get_att_text(const std::string &variable_name, const std::string &a
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::put_att_double(const std::string &variable_name, const std::string &att_name,
+int NC3File::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
                                IO_Type nctype, const std::vector<double> &data) const {
 
   int stat = 0;
@@ -848,15 +848,15 @@ int NC3File::put_att_double(const std::string &variable_name, const std::string 
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_put_att_double(ncid, varid, att_name.c_str(),
+    stat = nc_put_att_double(m_file_id, varid, att_name.c_str(),
                              pism_type_to_nc_type(nctype), data.size(), &data[0]); check(stat);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   return stat;
 }
@@ -867,7 +867,7 @@ int NC3File::put_att_double(const std::string &variable_name, const std::string 
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::put_att_text(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
+int NC3File::put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const {
   int stat = 0;
 
   stat = redef(); check(stat);
@@ -878,14 +878,14 @@ int NC3File::put_att_text(const std::string &variable_name, const std::string &a
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_put_att_text(ncid, varid, att_name.c_str(), value.size(), value.c_str()); check(stat);
+    stat = nc_put_att_text(m_file_id, varid, att_name.c_str(), value.size(), value.c_str()); check(stat);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   return stat;
 }
@@ -894,7 +894,7 @@ int NC3File::put_att_text(const std::string &variable_name, const std::string &a
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const {
+int NC3File::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
   int stat;
   char name[NC_MAX_NAME];
   memset(name, 0, NC_MAX_NAME);
@@ -905,14 +905,14 @@ int NC3File::inq_attname(const std::string &variable_name, unsigned int n, std::
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
-    stat = nc_inq_attname(ncid, varid, n, name); check(stat);
+    stat = nc_inq_attname(m_file_id, varid, n, name); check(stat);
   }
-  MPI_Barrier(com);
-  MPI_Bcast(name, NC_MAX_NAME, MPI_CHAR, 0, com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(name, NC_MAX_NAME, MPI_CHAR, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   result = name;
 
@@ -923,7 +923,7 @@ int NC3File::inq_attname(const std::string &variable_name, unsigned int n, std::
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-int NC3File::inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
+int NC3File::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {
@@ -932,12 +932,12 @@ int NC3File::inq_atttype(const std::string &variable_name, const std::string &at
     if (variable_name == "PISM_GLOBAL") {
       varid = NC_GLOBAL;
     } else {
-      stat = nc_inq_varid(ncid, variable_name.c_str(), &varid); check(stat);
+      stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(stat);
     }
 
     // In NetCDF 3.6.x nc_type is an enum; in 4.x it is 'typedef int'.
     nc_type nctype = NC_NAT;
-    stat = nc_inq_atttype(ncid, varid, att_name.c_str(), &nctype);
+    stat = nc_inq_atttype(m_file_id, varid, att_name.c_str(), &nctype);
     if (stat == NC_ENOTATT) {
       tmp = NC_NAT;
     } else {
@@ -945,8 +945,8 @@ int NC3File::inq_atttype(const std::string &variable_name, const std::string &at
       check(stat);
     }
   }
-  MPI_Barrier(com);
-  MPI_Bcast(&tmp, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&tmp, 1, MPI_INT, 0, m_com);
 
   result = nc_type_to_pism_type(tmp);
 
@@ -955,28 +955,28 @@ int NC3File::inq_atttype(const std::string &variable_name, const std::string &at
 
 
 //! \brief Sets the fill mode.
-int NC3File::set_fill(int fillmode, int &old_modep) const {
+int NC3File::set_fill_impl(int fillmode, int &old_modep) const {
   int stat;
 
   if (m_rank == 0) {
-    stat = nc_set_fill(ncid, fillmode, &old_modep); check(stat);
+    stat = nc_set_fill(m_file_id, fillmode, &old_modep); check(stat);
   }
 
-  MPI_Barrier(com);
-  MPI_Bcast(&old_modep, 1, MPI_INT, 0, com);
-  MPI_Bcast(&stat, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&old_modep, 1, MPI_INT, 0, m_com);
+  MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   return stat;
 }
 
-std::string NC3File::get_format() const {
+std::string NC3File::get_format_impl() const {
   int format;
 
   if (m_rank == 0) {
-    int stat = nc_inq_format(ncid, &format); check(stat);
+    int stat = nc_inq_format(m_file_id, &format); check(stat);
   }
-  MPI_Barrier(com);
-  MPI_Bcast(&format, 1, MPI_INT, 0, com);
+  MPI_Barrier(m_com);
+  MPI_Bcast(&format, 1, MPI_INT, 0, m_com);
 
   switch(format) {
   case NC_FORMAT_CLASSIC:

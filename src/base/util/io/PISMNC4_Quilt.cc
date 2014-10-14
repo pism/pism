@@ -54,47 +54,47 @@ int NC4_Quilt::integer_open_mode(IO_Mode input) const {
   }
 }
 
-int NC4_Quilt::open(const std::string &fname, IO_Mode mode) {
+int NC4_Quilt::open_impl(const std::string &fname, IO_Mode mode) {
   int stat, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
   m_filename = patch_filename(fname, rank);
 
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open(m_filename.c_str(), nc_mode, &ncid); check(stat);
+  stat = nc_open(m_filename.c_str(), nc_mode, &m_file_id); check(stat);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return global_stat(stat);
 }
 
 
-int NC4_Quilt::create(const std::string &fname) {
+int NC4_Quilt::create_impl(const std::string &fname) {
   int stat = 0, rank = 0;
 
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
   m_filename = patch_filename(fname, rank);
 
-  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &ncid); check(stat);
+  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &m_file_id); check(stat);
 
-  define_mode = true;
+  m_define_mode = true;
 
   return global_stat(stat);
 }
 
-int NC4_Quilt::close() {
+int NC4_Quilt::close_impl() {
   int stat;
 
-  stat = nc_close(ncid); check(stat);
+  stat = nc_close(m_file_id); check(stat);
 
-  ncid = -1;
+  m_file_id = -1;
 
   m_filename.clear();
 
   return global_stat(stat);
 }
 
-int NC4_Quilt::def_dim(const std::string &name, size_t length) const {
+int NC4_Quilt::def_dim_impl(const std::string &name, size_t length) const {
   int stat;
   size_t length_local = 0;
 
@@ -110,16 +110,16 @@ int NC4_Quilt::def_dim(const std::string &name, size_t length) const {
     stat = this->def_dim(name + suffix, length_local); check(stat);
   }
 
-  stat = NC4File::def_dim(name, length); check(stat);
+  stat = NC4File::def_dim_impl(name, length); check(stat);
 
   return global_stat(stat);
 }
 
-int NC4_Quilt::def_var(const std::string &name, IO_Type nctype,
+int NC4_Quilt::def_var_impl(const std::string &name, IO_Type nctype,
                        const std::vector<std::string> &dims_input) const {
   std::vector<std::string> dims = dims_input;
   int stat = 0, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
   if (name == "x" || name == "y") {
     std::vector<std::string> dims_local;
@@ -130,7 +130,7 @@ int NC4_Quilt::def_var(const std::string &name, IO_Type nctype,
                                 name == "x" ? m_xs : m_ys); check(stat);
 
     int size;
-    MPI_Comm_size(com, &size);
+    MPI_Comm_size(m_com, &size);
     stat = this->put_att_double(name + suffix, "mpi_rank", PISM_INT, rank); check(stat);
     stat = this->put_att_double(name + suffix, "mpi_size", PISM_INT, size); check(stat);
   }
@@ -141,12 +141,12 @@ int NC4_Quilt::def_var(const std::string &name, IO_Type nctype,
       dims[j] = dims[j] + suffix;
   }
 
-  stat = NC4File::def_var(name, nctype, dims); check(stat);
+  stat = NC4File::def_var_impl(name, nctype, dims); check(stat);
 
   return global_stat(stat);
 }
 
-int NC4_Quilt::put_att_double(const std::string &name, const std::string &att_name,
+int NC4_Quilt::put_att_double_impl(const std::string &name, const std::string &att_name,
                                       IO_Type xtype, const std::vector<double> &data) const {
   int stat;
 
@@ -154,20 +154,20 @@ int NC4_Quilt::put_att_double(const std::string &name, const std::string &att_na
     stat = this->put_att_double(name + suffix, att_name, xtype, data); check(stat);
   }
 
-  stat = NC4File::put_att_double(name, att_name, xtype, data); check(stat);
+  stat = NC4File::put_att_double_impl(name, att_name, xtype, data); check(stat);
 
   return global_stat(stat);
 }
 
 
-int NC4_Quilt::put_att_text(const std::string &name, const std::string &att_name, const std::string &value) const {
+int NC4_Quilt::put_att_text_impl(const std::string &name, const std::string &att_name, const std::string &value) const {
   int stat;
 
   if (name == "x" || name == "y") {
     stat = this->put_att_text(name + suffix, att_name, value); check(stat);
   }
 
-  stat = NC4File::put_att_text(name, att_name, value); check(stat);
+  stat = NC4File::put_att_text_impl(name, att_name, value); check(stat);
 
   return global_stat(stat);
 }
@@ -197,11 +197,11 @@ void NC4_Quilt::correct_start_and_count(const std::string &name,
 }
 
 int NC4_Quilt::get_put_var_double(const std::string &name,
-                                      const std::vector<unsigned int> &start_input,
-                                      const std::vector<unsigned int> &count_input,
-                                      const std::vector<unsigned int> &imap_input, double *data,
-                                      bool get,
-                                      bool mapped) const {
+                                  const std::vector<unsigned int> &start_input,
+                                  const std::vector<unsigned int> &count_input,
+                                  const std::vector<unsigned int> &imap_input, double *data,
+                                  bool get,
+                                  bool mapped) const {
   int stat;
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
@@ -230,14 +230,14 @@ int NC4_Quilt::get_put_var_double(const std::string &name,
       }
 
       stat = NC4File::get_put_var_double(name + suffix, start, count, imap,
-                                             tmp, get, mapped); check(stat);
+                                         tmp, get, mapped); check(stat);
       return global_stat(stat);
     }
 
     correct_start_and_count(name, start, count);
 
     stat = NC4File::get_put_var_double(name, start, count, imap,
-                                           data, get, mapped); check(stat);
+                                       data, get, mapped); check(stat);
   }
 
   return global_stat(stat);
@@ -246,16 +246,16 @@ int NC4_Quilt::get_put_var_double(const std::string &name,
 int NC4_Quilt::global_stat(int stat) const {
   int tmp;
 
-  MPI_Allreduce(&stat, &tmp, 1, MPI_INT, MPI_SUM, com);
+  MPI_Allreduce(&stat, &tmp, 1, MPI_INT, MPI_SUM, m_com);
 
   return tmp != 0;
 }
 
-int NC4_Quilt::move_if_exists(const std::string &file, int /*rank_to_use*/) {
+int NC4_Quilt::move_if_exists_impl(const std::string &file, int /*rank_to_use*/) {
   int stat = 0, rank = 0;
-  MPI_Comm_rank(com, &rank);
+  MPI_Comm_rank(m_com, &rank);
 
-  stat = NCFile::move_if_exists(patch_filename(file, rank), rank);
+  stat = NCFile::move_if_exists_impl(patch_filename(file, rank), rank);
 
   return global_stat(stat);
 }

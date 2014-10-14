@@ -35,27 +35,27 @@ int NC4_Serial::integer_open_mode(IO_Mode input) const {
   }
 }
 
-int NC4_Serial::open(const std::string &fname, IO_Mode mode) {
+int NC4_Serial::open_impl(const std::string &fname, IO_Mode mode) {
   int stat;
 
   m_filename = fname;
 
   int nc_mode = integer_open_mode(mode);
-  stat = nc_open(m_filename.c_str(), nc_mode, &ncid);
+  stat = nc_open(m_filename.c_str(), nc_mode, &m_file_id);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return stat;
 }
 
-int NC4_Serial::create(const std::string &fname) {
+int NC4_Serial::create_impl(const std::string &fname) {
   int stat;
 
   m_filename = fname;
 
-  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &ncid);
+  stat = nc_create(m_filename.c_str(), NC_NETCDF4, &m_file_id);
 
-  define_mode = true;
+  m_define_mode = true;
 
   return stat;
 }
