@@ -23,7 +23,8 @@ add_to_cached_list( CGAL_EXECUTABLE_TARGETS naturalNeighbor )
 include_directories(${FEvoR_INCLUDES})
 
 add_library(pismfevor
-  PISMFEvoR.cc)
+  PISMFEvoR.cc
+  FEvoR_IO.cc)
 
 target_link_libraries(pismfevor pismutil pismstressbalance ${FEvoR_LIB} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 

@@ -35,6 +35,8 @@
 #include "PISMStressBalance_diagnostics.hh"
 #include "enthalpyConverter.hh"
 
+#include "FEvoR_IO.hh"
+
 namespace pism {
 
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
@@ -147,6 +149,13 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     // Diagnostics -- total number of recrystallization events in time step
     std::vector<unsigned int> nMigRe(n_particles, 0), nPoly(n_particles, 0);
 
+    // Prepare a file to write distributions to:
+
+    // FIXME: I'd like to use Distribution::getNumberCrystals(), but
+    // we don't have a distribution created yet.
+    ierr = fevor_prepare_file("distributions.nc", grid.com, grid.get_unit_system(),
+                              n_particles, 3*3*3 /* FIXME */); CHKERRQ(ierr);
+
     // get enhancement factor for every particle!
     for (unsigned int i = 0; i < n_particles; ++i) {
       /* FIXME this should get the appropriate distribution!
@@ -229,7 +238,11 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         p_e[i] = 10.0;
         // upper bound.
       }
-    }
+
+      ierr = fevor_save_distribution("distributions.nc", grid.com, grid.get_unit_system(),
+                                     i, d_i); CHKERRQ(ierr);
+
+    } // end of the for-loop over particles
 
     // set the enhancement factor for every grid point from our particle cloud
     ierr = PISMFEvoR::pointcloud_to_grid(p_x, p_z, p_e,
