@@ -25,12 +25,6 @@
 #include "IceGrid.hh"
 #include <map>
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
-
 namespace pism {
 
 class Config;

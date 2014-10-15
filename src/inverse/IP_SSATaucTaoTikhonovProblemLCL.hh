@@ -19,12 +19,6 @@
 #ifndef IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 #define IP_SSATAUCTIKHONOVLCL_HH_39UGM4S2
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
-
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
 #include <petsc.h>
