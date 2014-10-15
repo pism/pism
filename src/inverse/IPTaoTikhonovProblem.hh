@@ -20,12 +20,6 @@
 #ifndef IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 #define IPTAOTIKHONOVPROBLEM_HH_4NMM724B
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
-
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 #include <assert.h>

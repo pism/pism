@@ -25,12 +25,6 @@
 #include <map>
 #include "PISMUnits.hh"
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-#else
-#include <memory>
-#endif
-
 #include <cassert>
 
 #include "pism_const.hh"
