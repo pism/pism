@@ -231,10 +231,9 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
       ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
 
       PIO nc(grid.com, "guess_mode", grid.get_unit_system());
-      bool tillphi_present;
 
       nc.open(filename, PISM_READONLY);
-      nc.inq_var(m_till_phi.metadata().get_string("short_name"), tillphi_present);
+      bool tillphi_present = nc.inq_var(m_till_phi.metadata().get_string("short_name"));
       nc.close();
 
       if (tillphi_present) {

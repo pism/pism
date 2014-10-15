@@ -306,8 +306,8 @@ PetscErrorCode IceRegionalModel::initFromFile(const std::string &filename) {
     bool u_ssa_exists, v_ssa_exists;
 
     nc.open(filename, PISM_READONLY);
-    nc.inq_var("u_ssa_bc", u_ssa_exists);
-    nc.inq_var("v_ssa_bc", v_ssa_exists);
+    u_ssa_exists = nc.inq_var("u_ssa_bc");
+    v_ssa_exists = nc.inq_var("v_ssa_bc");
     nc.close();
 
     if (! (u_ssa_exists && v_ssa_exists)) {

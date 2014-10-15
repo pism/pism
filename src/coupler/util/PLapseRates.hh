@@ -155,7 +155,7 @@ protected:
 
       PIO nc(g.com, "netcdf3", g.get_unit_system());
       nc.open(filename, PISM_READONLY);
-      nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records);
+      ref_surface_n_records = nc.inq_nrecords("usurf", "surface_altitude");
       nc.close();
 
       // if -..._period is not set, make n_records the minimum of the

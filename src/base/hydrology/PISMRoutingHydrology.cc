@@ -155,10 +155,9 @@ PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
       int start;
       ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
       if (i) {
-        bool bwat_exists = false;
         PIO nc(grid, "guess_mode");
         nc.open(filename, PISM_READONLY);
-        nc.inq_var("bwat", bwat_exists);
+        bool bwat_exists = nc.inq_var("bwat");
         if (bwat_exists == true) {
           ierr = W.read(filename, start); CHKERRQ(ierr);
         } else {

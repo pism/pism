@@ -121,7 +121,6 @@ BedThermalUnit::BedThermalUnit(IceGrid &g, const Config &conf)
 PetscErrorCode BedThermalUnit::allocate() {
   PetscErrorCode ierr;
   bool i_set, Mbz_set, Lbz_set;
-  grid_info g;
 
   ierr = PetscOptionsBegin(grid.com, "", "BedThermalUnit options", ""); CHKERRQ(ierr);
   {
@@ -149,11 +148,10 @@ PetscErrorCode BedThermalUnit::allocate() {
 
     nc.open(m_input_file, PISM_READONLY);
 
-    bool exists;
-    nc.inq_var("litho_temp", exists);
+    bool exists = nc.inq_var("litho_temp");
 
     if (exists) {
-      nc.inq_grid_info("litho_temp", grid.periodicity, g);
+      grid_info g = nc.inq_grid_info("litho_temp", grid.periodicity);
 
       Mbz = g.z_len;
       Lbz = -g.z_min;
@@ -223,16 +221,12 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
 
   if (m_input_file.empty() == false) {
     PIO nc(grid, "guess_mode");
-    bool exists;
-    unsigned int n_records;
 
     nc.open(m_input_file, PISM_READONLY);
-    nc.inq_var("litho_temp", exists);
+    bool exists = nc.inq_var("litho_temp");
 
     if (exists) {
-      nc.inq_nrecords("litho_temp", "", n_records);
-
-      const unsigned int last_record = n_records - 1;
+      const unsigned int last_record = nc.inq_nrecords("litho_temp", "") - 1;
       ierr = temp.read(m_input_file, last_record); CHKERRQ(ierr);
     }
 

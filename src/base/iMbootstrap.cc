@@ -142,7 +142,7 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   bool usurf_found = false, mask_found = false, usurf_found_by_std_name = false;
   nc.inq_var("usurf", "surface_altitude",
              usurf_found, usurf_name, usurf_found_by_std_name);
-  nc.inq_var("mask", mask_found);
+  mask_found = nc.inq_var("mask");
 
   std::string lon_name, lat_name;
   bool lon_found = false, lat_found = false,

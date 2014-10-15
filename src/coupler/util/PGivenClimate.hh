@@ -172,7 +172,7 @@ protected:
       std::string short_name = k->first,
         standard_name = standard_names[short_name];
 
-      nc.inq_nrecords(short_name, standard_name, n_records);
+      n_records = nc.inq_nrecords(short_name, standard_name);
 
       // If -..._period is not set, make ..._n_records the minimum of the
       // buffer size and the number of available records. Otherwise try

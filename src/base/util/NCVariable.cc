@@ -225,11 +225,10 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
     int input_ndims = 0;                 // number of spatial dimensions (input file)
     size_t matching_dim_count = 0; // number of matching dimensions
 
-    nc.inq_vardims(name_found, input_dims);
+    input_dims = nc.inq_vardims(name_found);
     std::vector<std::string>::iterator j = input_dims.begin();
     while (j != input_dims.end()) {
-      AxisType tmp;
-      nc.inq_dimtype(*j, tmp);
+      AxisType tmp = nc.inq_dimtype(*j);
 
       if (tmp != T_AXIS)
         ++input_ndims;
@@ -333,10 +332,7 @@ PetscErrorCode NCSpatialVariable::write(const PIO &nc, IO_Type nctype,
 PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, RegriddingFlag flag, bool do_report_range,
                                          double default_value, Vec v) {
   PetscErrorCode ierr;
-  unsigned int t_length = 0;
-
-  nc.inq_nrecords(get_name(), get_string("standard_name"),
-                  t_length);
+  unsigned int t_length = nc.inq_nrecords(get_name(), get_string("standard_name"));
 
   ierr = this->regrid(nc, t_length - 1, flag, do_report_range, default_value, v); CHKERRQ(ierr);
 
@@ -541,14 +537,14 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
   bool exists;
 
   // x
-  nc.inq_dim(get_x().get_name(), exists);
+  exists = nc.inq_dim(get_x().get_name());
   if (!exists) {
     nc.def_dim(m_grid->Mx, m_x);
     nc.put_dim(get_x().get_name(), m_grid->x);
   }
 
   // y
-  nc.inq_dim(get_y().get_name(), exists);
+  exists = nc.inq_dim(get_y().get_name());
   if (!exists) {
     nc.def_dim(m_grid->My, m_y);
     nc.put_dim(get_y().get_name(), m_grid->y);
@@ -557,7 +553,7 @@ PetscErrorCode NCSpatialVariable::define_dimensions(const PIO &nc) const {
   // z
   std::string z_name = get_z().get_name();
   if (z_name.empty() == false) {
-    nc.inq_dim(z_name, exists);
+    exists = nc.inq_dim(z_name);
     if (!exists) {
       unsigned int nlevels = PetscMax(m_zlevels.size(), 1); // make sure we have at least one level
       nc.def_dim(nlevels, m_z);
@@ -573,9 +569,8 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
                                          bool write_in_glaciological_units) const {
   int ierr;
   std::vector<std::string> dims;
-  bool exists;
 
-  nc.inq_var(get_name(), exists);
+  bool exists = nc.inq_var(get_name());
   if (exists)
     return 0;
 
@@ -806,20 +801,20 @@ std::string NCTimeseries::get_dimension_name() const {
 
 //! Define a NetCDF variable corresponding to a time-series.
 PetscErrorCode NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
-  bool exists;
-  nc.inq_var(get_name(), exists);
+
+  bool exists = nc.inq_var(get_name());
   if (exists)
     return 0;
 
   nc.redef();
 
-  nc.inq_dim(m_dimension_name, exists);
+  exists = nc.inq_dim(m_dimension_name);
   if (exists == false) {
     NCVariable tmp(m_dimension_name, get_units().get_system());
     nc.def_dim(PISM_UNLIMITED, tmp);
   }
 
-  nc.inq_var(get_name(), exists);
+  exists = nc.inq_var(get_name());
   if (exists == false) {
     std::vector<std::string> dims(1);
     dims[0] = m_dimension_name;
@@ -852,19 +847,19 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
 
   UnitSystem system = get_units().get_system();
 
-  nc.inq_var(get_name(), exists);
+  exists = nc.inq_var(get_name());
   if (exists)
     return 0;
 
   nc.redef();
 
-  nc.inq_dim(dimension_name, exists);
+  exists = nc.inq_dim(dimension_name);
   if (exists == false) {
     NCVariable tmp(dimension_name, system);
     nc.def_dim(PISM_UNLIMITED, tmp);
   }
 
-  nc.inq_dim(m_bounds_name, exists);
+  exists = nc.inq_dim(m_bounds_name);
   if (exists == false) {
     NCVariable tmp(m_bounds_name, system);
     nc.def_dim(2, tmp);

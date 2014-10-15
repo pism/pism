@@ -147,15 +147,14 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
 
   // find the time dimension:
   std::vector<std::string> dims;
-  nc.inq_vardims(name_found, dims);
+  dims = nc.inq_vardims(name_found);
   
   std::string dimname = "";
   bool time_found = false;
   for (unsigned int i = 0; i < dims.size(); ++i) {
-    AxisType dimtype;
     dimname = dims[i];
 
-    nc.inq_dimtype(dimname, dimtype);
+    AxisType dimtype = nc.inq_dimtype(dimname);
 
     if (dimtype == T_AXIS) {
       time_found = true;
@@ -170,8 +169,7 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
     ierr = time_dimension.set_units(grid->time->units_string()); CHKERRQ(ierr);
     nc.read_timeseries(time_dimension, grid->time, time);
 
-    std::string bounds_name;
-    nc.get_att_text(dimname, "bounds", bounds_name);
+    std::string bounds_name = nc.get_att_text(dimname, "bounds");
 
     if (time.size() > 1) {
       if (bounds_name.empty() == false) {

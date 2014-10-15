@@ -84,7 +84,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
     PISMEnd();
   }
 
-  nc.inq_vardims(name_found, dims);
+  dims = nc.inq_vardims(name_found);
 
   if (dims.size() != 1) {
     ierr = PetscPrintf(com,
@@ -115,8 +115,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
     PISMEnd();
   }
 
-  std::string time_bounds_name;
-  nc.get_att_text(time_name, "bounds", time_bounds_name);
+  std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
 
   if (!time_bounds_name.empty()) {
     use_bounds = true;
@@ -411,18 +410,16 @@ PetscErrorCode DiagnosticTimeseries::init(const std::string &filename) {
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
-  bool file_exists = false;
-  nc.check_if_exists(filename, file_exists);
+  bool file_exists = nc.check_if_exists(com, filename);
 
   if (file_exists == true) {
     nc.open(filename, PISM_READONLY);
-    nc.inq_dimlen(dimension.get_name(), len);
+    len = nc.inq_dimlen(dimension.get_name());
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
       std::vector<double> tmp;
-      bool var_exists;
+      bool var_exists = nc.inq_var(short_name);
 
-      nc.inq_var(short_name, var_exists);
       if (var_exists) {
         nc.get_1d_var(short_name, len - 1, 1, tmp);
         // NOTE: this is WRONG if rate_of_change == true!
@@ -454,7 +451,7 @@ PetscErrorCode DiagnosticTimeseries::flush() {
     return 0;
 
   nc.open(output_filename, PISM_READWRITE);
-  nc.inq_dimlen(dimension.get_name(), len);
+  len = nc.inq_dimlen(dimension.get_name());
 
   if (len > 0) {
     double last_time;

@@ -130,8 +130,8 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
   nc.open(regrid_filename, PISM_READONLY);
 
-  nc.inq_var("topg_initial", topg_initial_exists);
-  nc.inq_var("topg", topg_exists);
+  topg_initial_exists = nc.inq_var("topg_initial");
+  topg_exists = nc.inq_var("topg");
   nc.close();
 
   // Stop if the regridding file does not have both topg and topg_initial.

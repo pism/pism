@@ -85,9 +85,9 @@ PetscErrorCode IceModel::set_grid_defaults() {
   bool x_dim_exists, y_dim_exists, t_exists;
   nc.open(filename, PISM_READONLY);
 
-  nc.inq_dim("x", x_dim_exists);
-  nc.inq_dim("y", y_dim_exists);
-  nc.inq_var(config.get_string("time_dimension_name"), t_exists);
+  x_dim_exists = nc.inq_dim("x");
+  y_dim_exists = nc.inq_dim("y");
+  t_exists = nc.inq_var(config.get_string("time_dimension_name"));
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -100,7 +100,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   bool grid_info_found = false;
   for (unsigned int i = 0; i < names.size(); ++i) {
 
-    nc.inq_var(names[i], grid_info_found);
+    grid_info_found = nc.inq_var(names[i]);
     if (grid_info_found == false) {
       std::string dummy1;
       bool dummy2;
@@ -108,7 +108,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     }
 
     if (grid_info_found) {
-      nc.inq_grid_info(names[i], grid.periodicity, input);
+      input = nc.inq_grid_info(names[i], grid.periodicity);
       break;
     }
   }
@@ -119,14 +119,12 @@ PetscErrorCode IceModel::set_grid_defaults() {
     PISMEnd();
   }
 
-  std::string proj4_string;
-  nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string);
+  std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
   if (proj4_string.empty() == false) {
     global_attributes.set_string("proj4", proj4_string);
   }
 
-  bool mapping_exists;
-  nc.inq_var("mapping", mapping_exists);
+  bool mapping_exists = nc.inq_var("mapping");
   if (mapping_exists) {
     nc.read_attributes(mapping.get_name(), mapping);
     ierr = mapping.report_to_stdout(grid.com, 4); CHKERRQ(ierr);
@@ -293,21 +291,18 @@ PetscErrorCode IceModel::grid_setup() {
 
   if (i_set) {
     PIO nc(grid, "guess_mode");
-    std::string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
     nc.open(filename, PISM_READONLY);
-    nc.get_att_text("PISM_GLOBAL", "source", source);
+    std::string source = nc.get_att_text("PISM_GLOBAL", "source");
 
-    std::string proj4_string;
-    nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string);
+    std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
     if (proj4_string.empty() == false) {
       global_attributes.set_string("proj4", proj4_string);
     }
 
-    bool mapping_exists;
-    nc.inq_var("mapping", mapping_exists);
+    bool mapping_exists = nc.inq_var("mapping");
     if (mapping_exists) {
       nc.read_attributes(mapping.get_name(), mapping);
       ierr = mapping.report_to_stdout(grid.com, 4); CHKERRQ(ierr);
@@ -339,7 +334,7 @@ PetscErrorCode IceModel::grid_setup() {
 
     bool var_exists = false;
     for (unsigned int i = 0; i < names.size(); ++i) {
-      nc.inq_var(names[i], var_exists);
+      var_exists = nc.inq_var(names[i]);
 
       if (var_exists == true) {
         ierr = nc.inq_grid(names[i], &grid, grid.periodicity); CHKERRQ(ierr);
@@ -589,10 +584,9 @@ PetscErrorCode IceModel::model_state_setup() {
 
   if (i_set) {
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
-    bool run_stats_exists;
 
     nc.open(filename, PISM_READONLY);
-    nc.inq_var("run_stats", run_stats_exists);
+    bool run_stats_exists = nc.inq_var("run_stats");
     if (run_stats_exists) {
       nc.read_attributes(run_stats.get_name(), run_stats);
     }

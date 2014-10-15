@@ -133,12 +133,11 @@ PetscErrorCode Hydrology::init(Vars &vars) {
     inputtobed_period = (itbperiod_set) ? itbperiod_years : 0.0;
     inputtobed_reference_time = (itbreference_set) ? grid.convert(itbreference_year, "years", "seconds") : 0.0;
 
-    unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
-                 n_records = 1;
+    unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size");
 
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
     nc.open(itbfilename, PISM_READONLY);
-    nc.inq_nrecords("inputtobed", "", n_records);
+    unsigned int n_records = nc.inq_nrecords("inputtobed", "");
     nc.close();
 
     // if -..._period is not set, make n_records the minimum of the

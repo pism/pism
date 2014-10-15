@@ -84,8 +84,7 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
   PetscErrorCode ierr;
 
   if (write_mapping) {
-    bool mapping_exists = false;
-    nc.inq_var(mapping.get_name(), mapping_exists);
+    bool mapping_exists = nc.inq_var(mapping.get_name());
     if (mapping_exists == false) {
       nc.redef();
       nc.def_var(mapping.get_name(), PISM_DOUBLE,
@@ -96,8 +95,7 @@ PetscErrorCode IceModel::write_metadata(const PIO &nc, bool write_mapping,
 
   if (write_run_stats) {
     ierr = update_run_stats(); CHKERRQ(ierr);
-    bool run_stats_exists = false;
-    nc.inq_var(run_stats.get_name(), run_stats_exists);
+    bool run_stats_exists = nc.inq_var(run_stats.get_name());
     if (run_stats_exists == false) {
       nc.redef();
       nc.def_var(run_stats.get_name(), PISM_DOUBLE,
@@ -374,9 +372,7 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
   nc.open(filename, PISM_READONLY);
 
   // Find the index of the last record in the file:
-  unsigned int last_record;
-  nc.inq_nrecords(last_record);
-  last_record -= 1;
+  unsigned int last_record = nc.inq_nrecords() - 1;
 
   // Read the model state, mapping and climate_steady variables:
   std::set<std::string> vars = variables.keys();
@@ -409,8 +405,7 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
 
   // check if the input file has Href; set to 0 if it is not present
   if (config.get_flag("part_grid")) {
-    bool href_exists;
-    nc.inq_var("Href", href_exists);
+    bool href_exists = nc.inq_var("Href");
 
     if (href_exists == true) {
       ierr = vHref.read(filename, last_record); CHKERRQ(ierr);
@@ -424,8 +419,7 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
 
   // read the age field if present, otherwise set to zero
   if (config.get_flag("do_age")) {
-    bool age_exists;
-    nc.inq_var("age", age_exists);
+    bool age_exists = nc.inq_var("age");
 
     if (age_exists) {
       ierr = tau3.read(filename, last_record); CHKERRQ(ierr);
@@ -444,8 +438,7 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
   // and assuming that the ice is cold.
   ierr = init_enthalpy(filename, false, last_record); CHKERRQ(ierr);
 
-  std::string history;
-  nc.get_att_text("PISM_GLOBAL", "history", history);
+  std::string history = nc.get_att_text("PISM_GLOBAL", "history");
   global_attributes.set_string("history",
                                history + global_attributes.get_string("history"));
 
@@ -591,9 +584,9 @@ PetscErrorCode IceModel::init_enthalpy(const std::string &filename,
 
   PIO nc(grid, "guess_mode");
   nc.open(filename, PISM_READONLY);
-  nc.inq_var("enthalpy", enthalpy_exists);
-  nc.inq_var("temp", temp_exists);
-  nc.inq_var("liqfrac", liqfrac_exists);
+  enthalpy_exists = nc.inq_var("enthalpy");
+  temp_exists     = nc.inq_var("temp");
+  liqfrac_exists  = nc.inq_var("liqfrac");
   nc.close();
 
   if (enthalpy_exists == true) {
@@ -783,7 +776,7 @@ PetscErrorCode IceModel::write_snapshot() {
   unsigned int time_length = 0;
 
   nc.append_time(config.get_string("time_dimension_name"), grid.time->current());
-  nc.inq_dimlen(config.get_string("time_dimension_name"), time_length);
+  time_length = nc.inq_dimlen(config.get_string("time_dimension_name"));
 
   ierr = write_variables(nc, snapshot_vars, PISM_DOUBLE);
 

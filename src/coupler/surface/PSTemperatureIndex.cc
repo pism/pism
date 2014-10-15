@@ -115,7 +115,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
     nc.open(filename, PISM_READONLY);
-    nc.inq_nrecords(short_name, "", n_records);
+    n_records = nc.inq_nrecords(short_name, "");
     nc.close();
 
     // If -..._period is not set, make ..._n_records the minimum of the

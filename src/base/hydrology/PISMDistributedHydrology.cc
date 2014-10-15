@@ -157,10 +157,9 @@ PetscErrorCode DistributedHydrology::init_bwp(Vars &vars) {
       int start;
       ierr = find_pism_input(filename, bootstrap_set, start); CHKERRQ(ierr);
       if (i_set) {
-        bool bwp_exists = false;
         PIO nc(grid, "guess_mode");
         nc.open(filename, PISM_READONLY);
-        nc.inq_var("bwp", bwp_exists);
+        bool bwp_exists = nc.inq_var("bwp");
         nc.close();
         if (bwp_exists == true) {
           ierr = P.read(filename, start); CHKERRQ(ierr);

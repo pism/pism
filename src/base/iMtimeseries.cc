@@ -115,7 +115,7 @@ PetscErrorCode IceModel::init_timeseries() {
     std::string time_name = config.get_string("time_dimension_name");
     bool time_exists = false;
 
-    nc.inq_var(time_name, time_exists);
+    time_exists = nc.inq_var(time_name);
     if (time_exists == true) {
       nc.inq_dim_limits(time_name, NULL, &time_max);
 
@@ -267,7 +267,7 @@ PetscErrorCode IceModel::init_extras() {
     bool time_exists;
 
     nc.open(extra_filename, PISM_READONLY);
-    nc.inq_var(time_name, time_exists);
+    time_exists = nc.inq_var(time_name);
 
     if (time_exists == true) {
       double time_max;
@@ -491,8 +491,7 @@ PetscErrorCode IceModel::write_extras() {
 
   nc.append_time(time_name, current_time);
 
-  unsigned int time_length = 0;
-  nc.inq_dimlen(time_name, time_length);
+  unsigned int time_length = nc.inq_dimlen(time_name);
 
   size_t time_start = static_cast<size_t>(time_length - 1);
 

@@ -186,7 +186,7 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
   nc.open(filename, PISM_READONLY);
-  nc.inq_var(time_name, exists);
+  exists = nc.inq_var(time_name);
   if (exists == false) {
     nc.close();
 
@@ -194,10 +194,10 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
                 time_name.c_str(), filename.c_str());
     PISMEnd();
   }
-  nc.get_att_text(time_name, "units",  time_units);      
-  nc.get_att_text(time_name, "bounds", time_bounds_name);
+  time_units = nc.get_att_text(time_name, "units");      
+  time_bounds_name = nc.get_att_text(time_name, "bounds");
 
-  nc.get_att_text(time_name, "calendar", new_calendar);
+  new_calendar = nc.get_att_text(time_name, "calendar");
   if (new_calendar.empty() == false) {
     if (pism_is_valid_calendar_name(new_calendar) == false) {
       PetscPrintf(m_com,
@@ -209,7 +209,7 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   }
 
   if (time_bounds_name.empty() == false) {
-    nc.inq_var(time_bounds_name, exists);
+    exists = nc.inq_var(time_bounds_name);
 
     if (exists == false) {
       nc.close();

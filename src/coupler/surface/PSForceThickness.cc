@@ -154,7 +154,7 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
   PIO nc(grid, "guess_mode");
   bool mask_exists = false;
   nc.open(m_input_file, PISM_READONLY);
-  nc.inq_var("ftt_mask", mask_exists);
+  mask_exists = nc.inq_var("ftt_mask");
   nc.close();
 
   ierr = verbPrintf(2, grid.com,

@@ -153,15 +153,13 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
                            time_file_name, time_file_set); CHKERRQ(ierr);
   if (time_file_set) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
-    std::string tmp;
 
     nc.open(time_file_name, PISM_READONLY);
     {
-      bool time_exists;
       std::string time_name = config.get_string("time_dimension_name");
-      nc.inq_var(time_name, time_exists);
+      bool time_exists = nc.inq_var(time_name);
       if (time_exists) {
-        nc.get_att_text(time_name, "calendar", tmp);
+        std::string tmp = nc.get_att_text(time_name, "calendar");
         if (tmp.empty() == false)
           result = tmp;
       }

@@ -304,7 +304,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   // Find the number of records in this file:
   PIO nc(grid, "netcdf3");      // OK to use NetCDF3.
   nc.open(filename, mode);
-  nc.inq_dimlen("N", start);
+  start = nc.inq_dimlen("N");
 
   nc.write_global_attributes(global_attributes);
 

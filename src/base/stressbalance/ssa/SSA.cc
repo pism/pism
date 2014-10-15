@@ -97,11 +97,10 @@ PetscErrorCode SSA::init(Vars &vars) {
     ierr = OptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
 
     nc.open(filename, PISM_READONLY);
-    nc.inq_var("u_ssa", u_ssa_found);
-    nc.inq_var("v_ssa", v_ssa_found);
-    nc.inq_nrecords(start);
+    u_ssa_found = nc.inq_var("u_ssa");
+    v_ssa_found = nc.inq_var("v_ssa");
+    start = nc.inq_nrecords() - 1;
     nc.close();
-    start -= 1;
 
     if (u_ssa_found && v_ssa_found &&
         (! dont_read_initial_guess)) {

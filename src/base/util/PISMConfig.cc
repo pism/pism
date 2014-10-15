@@ -96,9 +96,8 @@ PetscErrorCode Config::read(const PIO &nc) {
 
 //! Write a config variable to a file (with all its attributes).
 PetscErrorCode Config::write(const PIO &nc) const {
-  bool variable_exists;
 
-  nc.inq_var(m_data.get_name(), variable_exists);
+  bool variable_exists = nc.inq_var(m_data.get_name());
 
   if (variable_exists == false) {
     nc.redef();

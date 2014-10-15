@@ -996,7 +996,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
     // Find the number of records in this file:
     nc.open(filename, mode);
-    nc.inq_dimlen("N", start);
+    start = nc.inq_dimlen("N");
 
     nc.write_global_attributes(global_attributes);
 
