@@ -65,6 +65,7 @@
 #include "SIAFD.hh"
 #include "regional/regional.hh"
 #include "enthSystem.hh"
+#include "error_handling.hh"
 
 using namespace pism;
 %}
@@ -76,6 +77,17 @@ using namespace pism;
 %include "petsc4py/petsc4py.i"
 
 %include "pism_exception.i"
+
+%include exception.i
+%exception {
+  try {
+    $action
+  } catch (RuntimeError &e) {
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  } catch (...) {
+    SWIG_exception(SWIG_UnknownError, "unknown C++ exception");
+  }
+}
 
 %typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) PetscErrorCode {
    $1 = PyInt_Check($input) ? 1 : 0;
