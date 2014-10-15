@@ -153,9 +153,9 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
   // it is really there; and regrid the target thickness
   PIO nc(grid, "guess_mode");
   bool mask_exists = false;
-  ierr = nc.open(m_input_file, PISM_READONLY); CHKERRQ(ierr);
-  ierr = nc.inq_var("ftt_mask", mask_exists); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.open(m_input_file, PISM_READONLY);
+  nc.inq_var("ftt_mask", mask_exists);
+  nc.close();
 
   ierr = verbPrintf(2, grid.com,
                     "    reading target thickness 'thk' from %s ...\n"

@@ -577,14 +577,11 @@ PetscErrorCode IceModelVec::define(const PIO &nc, IO_Type output_datatype) const
  */
 PetscErrorCode IceModelVec::read_attributes(const std::string &filename, int N) {
   PIO nc(*grid, "netcdf3");     // OK to use netcdf3
-  PetscErrorCode ierr;
 
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-
-  ierr = nc.read_attributes(metadata(N).get_name(),
-                            metadata(N)); CHKERRQ(ierr);
-
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
+  nc.read_attributes(metadata(N).get_name(),
+                     metadata(N));
+  nc.close();
 
   return 0;
 }
@@ -634,16 +631,16 @@ PetscErrorCode IceModelVec::dump(const char filename[]) const {
   PetscErrorCode ierr;
   PIO nc(*grid, grid->config.get_string("output_format"));
 
-  ierr = nc.open(filename, PISM_READWRITE_CLOBBER); CHKERRQ(ierr);
-  ierr = nc.def_time(grid->config.get_string("time_dimension_name"),
-                     grid->time->calendar(),
-                     grid->time->units_string()); CHKERRQ(ierr);
-  ierr = nc.append_time(grid->config.get_string("time_dimension_name"),
-                        grid->time->current()); CHKERRQ(ierr);
+  nc.open(filename, PISM_READWRITE_CLOBBER);
+  nc.def_time(grid->config.get_string("time_dimension_name"),
+              grid->time->calendar(),
+              grid->time->units_string());
+  nc.append_time(grid->config.get_string("time_dimension_name"),
+                 grid->time->current());
 
   ierr = write(nc, PISM_DOUBLE); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }
@@ -920,11 +917,11 @@ PetscErrorCode IceModelVec::write(const std::string &filename, IO_Type nctype) c
   PIO nc(*grid, grid->config.get_string("output_format"));
 
   // We expect the file to be present and ready to write into.
-  ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
+  nc.open(filename, PISM_READWRITE);
 
   ierr = this->write(nc, nctype); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }
@@ -934,11 +931,11 @@ PetscErrorCode IceModelVec::read(const std::string &filename, unsigned int time)
 
   PIO nc(*grid, "guess_mode");
 
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
 
   ierr = this->read(nc, time); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }
@@ -949,11 +946,11 @@ PetscErrorCode IceModelVec::regrid(const std::string &filename, RegriddingFlag f
 
   PIO nc(*grid, "guess_mode");
 
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
 
   ierr = this->regrid(nc, flag, default_value); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }

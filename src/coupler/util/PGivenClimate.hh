@@ -161,11 +161,10 @@ protected:
 
   PetscErrorCode set_vec_parameters(std::map<std::string, std::string> standard_names)
   {
-    PetscErrorCode ierr;
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
 
     PIO nc(Model::grid.com, "netcdf3", Model::grid.get_unit_system());
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
@@ -173,7 +172,7 @@ protected:
       std::string short_name = k->first,
         standard_name = standard_names[short_name];
 
-      ierr = nc.inq_nrecords(short_name, standard_name, n_records); CHKERRQ(ierr);
+      nc.inq_nrecords(short_name, standard_name, n_records);
 
       // If -..._period is not set, make ..._n_records the minimum of the
       // buffer size and the number of available records. Otherwise try
@@ -194,7 +193,7 @@ protected:
       ++k;
     }
 
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
 
     return 0;
   }

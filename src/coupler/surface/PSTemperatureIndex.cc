@@ -114,9 +114,9 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
     unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size");
 
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_nrecords(short_name, "", n_records); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
+    nc.inq_nrecords(short_name, "", n_records);
+    nc.close();
 
     // If -..._period is not set, make ..._n_records the minimum of the
     // buffer size and the number of available records. Otherwise try

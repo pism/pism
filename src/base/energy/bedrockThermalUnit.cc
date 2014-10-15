@@ -147,13 +147,13 @@ PetscErrorCode BedThermalUnit::allocate() {
     // levels and the depth of the bed thermal layer from it:
     PIO nc(grid, "guess_mode");
 
-    ierr = nc.open(m_input_file, PISM_READONLY); CHKERRQ(ierr);
+    nc.open(m_input_file, PISM_READONLY);
 
     bool exists;
-    ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
+    nc.inq_var("litho_temp", exists);
 
     if (exists) {
-      ierr = nc.inq_grid_info("litho_temp", grid.periodicity, g); CHKERRQ(ierr);
+      nc.inq_grid_info("litho_temp", grid.periodicity, g);
 
       Mbz = g.z_len;
       Lbz = -g.z_min;
@@ -163,7 +163,7 @@ PetscErrorCode BedThermalUnit::allocate() {
       Lbz = 0;
     }
 
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
   } else {
     // Bootstrapping
 
@@ -226,17 +226,17 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
     bool exists;
     unsigned int n_records;
 
-    ierr = nc.open(m_input_file, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_var("litho_temp", exists); CHKERRQ(ierr);
+    nc.open(m_input_file, PISM_READONLY);
+    nc.inq_var("litho_temp", exists);
 
     if (exists) {
-      ierr = nc.inq_nrecords("litho_temp", "", n_records); CHKERRQ(ierr);
+      nc.inq_nrecords("litho_temp", "", n_records);
 
       const unsigned int last_record = n_records - 1;
       ierr = temp.read(m_input_file, last_record); CHKERRQ(ierr);
     }
 
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
   }
 
   if (temp.was_created() == true) {

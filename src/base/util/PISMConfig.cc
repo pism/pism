@@ -53,11 +53,11 @@ PetscErrorCode Config::read(const std::string &filename) {
 
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
 
   ierr = this->read(nc); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }
@@ -72,11 +72,11 @@ PetscErrorCode Config::write(const std::string &filename, bool append) const {
     mode = PISM_READWRITE_MOVE;
   }
 
-  ierr = nc.open(filename, mode); CHKERRQ(ierr);
+  nc.open(filename, mode);
 
   ierr = this->write(nc); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }
@@ -87,7 +87,7 @@ PetscErrorCode Config::write(const std::string &filename, bool append) const {
 */
 PetscErrorCode Config::read(const PIO &nc) {
 
-  PetscErrorCode ierr = nc.read_attributes(m_data.get_name(), m_data); CHKERRQ(ierr);
+  nc.read_attributes(m_data.get_name(), m_data);
 
   m_config_filename = nc.inq_filename();
 
@@ -96,20 +96,19 @@ PetscErrorCode Config::read(const PIO &nc) {
 
 //! Write a config variable to a file (with all its attributes).
 PetscErrorCode Config::write(const PIO &nc) const {
-  PetscErrorCode ierr;
   bool variable_exists;
 
-  ierr = nc.inq_var(m_data.get_name(), variable_exists); CHKERRQ(ierr);
+  nc.inq_var(m_data.get_name(), variable_exists);
 
   if (variable_exists == false) {
-    ierr = nc.redef(); CHKERRQ(ierr);
+    nc.redef();
 
-    ierr = nc.def_var(m_data.get_name(),
-                      PISM_BYTE, std::vector<std::string>()); CHKERRQ(ierr);
+    nc.def_var(m_data.get_name(),
+               PISM_BYTE, std::vector<std::string>());
 
-    ierr = nc.write_attributes(m_data, PISM_DOUBLE, false); CHKERRQ(ierr);
+    nc.write_attributes(m_data, PISM_DOUBLE, false);
   } else {
-    ierr = nc.write_attributes(m_data, PISM_DOUBLE, false); CHKERRQ(ierr);
+    nc.write_attributes(m_data, PISM_DOUBLE, false);
   }
 
   return 0;

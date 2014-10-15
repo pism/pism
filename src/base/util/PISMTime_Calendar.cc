@@ -185,19 +185,19 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   ierr = MPI_Comm_rank(m_com, &rank); CHKERRQ(ierr);
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-  ierr = nc.inq_var(time_name, exists); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
+  nc.inq_var(time_name, exists);
   if (exists == false) {
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
 
     PetscPrintf(m_com, "PISM ERROR: '%s' variable is not present in '%s'.\n",
                 time_name.c_str(), filename.c_str());
     PISMEnd();
   }
-  ierr = nc.get_att_text(time_name, "units",  time_units);       CHKERRQ(ierr);
-  ierr = nc.get_att_text(time_name, "bounds", time_bounds_name); CHKERRQ(ierr);
+  nc.get_att_text(time_name, "units",  time_units);      
+  nc.get_att_text(time_name, "bounds", time_bounds_name);
 
-  ierr = nc.get_att_text(time_name, "calendar", new_calendar); CHKERRQ(ierr);
+  nc.get_att_text(time_name, "calendar", new_calendar);
   if (new_calendar.empty() == false) {
     if (pism_is_valid_calendar_name(new_calendar) == false) {
       PetscPrintf(m_com,
@@ -209,10 +209,10 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   }
 
   if (time_bounds_name.empty() == false) {
-    ierr = nc.inq_var(time_bounds_name, exists); CHKERRQ(ierr);
+    nc.inq_var(time_bounds_name, exists);
 
     if (exists == false) {
-      ierr = nc.close(); CHKERRQ(ierr);
+      nc.close();
 
       PetscPrintf(m_com, "PISM ERROR: variable '%s' is not present in '%s'.\n",
                   time_bounds_name.c_str(), filename.c_str());
@@ -245,18 +245,18 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
     NCTimeBounds bounds(time_bounds_name, time_name, m_unit_system);
     bounds.set_units(m_time_units.format());
 
-    ierr = nc.read_time_bounds(bounds, this, time); CHKERRQ(ierr);
+    nc.read_time_bounds(bounds, this, time);
   } else {
     // use the time axis
 
-    ierr = nc.read_timeseries(time_axis, this, time); CHKERRQ(ierr);
+    nc.read_timeseries(time_axis, this, time);
   }
 
   m_run_start       = time.front();
   m_run_end         = time.back();
   m_time_in_seconds = m_run_start;
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }

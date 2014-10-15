@@ -159,9 +159,9 @@ PetscErrorCode DistributedHydrology::init_bwp(Vars &vars) {
       if (i_set) {
         bool bwp_exists = false;
         PIO nc(grid, "guess_mode");
-        ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-        ierr = nc.inq_var("bwp", bwp_exists); CHKERRQ(ierr);
-        ierr = nc.close(); CHKERRQ(ierr);
+        nc.open(filename, PISM_READONLY);
+        nc.inq_var("bwp", bwp_exists);
+        nc.close();
         if (bwp_exists == true) {
           ierr = P.read(filename, start); CHKERRQ(ierr);
         } else {

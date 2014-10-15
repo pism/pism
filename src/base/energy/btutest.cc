@@ -293,10 +293,10 @@ int main(int argc, char *argv[]) {
     PIO pio(grid, grid.config.get_string("output_format"));
 
     std::string time_name = config.get_string("time_dimension_name");
-    ierr = pio.open(outname, PISM_READWRITE_MOVE); CHKERRQ(ierr);
-    ierr = pio.def_time(time_name, grid.time->calendar(),
-                        grid.time->CF_units_string()); CHKERRQ(ierr);
-    ierr = pio.append_time(time_name, grid.time->end()); CHKERRQ(ierr);
+    pio.open(outname, PISM_READWRITE_MOVE);
+    pio.def_time(time_name, grid.time->calendar(),
+                 grid.time->CF_units_string());
+    pio.append_time(time_name, grid.time->end());
 
     ierr = btu.define_variables(vars, pio, PISM_DOUBLE); CHKERRQ(ierr);
     ierr = btu.write_variables(vars, pio); CHKERRQ(ierr);
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     ierr = bedtoptemp->write(pio); CHKERRQ(ierr);
     ierr = ghf->write(pio); CHKERRQ(ierr);
 
-    ierr = pio.close(); CHKERRQ(ierr);
+    pio.close();
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);

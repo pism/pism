@@ -94,11 +94,11 @@ protected:
                       offset->short_name.c_str(), filename.c_str());
     CHKERRQ(ierr);
     PIO nc(g.com, "netcdf3", g.get_unit_system());
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
     {
       ierr = offset->read(nc, g.time); CHKERRQ(ierr);
     }
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
 
 
     return 0;

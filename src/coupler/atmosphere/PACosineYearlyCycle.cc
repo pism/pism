@@ -88,11 +88,11 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
                       scaling_file.c_str()); CHKERRQ(ierr);
 
     PIO nc(grid, "netcdf3");    // OK to use netcdf3
-    ierr = nc.open(scaling_file, PISM_READONLY); CHKERRQ(ierr);
+    nc.open(scaling_file, PISM_READONLY);
     {
       ierr = A->read(nc, grid.time); CHKERRQ(ierr);
     }
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
 
   } else {
     if (A != NULL)

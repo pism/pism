@@ -121,7 +121,7 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   PetscErrorCode ierr;
 
   PIO nc(grid, "guess_mode");
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
 
   ierr = verbPrintf(2, grid.com, 
                     "bootstrapping by PISM default method from file %s\n", filename.c_str()); CHKERRQ(ierr);
@@ -140,17 +140,17 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
 
   std::string usurf_name;
   bool usurf_found = false, mask_found = false, usurf_found_by_std_name = false;
-  ierr = nc.inq_var("usurf", "surface_altitude",
-                    usurf_found, usurf_name, usurf_found_by_std_name); CHKERRQ(ierr);
-  ierr = nc.inq_var("mask", mask_found); CHKERRQ(ierr);
+  nc.inq_var("usurf", "surface_altitude",
+             usurf_found, usurf_name, usurf_found_by_std_name);
+  nc.inq_var("mask", mask_found);
 
   std::string lon_name, lat_name;
   bool lon_found = false, lat_found = false,
     lon_found_by_std_name = false, lat_found_by_std_name = false;
-  ierr = nc.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name); CHKERRQ(ierr);
-  ierr = nc.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name); CHKERRQ(ierr);
+  nc.inq_var("lon", "longitude", lon_found, lon_name, lon_found_by_std_name);
+  nc.inq_var("lat", "latitude",  lat_found, lat_name, lat_found_by_std_name);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately

@@ -102,13 +102,12 @@ PetscErrorCode PAWeatherStation::init(Vars &vars) {
                     filename.c_str()); CHKERRQ(ierr);
 
   PIO nc(grid.com, "netcdf3", grid.get_unit_system());
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
   {
     ierr = m_precipitation.read(nc, grid.time); CHKERRQ(ierr);
     ierr = m_air_temperature.read(nc, grid.time); CHKERRQ(ierr);
   }
-  ierr = nc.close(); CHKERRQ(ierr);
-
+  nc.close();
 
   return 0;
 }

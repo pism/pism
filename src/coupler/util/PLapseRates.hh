@@ -154,9 +154,9 @@ protected:
         ref_surface_n_records = 1;
 
       PIO nc(g.com, "netcdf3", g.get_unit_system());
-      ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-      ierr = nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records); CHKERRQ(ierr);
-      ierr = nc.close(); CHKERRQ(ierr);
+      nc.open(filename, PISM_READONLY);
+      nc.inq_nrecords("usurf", "surface_altitude", ref_surface_n_records);
+      nc.close();
 
       // if -..._period is not set, make n_records the minimum of the
       // buffer size and the number of available records. Otherwise try

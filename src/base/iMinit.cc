@@ -83,11 +83,11 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Determine the grid extent from a bootstrapping file:
   PIO nc(grid, "netcdf3"); // OK to use netcdf3, we read very little data here.
   bool x_dim_exists, y_dim_exists, t_exists;
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
 
-  ierr = nc.inq_dim("x", x_dim_exists); CHKERRQ(ierr);
-  ierr = nc.inq_dim("y", y_dim_exists); CHKERRQ(ierr);
-  ierr = nc.inq_var(config.get_string("time_dimension_name"), t_exists); CHKERRQ(ierr);
+  nc.inq_dim("x", x_dim_exists);
+  nc.inq_dim("y", y_dim_exists);
+  nc.inq_var(config.get_string("time_dimension_name"), t_exists);
 
   // Try to deduce grid information from present spatial fields. This is bad,
   // because theoretically these fields may use different grids. We need a
@@ -100,15 +100,15 @@ PetscErrorCode IceModel::set_grid_defaults() {
   bool grid_info_found = false;
   for (unsigned int i = 0; i < names.size(); ++i) {
 
-    ierr = nc.inq_var(names[i], grid_info_found); CHKERRQ(ierr);
+    nc.inq_var(names[i], grid_info_found);
     if (grid_info_found == false) {
       std::string dummy1;
       bool dummy2;
-      ierr = nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2); CHKERRQ(ierr);
+      nc.inq_var("dummy", names[i], grid_info_found, dummy1, dummy2);
     }
 
     if (grid_info_found) {
-      ierr = nc.inq_grid_info(names[i], grid.periodicity, input); CHKERRQ(ierr);
+      nc.inq_grid_info(names[i], grid.periodicity, input);
       break;
     }
   }
@@ -120,19 +120,19 @@ PetscErrorCode IceModel::set_grid_defaults() {
   }
 
   std::string proj4_string;
-  ierr = nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string); CHKERRQ(ierr);
+  nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string);
   if (proj4_string.empty() == false) {
     global_attributes.set_string("proj4", proj4_string);
   }
 
   bool mapping_exists;
-  ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
+  nc.inq_var("mapping", mapping_exists);
   if (mapping_exists) {
-    ierr = nc.read_attributes(mapping.get_name(), mapping); CHKERRQ(ierr);
+    nc.read_attributes(mapping.get_name(), mapping);
     ierr = mapping.report_to_stdout(grid.com, 4); CHKERRQ(ierr);
   }
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   // Set the grid center and horizontal extent:
   grid.x0 = input.x0;
@@ -297,23 +297,23 @@ PetscErrorCode IceModel::grid_setup() {
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.get_att_text("PISM_GLOBAL", "source", source); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
+    nc.get_att_text("PISM_GLOBAL", "source", source);
 
     std::string proj4_string;
-    ierr = nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string); CHKERRQ(ierr);
+    nc.get_att_text("PISM_GLOBAL", "proj4", proj4_string);
     if (proj4_string.empty() == false) {
       global_attributes.set_string("proj4", proj4_string);
     }
 
     bool mapping_exists;
-    ierr = nc.inq_var("mapping", mapping_exists); CHKERRQ(ierr);
+    nc.inq_var("mapping", mapping_exists);
     if (mapping_exists) {
-      ierr = nc.read_attributes(mapping.get_name(), mapping); CHKERRQ(ierr);
+      nc.read_attributes(mapping.get_name(), mapping);
       ierr = mapping.report_to_stdout(grid.com, 4); CHKERRQ(ierr);
     }
 
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
 
     // If it's missing, print a warning
     if (source.empty()) {
@@ -335,11 +335,11 @@ PetscErrorCode IceModel::grid_setup() {
     names.push_back("enthalpy");
     names.push_back("temp");
 
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
 
     bool var_exists = false;
     for (unsigned int i = 0; i < names.size(); ++i) {
-      ierr = nc.inq_var(names[i], var_exists); CHKERRQ(ierr);
+      nc.inq_var(names[i], var_exists);
 
       if (var_exists == true) {
         ierr = nc.inq_grid(names[i], &grid, grid.periodicity); CHKERRQ(ierr);
@@ -351,12 +351,12 @@ PetscErrorCode IceModel::grid_setup() {
       PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
                   filename.c_str());
 
-      ierr = nc.close(); CHKERRQ(ierr);
+      nc.close();
 
       PISMEnd();
     }
 
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
@@ -591,12 +591,12 @@ PetscErrorCode IceModel::model_state_setup() {
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
     bool run_stats_exists;
 
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_var("run_stats", run_stats_exists); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
+    nc.inq_var("run_stats", run_stats_exists);
     if (run_stats_exists) {
-      ierr = nc.read_attributes(run_stats.get_name(), run_stats); CHKERRQ(ierr);
+      nc.read_attributes(run_stats.get_name(), run_stats);
     }
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
 
     if (run_stats.has_attribute("grounded_basal_ice_flux_cumulative"))
       grounded_basal_ice_flux_cumulative = run_stats.get_double("grounded_basal_ice_flux_cumulative");

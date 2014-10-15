@@ -303,63 +303,63 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
 
   // Find the number of records in this file:
   PIO nc(grid, "netcdf3");      // OK to use NetCDF3.
-  ierr = nc.open(filename, mode); CHKERRQ(ierr);
-  ierr = nc.inq_dimlen("N", start); CHKERRQ(ierr);
+  nc.open(filename, mode);
+  nc.inq_dimlen("N", start);
 
-  ierr = nc.write_global_attributes(global_attributes); CHKERRQ(ierr);
+  nc.write_global_attributes(global_attributes);
 
   // Write the dimension variable:
-  ierr = nc.write_timeseries(err, (size_t)start, (double)(start + 1), PISM_INT); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, (double)(start + 1), PISM_INT);
 
   // Always write grid parameters:
   err.set_name("dx");
   ierr = err.set_units("meters"); CHKERRQ(ierr);
-  ierr = nc.write_timeseries(err, (size_t)start, grid.dx); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, grid.dx);
   err.set_name("dy");
-  ierr = nc.write_timeseries(err, (size_t)start, grid.dy); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, grid.dy);
 
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("test");
-  ierr = nc.write_timeseries(err, (size_t)start, testname[0], PISM_BYTE); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, testname[0], PISM_BYTE);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("max_velocity");
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum ice velocity magnitude error");
-  ierr = nc.write_timeseries(err, (size_t)start, max_vector); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, max_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("relative_velocity");
   ierr = err.set_units("percent"); CHKERRQ(ierr);
   err.set_string("long_name", "relative ice velocity magnitude error");
-  ierr = nc.write_timeseries(err, (size_t)start, rel_vector); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, rel_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("maximum_u");
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, max_u); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, max_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("maximum_v");
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, max_v); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, max_v);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("average_u");
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the X-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, avg_u); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, avg_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("average_v");
   ierr = err.set_units("m/year"); CHKERRQ(ierr);
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
-  ierr = nc.write_timeseries(err, (size_t)start, avg_v); CHKERRQ(ierr);
+  nc.write_timeseries(err, (size_t)start, avg_v);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }
@@ -379,11 +379,11 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
 
   // Write results to an output file:
   PIO pio(grid, grid.config.get_string("output_format"));
-  ierr = pio.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
-  ierr = pio.def_time(config.get_string("time_dimension_name"),
-                      grid.time->calendar(),
-                      grid.time->CF_units_string()); CHKERRQ(ierr);
-  ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0); CHKERRQ(ierr);
+  pio.open(filename, PISM_READWRITE_MOVE);
+  pio.def_time(config.get_string("time_dimension_name"),
+               grid.time->calendar(),
+               grid.time->CF_units_string());
+  pio.append_time(config.get_string("time_dimension_name"), 0.0);
 
   ierr = surface.write(pio); CHKERRQ(ierr);
   ierr = thickness.write(pio); CHKERRQ(ierr);
@@ -417,7 +417,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
   }
   ierr = exact.write(pio); CHKERRQ(ierr);
 
-  ierr = pio.close(); CHKERRQ(ierr);
+  pio.close();
   return 0;
 }
 

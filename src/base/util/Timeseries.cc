@@ -72,8 +72,8 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
   std::string time_name, standard_name = var.get_string("standard_name"),
     name_found;
 
-  ierr = nc.inq_var(short_name, standard_name,
-                    exists, name_found, found_by_standard_name); CHKERRQ(ierr);
+  nc.inq_var(short_name, standard_name,
+             exists, name_found, found_by_standard_name);
 
   if (!exists) {
     ierr = PetscPrintf(com,
@@ -84,7 +84,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
     PISMEnd();
   }
 
-  ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
+  nc.inq_vardims(name_found, dims);
 
   if (dims.size() != 1) {
     ierr = PetscPrintf(com,
@@ -101,7 +101,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
   NCTimeseries tmp_dim = dimension;
   tmp_dim.set_name(time_name);
 
-  ierr = nc.read_timeseries(tmp_dim, time_manager, time); CHKERRQ(ierr);
+  nc.read_timeseries(tmp_dim, time_manager, time);
   bool is_increasing = true;
   for (unsigned int j = 1; j < time.size(); ++j) {
     if (time[j] - time[j-1] < 1e-16) {
@@ -116,7 +116,7 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
   }
 
   std::string time_bounds_name;
-  ierr = nc.get_att_text(time_name, "bounds", time_bounds_name); CHKERRQ(ierr);
+  nc.get_att_text(time_name, "bounds", time_bounds_name);
 
   if (!time_bounds_name.empty()) {
     use_bounds = true;
@@ -127,12 +127,12 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
 
     ierr = tmp_bounds.set_units(tmp_dim.get_string("units")); CHKERRQ(ierr);
 
-    ierr = nc.read_time_bounds(tmp_bounds, time_manager, time_bounds); CHKERRQ(ierr);
+    nc.read_time_bounds(tmp_bounds, time_manager, time_bounds);
   } else {
     use_bounds = false;
   }
 
-  ierr = nc.read_timeseries(var, time_manager, values); CHKERRQ(ierr);
+  nc.read_timeseries(var, time_manager, values);
 
   if (time.size() != values.size()) {
     ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
@@ -176,15 +176,13 @@ PetscErrorCode Timeseries::report_range() {
 
 //! Write timeseries data to a NetCDF file `filename`.
 PetscErrorCode Timeseries::write(const PIO &nc) {
-  PetscErrorCode ierr;
-
   // write the dimensional variable; this call should go first
-  ierr = nc.write_timeseries(dimension, 0, time); CHKERRQ(ierr);
-  ierr = nc.write_timeseries(var, 0, values); CHKERRQ(ierr);
+  nc.write_timeseries(dimension, 0, time);
+  nc.write_timeseries(var, 0, values);
 
   if (use_bounds) {
     set_bounds_units();
-    ierr = nc.write_time_bounds(bounds, 0, time_bounds); CHKERRQ(ierr);
+    nc.write_time_bounds(bounds, 0, time_bounds);
   }
 
   return 0;
@@ -409,31 +407,30 @@ PetscErrorCode DiagnosticTimeseries::interp(double a, double b) {
   return 0;
 }
 PetscErrorCode DiagnosticTimeseries::init(const std::string &filename) {
-  PetscErrorCode ierr;
   PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
   // Get the number of records in the file (for appending):
   bool file_exists = false;
-  ierr = nc.check_if_exists(filename, file_exists); CHKERRQ(ierr);
+  nc.check_if_exists(filename, file_exists);
 
   if (file_exists == true) {
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_dimlen(dimension.get_name(), len); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
+    nc.inq_dimlen(dimension.get_name(), len);
     if (len > 0) {
       // read the last value and initialize v_previous and v[0]
       std::vector<double> tmp;
       bool var_exists;
 
-      ierr = nc.inq_var(short_name, var_exists); CHKERRQ(ierr);
+      nc.inq_var(short_name, var_exists);
       if (var_exists) {
-        ierr = nc.get_1d_var(short_name, len - 1, 1, tmp); CHKERRQ(ierr);
+        nc.get_1d_var(short_name, len - 1, 1, tmp);
         // NOTE: this is WRONG if rate_of_change == true!
         v.push_back(tmp[0]);
         v_previous = tmp[0];
       }
     }
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
   }
 
   output_filename = filename;
@@ -445,7 +442,6 @@ PetscErrorCode DiagnosticTimeseries::init(const std::string &filename) {
 
   //! Writes data to a file.
 PetscErrorCode DiagnosticTimeseries::flush() {
-  PetscErrorCode ierr;
   PIO nc(com, "netcdf3", m_unit_system); // OK to use netcdf3
   unsigned int len = 0;
 
@@ -457,25 +453,25 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   if (time.empty())
     return 0;
 
-  ierr = nc.open(output_filename, PISM_READWRITE); CHKERRQ(ierr);
-  ierr = nc.inq_dimlen(dimension.get_name(), len); CHKERRQ(ierr);
+  nc.open(output_filename, PISM_READWRITE);
+  nc.inq_dimlen(dimension.get_name(), len);
 
   if (len > 0) {
     double last_time;
-    ierr = nc.inq_dim_limits(dimension.get_dimension_name(),
-                             NULL, &last_time); CHKERRQ(ierr);
+    nc.inq_dim_limits(dimension.get_dimension_name(),
+                      NULL, &last_time);
     if (last_time < time.front()) {
       start = len;
     }
   }
 
   if (len == (unsigned int)start) {
-    ierr = nc.write_timeseries(dimension, start, time);   CHKERRQ(ierr);
+    nc.write_timeseries(dimension, start, time);  
 
     set_bounds_units();
-    ierr = nc.write_time_bounds(bounds, start, time_bounds);   CHKERRQ(ierr);
+    nc.write_time_bounds(bounds, start, time_bounds);
   }
-  ierr = nc.write_timeseries(var, start, values); CHKERRQ(ierr);
+  nc.write_timeseries(var, start, values);
 
   start += time.size();
 
@@ -483,7 +479,7 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   values.clear();
   time_bounds.clear();
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }

@@ -157,8 +157,8 @@ PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
       if (i) {
         bool bwat_exists = false;
         PIO nc(grid, "guess_mode");
-        ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-        ierr = nc.inq_var("bwat", bwat_exists); CHKERRQ(ierr);
+        nc.open(filename, PISM_READONLY);
+        nc.inq_var("bwat", bwat_exists);
         if (bwat_exists == true) {
           ierr = W.read(filename, start); CHKERRQ(ierr);
         } else {
@@ -168,7 +168,7 @@ PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
                             filename.c_str(), bwatdefault); CHKERRQ(ierr);
           ierr = W.set(bwatdefault); CHKERRQ(ierr);
         }
-        ierr = nc.close(); CHKERRQ(ierr);
+        nc.close();
       } else {
         ierr = W.regrid(filename, OPTIONAL, bwatdefault); CHKERRQ(ierr);
       }

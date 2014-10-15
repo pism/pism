@@ -466,12 +466,12 @@ int main(int argc, char *argv[]) {
     // Write results to an output file:
     PIO pio(grid, "guess_mode");
 
-    ierr = pio.open(output_file, PISM_READWRITE_MOVE); CHKERRQ(ierr);
-    ierr = pio.def_time(config.get_string("time_dimension_name"),
+    pio.open(output_file, PISM_READWRITE_MOVE);
+    pio.def_time(config.get_string("time_dimension_name"),
                         grid.time->calendar(),
-                        grid.time->CF_units_string()); CHKERRQ(ierr);
-    ierr = pio.append_time(config.get_string("time_dimension_name"), 0.0);
-    ierr = pio.close(); CHKERRQ(ierr);
+                        grid.time->CF_units_string());
+    pio.append_time(config.get_string("time_dimension_name"), 0.0);
+    pio.close();
 
     ierr = ice_surface_elevation.write(output_file); CHKERRQ(ierr);
     ierr = ice_thickness.write(output_file); CHKERRQ(ierr);

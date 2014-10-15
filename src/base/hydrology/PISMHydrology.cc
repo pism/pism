@@ -137,9 +137,9 @@ PetscErrorCode Hydrology::init(Vars &vars) {
                  n_records = 1;
 
     PIO nc(grid.com, "netcdf3", grid.get_unit_system());
-    ierr = nc.open(itbfilename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_nrecords("inputtobed", "", n_records); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.open(itbfilename, PISM_READONLY);
+    nc.inq_nrecords("inputtobed", "", n_records);
+    nc.close();
 
     // if -..._period is not set, make n_records the minimum of the
     // buffer size and the number of available records. Otherwise try

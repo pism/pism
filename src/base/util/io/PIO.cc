@@ -105,11 +105,7 @@ void PIO::constructor(MPI_Comm c, const string &mode) {
   m_nc = create_backend(m_com, mode);
 
   if (mode != "guess_mode" && m_nc == NULL) {
-    PetscPrintf(m_com,
-                "PISM ERROR: output format '%s' is not supported.\n"
-                "Please recompile PISM with the appropriate I/O library.\n",
-                mode.c_str());
-    PISMEnd();
+    throw RuntimeError("failed to allocate an I/O backend (class PIO)");
   }
 }
 
@@ -140,9 +136,7 @@ PIO::~PIO() {
 }
 
 // Chooses the best I/O backend for reading from 'filename'.
-PetscErrorCode PIO::detect_mode(const string &filename) {
-  int stat;
-
+void PIO::detect_mode(const string &filename) {
   assert(m_nc == NULL);
 
   string format;
@@ -170,21 +164,18 @@ PetscErrorCode PIO::detect_mode(const string &filename) {
 
     if (m_nc != NULL) {
       m_mode = modes[j];
-      stat = verbPrintf(3, m_com,
-                        "  - Using the %s backend to read from %s...\n",
-                        modes[j].c_str(), filename.c_str()); CHKERRQ(stat);
+      verbPrintf(3, m_com,
+                 "  - Using the %s backend to read from %s...\n",
+                 modes[j].c_str(), filename.c_str());
       break;
     }
   }
 
   if (m_nc == NULL) {
-    PetscPrintf(m_com, "PISM ERROR: Unable to allocate an I/O backend. This should never happen!\n");
-    PISMEnd();
+    throw RuntimeError("failed to allocate an I/O backend (class PIO)");
   }
 
   m_nc->set_local_extent(m_xs, m_xm, m_ys, m_ym);
-
-  return 0;
 }
 
 
@@ -197,10 +188,10 @@ PetscErrorCode PIO::detect_mode(const string &filename) {
  *
  * @return 0 on success
  */
-PetscErrorCode PIO::use_mapped_io(string var_name, bool &result) const {
-  vector<string> dimnames;
+void PIO::use_mapped_io(string var_name, bool &result) const {
 
-  PetscErrorCode ierr = inq_vardims(var_name, dimnames); CHKERRQ(ierr);
+  vector<string> dimnames;
+  inq_vardims(var_name, dimnames);
 
   vector<AxisType> storage, memory;
   memory.push_back(X_AXIS);
@@ -208,7 +199,7 @@ PetscErrorCode PIO::use_mapped_io(string var_name, bool &result) const {
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
     AxisType dimtype;
-    ierr = inq_dimtype(dimnames[j], dimtype); CHKERRQ(ierr);
+    inq_dimtype(dimnames[j], dimtype);
 
     if (j == 0 && dimtype == T_AXIS) {
       // ignore the time dimension, but only if it is the first
@@ -225,7 +216,7 @@ PetscErrorCode PIO::use_mapped_io(string var_name, bool &result) const {
     } else {
       // an UNKNOWN_AXIS or T_AXIS at index != 0 was found, use mapped I/O
       result = true;
-      return 0;
+      return;
     }
   }
 
@@ -240,12 +231,10 @@ PetscErrorCode PIO::use_mapped_io(string var_name, bool &result) const {
     result = true;
   }
 
-  return 0;
+  return;
 }
 
-PetscErrorCode PIO::check_if_exists(const string &filename, bool &result) {
-  PetscErrorCode ierr;
-
+void PIO::check_if_exists(const string &filename, bool &result) {
   int file_exists = 0, rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
@@ -258,32 +247,30 @@ PetscErrorCode PIO::check_if_exists(const string &filename, bool &result) {
       file_exists = 0;
     }
   }
-  ierr = MPI_Bcast(&file_exists, 1, MPI_INT, 0, m_com); CHKERRQ(ierr);
+  MPI_Bcast(&file_exists, 1, MPI_INT, 0, m_com);
 
   if (file_exists == 1)
     result = true;
   else
     result = false;
 
-  return 0;
+  return;
 }
 
 
-PetscErrorCode PIO::open(const string &filename, IO_Mode mode) {
-  PetscErrorCode stat;
-
+void PIO::open(const string &filename, IO_Mode mode) {
   try {
     // opening for reading
     if (mode == PISM_READONLY) {
       if (m_nc == NULL && m_mode == "guess_mode") {
-        stat = detect_mode(filename); CHKERRQ(stat);
+        detect_mode(filename);
       }
 
       assert(m_nc != NULL);
 
       m_nc->open(filename, mode);
 
-      return 0;
+      return;
     }
 
     // opening for writing
@@ -304,7 +291,7 @@ PetscErrorCode PIO::open(const string &filename, IO_Mode mode) {
       m_nc->set_fill(PISM_NOFILL, old_fill);
     } else {                      // mode == PISM_READWRITE
       if (m_nc == NULL && m_mode == "guess_mode") {
-        stat = detect_mode(filename); CHKERRQ(stat);
+        detect_mode(filename);
       }
 
       assert(m_nc != NULL);
@@ -319,39 +306,35 @@ PetscErrorCode PIO::open(const string &filename, IO_Mode mode) {
     e.add_context("opening or creating " + filename);
     throw;
   }
-  return 0;
 }
 
 
-PetscErrorCode PIO::close() {
+void PIO::close() {
   try {
     m_nc->close();
   } catch (RuntimeError &e) {
     e.add_context("closing " + inq_filename());
     throw;
   }
-  return 0;
 }
 
-PetscErrorCode PIO::redef() const {
+void PIO::redef() const {
   try {
     m_nc->redef();
   } catch (RuntimeError &e) {
     e.add_context("switching to define mode; file " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
-PetscErrorCode PIO::enddef() const {
+void PIO::enddef() const {
   try {
     m_nc->enddef();
   } catch (RuntimeError &e) {
     e.add_context("switching to data mode; file " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 string PIO::inq_filename() const {
@@ -360,7 +343,7 @@ string PIO::inq_filename() const {
 
 
 //! \brief Get the number of records. Uses the length of an unlimited dimension.
-PetscErrorCode PIO::inq_nrecords(unsigned int &result) const {
+void PIO::inq_nrecords(unsigned int &result) const {
   try {
     string dim;
     m_nc->inq_unlimdim(dim);
@@ -373,13 +356,12 @@ PetscErrorCode PIO::inq_nrecords(unsigned int &result) const {
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records in file " + inq_filename());
   }
-
-  return 0;
 }
 
 //! \brief Get the number of records of a certain variable. Uses the length of
 //! an associated "time" dimension.
-PetscErrorCode PIO::inq_nrecords(const string &name, const string &std_name, unsigned int &result) const {
+void PIO::inq_nrecords(const string &name, const string &std_name,
+                       unsigned int &result) const {
   try {
     bool exists = false, found_by_standard_name = false;
     string name_found;
@@ -387,7 +369,7 @@ PetscErrorCode PIO::inq_nrecords(const string &name, const string &std_name, uns
 
     if (exists == false) {
       result = 0;
-      return 0;
+      return;
     }
 
     vector<string> dims;
@@ -400,7 +382,7 @@ PetscErrorCode PIO::inq_nrecords(const string &name, const string &std_name, uns
 
       if (dimtype == T_AXIS) {
         m_nc->inq_dimlen(dims[j], result);
-        return 0;
+        return;
       }
     }
 
@@ -410,7 +392,7 @@ PetscErrorCode PIO::inq_nrecords(const string &name, const string &std_name, uns
     throw;
   }
 
-  return 0;
+  return;
 }
 
 
@@ -418,14 +400,14 @@ PetscErrorCode PIO::inq_nrecords(const string &name, const string &std_name, uns
 /*!
  * Sets "result" to the short name found.
  */
-PetscErrorCode PIO::inq_var(const string &short_name, const string &std_name, bool &exists,
-                            string &result, bool &found_by_standard_name) const {
+void PIO::inq_var(const string &short_name, const string &std_name, bool &exists,
+                  string &result, bool &found_by_standard_name) const {
   try {
     exists = false;
 
     if (std_name.empty() == false) {
-      int nvars;
 
+      int nvars;
       m_nc->inq_nvars(nvars);
 
       for (int j = 0; j < nvars; ++j) {
@@ -468,48 +450,43 @@ PetscErrorCode PIO::inq_var(const string &short_name, const string &std_name, bo
     e.add_context("searching for variable " + short_name + " in " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
 //! \brief Checks if a variable exists.
-PetscErrorCode PIO::inq_var(const string &name, bool &exists) const {
+void PIO::inq_var(const string &name, bool &exists) const {
   try {
     m_nc->inq_varid(name, exists);
   } catch (RuntimeError &e) {
     e.add_context("searching for variable " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
-PetscErrorCode PIO::inq_vardims(const string &name, vector<string> &result) const {
+void PIO::inq_vardims(const string &name, vector<string> &result) const {
   try {
     m_nc->inq_vardimid(name, result);
   } catch (RuntimeError &e) {
     e.add_context("getting dimensions of variable " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
 //! \brief Checks if a dimension exists.
-PetscErrorCode PIO::inq_dim(const string &name, bool &exists) const {
+void PIO::inq_dim(const string &name, bool &exists) const {
   try {
     m_nc->inq_dimid(name, exists);
   } catch (RuntimeError &e) {
     e.add_context("searching for dimension " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Get the length of a dimension.
 /*!
  * Sets result to 0 if a dimension does not exist.
  */
-PetscErrorCode PIO::inq_dimlen(const string &name, unsigned int &result) const {
+void PIO::inq_dimlen(const string &name, unsigned int &result) const {
   try {
     bool exists = false;
     m_nc->inq_dimid(name, exists);
@@ -523,14 +500,13 @@ PetscErrorCode PIO::inq_dimlen(const string &name, unsigned int &result) const {
     e.add_context("getting the length of dimension " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Get the "type" of a dimension.
 /*!
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
-PetscErrorCode PIO::inq_dimtype(const string &name, AxisType &result) const {
+void PIO::inq_dimtype(const string &name, AxisType &result) const {
   try {
     string axis, standard_name, units;
     Unit tmp_units(m_unit_system, "1");
@@ -553,53 +529,53 @@ PetscErrorCode PIO::inq_dimtype(const string &name, AxisType &result) const {
     Unit seconds(m_unit_system, "seconds");
     if (UnitConverter::are_convertible(tmp_units, seconds)) {
       result = T_AXIS;
-      return 0;
+      return;
     }
 
     // check the standard_name attribute:
     if (standard_name == "time") {
       result = T_AXIS;
-      return 0;
+      return;
     } else if (standard_name == "projection_x_coordinate") {
       result = X_AXIS;
-      return 0;
+      return;
     } else if (standard_name == "projection_y_coordinate") {
       result = Y_AXIS;
-      return 0;
+      return;
     }
 
     // check the axis attribute:
     if (axis == "T" || axis == "t") {
       result = T_AXIS;
-      return 0;
+      return;
     } else if (axis == "X" || axis == "x") {
       result = X_AXIS;
-      return 0;
+      return;
     } else if (axis == "Y" || axis == "y") {
       result = Y_AXIS;
-      return 0;
+      return;
     } else if (axis == "Z" || axis == "z") {
       result = Z_AXIS;
-      return 0;
+      return;
     }
 
     // check the variable name:
     if (name == "x" || name == "X" ||
         name.find("x") == 0 || name.find("X") == 0) {
       result = X_AXIS;
-      return 0;
+      return;
     } else if (name == "y" || name == "Y" ||
                name.find("y") == 0 || name.find("Y") == 0) {
       result = Y_AXIS;
-      return 0;
+      return;
     } else if (name == "z" || name == "Z" ||
                name.find("z") == 0 || name.find("Z") == 0) {
       result = Z_AXIS;
-      return 0;
+      return;
     } else if (name == "t" || name == "T" || name == "time" ||
                name.find("t") == 0 || name.find("T") == 0) {
       result = T_AXIS;
-      return 0;
+      return;
     }
 
     // we have no clue:
@@ -609,10 +585,10 @@ PetscErrorCode PIO::inq_dimtype(const string &name, AxisType &result) const {
     e.add_context("getting the type of dimension " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
+  return;
 }
 
-PetscErrorCode PIO::inq_dim_limits(const string &name, double *min, double *max) const {
+void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
   try {
     vector<double> data;
     get_dim(name, data);
@@ -634,7 +610,6 @@ PetscErrorCode PIO::inq_dim_limits(const string &name, double *min, double *max)
     e.add_context("getting limits of dimension " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
@@ -653,10 +628,10 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
       double Lz = grid->config.get("grid_Lz");
-      ierr = verbPrintf(3, m_com,
-                        "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
-                        "         Using 2 levels and Lz of %3.3fm\n",
-                        var_name.c_str(), inq_filename().c_str(), Lz); CHKERRQ(ierr);
+      verbPrintf(3, m_com,
+                 "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
+                 "         Using 2 levels and Lz of %3.3fm\n",
+                 var_name.c_str(), inq_filename().c_str(), Lz);
 
       input.z.clear();
       input.z.push_back(0);
@@ -691,7 +666,7 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
   variables: in these two cases we need to handle the reference date
   correctly.
  */
-PetscErrorCode PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
+void PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
   try {
     string units_string;
 
@@ -702,7 +677,7 @@ PetscErrorCode PIO::inq_units(const string &name, bool &has_units, Unit &units) 
     if (units_string.empty()) {
       has_units = false;
       units = Unit(units.get_system(), "1");
-      return 0;
+      return;
     }
 
     // strip trailing spaces
@@ -717,12 +692,11 @@ PetscErrorCode PIO::inq_units(const string &name, bool &has_units, Unit &units) 
     e.add_context("getting units of variable '" + name + "' in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
-PetscErrorCode PIO::inq_grid_info(const string &name, Periodicity p,
-                                  grid_info &result) const {
+void PIO::inq_grid_info(const string &name, Periodicity p,
+                        grid_info &result) const {
   try {
     vector<string> dims;
     bool exists, found_by_standard_name;
@@ -808,12 +782,10 @@ PetscErrorCode PIO::inq_grid_info(const string &name, Periodicity p,
     e.add_context("getting grid information using variable " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
-PetscErrorCode PIO::def_dim(unsigned long int length,
-                            const NCVariable &metadata) const {
+void PIO::def_dim(unsigned long int length, const NCVariable &metadata) const {
   string name = metadata.get_name();
   try {
     m_nc->redef();
@@ -828,24 +800,20 @@ PetscErrorCode PIO::def_dim(unsigned long int length,
     e.add_context("defining dimension " + name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Define a variable.
-PetscErrorCode PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims) const {
+void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims) const {
   try {
     m_nc->def_var(name, nctype, dims);
   } catch (RuntimeError &e) {
     e.add_context("defining variable " + name + " in " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
-PetscErrorCode PIO::get_1d_var(const string &name, unsigned int s, unsigned int c,
-                               vector<double> &result) const {
-
+void PIO::get_1d_var(const string &name, unsigned int s, unsigned int c,
+                     vector<double> &result) const {
   vector<unsigned int> start(1), count(1);
 
   result.resize(c);
@@ -855,28 +823,23 @@ PetscErrorCode PIO::get_1d_var(const string &name, unsigned int s, unsigned int 
 
   // this call will handle errors
   get_vara_double(name, start, count, &result[0]);
-
-  return 0;
 }
 
 
-PetscErrorCode PIO::put_1d_var(const string &name, unsigned int s, unsigned int c,
-                               const vector<double> &data) const {
+void PIO::put_1d_var(const string &name, unsigned int s, unsigned int c,
+                     const vector<double> &data) const {
   vector<unsigned int> start(1), count(1);
 
   start[0] = s;
   count[0] = c;
 
   // this call will handle errors
-  put_vara_double(name, start, count,
-                  const_cast<double*>(&data[0]));
-
-  return 0;
+  put_vara_double(name, start, count, const_cast<double*>(&data[0]));
 }
 
 
 //! \brief Get dimension data (a coordinate variable).
-PetscErrorCode PIO::get_dim(const string &name, vector<double> &data) const {
+void PIO::get_dim(const string &name, vector<double> &data) const {
   try {
     unsigned int dim_length = 0;
     m_nc->inq_dimlen(name, dim_length);
@@ -886,27 +849,27 @@ PetscErrorCode PIO::get_dim(const string &name, vector<double> &data) const {
     e.add_context("reading dimension " + name + " from " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Write dimension data (a coordinate variable).
-PetscErrorCode PIO::put_dim(const string &name, const vector<double> &data) const {
+void PIO::put_dim(const string &name, const vector<double> &data) const {
   try {
     put_1d_var(name, 0, (unsigned int)data.size(), data);
   } catch (RuntimeError &e) {
     e.add_context("writing dimension " + name + " to " + inq_filename());
     throw;
   }
-  return 0;
 }
-PetscErrorCode PIO::def_time(const string &name, const string &calendar, const string &units) const {
+
+void PIO::def_time(const string &name, const string &calendar, const string &units) const {
   try {
     std::map<string,string> attrs;
 
     bool time_exists;
     m_nc->inq_varid(name, time_exists);
-    if (time_exists)
-      return 0;
+    if (time_exists) {
+      return;
+    }
 
     // time
     NCVariable time(name, m_unit_system);
@@ -920,16 +883,15 @@ PetscErrorCode PIO::def_time(const string &name, const string &calendar, const s
     e.add_context("defining the time dimension in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
 //! \brief Append to the time dimension.
-PetscErrorCode PIO::append_time(const string &name, double value) const {
+void PIO::append_time(const string &name, double value) const {
   try {
     vector<unsigned int> start(1), count(1);
-    unsigned int dim_length = 0;
 
+    unsigned int dim_length = 0;
     m_nc->inq_dimlen(name, dim_length);
 
     start[0] = dim_length;
@@ -940,14 +902,13 @@ PetscErrorCode PIO::append_time(const string &name, double value) const {
     e.add_context("appending to the time dimension in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Append to the history global attribute.
 /*!
  * Use put_att_text("PISM_GLOBAL", "history", ...) to overwrite "history".
  */
-PetscErrorCode PIO::append_history(const string &history) const {
+void PIO::append_history(const string &history) const {
   try {
     string old_history;
     get_att_text("PISM_GLOBAL", "history", old_history);
@@ -956,13 +917,11 @@ PetscErrorCode PIO::append_history(const string &history) const {
     e.add_context("appending to the history attribute in " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
 //! \brief Write a multiple-valued double attribute.
-PetscErrorCode PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
-                                   const vector<double> &values) const {
+void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
+                         const vector<double> &values) const {
   try {
     m_nc->redef();
     m_nc->put_att_double(var_name, att_name, nctype, values);
@@ -970,22 +929,20 @@ PetscErrorCode PIO::put_att_double(const string &var_name, const string &att_nam
     e.add_context("writing double attribute " + var_name + ":" + att_name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Write a single-valued double attribute.
-PetscErrorCode PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
-                                   double value) const {
+void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type nctype,
+                         double value) const {
   vector<double> tmp(1, value);
 
   // this call will handle errors
   this->put_att_double(var_name, att_name, nctype, tmp);
-
-  return 0;
 }
 
 //! \brief Write a text attribute.
-PetscErrorCode PIO::put_att_text(const string &var_name, const string &att_name, const string &value) const {
+void PIO::put_att_text(const string &var_name, const string &att_name,
+                       const string &value) const {
   try {
     m_nc->redef();
 
@@ -996,12 +953,11 @@ PetscErrorCode PIO::put_att_text(const string &var_name, const string &att_name,
     e.add_context("writing text attribute " + var_name + ":" + att_name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Get a double attribute.
-PetscErrorCode PIO::get_att_double(const string &var_name, const string &att_name,
-                                   vector<double> &result) const {
+void PIO::get_att_double(const string &var_name, const string &att_name,
+                         vector<double> &result) const {
   try {
     IO_Type att_type;
     m_nc->inq_atttype(var_name, att_name, att_type);
@@ -1024,20 +980,16 @@ PetscErrorCode PIO::get_att_double(const string &var_name, const string &att_nam
     e.add_context("reading double attribute " + var_name + ":" + att_name + " from " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! \brief Get a text attribute.
-PetscErrorCode PIO::get_att_text(const string &var_name, const string &att_name, string &result) const {
-
+void PIO::get_att_text(const string &var_name, const string &att_name, string &result) const {
   try {
     m_nc->get_att_text(var_name, att_name, result);
   } catch (RuntimeError &e) {
     e.add_context("reading text attribute " + var_name + ":" + att_name + " from " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
 //! \brief Read a PETSc Vec using the grid "grid".
@@ -1080,38 +1032,34 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
   return 0;
 }
 
-PetscErrorCode PIO::inq_nattrs(const string &var_name, int &result) const {
+void PIO::inq_nattrs(const string &var_name, int &result) const {
   try {
     m_nc->inq_varnatts(var_name, result);
   } catch (RuntimeError &e) {
     e.add_context("getting the number of attributes of variable " + var_name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
-PetscErrorCode PIO::inq_attname(const string &var_name, unsigned int n, string &result) const {
+void PIO::inq_attname(const string &var_name, unsigned int n, string &result) const {
   try {
     m_nc->inq_attname(var_name, n, result);
   } catch (RuntimeError &e) {
     e.add_context("getting the name of an attribute of variable " + var_name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
-PetscErrorCode PIO::inq_atttype(const string &var_name, const string &att_name, IO_Type &result) const {
+void PIO::inq_atttype(const string &var_name, const string &att_name, IO_Type &result) const {
   try {
     m_nc->inq_atttype(var_name, att_name, result);
   } catch (RuntimeError &e) {
     e.add_context("getting the type of an attribute of variable " + var_name + " in " + inq_filename());
     throw;
   }
-  return 0;
 }
-
 
 
 //! \brief Write a PETSc Vec using the grid "grid".
@@ -1166,10 +1114,10 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int 
  *
  * @note The *caller* is in charge of destroying lic
  */
-PetscErrorCode PIO::get_interp_context(const string &name,
-                                       const IceGrid &grid,
-                                       const vector<double> &zlevels,
-                                       LocalInterpCtx* &lic) const {
+void PIO::get_interp_context(const string &name,
+                             const IceGrid &grid,
+                             const vector<double> &zlevels,
+                             LocalInterpCtx* &lic) const {
   bool exists = false;
 
   inq_var(name, exists);
@@ -1183,15 +1131,13 @@ PetscErrorCode PIO::get_interp_context(const string &name,
 
     lic = new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
   }
-
-  return 0;
 }
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
-PetscErrorCode PIO::regrid_vec(IceGrid *grid, const string &var_name,
-                               const vector<double> &zlevels_out,
-                               unsigned int t_start, Vec result) const {
+void PIO::regrid_vec(IceGrid *grid, const string &var_name,
+                     const vector<double> &zlevels_out,
+                     unsigned int t_start, Vec result) const {
   try {
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
@@ -1221,11 +1167,10 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const string &var_name,
     regrid(grid, zlevels_out, lic.get(), result);
 
   } catch (RuntimeError &e) {
-    e.add_context("reading variable " + var_name + " (using linear interpolation) from " + inq_filename());
+    e.add_context("reading variable " + var_name +
+                  " (using linear interpolation) from " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
 /** Regrid `var_name` from a file, replacing missing values with `default_value`.
@@ -1236,14 +1181,12 @@ PetscErrorCode PIO::regrid_vec(IceGrid *grid, const string &var_name,
  * @param t_start time index of the record to regrid
  * @param default_value default value to replace `_FillValue` with
  * @param[out] result resulting interpolated field
- *
- * @return 0 on success
  */
-PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_name,
-                                            const vector<double> &zlevels_out,
-                                            unsigned int t_start,
-                                            double default_value,
-                                            Vec result) const {
+void PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_name,
+                                  const vector<double> &zlevels_out,
+                                  unsigned int t_start,
+                                  double default_value,
+                                  Vec result) const {
   try {
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
@@ -1287,10 +1230,10 @@ PetscErrorCode PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_nam
 
     regrid(grid, zlevels_out, lic.get(), result);
   } catch (RuntimeError &e) {
-    e.add_context("reading variable " + var_name + " (using linear interpolation) from " + inq_filename());
+    e.add_context("reading variable " + var_name +
+                  " (using linear interpolation) from " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 int PIO::k_below(double z, const vector<double> &zlevels) const {
@@ -1427,14 +1370,14 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out,
 }
 
 
-PetscErrorCode PIO::compute_start_and_count(const string &short_name,
-                                            unsigned int t_start, unsigned int t_count,
-                                            unsigned int x_start, unsigned int x_count,
-                                            unsigned int y_start, unsigned int y_count,
-                                            unsigned int z_start, unsigned int z_count,
-                                            vector<unsigned int> &start,
-                                            vector<unsigned int> &count,
-                                            vector<unsigned int> &imap) const {
+void PIO::compute_start_and_count(const string &short_name,
+                                  unsigned int t_start, unsigned int t_count,
+                                  unsigned int x_start, unsigned int x_count,
+                                  unsigned int y_start, unsigned int y_count,
+                                  unsigned int z_start, unsigned int z_count,
+                                  vector<unsigned int> &start,
+                                  vector<unsigned int> &count,
+                                  vector<unsigned int> &imap) const {
   vector<string> dims;
 
   m_nc->inq_vardimid(short_name, dims);
@@ -1476,21 +1419,19 @@ PetscErrorCode PIO::compute_start_and_count(const string &short_name,
       break;
     }
 
-// #if (PISM_DEBUG==1)
-//     fprintf(stderr, "[%d] var=%s start[%d]=%d count[%d]=%d imap[%d]=%d\n",
-//             rank, short_name.c_str(),
-//             j, start[j], j, count[j], j, imap[j]);
-// #endif
+    // #if (PISM_DEBUG==1)
+    //     fprintf(stderr, "[%d] var=%s start[%d]=%d count[%d]=%d imap[%d]=%d\n",
+    //             rank, short_name.c_str(),
+    //             j, start[j], j, count[j], j, imap[j]);
+    // #endif
 
   }
-
-  return 0;
 }
 
-PetscErrorCode PIO::get_vara_double(const string &variable_name,
-                                    const vector<unsigned int> &start,
-                                    const vector<unsigned int> &count,
-                                    double *ip) const {
+void PIO::get_vara_double(const string &variable_name,
+                          const vector<unsigned int> &start,
+                          const vector<unsigned int> &count,
+                          double *ip) const {
   try {
     m_nc->enddef();
     m_nc->get_vara_double(variable_name, start, count, ip);
@@ -1498,14 +1439,13 @@ PetscErrorCode PIO::get_vara_double(const string &variable_name,
     e.add_context("reading variable " + variable_name + " from " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
-PetscErrorCode PIO::put_vara_double(const string &variable_name,
-                                    const vector<unsigned int> &start,
-                                    const vector<unsigned int> &count,
-                                    double *op) const {
+void PIO::put_vara_double(const string &variable_name,
+                          const vector<unsigned int> &start,
+                          const vector<unsigned int> &count,
+                          double *op) const {
   try {
     m_nc->enddef();
     m_nc->put_vara_double(variable_name, start, count, op);
@@ -1513,13 +1453,12 @@ PetscErrorCode PIO::put_vara_double(const string &variable_name,
     e.add_context("writing variable " + variable_name + " to " + inq_filename());
     throw;
   }
-  return 0;
 }
 
-PetscErrorCode PIO::get_varm_double(const string &variable_name,
-                                    const vector<unsigned int> &start,
-                                    const vector<unsigned int> &count,
-                                    const vector<unsigned int> &imap, double *ip) const {
+void PIO::get_varm_double(const string &variable_name,
+                          const vector<unsigned int> &start,
+                          const vector<unsigned int> &count,
+                          const vector<unsigned int> &imap, double *ip) const {
   try {
     m_nc->enddef();
     m_nc->get_varm_double(variable_name, start, count, imap, ip);
@@ -1527,15 +1466,13 @@ PetscErrorCode PIO::get_varm_double(const string &variable_name,
     e.add_context("reading variable " + variable_name + " from " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
 
-PetscErrorCode PIO::put_varm_double(const string &variable_name,
-                                    const vector<unsigned int> &start,
-                                    const vector<unsigned int> &count,
-                                    const vector<unsigned int> &imap, double *op) const {
+void PIO::put_varm_double(const string &variable_name,
+                          const vector<unsigned int> &start,
+                          const vector<unsigned int> &count,
+                          const vector<unsigned int> &imap, double *op) const {
   try {
     m_nc->enddef();
     m_nc->put_varm_double(variable_name, start, count, imap, op);
@@ -1543,8 +1480,6 @@ PetscErrorCode PIO::put_varm_double(const string &variable_name,
     e.add_context("writing variable " + variable_name + " to " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
 void PIO::set_local_extent(unsigned int xs, unsigned int xm,
@@ -1556,7 +1491,7 @@ void PIO::set_local_extent(unsigned int xs, unsigned int xm,
   m_ym = ym;
 }
 
-PetscErrorCode PIO::read_attributes(const string &name, NCVariable &variable) const {
+void PIO::read_attributes(const string &name, NCVariable &variable) const {
   try {
     bool variable_exists;
     int nattrs;
@@ -1598,7 +1533,6 @@ PetscErrorCode PIO::read_attributes(const string &name, NCVariable &variable) co
     e.add_context("reading attributes of variable " + name + " from " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 
@@ -1612,8 +1546,8 @@ PetscErrorCode PIO::read_attributes(const string &name, NCVariable &variable) co
   \li if both valid_min and valid_max are set, then valid_range is written
   instead of the valid_min, valid_max pair.
  */
-PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
-                                     bool write_in_glaciological_units) const {
+void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
+                           bool write_in_glaciological_units) const {
   string var_name = var.get_name();
   try {
     // units, valid_min, valid_max and valid_range need special treatment:
@@ -1696,8 +1630,6 @@ PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     e.add_context("writing attributes of variable " + var_name + " to " + inq_filename());
     throw;
   }
-
-  return 0;
 }
 
 /** Write global attributes to a file.
@@ -1709,7 +1641,7 @@ PetscErrorCode PIO::write_attributes(const NCVariable &var, IO_Type nctype,
  *
  * @return 0 on success
  */
-PetscErrorCode PIO::write_global_attributes(const NCVariable &var) const {
+void PIO::write_global_attributes(const NCVariable &var) const {
   try {
     string old_history;
     NCVariable tmp = var;
@@ -1725,22 +1657,22 @@ PetscErrorCode PIO::write_global_attributes(const NCVariable &var) const {
     e.add_context("writing global attributes to " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! Read the valid range information from a file.
 /*! Reads `valid_min`, `valid_max` and `valid_range` attributes; if \c
     valid_range is found, sets the pair `valid_min` and `valid_max` instead.
  */
-PetscErrorCode PIO::read_valid_range(const string &name, NCVariable &variable) const {
+void PIO::read_valid_range(const string &name, NCVariable &variable) const {
   try {
     string input_units_string;
     vector<double> bounds;
 
     // Never reset valid_min/max if they were set internally
     if (variable.has_attribute("valid_min") ||
-        variable.has_attribute("valid_max"))
-      return 0;
+        variable.has_attribute("valid_max")) {
+      return;
+    }
 
     // Read the units.
     get_att_text(name, "units", input_units_string);
@@ -1769,12 +1701,11 @@ PetscErrorCode PIO::read_valid_range(const string &name, NCVariable &variable) c
     e.add_context("reading valid range of variable " + name + " to " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
-                                    Time *time, vector<double> &data) const {
+void PIO::read_timeseries(const NCTimeseries &metadata,
+                          Time *time, vector<double> &data) const {
   string name = metadata.get_name();
 
   try {
@@ -1843,26 +1774,23 @@ PetscErrorCode PIO::read_timeseries(const NCTimeseries &metadata,
     e.add_context("reading time-series variable " + name + " from " + inq_filename());
     throw;
   }
-  return 0;
 }
 
-PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
-                                     double data, IO_Type nctype) const {
+void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
+                           double data, IO_Type nctype) const {
   vector<double> vector_data(1, data);
 
   // this call will handle errors
   write_timeseries(metadata, t_start, vector_data, nctype);
-
-  return 0;
 }
 
 /** @brief Write a time-series `data` to a file.
  *
  * Always use glaciological units when saving time-series.
  */
-PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
-                                     vector<double> &data,
-                                     IO_Type nctype) const {
+void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
+                           vector<double> &data,
+                           IO_Type nctype) const {
   string name = metadata.get_name();
   try {
     bool variable_exists = false;
@@ -1888,12 +1816,11 @@ PetscErrorCode PIO::write_timeseries(const NCTimeseries &metadata, size_t t_star
     e.add_context("writing time-series variable " + name + " to " + inq_filename());
     throw;
   }
-  return 0;
 }
 
-PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
-                                     Time *time,
-                                     vector<double> &data) const {
+void PIO::read_time_bounds(const NCTimeBounds &metadata,
+                           Time *time,
+                           vector<double> &data) const {
   string name = metadata.get_name();
 
   try {
@@ -1984,12 +1911,11 @@ PetscErrorCode PIO::read_time_bounds(const NCTimeBounds &metadata,
     e.add_context("reading time bounds variable " + name + " from " + inq_filename());
     throw;
   }
-  return 0;
 }
 
-PetscErrorCode PIO::write_time_bounds(const NCTimeBounds &metadata,
-                                      size_t t_start,
-                                      vector<double> &data, IO_Type nctype) const {
+void PIO::write_time_bounds(const NCTimeBounds &metadata,
+                            size_t t_start,
+                            vector<double> &data, IO_Type nctype) const {
   string name = metadata.get_name();
   try {
     bool variable_exists = false;
@@ -2018,7 +1944,6 @@ PetscErrorCode PIO::write_time_bounds(const NCTimeBounds &metadata,
     e.add_context("writing time-bounds variable " + name + " to " + inq_filename());
     throw;
   }
-  return 0;
 }
 
 grid_info::grid_info() {

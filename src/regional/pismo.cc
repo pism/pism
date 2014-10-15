@@ -305,10 +305,10 @@ PetscErrorCode IceRegionalModel::initFromFile(const std::string &filename) {
   if (config.get_flag("ssa_dirichlet_bc")) {
     bool u_ssa_exists, v_ssa_exists;
 
-    ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_var("u_ssa_bc", u_ssa_exists); CHKERRQ(ierr);
-    ierr = nc.inq_var("v_ssa_bc", v_ssa_exists); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.open(filename, PISM_READONLY);
+    nc.inq_var("u_ssa_bc", u_ssa_exists);
+    nc.inq_var("v_ssa_bc", v_ssa_exists);
+    nc.close();
 
     if (! (u_ssa_exists && v_ssa_exists)) {
       vBCvel.metadata().set_string("pism_intent", "internal");

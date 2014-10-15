@@ -56,10 +56,10 @@ PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid
 
   PIO nc(grid, "netcdf3");      // OK to use netcdf3
   unsigned int last_record;
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-  ierr = nc.inq_nrecords(last_record); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
+  nc.inq_nrecords(last_record);
   last_record -= 1;
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   if (boot_file_set) {
     do_regrid = true;

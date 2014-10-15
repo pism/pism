@@ -108,16 +108,16 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
   PIO nc(grid, "netcdf3");      // Use NetCDF-3 to write time-series.
-  ierr = nc.open(ts_filename, mode); CHKERRQ(ierr);
+  nc.open(ts_filename, mode);
 
   if (append == true) {
     double time_max;
     std::string time_name = config.get_string("time_dimension_name");
     bool time_exists = false;
 
-    ierr = nc.inq_var(time_name, time_exists); CHKERRQ(ierr);
+    nc.inq_var(time_name, time_exists);
     if (time_exists == true) {
-      ierr = nc.inq_dim_limits(time_name, NULL, &time_max); CHKERRQ(ierr);
+      nc.inq_dim_limits(time_name, NULL, &time_max);
 
       while (current_ts < ts_times.size() && ts_times[current_ts] < time_max)
         current_ts++;
@@ -132,7 +132,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
   ierr = write_metadata(nc, false, false); CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
 
   // set the output file:
@@ -266,12 +266,12 @@ PetscErrorCode IceModel::init_extras() {
     std::string time_name = config.get_string("time_dimension_name");
     bool time_exists;
 
-    ierr = nc.open(extra_filename, PISM_READONLY); CHKERRQ(ierr);
-    ierr = nc.inq_var(time_name, time_exists); CHKERRQ(ierr);
+    nc.open(extra_filename, PISM_READONLY);
+    nc.inq_var(time_name, time_exists);
 
     if (time_exists == true) {
       double time_max;
-      ierr = nc.inq_dim_limits(time_name, NULL, &time_max); CHKERRQ(ierr);
+      nc.inq_dim_limits(time_name, NULL, &time_max);
 
       while (next_extra + 1 < extra_times.size() && extra_times[next_extra + 1] < time_max)
         next_extra++;
@@ -290,7 +290,7 @@ PetscErrorCode IceModel::init_extras() {
       extra_times = tmp;
       next_extra = 0;
     }
-    ierr = nc.close(); CHKERRQ(ierr);
+    nc.close();
   }
 
   save_extra = true;
@@ -471,41 +471,41 @@ PetscErrorCode IceModel::write_extras() {
     }
 
     // Prepare the file:
-    ierr = nc.open(filename, mode); CHKERRQ(ierr);
-    ierr = nc.def_time(config.get_string("time_dimension_name"),
-                       grid.time->calendar(),
-                       grid.time->CF_units_string()); CHKERRQ(ierr);
-    ierr = nc.put_att_text(config.get_string("time_dimension_name"),
-                           "bounds", "time_bounds"); CHKERRQ(ierr);
+    nc.open(filename, mode);
+    nc.def_time(config.get_string("time_dimension_name"),
+                grid.time->calendar(),
+                grid.time->CF_units_string());
+    nc.put_att_text(config.get_string("time_dimension_name"),
+                    "bounds", "time_bounds");
 
     ierr = write_metadata(nc, true, false); CHKERRQ(ierr);
 
     extra_file_is_ready = true;
   } else {
     // In this case the extra file should be present.
-    ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
+    nc.open(filename, PISM_READWRITE);
   }
 
   double      current_time = grid.time->current();
   std::string time_name    = config.get_string("time_dimension_name");
 
-  ierr = nc.append_time(time_name, current_time); CHKERRQ(ierr);
+  nc.append_time(time_name, current_time);
 
   unsigned int time_length = 0;
-  ierr = nc.inq_dimlen(time_name, time_length); CHKERRQ(ierr);
+  nc.inq_dimlen(time_name, time_length);
 
   size_t time_start = static_cast<size_t>(time_length - 1);
 
   std::vector<double> data(2);
   data[0] = last_extra;
   data[1] = current_time;
-  ierr = nc.write_time_bounds(extra_bounds, time_start, data); CHKERRQ(ierr);
+  nc.write_time_bounds(extra_bounds, time_start, data);
 
-  ierr = nc.write_timeseries(timestamp, time_start, wall_clock_hours); CHKERRQ(ierr);
+  nc.write_timeseries(timestamp, time_start, wall_clock_hours);
 
   ierr = write_variables(nc, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   // flush time-series buffers
   ierr = flush_timeseries(); CHKERRQ(ierr);

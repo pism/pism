@@ -135,9 +135,9 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
   PIO nc(*grid, "guess_mode");
   std::string name_found;
   bool exists, found_by_standard_name;
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
-  ierr = nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
-                    exists, name_found, found_by_standard_name); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
+  nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
+             exists, name_found, found_by_standard_name);
   if (exists == false) {
     PetscPrintf(grid->com, "PISM ERROR: can't find %s (%s) in %s.\n",
                 m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
@@ -147,7 +147,7 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
 
   // find the time dimension:
   std::vector<std::string> dims;
-  ierr = nc.inq_vardims(name_found, dims); CHKERRQ(ierr);
+  nc.inq_vardims(name_found, dims);
   
   std::string dimname = "";
   bool time_found = false;
@@ -155,7 +155,7 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
     AxisType dimtype;
     dimname = dims[i];
 
-    ierr = nc.inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
+    nc.inq_dimtype(dimname, dimtype);
 
     if (dimtype == T_AXIS) {
       time_found = true;
@@ -168,10 +168,10 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
     NCTimeseries time_dimension(dimname, dimname, grid->get_unit_system());
 
     ierr = time_dimension.set_units(grid->time->units_string()); CHKERRQ(ierr);
-    ierr = nc.read_timeseries(time_dimension, grid->time, time); CHKERRQ(ierr);
+    nc.read_timeseries(time_dimension, grid->time, time);
 
     std::string bounds_name;
-    ierr = nc.get_att_text(dimname, "bounds", bounds_name); CHKERRQ(ierr);
+    nc.get_att_text(dimname, "bounds", bounds_name);
 
     if (time.size() > 1) {
       if (bounds_name.empty() == false) {
@@ -179,7 +179,7 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
         NCTimeBounds tb(bounds_name, dimname, grid->get_unit_system());
         ierr = tb.set_units(time_dimension.get_string("units")); CHKERRQ(ierr);
 
-        ierr = nc.read_time_bounds(tb, grid->time, time_bounds); CHKERRQ(ierr);
+        nc.read_time_bounds(tb, grid->time, time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
@@ -218,7 +218,7 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
     PISMEnd();
   }
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   if (m_period != 0) {
     if ((size_t)n_records < time.size())
@@ -359,7 +359,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
   }
 
   PIO nc(*grid, "guess_mode");
-  ierr = nc.open(filename, PISM_READONLY); CHKERRQ(ierr);
+  nc.open(filename, PISM_READONLY);
 
   for (unsigned int j = 0; j < missing; ++j) {
     ierr = m_metadata[0].regrid(nc, start + j,
@@ -372,7 +372,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
     ierr = set_record(kept + j); CHKERRQ(ierr);
   }
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  nc.close();
 
   return 0;
 }
