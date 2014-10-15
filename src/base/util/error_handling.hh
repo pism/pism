@@ -29,20 +29,18 @@ namespace pism {
 
 class RuntimeError : public std::runtime_error {
 public:
-  RuntimeError(const std::string &message, MPI_Comm com = MPI_COMM_SELF);
+  RuntimeError(const std::string &message);
   ~RuntimeError() throw();
 
   //! @brief Add a message providing some context. This way we can (sort of)
   //! get a stack trace even though C++ exceptions do not provide one.
   void add_context(const std::string &message);
   std::vector<std::string> get_context() const;
-  MPI_Comm get_communicator() const;
 protected:
   std::vector<std::string> m_context;
-  MPI_Comm m_com;
 };
 
-void handle_fatal_errors();
+void handle_fatal_errors(MPI_Comm com);
 
 } // end of namespace pism
 

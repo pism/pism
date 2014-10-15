@@ -24,8 +24,8 @@
 
 namespace pism {
 
-RuntimeError::RuntimeError(const std::string &message, MPI_Comm com)
-  : std::runtime_error(message), m_com(com) {
+RuntimeError::RuntimeError(const std::string &message)
+  : std::runtime_error(message) {
   // empty
 }
 
@@ -41,41 +41,38 @@ std::vector<std::string> RuntimeError::get_context() const {
   return m_context;
 }
 
-MPI_Comm RuntimeError::get_communicator() const {
-  return m_com;
-}
-
 /** Handle fatal PISM errors by printing an informative error message.
  *
  * (Since these are fatal there is nothing else that can be done.)
  *
  * Should be called from a catch(...) block *only*.
  */
-void handle_fatal_errors() {
+void handle_fatal_errors(MPI_Comm com) {
   try {
     throw;                      // re-throw the current exception
   }
   catch (RuntimeError &e) {
-    MPI_Comm com = e.get_communicator();
-    PetscPrintf(com, "PISM ERROR: %s.\n", e.what());
     std::vector<std::string> context = e.get_context();
 
+    PetscPrintf(com,
+                "PISM ERROR: %s.\n", e.what());
     std::vector<std::string>::const_iterator j = context.begin();
     while (j != context.end()) {
-      PetscPrintf(com, "     while %s\n", j->c_str());
+      PetscPrintf(com,
+                  "            while %s\n", j->c_str());
       ++j;
     }
   }
   catch (std::exception &e) {
     PetscPrintf(PETSC_COMM_SELF,
                 "PISM ERROR: caught a C++ standard library exception: %s.\n"
-                "     This is a bug in PISM. Please send a report to help@pism-docs.org\n",
+                "     This is probably a bug in PISM. Please send a report to help@pism-docs.org\n",
                 e.what());
   }
   catch (...) {
     PetscPrintf(PETSC_COMM_SELF,
                 "PISM ERROR: caught an unexpected exception.\n"
-                "     This is a bug in PISM. Please send a report to help@pism-docs.org\n");
+                "     This is probably a bug in PISM. Please send a report to help@pism-docs.org\n");
   }
 }
 

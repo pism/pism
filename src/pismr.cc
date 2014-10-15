@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
   }
   catch (...) {
-    handle_fatal_errors();
+    handle_fatal_errors(com);
   }
 
   return 0;
