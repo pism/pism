@@ -23,6 +23,12 @@
 #include <string>
 #include <vector>
 
+#ifdef PISM_USE_TR1
+#include <tr1/memory>
+#else
+#include <memory>
+#endif
+
 namespace pism {
 
 // This is a subset of NetCDF data-types.
@@ -80,6 +86,12 @@ enum Fill_Mode {
 class NCFile
 {
 public:
+#ifdef PISM_USE_TR1
+  typedef std::tr1::shared_ptr<NCFile> Ptr;
+#else
+  typedef std::shared_ptr<NCFile> Ptr;
+#endif
+
   NCFile(MPI_Comm com);
   virtual ~NCFile();
 

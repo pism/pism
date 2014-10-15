@@ -197,8 +197,7 @@ public:
 private:
   MPI_Comm m_com;
   std::string m_mode;
-  bool shallow_copy;
-  NCFile *m_nc;
+  NCFile::Ptr m_nc;
   int m_xs, m_xm, m_ys, m_ym;
   UnitSystem m_unit_system;
 

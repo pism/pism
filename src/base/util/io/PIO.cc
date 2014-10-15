@@ -56,9 +56,9 @@ namespace pism {
 using std::string;
 using std::vector;
 
-static NCFile* create_backend(MPI_Comm com, string mode) {
+static NCFile::Ptr create_backend(MPI_Comm com, string mode) {
   if (mode == "netcdf3") {
-    return new NC3File(com);
+    return NCFile::Ptr(new NC3File(com));
   } else if (mode.find("quilt") == 0) {
     size_t n = mode.find(":");
     int compression_level = 0;
@@ -74,39 +74,38 @@ static NCFile* create_backend(MPI_Comm com, string mode) {
       }
     }
 
-    return new NC4_Quilt(com, compression_level);
+    return NCFile::Ptr(new NC4_Quilt(com, compression_level));
   }
 #if (PISM_USE_PARALLEL_NETCDF4==1)
   else if (mode == "netcdf4_parallel") {
-    return new NC4_Par(com);
+    return NCFile::Ptr(new NC4_Par(com));
   }
 #endif
 #if (PISM_USE_PNETCDF==1)
   else if (mode == "pnetcdf") {
-    return new PNCFile(com);
+    return NCFile::Ptr(new PNCFile(com));
   }
 #endif
 #if (PISM_USE_HDF5==1)
   else if (mode == "hdf5") {
-    return new NC4_HDF5(com);
+    return NCFile::Ptr(new NC4_HDF5(com));
   }
 #endif
   else {
-    return NULL;
+    return NCFile::Ptr();       // a "NULL" pointer
   }
 }
 
 //! \brief The code shared by different PIO constructors.
 void PIO::constructor(MPI_Comm c, const string &mode) {
-  m_com = c;
-  shallow_copy = false;
+  m_com  = c;
   m_mode = mode;
+  m_nc   = create_backend(m_com, m_mode);
 
-  m_nc = create_backend(m_com, mode);
-
-  if (mode != "guess_mode" && m_nc == NULL) {
+  if (mode != "guess_mode" && not m_nc) {
     throw RuntimeError("failed to allocate an I/O backend (class PIO)");
   }
+
 }
 
 PIO::PIO(MPI_Comm c, const string &mode, const UnitSystem &units_system)
@@ -117,27 +116,23 @@ PIO::PIO(MPI_Comm c, const string &mode, const UnitSystem &units_system)
 PIO::PIO(IceGrid &grid, const string &mode)
   : m_unit_system(grid.get_unit_system()) {
   constructor(grid.com, mode);
-  if (m_nc != NULL)
+  if (m_nc)
     set_local_extent(grid.xs, grid.xm, grid.ys, grid.ym);
 }
 
 PIO::PIO(const PIO &other)
   : m_unit_system(other.m_unit_system) {
-  m_com = other.m_com;
-  m_nc = other.m_nc;
+  m_com  = other.m_com;
+  m_nc   = other.m_nc;
   m_mode = other.m_mode;
-
-  shallow_copy = true;
 }
 
 PIO::~PIO() {
-  if (shallow_copy == false)
-    delete m_nc;
 }
 
 // Chooses the best I/O backend for reading from 'filename'.
 void PIO::detect_mode(const string &filename) {
-  assert(m_nc == NULL);
+  assert(m_nc == false);
 
   string format;
   {
@@ -162,7 +157,7 @@ void PIO::detect_mode(const string &filename) {
   for (unsigned int j = 0; j < modes.size(); ++j) {
     m_nc = create_backend(m_com, modes[j]);
 
-    if (m_nc != NULL) {
+    if (m_nc) {
       m_mode = modes[j];
       verbPrintf(3, m_com,
                  "  - Using the %s backend to read from %s...\n",
@@ -171,7 +166,7 @@ void PIO::detect_mode(const string &filename) {
     }
   }
 
-  if (m_nc == NULL) {
+  if (not m_nc) {
     throw RuntimeError("failed to allocate an I/O backend (class PIO)");
   }
 
@@ -260,24 +255,23 @@ void PIO::check_if_exists(const string &filename, bool &result) {
 
 void PIO::open(const string &filename, IO_Mode mode) {
   try {
-    // opening for reading
-    if (mode == PISM_READONLY) {
-      if (m_nc == NULL && m_mode == "guess_mode") {
+
+    if (mode == PISM_READONLY || mode == PISM_READWRITE) {
+      if (not m_nc && m_mode == "guess_mode") {
         detect_mode(filename);
       }
-
-      assert(m_nc != NULL);
-
-      m_nc->open(filename, mode);
-
-      return;
     }
 
-    // opening for writing
+    // opening for reading
+    if (mode == PISM_READONLY) {
 
-    if (mode == PISM_READWRITE_CLOBBER || mode == PISM_READWRITE_MOVE) {
+      assert(m_nc != false);
+      m_nc->open(filename, mode);
 
-      assert(m_nc != NULL);
+    } else if (mode == PISM_READWRITE_CLOBBER ||
+               mode == PISM_READWRITE_MOVE) {
+
+      assert(m_nc != false);
 
       if (mode == PISM_READWRITE_MOVE) {
         m_nc->move_if_exists(filename);
@@ -290,17 +284,12 @@ void PIO::open(const string &filename, IO_Mode mode) {
       int old_fill;
       m_nc->set_fill(PISM_NOFILL, old_fill);
     } else {                      // mode == PISM_READWRITE
-      if (m_nc == NULL && m_mode == "guess_mode") {
-        detect_mode(filename);
-      }
-
       assert(m_nc != NULL);
 
       m_nc->open(filename, mode);
 
       int old_fill;
       m_nc->set_fill(PISM_NOFILL, old_fill);
-
     }
   } catch (RuntimeError &e) {
     e.add_context("opening or creating " + filename);
@@ -600,11 +589,13 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
       my_max = PetscMax(data[j], my_max);
     }
 
-    if (min != NULL)
+    if (min != NULL) {
       *min = my_min;
+    }
 
-    if (max != NULL)
+    if (max != NULL) {
       *max = my_max;
+    }
 
   } catch (RuntimeError &e) {
     e.add_context("getting limits of dimension " + name + " in " + inq_filename());
