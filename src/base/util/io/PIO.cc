@@ -185,16 +185,14 @@ void PIO::detect_mode(const string &filename) {
  */
 void PIO::use_mapped_io(string var_name, bool &result) const {
 
-  vector<string> dimnames;
-  inq_vardims(var_name, dimnames);
+  vector<string> dimnames = inq_vardims(var_name);
 
   vector<AxisType> storage, memory;
   memory.push_back(X_AXIS);
   memory.push_back(Y_AXIS);
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
-    AxisType dimtype;
-    inq_dimtype(dimnames[j], dimtype);
+    AxisType dimtype = inq_dimtype(dimnames[j]);
 
     if (j == 0 && dimtype == T_AXIS) {
       // ignore the time dimension, but only if it is the first
@@ -229,9 +227,9 @@ void PIO::use_mapped_io(string var_name, bool &result) const {
   return;
 }
 
-void PIO::check_if_exists(const string &filename, bool &result) {
+bool PIO::check_if_exists(MPI_Comm com, const string &filename) {
   int file_exists = 0, rank = 0;
-  MPI_Comm_rank(m_com, &rank);
+  MPI_Comm_rank(com, &rank);
 
   if (rank == 0) {
     // Check if the file exists:
@@ -242,14 +240,13 @@ void PIO::check_if_exists(const string &filename, bool &result) {
       file_exists = 0;
     }
   }
-  MPI_Bcast(&file_exists, 1, MPI_INT, 0, m_com);
+  MPI_Bcast(&file_exists, 1, MPI_INT, 0, com);
 
-  if (file_exists == 1)
-    result = true;
-  else
-    result = false;
-
-  return;
+  if (file_exists == 1) {
+    return true;
+  } else { 
+    return false;
+  }
 }
 
 
@@ -332,56 +329,55 @@ string PIO::inq_filename() const {
 
 
 //! \brief Get the number of records. Uses the length of an unlimited dimension.
-void PIO::inq_nrecords(unsigned int &result) const {
+unsigned int PIO::inq_nrecords() const {
   try {
     string dim;
     m_nc->inq_unlimdim(dim);
 
     if (dim.empty()) {
-      result = 1;
+      return 1;
     } else {
+      unsigned int result;
       m_nc->inq_dimlen(dim, result);
+      return result;
     }
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records in file " + inq_filename());
   }
+  return 0;                     // will never happen
 }
 
 //! \brief Get the number of records of a certain variable. Uses the length of
 //! an associated "time" dimension.
-void PIO::inq_nrecords(const string &name, const string &std_name,
-                       unsigned int &result) const {
+unsigned int PIO::inq_nrecords(const string &name, const string &std_name) const {
   try {
     bool exists = false, found_by_standard_name = false;
     string name_found;
     inq_var(name, std_name, exists, name_found, found_by_standard_name);
 
     if (exists == false) {
-      result = 0;
-      return;
+      return 0;
     }
 
     vector<string> dims;
     m_nc->inq_vardimid(name_found, dims);
 
     for (unsigned int j = 0; j < dims.size(); ++j) {
-      AxisType dimtype;
-
-      inq_dimtype(dims[j], dimtype);
+      AxisType dimtype = inq_dimtype(dims[j]);
 
       if (dimtype == T_AXIS) {
+        unsigned int result = 0;
         m_nc->inq_dimlen(dims[j], result);
-        return;
+        return result;
       }
     }
 
-    result = 1;
+    return 1;
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records of variable " + name + " in " + inq_filename());
     throw;
   }
-
-  return;
+  return 0;                     // will never happen
 }
 
 
@@ -400,10 +396,10 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
       m_nc->inq_nvars(nvars);
 
       for (int j = 0; j < nvars; ++j) {
-        string name, attribute;
+        string name;
         m_nc->inq_varname(j, name);
 
-        get_att_text(name, "standard_name", attribute);
+        string attribute = get_att_text(name, "standard_name");
 
         if (attribute.empty())
           continue;
@@ -442,18 +438,22 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
 }
 
 //! \brief Checks if a variable exists.
-void PIO::inq_var(const string &name, bool &exists) const {
+bool PIO::inq_var(const string &name) const {
   try {
+    bool exists = false;
     m_nc->inq_varid(name, exists);
+    return exists;
   } catch (RuntimeError &e) {
     e.add_context("searching for variable " + name + " in " + inq_filename());
     throw;
   }
 }
 
-void PIO::inq_vardims(const string &name, vector<string> &result) const {
+vector<string> PIO::inq_vardims(const string &name) const {
   try {
+    vector<string> result;
     m_nc->inq_vardimid(name, result);
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("getting dimensions of variable " + name + " in " + inq_filename());
     throw;
@@ -462,9 +462,11 @@ void PIO::inq_vardims(const string &name, vector<string> &result) const {
 
 
 //! \brief Checks if a dimension exists.
-void PIO::inq_dim(const string &name, bool &exists) const {
+bool PIO::inq_dim(const string &name) const {
   try {
+    bool exists = false;
     m_nc->inq_dimid(name, exists);
+    return exists;
   } catch (RuntimeError &e) {
     e.add_context("searching for dimension " + name + " in " + inq_filename());
     throw;
@@ -475,15 +477,16 @@ void PIO::inq_dim(const string &name, bool &exists) const {
 /*!
  * Sets result to 0 if a dimension does not exist.
  */
-void PIO::inq_dimlen(const string &name, unsigned int &result) const {
+unsigned int PIO::inq_dimlen(const string &name) const {
   try {
     bool exists = false;
     m_nc->inq_dimid(name, exists);
-
     if (exists == true) {
+      unsigned int result = 0;
       m_nc->inq_dimlen(name, result);
+      return result;
     } else {
-      result = 0;
+      return 0;
     }
   } catch (RuntimeError &e) {
     e.add_context("getting the length of dimension " + name + " in " + inq_filename());
@@ -495,7 +498,7 @@ void PIO::inq_dimlen(const string &name, unsigned int &result) const {
 /*!
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
  */
-void PIO::inq_dimtype(const string &name, AxisType &result) const {
+AxisType PIO::inq_dimtype(const string &name) const {
   try {
     string axis, standard_name, units;
     Unit tmp_units(m_unit_system, "1");
@@ -507,9 +510,9 @@ void PIO::inq_dimtype(const string &name, AxisType &result) const {
       throw RuntimeError("coordinate variable " + name + " is missing");
     }
 
-    get_att_text(name, "axis", axis);
-    get_att_text(name, "standard_name", standard_name);
-    get_att_text(name, "units", units);
+    axis          = get_att_text(name, "axis");
+    standard_name = get_att_text(name, "standard_name");
+    units         = get_att_text(name, "units");
 
     // check if it has units compatible with "seconds":
 
@@ -517,64 +520,51 @@ void PIO::inq_dimtype(const string &name, AxisType &result) const {
 
     Unit seconds(m_unit_system, "seconds");
     if (UnitConverter::are_convertible(tmp_units, seconds)) {
-      result = T_AXIS;
-      return;
+      return T_AXIS;
     }
 
     // check the standard_name attribute:
     if (standard_name == "time") {
-      result = T_AXIS;
-      return;
+      return T_AXIS;
     } else if (standard_name == "projection_x_coordinate") {
-      result = X_AXIS;
-      return;
+      return X_AXIS;
     } else if (standard_name == "projection_y_coordinate") {
-      result = Y_AXIS;
-      return;
+      return Y_AXIS;
     }
 
     // check the axis attribute:
     if (axis == "T" || axis == "t") {
-      result = T_AXIS;
-      return;
+      return T_AXIS;
     } else if (axis == "X" || axis == "x") {
-      result = X_AXIS;
-      return;
+      return X_AXIS;
     } else if (axis == "Y" || axis == "y") {
-      result = Y_AXIS;
-      return;
+      return Y_AXIS;
     } else if (axis == "Z" || axis == "z") {
-      result = Z_AXIS;
-      return;
+      return Z_AXIS;
     }
 
     // check the variable name:
     if (name == "x" || name == "X" ||
         name.find("x") == 0 || name.find("X") == 0) {
-      result = X_AXIS;
-      return;
+      return X_AXIS;
     } else if (name == "y" || name == "Y" ||
                name.find("y") == 0 || name.find("Y") == 0) {
-      result = Y_AXIS;
-      return;
+      return Y_AXIS;
     } else if (name == "z" || name == "Z" ||
                name.find("z") == 0 || name.find("Z") == 0) {
-      result = Z_AXIS;
-      return;
+      return Z_AXIS;
     } else if (name == "t" || name == "T" || name == "time" ||
                name.find("t") == 0 || name.find("T") == 0) {
-      result = T_AXIS;
-      return;
+      return T_AXIS;
     }
 
     // we have no clue:
-    result = UNKNOWN_AXIS;
-
+    return UNKNOWN_AXIS;
   } catch (RuntimeError &e) {
     e.add_context("getting the type of dimension " + name + " in " + inq_filename());
     throw;
   }
-  return;
+  return UNKNOWN_AXIS;          // will never happen
 }
 
 void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
@@ -611,10 +601,8 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
 
     assert(grid != NULL);
 
-    grid_info input;
-
     // The following call may fail because var_name does not exist. (And this is fatal!)
-    inq_grid_info(var_name, periodicity, input);
+    grid_info input = inq_grid_info(var_name, periodicity);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (input.z.size() < 2) {
@@ -659,10 +647,8 @@ PetscErrorCode PIO::inq_grid(const string &var_name, IceGrid *grid, Periodicity 
  */
 void PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
   try {
-    string units_string;
-
     // Get the string:
-    get_att_text(name, "units", units_string);
+    string units_string = get_att_text(name, "units");
 
     // If a variables does not have the units attribute, set the flag and return:
     if (units_string.empty()) {
@@ -686,12 +672,12 @@ void PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
 }
 
 
-void PIO::inq_grid_info(const string &name, Periodicity p,
-                        grid_info &result) const {
+grid_info PIO::inq_grid_info(const string &name, Periodicity p) const {
   try {
     vector<string> dims;
     bool exists, found_by_standard_name;
     string name_found;
+    grid_info result;
 
     // try "name" as the standard_name first, then as the short name:
     inq_var(name, name, exists, name_found, found_by_standard_name);
@@ -716,8 +702,7 @@ void PIO::inq_grid_info(const string &name, Periodicity p,
     for (unsigned int i = 0; i < dims.size(); ++i) {
       string dimname = dims[i];
 
-      AxisType dimtype = UNKNOWN_AXIS;
-      inq_dimtype(dimname, dimtype);
+      AxisType dimtype = inq_dimtype(dimname);
 
       switch (dimtype) {
       case X_AXIS:
@@ -768,6 +753,7 @@ void PIO::inq_grid_info(const string &name, Periodicity p,
       } // switch
     }   // for loop
 
+    return result;
 
   } catch (RuntimeError &e) {
     e.add_context("getting grid information using variable " + name + " in " + inq_filename());
@@ -901,8 +887,7 @@ void PIO::append_time(const string &name, double value) const {
  */
 void PIO::append_history(const string &history) const {
   try {
-    string old_history;
-    get_att_text("PISM_GLOBAL", "history", old_history);
+    string old_history = get_att_text("PISM_GLOBAL", "history");
     put_att_text("PISM_GLOBAL", "history", history + old_history);
   } catch (RuntimeError &e) {
     e.add_context("appending to the history attribute in " + inq_filename());
@@ -947,8 +932,7 @@ void PIO::put_att_text(const string &var_name, const string &att_name,
 }
 
 //! \brief Get a double attribute.
-void PIO::get_att_double(const string &var_name, const string &att_name,
-                         vector<double> &result) const {
+vector<double> PIO::get_att_double(const string &var_name, const string &att_name) const {
   try {
     IO_Type att_type;
     m_nc->inq_atttype(var_name, att_name, att_type);
@@ -957,15 +941,16 @@ void PIO::get_att_double(const string &var_name, const string &att_name,
     // a number (or a list of numbers) was expected. (We've seen datasets with
     // "valid_min" stored as a string...)
     if (att_type == PISM_CHAR) {
-      string tmp;
-      get_att_text(var_name, att_name, tmp);
+      string tmp = get_att_text(var_name, att_name);
 
       string message = "attribute " + att_name + " is a string; expected a number or a list of numbers";
       throw RuntimeError(message);
     } else {
       // In this case att_type might be PISM_NAT (if an attribute does not
       // exist), but get_att_double can handle that.
+      vector<double> result;
       m_nc->get_att_double(var_name, att_name, result);
+      return result;
     }
   } catch (RuntimeError &e) {
     e.add_context("reading double attribute " + var_name + ":" + att_name + " from " + inq_filename());
@@ -974,9 +959,11 @@ void PIO::get_att_double(const string &var_name, const string &att_name,
 }
 
 //! \brief Get a text attribute.
-void PIO::get_att_text(const string &var_name, const string &att_name, string &result) const {
+string PIO::get_att_text(const string &var_name, const string &att_name) const {
   try {
+    string result;
     m_nc->get_att_text(var_name, att_name, result);
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("reading text attribute " + var_name + ":" + att_name + " from " + inq_filename());
     throw;
@@ -1023,9 +1010,11 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
   return 0;
 }
 
-void PIO::inq_nattrs(const string &var_name, int &result) const {
+unsigned int PIO::inq_nattrs(const string &var_name) const {
   try {
+    int result = 0;
     m_nc->inq_varnatts(var_name, result);
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("getting the number of attributes of variable " + var_name + " in " + inq_filename());
     throw;
@@ -1033,9 +1022,11 @@ void PIO::inq_nattrs(const string &var_name, int &result) const {
 }
 
 
-void PIO::inq_attname(const string &var_name, unsigned int n, string &result) const {
+string PIO::inq_attname(const string &var_name, unsigned int n) const {
   try {
+    string result;
     m_nc->inq_attname(var_name, n, result);
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("getting the name of an attribute of variable " + var_name + " in " + inq_filename());
     throw;
@@ -1043,9 +1034,11 @@ void PIO::inq_attname(const string &var_name, unsigned int n, string &result) co
 }
 
 
-void PIO::inq_atttype(const string &var_name, const string &att_name, IO_Type &result) const {
+IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
   try {
+    IO_Type result;
     m_nc->inq_atttype(var_name, att_name, result);
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("getting the type of an attribute of variable " + var_name + " in " + inq_filename());
     throw;
@@ -1109,16 +1102,12 @@ void PIO::get_interp_context(const string &name,
                              const IceGrid &grid,
                              const vector<double> &zlevels,
                              LocalInterpCtx* &lic) const {
-  bool exists = false;
-
-  inq_var(name, exists);
+  bool exists = inq_var(name);
 
   if (exists == false) {
     throw RuntimeError("variable " + name + " is missing in " + inq_filename());
   } else {
-    grid_info gi;
-
-    inq_grid_info(name, grid.periodicity, gi);
+    grid_info gi = inq_grid_info(name, grid.periodicity);
 
     lic = new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
   }
@@ -1383,8 +1372,7 @@ void PIO::compute_start_and_count(const string &short_name,
   for (unsigned int j = 0; j < ndims; j++) {
     string dimname = dims[j];
 
-    AxisType dimtype;
-    inq_dimtype(dimname, dimtype);
+    AxisType dimtype = inq_dimtype(dimname);
 
     switch (dimtype) {
     case T_AXIS:
@@ -1484,10 +1472,7 @@ void PIO::set_local_extent(unsigned int xs, unsigned int xm,
 
 void PIO::read_attributes(const string &name, NCVariable &variable) const {
   try {
-    bool variable_exists;
-    int nattrs;
-
-    inq_var(name, variable_exists);
+    bool variable_exists = inq_var(name);
 
     if (variable_exists == false) {
       throw RuntimeError("variable " + name + " is missing");
@@ -1496,17 +1481,14 @@ void PIO::read_attributes(const string &name, NCVariable &variable) const {
     variable.clear_all_strings();
     variable.clear_all_doubles();
 
-    inq_nattrs(name, nattrs);
+    unsigned int nattrs = inq_nattrs(name);
 
-    for (int j = 0; j < nattrs; ++j) {
-      string attribute_name;
-      IO_Type nctype;
-      inq_attname(name, j, attribute_name);
-      inq_atttype(name, attribute_name, nctype);
+    for (unsigned int j = 0; j < nattrs; ++j) {
+      string attribute_name = inq_attname(name, j);
+      IO_Type nctype = inq_atttype(name, attribute_name);
 
       if (nctype == PISM_CHAR) {
-        string value;
-        get_att_text(name, attribute_name, value);
+        string value = get_att_text(name, attribute_name);
 
         if (attribute_name == "units") {
           variable.set_units(value);
@@ -1514,9 +1496,7 @@ void PIO::read_attributes(const string &name, NCVariable &variable) const {
           variable.set_string(attribute_name, value);
         }
       } else {
-        vector<double> values;
-
-        get_att_double(name, attribute_name, values);
+        vector<double> values = get_att_double(name, attribute_name);
         variable.set_doubles(attribute_name, values);
       }
     } // end of for (int j = 0; j < nattrs; ++j)
@@ -1634,10 +1614,9 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
  */
 void PIO::write_global_attributes(const NCVariable &var) const {
   try {
-    string old_history;
     NCVariable tmp = var;
 
-    get_att_text("PISM_GLOBAL", "history", old_history);
+    string old_history = get_att_text("PISM_GLOBAL", "history");
 
     tmp.set_name("PISM_GLOBAL");
     tmp.set_string("history", tmp.get_string("history") + old_history);
@@ -1656,9 +1635,6 @@ void PIO::write_global_attributes(const NCVariable &var) const {
  */
 void PIO::read_valid_range(const string &name, NCVariable &variable) const {
   try {
-    string input_units_string;
-    vector<double> bounds;
-
     // Never reset valid_min/max if they were set internally
     if (variable.has_attribute("valid_min") ||
         variable.has_attribute("valid_max")) {
@@ -1666,24 +1642,24 @@ void PIO::read_valid_range(const string &name, NCVariable &variable) const {
     }
 
     // Read the units.
-    get_att_text(name, "units", input_units_string);
+    string input_units_string = get_att_text(name, "units");
 
     UnitSystem sys = variable.get_units().get_system();
     Unit input_units = Unit(sys, input_units_string);
 
     UnitConverter c(input_units, variable.get_units());
 
-    get_att_double(name, "valid_range", bounds);
+    vector<double> bounds = get_att_double(name, "valid_range");
     if (bounds.size() == 2) {             // valid_range is present
       variable.set_double("valid_min", c(bounds[0]));
       variable.set_double("valid_max", c(bounds[1]));
     } else {                      // valid_range has the wrong length or is missing
-      get_att_double(name, "valid_min", bounds);
+      bounds = get_att_double(name, "valid_min");
       if (bounds.size() == 1) {           // valid_min is present
         variable.set_double("valid_min", c(bounds[0]));
       }
 
-      get_att_double(name, "valid_max", bounds);
+      bounds = get_att_double(name, "valid_max");
       if (bounds.size() == 1) {           // valid_max is present
         variable.set_double("valid_max", c(bounds[0]));
       }
@@ -1715,16 +1691,12 @@ void PIO::read_timeseries(const NCTimeseries &metadata,
       throw RuntimeError("variable " + name + " is missing");
     }
 
-    vector<string> dims;
-    inq_vardims(name_found, dims);
-
+    vector<string> dims = inq_vardims(name_found);
     if (dims.size() != 1) {
       throw RuntimeError("a time-series variable has to be one-dimensional");
     }
 
-    unsigned int length;
-    inq_dimlen(dimension_name, length);
-
+    unsigned int length = inq_dimlen(dimension_name);
     if (length <= 0) {
       throw RuntimeError("dimension " + dimension_name + " has length zero");
     }
@@ -1734,11 +1706,10 @@ void PIO::read_timeseries(const NCTimeseries &metadata,
     get_1d_var(name_found, 0, length, data);
 
     bool input_has_units = false;
-    string input_units_string;
     Unit internal_units = metadata.get_units(),
       input_units(internal_units.get_system(), "1");
 
-    get_att_text(name_found, "units", input_units_string);
+    string input_units_string = get_att_text(name_found, "units");
 
     if (input_units_string.empty() == true) {
       input_has_units = false;
@@ -1784,8 +1755,7 @@ void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
                            IO_Type nctype) const {
   string name = metadata.get_name();
   try {
-    bool variable_exists = false;
-    inq_var(name, variable_exists);
+    bool variable_exists = inq_var(name);
 
     if (variable_exists == false) {
       metadata.define(*this, nctype, true);
@@ -1815,19 +1785,16 @@ void PIO::read_time_bounds(const NCTimeBounds &metadata,
   string name = metadata.get_name();
 
   try {
-    bool variable_exists = false;
-
     Unit internal_units = metadata.get_units();
 
     // Find the variable:
-    inq_var(name, variable_exists);
+    bool variable_exists = inq_var(name);
 
     if (variable_exists == false) {
       throw RuntimeError("variable " + name + " is missing");
     }
 
-    vector<string> dims;
-    inq_vardims(name, dims);
+    vector<string> dims = inq_vardims(name);
 
     if (dims.size() != 2) {
       throw RuntimeError("variable " + name + " has to has two dimensions");
@@ -1837,16 +1804,14 @@ void PIO::read_time_bounds(const NCTimeBounds &metadata,
       &dimension_name = dims[0],
       &bounds_name    = dims[1];
 
-    unsigned int length = 0;
-
     // Check that we have 2 vertices (interval end-points) per time record.
-    inq_dimlen(bounds_name, length);
+    unsigned int length = inq_dimlen(bounds_name);
     if (length != 2) {
       throw RuntimeError("time-bounds variable " + name + " has to have exactly 2 bounds per time record");
     }
 
     // Get the number of time records.
-    inq_dimlen(dimension_name, length);
+    length = inq_dimlen(dimension_name);
     if (length <= 0) {
       throw RuntimeError("dimension " + dimension_name + " has length zero");
     }
@@ -1864,17 +1829,16 @@ void PIO::read_time_bounds(const NCTimeBounds &metadata,
     // Find the corresponding 'time' variable. (We get units from the 'time'
     // variable, because according to CF-1.5 section 7.1 a "boundary variable"
     // may not have metadata set.)
-    inq_var(dimension_name, variable_exists);
+    variable_exists = inq_var(dimension_name);
 
     if (variable_exists == false) {
       throw RuntimeError("time coordinate variable " + dimension_name + " is missing");
     }
 
     bool input_has_units = false;
-    string input_units_string;
     Unit input_units(internal_units.get_system(), "1");
 
-    get_att_text(dimension_name, "units", input_units_string);
+    string input_units_string = get_att_text(dimension_name, "units");
     input_units_string = time->CF_units_to_PISM_units(input_units_string);
 
     if (input_units_string.empty() == true) {
@@ -1909,9 +1873,7 @@ void PIO::write_time_bounds(const NCTimeBounds &metadata,
                             vector<double> &data, IO_Type nctype) const {
   string name = metadata.get_name();
   try {
-    bool variable_exists = false;
-    inq_var(name, variable_exists);
-
+    bool variable_exists = inq_var(name);
     if (variable_exists == false) {
       metadata.define(*this, nctype, true);
     }

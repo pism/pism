@@ -51,7 +51,7 @@ public:
   PIO(const PIO &other);
   ~PIO();
 
-  void check_if_exists(const std::string &filename, bool &result);
+  static bool check_if_exists(MPI_Comm com, const std::string &filename);
 
   void open(const std::string &filename, IO_Mode mode);
 
@@ -63,23 +63,22 @@ public:
 
   std::string inq_filename() const;
 
-  void inq_nrecords(unsigned int &result) const;
+  unsigned int inq_nrecords() const;
 
-  void inq_nrecords(const std::string &name, const std::string &std_name,
-                    unsigned int &result) const;
+  unsigned int inq_nrecords(const std::string &name, const std::string &std_name) const;
 
   void inq_var(const std::string &short_name, const std::string &std_name, bool &exists,
                std::string &result, bool &found_by_standard_name) const;
 
-  void inq_var(const std::string &short_name, bool &exists) const;
+  bool inq_var(const std::string &short_name) const;
 
-  void inq_vardims(const std::string &name, std::vector<std::string> &result) const;
+  std::vector<std::string> inq_vardims(const std::string &name) const;
 
-  void inq_dim(const std::string &name, bool &exists) const;
+  bool inq_dim(const std::string &name) const;
 
-  void inq_dimlen(const std::string &name, unsigned int &result) const;
+  unsigned int inq_dimlen(const std::string &name) const;
 
-  void inq_dimtype(const std::string &name, AxisType &result) const;
+  AxisType inq_dimtype(const std::string &name) const;
 
   void inq_dim_limits(const std::string &name, double *min, double *max) const;
 
@@ -87,8 +86,7 @@ public:
 
   void inq_units(const std::string &name, bool &has_units, Unit &units) const;
 
-  void inq_grid_info(const std::string &name, Periodicity p,
-                     grid_info &g) const;
+  grid_info inq_grid_info(const std::string &name, Periodicity p) const;
 
   void def_dim(unsigned long int length, const NCVariable &metadata) const;
 
@@ -110,11 +108,11 @@ public:
 
   void append_history(const std::string &history) const;
 
-  void inq_nattrs(const std::string &var_name, int &result) const;
+  unsigned int inq_nattrs(const std::string &var_name) const;
 
-  void inq_attname(const std::string &var_name, unsigned int n, std::string &result) const;
+  std::string inq_attname(const std::string &var_name, unsigned int n) const;
 
-  void inq_atttype(const std::string &var_name, const std::string &att_name, IO_Type &result) const;
+  IO_Type inq_atttype(const std::string &var_name, const std::string &att_name) const;
 
   void put_att_double(const std::string &var_name, const std::string &att_name, IO_Type nctype,
                       const std::vector<double> &values) const;
@@ -124,12 +122,12 @@ public:
 
   void put_att_text(const std::string &var_name, const std::string &att_name, const std::string &value) const;
 
-  void get_att_double(const std::string &var_name, const std::string &att_name,
-                      std::vector<double> &result) const;
+  std::vector<double> get_att_double(const std::string &var_name, const std::string &att_name) const;
 
-  void get_att_text(const std::string &var_name, const std::string &att_name, std::string &result) const;
+  std::string get_att_text(const std::string &var_name, const std::string &att_name) const;
 
-  PetscErrorCode get_vec(IceGrid *grid, const std::string &var_name, unsigned int z_count, unsigned int t, Vec g) const;
+  PetscErrorCode get_vec(IceGrid *grid, const std::string &var_name, unsigned int z_count,
+                         unsigned int t, Vec g) const;
 
   PetscErrorCode put_vec(IceGrid *grid, const std::string &var_name, unsigned int z_count, Vec g) const;
 
