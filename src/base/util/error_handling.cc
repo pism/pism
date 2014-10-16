@@ -53,26 +53,56 @@ void handle_fatal_errors(MPI_Comm com) {
   }
   catch (RuntimeError &e) {
     std::vector<std::string> context = e.get_context();
+    std::string error = "PISM ERROR: ",
+      message = e.what();
 
+    std::string padding = std::string(error.size(), ' ');
+
+    // replace newlines with newlines plus padding
+    size_t k = message.find("\n", 0);
+    while (k != std::string::npos) {
+      message.insert(k+1, padding);
+      k = message.find("\n", k+1);
+    }
+
+    // print the error message with "PISM ERROR:" in front:
     PetscPrintf(com,
-                "PISM ERROR: %s.\n", e.what());
+                "%s%s\n", error.c_str(), message.c_str());
+
+    // compute how much padding we need to align things:
+    std::string while_str = std::string(error.size(), ' ') + "while ";
+    padding = std::string(while_str.size() + 1, ' '); // 1 extra space
+
+    // loop over "context" messages
     std::vector<std::string>::const_iterator j = context.begin();
     while (j != context.end()) {
+      message = *j;
+
+      // replace newlines with newlines plus padding
+      k = message.find("\n", 0);
+      while (k != std::string::npos) {
+        message.insert(k+1, padding);
+        k = message.find("\n", k+1);
+      }
+
+      // print a "context" message
       PetscPrintf(com,
-                  "            while %s\n", j->c_str());
+                  "%s%s\n", while_str.c_str(), message.c_str());
       ++j;
     }
   }
   catch (std::exception &e) {
     PetscPrintf(PETSC_COMM_SELF,
                 "PISM ERROR: caught a C++ standard library exception: %s.\n"
-                "     This is probably a bug in PISM. Please send a report to help@pism-docs.org\n",
+                "     This is probably a bug in PISM."
+                " Please send a report to help@pism-docs.org\n",
                 e.what());
   }
   catch (...) {
     PetscPrintf(PETSC_COMM_SELF,
                 "PISM ERROR: caught an unexpected exception.\n"
-                "     This is probably a bug in PISM. Please send a report to help@pism-docs.org\n");
+                "     This is probably a bug in PISM."
+                " Please send a report to help@pism-docs.org\n");
   }
 }
 
