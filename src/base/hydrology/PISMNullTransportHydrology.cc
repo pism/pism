@@ -85,11 +85,8 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
                C           = config.get("hydrology_tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "NullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
-             "this is not allowed ... ENDING ...");
-    throw RuntimeError(message);
+    throw RuntimeError("NullTransportHydrology: hydrology_tillwat_max is negative.\n"
+                       "This is not allowed.");
   }
 
   MaskQuery M(*mask);

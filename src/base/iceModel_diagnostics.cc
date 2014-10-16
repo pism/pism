@@ -1990,10 +1990,7 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &
 
   pism = pj_init_plus(proj_string.c_str());
   if (pism == NULL) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "PISM ERROR: proj.4 string '%s' is invalid.", proj_string.c_str());
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("proj.4 string '%s' is invalid.", proj_string.c_str());
   }
 }
 

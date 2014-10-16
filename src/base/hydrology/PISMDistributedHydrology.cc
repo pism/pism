@@ -248,23 +248,17 @@ PetscErrorCode DistributedHydrology::check_P_bounds(bool enforce_upper) {
     const int i = p.i(), j = p.j();
 
     if (P(i,j) < 0.0) {
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-               "disallowed negative subglacial water pressure\n"
-               "    P = %.6f Pa\n at (i,j)=(%d,%d)\n",
-               P(i,j), i, j);
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("disallowed negative subglacial water pressure\n"
+                                    "P = %.6f Pa at (i,j)=(%d,%d)",
+                                    P(i, j), i, j);
     }
 
     if (enforce_upper) {
       P(i,j) = PetscMin(P(i,j), Pover(i,j));
     } else if (P(i,j) > Pover(i,j) + 0.001) {
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-               "subglacial water pressure P = %.16f Pa exceeds\n"
-               "    overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)\n",
-               P(i,j),Pover(i,j),i,j );
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("subglacial water pressure P = %.16f Pa exceeds\n"
+                                    "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
+                                    P(i, j), Pover(i, j), i, j);
     }
   }
   return 0;

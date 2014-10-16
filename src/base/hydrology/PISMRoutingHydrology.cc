@@ -231,12 +231,9 @@ PetscErrorCode RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S
     const int i = p.i(), j = p.j();
 
     if (waterthk(i,j) < 0.0) {
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-               "RoutingHydrology ERROR: disallowed negative water layer thickness\n"
-               "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
-               "ENDING ... \n\n", waterthk(i,j),i,j);
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("RoutingHydrology: disallowed negative water layer thickness\n"
+                                    "waterthk(i,j) = %.6f m at (i,j)=(%d,%d)",
+                                    waterthk(i,j),i,j);
     }
   }
   return 0;
@@ -425,10 +422,7 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result
     beta  = config.get("hydrology_gradient_power_in_flux"),
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
   if (alpha < 1.0) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "PISM ERROR: alpha = %f < 1 which is not allowed", alpha);
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
   }
 
   IceModelVec::AccessList list(result);
@@ -511,10 +505,7 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
 
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "PISM ERROR: alpha = %f < 1 which is not allowed", alpha);
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
   }
 
   ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // yes, it updates ghosts

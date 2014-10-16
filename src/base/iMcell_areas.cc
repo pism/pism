@@ -70,10 +70,8 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   pism = pj_init_plus(proj_string.c_str());
   if (pism == NULL) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "proj.4 string '%s' is invalid.", proj_string.c_str());
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("proj.4 string '%s' is invalid.",
+                                  proj_string.c_str());
   }
 
   ierr = verbPrintf(2,grid.com,

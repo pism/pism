@@ -197,12 +197,9 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
     ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
 
     if (thk_max >= grid.Lz + 1e-6) {
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-               "Maximum ice thickness (%f meters)\n"
-               "exceeds the height of the computational domain (%f meters).\n"
-               "Stopping...\n", thk_max, grid.Lz);
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
+                                    "exceeds the height of the computational domain (%f meters).",
+                                    thk_max, grid.Lz);
     }
   }
 
@@ -235,11 +232,9 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
 
   if (thk_max > grid.Lz) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "Max. ice thickness (%3.3f m) exceeds the height of the computational domain (%3.3f m).\n"
-             "Exiting...", thk_max, grid.Lz);
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("Max. ice thickness (%3.3f m)\n"
+                                  "exceeds the height of the computational domain (%3.3f m).",
+                                  thk_max, grid.Lz);
   }
 
   return 0;

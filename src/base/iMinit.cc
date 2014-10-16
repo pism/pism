@@ -112,10 +112,8 @@ PetscErrorCode IceModel::set_grid_defaults() {
   }
 
   if (grid_info_found == false) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "no geometry information found in '%s'", filename.c_str());
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("no geometry information found in '%s'",
+                                  filename.c_str());
   }
 
   std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
@@ -202,12 +200,9 @@ PetscErrorCode IceModel::set_grid_from_options() {
     grid.My = tmp_My;
     grid.Mz = tmp_Mz;
   } else {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "-Mx %d -My %d -Mz %d is invalid"
-             " (have to have a positive number of grid points).\n",
-             tmp_Mx, tmp_My, tmp_Mz);
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("-Mx %d -My %d -Mz %d is invalid\n"
+                                  "(have to have a positive number of grid points).",
+                                  tmp_Mx, tmp_My, tmp_Mz);
   }
 
   std::vector<double> x_range, y_range;
@@ -341,11 +336,8 @@ PetscErrorCode IceModel::grid_setup() {
 
     if (var_exists == false) {
       nc.close();
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-               "file %s has neither enthalpy nor temperature in it",
-               filename.c_str());
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("file %s has neither enthalpy nor temperature in it",
+                                    filename.c_str());
     }
 
     nc.close();

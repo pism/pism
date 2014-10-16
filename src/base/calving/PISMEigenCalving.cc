@@ -68,13 +68,10 @@ PetscErrorCode EigenCalving::init(Vars &vars) {
   CHKERRQ(ierr);
 
   if (PetscAbs(grid.dx - grid.dy) / PetscMin(grid.dx, grid.dy) > 1e-2) {
-    char message[TEMPORARY_STRING_LENGTH];
-    snprintf(message, TEMPORARY_STRING_LENGTH,
-             "-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
-             "dx = %f, dy = %f, relative difference = %f",
-             grid.dx, grid.dy,
-             PetscAbs(grid.dx - grid.dy) / PetscMax(grid.dx, grid.dy));
-    throw RuntimeError(message);
+    throw RuntimeError::formatted("-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
+                                  "dx = %f, dy = %f, relative difference = %f",
+                                  grid.dx, grid.dy,
+                                  PetscAbs(grid.dx - grid.dy) / PetscMax(grid.dx, grid.dy));
   }
 
   ierr = m_strain_rates.set(0.0); CHKERRQ(ierr);

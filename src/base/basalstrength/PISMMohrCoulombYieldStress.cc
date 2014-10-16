@@ -154,13 +154,9 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
     bool till_is_present = config.get(hydrology_tillwat_max) > 0.0;
 
     if (till_is_present == false) {
-      char message[TEMPORARY_STRING_LENGTH];
-
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-               "The Mohr-Coulomb yield stress model cannot be used without till.\n"
-               "Reset %s or choose a different yield stress model.",
-               hydrology_tillwat_max.c_str());
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("The Mohr-Coulomb yield stress model cannot be used without till.\n"
+                                    "Reset %s or choose a different yield stress model.",
+                                    hydrology_tillwat_max.c_str());
     }
   }
 
@@ -168,15 +164,12 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
     const std::string flag_name = "tauc_add_transportable_water";
     RoutingHydrology *hydrology_routing = dynamic_cast<RoutingHydrology*>(m_hydrology);
     if (config.get_flag(flag_name) == true && hydrology_routing == NULL) {
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-                  "Flag %s is set.\n"
-                  "Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
-                  "(or derived like DistributedHydrology) object with transportable water.\n"
-                  "The current Hydrology instance is not suitable.  Set flag\n"
-                  "%s to 'no' or choose a different yield stress model.\n",
-                  flag_name.c_str(), flag_name.c_str());
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("Flag %s is set.\n"
+                                    "Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
+                                    "(or derived like DistributedHydrology) object with transportable water.\n"
+                                    "The current Hydrology instance is not suitable.  Set flag\n"
+                                    "%s to 'no' or choose a different yield stress model.\n",
+                                    flag_name.c_str(), flag_name.c_str());
     }
   }
 

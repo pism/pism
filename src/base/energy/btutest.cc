@@ -29,6 +29,8 @@ static char help[] =
 #include "PISMConfig.hh"
 
 #include "../../verif/tests/exactTestK.h"
+
+#include "PetscInitializer.hh"
 #include "error_handling.hh"
 
 using namespace pism;
@@ -107,12 +109,12 @@ static PetscErrorCode doneWithIceInfo(Vars &variables) {
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  MPI_Comm com = MPI_COMM_WORLD;
+  PetscInitializer petsc(argc, argv, help);
+
   com = PETSC_COMM_WORLD;
 
-  /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -182,9 +184,7 @@ int main(int argc, char *argv[]) {
     if (tmp > 0) {
       grid.Mz = tmp;
     } else {
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH, "-Mz %d is invalid (has to be positive)", tmp);
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("-Mz %d is invalid (has to be positive)", tmp);
     }
 
     // complete grid initialization based on user options
@@ -311,8 +311,10 @@ int main(int argc, char *argv[]) {
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);
   }
+  catch (...) {
+    handle_fatal_errors(com);
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
 

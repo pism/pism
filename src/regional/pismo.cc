@@ -262,10 +262,8 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
     } else if (yield_stress_model == "mohr_coulomb") {
       basal_yield_stress_model = new RegionalDefaultYieldStress(grid, config, subglacial_hydrology);
     } else {
-      char message[TEMPORARY_STRING_LENGTH];
-      snprintf(message, TEMPORARY_STRING_LENGTH,
-               "yield stress model '%s' is not supported.\n", yield_stress_model.c_str());
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("yield stress model '%s' is not supported.",
+                                    yield_stress_model.c_str());
     }
   }
 
