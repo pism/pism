@@ -29,6 +29,17 @@ RuntimeError::RuntimeError(const std::string &message)
   // empty
 }
 
+RuntimeError RuntimeError::formatted(const char format[], ...) {
+  char buffer[8192];
+  va_list argp;
+
+  va_start(argp, format);
+  vsnprintf(buffer, sizeof(buffer), format, argp);
+  va_end(argp);
+
+  return RuntimeError(buffer);
+}
+
 RuntimeError::~RuntimeError() throw() {
   // empty
 }

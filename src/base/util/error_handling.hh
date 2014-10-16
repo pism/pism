@@ -32,6 +32,9 @@ public:
   RuntimeError(const std::string &message);
   ~RuntimeError() throw();
 
+  //! @brief build a RuntimeError with a formatted message
+  static RuntimeError formatted(const char format[], ...);
+
   //! @brief Add a message providing some context. This way we can (sort of)
   //! get a stack trace even though C++ exceptions do not provide one.
   void add_context(const std::string &message);
