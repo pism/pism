@@ -48,6 +48,17 @@ void RuntimeError::add_context(const std::string &message) {
   m_context.push_back(message);
 }
 
+void RuntimeError::add_context(const char format[], ...) {
+  char buffer[8192];
+  va_list argp;
+
+  va_start(argp, format);
+  vsnprintf(buffer, sizeof(buffer), format, argp);
+  va_end(argp);
+
+  this->add_context(buffer);
+}
+
 std::vector<std::string> RuntimeError::get_context() const {
   return m_context;
 }

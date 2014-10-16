@@ -38,6 +38,7 @@ public:
   //! @brief Add a message providing some context. This way we can (sort of)
   //! get a stack trace even though C++ exceptions do not provide one.
   void add_context(const std::string &message);
+  void add_context(const char format[], ...);
   std::vector<std::string> get_context() const;
 protected:
   std::vector<std::string> m_context;
