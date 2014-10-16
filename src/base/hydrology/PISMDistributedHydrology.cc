@@ -27,16 +27,14 @@
 namespace pism {
 
 DistributedHydrology::DistributedHydrology(IceGrid &g, const Config &conf,
-                                                   StressBalance *sb)
-    : RoutingHydrology(g, conf)
+                                           StressBalance *sb)
+  : RoutingHydrology(g, conf)
 {
-    stressbalance = sb;
-    hold_velbase_mag = false;
-    if (allocate_pressure() != 0) {
-      PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in DistributedHydrology constructor (pressure).\n");
-      PISMEnd();
-    }
+  stressbalance = sb;
+  hold_velbase_mag = false;
+  if (allocate_pressure() != 0) {
+    throw std::runtime_error("DistributedHydrology allocation failed");
+  }
 }
 
 DistributedHydrology::~DistributedHydrology() {
@@ -250,20 +248,23 @@ PetscErrorCode DistributedHydrology::check_P_bounds(bool enforce_upper) {
     const int i = p.i(), j = p.j();
 
     if (P(i,j) < 0.0) {
-      PetscPrintf(grid.com,
-                  "PISM ERROR: disallowed negative subglacial water pressure\n"
-                  "    P = %.6f Pa\n at (i,j)=(%d,%d)\n"
-                  "ENDING ... \n\n", P(i,j),i,j);
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "disallowed negative subglacial water pressure\n"
+               "    P = %.6f Pa\n at (i,j)=(%d,%d)\n",
+               P(i,j), i, j);
+      throw RuntimeError(message);
     }
+
     if (enforce_upper) {
       P(i,j) = PetscMin(P(i,j), Pover(i,j));
     } else if (P(i,j) > Pover(i,j) + 0.001) {
-      PetscPrintf(grid.com,
-                  "PISM ERROR: subglacial water pressure P = %.16f Pa exceeds\n"
-                  "    overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)\n"
-                  "ENDING ... \n\n", P(i,j),Pover(i,j),i,j);
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "subglacial water pressure P = %.16f Pa exceeds\n"
+               "    overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)\n",
+               P(i,j),Pover(i,j),i,j );
+      throw RuntimeError(message);
     }
   }
   return 0;

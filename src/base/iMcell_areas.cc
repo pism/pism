@@ -23,6 +23,8 @@
 #include <proj_api.h>
 #endif
 
+#include "error_handling.hh"
+
 namespace pism {
 
 #if (PISM_USE_PROJ4==1)
@@ -56,23 +58,22 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
-                "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
-    PISMEnd();
+    throw RuntimeError("projection initialization failed "
+                       "('+proj=latlong +datum=WGS84 +ellps=WGS84').");
   }
 
   geocent = pj_init_plus("+proj=geocent +datum=WGS84 +ellps=WGS84");
   if (geocent == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
-                "('+proj=geocent +datum=WGS84 +ellps=WGS84').\n");
-    PISMEnd();
+    throw RuntimeError("projection initialization failed "
+                       "('+proj=geocent +datum=WGS84 +ellps=WGS84').");
   }
 
   pism = pj_init_plus(proj_string.c_str());
   if (pism == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: proj.4 string '%s' is invalid. Exiting...\n",
-                proj_string.c_str());
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "proj.4 string '%s' is invalid.", proj_string.c_str());
+    throw RuntimeError(message);
   }
 
   ierr = verbPrintf(2,grid.com,

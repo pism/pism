@@ -23,6 +23,7 @@
 #include "pism_options.hh"
 #include <assert.h>
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -111,8 +112,9 @@ BedThermalUnit::BedThermalUnit(IceGrid &g, const Config &conf)
   m_input_file.clear();
 
   PetscErrorCode ierr = allocate(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  if (ierr != 0) {
+    throw std::runtime_error("BedThermalUnit allocation failed");
+  }
 
 }
 
@@ -169,15 +171,15 @@ PetscErrorCode BedThermalUnit::allocate() {
       ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
       Lbz = 0;
     } else if (Mbz_set ^ Lbz_set) {
-      PetscPrintf(grid.com, "BedThermalUnit ERROR: please specify both -Mbz and -Lbz.\n");
-      PISMEnd();
+      throw RuntimeError("please specify both -Mbz and -Lbz");
     }
   }
 
   // actual allocation:
   if ((Lbz <= 0.0) && (Mbz > 1)) {
-    SETERRQ(grid.com, 1,"BedThermalUnit can not be created with negative or zero Lbz value\n"
-            " and more than one layers\n"); }
+    throw RuntimeError("BedThermalUnit can not be created with negative or zero Lbz value\n"
+                       "and more than one layers");
+  }
 
   if (Mbz > 1) {
     ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);

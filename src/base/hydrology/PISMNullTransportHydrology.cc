@@ -19,6 +19,7 @@
 #include "Mask.hh"
 #include "PISMHydrology.hh"
 #include "hydrology_diagnostics.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -84,10 +85,11 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
                C           = config.get("hydrology_tillwat_decay_rate");
 
   if (tillwat_max < 0.0) {
-    PetscPrintf(grid.com,
-       "NullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
-       "            this is not allowed ... ENDING ... \n\n");
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "NullTransportHydrology ERROR: hydrology_tillwat_max is negative\n"
+             "this is not allowed ... ENDING ...");
+    throw RuntimeError(message);
   }
 
   MaskQuery M(*mask);

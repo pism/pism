@@ -21,6 +21,7 @@
 #include "PISMVars.hh"
 #include "PISMStressBalance.hh"
 #include "Mask.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -33,14 +34,12 @@ EigenCalving::EigenCalving(IceGrid &g, const Config &conf,
                                m_stencil_width,
                                2); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: memory allocation failed.\n");
-    PISMEnd();
+    throw std::runtime_error("EigenCalving allocation failed");
   }
 
   ierr = m_thk_loss.create(grid, "temporary_storage", WITH_GHOSTS, 1); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: memory allocation failed.\n");
-    PISMEnd();
+    throw std::runtime_error("EigenCalving allocation failed");
   }
 
   m_strain_rates.set_name("edot_1", 0);
@@ -69,12 +68,13 @@ PetscErrorCode EigenCalving::init(Vars &vars) {
   CHKERRQ(ierr);
 
   if (PetscAbs(grid.dx - grid.dy) / PetscMin(grid.dx, grid.dy) > 1e-2) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: -calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
-                "            dx = %f, dy = %f, relative difference = %f",
-                grid.dx, grid.dy,
-                PetscAbs(grid.dx - grid.dy) / PetscMax(grid.dx, grid.dy));
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
+             "dx = %f, dy = %f, relative difference = %f",
+             grid.dx, grid.dy,
+             PetscAbs(grid.dx - grid.dy) / PetscMax(grid.dx, grid.dy));
+    throw RuntimeError(message);
   }
 
   ierr = m_strain_rates.set(0.0); CHKERRQ(ierr);

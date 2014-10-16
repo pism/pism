@@ -43,9 +43,7 @@ Hydrology::Hydrology(IceGrid &g, const Config &conf)
                          "hydrology model workspace for total input rate into subglacial water layer",
                          "m s-1", "");
   if ((ierr1 != 0) || (ierr2 != 0)) {
-      PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in Hydrology constructor (total_input).\n");
-      PISMEnd();
+    throw std::runtime_error("Hydrology allocation failed");
   }
 
   ierr1 = bmelt_local.create(grid, "bmelt", WITHOUT_GHOSTS);
@@ -53,9 +51,7 @@ Hydrology::Hydrology(IceGrid &g, const Config &conf)
                          "hydrology model workspace for bmelt",
                          "m s-1", "");
   if ((ierr1 != 0) || (ierr2 != 0)) {
-      PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in Hydrology constructor (bmelt_local).\n");
-      PISMEnd();
+    throw std::runtime_error("Hydrology allocation failed");
   }
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
@@ -65,9 +61,7 @@ Hydrology::Hydrology(IceGrid &g, const Config &conf)
                      "m", "");
   Wtil.metadata().set_double("valid_min", 0.0);
   if ((ierr1 != 0) || (ierr2 != 0)) {
-      PetscPrintf(grid.com,
-        "PISM ERROR: memory allocation failed in Hydrology constructor (Wtil).\n");
-      PISMEnd();
+    throw std::runtime_error("Hydrology allocation failed");
   }
 }
 
@@ -148,9 +142,11 @@ PetscErrorCode Hydrology::init(Vars &vars) {
     }
 
     if (n_records == 0) {
-      PetscPrintf(grid.com, "PISM ERROR: can't find 'inputtobed' in -hydrology_input_to_bed file with name '%s'.\n",
-                  itbfilename.c_str());
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "can't find 'inputtobed' in -hydrology_input_to_bed file with name '%s'",
+               itbfilename.c_str());
+      throw RuntimeError(message);
     }
 
     ierr = verbPrintf(2,grid.com,
@@ -274,18 +270,21 @@ PetscErrorCode Hydrology::check_Wtil_bounds() {
     const int i = p.i(), j = p.j();
 
     if (Wtil(i,j) < 0.0) {
-      PetscPrintf(grid.com,
-                  "Hydrology ERROR: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
-                  "            at (i,j)=(%d,%d)\n"
-                  "ENDING ... \n\n", Wtil(i,j), i, j);
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "Hydrology ERROR: negative till water effective layer thickness Wtil(i,j) = %.6f m\n"
+               "at (i,j)=(%d,%d)\n"
+               "ENDING ... \n\n", Wtil(i,j), i, j);
+      throw RuntimeError(message);
     }
+
     if (Wtil(i,j) > tillwat_max) {
-      PetscPrintf(grid.com,
-                  "Hydrology ERROR: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
-                  "            hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)\n"
-                  "ENDING ... \n\n", Wtil(i,j), tillwat_max, i, j);
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "Hydrology ERROR: till water effective layer thickness Wtil(i,j) = %.6f m exceeds\n"
+               "hydrology_tillwat_max = %.6f at (i,j)=(%d,%d)\n"
+               "ENDING ... \n\n", Wtil(i,j), tillwat_max, i, j);
+      throw RuntimeError(message);
     }
   }
   return 0;

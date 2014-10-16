@@ -32,6 +32,7 @@
 #include "SSB_Modifier.hh"
 #include "bedrockThermalUnit.hh"
 #include "IceModelVec3Custom.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -320,8 +321,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
   if (flow_law == NULL) {
     flow_law = model->stress_balance->get_ssb_modifier()->get_flow_law();
     if (flow_law == NULL) {
-      PetscPrintf(grid.com, "ERROR: Can't compute vertically-averaged hardness: no flow law is used.\n");
-      PISMEnd();
+      throw RuntimeError("Can't compute vertically-averaged hardness: no flow law is used.");
     }
   }
 
@@ -1957,7 +1957,7 @@ PetscErrorCode IceModel_discharge_flux_2D_cumulative::compute(IceModelVec* &outp
 #if (PISM_USE_PROJ4==1)
 IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &my_vars,
                                                  std::string var_name, std::string proj_string)
-  :Diag<IceModel>(m, g, my_vars) {
+  : Diag<IceModel>(m, g, my_vars) {
   assert(var_name == "lat" || var_name == "lon");
   m_var_name = var_name;
 
@@ -1984,18 +1984,17 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: projection initialization failed "
-                "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
-    PISMEnd();
+    throw RuntimeError("projection initialization failed "
+                       "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
   }
 
   pism = pj_init_plus(proj_string.c_str());
   if (pism == NULL) {
-    PetscPrintf(grid.com, "PISM ERROR: proj.4 string '%s' is invalid. Exiting...\n",
-                proj_string.c_str());
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "PISM ERROR: proj.4 string '%s' is invalid.", proj_string.c_str());
+    throw RuntimeError(message);
   }
-
 }
 
 IceModel_lat_lon_bounds::~IceModel_lat_lon_bounds() {

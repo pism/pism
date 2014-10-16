@@ -40,6 +40,7 @@
 #include "POConstant.hh"
 #include "PSVerification.hh"
 #include "Mask.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -140,9 +141,7 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     grid.periodicity = Y_PERIODIC;
     break;
   default:
-    ierr = PetscPrintf(grid.com, "IceCompModel ERROR : desired test not implemented\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("desired test not implemented\n");
   }
 
   ierr =  grid.time->init(); CHKERRQ(ierr);

@@ -26,6 +26,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "pism_options.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -690,8 +691,7 @@ PetscErrorCode IceCompModel::initTestsKO() {
     ierr = OptionsInt("-Mbz", "Number of levels in the bedrock thermal model",
                           Mbz, Mbz_set); CHKERRQ(ierr);
     if (Mbz_set && Mbz < 2) {
-      PetscPrintf(grid.com, "PISM ERROR: pismv test K requires a bedrock thermal layer 1000m deep.\n");
-      PISMEnd();
+      throw RuntimeError("pismv test K requires a bedrock thermal layer 1000m deep");
     }
   }
 

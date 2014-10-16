@@ -22,6 +22,7 @@
 #include "PISMYieldStress.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -32,8 +33,7 @@ public:
     : YieldStress(g, conf)
   {
     if (allocate() != 0) {
-      PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in ConstantYieldStress constructor.\n");
-      PISMEnd();
+      throw std::runtime_error("ConstantYieldStress allocation failed");
     }
   }
   virtual ~ConstantYieldStress() {}
@@ -52,7 +52,8 @@ public:
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
 protected:
   IceModelVec2S tauc;
-  virtual PetscErrorCode allocate();
+private:
+  PetscErrorCode allocate();
 };
 
 } // end of namespace pism

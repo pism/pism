@@ -21,6 +21,7 @@
 #include "connected_components.hh"
 #include "Mask.hh"
 #include "PISMVars.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -29,17 +30,12 @@ IcebergRemover::IcebergRemover(IceGrid &g, const Config &conf)
 
   PetscErrorCode ierr = allocate();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate IcebergRemover.\n");
-    PISMEnd();
+    throw std::runtime_error("IcebergRemover allocation failed");
   }
 }
 
 IcebergRemover::~IcebergRemover() {
-  PetscErrorCode ierr = deallocate();
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to deallocate IcebergRemover.\n");
-    PISMEnd();
-  }
+  PetscErrorCode ierr = deallocate(); CHKERRCONTINUE(ierr);
 }
 
 PetscErrorCode IcebergRemover::init(Vars &vars) {

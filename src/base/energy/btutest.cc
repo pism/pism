@@ -29,6 +29,7 @@ static char help[] =
 #include "PISMConfig.hh"
 
 #include "../../verif/tests/exactTestK.h"
+#include "error_handling.hh"
 
 using namespace pism;
 
@@ -181,8 +182,9 @@ int main(int argc, char *argv[]) {
     if (tmp > 0) {
       grid.Mz = tmp;
     } else {
-      PetscPrintf(grid.com, "PISM ERROR: -Mz %d is invalid (has to be positive).\n", tmp);
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH, "-Mz %d is invalid (has to be positive)", tmp);
+      throw RuntimeError(message);
     }
 
     // complete grid initialization based on user options

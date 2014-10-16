@@ -27,6 +27,7 @@
 #include "pism_options.hh"
 #include <cmath>                // for erf() in method 1 in putTempAtDepth()
 #include <assert.h>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -196,11 +197,12 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
     ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
 
     if (thk_max >= grid.Lz + 1e-6) {
-      PetscPrintf(grid.com,
-                  "PISM ERROR: Maximum ice thickness (%f meters)\n"
-                  "            exceeds the height of the computational domain (%f meters).\n"
-                  "            Stopping...\n", thk_max, grid.Lz);
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "Maximum ice thickness (%f meters)\n"
+               "exceeds the height of the computational domain (%f meters).\n"
+               "Stopping...\n", thk_max, grid.Lz);
+      throw RuntimeError(message);
     }
   }
 
@@ -233,10 +235,11 @@ PetscErrorCode IceModel::bootstrap_2d(const std::string &filename) {
   ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
 
   if (thk_max > grid.Lz) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: Max. ice thickness (%3.3f m) exceeds the height of the computational domain (%3.3f m).\n"
-                "            Exiting...\n", thk_max, grid.Lz);
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "Max. ice thickness (%3.3f m) exceeds the height of the computational domain (%3.3f m).\n"
+             "Exiting...", thk_max, grid.Lz);
+    throw RuntimeError(message);
   }
 
   return 0;

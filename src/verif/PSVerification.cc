@@ -32,6 +32,8 @@
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.h"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 const double PSVerification::ablationRateOutside = 0.02; // m/year
@@ -47,8 +49,7 @@ PSVerification::PSVerification(IceGrid &g, const Config &conf,
   : SurfaceModel(g, conf), m_testname(test), m_EC(EC) {
   PetscErrorCode ierr = allocate_PSVerification();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate PSVerification.\n");
-    PISMEnd();
+    throw std::runtime_error("PSVerification allocation failed");
   }
 }
 

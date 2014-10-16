@@ -22,6 +22,7 @@
 #include "iceModel.hh"
 #include "Mask.hh"
 #include "PISMStressBalance.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -99,11 +100,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   PetscBool  fractures_set;
   ierr = PetscOptionsGetRealArray(NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);
   CHKERRQ(ierr);
-  if ((Nparamf > 4) || (Nparamf < 4)) {
-    ierr = verbPrintf(1, grid.com,
-                      "PISM ERROR: option -fractures requires exactly 4 arguments... ENDING...\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+  if (Nparamf != 4) {
+    throw RuntimeError("option -fractures requires exactly 4 arguments");
   }
   double gamma = inarrayf[0],
     initThreshold = inarrayf[1],

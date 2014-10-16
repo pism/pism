@@ -30,8 +30,7 @@ RoutingHydrology::RoutingHydrology(IceGrid &g, const Config &conf)
 {
   stripwidth = config.get("hydrology_null_strip_width");
   if (allocate() != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in RoutingHydrology constructor.\n");
-    PISMEnd();
+    throw std::runtime_error("RoutingHydrology allocation failed");
   }
 }
 
@@ -232,11 +231,12 @@ PetscErrorCode RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S
     const int i = p.i(), j = p.j();
 
     if (waterthk(i,j) < 0.0) {
-      PetscPrintf(grid.com,
-                  "RoutingHydrology ERROR: disallowed negative water layer thickness\n"
-                  "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
-                  "ENDING ... \n\n", waterthk(i,j),i,j);
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "RoutingHydrology ERROR: disallowed negative water layer thickness\n"
+               "    waterthk(i,j) = %.6f m at (i,j)=(%d,%d)\n"
+               "ENDING ... \n\n", waterthk(i,j),i,j);
+      throw RuntimeError(message);
     }
   }
   return 0;
@@ -425,10 +425,10 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result
     beta  = config.get("hydrology_gradient_power_in_flux"),
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
   if (alpha < 1.0) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: alpha = %f < 1 which is not allowed\n"
-                "ENDING ... \n\n", alpha);
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "PISM ERROR: alpha = %f < 1 which is not allowed", alpha);
+    throw RuntimeError(message);
   }
 
   IceModelVec::AccessList list(result);
@@ -511,10 +511,10 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
 
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
-    PetscPrintf(grid.com,
-           "PISM ERROR: alpha = %f < 1 which is not allowed\n"
-           "ENDING ... \n\n", alpha);
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "PISM ERROR: alpha = %f < 1 which is not allowed", alpha);
+    throw RuntimeError(message);
   }
 
   ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // yes, it updates ghosts
@@ -755,10 +755,8 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
   m_dt = icedt;
 
   if (config.get("hydrology_tillwat_max") < 0.0) {
-    PetscPrintf(grid.com,
-       "RoutingHydrology ERROR: hydrology_tillwat_max is negative\n"
-       "            this is not allowed ... ENDING ... \n\n");
-    PISMEnd();
+    throw RuntimeError("RoutingHydrology: hydrology_tillwat_max is negative.\n"
+                       "This is not allowed.");
   }
 
   // make sure W has valid ghosts before starting hydrology steps

@@ -51,6 +51,7 @@
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 #include "PISMFloatKill.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -71,10 +72,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
                            filename, boot_file_set); CHKERRQ(ierr);
 
   if (!boot_file_set) {
-    ierr = PetscPrintf(grid.com,
-                       "PISM ERROR: Please specify an input file using -i or -boot_file.\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("Please specify an input file using -i or -boot_file.");
   }
 
   // Use a bootstrapping file to set some grid parameters (they can be
@@ -114,9 +112,10 @@ PetscErrorCode IceModel::set_grid_defaults() {
   }
 
   if (grid_info_found == false) {
-    PetscPrintf(grid.com, "ERROR: no geometry information found in '%s'.\n",
-                filename.c_str());
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "no geometry information found in '%s'", filename.c_str());
+    throw RuntimeError(message);
   }
 
   std::string proj4_string = nc.get_att_text("PISM_GLOBAL", "proj4");
@@ -158,11 +157,8 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = OptionsIsSet("-My", My_set); CHKERRQ(ierr);
   ierr = OptionsIsSet("-Mz", Mz_set); CHKERRQ(ierr);
   ierr = OptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
-  if (!(Mx_set && My_set && Mz_set && Lz_set)) {
-    ierr = PetscPrintf(grid.com,
-                       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+  if (not (Mx_set && My_set && Mz_set && Lz_set)) {
+    throw RuntimeError("All of -boot_file, -Mx, -My, -Mz, -Lz are required for bootstrapping.");
   }
 
   return 0;
@@ -206,10 +202,12 @@ PetscErrorCode IceModel::set_grid_from_options() {
     grid.My = tmp_My;
     grid.Mz = tmp_Mz;
   } else {
-    PetscPrintf(grid.com, "PISM ERROR: -Mx %d -My %d -Mz %d is invalid"
-                " (have to have a positive number of grid points).\n",
-                tmp_Mx, tmp_My, tmp_Mz);
-    PISMEnd();
+    char message[TEMPORARY_STRING_LENGTH];
+    snprintf(message, TEMPORARY_STRING_LENGTH,
+             "-Mx %d -My %d -Mz %d is invalid"
+             " (have to have a positive number of grid points).\n",
+             tmp_Mx, tmp_My, tmp_Mz);
+    throw RuntimeError(message);
   }
 
   std::vector<double> x_range, y_range;
@@ -240,8 +238,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
 
   if (x_range_set && y_range_set) {
     if (x_range.size() != 2 || y_range.size() != 2) {
-      PetscPrintf(grid.com, "PISM ERROR: -x_range and/or -y_range argument is invalid.\n");
-      PISMEnd();
+      throw RuntimeError("-x_range and/or -y_range argument is invalid.");
     }
 
     grid.x0 = (x_range[0] + x_range[1]) / 2.0;
@@ -343,12 +340,12 @@ PetscErrorCode IceModel::grid_setup() {
     }
 
     if (var_exists == false) {
-      PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
-                  filename.c_str());
-
       nc.close();
-
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "file %s has neither enthalpy nor temperature in it",
+               filename.c_str());
+      throw RuntimeError(message);
     }
 
     nc.close();
@@ -375,10 +372,7 @@ PetscErrorCode IceModel::grid_setup() {
                         grid.Ny, Ny_set); CHKERRQ(ierr);
 
   if (Nx_set ^ Ny_set) {
-    ierr = PetscPrintf(grid.com,
-                       "PISM ERROR: Please set both -Nx and -Ny.\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("Please set both -Nx and -Ny.");
   }
 
   if ((!Nx_set) && (!Ny_set)) {

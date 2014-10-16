@@ -23,6 +23,7 @@
 #include "Mask.hh"
 #include <cmath>
 #include <cassert>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -58,9 +59,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid &g,
   m_hydrology      = hydro;
 
   if (allocate() != 0) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: memory allocation failed in YieldStress constructor.\n");
-    PISMEnd();
+    throw std::runtime_error("MohrCoulombYieldStress allocation failed");
   }
 }
 
@@ -155,11 +154,13 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
     bool till_is_present = config.get(hydrology_tillwat_max) > 0.0;
 
     if (till_is_present == false) {
-      PetscPrintf(grid.com,
-                  "PISM ERROR: The Mohr-Coulomb yield stress model cannot be used without till.\n"
-                  "            Reset %s or choose a different yield stress model.\n",
-                  hydrology_tillwat_max.c_str());
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "The Mohr-Coulomb yield stress model cannot be used without till.\n"
+               "Reset %s or choose a different yield stress model.",
+               hydrology_tillwat_max.c_str());
+      throw RuntimeError(message);
     }
   }
 
@@ -167,14 +168,15 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
     const std::string flag_name = "tauc_add_transportable_water";
     RoutingHydrology *hydrology_routing = dynamic_cast<RoutingHydrology*>(m_hydrology);
     if (config.get_flag(flag_name) == true && hydrology_routing == NULL) {
-      PetscPrintf(grid.com,
-                  "PISM ERROR: Flag %s is set.\n"
-                  "            Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
-                  "            (or derived like DistributedHydrology) object with transportable water.\n"
-                  "            The current Hydrology instance is not suitable.  Set flag\n"
-                  "            %s to 'no' or choose a different yield stress model.\n",
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+                  "Flag %s is set.\n"
+                  "Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
+                  "(or derived like DistributedHydrology) object with transportable water.\n"
+                  "The current Hydrology instance is not suitable.  Set flag\n"
+                  "%s to 'no' or choose a different yield stress model.\n",
                   flag_name.c_str(), flag_name.c_str());
-      PISMEnd();
+      throw RuntimeError(message);
     }
   }
 
@@ -213,8 +215,7 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
   }
 
   if (topg_to_phi_set && plastic_phi_set) {
-    PetscPrintf(grid.com, "ERROR: only one of -plastic_phi and -topg_to_phi is allowed.\n");
-    PISMEnd();
+    throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.\n");
   }
 
   if (plastic_phi_set) {
@@ -476,15 +477,11 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
          topg_max = config.get("till_topg_to_phi_topg_max");
 
   if (phi_min >= phi_max) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: invalid -topg_to_phi arguments: phi_min < phi_max is required\n");
-    PISMEnd();
+    throw RuntimeError("invalid -topg_to_phi arguments: phi_min < phi_max is required\n");
   }
 
   if (topg_min >= topg_max) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: invalid -topg_to_phi arguments: topg_min < topg_max is required\n");
-    PISMEnd();
+    throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required\n");
   }
 
   ierr = verbPrintf(2, grid.com,

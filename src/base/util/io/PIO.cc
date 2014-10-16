@@ -1098,10 +1098,9 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int 
  *
  * @note The *caller* is in charge of destroying lic
  */
-void PIO::get_interp_context(const string &name,
-                             const IceGrid &grid,
-                             const vector<double> &zlevels,
-                             LocalInterpCtx* &lic) const {
+LocalInterpCtx* PIO::get_interp_context(const string &name,
+                                        const IceGrid &grid,
+                                        const vector<double> &zlevels) const {
   bool exists = inq_var(name);
 
   if (exists == false) {
@@ -1109,7 +1108,7 @@ void PIO::get_interp_context(const string &name,
   } else {
     grid_info gi = inq_grid_info(name, grid.periodicity);
 
-    lic = new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
+    return new LocalInterpCtx(gi, grid, zlevels.front(), zlevels.back());
   }
 }
 
@@ -1122,11 +1121,8 @@ void PIO::regrid_vec(IceGrid *grid, const string &var_name,
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
 
-    LocalInterpCtx *tmp = NULL;
-
-    get_interp_context(var_name, *grid, zlevels_out, tmp);
-    assert(tmp != NULL);
-    shared_ptr<LocalInterpCtx> lic(tmp);
+    shared_ptr<LocalInterpCtx> lic(get_interp_context(var_name, *grid, zlevels_out));
+    assert(lic != false);
 
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
@@ -1171,10 +1167,8 @@ void PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_name,
     const int X = 1, Y = 2, Z = 3; // indices, just for clarity
     vector<unsigned int> start, count, imap;
 
-    LocalInterpCtx *tmp = NULL;
-    get_interp_context(var_name, *grid, zlevels_out, tmp);
-    assert(tmp != NULL);
-    shared_ptr<LocalInterpCtx> lic(tmp);
+    shared_ptr<LocalInterpCtx> lic(get_interp_context(var_name, *grid, zlevels_out));
+    assert(lic != false);
 
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,

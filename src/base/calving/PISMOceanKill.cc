@@ -22,6 +22,7 @@
 #include "PISMVars.hh"
 #include "Mask.hh"
 #include <assert.h>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -32,8 +33,7 @@ OceanKill::OceanKill(IceGrid &g, const Config &conf)
   ierr = m_ocean_kill_mask.create(grid, "ocean_kill_mask", WITH_GHOSTS,
                                   config.get("grid_max_stencil_width"));
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for OceanKill.\n");
-    PISMEnd();
+    throw std::runtime_error("OceanKill allocation failed");
   }
 
   ierr = m_ocean_kill_mask.set_attrs("internal",
@@ -67,8 +67,7 @@ PetscErrorCode OceanKill::init(Vars &vars) {
   IceModelVec2S thickness, *tmp;
 
   if (flag == false) {
-    PetscPrintf(grid.com, "PISM ERROR: option -ocean_kill_file is required.\n");
-    PISMEnd();
+    throw RuntimeError("option -ocean_kill_file is required.");
   } else {
     ierr = verbPrintf(2, grid.com,
        "  setting fixed calving front location using\n"

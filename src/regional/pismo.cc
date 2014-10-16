@@ -262,9 +262,10 @@ PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
     } else if (yield_stress_model == "mohr_coulomb") {
       basal_yield_stress_model = new RegionalDefaultYieldStress(grid, config, subglacial_hydrology);
     } else {
-      PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
-                  yield_stress_model.c_str());
-      PISMEnd();
+      char message[TEMPORARY_STRING_LENGTH];
+      snprintf(message, TEMPORARY_STRING_LENGTH,
+               "yield stress model '%s' is not supported.\n", yield_stress_model.c_str());
+      throw RuntimeError(message);
     }
   }
 
@@ -351,18 +352,16 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
 
   ierr = OptionsIsSet("-no_model_strip", 
-                          "width in km of strip near boundary in which modeling is turned off",
-                          nmstripSet);
-  if (!nmstripSet) {
-    ierr = PetscPrintf(grid.com,
-      "PISMO ERROR: option '-no_model_strip X' (X in km) is REQUIRED if '-i' is not used.\n"
-      "   pismo has no well-defined semantics without it!  ENDING ...\n\n"); CHKERRQ(ierr);
-    PISMEnd();
+                      "width in km of strip near boundary in which modeling is turned off",
+                      nmstripSet);
+
+  if (not nmstripSet) {
+    throw RuntimeError("option '-no_model_strip X' (X in km) is REQUIRED if '-i' is not used.\n"
+                       "pismo has no well-defined semantics without it!");
   }
 
   if (config.get_flag("do_cold_ice_methods")) {
-    PetscPrintf(grid.com, "PISM ERROR: pismo does not support the 'cold' mode.\n");
-    PISMEnd();
+    throw RuntimeError("pismo does not support the 'cold' mode.");
   }
 
   return 0;

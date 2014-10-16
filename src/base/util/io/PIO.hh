@@ -201,10 +201,9 @@ private:
 
   void use_mapped_io(std::string var_name, bool &result) const;
 
-  void get_interp_context(const std::string &name,
-                          const IceGrid &grid,
-                          const std::vector<double> &zlevels,
-                          LocalInterpCtx* &lic) const;
+  LocalInterpCtx* get_interp_context(const std::string &name,
+                                     const IceGrid &grid,
+                                     const std::vector<double> &zlevels) const;
 
   void compute_start_and_count(const std::string &name,
                                unsigned int t_start, unsigned int t_count,
