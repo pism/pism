@@ -58,13 +58,13 @@ PetscErrorCode IceModel::compute_cell_areas() {
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {
-    throw RuntimeError("projection initialization failed "
+    throw RuntimeError("projection initialization failed\n"
                        "('+proj=latlong +datum=WGS84 +ellps=WGS84').");
   }
 
   geocent = pj_init_plus("+proj=geocent +datum=WGS84 +ellps=WGS84");
   if (geocent == NULL) {
-    throw RuntimeError("projection initialization failed "
+    throw RuntimeError("projection initialization failed\n"
                        "('+proj=geocent +datum=WGS84 +ellps=WGS84').");
   }
 

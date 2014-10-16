@@ -1984,7 +1984,7 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &
 
   lonlat = pj_init_plus("+proj=latlong +datum=WGS84 +ellps=WGS84");
   if (lonlat == NULL) {
-    throw RuntimeError("projection initialization failed "
+    throw RuntimeError("projection initialization failed\n"
                        "('+proj=latlong +datum=WGS84 +ellps=WGS84').\n");
   }
 

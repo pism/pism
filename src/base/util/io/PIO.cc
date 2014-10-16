@@ -374,7 +374,7 @@ unsigned int PIO::inq_nrecords(const string &name, const string &std_name) const
 
     return 1;
   } catch (RuntimeError &e) {
-    e.add_context("getting the number of records of variable " + name + " in " + inq_filename());
+    e.add_context("getting the number of records of variable '%s' ('%s') in '%s'", name.c_str(), std_name.c_str(), inq_filename().c_str());
     throw;
   }
   return 0;                     // will never happen
@@ -410,11 +410,10 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
             found_by_standard_name = true;
             result = name;
           } else {
-            char buffer[TEMPORARY_STRING_LENGTH];
-            snprintf(buffer, TEMPORARY_STRING_LENGTH,
-                     "inconsistency in %s: variables %s and %s have the same standard_name (%s)",
-                     inq_filename().c_str(), result.c_str(), name.c_str(), attribute.c_str());
-            throw RuntimeError(buffer);
+            throw RuntimeError::formatted("inconsistency in '%s': variables '%s' and '%s'\n"
+                                          "have the same standard_name (%s)",
+                                          inq_filename().c_str(), result.c_str(),
+                                          name.c_str(), attribute.c_str());
           }
         }
 
@@ -432,7 +431,7 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("searching for variable " + short_name + " in " + inq_filename());
+    e.add_context("searching for variable '%s' ('%s') in '%s'", short_name.c_str(), std_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -444,7 +443,7 @@ bool PIO::inq_var(const string &name) const {
     m_nc->inq_varid(name, exists);
     return exists;
   } catch (RuntimeError &e) {
-    e.add_context("searching for variable " + name + " in " + inq_filename());
+    e.add_context("searching for variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -455,7 +454,7 @@ vector<string> PIO::inq_vardims(const string &name) const {
     m_nc->inq_vardimid(name, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("getting dimensions of variable " + name + " in " + inq_filename());
+    e.add_context("getting dimensions of variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -468,7 +467,7 @@ bool PIO::inq_dim(const string &name) const {
     m_nc->inq_dimid(name, exists);
     return exists;
   } catch (RuntimeError &e) {
-    e.add_context("searching for dimension " + name + " in " + inq_filename());
+    e.add_context("searching for dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -489,7 +488,7 @@ unsigned int PIO::inq_dimlen(const string &name) const {
       return 0;
     }
   } catch (RuntimeError &e) {
-    e.add_context("getting the length of dimension " + name + " in " + inq_filename());
+    e.add_context("getting the length of dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -561,7 +560,7 @@ AxisType PIO::inq_dimtype(const string &name) const {
     // we have no clue:
     return UNKNOWN_AXIS;
   } catch (RuntimeError &e) {
-    e.add_context("getting the type of dimension " + name + " in " + inq_filename());
+    e.add_context("getting the type of dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
   return UNKNOWN_AXIS;          // will never happen
@@ -588,7 +587,7 @@ void PIO::inq_dim_limits(const string &name, double *min, double *max) const {
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("getting limits of dimension " + name + " in " + inq_filename());
+    e.add_context("getting limits of dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -666,7 +665,7 @@ void PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
 
     has_units = true;
   } catch (RuntimeError &e) {
-    e.add_context("getting units of variable '" + name + "' in " + inq_filename());
+    e.add_context("getting units of variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -756,7 +755,7 @@ grid_info PIO::inq_grid_info(const string &name, Periodicity p) const {
     return result;
 
   } catch (RuntimeError &e) {
-    e.add_context("getting grid information using variable " + name + " in " + inq_filename());
+    e.add_context("getting grid information using variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -774,7 +773,7 @@ void PIO::def_dim(unsigned long int length, const NCVariable &metadata) const {
 
     write_attributes(metadata, PISM_DOUBLE, false);
   } catch (RuntimeError &e) {
-    e.add_context("defining dimension " + name + " in " + inq_filename());
+    e.add_context("defining dimension '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -784,7 +783,7 @@ void PIO::def_var(const string &name, IO_Type nctype, const vector<string> &dims
   try {
     m_nc->def_var(name, nctype, dims);
   } catch (RuntimeError &e) {
-    e.add_context("defining variable " + name + " in " + inq_filename());
+    e.add_context("defining variable '%s' in '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -823,7 +822,7 @@ void PIO::get_dim(const string &name, vector<double> &data) const {
 
     get_1d_var(name, 0, dim_length, data);
   } catch (RuntimeError &e) {
-    e.add_context("reading dimension " + name + " from " + inq_filename());
+    e.add_context("reading dimension '%s' from '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -833,7 +832,7 @@ void PIO::put_dim(const string &name, const vector<double> &data) const {
   try {
     put_1d_var(name, 0, (unsigned int)data.size(), data);
   } catch (RuntimeError &e) {
-    e.add_context("writing dimension " + name + " to " + inq_filename());
+    e.add_context("writing dimension '%s' to '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -902,7 +901,8 @@ void PIO::put_att_double(const string &var_name, const string &att_name, IO_Type
     m_nc->redef();
     m_nc->put_att_double(var_name, att_name, nctype, values);
   } catch (RuntimeError &e) {
-    e.add_context("writing double attribute " + var_name + ":" + att_name + " in " + inq_filename());
+    e.add_context("writing double attribute '%s:%s' in '%s'",
+                  var_name.c_str(), att_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -926,7 +926,8 @@ void PIO::put_att_text(const string &var_name, const string &att_name,
 
     m_nc->put_att_text(var_name, att_name, tmp);
   } catch (RuntimeError &e) {
-    e.add_context("writing text attribute " + var_name + ":" + att_name + " in " + inq_filename());
+    e.add_context("writing text attribute '%s:%s' in '%s'",
+                  var_name.c_str(), att_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -943,8 +944,8 @@ vector<double> PIO::get_att_double(const string &var_name, const string &att_nam
     if (att_type == PISM_CHAR) {
       string tmp = get_att_text(var_name, att_name);
 
-      string message = "attribute " + att_name + " is a string; expected a number or a list of numbers";
-      throw RuntimeError(message);
+      throw RuntimeError::formatted("attribute %s is a string '%s'; expected a number or a list of numbers",
+                                    att_name.c_str(), tmp.c_str());
     } else {
       // In this case att_type might be PISM_NAT (if an attribute does not
       // exist), but get_att_double can handle that.
@@ -953,7 +954,8 @@ vector<double> PIO::get_att_double(const string &var_name, const string &att_nam
       return result;
     }
   } catch (RuntimeError &e) {
-    e.add_context("reading double attribute " + var_name + ":" + att_name + " from " + inq_filename());
+    e.add_context("reading double attribute '%s:%s' from '%s'",
+                  var_name.c_str(), att_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -965,7 +967,7 @@ string PIO::get_att_text(const string &var_name, const string &att_name) const {
     m_nc->get_att_text(var_name, att_name, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("reading text attribute " + var_name + ":" + att_name + " from " + inq_filename());
+    e.add_context("reading text attribute '%s:%s' from %s", var_name.c_str(), att_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1004,7 +1006,7 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
     ierr = VecRestoreArray(result, &a_petsc); CHKERRQ(ierr);
 
   } catch (RuntimeError &e) {
-    e.add_context("reading variable " + var_name + " from " + inq_filename());
+    e.add_context("reading variable '%s' from '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
   return 0;
@@ -1016,7 +1018,7 @@ unsigned int PIO::inq_nattrs(const string &var_name) const {
     m_nc->inq_varnatts(var_name, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("getting the number of attributes of variable " + var_name + " in " + inq_filename());
+    e.add_context("getting the number of attributes of variable '%s' in '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1028,7 +1030,7 @@ string PIO::inq_attname(const string &var_name, unsigned int n) const {
     m_nc->inq_attname(var_name, n, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("getting the name of an attribute of variable " + var_name + " in " + inq_filename());
+    e.add_context("getting the name of an attribute of variable '%s' in '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1040,7 +1042,7 @@ IO_Type PIO::inq_atttype(const string &var_name, const string &att_name) const {
     m_nc->inq_atttype(var_name, att_name, result);
     return result;
   } catch (RuntimeError &e) {
-    e.add_context("getting the type of an attribute of variable " + var_name + " in " + inq_filename());
+    e.add_context("getting the type of an attribute of variable '%s' in '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1086,7 +1088,7 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int 
 
     ierr = VecRestoreArray(input, &a_petsc); CHKERRQ(ierr);
   } catch (RuntimeError &e) {
-    e.add_context("writing variable " + var_name + " to " + inq_filename());
+    e.add_context("writing variable '%s' to '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
   return 0;
@@ -1143,8 +1145,8 @@ void PIO::regrid_vec(IceGrid *grid, const string &var_name,
     regrid(grid, zlevels_out, lic.get(), result);
 
   } catch (RuntimeError &e) {
-    e.add_context("reading variable " + var_name +
-                  " (using linear interpolation) from " + inq_filename());
+    e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
+                  var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1204,8 +1206,8 @@ void PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_name,
 
     regrid(grid, zlevels_out, lic.get(), result);
   } catch (RuntimeError &e) {
-    e.add_context("reading variable " + var_name +
-                  " (using linear interpolation) from " + inq_filename());
+    e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
+                  var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1215,11 +1217,8 @@ int PIO::k_below(double z, const vector<double> &zlevels) const {
   int mcurr = 0;
 
   if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
-    char buffer[TEMPORARY_STRING_LENGTH];
-    snprintf(buffer, TEMPORARY_STRING_LENGTH,
-             "PIO::k_below(): z = %5.4f is outside the allowed range: [%f, %f]",
-             z, z_min, z_max);
-    throw RuntimeError(buffer);
+    throw RuntimeError::formatted("PIO::k_below(): z = %5.4f is outside the allowed range: [%f, %f]",
+                                  z, z_min, z_max);
   }
 
   while (zlevels[mcurr+1] < z)
@@ -1409,7 +1408,7 @@ void PIO::get_vara_double(const string &variable_name,
     m_nc->enddef();
     m_nc->get_vara_double(variable_name, start, count, ip);
   } catch (RuntimeError &e) {
-    e.add_context("reading variable " + variable_name + " from " + inq_filename());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1423,7 +1422,7 @@ void PIO::put_vara_double(const string &variable_name,
     m_nc->enddef();
     m_nc->put_vara_double(variable_name, start, count, op);
   } catch (RuntimeError &e) {
-    e.add_context("writing variable " + variable_name + " to " + inq_filename());
+    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1436,7 +1435,7 @@ void PIO::get_varm_double(const string &variable_name,
     m_nc->enddef();
     m_nc->get_varm_double(variable_name, start, count, imap, ip);
   } catch (RuntimeError &e) {
-    e.add_context("reading variable " + variable_name + " from " + inq_filename());
+    e.add_context("reading variable '%s' from '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1450,7 +1449,7 @@ void PIO::put_varm_double(const string &variable_name,
     m_nc->enddef();
     m_nc->put_varm_double(variable_name, start, count, imap, op);
   } catch (RuntimeError &e) {
-    e.add_context("writing variable " + variable_name + " to " + inq_filename());
+    e.add_context("writing variable '%s' to '%s'", variable_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1495,7 +1494,7 @@ void PIO::read_attributes(const string &name, NCVariable &variable) const {
       }
     } // end of for (int j = 0; j < nattrs; ++j)
   } catch (RuntimeError &e) {
-    e.add_context("reading attributes of variable " + name + " from " + inq_filename());
+    e.add_context("reading attributes of variable '%s' from '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1592,7 +1591,7 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("writing attributes of variable " + var_name + " to " + inq_filename());
+    e.add_context("writing attributes of variable '%s' to '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1659,7 +1658,7 @@ void PIO::read_valid_range(const string &name, NCVariable &variable) const {
       }
     }
   } catch (RuntimeError &e) {
-    e.add_context("reading valid range of variable " + name + " to " + inq_filename());
+    e.add_context("reading valid range of variable '%s' from '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1727,7 +1726,7 @@ void PIO::read_timeseries(const NCTimeseries &metadata,
     convert_doubles(&data[0], data.size(), input_units, internal_units);
 
   } catch (RuntimeError &e) {
-    e.add_context("reading time-series variable " + name + " from " + inq_filename());
+    e.add_context("reading time-series variable '%s' from '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1768,7 +1767,7 @@ void PIO::write_timeseries(const NCTimeseries &metadata, size_t t_start,
                static_cast<unsigned int>(tmp.size()), tmp);
 
   } catch (RuntimeError &e) {
-    e.add_context("writing time-series variable " + name + " to " + inq_filename());
+    e.add_context("writing time-series variable '%s' to '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1857,7 +1856,7 @@ void PIO::read_time_bounds(const NCTimeBounds &metadata,
     // FIXME: check that time intervals described by the time bounds
     // variable are contiguous (without gaps) and stop if they are not.
   } catch (RuntimeError &e) {
-    e.add_context("reading time bounds variable " + name + " from " + inq_filename());
+    e.add_context("reading time bounds variable '%s' from '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
@@ -1888,7 +1887,7 @@ void PIO::write_time_bounds(const NCTimeBounds &metadata,
     put_vara_double(name, start, count, &tmp[0]);
 
   } catch (RuntimeError &e) {
-    e.add_context("writing time-bounds variable " + name + " to " + inq_filename());
+    e.add_context("writing time-bounds variable '%s' to '%s'", name.c_str(), inq_filename().c_str());
     throw;
   }
 }
