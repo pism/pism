@@ -29,8 +29,9 @@ PSLapseRates::PSLapseRates(IceGrid &g, const Config &conf, SurfaceModel* in)
   option_prefix = "-surface_lapse_rate";
 
   PetscErrorCode ierr = allocate_PSLapseRates(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  if (ierr != 0) {
+    throw std::runtime_error("PSLapseRates allocation failed");
+  }
 
 }
 

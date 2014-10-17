@@ -30,6 +30,8 @@
 #include "PISMDiagnostic.hh"
 #include "bedrockThermalUnit.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 
@@ -216,15 +218,12 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
   if (grid.Lz >= H_max) return 0;
 
-  if (grid.initial_Mz == 0)
+  if (grid.initial_Mz == 0) {
     grid.initial_Mz = grid.Mz;
-  else if (grid.Mz > grid.initial_Mz * 2) {
-    ierr = PetscPrintf(grid.com,
-                       "\n"
-                       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
-                       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
-                       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
-    PISMEnd();
+  } else if (grid.Mz > grid.initial_Mz * 2) {
+    throw RuntimeError::formatted("Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)\n"
+                                  "AND the grid has twice the initial number of vertical levels (%d) already.",
+                                  H_max, grid.Lz, grid.initial_Mz);
   }
 
   // So, we need to extend the grid. We find dz at the top of the grid,
@@ -240,13 +239,9 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   else N += 2;
 
   if (H_max - grid.Lz > 1000) {
-    PetscPrintf(grid.com,
-                "\n"
-                "PISM ERROR: Max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)\n"
-                "     Extending PISM's vertical grid would require adding %d new levels totaling %7.4f m.\n"
-                "     Exiting...\n",
-                H_max, grid.Lz, N, N * dz_top);
-    PISMEnd();
+    throw RuntimeError::formatted("Max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)\n"
+                                  "Extending PISM's vertical grid would require adding %d new levels totaling %7.4f m.",
+                                  H_max, grid.Lz, N, N * dz_top);
   }
 
   ierr = verbPrintf(2, grid.com,

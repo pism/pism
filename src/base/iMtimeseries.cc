@@ -26,6 +26,8 @@
 #include "PISMTime.hh"
 #include "pism_options.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Initializes the code writing scalar time-series.
@@ -57,11 +59,7 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
   if (ts_file_set ^ ts_times_set) {
-    ierr = PetscPrintf(grid.com,
-      "PISM ERROR: you need to specity both -ts_file and -ts_times to save "
-      "diagnostic time-series.\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("you need to specity both -ts_file and -ts_times to save diagnostic time-series.");
   }
 
   // If neither -ts_filename nor -ts_times is set, we're done.
@@ -74,13 +72,11 @@ PetscErrorCode IceModel::init_timeseries() {
 
   ierr = grid.time->parse_times(times, ts_times);
   if (ierr != 0) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -ts_times argument failed.\n"); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("parsing the -ts_times argument failed.");
   }
 
   if (ts_times.size() == 0) {
-    PetscPrintf(grid.com, "PISM ERROR: no argument for -ts_times option.\n");
-    PISMEnd();
+    throw RuntimeError("no argument for -ts_times option.");
   }
 
   ierr = verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
@@ -233,9 +229,7 @@ PetscErrorCode IceModel::init_extras() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (extra_file_set ^ extra_times_set) {
-    PetscPrintf(grid.com,
-      "PISM ERROR: you need to specify both -extra_file and -extra_times to save spatial time-series.\n");
-    PISMEnd();
+    throw RuntimeError("you need to specify both -extra_file and -extra_times to save spatial time-series.");
   }
 
   if (!extra_file_set && !extra_times_set) {
@@ -245,20 +239,17 @@ PetscErrorCode IceModel::init_extras() {
 
   ierr = grid.time->parse_times(times, extra_times);
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n");
-    PISMEnd();
+    throw RuntimeError::formatted("parsing -extra_times %s failed.", times.c_str());
   }
   if (extra_times.size() == 0) {
-    PetscPrintf(grid.com, "PISM ERROR: no argument for -extra_times option.\n");
-    PISMEnd();
+    throw RuntimeError("no argument for -extra_times option.");
   }
 
   bool append;
   ierr = OptionsIsSet("-extra_append", append); CHKERRQ(ierr);
 
   if (append == true && split == true) {
-    PetscPrintf(grid.com, "PISM ERROR: both -extra_split and -extra_append are set.\n");
-    PISMEnd();
+    throw RuntimeError("both -extra_split and -extra_append are set.");
   }
 
   if (append) {

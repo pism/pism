@@ -23,14 +23,15 @@
 #include "pism_options.hh"
 #include "PISMConfig.hh"
 
+#include <stdexcept>
+
 namespace pism {
 
 PBLingleClark::PBLingleClark(IceGrid &g, const Config &conf)
   : BedDef(g, conf) {
 
   if (allocate() != 0) {
-    PetscPrintf(grid.com, "PBLingleClark::PBLingleClark(...): allocate() failed\n");
-    PISMEnd();
+    throw std::runtime_error("PBLingleClark allocation failed");
   }
 
 }
@@ -39,7 +40,6 @@ PBLingleClark::~PBLingleClark() {
 
   if (deallocate() != 0) {
     PetscPrintf(grid.com, "PBLingleClark::~PBLingleClark(...): deallocate() failed\n");
-    PISMEnd();
   }
 
 }

@@ -58,17 +58,14 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
 
   // init_calendar() was called by the constructor of Time.
   if (pism_is_valid_calendar_name(m_calendar_string) == false) {
-    PetscPrintf(m_com, "PISM ERROR: unsupported calendar: %s\n", m_calendar_string.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("unsupported calendar: %s", m_calendar_string.c_str());
   }
 
   std::string ref_date = m_config.get_string("reference_date");
 
   int errcode = parse_date(ref_date, NULL);
   if (errcode != 0) {
-    PetscPrintf(m_com, "PISM ERROR: reference date %s is invalid.\n",
-                ref_date.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("reference date %s is invalid.", ref_date.c_str());
   }
 
   try {
@@ -99,8 +96,7 @@ PetscErrorCode Time_Calendar::process_ys(double &result, bool &flag) {
   if (flag) {
     ierr = parse_date(tmp, &result);
     if (ierr != 0) {
-      PetscPrintf(m_com, "PISM ERROR: processing -ys option failed.\n");
-      PISMEnd();
+      throw RuntimeError("processing -ys option failed.");
     }
   }
 
@@ -133,8 +129,7 @@ PetscErrorCode Time_Calendar::process_ye(double &result, bool &flag) {
   if (flag) {
     ierr = parse_date(tmp, &result);
     if (ierr != 0) {
-      PetscPrintf(m_com, "PISM ERROR: processing -ye option failed.\n");
-      PISMEnd();
+      throw RuntimeError::formatted("processing -ye option failed.");
     }
   }
 
@@ -190,9 +185,8 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   if (exists == false) {
     nc.close();
 
-    PetscPrintf(m_com, "PISM ERROR: '%s' variable is not present in '%s'.\n",
-                time_name.c_str(), filename.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("'%s' variable is not present in '%s'.",
+                                  time_name.c_str(), filename.c_str());
   }
   time_units = nc.get_att_text(time_name, "units");      
   time_bounds_name = nc.get_att_text(time_name, "bounds");
@@ -200,10 +194,8 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   new_calendar = nc.get_att_text(time_name, "calendar");
   if (new_calendar.empty() == false) {
     if (pism_is_valid_calendar_name(new_calendar) == false) {
-      PetscPrintf(m_com,
-                  "PISM ERROR: unsupported calendar name '%s' found in a -time_file '%s'.\n",
-                  new_calendar.c_str(), filename.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("unsupported calendar name '%s' found in a -time_file '%s'.",
+                                    new_calendar.c_str(), filename.c_str());
     }
     init_calendar(new_calendar);
   }
@@ -214,9 +206,8 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
     if (exists == false) {
       nc.close();
 
-      PetscPrintf(m_com, "PISM ERROR: variable '%s' is not present in '%s'.\n",
-                  time_bounds_name.c_str(), filename.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("variable '%s' is not present in '%s'.",
+                                    time_bounds_name.c_str(), filename.c_str());
     }
   }
 
@@ -224,17 +215,15 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
     // Check if the time_file has a reference date set:
     size_t position = time_units.find("since");
     if (position == std::string::npos) {
-      PetscPrintf(m_com, "PISM ERROR: time units string '%s' does not contain a reference date.\n",
-                  time_units.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("time units string '%s' does not contain a reference date.\n",
+                                    time_units.c_str());
     }
 
     try {
       m_time_units = Unit(m_time_units.get_system(), "seconds " + time_units.substr(position));
     }
     catch (RuntimeError &e) {
-      std::string message = "processing -time_file";
-      e.add_context(message);
+      e.add_context("processing -time_file %s", filename.c_str());
       throw;
     }
   }

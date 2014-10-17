@@ -24,6 +24,7 @@
 #include "PISMConfig.hh"
 #include "pism_options.hh"
 #include <cstdlib>              // abort()
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -76,10 +77,8 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   else if (word == "xy")
     periodicity = XY_PERIODIC;
   else {
-    PetscPrintf(com,
-                "ERROR: grid periodicity type '%s' is invalid.\n",
-                word.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("grid periodicity type '%s' is invalid.",
+                                  word.c_str());
   }
 
   word = config.get_string("grid_ice_vertical_spacing");
@@ -88,10 +87,8 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   else if (word == "equal")
     ice_vertical_spacing = EQUAL;
   else {
-    PetscPrintf(com,
-                "ERROR: ice vertical spacing type '%s' is invalid.\n",
-                word.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
+                                  word.c_str());
   }
 
   Lx  = config.get("grid_Lx");
@@ -116,8 +113,7 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   std::string calendar;
   PetscErrorCode ierr = init_calendar(calendar);
   if (ierr != 0) {
-    PetscPrintf(com, "PISM ERROR: Calendar initialization failed.\n");
-    PISMEnd();
+    throw RuntimeError("Calendar initialization failed.");
   }
 
   if (calendar == "360_day" || calendar == "365_day" || calendar == "noleap" || calendar == "none") {
@@ -328,8 +324,7 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
 void IceGrid::compute_nprocs() {
 
   if (My <= 0) {
-    PetscPrintf(com, "PISM ERROR: 'My' is invalid. Exiting...\n");
-    PISMEnd();
+    throw RuntimeError("'My' is invalid.");
   }
 
   Nx = (int)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
@@ -345,17 +340,14 @@ void IceGrid::compute_nprocs() {
   if (Mx > My && Nx < Ny) {int _Nx = Nx; Nx = Ny; Ny = _Nx;}
 
   if ((Mx / Nx) < 2) {          // note: integer division
-    PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
-                Mx, My, size);
-    PISMEnd();
+    throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
+                                  Mx, My, size);
   }
 
   if ((My / Ny) < 2) {          // note: integer division
-    PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
-                Mx, My, size);
-    PISMEnd();
+    throw RuntimeError::formatted("Can't distribute a %d x %d grid across %d processors!",
+                                  Mx, My, size);
   }
-
 }
 
 //! \brief Computes processor ownership ranges corresponding to equal area
@@ -424,11 +416,8 @@ PetscErrorCode IceGrid::allocate() {
 
   ierr = this->get_dm(1, max_stencil_width, tmp);
   if (ierr != 0) {
-    ierr = PetscPrintf(com,
-                       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
-                       "Exiting...\n", Mx, My, size);
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("can't distribute the %d x %d grid across %d processors.",
+                                  Mx, My, size);
   }
 
   // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
@@ -805,33 +794,27 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) {
 void IceGrid::check_parameters() {
 
   if (Mx < 3) {
-    PetscPrintf(com, "PISM ERROR: Mx has to be at least 3.\n");
-    PISMEnd();
+    throw RuntimeError("Mx has to be at least 3.");
   }
 
   if (My < 3) {
-    PetscPrintf(com, "PISM ERROR: My has to be at least 3.\n");
-    PISMEnd();
+    throw RuntimeError("My has to be at least 3.");
   }
 
   if (Mz < 2) {
-    PetscPrintf(com, "PISM ERROR: Mz must be at least 2.\n");
-    PISMEnd();
+    throw RuntimeError("Mz must be at least 2.");
   }
 
   if (Lx <= 0) {
-    PetscPrintf(com, "PISM ERROR: Lx has to be positive.\n");
-    PISMEnd();
+    throw RuntimeError("Lx has to be positive.");
   }
 
   if (Ly <= 0) {
-    PetscPrintf(com, "PISM ERROR: Ly has to be positive.\n");
-    PISMEnd();
+    throw RuntimeError("Ly has to be positive.");
   }
 
   if (Lz <= 0) {
-    PetscPrintf(com, "PISM ERROR: Lz must be positive.\n");
-    PISMEnd();
+    throw RuntimeError("Lz must be positive.");
   }
 
   // A single record of a time-dependent variable cannot exceed 2^32-4
@@ -843,13 +826,11 @@ void IceGrid::check_parameters() {
   if (Mx_long * My_long * Mz_long * sizeof(double) > two_to_thirty_two - 4 &&
       ((config.get_string("output_format") == "netcdf3") ||
        (config.get_string("output_format") == "pnetcdf"))) {
-    PetscPrintf(com,
-                "PISM ERROR: The computational grid is too big to fit in a NetCDF-3 file.\n"
-                "            Each 3D variable requires %lu Mb.\n"
-                "            Please use \"-o_format quilt\" or re-build PISM with parallel NetCDF-4 or HDF5\n"
-                "            and use \"-o_format netcdf4_parallel\" or \"-o_format hdf5\" to proceed.\n",
-                Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
-    PISMEnd();
+    throw RuntimeError::formatted("The computational grid is too big to fit in a NetCDF-3 file.\n"
+                                  "Each 3D variable requires %lu Mb.\n"
+                                  "Please use '-o_format quilt' or re-build PISM with parallel NetCDF-4 or HDF5\n"
+                                  "and use '-o_format netcdf4_parallel' or '-o_format hdf5' to proceed.",
+                                  Mx_long * My_long * Mz_long * sizeof(double) / (1024 * 1024));
   }
 
 }
@@ -858,11 +839,11 @@ PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, PISMDM::Ptr &resul
   PetscErrorCode ierr;
 
   if (da_dof < 0 || da_dof > 10000) {
-    SETERRQ(com, 3, "Invalid da_dof argument");
+    throw RuntimeError::formatted("Invalid da_dof argument: %d", da_dof);
   }
 
   if (stencil_width < 0 || stencil_width > 10000) {
-    SETERRQ(com, 3, "Invalid stencil_width argument");
+    throw RuntimeError::formatted("Invalid stencil_width argument: %d", stencil_width);
   }
 
   int j = this->dm_key(da_dof, stencil_width);

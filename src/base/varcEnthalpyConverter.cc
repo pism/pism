@@ -20,6 +20,8 @@
 #include "pism_const.hh"
 #include "varcEnthalpyConverter.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 /*!
@@ -64,8 +66,7 @@ Of course, \f$T=T_0 + \Delta T\f$.
  */
 double varcEnthalpyConverter::TfromE(double E) const {
   if (E < 0.0) {
-    PetscPrintf(PETSC_COMM_WORLD,"\n\nE < 0 in varcEnthalpyConverter is not allowed.  FIXME.\n\n");
-    PISMEnd();
+    throw RuntimeError("E < 0 in varcEnthalpyConverter is not allowed.");
   }
   const double
     ALPHA = 2.0 / c_gradient,

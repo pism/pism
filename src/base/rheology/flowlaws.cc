@@ -23,6 +23,7 @@
 #include "iceModelVec.hh"
 
 #include "PISMConfig.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -330,17 +331,15 @@ double GoldsbyKohlstedtIce::flow(double stress, double E,
 
 void GoldsbyKohlstedtIce::effective_viscosity(double, double,
                                               double *, double *) const {
-  PetscPrintf(com,
-              "ERROR: GoldsbyKohlstedtIce::effective_viscosity is not implemented\n");
-  PISMEnd();
+  throw std::runtime_error("GoldsbyKohlstedtIce::effective_viscosity is not implemented");
 }
 
 double GoldsbyKohlstedtIce::averaged_hardness(double,
                                                  int,
                                                  const double *,
                                                  const double *) const {
-  PetscPrintf(com, "ERROR: GoldsbyKohlstedtIce::averaged_hardness is not implemented\n");
-  PISMEnd();
+
+  throw std::runtime_error("double GoldsbyKohlstedtIce::averaged_hardness is not implemented");
   return 0;
 }
 
@@ -362,8 +361,7 @@ double GoldsbyKohlstedtIce::hardness_parameter(double enthalpy, double pressure)
 }
 
 double GoldsbyKohlstedtIce::softness_parameter(double , double) const {
-  PetscPrintf(com, "ERROR: GoldsbyKohlstedtIce::softness_parameter is not implemented\n");
-  PISMEnd();
+  throw std::runtime_error("double GoldsbyKohlstedtIce::softness_parameter is not implemented");
   return 0;
 }
 

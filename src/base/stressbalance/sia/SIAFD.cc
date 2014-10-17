@@ -23,6 +23,8 @@
 #include "PISMVars.hh"
 #include "flowlaw_factory.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 SIAFD::~SIAFD() {
@@ -195,10 +197,8 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
     ierr = surface_gradient_mahaffy(h_x, h_y); CHKERRQ(ierr);
 
   } else {
-    verbPrintf(1, grid.com,
-               "PISM ERROR: value of surface_gradient_method, option '-gradient %s', not valid ... ending\n",
-               method.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("value of surface_gradient_method, option '-gradient %s', is not valid",
+                                  method.c_str());
   }
 
   return 0;
@@ -550,10 +550,8 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
   // some flow laws use grain size, and even need age to update grain size
   if (compute_grain_size_using_age && (!config.get_flag("do_age"))) {
-    PetscPrintf(grid.com,
-                "PISM ERROR in SIAFD::compute_diffusive_flux(): do_age not set but\n"
-                "age is needed for grain-size-based flow law ...  ENDING! ...\n\n");
-    PISMEnd();
+    throw RuntimeError("SIAFD::compute_diffusive_flux(): do_age not set but\n"
+                       "age is needed for grain-size-based flow law");
   }
 
   const bool use_age = (IceFlowLawUsesGrainSize(flow_law) &&

@@ -25,9 +25,9 @@ POGiven::POGiven(IceGrid &g, const Config &conf)
   : PGivenClimate<POModifier,OceanModel>(g, conf, NULL)
 {
   PetscErrorCode ierr = allocate_POGiven(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("POGiven allocation failed");
+  }
 }
 
 POGiven::~POGiven() {

@@ -29,6 +29,7 @@
 #include "PISMTime.hh"
 
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -202,12 +203,9 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
              variable_exists, name_found, found_by_standard_name);
 
   if (!variable_exists) {
-    ierr = PetscPrintf(m_com,
-                       "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
-                       get_name().c_str(),
-                       get_string("standard_name").c_str(), nc.inq_filename().c_str());
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("Can't find '%s' (%s) in '%s'.",
+                                  get_name().c_str(),
+                                  get_string("standard_name").c_str(), nc.inq_filename().c_str());
   }
 
   // Sanity check: the variable in an input file should have the expected
@@ -249,14 +247,11 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
         tmp += std::string(", ") + *j++;
 
       // Print the error message and stop:
-      PetscPrintf(m_com,
-                  "PISM ERROR: found the %dD variable %s(%s) in '%s' while trying to read\n"
-                  "            '%s' ('%s'), which is %d-dimensional.\n",
-                  input_ndims, name_found.c_str(), tmp.c_str(), nc.inq_filename().c_str(),
-                  get_name().c_str(), get_string("long_name").c_str(),
-                  static_cast<int>(axes.size()));
-      PISMEnd();
-
+      throw RuntimeError::formatted("found the %dD variable %s (%s) in '%s' while trying to read\n"
+                                    "'%s' ('%s'), which is %d-dimensional.",
+                                    input_ndims, name_found.c_str(), tmp.c_str(), nc.inq_filename().c_str(),
+                                    get_name().c_str(), get_string("long_name").c_str(),
+                                    static_cast<int>(axes.size()));
     }
   }
 
@@ -405,11 +400,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
   } else {                // couldn't find the variable
     if (flag == CRITICAL ||
         flag == CRITICAL_FILL_MISSING) { // if it's critical, print an error message and stop
-      ierr = PetscPrintf(m_com,
-                         "PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
-                         get_name().c_str(), nc.inq_filename().c_str());
-      CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted("Can't find '%s' in the regridding file '%s'.",
+                                    get_name().c_str(), nc.inq_filename().c_str());
     }
 
     // If it is optional, fill with the provided default value.
@@ -482,7 +474,6 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 PetscErrorCode NCSpatialVariable::check_range(const std::string &filename, Vec v) {
   PetscReal min = 0.0, max = 0.0;
   PetscErrorCode ierr;
-  bool failed = false;
 
   assert(m_grid != NULL);
 
@@ -493,40 +484,28 @@ PetscErrorCode NCSpatialVariable::check_range(const std::string &filename, Vec v
   const std::string &units_string = get_string("units");
 
   if (has_attribute("valid_min") && has_attribute("valid_max")) {
-    double valid_min = get_double("valid_min"),
+    double
+      valid_min = get_double("valid_min"),
       valid_max = get_double("valid_max");
     if ((min < valid_min) || (max > valid_max)) {
-      ierr = PetscPrintf(m_com,
-                         "PISM ERROR: some values of '%s' are outside the valid range [%f, %f] (%s).\n",
-                         get_name().c_str(), valid_min, valid_max, units_string.c_str()); CHKERRQ(ierr);
-      failed = true;
+      throw RuntimeError::formatted("some values of '%s' in '%s' are outside the valid range [%f, %f] (%s).",
+                                    get_name().c_str(), filename.c_str(),
+                                    valid_min, valid_max, units_string.c_str());
     }
-
   } else if (has_attribute("valid_min")) {
     double valid_min = get_double("valid_min");
     if (min < valid_min) {
-      ierr = PetscPrintf(m_com,
-                         "PISM ERROR: some values of '%s' are less than the valid minimum (%f %s).\n",
-                         get_name().c_str(), valid_min, units_string.c_str()); CHKERRQ(ierr);
-      failed = true;
+      throw RuntimeError::formatted("some values of '%s' in '%s' are less than the valid minimum (%f %s).",
+                                    get_name().c_str(), filename.c_str(),
+                                    valid_min, units_string.c_str());
     }
-
   } else if (has_attribute("valid_max")) {
     double valid_max = get_double("valid_max");
     if (max > valid_max) {
-      ierr = PetscPrintf(m_com,
-                         "PISM ERROR: some values of '%s' are greater than the valid maximum (%f %s).\n",
-                         get_name().c_str(), valid_max, units_string.c_str()); CHKERRQ(ierr);
-      failed = true;
+      throw RuntimeError::formatted("some values of '%s' in '%s' are greater than the valid maximum (%f %s).\n",
+                                    get_name().c_str(), filename.c_str(),
+                                    valid_max, units_string.c_str());
     }
-  }
-
-  if (failed == true) {
-    PetscPrintf(m_com,
-                "            Please inspect variable '%s' in '%s' and replace offending entries.\n"
-                "            PISM will stop now.\n",
-                get_name().c_str(), filename.c_str());
-    PISMEnd();
   }
 
   return 0;

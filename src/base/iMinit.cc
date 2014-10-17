@@ -373,27 +373,18 @@ PetscErrorCode IceModel::grid_setup() {
   } else {
 
     if ((grid.Mx / grid.Nx) < 2) {
-      ierr = PetscPrintf(grid.com,
-                         "PISM ERROR: Can't split %d grid points between %d processors.\n",
-                         grid.Mx, grid.Nx);
-      CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                    grid.Mx, grid.Nx);
     }
 
     if ((grid.My / grid.Ny) < 2) {
-      ierr = PetscPrintf(grid.com,
-                         "PISM ERROR: Can't split %d grid points between %d processors.\n",
-                         grid.My, grid.Ny);
-      CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted("Can't split %d grid points between %d processors.",
+                                    grid.My, grid.Ny);
     }
 
     if (grid.Nx * grid.Ny != grid.size) {
-      ierr = PetscPrintf(grid.com,
-                         "PISM ERROR: Nx * Ny has to be equal to %d.\n",
-                         grid.size);
-      CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted("Nx * Ny has to be equal to %d.",
+                                    grid.size);
     }
 
     bool procs_x_set, procs_y_set;
@@ -404,25 +395,16 @@ PetscErrorCode IceModel::grid_setup() {
                                tmp_y, procs_y_set); CHKERRQ(ierr);
 
     if (procs_x_set ^ procs_y_set) {
-      ierr = PetscPrintf(grid.com,
-                         "PISM ERROR: Please set both -procs_x and -procs_y.\n");
-      CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError("Please set both -procs_x and -procs_y.");
     }
 
     if (procs_x_set && procs_y_set) {
       if (tmp_x.size() != (unsigned int)grid.Nx) {
-        ierr = PetscPrintf(grid.com,
-                           "PISM ERROR: -Nx has to be equal to the -procs_x size.\n");
-        CHKERRQ(ierr);
-        PISMEnd();
+        throw RuntimeError("-Nx has to be equal to the -procs_x size.");
       }
 
       if (tmp_y.size() != (unsigned int)grid.Ny) {
-        ierr = PetscPrintf(grid.com,
-                           "PISM ERROR: -Ny has to be equal to the -procs_y size.\n");
-        CHKERRQ(ierr);
-        PISMEnd();
+        throw RuntimeError("-Ny has to be equal to the -procs_y size.");
       }
 
       grid.procs_x.resize(grid.Nx);
@@ -649,8 +631,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
   if (boot_file_set) {
     ierr = bootstrapFromFile(filename); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: No input file specified.\n"); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("No input file specified.");
   }
 
   return 0;
@@ -738,12 +719,9 @@ PetscErrorCode IceModel::allocate_iceberg_remover() {
     return 0;
 
   if (config.get_flag("kill_icebergs")) {
-    iceberg_remover = new IcebergRemover(grid, config);
 
-    if (iceberg_remover == NULL) {
-      PetscPrintf(grid.com, "PISM ERROR: failed to allocate the 'iceberg remover' object.\n");
-      PISMEnd();
-    }
+    // this will throw an exception on failure
+    iceberg_remover = new IcebergRemover(grid, config);
 
     // Iceberg Remover does not have a state, so it is OK to
     // initialize here.
@@ -801,9 +779,8 @@ PetscErrorCode IceModel::allocate_basal_yield_stress() {
     } else if (yield_stress_model == "mohr_coulomb") {
       basal_yield_stress_model = new MohrCoulombYieldStress(grid, config, subglacial_hydrology);
     } else {
-      PetscPrintf(grid.com, "PISM ERROR: yield stress model \"%s\" is not supported.\n",
-                  yield_stress_model.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("yield stress model '%s' is not supported.",
+                                    yield_stress_model.c_str());
     }
   }
 
@@ -996,9 +973,7 @@ PetscErrorCode IceModel::misc_setup() {
   std::string o_format = config.get_string("output_format");
   if ((o_format == "netcdf4_parallel" || o_format == "quilt" || o_format == "hdf5") &&
       config.get_string("output_variable_order") != "xyz") {
-    PetscPrintf(grid.com,
-                "PISM ERROR: output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.\n");
-    PISMEnd();
+    throw RuntimeError("output formats netcdf4_parallel, quilt, and hdf5 require -o_order xyz.");
   }
 
   return 0;

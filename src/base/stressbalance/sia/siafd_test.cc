@@ -38,6 +38,9 @@ static char help[] =
 #include "PISMVars.hh"
 #include "Mask.hh"
 
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
+
 using namespace pism;
 
 PetscErrorCode compute_strain_heating_errors(const Config &config,
@@ -301,14 +304,13 @@ PetscErrorCode reportErrors(const Config &config,
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
-
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  MPI_Comm com = MPI_COMM_WORLD;
+  PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -353,9 +355,7 @@ int main(int argc, char *argv[]) {
     if (tmp > 0) {
       grid.Mz = tmp;
     } else {
-      PetscPrintf(grid.com, "PISM ERROR: -Mz %d is invalid (has to be positive).\n",
-                  tmp);
-      PISMEnd();
+      throw RuntimeError::formatted("-Mz %d is invalid (has to be positive).", tmp);
     }
 
     grid.compute_nprocs();
@@ -483,6 +483,9 @@ int main(int argc, char *argv[]) {
     ierr = w_sia->write(output_file); CHKERRQ(ierr);
     ierr = sigma->write(output_file); CHKERRQ(ierr);
   }
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  catch (...) {
+    handle_fatal_errors(com);
+  }
+
   return 0;
 }

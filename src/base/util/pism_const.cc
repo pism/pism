@@ -240,29 +240,6 @@ std::string pism_filename_add_suffix(std::string filename, std::string separator
   return result;
 }
 
-//! \brief Finalizes PETSc and MPI. Replaces PetscEnd().
-/*!
- * This is necessary if PETSc is using a subset of all the processors in
- * MPI_COMM_WORLD. Using PetscEnd() in this case leaves processes \b not
- * running PETSc hanging waiting for a MPI_Finalize() call. (PetscFinalize()
- * only calls MPI_Finalize() if PetscInitialize() called MPI_Init().)
- */
-void PISMEnd() {
-  int flag;
-  PetscFinalize();
-
-  MPI_Finalized(&flag);
-  if (flag == false)
-    MPI_Finalize();
-
-  exit(0);
-}
-
-void PISMEndQuiet() {
-  PetscOptionsSetValue("-options_left","no");
-  PISMEnd();
-}
-
 PetscErrorCode GetTime(PetscLogDouble *result) {
 #if PETSC_VERSION_LT(3,4,0)
   PetscErrorCode ierr = PetscGetTime(result); CHKERRQ(ierr);

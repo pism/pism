@@ -25,6 +25,8 @@
 #include "NCVariable.hh"
 #include "PISMConfig.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! \brief Stop if -version is set.
@@ -36,7 +38,8 @@ PetscErrorCode stop_on_version_option() {
   if (vSet == false)
     return 0;
 
-  PISMEndQuiet();
+  // FIXME!
+  // PISMEndQuiet();
   return 0;
 }
 
@@ -88,7 +91,7 @@ PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
 }
 
 //! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
-PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std::string new_name) {
+PetscErrorCode check_old_option_and_stop(std::string old_name, std::string new_name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
@@ -96,17 +99,15 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, std::string old_name, std
   ierr = PetscOptionsGetString(NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
-    ierr = PetscPrintf(com,
-                       "PISM ERROR: command-line option '%s' is deprecated. Please use '%s' instead.\n",
-                       old_name.c_str(), new_name.c_str()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("command-line option '%s' is deprecated. Please use '%s' instead.",
+                                  old_name.c_str(), new_name.c_str());
   }
 
   return 0;
 }
 
 //!Stop if an option `name` is set.
-PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
+PetscErrorCode stop_if_set(std::string name) {
   PetscErrorCode ierr;
   PetscBool option_is_set;
 
@@ -114,9 +115,8 @@ PetscErrorCode stop_if_set(MPI_Comm com, std::string name) {
   ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
 
   if (option_is_set) {
-    ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is not allowed.\n",
-                       name.c_str()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("command-line option '%s' is not allowed.",
+                                  name.c_str());
   }
 
   return 0;
@@ -153,7 +153,8 @@ PetscErrorCode show_usage_and_quit(MPI_Comm com, std::string execname, std::stri
 
   ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
 
-  PISMEndQuiet();
+  // FIXME!
+  // PISMEndQuiet();
   return 0;
 }
 
@@ -265,9 +266,8 @@ PetscErrorCode OptionsList(MPI_Comm com, std::string opt, std::string descriptio
     flag = true;
     result = tmp;
   } else {
-    ierr = PetscPrintf(com, "ERROR: invalid %s argument: \"%s\". Please choose one of %s.\n",
-                       opt.c_str(), tmp, list.c_str()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("invalid %s argument: '%s'. Please choose one of %s.\n",
+                                  opt.c_str(), tmp, list.c_str());
   }
 
   return 0;
@@ -291,10 +291,8 @@ PetscErrorCode OptionsString(std::string option, std::string text,
       if (allow_empty_arg)
         result.clear();
       else {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,
-                           "ERROR: command line option '%s' requires an argument.\n",
-                           option.c_str()); CHKERRQ(ierr);
-        PISMEnd();
+        throw RuntimeError::formatted("command line option '%s' requires an argument.\n",
+                                      option.c_str());
       }
     } else
       result = tmp;
@@ -322,10 +320,8 @@ PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string
       result.push_back(word);
 
     if (result.empty()) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,
-                         "ERROR: command line option '%s' requires an argument.\n",
-                         opt.c_str()); CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted("command line option '%s' requires an argument.\n",
+                                    opt.c_str());
     }
 
     flag = true;
@@ -375,18 +371,14 @@ PetscErrorCode OptionsInt(std::string option, std::string text,
     return 0;
 
   if (strlen(str) == 0) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "ERROR: command line option '%s' requires an argument.\n",
-                       option.c_str()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("command line option '%s' requires an argument.",
+                                  option.c_str());
   }
 
   result = (int) strtol(str, &endptr, 10);
   if (*endptr != '\0') {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "PISM ERROR: Can't parse \"%s %s\": (%s is not an integer).\n",
-                       option.c_str(), str, str); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("Can't parse '%s %s': (%s is not an integer).\n",
+                                  option.c_str(), str, str);
   }
 
   return 0;
@@ -412,18 +404,14 @@ PetscErrorCode OptionsReal(std::string option, std::string text,
     return 0;
 
   if (strlen(str) == 0) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "ERROR: command line option '%s' requires an argument.\n",
-                       option.c_str()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("command line option '%s' requires an argument.",
+                                  option.c_str());
   }
 
   result = strtod(str, &endptr);
   if (*endptr != '\0') {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "PISM ERROR: Can't parse \"%s %s\": (%s is not a number).\n",
-                       option.c_str(), str, str); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("Can't parse '%s %s': (%s is not a number).",
+                                  option.c_str(), str, str);
   }
 
   return 0;
@@ -453,13 +441,12 @@ PetscErrorCode OptionsRealArray(std::string option, std::string text,
 
       d = strtod(tmp.c_str(), &endptr);
       if (*endptr != '\0') {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,
-                           "PISM ERROR: Can't parse %s (%s is not a number).\n",
-                           tmp.c_str(), tmp.c_str()); CHKERRQ(ierr);
-        PISMEnd();
+        throw RuntimeError::formatted("Can't parse %s (%s is not a number).",
+                                      tmp.c_str(), tmp.c_str());
       }
-      else
+      else {
         result.push_back(d);
+      }
     }
   }
 
@@ -765,10 +752,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
                               inarray, topg_to_phi_set); CHKERRQ(ierr);
   if (topg_to_phi_set == true) {
     if (inarray.size() != 4) {
-      PetscPrintf(com,
-                  "PISM ERROR: option -topg_to_phi requires a comma-separated list with 4 numbers; got %d\n",
-                  inarray.size());
-      PISMEnd();
+      throw RuntimeError::formatted("option -topg_to_phi requires a comma-separated list with 4 numbers; got %d",
+                                    inarray.size());
     }
     config.set_flag("till_use_topg_to_phi", true);
     config.set_double("till_topg_to_phi_phi_min", inarray[0]);
@@ -918,20 +903,20 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor"); CHKERRQ(ierr);
 
   // old options
-  ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",
+  ierr = check_old_option_and_stop("-sliding_scale_brutal",
                                    "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-ssa_sliding", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-ssa_floating_only", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-sia", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-no_sia", "-stress_balance ..."); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-hold_tauc", "-yield_stress constant"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-calving_at_thickness",
+  ierr = check_old_option_and_stop("-ssa_sliding", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-ssa_floating_only", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-sia", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-no_sia", "-stress_balance ..."); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-hold_tauc", "-yield_stress constant"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-ocean_kill", "-calving ocean_kill -ocean_kill_file foo.nc"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-calving_at_thickness",
                                    "-calving thickness_calving -thickness_calving_threshold XXX"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-float_kill", "-calving float_kill"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-no_energy", "-energy none"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(com, "-cold", "-energy cold"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-float_kill", "-calving float_kill"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-no_energy", "-energy none"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop("-cold", "-energy cold"); CHKERRQ(ierr);
 
   return 0;
 }

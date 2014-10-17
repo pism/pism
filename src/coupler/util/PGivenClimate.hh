@@ -25,6 +25,8 @@
 #include "PIO.hh"
 #include "pism_options.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 template <class Model, class Input>
@@ -181,9 +183,8 @@ protected:
         n_records = PetscMin(n_records, buffer_size);
 
       if (n_records < 1) {
-        PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
-                    short_name.c_str(), standard_name.c_str(), filename.c_str());
-        PISMEnd();
+        throw RuntimeError::formatted("Can't find '%s' (%s) in %s.",
+                                      short_name.c_str(), standard_name.c_str(), filename.c_str());
       }
 
       (k->second)->set_n_records(n_records);

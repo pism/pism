@@ -20,6 +20,9 @@
 #include "pism_options.hh"
 #include "pismmerge.hh"
 
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
+
 using namespace pism;
 
 static char help[] =
@@ -143,17 +146,16 @@ int main(int argc, char *argv[])
 {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;
-  int rank, size;
+  MPI_Comm    com = MPI_COMM_WORLD;
+  int rank;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "PISM-MERGE %s (output file merging tool)\n",
@@ -191,9 +193,8 @@ int main(int argc, char *argv[])
     // Check the validity of the -L option.
     if (compression_level_set) {
       if (compression_level < 0 || compression_level > 9) {
-        PetscPrintf(com, "PISMMERGE ERROR: invalid compression level: %d.\n",
-                    compression_level);
-        PISMEnd();
+        throw RuntimeError::formatted("invalid compression level: %d.",
+                                      compression_level);
       }
     }
 
@@ -214,8 +215,10 @@ int main(int argc, char *argv[])
       }
     }
   }
+  catch (...) {
+    handle_fatal_errors(com);
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
 }

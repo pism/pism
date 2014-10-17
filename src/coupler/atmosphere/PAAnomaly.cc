@@ -29,9 +29,9 @@ PAAnomaly::PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in)
     precipitation(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PAAnomaly(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PAAnomaly allocation failed");
+  }
 }
 
 PetscErrorCode PAAnomaly::allocate_PAAnomaly() {

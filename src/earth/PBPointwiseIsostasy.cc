@@ -21,6 +21,8 @@
 #include "PISMTime.hh"
 #include "PISMConfig.hh"
 
+#include <stdexcept>
+
 namespace pism {
 
 PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const Config &conf)
@@ -29,8 +31,7 @@ PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const Config &conf)
 
   ierr = allocate();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PBPointwiseIsostasy::PBPointwiseIsostasy(...): allocate() failed\n");
-    PISMEnd();
+    throw std::runtime_error("PBPointwiseIsostasy allocation failed");
   }
 
 }

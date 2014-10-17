@@ -27,9 +27,9 @@ PO_delta_SMB::PO_delta_SMB(IceGrid &g, const Config &conf, OceanModel* in)
     shelfbtemp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PO_delta_SMB(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PO_delta_SMB allocation failed");
+  }
 }
 
 PO_delta_SMB::~PO_delta_SMB() {

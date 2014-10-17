@@ -19,15 +19,16 @@
 #include "PSStuffAsAnomaly.hh"
 #include "IceGrid.hh"
 #include "PISMTime.hh"
+#include <stdexcept>
 
 namespace pism {
 
 PSStuffAsAnomaly::PSStuffAsAnomaly(IceGrid &g, const Config &conf, SurfaceModel *input)
     : PSModifier(g, conf, input) {
   PetscErrorCode ierr = allocate_PSStuffAsAnomaly(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PSStuffAsAnomaly allocation failed");
+  }
 }
 
 PSStuffAsAnomaly::~PSStuffAsAnomaly() {

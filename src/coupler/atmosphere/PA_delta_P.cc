@@ -28,9 +28,9 @@ PA_delta_P::PA_delta_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
 {
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_delta_P(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PA_delta_P allocation failed");
+  }
 }
 
 PetscErrorCode PA_delta_P::allocate_PA_delta_P() {

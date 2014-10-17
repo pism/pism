@@ -28,6 +28,8 @@
 #include <algorithm>            // std::min
 #include <cassert>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 ///// PISM surface model implementing a PDD scheme.
@@ -37,9 +39,9 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const Config &conf)
     ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PSTemperatureIndex(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PSTemperatureIndex allocation failed");
+  }
 }
 
 PSTemperatureIndex::~PSTemperatureIndex() {
@@ -125,9 +127,8 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
       n_records = std::min(n_records, buffer_size);
 
     if (n_records < 1) {
-      PetscPrintf(grid.com, "PISM ERROR: Can't find '%s' in %s.\n",
-                  short_name.c_str(), filename.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("Can't find '%s' in %s.",
+                                    short_name.c_str(), filename.c_str());
     }
 
     air_temp_sd.set_n_records(n_records);

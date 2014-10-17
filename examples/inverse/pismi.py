@@ -268,15 +268,15 @@ if __name__ == "__main__":
 
     if (input_filename is None) and (append_filename is None):
       PISM.verbPrintf(1,com,"\nError: No input file specified. Use one of -i [file.nc] or -a [file.nc].\n")
-      PISM.PISMEndQuiet()
+      sys.exit(0)
 
     if (input_filename is not None) and (append_filename is not None):
       PISM.verbPrintf(1,com,"\nError: Only one of -i/-a is allowed.\n")
-      PISM.PISMEndQuiet()
+      sys.exit(0)
 
     if (output_filename is not None) and (append_filename is not None):
       PISM.verbPrintf(1,com,"\nError: Only one of -a/-o is allowed.\n")
-      PISM.PISMEndQuiet()
+      sys.edit(0)
 
     if append_filename is not None:
       input_filename = append_filename

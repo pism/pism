@@ -24,6 +24,8 @@
 #include "pism_options.hh"
 #include <cassert>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 using mask::ice_free;
@@ -586,8 +588,7 @@ PetscErrorCode PrescribedSliding::init(Vars &vars) {
   ierr = OptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
                            input_filename, flag); CHKERRQ(ierr);
   if (flag == false) {
-    PetscPrintf(grid.com, "PISM ERROR: option -prescribed_sliding_file is required.\n");
-    PISMEnd();
+    throw RuntimeError("option -prescribed_sliding_file is required.");
   }
 
   ierr = m_velocity.regrid(input_filename, CRITICAL); CHKERRQ(ierr);

@@ -41,6 +41,8 @@
 #include "PISMCalvingAtThickness.hh"
 #include "PISMEigenCalving.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Save model state in NetCDF format.
@@ -551,11 +553,9 @@ PetscErrorCode IceModel::regrid_variables(const std::string &filename, const std
       ierr = ice_thickness.range(thk_min, thk_max); CHKERRQ(ierr);
 
       if (thk_max >= grid.Lz + 1e-6) {
-        PetscPrintf(grid.com,
-                    "PISM ERROR: Maximum ice thickness (%f meters)\n"
-                    "            exceeds the height of the computational domain (%f meters).\n"
-                    "            Stopping...\n", thk_max, grid.Lz);
-        PISMEnd();
+        throw RuntimeError::formatted("Maximum ice thickness (%f meters)\n"
+                                      "exceeds the height of the computational domain (%f meters).",
+                                      thk_max, grid.Lz);
       }
     }
 
@@ -634,9 +634,8 @@ PetscErrorCode IceModel::init_enthalpy(const std::string &filename,
 
     Enth3.metadata() = enthalpy_metadata;
   } else {
-    PetscPrintf(grid.com, "PISM ERROR: neither %s nor %s was found in '%s'.\n",
-                "enthalpy", "temperature", filename.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("neither enthalpy nor temperature was found in '%s'.\n",
+                                  filename.c_str());
   }
 
   return 0;
@@ -666,10 +665,7 @@ PetscErrorCode IceModel::init_snapshots() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (save_file_set ^ save_times_set) {
-    ierr = PetscPrintf(grid.com,
-                       "PISM ERROR: you need to specify both -save_file and -save_times to save snapshots.\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("you need to specify both -save_file and -save_times to save snapshots.");
   }
 
   if (!save_file_set && !save_times_set) {
@@ -679,13 +675,11 @@ PetscErrorCode IceModel::init_snapshots() {
 
   ierr = grid.time->parse_times(tmp, snapshot_times);
   if (ierr != 0) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("parsing the -save_times argument failed.");
   }
 
   if (snapshot_times.size() == 0) {
-    PetscPrintf(grid.com, "PISM ERROR: no argument for -save_times option.\n");
-    PISMEnd();
+    throw RuntimeError("no argument for -save_times option.");
   }
 
   save_snapshots = true;

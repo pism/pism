@@ -20,6 +20,7 @@
 #include "PIO.hh"
 #include "PISMVars.hh"
 #include "IceGrid.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -32,7 +33,7 @@ PSConstantPIK::PSConstantPIK(IceGrid &g, const Config &conf)
 {
   PetscErrorCode ierr = allocate_PSConstantPIK(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
-    PISMEnd();
+    throw std::runtime_error("PSConstantPIK allocation failed");
   }
 }
 

@@ -138,7 +138,7 @@ class BasalTillStrength:
       verbPrintf(1,grid.com,
         "PISM ERROR:  bwat = %12.8f exceeds bwat_max = %12.8f\n" +
         "  in IceModel::getBasalWaterPressure()\n", bwat, bwat_max)
-      PISM.PISMEnd()
+      sys.exit(0)
 
     # the model; note  0 <= p_pw <= frac * p_overburden
     #   because  0 <= bwat <= bwat_max

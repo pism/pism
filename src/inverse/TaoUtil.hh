@@ -25,6 +25,7 @@
 #include <string>
 #include "pism_const.hh"
 #include "TerminationReason.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -97,9 +98,7 @@ public:
     PetscErrorCode ierr;
     ierr = this->construct(tao_type);
     if (ierr) {
-      CHKERRCONTINUE(ierr);
-      PetscPrintf(m_comm, "FATAL ERROR: TaoBasicSolver allocation failed.\n");
-      PISMEnd();
+      throw std::runtime_error("TaoBasicSolver allocation failed");
     }    
   }
   
@@ -109,7 +108,7 @@ public:
     if (ierr) {
       CHKERRCONTINUE(ierr);
       PetscPrintf(m_comm, "FATAL ERROR: TaoBasicSolver deallocation failed.\n");
-      PISMEnd();
+      abort();
     }
   };
 

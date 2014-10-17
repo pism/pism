@@ -21,6 +21,9 @@
 #include "pism_options.hh"
 #include "PISMUnits.hh"
 #include <cassert>
+#include <stdexcept>
+
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -35,13 +38,11 @@ IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,
   assert(prefix.empty() == false);
 
   if (registerAll()) {
-    PetscPrintf(com, "IceFlowLawFactory::registerAll returned an error but we're in a constructor\n");
-    PISMEnd();
+    throw std::runtime_error("IceFlowLawFactory constructor: failed to register flow law types");
   }
 
   if (setType(ICE_PB)) {        // Set's a default type
-    PetscPrintf(com, "IceFlowLawFactory::setType(\"%s\") returned an error, but we're in a constructor\n", ICE_PB);
-    PISMEnd();
+    throw std::runtime_error("IceFlowLawFactory constructor: failed to set the default flow law type");
   }
 }
 
@@ -114,14 +115,10 @@ PetscErrorCode IceFlowLawFactory::registerAll()
 
 PetscErrorCode IceFlowLawFactory::setType(const std::string &type)
 {
-  IceFlowLawCreator r;
-  PetscErrorCode ierr;
-
-  r = flow_laws[type];
+  IceFlowLawCreator r = flow_laws[type];
   if (!r) {
-    ierr = PetscPrintf(com, "PISM ERROR: Selected ice type \"%s\" is not available.\n",
-                       type.c_str()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("Selected ice type \"%s\" is not available.\n",
+                                  type.c_str());
   }
 
   type_name = type;

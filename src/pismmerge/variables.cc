@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pismmerge.hh"
+#include <stdexcept>
 
 //! \brief Copies 1D variables.
 /*!
@@ -150,9 +151,8 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
 
     double *data = (double*)malloc(sizeof(double) * buffer_size);
     if (data == NULL) {
-      printf("ERROR: memory allocation failed while processing %s (variable %s)! Ending...\n",
-             input.get_filename().c_str(), var_name.c_str());
-      pism::PISMEnd();
+      throw std::runtime_error("memory allocation failed while processing variable " +
+                               var_name);
     }
 
     // for each time record...

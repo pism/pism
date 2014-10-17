@@ -22,6 +22,8 @@
 #include "pism_options.hh"
 #include "PISMConfig.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const Config &conf)
@@ -59,10 +61,8 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (input_file_flag == false) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: Please specify an '-atmosphere yearly_cycle' input file\n"
-                "            using the -atmosphere_yearly_cycle_file option.\n");
-    PISMEnd();
+    throw RuntimeError("Please specify an '-atmosphere yearly_cycle' input file\n"
+                       "using the -atmosphere_yearly_cycle_file option.");
   }
 
   ierr = verbPrintf(2, grid.com,

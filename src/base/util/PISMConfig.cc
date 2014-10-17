@@ -21,6 +21,8 @@
 #include "pism_options.hh"
 #include <sstream>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 Config::Config(MPI_Comm com, const std::string &name, const UnitSystem &unit_system)
@@ -118,9 +120,8 @@ double Config::get_quiet(const std::string &name) const {
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_double(name);
   } else {
-    PetscPrintf(m_com, "PISM ERROR: parameter '%s' is unset. (Parameters read from '%s'.)\n",
-                name.c_str(), m_config_filename.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("parameter '%s' is unset. (Parameters read from '%s'.)",
+                                  name.c_str(), m_config_filename.c_str());
   }
 
   return 0;                     // can't happen
@@ -131,10 +132,8 @@ std::string Config::get_string_quiet(const std::string &name) const {
   if (strings.find(name) != strings.end())
     return m_data.get_string(name);
   else {
-    PetscPrintf(m_com,
-                "PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
-                name.c_str(), m_config_filename.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("Parameter '%s' was not set. (Read from '%s'.)\n",
+                                  name.c_str(), m_config_filename.c_str());
   }
 
   return std::string();         // will never happen
@@ -157,17 +156,13 @@ bool Config::get_flag_quiet(const std::string &name) const {
         (value == "on"))
       return true;
 
-    PetscPrintf(m_com,
-                "PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
-                "            Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
-                name.c_str(), value.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
+                                  "Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.",
+                                  name.c_str(), value.c_str());
   }
 
-  PetscPrintf(m_com,
-              "PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
-              name.c_str(), m_config_filename.c_str());
-  PISMEnd();
+  throw RuntimeError::formatted("Parameter '%s' was not set. (Read from '%s'.)",
+                                name.c_str(), m_config_filename.c_str());
 
   return true;                  // will never happen
 }
@@ -238,9 +233,8 @@ PetscErrorCode Config::flag_from_option(const std::string &name, const std::stri
   ierr = OptionsIsSet("-no_" + name, no_foo); CHKERRQ(ierr);
 
   if (foo && no_foo) {
-    PetscPrintf(m_com, "PISM ERROR: Inconsistent command-line options: both -%s and -no_%s are set.\n",
-                name.c_str(), name.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("Inconsistent command-line options: both -%s and -no_%s are set.\n",
+                                  name.c_str(), name.c_str());
   }
 
   if (foo)

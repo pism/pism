@@ -43,6 +43,8 @@
 #include "PISMEigenCalving.hh"
 #include "Mask.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 IceModel::IceModel(IceGrid &g, Config &conf, Config &conf_overrides)
@@ -687,14 +689,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
                              o_file, o_file_set); CHKERRQ(ierr);
 
     o_file = pism_filename_add_suffix(o_file, "_stressbalance_failed", "");
-    ierr = PetscPrintf(grid.com,
-                       "PISM ERROR: stress balance computation failed. Saving model state to '%s'...\n",
-                       o_file.c_str());
-
     ierr = dumpToFile(o_file); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(grid.com, "ending...\n");
-    PISMEnd();
+    throw RuntimeError::formatted("stress balance computation failed. Model state was saved to '%s'",
+                                  o_file.c_str());
   }
 
   std::string sb_stdout;

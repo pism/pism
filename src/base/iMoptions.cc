@@ -33,6 +33,8 @@
 #include "pism_options.hh"
 #include "IceGrid.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
@@ -60,8 +62,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   // warn about some option combinations
 
   if (config.get("maximum_time_step_years") <= 0) {
-    PetscPrintf(grid.com, "PISM ERROR: maximum_time_step_years has to be greater than 0.\n");
-    PISMEnd();
+    throw RuntimeError("maximum_time_step_years has to be greater than 0.");
   }
   
   if (config.get_flag("do_mass_conserve") == false &&

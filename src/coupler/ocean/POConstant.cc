@@ -22,6 +22,7 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 #include "iceModelVec.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -30,9 +31,9 @@ POConstant::POConstant(IceGrid &g, const Config &conf)
     shelfbmassflux(g.get_unit_system()),
     shelfbtemp(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("POConstant allocation failed");
+  }
 }
 
 PetscErrorCode POConstant::allocate_POConstant() {

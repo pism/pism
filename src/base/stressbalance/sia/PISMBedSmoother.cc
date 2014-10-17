@@ -18,6 +18,7 @@
 
 #include "PISMBedSmoother.hh"
 #include "Mask.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -32,8 +33,7 @@ BedSmoother::BedSmoother(IceGrid &g, const Config &conf, int MAX_GHOSTS)
   C4p0 = NULL;
 
   if (allocate(MAX_GHOSTS) != 0) {
-    PetscPrintf(grid.com, "BedSmoother constructor: allocate() failed\n");
-    PISMEnd();
+    throw std::runtime_error("BedSmoother allocation failed");
   }
 
   m_Glen_exponent = config.get("sia_Glen_exponent"); // choice is SIA; see #285
@@ -52,7 +52,7 @@ BedSmoother::~BedSmoother() {
 
   if (deallocate() != 0) {
     PetscPrintf(grid.com, "BedSmoother destructor: deallocate() failed\n");
-    PISMEnd();
+    // there's nothing we can do about it
   }
 }
 

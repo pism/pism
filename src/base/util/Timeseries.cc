@@ -27,6 +27,8 @@
 #include "PISMTime.hh"
 #include "PISMConfig.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 Timeseries::Timeseries(IceGrid *g, const std::string &name, const std::string &dimension_name)
@@ -76,24 +78,19 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
              exists, name_found, found_by_standard_name);
 
   if (!exists) {
-    ierr = PetscPrintf(com,
-                      "PISM ERROR: Can't find '%s' ('%s') in '%s'.\n",
-                       short_name.c_str(), standard_name.c_str(),
-                       nc.inq_filename().c_str());
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("Can't find '%s' ('%s') in '%s'.\n",
+                                  short_name.c_str(), standard_name.c_str(),
+                                  nc.inq_filename().c_str());
   }
 
   dims = nc.inq_vardims(name_found);
 
   if (dims.size() != 1) {
-    ierr = PetscPrintf(com,
-                       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
-                       "            but a time-series variable can only depend on 1 dimension.\n",
-                       short_name.c_str(),
-                       nc.inq_filename().c_str(),
-                       dims.size()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("Variable '%s' in '%s' depends on %d dimensions,\n"
+                                  "but a time-series variable can only depend on 1 dimension.",
+                                  short_name.c_str(),
+                                  nc.inq_filename().c_str(),
+                                  dims.size());
   }
 
   time_name = dims[0];
@@ -110,9 +107,8 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
     }
   }
   if (!is_increasing) {
-    ierr = PetscPrintf(com, "PISM ERROR: dimension '%s' has to be strictly increasing (read from '%s').\n",
-                       tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("dimension '%s' has to be strictly increasing (read from '%s').",
+                                  tmp_dim.get_name().c_str(), nc.inq_filename().c_str());
   }
 
   std::string time_bounds_name = nc.get_att_text(time_name, "bounds");
@@ -134,11 +130,10 @@ PetscErrorCode Timeseries::read(const PIO &nc, Time *time_manager) {
   nc.read_timeseries(var, time_manager, values);
 
   if (time.size() != values.size()) {
-    ierr = PetscPrintf(com, "PISM ERROR: variables %s and %s in %s have different numbers of values.\n",
-                       dimension.get_name().c_str(),
-                       var.get_name().c_str(),
-                       nc.inq_filename().c_str()); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError::formatted("variables %s and %s in %s have different numbers of values.",
+                                  dimension.get_name().c_str(),
+                                  var.get_name().c_str(),
+                                  nc.inq_filename().c_str());
   }
 
   ierr = report_range(); CHKERRQ(ierr);
@@ -222,11 +217,9 @@ double Timeseries::operator()(double t) {
       return values[0];         // out of range (on the left)
 
     if (i % 2 == 0) {
-      PetscPrintf(com,
-                  "PISM ERROR: time bounds array in %s does not represent continguous time intervals.\n"
-                  "            (PISM was trying to compute %s at time %3.3f years.)\n",
-                  bounds.get_name().c_str(), short_name.c_str(), t);
-      PISMEnd();
+      throw RuntimeError::formatted("time bounds array in %s does not represent continguous time intervals.\n"
+                                    "(PISM was trying to compute %s at time %3.3f seconds.)",
+                                    bounds.get_name().c_str(), short_name.c_str(), t);
     }
 
     return values[(i-1)/2];
@@ -260,9 +253,8 @@ double Timeseries::operator[](unsigned int j) const {
 
 #if (PISM_DEBUG==1)
   if (j >= values.size()) {
-    PetscPrintf(com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
-                var.get_name().c_str(), values.size(), j);
-    PISMEnd();
+    throw RuntimeError::formatted("Timeseries %s: operator[]: invalid argument: size=%d, index=%d",
+                                  var.get_name().c_str(), values.size(), j);
   }
 #endif
 

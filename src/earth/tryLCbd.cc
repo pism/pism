@@ -46,22 +46,24 @@ static char help[] =
 #include "deformation.hh"
 #include "pism_options.hh"
 
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
+
 using namespace pism;
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;  // won't be used except for rank,size
-  int rank, size;
+  MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank
+  int rank;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
-  ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -232,7 +234,9 @@ int main(int argc, char *argv[]) {
       ierr = DMDestroy(&da2); CHKERRQ(ierr);
     }
   }
+  catch (...) {
+    handle_fatal_errors(com);
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

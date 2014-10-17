@@ -27,6 +27,8 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
+#include "error_handling.hh"
+
 #include <cassert>
 
 namespace pism {
@@ -146,10 +148,8 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
   check_array_indices(i, j, 0);
 
   if (isLegalLevel(z) != 0) {
-    PetscPrintf(PETSC_COMM_SELF, 
-       "IceModelVec3 getValZ(): isLegalLevel() says level %f was\n"
-       "  not legal; name = %s\n", z, m_name.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("IceModelVec3 getValZ(): level %f is not legal; name = %s",
+                                  z, m_name.c_str());
   }
 #endif
 

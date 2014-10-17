@@ -20,14 +20,16 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 
+#include <stdexcept>
+
 namespace pism {
 
 PAConstantPIK::PAConstantPIK(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PAConstantPIK allocation failed");
+  }
 }
 
 PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {

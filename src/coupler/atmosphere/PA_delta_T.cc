@@ -18,6 +18,7 @@
 
 #include "PA_delta_T.hh"
 #include "PISMConfig.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -30,9 +31,9 @@ PA_delta_T::PA_delta_T(IceGrid &g, const Config &conf, AtmosphereModel* in)
 {
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_delta_T(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PA_delta_T allocation failed");
+  }
 }
 
 PetscErrorCode PA_delta_T::allocate_PA_delta_T() {

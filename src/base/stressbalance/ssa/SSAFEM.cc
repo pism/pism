@@ -22,6 +22,7 @@
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
 #include "pism_options.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -34,8 +35,7 @@ SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSA(g, e, c), m_element_index(g), m_quadrature(grid, 1.0), m_quadrature_vector(grid, 1.0) {
   PetscErrorCode ierr = allocate_fem();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "FATAL ERROR: SSAFEM allocation failed.\n");
-    PISMEnd();
+    throw std::runtime_error("SSAFEM allocation failed");
   }
 }
 

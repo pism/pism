@@ -28,9 +28,9 @@ PA_paleo_precip::PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel
 {
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_paleo_precip(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PA_paleo_precip allocation failed");
+  }
 }
 
 PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {

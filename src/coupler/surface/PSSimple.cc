@@ -23,6 +23,7 @@
 #include "PISMConfig.hh"
 
 #include <assert.h>
+#include <stdexcept>
 
 namespace pism {
 
@@ -33,8 +34,9 @@ PSSimple::PSSimple(IceGrid &g, const Config &conf)
     ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PSSimple(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  if (ierr != 0) {
+    throw std::runtime_error("PSSimple allocation failed");
+  }
 
 }
 

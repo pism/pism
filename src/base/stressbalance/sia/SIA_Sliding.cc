@@ -22,6 +22,8 @@
 #include "PISMVars.hh"
 #include "flowlaw_factory.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 PetscErrorCode SIA_Sliding::allocate() {
@@ -271,10 +273,8 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
     ierr = surface_gradient_mahaffy(h_x, h_y); CHKERRQ(ierr);
 
   } else {
-    verbPrintf(1, grid.com,
-               "PISM ERROR: value of surface_gradient_method, option -gradient %s, not valid ... ending\n",
-               method.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("value of surface_gradient_method, option -gradient %s, is not valid",
+                                  method.c_str());
   }
 
   return 0;

@@ -60,8 +60,9 @@ POGivenTH::POGivenTH(IceGrid &g, const Config &conf)
   : PGivenClimate<POModifier,OceanModel>(g, conf, NULL)
 {
   PetscErrorCode ierr = allocate_POGivenTH(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  if (ierr != 0) {
+    throw std::runtime_error("POGivenTH allocation failed");
+  }
 }
 
 POGivenTH::~POGivenTH() {

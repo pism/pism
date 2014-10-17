@@ -46,12 +46,6 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 
 void endPrintRank();
 
-#ifndef __GNUC__
-#  define  __attribute__(x)  /* nothing */
-#endif
-void PISMEnd()  __attribute__((noreturn));
-void PISMEndQuiet()  __attribute__((noreturn));
-
 std::string pism_timestamp();
 std::string pism_username_prefix(MPI_Comm com);
 std::string pism_args_string();

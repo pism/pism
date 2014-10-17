@@ -81,11 +81,20 @@ int main(int argc, char *argv[]) {
 
     ierr = m.init(); CHKERRQ(ierr);
 
-    ierr = m.run(); CHKERRQ(ierr);
+    bool print_list_and_stop = false;
+    ierr = OptionsIsSet("-list_diagnostics",
+                        "List available diagnostic quantities and stop",
+                        print_list_and_stop); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
-    // provide a default output file name if no -o option is given.
-    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+    if (print_list_and_stop) {
+      ierr = m.list_diagnostics(); CHKERRQ(ierr);
+    } else {
+      ierr = m.run(); CHKERRQ(ierr);
+
+      ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
+      // provide a default output file name if no -o option is given.
+      ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+    }
   }
   catch (...) {
     handle_fatal_errors(com);

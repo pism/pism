@@ -70,9 +70,6 @@
 using namespace pism;
 %}
 
-// SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
-#define __attribute__(x) 
-
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
 %include "petsc4py/petsc4py.i"
 

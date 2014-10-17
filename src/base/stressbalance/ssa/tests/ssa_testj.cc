@@ -36,6 +36,9 @@ static char help[] =
 #include "SSATestCase.hh"
 #include "Mask.hh"
 
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
+
 using namespace pism;
 
 class SSATestCaseJ: public SSATestCase
@@ -148,14 +151,14 @@ PetscErrorCode SSATestCaseJ::exactSolution(int /*i*/, int /*j*/,
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
 
-  MPI_Comm    com;
+  MPI_Comm com = MPI_COMM_WORLD;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  PetscInitializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -215,7 +218,9 @@ int main(int argc, char *argv[]) {
     ierr = testcase.report("J"); CHKERRQ(ierr);
     ierr = testcase.write(output_file);
   }
+  catch (...) {
+    handle_fatal_errors(com);
+  }
 
-  ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }

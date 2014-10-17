@@ -33,7 +33,7 @@ PSConstantGLINT2::PSConstantGLINT2(IceGrid &g, const ::PISMConfig &conf)
 {
 	PetscErrorCode ierr = allocate_PSConstantGLINT2(); CHKERRCONTINUE(ierr);
 	if (ierr != 0) {
-		PISMEnd();
+          throw std::runtime_error("PSConstantGLINT2 allocation failed");
 	}
 }
 

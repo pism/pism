@@ -196,14 +196,11 @@ PetscErrorCode Time::init() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (ys_set && ye_set && y_set) {
-    ierr = PetscPrintf(m_com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("all of -y, -ys, -ye are set.");
   }
 
   if (y_set && ye_set) {
-    ierr = PetscPrintf(m_com, "PISM ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("using -y and -ye together is not allowed.");
   }
 
   // Set the start year if -ys is set, use the default otherwise.
@@ -215,12 +212,9 @@ PetscErrorCode Time::init() {
 
   if (ye_set == true) {
     if (ye_seconds < m_time_in_seconds) {
-      ierr = PetscPrintf(m_com,
-                        "PISM ERROR: -ye (%s) is less than -ys (%s) (or input file year or default).\n"
-                        "PISM cannot run backward in time.\n",
-                         date(ye_seconds).c_str(),
-                         date(m_run_start).c_str()); CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted("-ye (%s) is less than -ys (%s) (or input file year or default).\n"
+                                    "PISM cannot run backward in time.",
+                                    date(ye_seconds).c_str(), date(m_run_start).c_str());
     }
     m_run_end = ye_seconds;
   } else if (y_set == true) {

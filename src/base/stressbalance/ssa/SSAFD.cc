@@ -24,6 +24,7 @@
 #include "PISMVars.hh"
 
 #include <assert.h>
+#include <stdexcept>
 
 namespace pism {
 
@@ -37,8 +38,7 @@ SSAFD::SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c)
   : SSA(g,e,c) {
   PetscErrorCode ierr = allocate_fd();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "FATAL ERROR: SSAFD allocation failed.\n");
-    PISMEnd();
+    throw std::runtime_error("SSAFD allocation failed");
   }
 }
 
@@ -46,7 +46,7 @@ SSAFD::~SSAFD() {
   PetscErrorCode ierr = deallocate_fd();
   if (ierr != 0) {
     PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
-    PISMEnd();
+    abort();
   }
 }
 

@@ -25,6 +25,8 @@
 
 #include "pism_options.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 ///// "Force-to-thickness" mechanism
@@ -35,9 +37,9 @@ PSForceThickness::PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel 
     m_ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PSForceThickness(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PSForceThickness allocation failed");
+  }
 }
 
 PSForceThickness::~PSForceThickness() {
@@ -108,9 +110,7 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
                        m_input_file, file_set, false); CHKERRQ(ierr);
 
   if (file_set == false) {
-    ierr = PetscPrintf(grid.com,
-                       "ERROR: surface model forcing requires the -force_to_thickness_file option.\n"); CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("surface model forcing requires the -force_to_thickness_file option.");
   }
 
   double ftt_alpha = grid.convert(m_alpha, "s-1", "yr-1");

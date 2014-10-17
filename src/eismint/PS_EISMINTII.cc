@@ -21,6 +21,7 @@
 #include "PISMAtmosphere.hh"
 #include "PISMConfig.hh"
 #include "pism_options.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -28,8 +29,7 @@ PS_EISMINTII::PS_EISMINTII(IceGrid &g, const Config &conf, int experiment)
   : SurfaceModel(g, conf), m_experiment(experiment) {
   PetscErrorCode ierr = allocate();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: memory allocation failed");
-    PISMEnd();
+    throw std::runtime_error("PS_EISMINTII allocation failed");
   }
 }
 

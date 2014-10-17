@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <cassert>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 POCache::POCache(IceGrid &g, const Config &conf, OceanModel* in)
@@ -33,8 +35,7 @@ POCache::POCache(IceGrid &g, const Config &conf, OceanModel* in)
 
   PetscErrorCode ierr = allocate_POCache();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for PSCache.\n");
-    PISMEnd();
+    throw std::runtime_error("POCache allocation failed");
   }
 }
 
@@ -87,9 +88,7 @@ PetscErrorCode POCache::init(Vars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (update_interval <= 0) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: -ocean_cache_update_interval has to be strictly positive.\n");
-    PISMEnd();
+    throw RuntimeError("-ocean_cache_update_interval has to be strictly positive.");
   }
 
   m_update_interval_years = update_interval;

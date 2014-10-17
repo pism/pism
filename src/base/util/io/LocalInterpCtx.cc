@@ -24,6 +24,8 @@
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Construct a local interpolation context.
@@ -75,18 +77,12 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
            y_min >= input_y_min - eps && y_max <= input_y_max + eps &&
            z_min >= input.z_min - eps && z_max <= input.z_max + eps)) {
 
-    PetscPrintf(com,
-                "target computational domain not a subset of source (in NetCDF file)\n"
-                "  computational domain:\n");
-    PetscPrintf(grid.com, "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
-                x_min, x_max,
-                y_min, y_max,
-                z_min, z_max);
-    PetscPrintf(grid.com, "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n",
-                input_x_min, input_x_max,
-                input_y_min, input_y_max,
-                input.z_min, input.z_max);
-    PISMEnd();
+    throw RuntimeError::formatted("target computational domain not a subset of source (in NetCDF file)\n"
+                                  "computational domain:\n"
+                                  "target domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters\n"
+                                  "source domain: [%3.3f, %3.3f] x [%3.3f, %3.3f] x [%3.3f, %3.3f] meters",
+                                  x_min, x_max, y_min, y_max, z_min, z_max,
+                                  input_x_min, input_x_max, input_y_min, input_y_max, input.z_min, input.z_max);
   }
 
   // limits of the processor's part of the target computational domain

@@ -4,29 +4,24 @@
 %}
 
 %exception {
-   try
-   {
-      {
-        SigInstaller h(SIGINT,pism_sigint_handler); 
-        $action
-      }
-      int sig = pism_check_signal();
-      if( sig == SIGINT )
-      {
-        PyErr_SetString(PyExc_KeyboardInterrupt, "");
-        return NULL;
-      }
-      else if(sig)
-      {
-        PyErr_SetString(PyExc_Exception, "Caught an unknown signal.");
-        return NULL;      
-      } 
-   }
-   catch(Swig::DirectorException &e) {
-     PyErr_SetString(PyExc_RuntimeError,e.getMessage());
-   }
-   catch (...) {
-     pism::verbPrintf(1,PETSC_COMM_WORLD,"Caught a C++ exception; PISM memory may be corrupt. Aborting.");
-     pism::PISMEnd();
-   }
-}
+  try {
+    {
+      SigInstaller handler(SIGINT, pism_sigint_handler); 
+      $action
+        }
+    int sig = pism_check_signal();
+    if (sig == SIGINT) {
+      PyErr_SetString(PyExc_KeyboardInterrupt, "");
+      return NULL;
+    } else if (sig) {
+      SWIG_exception(SWIG_RuntimeError, "Caught an unknown signal.");
+      return NULL;      
+    } 
+  }
+  catch(Swig::DirectorException &e) {
+    SWIG_exception(SWIG_RuntimeError, e.getMessage());
+  }
+  catch (...) {
+    SWIG_exception(SWIG_RuntimeError, "Caught an unexpected C++ exception");
+  }
+ }

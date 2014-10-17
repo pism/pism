@@ -48,7 +48,7 @@ SSA::SSA(IceGrid &g, EnthalpyConverter &e, const Config &c)
 SSA::~SSA() { 
   if (deallocate() != 0) {
     PetscPrintf(grid.com, "FATAL ERROR: SSA de-allocation failed.\n");
-    PISMEnd();
+    abort();
   }
   delete strength_extension;
 }

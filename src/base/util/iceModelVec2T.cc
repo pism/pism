@@ -25,6 +25,8 @@
 #include "LocalInterpCtx.hh"
 #include "IceGrid.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
@@ -139,10 +141,9 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
   nc.inq_var(m_metadata[0].get_name(), m_metadata[0].get_string("standard_name"),
              exists, name_found, found_by_standard_name);
   if (exists == false) {
-    PetscPrintf(grid->com, "PISM ERROR: can't find %s (%s) in %s.\n",
-                m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
-                filename.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("can't find %s (%s) in %s.",
+                                  m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str(),
+                                  filename.c_str());
   }
 
   // find the time dimension:
@@ -185,11 +186,10 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
           time[k] = time_bounds[2*k + 1];
       } else {
         // no time bounds attribute
-        PetscPrintf(grid->com,
-                    "PISM ERROR: Variable '%s' does not have the time_bounds attribute.\n"
-                    "  Cannot use time-dependent forcing data '%s' (%s) without time bounds.\n",
-                    dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(), m_metadata[0].get_name().c_str());
-        PISMEnd();
+        throw RuntimeError::formatted("Variable '%s' does not have the time_bounds attribute.\n"
+                                      "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
+                                      dimname.c_str(),  m_metadata[0].get_string("long_name").c_str(),
+                                      m_metadata[0].get_name().c_str());
       }
     } else {
       // only one time record; set fake time bounds:
@@ -211,9 +211,8 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
   }
 
   if (is_increasing(time) == false) {
-    ierr = PetscPrintf(grid->com, "PISM ERROR: times have to be strictly increasing (read from '%s').\n",
-                       filename.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("times have to be strictly increasing (read from '%s').",
+                                  filename.c_str());
   }
 
   nc.close();

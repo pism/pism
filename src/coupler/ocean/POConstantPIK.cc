@@ -23,6 +23,7 @@
 #include "IceGrid.hh"
 #include "iceModelVec.hh"
 #include "pism_options.hh"
+#include <stdexcept>
 
 namespace pism {
 
@@ -32,8 +33,9 @@ POConstantPIK::POConstantPIK(IceGrid &g, const Config &conf)
     shelfbtemp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_POConstantPIK(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  if (ierr != 0) {
+    throw std::runtime_error("POConstantPIK allocation failed");
+  }
 
   meltfactor = config.get("ocean_pik_melt_factor");
 }

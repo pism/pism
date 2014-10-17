@@ -24,6 +24,8 @@
 #include "iceModelVec.hh"
 #include "PISMTime.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 PAWeatherStation::PAWeatherStation(IceGrid &g, const Config &conf)
@@ -92,9 +94,7 @@ PetscErrorCode PAWeatherStation::init(Vars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (bc_file_set == false) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: Command-line option %s is required.\n", option.c_str());
-    PISMEnd();
+    throw RuntimeError::formatted("Command-line option %s is required.", option.c_str());
   }
 
   ierr = verbPrintf(2, grid.com,

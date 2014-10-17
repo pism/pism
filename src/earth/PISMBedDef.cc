@@ -22,6 +22,8 @@
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
 
+#include <stdexcept>
+
 namespace pism {
 
 BedDef::BedDef(IceGrid &g, const Config &conf)
@@ -35,8 +37,7 @@ BedDef::BedDef(IceGrid &g, const Config &conf)
 
   PetscErrorCode ierr = pismbeddef_allocate();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "BedDef::BedDef(...): pismbeddef_allocate() failed\n");
-    PISMEnd();
+    throw std::runtime_error("BedDef allocation failed");
   }
 }
 

@@ -29,9 +29,9 @@ PO_delta_SL::PO_delta_SL(IceGrid &g, const Config &conf, OceanModel* in)
     shelfbtemp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PO_delta_SL(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PO_delta_SL allocation failed");
+  }
 }
 
 PO_delta_SL::~PO_delta_SL() {

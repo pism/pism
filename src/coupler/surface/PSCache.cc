@@ -23,6 +23,8 @@
 #include <cassert>
 #include <algorithm>            // for std::min
 
+#include "error_handling.hh"
+
 namespace pism {
 
 PSCache::PSCache(IceGrid &g, const Config &conf, SurfaceModel* in)
@@ -33,8 +35,7 @@ PSCache::PSCache(IceGrid &g, const Config &conf, SurfaceModel* in)
 
   PetscErrorCode ierr = allocate_PSCache();
   if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: failed to allocate storage for PSCache.\n");
-    PISMEnd();
+    throw std::runtime_error("PSCache allocation failed");
   }
 }
 
@@ -87,15 +88,13 @@ PetscErrorCode PSCache::init(Vars &vars) {
   ierr = PetscOptionsBegin(grid.com, "", "-surface ...,cache options", ""); CHKERRQ(ierr);
   {
     ierr = OptionsInt("-surface_cache_update_interval",
-                          "Interval (in years) between surface model updates",
-                          update_interval, flag); CHKERRQ(ierr);
+                      "Interval (in years) between surface model updates",
+                      update_interval, flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (update_interval <= 0) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: -surface_cache_update_interval has to be strictly positive.\n");
-    PISMEnd();
+    throw RuntimeError::formatted("-surface_cache_update_interval has to be strictly positive.");
   }
 
   m_update_interval_years = update_interval;

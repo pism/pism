@@ -27,10 +27,12 @@ PetscErrorCode globalMax(double local_max, double *result, MPI_Comm comm)
 {
   return GlobalMax(comm, &local_max,  result);
 }
+
 PetscErrorCode globalMin(double local_min, double *result, MPI_Comm comm)
 {
   return GlobalMin(comm, &local_min,  result);
 }
+
 PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
 {
   return GlobalSum(comm, &local_sum,  result);
@@ -39,7 +41,7 @@ PetscErrorCode globalSum(double local_sum, double *result, MPI_Comm comm)
 PetscErrorCode optionsGroupBegin(MPI_Comm comm, const std::string &prefix,
                                  const std::string &mess, const std::string &sec)
 {
-  PetscOptionsPublishCount=(PetscOptionsPublish?-1:1);
+  PetscOptionsPublishCount=(PetscOptionsPublish ? -1 : 1);
   return PetscOptionsBegin_Private(comm, prefix.c_str(), mess.c_str(), sec.c_str());
 }
 
@@ -50,7 +52,7 @@ void optionsGroupNext()
 
 bool optionsGroupContinue()
 {
-  return PetscOptionsPublishCount<2;
+  return PetscOptionsPublishCount < 2;
 }
 
 PetscErrorCode optionsGroupEnd()

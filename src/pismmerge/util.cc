@@ -18,6 +18,8 @@
 
 #include "pismmerge.hh"
 
+#include "error_handling.hh"
+
 //! Checks if a NetCDF call succeeded.
 void check(int return_code) {
   if (return_code != NC_NOERR) {
@@ -58,13 +60,10 @@ std::string output_filename(std::string input, std::string var_name) {
 
 //! \brief Gets the total number of patches.
 int get_quilt_size(pism::NC4_Serial &input, int &mpi_size) {
-  int stat;
-
   std::vector<double> tmp;
- input.get_att_double("x_patch", "mpi_size", tmp);
-  if (stat != 0 || tmp.size() != 1) {
-    printf("ERROR: x_patch:mpi_size does not exist or has the wrong length.\n");
-    pism::PISMEnd();
+  input.get_att_double("x_patch", "mpi_size", tmp);
+  if (tmp.size() != 1) {
+    throw pism::RuntimeError("x_patch:mpi_size does not exist or has the wrong length.");
   }
   mpi_size = static_cast<int>(tmp[0]);
 
@@ -96,20 +95,17 @@ int check_input_files(std::string filename) {
 //! dataset from an input file.
 int patch_geometry(pism::NC4_Serial &input, int &xs, int &ys,
                    unsigned int &xm, unsigned int &ym) {
-  int stat;
   std::vector<double> tmp;
 
   input.get_att_double("x_patch", "patch_offset", tmp);
   if (tmp.size() != 1) {
-    printf("ERROR: x_patch:patch_offset does not exist or has the wrong length.\n");
-    pism::PISMEnd();
+    throw pism::RuntimeError("x_patch:patch_offset does not exist or has the wrong length.");
   }
   xs = (int)tmp[0];
 
   input.get_att_double("y_patch", "patch_offset", tmp);
   if (tmp.size() != 1) {
-    printf("ERROR: y_patch:patch_offset does not exist or has the wrong length.\n");
-    pism::PISMEnd();
+    throw pism::RuntimeError("y_patch:patch_offset does not exist or has the wrong length.");
   }
   ys = (int)tmp[0];
 

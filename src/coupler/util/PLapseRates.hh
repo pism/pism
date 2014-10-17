@@ -28,6 +28,8 @@
 #include "PISMConfig.hh"
 #include <assert.h>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 template <class Model, class Mod>
@@ -133,8 +135,8 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
-      PetscPrintf(Model::grid.com, "PISM ERROR: option %s_file is required.\n", option_prefix.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("command-line option %s_file is required.",
+                                    option_prefix.c_str());
     }
 
     if (bc_ref_year_set) {
@@ -166,9 +168,8 @@ protected:
       }
 
       if (ref_surface_n_records == 0) {
-        PetscPrintf(g.com, "PISM ERROR: can't find reference surface elevation (usurf) in %s.\n",
-                    filename.c_str());
-        PISMEnd();
+        throw RuntimeError::formatted("can't find reference surface elevation (usurf) in %s.\n",
+                                      filename.c_str());
       }
 
       reference_surface.set_n_records(ref_surface_n_records);

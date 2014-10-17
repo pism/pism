@@ -25,6 +25,8 @@
 #include "pism_options.hh"
 #include "PISMTime.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 template<class Model, class Mod>
@@ -71,9 +73,8 @@ protected:
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (file_set == false) {
-      ierr = PetscPrintf(g.com, "PISM ERROR: %s_file is not set.\n",
-                         option_prefix.c_str()); CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError::formatted("command-line option %s_file is required.",
+                                    option_prefix.c_str());
     }
 
     if (bc_period_set) {

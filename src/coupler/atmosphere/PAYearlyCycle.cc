@@ -24,15 +24,16 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
+#include <stdexcept>
 
 namespace pism {
 
 PAYearlyCycle::PAYearlyCycle(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf), m_air_temp_snapshot(g.get_unit_system()) {
   PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PAYearlyCycle allocation failed");
+  }
 }
 
 PAYearlyCycle::~PAYearlyCycle() {

@@ -29,7 +29,7 @@ PA_frac_P::PA_frac_P(IceGrid &g, const Config &conf, AtmosphereModel* in)
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_frac_P(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
-    PISMEnd();
+    throw std::runtime_error("PA_frac_P allocation failed");
   }
 }
 

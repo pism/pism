@@ -37,11 +37,6 @@
 namespace pism {
 
 PetscErrorCode IceModel::init_diagnostics() {
-  bool print_list_and_stop = false;
-
-  PetscErrorCode ierr = OptionsIsSet("-list_diagnostics",
-                                         "List available diagnostic quantities and stop",
-                                         print_list_and_stop); CHKERRQ(ierr);
 
   // Add IceModel diagnostics:
   diagnostics["cts"]              = new IceModel_cts(this, grid, variables);
@@ -60,33 +55,27 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
   diagnostics["dHdt"]             = new IceModel_dHdt(this, grid, variables);
 
-  if (flux_divergence.was_created() ||
-      print_list_and_stop) {
+  if (flux_divergence.was_created()) {
     diagnostics["flux_divergence"] = new IceModel_flux_divergence(this, grid, variables);
   }
 
-  if (climatic_mass_balance_cumulative.was_created() ||
-      print_list_and_stop) {
+  if (climatic_mass_balance_cumulative.was_created()) {
     diagnostics["climatic_mass_balance_cumulative"] = new IceModel_climatic_mass_balance_cumulative(this, grid, variables);
   }
 
-  if (nonneg_flux_2D_cumulative.was_created() ||
-      print_list_and_stop) {
+  if (nonneg_flux_2D_cumulative.was_created()) {
     diagnostics["nonneg_flux_cumulative"] = new IceModel_nonneg_flux_2D_cumulative(this, grid, variables);
   }
 
-  if (grounded_basal_flux_2D_cumulative.was_created() ||
-      print_list_and_stop) {
+  if (grounded_basal_flux_2D_cumulative.was_created()) {
     diagnostics["grounded_basal_flux_cumulative"] = new IceModel_grounded_basal_flux_2D_cumulative(this, grid, variables);
   }
 
-  if (floating_basal_flux_2D_cumulative.was_created() ||
-      print_list_and_stop) {
+  if (floating_basal_flux_2D_cumulative.was_created()) {
     diagnostics["floating_basal_flux_cumulative"] = new IceModel_floating_basal_flux_2D_cumulative(this, grid, variables);
   }
 
-  if (discharge_flux_2D_cumulative.was_created() ||
-      print_list_and_stop) {
+  if (discharge_flux_2D_cumulative.was_created()) {
     diagnostics["discharge_flux_cumulative"] = new IceModel_discharge_flux_2D_cumulative(this, grid, variables);
   }
 
@@ -156,12 +145,6 @@ PetscErrorCode IceModel::init_diagnostics() {
 
   if (subglacial_hydrology != NULL)
     subglacial_hydrology->get_diagnostics(diagnostics, ts_diagnostics);
-
-  if (print_list_and_stop) {
-    ierr = list_diagnostics(); CHKERRQ(ierr);
-
-    PISMEnd();
-  }
 
   return 0;
 }

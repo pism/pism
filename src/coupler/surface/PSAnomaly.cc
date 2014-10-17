@@ -27,8 +27,9 @@ PSAnomaly::PSAnomaly(IceGrid &g, const Config &conf, SurfaceModel* in)
     ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PSAnomaly(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
+  if (ierr != 0) {
+    throw std::runtime_error("PSAnomaly allocation failed");
+  }
 
 }
 

@@ -25,6 +25,8 @@
 #include "IceGrid.hh"
 #include <map>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 class Config;
@@ -122,8 +124,7 @@ public:
 
     if (choices.empty()) {
       if (flag == true) {
-        PetscPrintf(m_grid.com, "ERROR: option -%s requires an argument.\n", m_option.c_str());
-        PISMEnd();
+        throw RuntimeError::formatted("option -%s requires an argument.\n", m_option.c_str());
       }
       choices.push_back(m_default_type);
     }
@@ -133,13 +134,11 @@ public:
     std::vector<std::string>::iterator j = choices.begin();
 
     if (m_models.find(*j) == m_models.end()) {
-      PetscPrintf(m_grid.com,
-                  "ERROR: %s model \"%s\" is not available.\n"
-                  "  Available models:    %s\n"
-                  "  Available modifiers: %s\n",
-                  m_option.c_str(), j->c_str(),
-                  model_list.c_str(), modifier_list.c_str());
-      PISMEnd();
+      throw RuntimeError::formatted("%s model \"%s\" is not available.\n"
+                                    "Available models:    %s\n"
+                                    "Available modifiers: %s",
+                                    m_option.c_str(), j->c_str(),
+                                    model_list.c_str(), modifier_list.c_str());
     }
 
     result = m_models[*j]->create(m_grid, m_config);
@@ -149,11 +148,9 @@ public:
     // process remaining arguments:
     while (j != choices.end()) {
       if (m_modifiers.find(*j) == m_modifiers.end()) {
-        PetscPrintf(m_grid.com,
-                    "ERROR: %s modifier \"%s\" is not available.\n"
-                    "  Available modifiers: %s\n",
-                    m_option.c_str(), j->c_str(), modifier_list.c_str());
-        PISMEnd();
+        throw RuntimeError::formatted("%s modifier \"%s\" is not available.\n"
+                                      "Available modifiers: %s",
+                                      m_option.c_str(), j->c_str(), modifier_list.c_str());
       }
 
       result =  m_modifiers[*j]->create(m_grid, m_config, result);

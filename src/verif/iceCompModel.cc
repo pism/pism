@@ -332,7 +332,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
   // -boot_file command-line option is not allowed here.
-  ierr = stop_if_set(grid.com, "-boot_file"); CHKERRQ(ierr);
+  ierr = stop_if_set("-boot_file"); CHKERRQ(ierr);
 
   ierr = strain_heating3_comp.set(0.0); CHKERRQ(ierr);
 

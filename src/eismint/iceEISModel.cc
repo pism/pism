@@ -26,6 +26,8 @@
 #include "POConstant.hh"
 #include "PS_EISMINTII.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 IceEISModel::IceEISModel(IceGrid &g, Config &conf, Config &conf_overrides)
@@ -77,17 +79,15 @@ PetscErrorCode IceEISModel::setFromOptions() {
     char temp = m_experiment;
     bool EISIIchosen;
     ierr = OptionsString("-eisII", "EISMINT II experiment name",
-                             name, EISIIchosen);
-    CHKERRQ(ierr);
-    if (EISIIchosen == PETSC_TRUE) {
+                         name, EISIIchosen); CHKERRQ(ierr);
+
+    if (EISIIchosen == true) {
       temp = (char)toupper(name.c_str()[0]);
       if ((temp >= 'A') && (temp <= 'L')) {
         m_experiment = temp;
       } else {
-        ierr = PetscPrintf(grid.com,
-                           "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
-        CHKERRQ(ierr);
-        PISMEnd();
+        throw RuntimeError::formatted("option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L; got %c",
+                                      temp);
       }
     }
 

@@ -29,9 +29,9 @@ PALapseRates::PALapseRates(IceGrid &g, const Config &conf, AtmosphereModel* in)
   option_prefix     = "-atmosphere_lapse_rate";
 
   PetscErrorCode ierr = allocate_PALapseRates(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PALapseRates allocation failed");
+  }
 }
 
 PALapseRates::~PALapseRates() {

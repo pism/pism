@@ -30,6 +30,8 @@
 #include <assert.h>
 #include "PISMConfig.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 ///// PA_SeaRISE_Greenland
@@ -102,19 +104,15 @@ PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vecto
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
 PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
 
   if (m_lat->metadata().has_attribute("missing_at_bootstrap")) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: latitude variable was missing at bootstrap;\n"
-                       "  SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!!\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("latitude variable was missing at bootstrap;\n"
+                       "SeaRISE-Greenland atmosphere model depends on latitude and would return nonsense!");
   }
+
   if (m_lon->metadata().has_attribute("missing_at_bootstrap")) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: longitude variable was missing at bootstrap;\n"
-                       "  SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!!\n");
-    CHKERRQ(ierr);
-    PISMEnd();
+    throw RuntimeError("longitude variable was missing at bootstrap;\n"
+                       "SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!");
   }
 
   if ((fabs(my_t - m_t) < 1e-12) &&

@@ -25,6 +25,8 @@
 #include "iceModel.hh"
 #include "PISMDiagnostic.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Update the runtime graphical viewers.
@@ -61,10 +63,7 @@ PetscErrorCode IceModel::update_viewers() {
     unsigned int dims = v->get_ndims();
 
     if (dims != 2) {
-      ierr = PetscPrintf(grid.com,
-                         "PISM ERROR: map-plane views of 3D quantities are not supported.\n");
-      CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError("map-plane views of 3D quantities are not supported.");
     }
 
     if (v->get_ndof() == 1) {    // scalar fields

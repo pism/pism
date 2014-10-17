@@ -29,9 +29,9 @@ PS_delta_T::PS_delta_T(IceGrid &g, const Config &conf, SurfaceModel* in)
     ice_surface_temp(g.get_unit_system())
 {
   PetscErrorCode ierr = allocate_PS_delta_T(); CHKERRCONTINUE(ierr);
-  if (ierr != 0)
-    PISMEnd();
-
+  if (ierr != 0) {
+    throw std::runtime_error("PS_delta_T allocation failed");
+  }
 }
 
 PS_delta_T::~PS_delta_T() {

@@ -30,17 +30,21 @@ static char help[] = "\nBEDROUGH_TEST\n"
 #include "iceModelVec.hh"
 #include "PISMBedSmoother.hh"
 
+#include "PetscInitializer.hh"
+#include "error_handling.hh"
+
 using namespace pism;
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
+  MPI_Comm com = MPI_COMM_WORLD;
 
-  ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRQ(ierr);
+  PetscInitializer petsc(argc, argv, help);
 
-  MPI_Comm com = PETSC_COMM_WORLD;
+  com = PETSC_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  try {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
@@ -136,6 +140,8 @@ int main(int argc, char *argv[]) {
     }
 
   }
-  ierr = PetscFinalize(); CHKERRQ(ierr);
+  catch (...) {
+    handle_fatal_errors(com);
+  }
   return 0;
 }

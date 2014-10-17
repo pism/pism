@@ -26,6 +26,8 @@
 #include "pism_options.hh"
 #include <assert.h>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
@@ -44,9 +46,7 @@ PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid
                                PETSC_MAX_PATH_LEN, &boot_file_set); CHKERRQ(ierr);
   if (i_set) {
     if (boot_file_set) {
-      ierr = PetscPrintf(grid.com,
-        "ClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
-      PISMEnd();
+      throw RuntimeError("both '-i' and '-boot_file' are used.");
     }
     filename = i_file;
   }
