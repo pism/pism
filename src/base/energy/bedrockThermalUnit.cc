@@ -38,7 +38,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
   grid = &mygrid;
 
   if (m_v != NULL) {
-    SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated\n",m_name.c_str());
+    SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated",m_name.c_str());
   }
 
   m_name = my_short_name;
@@ -73,14 +73,14 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
   // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
 
   if (!good_init()) {
-    SETERRQ1(grid->com, 1,"create() says IceModelVec3BTU with name %s was not properly created\n",
+    SETERRQ1(grid->com, 1,"create() says IceModelVec3BTU with name %s was not properly created",
              m_name.c_str());  }
   return 0;
 }
 
 PetscErrorCode IceModelVec3BTU::get_layer_depth(double &depth) {
   if (!good_init()) {
-    SETERRQ1(grid->com, 1,"get_layer_depth() says IceModelVec3BTU with name %s was not properly created\n",
+    SETERRQ1(grid->com, 1,"get_layer_depth() says IceModelVec3BTU with name %s was not properly created",
              m_name.c_str());
   }
   depth = Lbz;
@@ -89,7 +89,7 @@ PetscErrorCode IceModelVec3BTU::get_layer_depth(double &depth) {
 
 PetscErrorCode IceModelVec3BTU::get_spacing(double &dzb) {
   if (!good_init()) {
-    SETERRQ1(grid->com, 1,"get_spacing() says IceModelVec3BTU with name %s was not properly created\n",
+    SETERRQ1(grid->com, 1,"get_spacing() says IceModelVec3BTU with name %s was not properly created",
              m_name.c_str());
   }
   dzb = Lbz / (m_n_levels - 1);
@@ -346,7 +346,8 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (my_dt < 0) {
-     SETERRQ(grid.com, 1,"BedThermalUnit::update() does not allow negative timesteps\n"); }
+     throw RuntimeError("BedThermalUnit::update() does not allow negative timesteps");
+ }
   // CHECK: is desired time-interval equal to [my_t,my_t+my_dt] where my_t = t + dt?
   if ((!gsl_isnan(m_t)) && (!gsl_isnan(m_dt))) { // this check should not fire on first use
     bool contiguous = true;
@@ -370,7 +371,8 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
   bool restrict_dt;
   ierr = max_timestep(my_t, my_max_dt, restrict_dt); CHKERRQ(ierr);
   if (restrict_dt && my_max_dt < my_dt) {
-     SETERRQ(grid.com, 3,"BedThermalUnit::update() thinks you asked for too big a timestep\n"); }
+     throw RuntimeError("BedThermalUnit::update() thinks you asked for too big a timestep\n");
+  }
 
   // o.k., we have checked; we are going to do the desired timestep!
   m_t  = my_t;

@@ -62,7 +62,9 @@ public:
   //! Set strength = (viscosity times thickness).
   /*! Determines nu by input strength and current min_thickness. */
   virtual PetscErrorCode set_notional_strength(double my_nuH) {
-    if (my_nuH <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"nuH must be positive");
+    if (my_nuH <= 0.0) {
+      throw RuntimeError("nuH must be positive");
+    }
     constant_nu = my_nuH / min_thickness;
     return 0;
   }

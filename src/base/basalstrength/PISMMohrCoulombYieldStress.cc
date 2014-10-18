@@ -168,7 +168,7 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
                                     "Thus the Mohr-Coulomb yield stress model needs a RoutingHydrology\n"
                                     "(or derived like DistributedHydrology) object with transportable water.\n"
                                     "The current Hydrology instance is not suitable.  Set flag\n"
-                                    "%s to 'no' or choose a different yield stress model.\n",
+                                    "%s to 'no' or choose a different yield stress model.",
                                     flag_name.c_str(), flag_name.c_str());
     }
   }
@@ -208,7 +208,7 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
   }
 
   if (topg_to_phi_set && plastic_phi_set) {
-    throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.\n");
+    throw RuntimeError("only one of -plastic_phi and -topg_to_phi is allowed.");
   }
 
   if (plastic_phi_set) {
@@ -470,11 +470,11 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
          topg_max = config.get("till_topg_to_phi_topg_max");
 
   if (phi_min >= phi_max) {
-    throw RuntimeError("invalid -topg_to_phi arguments: phi_min < phi_max is required\n");
+    throw RuntimeError("invalid -topg_to_phi arguments: phi_min < phi_max is required");
   }
 
   if (topg_min >= topg_max) {
-    throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required\n");
+    throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required");
   }
 
   ierr = verbPrintf(2, grid.com,

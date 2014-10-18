@@ -53,7 +53,7 @@ class Config;
 
   The three methods that get the enthalpy from temperatures and liquid fractions, 
   namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict
-  about error checking.  They call SETERRQ() if their arguments are invalid.
+  about error checking.  They throw RuntimeError if their arguments are invalid.
 
   This class is documented by [\ref AschwandenBuelerKhroulevBlatter].
 */

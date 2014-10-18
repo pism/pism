@@ -59,7 +59,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
     // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
     // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
     if (z > 0.00001) {
-      SETERRQ(grid.com, 1, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
+      throw RuntimeError("excessToBasalMeltLayer() called with z not at base and negative Texcess");
     }
     if (*bwat > 0.0) {
       const double thicknessToFreezeOn = - massmelted / (rho * darea);
@@ -335,7 +335,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         }
         Tnew[0] = Tpmp + Texcess;
         if (Tnew[0] > (Tpmp + 0.00001)) {
-          SETERRQ(grid.com, 1,"updated temperature came out above Tpmp");
+          throw RuntimeError("updated temperature came out above Tpmp");
         }
       }
       if (Tnew[0] < globalMinAllowedTemp) {
@@ -371,7 +371,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   }
 
   if (myLowTempCount > maxLowTempCount) {
-    SETERRQ(grid.com, 1,"too many low temps");
+    throw RuntimeError::formatted("too many low temps: %d", myLowTempCount);
   }
 
   delete [] system.T;  delete [] system.strain_heating;

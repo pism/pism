@@ -65,14 +65,30 @@ ageSystemCtx::ageSystemCtx(int my_Mz, const std::string &my_prefix)
 
 PetscErrorCode ageSystemCtx::initAllColumns() {
   // check whether each parameter & pointer got set
-  if (dx <= 0.0) { SETERRQ(PETSC_COMM_SELF, 2,"un-initialized dx in ageSystemCtx"); }
-  if (dy <= 0.0) { SETERRQ(PETSC_COMM_SELF, 3,"un-initialized dy in ageSystemCtx"); }
-  if (dtAge <= 0.0) { SETERRQ(PETSC_COMM_SELF, 4,"un-initialized dtAge in ageSystemCtx"); }
-  if (dzEQ <= 0.0) { SETERRQ(PETSC_COMM_SELF, 5,"un-initialized dzEQ in ageSystemCtx"); }
-  if (u == NULL) { SETERRQ(PETSC_COMM_SELF, 6,"un-initialized pointer u in ageSystemCtx"); }
-  if (v == NULL) { SETERRQ(PETSC_COMM_SELF, 7,"un-initialized pointer v in ageSystemCtx"); }
-  if (w == NULL) { SETERRQ(PETSC_COMM_SELF, 8,"un-initialized pointer w in ageSystemCtx"); }
-  if (tau3 == NULL) { SETERRQ(PETSC_COMM_SELF, 9,"un-initialized pointer tau3 in ageSystemCtx"); }
+  if (dx <= 0.0) {
+    throw RuntimeError("un-initialized dx in ageSystemCtx");
+  }
+  if (dy <= 0.0) {
+    throw RuntimeError("un-initialized dy in ageSystemCtx");
+  }
+  if (dtAge <= 0.0) {
+    throw RuntimeError("un-initialized dtAge in ageSystemCtx");
+  }
+  if (dzEQ <= 0.0) {
+    throw RuntimeError("un-initialized dzEQ in ageSystemCtx");
+  }
+  if (u == NULL) {
+    throw RuntimeError("un-initialized pointer u in ageSystemCtx");
+  }
+  if (v == NULL) {
+    throw RuntimeError("un-initialized pointer v in ageSystemCtx");
+  }
+  if (w == NULL) {
+    throw RuntimeError("un-initialized pointer w in ageSystemCtx");
+  }
+  if (tau3 == NULL) {
+    throw RuntimeError("un-initialized pointer tau3 in ageSystemCtx");
+  }
   nuEQ = dtAge / dzEQ; // derived constant
   initAllDone = true;
   return 0;
@@ -131,8 +147,9 @@ FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
  */
 PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
   PetscErrorCode ierr;
-  if (!initAllDone) {  SETERRQ(PETSC_COMM_SELF, 2,
-     "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
+  if (!initAllDone) {
+    throw RuntimeError("solveThisColumn() should only be called after initAllColumns() in ageSystemCtx");
+  }
 
   // set up system: 0 <= k < m_ks
   for (unsigned int k = 0; k < m_ks; k++) {
@@ -190,7 +207,7 @@ PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
                        " with zero pivot position %d; viewing system to m-file ... \n",
                        m_i, m_j, pivoterr); CHKERRQ(ierr);
     ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
-    SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in ageStep()\n");
+    throw RuntimeError("PISM ERROR in ageStep()\n");
   }
 
   return 0;

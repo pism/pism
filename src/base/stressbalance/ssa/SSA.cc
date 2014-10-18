@@ -451,8 +451,10 @@ PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
   ierr = diag.compute(tmp);
 
   IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
-  if (taud == NULL)
-    SETERRQ(grid.com, 1, "expected an IceModelVec2V, but dynamic_cast failed");
+  if (taud == NULL) {
+    delete tmp;
+    throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
+  }
 
   ierr = taud->magnitude(*result); CHKERRQ(ierr);
 

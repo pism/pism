@@ -174,8 +174,8 @@ double enthSystemCtx::compute_lambda() {
 PetscErrorCode enthSystemCtx::setDirichletSurface(double my_Enth_surface) {
 #if (PISM_DEBUG==1)
   if ((nu < 0.0) || (R_cold < 0.0) || (R_temp < 0.0)) {
-    SETERRQ(PETSC_COMM_SELF, 2, "setDirichletSurface() should only be called after\n"
-            "  initAllColumns() in enthSystemCtx");
+    throw RuntimeError("setDirichletSurface() should only be called after\n"
+                       "initAllColumns() in enthSystemCtx");
   }
 #endif
   Enth_ks = my_Enth_surface;
@@ -193,7 +193,7 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer, bool show_col_de
   PetscBool iascii;
   ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
   if (not iascii) {
-    SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for enthSystemCtx::viewConstants()\n");
+    throw RuntimeError("Only ASCII viewer for enthSystemCtx::viewConstants()");
   }
   
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -235,12 +235,10 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer, bool show_col_de
 
 PetscErrorCode enthSystemCtx::checkReadyToSolve() {
   if (nu < 0.0 || R_cold < 0.0 || R_temp < 0.0) {
-    SETERRQ(PETSC_COMM_SELF, 2,
-            "not ready to solve: need initAllColumns() in enthSystemCtx");
+    throw RuntimeError("not ready to solve: need initAllColumns() in enthSystemCtx");
   }
   if (m_lambda < 0.0) {
-    SETERRQ(PETSC_COMM_SELF, 3,
-            "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
+    throw RuntimeError("not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
   }
   return 0;
 }
@@ -256,7 +254,7 @@ PetscErrorCode enthSystemCtx::setDirichletBasal(double Y) {
   PetscErrorCode ierr;
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if (gsl_isnan(D0) == 0 || gsl_isnan(U0) == 0 || gsl_isnan(B0) == 0) {
-    SETERRQ(PETSC_COMM_SELF, 1, "setting basal boundary conditions twice in enthSystemCtx");
+    throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
   D0 = 1.0;
@@ -306,7 +304,7 @@ PetscErrorCode enthSystemCtx::setBasalHeatFlux(double heat_flux) {
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if (gsl_isnan(D0) == 0 || gsl_isnan(U0) == 0 || gsl_isnan(B0) == 0) {
-    SETERRQ(PETSC_COMM_SELF, 1, "setting basal boundary conditions twice in enthSystemCtx");
+    throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
   // extract K from R[0], so this code works even if K=K(T)
@@ -429,9 +427,9 @@ PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
 #if (PISM_DEBUG==1)
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if (gsl_isnan(D0) || gsl_isnan(U0) || gsl_isnan(B0)) {
-    SETERRQ(PETSC_COMM_SELF, 1,
-            "solveThisColumn() should only be called after\n"
-            "  setting basal boundary condition in enthSystemCtx"); }
+    throw RuntimeError("solveThisColumn() should only be called after\n"
+                       "  setting basal boundary condition in enthSystemCtx");
+  }
 #endif
 
   // k=0 equation is already established
@@ -489,7 +487,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
                        " with zero pivot position %d; viewing system to m-file ... \n",
                        m_i, m_j, pivoterr); CHKERRQ(ierr);
     ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
-    SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in enthalpyDrainageStep()\n");
+    throw RuntimeError("PISM ERROR in enthalpyDrainageStep()");
   }
 
   // air above

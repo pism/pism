@@ -193,7 +193,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
     if (stress_balance != NULL) {
       ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
-      SETERRQ(grid.com, 1,"PISM ERROR: stress_balance == NULL");
+      throw RuntimeError("PISM ERROR: stress_balance == NULL");
     }
 
     if (subglacial_hydrology != NULL) {
@@ -203,13 +203,13 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
     if (surface != NULL) {
       ierr = surface->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
-      SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
+      throw RuntimeError("PISM ERROR: surface == NULL");
     }
 
     if (ocean != NULL) {
       ierr = ocean->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
-      SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
+      throw RuntimeError("PISM ERROR: ocean == NULL");
     }
 
     if (ocean_kill_calving != NULL) {
@@ -262,7 +262,7 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
   if (stress_balance != NULL) {
     ierr = stress_balance->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
-    SETERRQ(grid.com, 1,"PISM ERROR: stress_balance == NULL");
+    throw RuntimeError("PISM ERROR: stress_balance == NULL");
   }
 
   if (subglacial_hydrology != NULL) {
@@ -273,12 +273,12 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
   if (surface != NULL) {
     ierr = surface->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
-    SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
+    throw RuntimeError("PISM ERROR: surface == NULL");
   }
   if (ocean != NULL) {
     ierr = ocean->write_variables(vars, nc); CHKERRQ(ierr);
   } else {
-    SETERRQ(grid.com, 1,"PISM ERROR: ocean == NULL");
+    throw RuntimeError("PISM ERROR: ocean == NULL");
   }
 
   if (ocean_kill_calving != NULL) {
@@ -471,8 +471,9 @@ PetscErrorCode IceModel::regrid(int dimensions) {
 
   if (! (dimensions == 0 ||
          dimensions == 2 ||
-         dimensions == 3))
-    SETERRQ(grid.com, 1, "dimensions can only be 0, 2 or 3");
+         dimensions == 3)) {
+    throw RuntimeError("dimensions can only be 0, 2 or 3");
+  }
 
   ierr = PetscOptionsBegin(grid.com, NULL, "Options controlling regridding",
                            NULL); CHKERRQ(ierr);

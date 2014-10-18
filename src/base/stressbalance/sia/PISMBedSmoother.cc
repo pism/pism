@@ -155,9 +155,8 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg,
   PetscErrorCode ierr;
 
   if ((Nx_in >= grid.Mx) || (Ny_in >= grid.My)) {
-    SETERRQ(grid.com, 1,
-            "PISM ERROR: input Nx, Ny in bed smoother is too large because\n"
-            "            domain of smoothing exceeds IceGrid domain\n");
+    throw RuntimeError("input Nx, Ny in bed smoother is too large because\n"
+                       "domain of smoothing exceeds IceGrid domain");
   }
   Nx = Nx_in; Ny = Ny_in;
 

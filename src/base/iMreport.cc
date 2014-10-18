@@ -341,7 +341,9 @@ PetscErrorCode IceModel::compute_sealevel_volume(double &result) {
   double ocean_rho = config.get("sea_water_density");
   double ice_rho = config.get("ice_density");
 
-  if (ocean == NULL) {  SETERRQ(grid.com, 1, "PISM ERROR: ocean == NULL");  }
+  if (ocean == NULL) {
+    throw RuntimeError("PISM ERROR: ocean == NULL");
+  }
   double sea_level;
   ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
 

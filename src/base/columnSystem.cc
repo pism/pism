@@ -133,7 +133,7 @@ PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
                                                              unsigned int Mz) {
 #if PISM_DEBUG==1
   if (indicesValid && m_i == my_i && m_j == my_j) {
-    SETERRQ(PETSC_COMM_SELF, 3, "setIndicesAndClearThisColumn() called twice in same column");
+    throw RuntimeError("setIndicesAndClearThisColumn() called twice in same column");
   }
 #endif
 
@@ -146,7 +146,7 @@ PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
   if (m_ks >= Mz) {
     PetscPrintf(PETSC_COMM_SELF,
                 "ERROR: ks = %d computed at i = %d, j = %d is invalid,"
-                " possibly because of invalid ice thickness (%f meters) or dz (%f meters).\n",
+                " possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
                 m_ks, m_i, m_j, ice_thickness, dz);
     SETERRQ(PETSC_COMM_SELF, 1, "invalid ks");
   }
@@ -185,7 +185,7 @@ PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF, &viewer); CHKERRQ(ierr);
   }
   ierr = PetscObjectTypeCompare((PetscObject)viewer, PETSCVIEWERASCII, &iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1, "Only ASCII viewer for ColumnSystem\n"); }
+  if (!iascii) { throw RuntimeError("Only ASCII viewer for ColumnSystem"); }
 
   ierr = PetscViewerASCIIPrintf(viewer,
      "\n%% viewing ColumnSystem column object with description '%s' (columns  [k value])\n",
@@ -222,7 +222,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer,
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF, &viewer); CHKERRQ(ierr);
   }
   ierr = PetscObjectTypeCompare((PetscObject)viewer, PETSCVIEWERASCII, &iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1, "Only ASCII viewer for ColumnSystem\n"); }
+  if (!iascii) { throw RuntimeError("Only ASCII viewer for ColumnSystem"); }
 
   if (M < 2) {
     ierr = PetscViewerASCIIPrintf(viewer,

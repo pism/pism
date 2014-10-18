@@ -76,7 +76,9 @@ PetscErrorCode IceModel::update_viewers() {
       }
 
       IceModelVec2S *v2d = dynamic_cast<IceModelVec2S*>(v);
-      if (v2d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      if (v2d == NULL) {
+        throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      }
 
       ierr = v2d->view(viewer, NULL); CHKERRQ(ierr);
 
@@ -97,7 +99,9 @@ PetscErrorCode IceModel::update_viewers() {
       }
 
       IceModelVec2 *v2d = dynamic_cast<IceModelVec2*>(v);
-      if (v2d == NULL) SETERRQ(grid.com, 1,"get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      if (v2d == NULL) {
+        throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
+      }
 
       ierr = v2d->view(v1, v2); CHKERRQ(ierr);
     }

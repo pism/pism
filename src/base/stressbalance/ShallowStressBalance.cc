@@ -190,8 +190,9 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
                                                                        IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
 
-  if (result.get_ndof() != 2)
-    SETERRQ(grid.com, 1, "result.dof() == 2 is required");
+  if (result.get_ndof() != 2) {
+    throw RuntimeError("result.dof() == 2 is required");
+  }
 
   IceModelVec::AccessList list;
   list.add(velocity);
@@ -270,8 +271,9 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
                                                          IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
 
-  if (result.get_ndof() != 3)
-    SETERRQ(grid.com, 1, "result.get_dof() == 3 is required");
+  if (result.get_ndof() != 3) {
+    throw RuntimeError("result.get_dof() == 3 is required");
+  }
 
   // NB: uses constant ice hardness; choice is to use SSA's exponent; see issue #285
   double hardness = pow(config.get("ice_softness"),-1.0/config.get("ssa_Glen_exponent"));
@@ -441,7 +443,7 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
   IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
   if (taud == NULL) {
     delete tmp;
-    SETERRQ(grid.com, 1, "expected an IceModelVec2V, but dynamic_cast failed");
+    throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
   }
 
   ierr = taud->magnitude(*result); CHKERRQ(ierr);
@@ -542,7 +544,7 @@ PetscErrorCode SSB_taub_mag::compute(IceModelVec* &output) {
   IceModelVec2V *taub = dynamic_cast<IceModelVec2V*>(tmp);
   if (taub == NULL) {
     delete tmp;
-    SETERRQ(grid.com, 1, "expected an IceModelVec2V, but dynamic_cast failed");
+    throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
   }
 
   ierr = taub->magnitude(*result); CHKERRQ(ierr);

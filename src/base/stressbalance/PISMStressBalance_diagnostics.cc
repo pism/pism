@@ -170,7 +170,9 @@ PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
   ierr = velbar.compute(tmp); CHKERRQ(ierr);
 
   velbar_vec = dynamic_cast<IceModelVec2V*>(tmp);
-  if (velbar_vec == NULL) SETERRQ(grid.com, 1, "dynamic cast failure");
+  if (velbar_vec == NULL) {
+    throw RuntimeError("dynamic cast failure");
+  }
 
   // compute its magnitude:
   ierr = velbar_vec->magnitude(*result); CHKERRQ(ierr);
@@ -207,7 +209,9 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   // NB: the call above allocates memory
 
   result = dynamic_cast<IceModelVec2S*>(tmp);
-  if (result == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
+  if (result == NULL) {
+    throw RuntimeError("dynamic_cast failure");
+  }
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -488,7 +492,9 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   ierr = wvel.compute(tmp); CHKERRQ(ierr);
 
   w3 = dynamic_cast<IceModelVec3*>(tmp);
-  if (tmp == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
+  if (tmp == NULL) {
+    throw RuntimeError("dynamic_cast failure");
+  }
 
   thickness = variables.get_2d_scalar("land_ice_thickness");
 
@@ -544,7 +550,9 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   ierr = wvel.compute(tmp); CHKERRQ(ierr);
 
   w3 = dynamic_cast<IceModelVec3*>(tmp);
-  if (tmp == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
+  if (tmp == NULL) {
+    throw RuntimeError("dynamic_cast failure");
+  }
 
   ierr = w3->getHorSlice(*result, 0.0); CHKERRQ(ierr);
 
@@ -877,7 +885,9 @@ PetscErrorCode PSB_strain_rates::compute(IceModelVec* &output) {
 
   ierr = diag.compute(velbar); CHKERRQ(ierr);
   IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
-  if (v_tmp == NULL) SETERRQ(grid.com, 1, "velbar is expected to be an IceModelVec2V");
+  if (v_tmp == NULL) {
+    throw RuntimeError("velbar is expected to be an IceModelVec2V");
+  }
 
   IceModelVec2V velbar_with_ghosts;
   ierr = velbar_with_ghosts.create(grid, "velbar", WITH_GHOSTS); CHKERRQ(ierr);
@@ -925,7 +935,9 @@ PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
 
   ierr = diag.compute(velbar); CHKERRQ(ierr);
   IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
-  if (v_tmp == NULL) SETERRQ(grid.com, 1, "velbar is expected to be an IceModelVec2V");
+  if (v_tmp == NULL) {
+    throw RuntimeError("velbar is expected to be an IceModelVec2V");
+  }
 
   IceModelVec2V velbar_with_ghosts;
   ierr = velbar_with_ghosts.create(grid, "velbar", WITH_GHOSTS); CHKERRQ(ierr);

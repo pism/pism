@@ -218,7 +218,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(std::vector<double> &x) {
                        " with zero pivot position %d; viewing system to m-file ... \n",
                        m_i, m_j, pivoterr); CHKERRQ(ierr);
     ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
-    SETERRQ(PETSC_COMM_SELF, 1,"PISM ERROR in temperatureStep()\n");
+    throw RuntimeError("PISM ERROR in temperatureStep()");
   }
 
   return 0;

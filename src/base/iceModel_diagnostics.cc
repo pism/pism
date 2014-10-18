@@ -707,7 +707,9 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
 
   ierr = enth.compute(output); CHKERRQ(ierr);
   result = dynamic_cast<IceModelVec2S*>(output);
-  if (result == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
+  if (result == NULL) {
+    throw RuntimeError("dynamic_cast failure");
+  }
 
   // result contains basal enthalpy; note that it is allocated by
   // enth.compute().
@@ -760,7 +762,9 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
 
   ierr = enth.compute(output); CHKERRQ(ierr);
   result = dynamic_cast<IceModelVec2S*>(output);
-  if (result == NULL) SETERRQ(grid.com, 1, "dynamic_cast failure");
+  if (result == NULL) {
+    throw RuntimeError( "dynamic_cast failure");
+  }
 
   // result contains surface enthalpy; note that it is allocated by
   // enth.compute().

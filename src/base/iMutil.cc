@@ -268,7 +268,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
     ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
   } else {
-    SETERRQ(grid.com, 1,"PISM ERROR: surface == NULL");
+    throw RuntimeError("PISM ERROR: surface == NULL");
   }
 
   // for extending the variables Enth3 and vWork3d vertically, put into

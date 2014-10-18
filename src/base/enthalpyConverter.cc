@@ -47,7 +47,9 @@ PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
   }
   ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for EnthalpyConverter\n"); }
+  if (!iascii) {
+    throw RuntimeError("Only ASCII viewer for EnthalpyConverter");
+  }
 
   ierr = PetscViewerASCIIPrintf(viewer,
     "\n<showing EnthalpyConverter constants:\n"); CHKERRQ(ierr);
