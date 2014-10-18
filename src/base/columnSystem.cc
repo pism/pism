@@ -20,7 +20,9 @@
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
-#include <assert.h>
+#include <cassert>
+
+#include "error_handling.hh"
 
 namespace pism {
 

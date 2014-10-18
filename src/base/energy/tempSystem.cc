@@ -23,6 +23,8 @@
 #include "tempSystem.hh"
 #include "Mask.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 tempSystemCtx::tempSystemCtx(int my_Mz, const std::string &my_prefix)

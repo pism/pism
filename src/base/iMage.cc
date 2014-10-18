@@ -24,6 +24,8 @@
 #include "IceGrid.hh"
 #include "pism_options.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Tridiagonal linear system for vertical column of age (pure advection) problem.

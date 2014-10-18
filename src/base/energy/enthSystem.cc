@@ -22,6 +22,8 @@
 #include "iceModelVec.hh"
 #include "enthalpyConverter.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 enthSystemCtx::enthSystemCtx(const Config &config,

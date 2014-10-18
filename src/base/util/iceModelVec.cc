@@ -27,7 +27,9 @@
 #include "PISMConfig.hh"
 #include "iceModelVec_helpers.hh"
 
-#include <assert.h>
+#include <cassert>
+
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -323,8 +325,9 @@ PetscErrorCode IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
   PetscErrorCode ierr;
   void *tmp_res = NULL, *tmp_v = NULL;
 
-  if (start >= m_dof)
-    SETERRQ(grid->com, 1, "invalid argument (start)");
+  if (start >= m_dof) {
+    throw RuntimeError::formatted("invalid argument (start); got %d", start);
+  }
 
   ierr = DMDAVecGetArrayDOF(*da_result, result, &tmp_res); CHKERRQ(ierr);
   double ***result_a = static_cast<double***>(tmp_res);
@@ -349,8 +352,9 @@ PetscErrorCode IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
   PetscErrorCode ierr;
   void *tmp_src = NULL, *tmp_v = NULL;
 
-  if (start >= m_dof)
-    SETERRQ(grid->com, 1, "invalid argument (start)");
+  if (start >= m_dof) {
+    throw RuntimeError::formatted("invalid argument (start); got %d", start);
+  }
 
   ierr = DMDAVecGetArrayDOF(*da_source, source, &tmp_src); CHKERRQ(ierr);
   double ***source_a = static_cast<double***>(tmp_src);
@@ -513,8 +517,9 @@ PetscErrorCode IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
     ierr = PetscPrintf(grid->com, "  Regridding %s...\n", m_name.c_str()); CHKERRQ(ierr);
   }
 
-  if (m_dof != 1)
-    SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1.");
+  if (m_dof != 1) {
+    throw RuntimeError("This method (IceModelVec::regrid_impl) only supports IceModelVecs with dof == 1.");
+  }
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
@@ -541,8 +546,9 @@ PetscErrorCode IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
     ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str()); CHKERRQ(ierr);
   }
 
-  if (m_dof != 1)
-    SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1.");
+  if (m_dof != 1) {
+    throw RuntimeError("This method (IceModelVec::read_impl) only supports IceModelVecs with dof == 1.");
+  }
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
@@ -608,8 +614,9 @@ PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
     ierr = PetscPrintf(grid->com, "  Writing %s...\n", m_name.c_str()); CHKERRQ(ierr);
   }
 
-  if (m_dof != 1)
-    SETERRQ(grid->com, 1, "This method only supports IceModelVecs with dof == 1");
+  if (m_dof != 1) {
+    throw RuntimeError("This method (IceModelVec::write_impl) only supports IceModelVecs with dof == 1");
+  }
 
   if (m_has_ghosts) {
     ierr = DMGetGlobalVector(*m_da, &tmp); CHKERRQ(ierr);
@@ -669,12 +676,11 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, const IceModelV
 //! Checks if an IceModelVec is allocated and calls DAVecGetArray.
 PetscErrorCode  IceModelVec::begin_access() const {
   PetscErrorCode ierr;
-#if (PISM_DEBUG==1)
   assert(m_v != NULL);
 
-  if (m_access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec::begin_access(): m_access_counter < 0");
-#endif
+  if (m_access_counter < 0) {
+    throw RuntimeError("IceModelVec::begin_access(): m_access_counter < 0");
+  }
 
   if (m_access_counter == 0) {
 
@@ -693,15 +699,16 @@ PetscErrorCode  IceModelVec::begin_access() const {
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
 PetscErrorCode  IceModelVec::end_access() const {
   PetscErrorCode ierr;
-#if (PISM_DEBUG==1)
   assert(m_v != NULL);
 
-  if (array == NULL)
-    SETERRQ(grid->com, 1, "IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
+  if (array == NULL) {
+    throw RuntimeError("IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
+  }
 
-  if (m_access_counter < 0)
-    SETERRQ(grid->com, 1, "IceModelVec::end_access(): m_access_counter < 0");
-#endif
+  if (m_access_counter < 0) {
+    throw RuntimeError("IceModelVec::end_access(): m_access_counter < 0");
+  }
+
 
   m_access_counter--;
   if (m_access_counter == 0) {

@@ -197,11 +197,11 @@ which may not even be a grid created by this routine).
 PetscErrorCode  IceGrid::compute_vertical_levels() {
 
   if (Mz < 2) {
-    SETERRQ(com, 2,"IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
+    throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
   }
 
   if (Lz <= 0) {
-    SETERRQ(com, 4, "IceGrid::compute_ice_vertical_levels(): Lz must be positive.");
+    throw RuntimeError("IceGrid::compute_ice_vertical_levels(): Lz must be positive.");
   }
 
   // Fill the levels in the ice:
@@ -231,7 +231,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
     break;
   }
   default:
-    SETERRQ(com, 1,"IceGrid::compute_ice_vertical_levels(): ice_vertical_spacing can not be UNKNOWN.");
+    throw RuntimeError("IceGrid::compute_ice_vertical_levels(): ice_vertical_spacing can not be UNKNOWN.");
   }
 
   PetscErrorCode ierr = compute_fine_vertical_grid(); CHKERRQ(ierr);
@@ -395,19 +395,19 @@ PetscErrorCode IceGrid::allocate() {
   PetscErrorCode ierr;
 
   if (Mx < 3) {
-    SETERRQ(com, 1, "IceGrid::allocate(): Mx has to be at least 3.");
+    throw RuntimeError("IceGrid::allocate(): Mx has to be at least 3.");
   }
 
   if (My < 3) {
-    SETERRQ(com, 2, "IceGrid::allocate(): My has to be at least 3.");
+    throw RuntimeError("IceGrid::allocate(): My has to be at least 3.");
   }
 
   if (Lx <= 0) {
-    SETERRQ(com, 3, "IceGrid::allocate(): Lx has to be positive.");
+    throw RuntimeError("IceGrid::allocate(): Lx has to be positive.");
   }
 
   if (Ly <= 0) {
-    SETERRQ(com, 3, "IceGrid::allocate(): Ly has to be positive.");
+    throw RuntimeError("IceGrid::allocate(): Ly has to be positive.");
   }
 
   PISMDM::Ptr tmp;
@@ -438,11 +438,11 @@ PetscErrorCode IceGrid::set_vertical_levels(const std::vector<double> &new_zleve
   PetscErrorCode ierr;
 
   if (new_zlevels.size() < 2) {
-    SETERRQ(com, 1, "IceGrid::set_vertical_levels(): Mz has to be at least 2.");
+    throw RuntimeError("IceGrid::set_vertical_levels(): Mz has to be at least 2.");
   }
 
   if ((!is_increasing(new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10)) {
-    SETERRQ(com, 3, "IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
+    throw RuntimeError("IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 
   Mz  =  (int)new_zlevels.size();

@@ -23,6 +23,8 @@
 #include "PISMVars.hh"
 #include "PISMConfig.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,

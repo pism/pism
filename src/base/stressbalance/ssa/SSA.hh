@@ -22,6 +22,8 @@
 #include "ShallowStressBalance.hh"
 #include "PISMDiagnostic.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! Gives an extension coefficient to maintain ellipticity of SSA where ice is thin.

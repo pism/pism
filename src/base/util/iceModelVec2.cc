@@ -30,6 +30,8 @@
 
 #include <cassert>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 // this file contains methods for derived classes IceModelVec2S and IceModelVec2Int
@@ -107,7 +109,7 @@ PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0) const {
                           (PetscObject*)&natural_work); CHKERRQ(ierr);
 
   if (natural_work == NULL || scatter_to_zero == NULL) {
-    SETERRQ(grid->com, 1, "call allocate_proc0_copy() before calling put_on_proc0");
+    throw RuntimeError("call allocate_proc0_copy() before calling put_on_proc0");
   }
 
   Vec global = NULL;
@@ -147,7 +149,7 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0) {
                           (PetscObject*)&natural_work); CHKERRQ(ierr);
 
   if (natural_work == NULL || scatter_to_zero == NULL) {
-    SETERRQ(grid->com, 1, "call allocate_proc0_copy() before calling get_from_proc0");
+    throw RuntimeError("call allocate_proc0_copy() before calling get_from_proc0");
   }
 
   ierr = VecScatterBegin(scatter_to_zero, onp0, natural_work,
@@ -335,7 +337,9 @@ PetscErrorCode IceModelVec2::view(int viewer_size) const {
   PetscErrorCode ierr;
   PetscViewer viewers[2] = {NULL, NULL};
 
-  if (m_dof > 2) SETERRQ(grid->com, 1, "dof > 2 is not supported");
+  if (m_dof > 2) {
+    throw RuntimeError("dof > 2 is not supported");
+  }
 
   for (unsigned int j = 0; j < m_dof; ++j) {
     std::string c_name = m_metadata[j].get_name(),

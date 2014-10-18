@@ -28,6 +28,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMTime.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 /*!

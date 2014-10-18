@@ -67,7 +67,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const std::string &my_sho
   PetscErrorCode ierr;
 
   if (local) {
-    SETERRQ(grid->com, 1, "IceModelVec2T cannot be 'local'");
+    throw RuntimeError("IceModelVec2T cannot be 'local'");
   }
 
   ierr = IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width); CHKERRQ(ierr);
@@ -218,8 +218,9 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
   nc.close();
 
   if (m_period != 0) {
-    if ((size_t)n_records < time.size())
-      SETERRQ(grid->com, 1, "buffer has to be big enough to hold all records of periodic data");
+    if ((size_t)n_records < time.size()) {
+      throw RuntimeError("buffer has to be big enough to hold all records of periodic data");
+    }
 
     // read periodic data right away (we need to hold it all in memory anyway)
     ierr = update(0); CHKERRQ(ierr);

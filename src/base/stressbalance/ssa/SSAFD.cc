@@ -214,8 +214,8 @@ PetscErrorCode SSAFD::init(Vars &vars) {
   // The FD solver does not support direct specification of a driving stress;
   // a surface elevation must be explicitly given.
   if (surface == NULL) {
-    SETERRQ(grid.com, 1, "The finite difference SSA solver requires a surface elevation."
-            "An explicit driving stress was specified instead and cannot be used.");
+    throw RuntimeError("The finite difference SSA solver requires a surface elevation.\n"
+                       "An explicit driving stress was specified instead and cannot be used.");
   }
 
   ierr = verbPrintf(2,grid.com,

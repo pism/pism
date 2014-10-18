@@ -21,6 +21,8 @@
 #include "enthalpyConverter.hh"
 #include "PISMConfig.hh"
 
+#include "error_handling.hh"
+
 namespace pism {
 
 EnthalpyConverter::EnthalpyConverter(const Config &config) {

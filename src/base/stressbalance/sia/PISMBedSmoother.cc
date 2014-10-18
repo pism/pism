@@ -18,7 +18,8 @@
 
 #include "PISMBedSmoother.hh"
 #include "Mask.hh"
-#include <stdexcept>
+
+#include "error_handling.hh"
 
 namespace pism {
 
