@@ -102,6 +102,7 @@ PetscErrorCode Hydrology::init(Vars &vars) {
   bed = dynamic_cast<IceModelVec2S*>(vars.get("topg"));
   if (bed == NULL) SETERRQ(grid.com, 1, "topg is not available to Hydrology");
 
+  // This is the same variable as basal_melt_rate  in iMgeometry.cc
   bmelt = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
   if (bmelt == NULL) SETERRQ(grid.com, 1, "bmelt is not available to Hydrology");
 
