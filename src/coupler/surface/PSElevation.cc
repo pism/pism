@@ -214,8 +214,6 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
 }
 
 PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
   IceModelVec::AccessList list;
   list.add(result);
   list.add(*usurf);

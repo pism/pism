@@ -79,25 +79,23 @@ public:
   columnSystemCtx(unsigned int my_nmax, const std::string &my_prefix);
   virtual ~columnSystemCtx();
 
-  PetscErrorCode setIndicesAndClearThisColumn(int my_i, int my_j,
-                                              double ice_thickness, double dz,
-                                              unsigned int Mz);  
+  void setIndicesAndClearThisColumn(int my_i, int my_j,
+                                    double ice_thickness, double dz,
+                                    unsigned int Mz);  
 
-  double    norm1(unsigned int n) const;
-  double    ddratio(unsigned int n) const;
+  double norm1(unsigned int n) const;
+  double ddratio(unsigned int n) const;
 
-  PetscErrorCode viewVectorValues(PetscViewer viewer,
-                                  const std::vector<double> &v,
-                                  unsigned int M,
-                                  const std::string &info) const;
+  void viewVectorValues(PetscViewer viewer,
+                        const std::vector<double> &v,
+                        unsigned int M, const std::string &info) const;
   PetscErrorCode viewMatrix(PetscViewer viewer,
                             unsigned int M,
                             const std::string &info) const;
   virtual PetscErrorCode viewSystem(PetscViewer viewer,
                                     unsigned int M) const;
 
-  PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex,
-                                                 unsigned int M);
+  PetscErrorCode reportColumnZeroPivotErrorMFile(unsigned int M);
   PetscErrorCode viewColumnInfoMFile(const std::vector<double> &x,
                                      unsigned int M);
   PetscErrorCode viewColumnInfoMFile(const std::string &filename,
@@ -113,7 +111,7 @@ protected:
   unsigned int m_ks;
 
   // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(unsigned int n, std::vector<double> &x);
+  void solveTridiagonalSystem(unsigned int n, std::vector<double> &x);
   PetscErrorCode createViewer(const std::string &filename,
                               unsigned int M,
                               PetscViewer &result);

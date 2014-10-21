@@ -20,7 +20,7 @@
 #ifndef _ERROR_HANDLING_H_
 #define _ERROR_HANDLING_H_
 
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
 #include <stdexcept>
 #include <string>
 #include <vector>

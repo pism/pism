@@ -129,10 +129,10 @@ double columnSystemCtx::ddratio(unsigned int n) const {
 }
 
 
-PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
-                                                             double ice_thickness,
-                                                             double dz,
-                                                             unsigned int Mz) {
+void columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
+                                                   double ice_thickness,
+                                                   double dz,
+                                                   unsigned int Mz) {
 #if PISM_DEBUG==1
   if (indicesValid && m_i == my_i && m_j == my_j) {
     throw RuntimeError("setIndicesAndClearThisColumn() called twice in same column");
@@ -160,7 +160,6 @@ PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
   resetColumn();
 
   indicesValid = true;
-  return 0;
 }
 
 
@@ -171,39 +170,42 @@ Give first argument NULL to get standard out.  No binary viewer.
 Give description string as `info` argument.
 
 Result should be executable as part of a Matlab/Octave script.
+
+Does not stop on non-fatal errors.
  */
-PetscErrorCode columnSystemCtx::viewVectorValues(PetscViewer viewer,
-                                                 const std::vector<double> &v,
-                                                 unsigned int M,
-                                                 const std::string &info) const {
+void columnSystemCtx::viewVectorValues(PetscViewer viewer,
+                                       const std::vector<double> &v,
+                                       unsigned int M,
+                                       const std::string &info) const {
   PetscErrorCode ierr;
 
   assert(M >= 1);
 
   PetscBool iascii;
   if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF, &viewer); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF, &viewer); CHKERRCONTINUE(ierr);
   }
-  ierr = PetscObjectTypeCompare((PetscObject)viewer, PETSCVIEWERASCII, &iascii); CHKERRQ(ierr);
-  if (!iascii) { throw RuntimeError("Only ASCII viewer for ColumnSystem"); }
+  ierr = PetscObjectTypeCompare((PetscObject)viewer, PETSCVIEWERASCII, &iascii); CHKERRCONTINUE(ierr);
+  if (!iascii) {
+    throw RuntimeError("Only ASCII viewer for ColumnSystem");
+  }
 
   ierr = PetscViewerASCIIPrintf(viewer,
-     "\n%% viewing ColumnSystem column object with description '%s' (columns  [k value])\n",
-     info.c_str()); CHKERRQ(ierr);
+                                "\n%% viewing ColumnSystem column object with description '%s' (columns  [k value])\n",
+                                info.c_str()); CHKERRCONTINUE(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-      "%s_with_index = [...\n", info.c_str()); CHKERRQ(ierr);
+                                "%s_with_index = [...\n", info.c_str()); CHKERRCONTINUE(ierr);
   for (unsigned int k=0; k<M; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,
-      "  %5d %.12f", k, v[k]); CHKERRQ(ierr);
+                                  "  %5d %.12f", k, v[k]); CHKERRCONTINUE(ierr);
     if (k == M-1) {
-      ierr = PetscViewerASCIIPrintf(viewer, "];\n"); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer, "];\n"); CHKERRCONTINUE(ierr);
     } else {
-      ierr = PetscViewerASCIIPrintf(viewer, ";\n"); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer, ";\n"); CHKERRCONTINUE(ierr);
     }
   }
   ierr = PetscViewerASCIIPrintf(viewer,
-      "%s = %s_with_index(:,2);\n\n",info.c_str(),info.c_str()); CHKERRQ(ierr);
-  return 0;
+      "%s = %s_with_index(:,2);\n\n",info.c_str(),info.c_str()); CHKERRCONTINUE(ierr);
 }
 
 
@@ -236,16 +238,16 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer,
       "\n\n<nmax > 500: columnSystemCtx matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n", info.c_str()); CHKERRQ(ierr);
     char vinfo[PETSC_MAX_PATH_LEN];
     snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_super_diagonal_U", info.c_str());
-    ierr = viewVectorValues(viewer, U, M-1, vinfo); CHKERRQ(ierr);
+    viewVectorValues(viewer, U, M-1, vinfo);
     snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_diagonal_D", info.c_str());
-    ierr = viewVectorValues(viewer, D, M, vinfo); CHKERRQ(ierr);
+    viewVectorValues(viewer, D, M, vinfo);
     snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_sub_diagonal_L", info.c_str());
     {                           // discard L[0], which is not used
       std::vector<double> L_tmp(M - 1);
       for (unsigned int i = 0; i < M - 1; ++i) {
         L_tmp[i] = L[i + 1];
       }
-      ierr = viewVectorValues(viewer, L_tmp, M-1, vinfo); CHKERRQ(ierr);
+      viewVectorValues(viewer, L_tmp, M-1, vinfo);
     }
   } else {
     ierr = PetscViewerASCIIPrintf(viewer,
@@ -292,7 +294,7 @@ PetscErrorCode columnSystemCtx::viewSystem(PetscViewer viewer,
   ierr = viewMatrix(viewer, M, info.c_str()); CHKERRQ(ierr);
 
   info = prefix + "_rhs";
-  ierr = viewVectorValues(viewer, rhs, M, info.c_str()); CHKERRQ(ierr);
+  viewVectorValues(viewer, rhs, M, info.c_str());
 
   return 0;
 }
@@ -309,13 +311,13 @@ Solution of system in x.
 Success is return code zero.  Positive return code gives location of zero pivot.
 Negative return code indicates a software problem.
  */
-PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vector<double> &x) {
+void columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vector<double> &x) {
   assert(indicesValid == true);
   assert(n >= 1);
   assert(n <= m_nmax);
 
   if (D[0] == 0.0)
-    return 1;
+    throw RuntimeError("zero pivot at row 1");
 
   x.resize(m_nmax);
 
@@ -327,8 +329,9 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vect
 
     b = D[k] - L[k] * work[k];
 
-    if (b == 0.0)
-      return k + 1;
+    if (b == 0.0) {
+      throw RuntimeError::formatted("zero pivot at row %d", k + 1);
+    }
 
     x[k] = (rhs[k] - L[k] * x[k-1]) / b;
   }
@@ -337,17 +340,15 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vect
     x[k] -= work[k + 1] * x[k + 1];
 
   indicesValid = false;
-  return 0;
 }
 
 
 //! Write system matrix and right-hand-side into an m-file.  The file name contains ZERO_PIVOT_ERROR.
-PetscErrorCode columnSystemCtx::reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex,
-                                                                unsigned int M) {
+PetscErrorCode columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
   PetscErrorCode ierr;
   char fname[PETSC_MAX_PATH_LEN];
-  snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d_ZERO_PIVOT_ERROR_%d.m",
-           prefix.c_str(), m_i, m_j, errindex);
+  snprintf(fname, PETSC_MAX_PATH_LEN,
+           "%s_i%d_j%d_ZERO_PIVOT_ERROR.m", prefix.c_str(), m_i, m_j);
 
   PetscViewer viewer;
   ierr = createViewer(fname, M, viewer); CHKERRQ(ierr);
@@ -419,7 +420,7 @@ PetscErrorCode columnSystemCtx::viewColumnInfoMFile(const std::string &filename,
   ierr = viewSystem(viewer, M); CHKERRQ(ierr);
 
   std::string info = prefix + "_x";
-  ierr = viewVectorValues(viewer, x, M, info.c_str()); CHKERRQ(ierr);
+  viewVectorValues(viewer, x, M, info.c_str());
 
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   return 0;

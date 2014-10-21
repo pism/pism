@@ -212,15 +212,14 @@ PetscErrorCode tempSystemCtx::solveThisColumn(std::vector<double> &x) {
   basalBCsValid = false;
 
   // solve it; note melting not addressed yet
-  int pivoterr = solveTridiagonalSystem(m_ks+1,x);
-
-  if (pivoterr != 0) {
-    PetscErrorCode ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "\n\ntridiagonal solve of tempSystemCtx in temperatureStep() FAILED at (%d,%d)\n"
-                       " with zero pivot position %d; viewing system to m-file ... \n",
-                       m_i, m_j, pivoterr); CHKERRQ(ierr);
-    ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
-    throw RuntimeError("PISM ERROR in temperatureStep()");
+  try {
+    solveTridiagonalSystem(m_ks+1,x);
+  }
+  catch (RuntimeError &e) {
+    e.add_context("solving the tri-diagonal system (tempSystemCtx) at (%d,%d)\n"
+                  "viewing system to m-file... ", m_i, m_j);
+    reportColumnZeroPivotErrorMFile(m_ks + 1);
+    throw;
   }
 
   return 0;

@@ -112,7 +112,7 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
   ice_thickness = my_ice_thickness;
   ismarginal    = my_ismarginal;
 
-  ierr = setIndicesAndClearThisColumn(my_i, my_j, ice_thickness, dz, Mz); CHKERRQ(ierr);
+  setIndicesAndClearThisColumn(my_i, my_j, ice_thickness, dz, Mz);
 
   if (m_ks == 0) {
     return 0;
@@ -481,15 +481,14 @@ PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   rhs[m_ks] = Enth_ks;
 
   // Solve it; note drainage is not addressed yet and post-processing may occur
-  int pivoterr = solveTridiagonalSystem(m_ks+1, x);
-
-  if (pivoterr != 0) {
-    ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "\n\ntridiagonal solve of enthSystemCtx in enthalpyAndDrainageStep() FAILED at (%d,%d)\n"
-                       " with zero pivot position %d; viewing system to m-file ... \n",
-                       m_i, m_j, pivoterr); CHKERRQ(ierr);
-    ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
-    throw RuntimeError("PISM ERROR in enthalpyDrainageStep()");
+  try {
+    solveTridiagonalSystem(m_ks+1, x);
+  }
+  catch (RuntimeError &e) {
+    e.add_context("solving the tri-diagonal system (enthSystemCtx) at (%d,%d)\n"
+                  "viewing system to m-file... ", m_i, m_j);
+    reportColumnZeroPivotErrorMFile(m_ks + 1);
+    throw;
   }
 
   // air above
@@ -498,13 +497,11 @@ PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   }
 
 #if (PISM_DEBUG==1)
-  if (pivoterr == 0) {
-    // if success, mark column as done by making scheme params and b.c. coeffs invalid
-    m_lambda  = -1.0;
-    D0 = GSL_NAN;
-    U0 = GSL_NAN;
-    B0 = GSL_NAN;
-  }
+  // if success, mark column as done by making scheme params and b.c. coeffs invalid
+  m_lambda = -1.0;
+  D0       = GSL_NAN;
+  U0       = GSL_NAN;
+  B0       = GSL_NAN;
 #endif
   return 0;
 }
@@ -517,9 +514,9 @@ PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer,
   info = prefix + "_A";
   ierr = viewMatrix(viewer, M, info.c_str()); CHKERRQ(ierr);
   info = prefix + "_rhs";
-  ierr = viewVectorValues(viewer, rhs, M, info.c_str()); CHKERRQ(ierr);
+  viewVectorValues(viewer, rhs, M, info.c_str());
   info = prefix + "_R";
-  ierr = viewVectorValues(viewer, R, M, info.c_str()); CHKERRQ(ierr);
+  viewVectorValues(viewer, R, M, info.c_str());
   return 0;
 }
 

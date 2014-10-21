@@ -201,15 +201,14 @@ PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
   }
 
   // solve it
-  int pivoterr = solveTridiagonalSystem(m_ks+1,x);
-
-  if (pivoterr != 0) {
-    ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "\n\ntridiagonal solve of ageSystemCtx in ageStep() FAILED at (%d,%d)\n"
-                       " with zero pivot position %d; viewing system to m-file ... \n",
-                       m_i, m_j, pivoterr); CHKERRQ(ierr);
-    ierr = reportColumnZeroPivotErrorMFile(pivoterr, m_ks + 1); CHKERRQ(ierr);
-    throw RuntimeError("PISM ERROR in ageStep()\n");
+  try {
+    solveTridiagonalSystem(m_ks+1,x);
+  }
+  catch (RuntimeError &e) {
+    e.add_context("solving the tri-diagonal system (ageSystemCtx) at (%d,%d)\n"
+                  "viewing system to m-file... ", m_i, m_j);
+    reportColumnZeroPivotErrorMFile(m_ks + 1);
+    throw;
   }
 
   return 0;
@@ -303,7 +302,7 @@ PetscErrorCode IceModel::ageStep() {
       ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
 
       // this call will validate ks
-      ierr = system.setIndicesAndClearThisColumn(i,j, ice_thickness(i,j), fdz, fMz); CHKERRQ(ierr);
+      system.setIndicesAndClearThisColumn(i,j, ice_thickness(i,j), fdz, fMz);
 
       // solve the system for this column; call checks that params set
       ierr = system.solveThisColumn(x); CHKERRQ(ierr);

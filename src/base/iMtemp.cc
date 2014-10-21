@@ -249,8 +249,8 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
     if (ks>0) { // if there are enough points in ice to bother ...
       // this call will validate ks
-      ierr = system.setIndicesAndClearThisColumn(i, j,
-                                                 ice_thickness(i,j), fdz, grid.Mz_fine); CHKERRQ(ierr);
+      system.setIndicesAndClearThisColumn(i, j,
+                                          ice_thickness(i,j), fdz, grid.Mz_fine);
 
       ierr = u3->getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
       ierr = v3->getValColumn(i,j,ks,system.v); CHKERRQ(ierr);
