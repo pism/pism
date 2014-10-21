@@ -355,7 +355,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve(TerminationReason::Ptr &reason)
 
 
   if (m_target_misfit == 0) {
-    SETERRQ(m_d0.get_grid()->com,1,"Call set target misfit prior to calling IP_SSATaucTikhonovGNSolver::solve.");
+    throw RuntimeError::formatted("Call set target misfit prior to calling IP_SSATaucTikhonovGNSolver::solve.");
   }
 
   m_iter = 0;

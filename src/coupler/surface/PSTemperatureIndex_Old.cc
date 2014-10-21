@@ -24,6 +24,7 @@
 #include "PISMTime.hh"
 #include "PISMAtmosphere.hh"
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -291,9 +292,15 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   }
 
   if (faustogreve != NULL) {
-    if (lat == NULL) { SETERRQ(grid.com, 1,"faustogreve object is allocated BUT lat==NULL"); }
-    if (lon == NULL) { SETERRQ(grid.com, 2,"faustogreve object is allocated BUT lon==NULL"); }
-    if (usurf == NULL) { SETERRQ(grid.com, 3,"faustogreve object is allocated BUT usurf==NULL"); }
+    if (lat == NULL) {
+      throw RuntimeError("faustogreve object is allocated BUT lat==NULL");
+    }
+    if (lon == NULL) {
+      throw RuntimeError("faustogreve object is allocated BUT lon==NULL");
+    }
+    if (usurf == NULL) {
+      throw RuntimeError("faustogreve object is allocated BUT usurf==NULL");
+    }
     list.add(*lon);
     list.add(*usurf);
     ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
@@ -302,7 +309,9 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
   const PetscScalar sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
                     sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
   if (sigmalapserate != 0.0) {
-    if (lat == NULL) { SETERRQ(grid.com, 4,"pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL"); }
+    if (lat == NULL) {
+      throw RuntimeError("pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL");
+    }
   }
 
   DegreeDayFactors_Old  ddf = base_ddf;

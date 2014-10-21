@@ -84,7 +84,7 @@ public:
   //! Sets the default type name.
   PetscErrorCode set_default(std::string name) {
     if (m_models.find(name) == m_models.end()) {
-      SETERRQ1(m_grid.com, 1,"ERROR: type %s is not registered", name.c_str());
+      throw RuntimeError::formatted("type %s is not registered", name.c_str());
     } else {
       m_default_type = name;
     }

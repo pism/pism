@@ -33,6 +33,8 @@
 
 #include "NCVariable.hh"
 
+#include "error_handling.hh"
+
 extern FILE *petsc_history;
 
 namespace pism {
@@ -44,7 +46,7 @@ static int verbosityLevel;
 //! \brief Set the PISM verbosity level.
 PetscErrorCode setVerbosityLevel(int level) {
   if ((level < 0) || (level > 5)) {
-    SETERRQ(PETSC_COMM_SELF, 1,"verbosity level invalid");
+    throw RuntimeError::formatted("verbosity level %s is invalid", level);
   }
   verbosityLevel = level;
   return 0;  
@@ -98,31 +100,6 @@ PetscErrorCode verbPrintf(const int threshold,
     }
   }
   PetscFunctionReturn(0);
-}
-
-
-//! Prints rank (in process group PETSC_COMM_WORLD) to stderr.  Then attempts to end all processes.
-/*!
-Avoid using this if possible.  SETERRQ() should be used for all procedures that
-return PetscErrorCode.  Generally needed for errors in constructors.
-
-Printing the rank seems to be redundant because it will appear in brackets at start
-of each call to PetscErrorPrintf().  But emphasis is useful, perhaps ...
-
-Calls "MPI_Abort(PETSC_COMM_WORLD,3155)" to attempt to end all processes.
-If this works main() will return value 3155.  The problem with PetscEnd() for
-this purpose is that it is collective (presumably over PETSC_COMM_WORLD).
- */
-void endPrintRank() {
-  int rank;
-  if (!MPI_Comm_rank(PETSC_COMM_WORLD, &rank)) {
-    PetscErrorPrintf("\n\n    rank %d process called endPrintRank()\n"
-                         "    ending ...  \n\n",rank);
-  } else {
-    PetscErrorPrintf("\n\n    process with undeterminable rank called endPrintRank()\n"
-                         "    ending ...  \n\n");
-  }
-  MPI_Abort(PETSC_COMM_WORLD,3155);
 }
 
 

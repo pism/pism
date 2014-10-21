@@ -51,7 +51,7 @@ PetscErrorCode add_2d(const IceModelVec* const x_in, double alpha,
   V *z = dynamic_cast<V*>(result);
 
   if (x == NULL || y == NULL || z == NULL) {
-    SETERRQ(PETSC_COMM_SELF, 1, "incompatible arguments");
+    throw RuntimeError("incompatible arguments");
   }
 
   int stencil = 0;
@@ -89,7 +89,7 @@ PetscErrorCode copy_2d(const IceModelVec* const source,
   V *z = dynamic_cast<V*>(destination);
 
   if (x == NULL || z == NULL) {
-    SETERRQ(PETSC_COMM_SELF, 1, "incompatible arguments");
+    throw RuntimeError("incompatible arguments");
   }
 
   int stencil = 0;

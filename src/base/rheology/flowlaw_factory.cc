@@ -171,9 +171,9 @@ PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
   // find the function that can create selected ice type:
   r = flow_laws[type_name];
   if (r == NULL) {
-    SETERRQ1(com, 1,
-             "Selected Ice type %s not available, but we shouldn't be able to get here anyway",
-             type_name.c_str());
+    throw RuntimeError::formatted("Selected ice type %s is not available,\n"
+                                  "but we shouldn't be able to get here anyway",
+                                  type_name.c_str());
   }
 
   // create an IceFlowLaw instance:

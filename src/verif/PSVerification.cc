@@ -236,7 +236,7 @@ PetscErrorCode PSVerification::update(PetscReal t, PetscReal dt) {
     ierr = update_V(); CHKERRQ(ierr);
     break;
   default:
-    SETERRQ1(grid.com, 1, "Test %c is not implemented.\n", m_testname);
+    throw RuntimeError::formatted("Test %c is not implemented.", m_testname);
   }
 
   // convert from [m/s] to [kg m-2 s-1]
@@ -290,7 +290,8 @@ PetscErrorCode PSVerification::update_ABCDEH(double time) {
       exactH(f, time, r, &H, &accum);
       break;
     default:
-      SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
+      throw RuntimeError::formatted("test must be A, B, C, D, E, or H, got %c",
+                                    m_testname);
     }
     m_climatic_mass_balance(i, j) = accum;
   }

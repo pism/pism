@@ -21,6 +21,7 @@
 #include "PISMVars.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -202,10 +203,8 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
       result(i, j) = m_limit_max;
     }
     else {
-      SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
+      throw RuntimeError("PSElevation::ice_surface_mass_flux: HOW DID I GET HERE?");
     }
-    ierr = verbPrintf(5, grid.com, "!!!!! z=%.2f, climatic_mass_balance=%.2f\n", z,
-                      grid.convert(result(i, j), "m/s", "m/year")); CHKERRQ(ierr);
   }
 
   // convert from m/s ice equivalent to kg m-2 s-1:
@@ -235,11 +234,8 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
       result(i, j) = T_max;
     }
     else {
-      SETERRQ(grid.com, 1, "HOW DID I GET HERE? ... ending...\n");
+      throw RuntimeError("PSElevation::ice_surface_temperature: HOW DID I GET HERE?");
     }
-    ierr = verbPrintf(5, grid.com,
-                      "!!!!! z=%.2f, T_min=%.2f, dTdz=%.2f, dz=%.2f, T=%.2f\n",
-                      z, T_min, dTdz, z - z_T_min, result(i, j)); CHKERRQ(ierr);
   }
 
   return 0;

@@ -137,7 +137,7 @@ PetscErrorCode convert_vec(Vec v, Unit from, Unit to);
  *
  * @return 
  */
-PetscErrorCode convert_doubles(double *data, size_t data_size, const Unit &from, const Unit &to);
+void convert_doubles(double *data, size_t data_size, const Unit &from, const Unit &to);
 
 } // end of namespace pism
 

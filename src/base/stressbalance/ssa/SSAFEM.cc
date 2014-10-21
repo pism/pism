@@ -173,14 +173,12 @@ PetscErrorCode SSAFEM::solve() {
   ierr = solve_nocache(reason); CHKERRQ(ierr);
   if (reason->failed())
   {
-    SETERRQ1(grid.com, 1,
-    "SSAFEM solve failed to converge (SNES reason %s)\n\n", reason->description().c_str());
+    throw RuntimeError::formatted("SSAFEM solve failed to converge (SNES reason %s)",
+                                  reason->description().c_str());
   }
   else if (getVerbosityLevel() > 2)
   {
-    stdout_ssa += "SSAFEM converged (SNES reason ";
-    stdout_ssa += reason->description();
-    stdout_ssa += ")\n";
+    stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
   }
 
   return 0;

@@ -23,7 +23,8 @@
 #include "iceModelVec.hh"
 
 #include "PISMConfig.hh"
-#include <stdexcept>
+
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -205,8 +206,7 @@ double GPBLDIce::softness_parameter(
   PetscErrorCode ierr;
 
   if (EC == NULL) {
-    PetscErrorPrintf("EC is NULL in GPBLDIce::softness_parameter()\n");
-    endPrintRank();
+    throw RuntimeError("EC is NULL in GPBLDIce::softness_parameter()");
   }
   double E_s, E_l;
   EC->getEnthalpyInterval(pressure, E_s, E_l);
@@ -214,9 +214,7 @@ double GPBLDIce::softness_parameter(
     double T_pa;
     ierr = EC->getPATemp(enthalpy, pressure, T_pa);
     if (ierr) {
-      PetscErrorPrintf(
-        "getPATemp() returned ierr>0 in GPBLDIce::softness_parameter()\n");
-      endPrintRank();
+      throw RuntimeError("getPATemp() returned ierr>0 in GPBLDIce::softness_parameter()");
     }
     return softness_parameter_paterson_budd(T_pa);
   } else { // temperate ice

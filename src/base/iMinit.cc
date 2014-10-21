@@ -755,8 +755,8 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
   else if (hydrology_model == "distributed")
     subglacial_hydrology = new DistributedHydrology(grid, config, stress_balance);
   else {
-    SETERRQ1(grid.com,1,"unknown value for configuration string 'hydrology_model':\n"
-             "  has value '%s'\n", hydrology_model.c_str());
+    throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
+                                  "has value '%s'", hydrology_model.c_str());
   }
 
   return 0;

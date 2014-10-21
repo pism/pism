@@ -177,38 +177,24 @@ bool Unit::is_valid() const {
 PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {
   PetscErrorCode ierr;
 
-  // convert an exception to an error code
-  try {
-    UnitConverter c(from, to);
+  UnitConverter c(from, to);
 
-    PetscInt data_size = 0;
-    ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
+  PetscInt data_size = 0;
+  ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
 
-    double *data = NULL;
-    ierr = VecGetArray(v, &data); CHKERRQ(ierr);
-    c.convert_doubles(data, data_size);
-    ierr = VecRestoreArray(v, &data); CHKERRQ(ierr);
-  }
-  catch (RuntimeError &e) {
-    SETERRQ(PETSC_COMM_SELF, 1, e.what());
-  }
+  double *data = NULL;
+  ierr = VecGetArray(v, &data); CHKERRQ(ierr);
+  c.convert_doubles(data, data_size);
+  ierr = VecRestoreArray(v, &data); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode convert_doubles(double *data, size_t data_size,
-                               const Unit &from, const Unit &to) {
-  // convert an exception to an error code
-  try {
-    UnitConverter c(from, to);
+void convert_doubles(double *data, size_t data_size,
+                     const Unit &from, const Unit &to) {
+  UnitConverter c(from, to);
 
-    c.convert_doubles(data, data_size);
-  }
-  catch (RuntimeError &e) {
-    SETERRQ(PETSC_COMM_SELF, 1, e.what());
-  }
-
-  return 0;
+  c.convert_doubles(data, data_size);
 }
 
 

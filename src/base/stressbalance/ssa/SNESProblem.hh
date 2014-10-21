@@ -205,13 +205,14 @@ PetscErrorCode SNESProblem<DOF,U>::solve()
   // See if it worked.
   SNESConvergedReason reason;
   ierr = SNESGetConvergedReason(m_snes, &reason); CHKERRQ(ierr);
-  if (reason < 0)
-    {
-      SETERRQ2(m_grid.com, 1,
-               "SNESProblem %s solve failed to converge (SNES reason %s)\n\n", name().c_str(), SNESConvergedReasons[reason]);
-    }
+  if (reason < 0) {
+    throw RuntimeError::formatted("SNESProblem %s solve failed to converge (SNES reason %s)",
+                                  name().c_str(), SNESConvergedReasons[reason]);
+  }
 
-  verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n", name().c_str(), SNESConvergedReasons[reason]);
+  verbPrintf(1,m_grid.com,"SNESProblem %s converged (SNES reason %s)\n",
+             name().c_str(), SNESConvergedReasons[reason]);
+
   return 0;
 }
 

@@ -81,9 +81,9 @@ PetscErrorCode  IceModelVec3D::isLegalLevel(double z) const {
   double z_min = zlevels.front(),
     z_max = zlevels.back();
   if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
-    SETERRQ2(grid->com, 1,"level z = %5.4f is outside the valid range;\n"
-               "  IceModelVec3 has name='%s'; ENDING!\n",
-              z,m_name.c_str());
+    throw RuntimeError::formatted("level z = %5.4f is outside of the valid range;\n"
+                                  "IceModelVec3 has name='%s'",
+                                  z, m_name.c_str());
   }
   return 0;
 }

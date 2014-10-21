@@ -85,7 +85,9 @@ PetscErrorCode varcEnthalpyConverter::viewConstants(PetscViewer viewer) const {
     ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
   }
   ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) { SETERRQ(PETSC_COMM_SELF, 1,"Only ASCII viewer for EnthalpyConverter\n"); }
+  if (!iascii) {
+    throw RuntimeError("Only ASCII viewer for EnthalpyConverter");
+  }
 
   ierr = PetscViewerASCIIPrintf(viewer,
     "\n<class varcEnthalpyConverter has two additional constants, so as to implement\n"
@@ -136,16 +138,16 @@ PetscErrorCode varcEnthalpyConverter::getEnth(
                   double T, double omega, double p, double &E) const {
   const double T_m = getMeltingTemp(p);
   if (T <= 0.0) {
-    SETERRQ1(PETSC_COMM_SELF, 1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
+    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
   }
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
+    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
   }
   if (T > T_m + 1.0e-6) {
-    SETERRQ2(PETSC_COMM_SELF, 3,"T=%f exceeds T_m=%f; not allowed\n\n",T,T_m);
+    throw RuntimeError::formatted("T=%f exceeds T_m=%f; not allowed",T,T_m);
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    SETERRQ3(PETSC_COMM_SELF, 4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
+    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory",T,T_m,omega);
   }
   if (T < T_m) {
     E = EfromT(T);

@@ -327,9 +327,7 @@ the definition of IceModel for one example).
 - to use a field managed by IceModel, use "variables":
 
 ~~~
-IceModelVec2S *surface;
-surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
-if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+IceModelVec2S *surface = variables.get_2d_scalar("surface_altitude");
 ~~~
 
 - the **caller** of the PISMDiagnostic::compute() method has to

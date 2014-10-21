@@ -146,11 +146,9 @@ PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
 #if (PISM_DEBUG==1)
   // check if m_ks is valid
   if (m_ks >= Mz) {
-    PetscPrintf(PETSC_COMM_SELF,
-                "ERROR: ks = %d computed at i = %d, j = %d is invalid,"
-                " possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
-                m_ks, m_i, m_j, ice_thickness, dz);
-    SETERRQ(PETSC_COMM_SELF, 1, "invalid ks");
+    throw RuntimeError::formatted("ks = %d computed at i = %d, j = %d is invalid,\n"
+                                  "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
+                                  m_ks, m_i, m_j, ice_thickness, dz);
   }
 #endif
 

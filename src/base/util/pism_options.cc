@@ -233,7 +233,7 @@ PetscErrorCode OptionsList(MPI_Comm com, std::string opt, std::string descriptio
   PetscBool opt_set = PETSC_FALSE;
 
   if (choices.empty()) {
-    SETERRQ(com, 1, "OptionsList: empty choices argument");
+    throw RuntimeError::formatted("OptionsList: empty choices argument");
   }
 
   std::set<std::string>::iterator j = choices.begin();

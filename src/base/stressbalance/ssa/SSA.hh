@@ -74,7 +74,9 @@ public:
   //! Set minimum thickness to trigger use of extension.
   /*! Preserves strength (nuH) by also updating using current nu.  */
   virtual PetscErrorCode set_min_thickness(double my_min_thickness) {
-    if (my_min_thickness <= 0.0) SETERRQ(PETSC_COMM_SELF, 1,"min_thickness must be positive");
+    if (my_min_thickness <= 0.0) {
+      throw RuntimeError("min_thickness must be positive");
+    }
     double nuH = constant_nu * min_thickness;
     min_thickness = my_min_thickness;
     constant_nu = nuH / min_thickness;

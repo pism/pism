@@ -26,6 +26,7 @@
 #include "localMassBalance_old.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -196,7 +197,7 @@ PetscErrorCode PDDMassBalance_Old::getMassFluxesFromPDDs(const DegreeDayFactors_
 
 #if (PISM_DEBUG==1)
   if (dt <= 0) {
-    SETERRQ1(PETSC_COMM_SELF, 1, "dt = %f is not alloved", dt);
+    throw RuntimeError::formatted("dt = %f is not alloved", dt);
   }
 #endif
 

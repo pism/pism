@@ -578,12 +578,13 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization(IceModelVec2S &dz
   KSPConvergedReason  reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason); CHKERRQ(ierr);
   if (reason < 0) {
-    SETERRQ1(grid.com, 1,
-      "IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+    throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
+                                  KSPConvergedReasons[reason]);
   }
   else
   {
-    verbPrintf(4, grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason]);
+    verbPrintf(4, grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+               KSPConvergedReasons[reason]);
   }
 
   ierr = du.copy_from(m_du_global); CHKERRQ(ierr);
@@ -642,12 +643,13 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   KSPConvergedReason  reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason); CHKERRQ(ierr);
   if (reason < 0) {
-    SETERRQ1(grid.com, 1,
-      "IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
+    throw RuntimeError::formatted("IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
+                                  KSPConvergedReasons[reason]);
   }
   else
   {
-    verbPrintf(4, grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n", KSPConvergedReasons[reason]);
+    verbPrintf(4, grid.com, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",
+               KSPConvergedReasons[reason]);
   }
 
   ierr = this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta); CHKERRQ(ierr);

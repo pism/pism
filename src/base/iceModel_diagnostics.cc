@@ -978,8 +978,9 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
       (*result)(i,j) = PetscMax((*result)(i,j), grid.zlevels[k-1]);
       (*result)(i,j) = PetscMin((*result)(i,j), grid.zlevels[k]);
     } else {
-      SETERRQ4(grid.com, 1, "This should never happen: (i=%d, j=%d, k=%d, ks=%d)\n",
-               i, j, k, ks);
+      throw RuntimeError::formatted("Linear interpolation of the thickness of the basal temperate layer failed:\n"
+                                    "(i=%d, j=%d, k=%d, ks=%d)\n",
+                                    i, j, k, ks);
     }
   }
 

@@ -38,7 +38,8 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
   grid = &mygrid;
 
   if (m_v != NULL) {
-    SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated",m_name.c_str());
+    throw RuntimeError::formatted("IceModelVec3BTU with name='%s' already allocated",
+                                  m_name.c_str());
   }
 
   m_name = my_short_name;
@@ -73,15 +74,16 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
   // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
 
   if (!good_init()) {
-    SETERRQ1(grid->com, 1,"create() says IceModelVec3BTU with name %s was not properly created",
-             m_name.c_str());  }
+    throw RuntimeError::formatted("create() says IceModelVec3BTU with name %s was not properly created",
+                                  m_name.c_str());
+  }
   return 0;
 }
 
 PetscErrorCode IceModelVec3BTU::get_layer_depth(double &depth) {
   if (!good_init()) {
-    SETERRQ1(grid->com, 1,"get_layer_depth() says IceModelVec3BTU with name %s was not properly created",
-             m_name.c_str());
+    throw RuntimeError::formatted("get_layer_depth() says IceModelVec3BTU with name %s was not properly created",
+                                  m_name.c_str());
   }
   depth = Lbz;
   return 0;
@@ -89,8 +91,8 @@ PetscErrorCode IceModelVec3BTU::get_layer_depth(double &depth) {
 
 PetscErrorCode IceModelVec3BTU::get_spacing(double &dzb) {
   if (!good_init()) {
-    SETERRQ1(grid->com, 1,"get_spacing() says IceModelVec3BTU with name %s was not properly created",
-             m_name.c_str());
+    throw RuntimeError::formatted("get_spacing() says IceModelVec3BTU with name %s was not properly created",
+                                  m_name.c_str());
   }
   dzb = Lbz / (m_n_levels - 1);
   return 0;
@@ -361,17 +363,17 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
     }
 
     if (contiguous == false) {
-     SETERRQ4(grid.com, 2,"BedThermalUnit::update() requires next update to be contiguous with last;\n"
-                "  stored:     t = %f s,    dt = %f s\n"
-                "  desired: my_t = %f s, my_dt = %f s\n",
-              m_t,m_dt,my_t,my_dt); }
+      throw RuntimeError::formatted("BedThermalUnit::update() requires next update to be contiguous with last;\n"
+                                    "  stored:     t = %f s,    dt = %f s\n"
+                                    "  desired: my_t = %f s, my_dt = %f s",
+                                    m_t,m_dt,my_t,my_dt); }
   }
   // CHECK: is desired time-step too long?
   double my_max_dt;
   bool restrict_dt;
   ierr = max_timestep(my_t, my_max_dt, restrict_dt); CHKERRQ(ierr);
   if (restrict_dt && my_max_dt < my_dt) {
-     throw RuntimeError("BedThermalUnit::update() thinks you asked for too big a timestep\n");
+     throw RuntimeError("BedThermalUnit::update() thinks you asked for too big a timestep.");
   }
 
   // o.k., we have checked; we are going to do the desired timestep!

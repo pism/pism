@@ -220,7 +220,7 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   } else if (model == "ssa" || model == "ssa+sia") {
     sliding = new SSAFD_Regional(grid, *EC, config);
   } else {
-    SETERRQ(grid.com, 1, "invalid stress balance model");
+    throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   SSB_Modifier *modifier = NULL;
@@ -229,7 +229,7 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
     modifier = new SIAFD_Regional(grid, *EC, config);
   } else {
-    SETERRQ(grid.com, 1, "invalid stress balance model");
+    throw RuntimeError::formatted("invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.

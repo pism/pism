@@ -44,8 +44,6 @@ PetscErrorCode setVerbosityLevel(int level);
 int       getVerbosityLevel();
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 
-void endPrintRank();
-
 std::string pism_timestamp();
 std::string pism_username_prefix(MPI_Comm com);
 std::string pism_args_string();

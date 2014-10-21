@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <gsl/gsl_math.h>       // gsl_isnan()
+#include <cassert>
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"
@@ -25,11 +26,10 @@
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
 #include "PISMConfig.hh"
-#include "iceModelVec_helpers.hh"
 
-#include <cassert>
 
 #include "error_handling.hh"
+#include "iceModelVec_helpers.hh"
 
 namespace pism {
 
@@ -192,7 +192,7 @@ NormType IceModelVec::int_to_normtype(int input) const {
 See comment for range(); because local Vecs are VECSEQ, needs a reduce operation.
 See src/trypetsc/localVecMax.c.
 
-D@\note This method works for all IceModelVecs, including ones with
+@note This method works for all IceModelVecs, including ones with
 dof > 1. You might want to use norm_all() for IceModelVec2Stag,
 though.
  */
@@ -209,8 +209,7 @@ PetscErrorCode IceModelVec::norm(int n, double &out) const {
     // needs a reduce operation; use GlobalMax if NORM_INFINITY,
     //   otherwise GlobalSum; carefully in NORM_2 case
     if (n == NORM_1_AND_2) {
-      SETERRQ1(grid->com, 1,
-         "IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
+      throw RuntimeError::formatted("IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))",
          m_name.c_str());
     } else if (n == NORM_1) {
       ierr = GlobalSum(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
@@ -221,8 +220,8 @@ PetscErrorCode IceModelVec::norm(int n, double &out) const {
     } else if (n == NORM_INFINITY) {
       ierr = GlobalMax(grid->com, &my_norm,  &gnorm); CHKERRQ(ierr);
     } else {
-      SETERRQ1(grid->com, 2, "IceModelVec::norm(...): unknown norm type (called as %s.norm(...))\n",
-         m_name.c_str());
+      throw RuntimeError::formatted("IceModelVec::norm(...): unknown norm type (called as %s.norm(...))",
+                                    m_name.c_str());
     }
     out = gnorm;
   } else {
@@ -658,15 +657,15 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, const IceModelV
   PetscInt X_size, Y_size;
 
   if (m_dof != other.m_dof) {
-    SETERRQ1(grid->com, 1, "IceModelVec::%s(...): operands have different numbers of degrees of freedom",
-             func);
+    throw RuntimeError::formatted("IceModelVec::%s(...): operands have different numbers of degrees of freedom",
+                                  func);
   }
 
   ierr = VecGetSize(m_v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(other.m_v, &Y_size); CHKERRQ(ierr);
   if (X_size != Y_size) {
-    SETERRQ4(grid->com, 1, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))\n",
-             func, m_name.c_str(), func, other.m_name.c_str());
+    throw RuntimeError::formatted("IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
+                                  func, m_name.c_str(), func, other.m_name.c_str());
   }
 
 
@@ -882,9 +881,8 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
     // needs a reduce operation; use GlobalMax() if NORM_INFINITY,
     //   otherwise GlobalSum; carefully in NORM_2 case
     if (n == NORM_1_AND_2) {
-      SETERRQ1(grid->com, 1, 
-         "IceModelVec::norm_all(...): NORM_1_AND_2 not implemented (called as %s.norm_all(...))\n",
-         m_name.c_str());
+      throw RuntimeError::formatted("IceModelVec::norm_all(...): NORM_1_AND_2 not implemented (called as %s.norm_all(...))",
+                                    m_name.c_str());
     } else if (n == NORM_1) {
 
       for (unsigned int k = 0; k < m_dof; ++k) {
@@ -904,8 +902,8 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
         ierr = GlobalMax(grid->com, &norm_result[k], &result[k]); CHKERRQ(ierr);
       }
     } else {
-      SETERRQ1(grid->com, 2, "IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))\n",
-         m_name.c_str());
+      throw RuntimeError::formatted("IceModelVec::norm_all(...): unknown norm type (called as %s.norm_all(...))",
+                                    m_name.c_str());
     }
   } else {
 

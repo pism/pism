@@ -35,9 +35,7 @@ public:
   PetscErrorCode connect(SNES snes, Problem &p, DM dm, Vec r, Mat J, Mat Jpc=NULL) {
     PetscErrorCode ierr;
     if (m_cbData.dm != NULL) {
-      MPI_Comm comm;
-      ierr = PetscObjectGetComm((PetscObject)snes,&comm); CHKERRQ(ierr);
-      SETERRQ(comm,1,"SNESDMCallbacks already connected");
+      throw RuntimeError::formatted("SNESDMCallbacks already connected");
     }
     m_cbData.dm = dm;
     m_cbData.p = &p;

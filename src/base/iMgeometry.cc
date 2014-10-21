@@ -28,6 +28,7 @@
 #include "PISMSurface.hh"
 #include "PISMStressBalance.hh"
 #include "PISMIcebergRemover.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -140,7 +141,7 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
 
     // take this opportunity to check that thickness(i, j) >= 0
     if (thickness(i, j) < 0) {
-      SETERRQ2(grid.com, 1, "Thickness negative at point i=%d, j=%d", i, j);
+      throw RuntimeError::formatted("Thickness negative at point i=%d, j=%d", i, j);
     }
     result(i, j) = gc.surface(bed(i, j), thickness(i, j));
   }

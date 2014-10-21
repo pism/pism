@@ -132,7 +132,7 @@ PIO::~PIO() {
 
 // Chooses the best I/O backend for reading from 'filename'.
 void PIO::detect_mode(const string &filename) {
-  assert(m_nc == false);
+  assert(m_nc == nullptr);
 
   string format;
   {
@@ -262,13 +262,13 @@ void PIO::open(const string &filename, IO_Mode mode) {
     // opening for reading
     if (mode == PISM_READONLY) {
 
-      assert(m_nc != false);
+      assert(m_nc != nullptr);
       m_nc->open(filename, mode);
 
     } else if (mode == PISM_READWRITE_CLOBBER ||
                mode == PISM_READWRITE_MOVE) {
 
-      assert(m_nc != false);
+      assert(m_nc != nullptr);
 
       if (mode == PISM_READWRITE_MOVE) {
         m_nc->move_if_exists(filename);
@@ -281,7 +281,7 @@ void PIO::open(const string &filename, IO_Mode mode) {
       int old_fill;
       m_nc->set_fill(PISM_NOFILL, old_fill);
     } else {                      // mode == PISM_READWRITE
-      assert(m_nc != NULL);
+      assert(m_nc != nullptr);
 
       m_nc->open(filename, mode);
 
@@ -1124,7 +1124,7 @@ void PIO::regrid_vec(IceGrid *grid, const string &var_name,
     vector<unsigned int> start, count, imap;
 
     shared_ptr<LocalInterpCtx> lic(get_interp_context(var_name, *grid, zlevels_out));
-    assert(lic != false);
+    assert(lic != nullptr);
 
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,
@@ -1170,7 +1170,7 @@ void PIO::regrid_vec_fill_missing(IceGrid *grid, const string &var_name,
     vector<unsigned int> start, count, imap;
 
     shared_ptr<LocalInterpCtx> lic(get_interp_context(var_name, *grid, zlevels_out));
-    assert(lic != false);
+    assert(lic != nullptr);
 
     const unsigned int t_count = 1;
     compute_start_and_count(var_name,

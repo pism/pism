@@ -329,9 +329,8 @@ PetscErrorCode BedSmoother::get_smoothed_thk(IceModelVec2S &usurf,
     const int i = p.i(), j = p.j();
 
     if (thk(i, j) < 0.0) {
-      SETERRQ2(grid.com, 2,
-               "PISM ERROR:  BedSmoother detects negative original thickness\n"
-               "  at location (i, j) = (%d,%d) ... ending\n",i, j);
+      throw RuntimeError::formatted("BedSmoother detects negative original thickness\n"
+                                    "at location (i, j) = (%d, %d) ... ending", i, j);
     } else if (thk(i, j) == 0.0) {
       result(i, j) = 0.0;
     } else if (maxtl(i, j) >= thk(i, j)) {
@@ -412,8 +411,8 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
       const double Hinv = 1.0 / PetscMax(H, 1.0);
       double omega = 1.0 + Hinv*Hinv * (C2(i, j) + Hinv * (C3(i, j) + Hinv*C4(i, j)));
       if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
-        SETERRQ2(grid.com, 1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
-                 "    in BedSmoother.get_theta() ... ending\n",i, j);
+        throw RuntimeError::formatted("omega is negative for i=%d, j=%d\n"
+                                      "in BedSmoother.get_theta() ... ending", i, j);
       }
 
       if (omega < 0.001)      // this check *should not* be necessary

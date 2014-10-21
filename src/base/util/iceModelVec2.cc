@@ -21,16 +21,16 @@
 #include <petscdmda.h>
 #include <gsl/gsl_math.h>
 
+#include <cassert>
+
 #include "PIO.hh"
 #include "iceModelVec.hh"
 #include "IceGrid.hh"
 #include "LocalInterpCtx.hh"
-#include "iceModelVec_helpers.hh"
 #include "PISMConfig.hh"
 
-#include <cassert>
-
 #include "error_handling.hh"
+#include "iceModelVec_helpers.hh"
 
 namespace pism {
 

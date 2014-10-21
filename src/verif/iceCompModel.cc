@@ -371,7 +371,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
     ierr = test_V_init(); CHKERRQ(ierr);
     break;
   default:
-    SETERRQ(grid.com, 1,"Desired test not implemented by IceCompModel.\n");
+    throw RuntimeError("Desired test not implemented by IceCompModel.");
   }
 
   ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
@@ -428,7 +428,8 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
       exactH(f, time, r, &H, &accum);
       ice_thickness(i, j)   = H;
       break;
-    default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, E, or H");
+    default:
+      throw RuntimeError("test must be A, B, C, D, E, or H");
     }
   }
 
@@ -590,7 +591,8 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
       exactH(f, time, r, &H, &accum);
       ice_thickness(i, j)   = H;
       break;
-    default:  SETERRQ(grid.com, 1, "test must be A, B, C, D, or H");
+    default:
+      throw RuntimeError("test must be A, B, C, D, or H");
     }
   }
 
@@ -748,7 +750,7 @@ PetscErrorCode IceCompModel::computeGeometryErrors(double &gvolexact, double &ga
       }
       break;
     default:
-      SETERRQ(grid.com, 1, "test must be A, B, C, D, E, F, G, H, K, L, or O");
+      throw RuntimeError("test must be A, B, C, D, E, F, G, H, K, L, or O");
     }
 
     if (Hexact > 0) {
@@ -798,8 +800,9 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
   double    ubexact,vbexact, dummy1,dummy2,dummy3;
   Vector2    bvel;
 
-  if (testname != 'E')
-    SETERRQ(grid.com, 1,"basal velocity errors only computable for test E\n");
+  if (testname != 'E') {
+    throw RuntimeError("basal velocity errors only computable for test E");
+  }
 
   IceModelVec2V *vel_adv;
   ierr = stress_balance->get_2D_advective_velocity(vel_adv); CHKERRQ(ierr);
@@ -902,7 +905,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
     ierr = fillSolnTestL(); CHKERRQ(ierr);
     break;
   default:
-    SETERRQ(grid.com, 1,"unknown testname in IceCompModel");
+    throw RuntimeError::formatted("unknown testname %c in IceCompModel", testname);
   }
 
   return 0;

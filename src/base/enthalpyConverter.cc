@@ -260,16 +260,16 @@ PetscErrorCode EnthalpyConverter::getEnth(
   const double T_m = getMeltingTemp(p);
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
-    SETERRQ1(PETSC_COMM_SELF, 1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
+    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
   }
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
+    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
   }
   if (T > T_m + 1.0e-6) {
-    SETERRQ2(PETSC_COMM_SELF, 3,"T=%f exceeds T_m=%f; not allowed\n\n",T,T_m);
+    throw RuntimeError::formatted("T=%f exceeds T_m=%f; not allowed",T,T_m);
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    SETERRQ3(PETSC_COMM_SELF, 4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
+    throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory",T,T_m,omega);
   }
 #endif
   if (T < T_m) {
@@ -306,7 +306,7 @@ PetscErrorCode EnthalpyConverter::getEnthPermissive(
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
-    SETERRQ1(PETSC_COMM_SELF, 1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
+    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
   }
 #endif
   const double T_m = getMeltingTemp(p);
@@ -336,7 +336,7 @@ PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
                         double omega, double p, double &E) const {
 #if (PISM_DEBUG==1)
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    SETERRQ1(PETSC_COMM_SELF, 2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
+    throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
   }
 #endif
   E = getEnthalpyCTS(p) + omega * L;

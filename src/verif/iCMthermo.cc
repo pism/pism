@@ -295,7 +295,8 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(double &gmaxTerr,
         bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
                   &junk0, &junk1, Tex, dummy1, dummy2, dummy3, dummy4);
         break;
-      default:  SETERRQ(grid.com, 1, "temperature errors only computable for tests F and G\n");
+      default:
+        throw RuntimeError("temperature errors only computable for tests F and G");
       }
       const int ks = grid.kBelowHeight(ice_thickness(i,j));
       for (int k = 0; k < ks; k++) {  // only eval error if below num surface
@@ -324,8 +325,9 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
                                 double &gmaxTberr, double &gavTberr) {
   PetscErrorCode ierr;
 
-  if ((testname != 'K') && (testname != 'O'))
-    SETERRQ(grid.com, 1,"ice and bedrock temperature errors only computable for tests K and O\n");
+  if ((testname != 'K') && (testname != 'O')) {
+    throw RuntimeError("ice and bedrock temperature errors only computable for tests K and O");
+  }
 
   double    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
   double    maxTberr = 0.0, avTberr = 0.0, avbcount = 0.0;
@@ -337,7 +339,9 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   IceModelVec3BTU *bedrock_temp;
 
   BTU_Verification *my_btu = dynamic_cast<BTU_Verification*>(btu);
-  if (my_btu == NULL) SETERRQ(grid.com, 1, "my_btu == NULL");
+  if (my_btu == NULL) {
+    throw RuntimeError("my_btu == NULL");
+  }
   ierr = my_btu->get_temp(bedrock_temp); CHKERRQ(ierr);
 
   std::vector<double> zblevels = bedrock_temp->get_levels();
@@ -366,7 +370,8 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
              CHKERRQ(ierr);
       }
       break;
-    default: SETERRQ(grid.com, 2,"again: ice and bedrock temperature errors only for tests K and O\n");
+    default:
+      throw RuntimeError("ice and bedrock temperature errors only for tests K and O");
   }
 
   IceModelVec::AccessList list;
@@ -446,7 +451,8 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
                   &dummy5,&dummy,&Texact,&dummy1,&dummy2,&dummy3,&dummy4);
       }
       break;
-    default:  SETERRQ(grid.com, 1,"temperature errors only computable for tests F and G\n");
+    default:
+      throw RuntimeError("temperature errors only computable for tests F and G");
     }
 
     const double Tbase = T3.getValZ(i,j,0.0);
@@ -514,7 +520,7 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
                   &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
         break;
       default:
-        SETERRQ(grid.com, 1,"strain-heating (strain_heating) errors only computable for tests F and G\n");
+        throw RuntimeError("strain-heating (strain_heating) errors only computable for tests F and G");
       }
       for (unsigned int k = 0; k < grid.Mz; k++)
         strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
@@ -574,7 +580,7 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, doub
                   &dummy0, &dummy1, &dummy2, &radialUex, &wex, &dummy3, &dummy4);
         break;
       default:
-        SETERRQ(grid.com, 1, "surface velocity errors only computed for tests F and G\n");
+        throw RuntimeError("surface velocity errors only computed for tests F and G");
       }
       const double uex = (xx/r) * radialUex;
       const double vex = (yy/r) * radialUex;
@@ -606,8 +612,9 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
   double    maxbmelterr = -9.99e40, minbmelterr = 9.99e40, err;
   double    bmelt,dum1,dum2,dum3,dum4;
 
-  if (testname != 'O')
-    SETERRQ(grid.com, 1,"basal melt rate errors are only computable for test O\n");
+  if (testname != 'O') {
+    throw RuntimeError("basal melt rate errors are only computable for test O");
+  }
 
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
@@ -649,7 +656,8 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
         ierr = exactO(grid.zlevels[k], &Tcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
       }
       break;
-    default:  SETERRQ(grid.com, 2,"only fills temperature solutions for tests K and O\n");
+    default:
+      throw RuntimeError("only fills temperature solutions for tests K and O");
   }
 
   // copy column values into 3D arrays
@@ -672,7 +680,9 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
 PetscErrorCode IceCompModel::fillBasalMeltRateSolnTestO() {
   PetscErrorCode    ierr;
   double       bmelt, dum1, dum2, dum3, dum4;
-  if (testname != 'O') { SETERRQ(grid.com, 1,"only fills basal melt rate soln for test O\n"); }
+  if (testname != 'O') {
+    throw RuntimeError("only fills basal melt rate soln for test O");
+  }
 
   // we just need one constant from exact solution:
   ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
@@ -725,8 +735,8 @@ PetscErrorCode BTU_Verification::bootstrap() {
       for (unsigned int k=0; k<Mbz; k++) {
         if (exactK(grid.time->current(), zlevels[k], &Tbcol[k], &FF,
                    (bedrock_is_ice==PETSC_TRUE)))
-          SETERRQ1(grid.com, 1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
-                   zlevels[k]);
+          throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
+                                        zlevels[k]);
       }
       break;
     case 'O':

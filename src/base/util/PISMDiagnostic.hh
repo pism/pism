@@ -24,6 +24,7 @@
 #include "PISMTime.hh"
 #include "IceGrid.hh"
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -118,7 +119,9 @@ public:
                            int N = 0) {
     PetscErrorCode ierr;
 
-    if (N >= dof) SETERRQ(grid.com, 1, "invalid N (>= dof)");
+    if (N >= dof) {
+      throw RuntimeError::formatted("invalid N (>= dof)");
+    }
 
     vars[N].set_string("pism_intent", "diagnostic");
 

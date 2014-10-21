@@ -19,6 +19,8 @@
 #include "iceModelVec.hh"
 #include "pism_const.hh"
 #include "IceGrid.hh"
+
+#include "error_handling.hh"
 #include "iceModelVec_helpers.hh"
 
 namespace pism {

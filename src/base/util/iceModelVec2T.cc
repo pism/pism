@@ -300,8 +300,9 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
 
   // check if all the records necessary to cover this interval fit in the
   // buffer:
-  if (n - m + 1 > n_records)
-    SETERRQ(grid->com, 1, "IceModelVec2T::update(): timestep is too big");
+  if (n - m + 1 > n_records) {
+    throw RuntimeError("IceModelVec2T::update(): timestep is too big");
+  }
 
   ierr = update(m); CHKERRQ(ierr);
 
@@ -313,8 +314,9 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
   PetscErrorCode ierr;
   unsigned int time_size = (int)time.size();
 
-  if (start >= time_size)
-    SETERRQ1(grid->com, 1, "IceModelVec2T::update(int start): start = %d is invalid", start);
+  if (start >= time_size) {
+    throw RuntimeError::formatted("IceModelVec2T::update(int start): start = %d is invalid", start);
+  }
 
   unsigned int missing = PetscMin(n_records, time_size - start);
 
