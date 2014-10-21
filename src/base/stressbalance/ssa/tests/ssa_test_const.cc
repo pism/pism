@@ -219,8 +219,8 @@ int main(int argc, char *argv[]) {
       ierr = OptionsInt("-My", "Number of grid points in the Y direction", 
                                                       My, flag); CHKERRQ(ierr);
 
-      ierr = OptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
-                             ssa_choices, driver, driver, flag); CHKERRQ(ierr);
+      ierr = OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
+                         ssa_choices, driver, driver, flag); CHKERRQ(ierr);
              
       ierr = OptionsReal("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
                                                   basal_q, flag); CHKERRQ(ierr);                                                      

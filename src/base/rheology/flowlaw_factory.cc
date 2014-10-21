@@ -143,8 +143,8 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
       ++j;
     }
 
-    ierr = OptionsList(com, "-flow_law", "flow law type", choices,
-                           type_name, my_type_name, flag); CHKERRQ(ierr);
+    ierr = OptionsList("-flow_law", "flow law type", choices,
+                       type_name, my_type_name, flag); CHKERRQ(ierr);
 
     if (flag) {
       ierr = setType(my_type_name); CHKERRQ(ierr);

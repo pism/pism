@@ -28,8 +28,8 @@ class Config;
 PetscErrorCode verbosityLevelFromOptions();
 
 // handy functions for processing options:
-PetscErrorCode OptionsList(MPI_Comm com, std::string opt, std::string text, std::set<std::string> choices,
-                               std::string default_value, std::string &result, bool &flag);
+PetscErrorCode OptionsList(std::string opt, std::string text, std::set<std::string> choices,
+                           std::string default_value, std::string &result, bool &flag);
 
 PetscErrorCode OptionsString(std::string option, std::string text,
                                  std::string &result, bool &flag, bool allow_empty_arg = false);
@@ -71,8 +71,7 @@ PetscErrorCode init_config(MPI_Comm com,
                            Config &config, Config &overrides,
                            bool process_options = false);
 
-PetscErrorCode set_config_from_options(MPI_Comm com,
-                                       Config &config);
+PetscErrorCode set_config_from_options(Config &config);
 
 
 } // end of namespace pism

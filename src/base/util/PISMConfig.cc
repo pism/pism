@@ -305,10 +305,10 @@ PetscErrorCode Config::keyword_from_option(const std::string &name,
   while (getline(arg, tmp, ','))
     choices.insert(tmp);
 
-  ierr = OptionsList(m_com, "-" + name,
-                         get_string_quiet(parameter + "_doc"),
-                         choices,
-                         get_string_quiet(parameter), keyword, flag); CHKERRQ(ierr);
+  ierr = OptionsList("-" + name,
+                     get_string_quiet(parameter + "_doc"),
+                     choices,
+                     get_string_quiet(parameter), keyword, flag); CHKERRQ(ierr);
 
   if (flag) {
     this->set_string_from_option(parameter, keyword);

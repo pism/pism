@@ -47,7 +47,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsBegin(grid.com, "", "Options overriding config flags and parameters", ""); CHKERRQ(ierr);
 
-  ierr = set_config_from_options(grid.com, config); CHKERRQ(ierr);
+  ierr = set_config_from_options(config); CHKERRQ(ierr);
 
   ierr = OptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
   ierr = OptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
@@ -109,8 +109,7 @@ PetscErrorCode IceModel::output_size_from_option(const std::string &option,
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
-  ierr = OptionsList(grid.com, option,
-                     description, choices,
+  ierr = OptionsList(option, description, choices,
                      default_value, keyword, flag); CHKERRQ(ierr);
 
   ierr = set_output_size(keyword, result); CHKERRQ(ierr);
@@ -226,9 +225,7 @@ std::string IceModel::get_output_size(const std::string &option) {
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
-  OptionsList(grid.com, option,
-                  "UNKNOWN", choices,
-                  "UNKNOWN", keyword, flag);
+  OptionsList(option, "UNKNOWN", choices, "UNKNOWN", keyword, flag);
   return keyword;
 }
 

@@ -217,8 +217,8 @@ PetscErrorCode IceModel::set_grid_from_options() {
   z_spacing_choices.insert("quadratic");
   z_spacing_choices.insert("equal");
   // Determine the vertical grid spacing in the ice:
-  ierr = OptionsList(grid.com, "-z_spacing", "Vertical spacing in the ice.",
-                         z_spacing_choices, "quadratic", keyword, z_spacing_set); CHKERRQ(ierr);
+  ierr = OptionsList("-z_spacing", "Vertical spacing in the ice.",
+                     z_spacing_choices, "quadratic", keyword, z_spacing_set); CHKERRQ(ierr);
 
   if (keyword == "quadratic") {
     grid.ice_vertical_spacing = QUADRATIC;

@@ -224,9 +224,9 @@ PetscErrorCode show_usage_check_req_opts(MPI_Comm com, std::string execname,
   This is to make it possible to pass a parameter to a module selected using a
   command-line option without adding one mode option.
  */
-PetscErrorCode OptionsList(MPI_Comm com, std::string opt, std::string description,
-			       std::set<std::string> choices, std::string default_value,
-			       std::string &result, bool &flag) {
+PetscErrorCode OptionsList(std::string opt, std::string description,
+                           std::set<std::string> choices, std::string default_value,
+                           std::string &result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   std::string list, descr;
@@ -562,7 +562,7 @@ PetscErrorCode init_config(MPI_Comm com,
   }
 
   if (process_options) {
-    ierr =  set_config_from_options(com, config); CHKERRQ(ierr);
+    ierr =  set_config_from_options(config); CHKERRQ(ierr);
   }
 
   config.print_to_stdout();
@@ -570,7 +570,7 @@ PetscErrorCode init_config(MPI_Comm com,
   return 0;
 }
 
-PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
+PetscErrorCode set_config_from_options(Config &config) {
   PetscErrorCode ierr;
   bool flag;
 
@@ -591,9 +591,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
     choices.insert("cold");
     choices.insert("enthalpy");
 
-    ierr = OptionsList(com, "-energy",
-                           "choose the energy model (one of 'none', 'cold', 'enthalpy')",
-                           choices, "enthalpy", energy, energy_set); CHKERRQ(ierr);
+    ierr = OptionsList("-energy",
+                       "choose the energy model (one of 'none', 'cold', 'enthalpy')",
+                       choices, "enthalpy", energy, energy_set); CHKERRQ(ierr);
 
     if (energy_set == true) {
       if (energy == "none") {
