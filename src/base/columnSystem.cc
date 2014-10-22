@@ -28,9 +28,10 @@
 
 namespace pism {
 
-//! Allocate a tridiagonal system of maximum size nmax.
+
+//! Allocate a tridiagonal system of maximum size max_system_size.
 /*!
-Let N = `nmax`.  Then allocated locations are like this:
+Let N = `max_system_size`.  Then allocated locations are like this:
 \verbatim
 D[0]   U[0]    0      0      0    ...
 L[1]   D[1]   U[1]    0      0    ...
@@ -43,52 +44,40 @@ with the last row
 \endverbatim
 Thus the index into the arrays L, D, U is always the row number.
  */
-columnSystemCtx::columnSystemCtx(unsigned int nmax, const std::string &my_prefix)
-  : m_nmax(nmax), m_prefix(my_prefix) {
-  assert(m_nmax >= 1 && m_nmax < 1e6);
+TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
+                                     const std::string &prefix)
+  : m_max_system_size(max_size), m_prefix(prefix) {
+  assert(m_max_system_size >= 1 && m_max_system_size < 1e6);
 
-  L.resize(m_nmax);
-  D.resize(m_nmax);
-  U.resize(m_nmax);
-  rhs.resize(m_nmax);
-  work.resize(m_nmax);
-
-  resetColumn();
-
-  m_indicesValid = false;
-}
-
-
-columnSystemCtx::~columnSystemCtx() {
-}
-
-unsigned int columnSystemCtx::ks() const {
-  return m_ks;
+  m_L.resize(m_max_system_size);
+  m_D.resize(m_max_system_size);
+  m_U.resize(m_max_system_size);
+  m_rhs.resize(m_max_system_size);
+  m_work.resize(m_max_system_size);
 }
 
 //! Zero all entries.
-void columnSystemCtx::resetColumn() {
+void TridiagonalSystem::reset() {
 #if PISM_DEBUG==1
-  memset(&L[0],    0, (m_nmax)*sizeof(double));
-  memset(&U[0],    0, (m_nmax)*sizeof(double));
-  memset(&D[0],    0, (m_nmax)*sizeof(double));
-  memset(&rhs[0],  0, (m_nmax)*sizeof(double));
-  memset(&work[0], 0, (m_nmax)*sizeof(double)); 
+  memset(&m_L[0],    0, (m_max_system_size)*sizeof(double));
+  memset(&m_U[0],    0, (m_max_system_size)*sizeof(double));
+  memset(&m_D[0],    0, (m_max_system_size)*sizeof(double));
+  memset(&m_rhs[0],  0, (m_max_system_size)*sizeof(double));
+  memset(&m_work[0], 0, (m_max_system_size)*sizeof(double));
 #endif
 }
 
-
 //! Compute 1-norm, which is max sum of absolute values of columns.
-double columnSystemCtx::norm1(unsigned int n) const {
-  assert(n <= m_nmax);
-  if (n == 1)  {
-    return fabs(D[0]);   // only 1x1 case is special
+double TridiagonalSystem::norm1(unsigned int system_size) const {
+  assert(system_size <= m_max_system_size);
+  if (system_size == 1)  {
+    return fabs(m_D[0]);   // only 1x1 case is special
   }
-  double z = fabs(D[0]) + fabs(L[1]);
-  for (unsigned int k = 1; k < n; k++) {  // k is column index (zero-based)
-    z = std::max(z, fabs(U[k-1])) + fabs(D[k]) + fabs(L[k+1]);
+  double z = fabs(m_D[0]) + fabs(m_L[1]);
+  for (unsigned int k = 1; k < system_size; k++) {  // k is column index (zero-based)
+    z = std::max(z, fabs(m_U[k-1])) + fabs(m_D[k]) + fabs(m_L[k+1]);
   }
-  z = std::max(z, fabs(U[n-2]) + fabs(D[n-1]));
+  z = std::max(z, fabs(m_U[system_size-2]) + fabs(m_D[system_size-1]));
   return z;
 }
 
@@ -106,68 +95,31 @@ succeed.
 We return -1.0 if the absolute value of any diagonal element is less than
 1e-12 of the 1-norm of the matrix.
  */
-double columnSystemCtx::ddratio(unsigned int n) const {
-  assert(n <= m_nmax);
+double TridiagonalSystem::ddratio(unsigned int system_size) const {
+  assert(system_size <= m_max_system_size);
 
-  const double scale = norm1(n);
+  const double scale = norm1(system_size);
 
-  if ((fabs(D[0]) / scale) < 1.0e-12) {
+  if ((fabs(m_D[0]) / scale) < 1.0e-12) {
     return -1.0;
   }
-  double z = fabs(U[0]) / fabs(D[0]);
+  double z = fabs(m_U[0]) / fabs(m_D[0]);
 
-  for (unsigned int k = 1; k < n - 1; k++) {  // k is row index (zero-based)
-    if ((fabs(D[k]) / scale) < 1.0e-12) {
+  for (unsigned int k = 1; k < system_size - 1; k++) {  // k is row index (zero-based)
+    if ((fabs(m_D[k]) / scale) < 1.0e-12) {
       return -1.0;
     }
-    const double s = fabs(L[k]) + fabs(U[k]);
-    z = std::max(z, s / fabs(D[k]));
+    const double s = fabs(m_L[k]) + fabs(m_U[k]);
+    z = std::max(z, s / fabs(m_D[k]));
   }
 
-  if ((fabs(D[n - 1]) / scale) < 1.0e-12) {
+  if ((fabs(m_D[system_size - 1]) / scale) < 1.0e-12) {
     return -1.0;
   }
-  z = std::max(z, fabs(L[n - 1]) / fabs(D[n - 1]));
+  z = std::max(z, fabs(m_L[system_size - 1]) / fabs(m_D[system_size - 1]));
 
   return z;
 }
-
-
-void columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
-                                                   double ice_thickness,
-                                                   double dz,
-                                                   unsigned int Mz) {
-  // pre-condition
-#if PISM_DEBUG==1
-  if (m_indicesValid && m_i == my_i && m_j == my_j) {
-    throw RuntimeError("setIndicesAndClearThisColumn() called twice in same column");
-  }
-#endif
-
-  m_i  = my_i;
-  m_j  = my_j;
-  m_ks = static_cast<unsigned int>(floor(ice_thickness / dz));
-
-  // Force m_ks to be in the allowed range.
-  if (m_ks >= Mz) {
-    m_ks = Mz - 1;
-  }
-
-  resetColumn();
-
-  m_indicesValid = true;
-
-  // post-condition
-#if PISM_DEBUG==1
-  // check if m_ks is valid
-  if (m_ks >= Mz) {
-    throw RuntimeError::formatted("ks = %d computed at i = %d, j = %d is invalid,\n"
-                                  "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
-                                  m_ks, m_i, m_j, ice_thickness, dz);
-  }
-#endif
-}
-
 
 //! Utility for simple ascii view of a vector (one-dimensional column) quantity.
 /*!
@@ -179,19 +131,19 @@ Result should be executable as part of a Matlab/Octave script.
 
 Does not stop on non-fatal errors.
  */
-void columnSystemCtx::viewVectorValues(std::ostream &output,
-                                       const std::vector<double> &v,
-                                       unsigned int M,
-                                       const std::string &variable) const {
-  assert(M >= 1);
+void TridiagonalSystem::save_vector(std::ostream &output,
+                                    const std::vector<double> &v,
+                                    unsigned int system_size,
+                                    const std::string &variable) const {
+  assert(system_size >= 1);
 
   output << "%% viewing ColumnSystem column object with description '" << variable << "'"
          << " (columns  [k value])" << std::endl;
 
   output << variable << "_with_index = [..." << std::endl;
-  for (unsigned int k = 0; k < M; k++) {
+  for (unsigned int k = 0; k < system_size; k++) {
     output << "  " << k << " " << v[k];
-    if (k == M-1) {
+    if (k == system_size - 1) {
       output << "];" << std::endl;
     } else {
       output << ";" << std::endl;
@@ -208,46 +160,46 @@ Give first argument NULL to get standard out.  No binary viewer.
 
 Give description string as `info` argument.
  */
-void columnSystemCtx::viewMatrix(std::ostream &output,
-                                 unsigned int M,
+void TridiagonalSystem::save_matrix(std::ostream &output,
+                                 unsigned int system_size,
                                  const std::string &variable) const {
 
-  if (M < 2) {
+  if (system_size < 2) {
     std::cout << "\n\n<nmax >= 2 required to view tri-diagonal matrix " << variable
               << " ... skipping view" << std::endl;
     return;
   }
 
-  if (M > 500) {
+  if (system_size > 500) {
     std::cout << "\n\n<nmax > 500:" << variable
               << " matrix too big to display as full; viewing tridiagonal matrix diagonals..."
               << std::endl;
 
-    viewVectorValues(output, U, M-1, variable + "_super_diagonal_U");
-    viewVectorValues(output, D, M,   variable + "_diagonal_D");
+    save_vector(output, m_U, system_size + 1, variable + "_super_diagonal_U");
+    save_vector(output, m_D, system_size,   variable + "_diagonal_D");
 
-    // discard L[0], which is not used
+    // discard m_L[0], which is not used
     {
-      std::vector<double> L_tmp(M - 1);
-      for (unsigned int i = 0; i < M - 1; ++i) {
-        L_tmp[i] = L[i + 1];
+      std::vector<double> L_tmp(system_size - 1);
+      for (unsigned int i = 0; i < system_size - 1; ++i) {
+        L_tmp[i] = m_L[i + 1];
       }
-      viewVectorValues(output, L_tmp, M-1, variable + "_sub_diagonal_L");
+      save_vector(output, L_tmp, system_size - 1, variable + "_sub_diagonal_L");
     }
   } else {
     output << "\n"
            << variable << " = [..." << std::endl;
 
-    for (unsigned int i = 0; i < M; ++i) { // row
-      for (unsigned int j = 0; j < M; j++) { // column
+    for (unsigned int i = 0; i < system_size; ++i) { // row
+      for (unsigned int j = 0; j < system_size; j++) { // column
         double A_ij = 0.0;
 
         if (j == i - 1) {
-          A_ij = L[i];
+          A_ij = m_L[i];
         } else if (j == i) {
-          A_ij = D[i];
+          A_ij = m_D[i];
         } else if (j == i + 1) {
-          A_ij = U[i];
+          A_ij = m_U[i];
         } else {
           A_ij = 0.0;
         }
@@ -255,7 +207,7 @@ void columnSystemCtx::viewMatrix(std::ostream &output,
         output << A_ij << " ";
       } // column loop
 
-      if (i != M-1) {
+      if (i != system_size - 1) {
         output << ";" << std::endl;
       } else {
         output << "];" << std::endl;
@@ -266,55 +218,109 @@ void columnSystemCtx::viewMatrix(std::ostream &output,
 
 
 //! View the tridiagonal system A x = b to an output stream, both A as a full matrix and b as a vector.
-void columnSystemCtx::viewSystem(std::ostream &output,
-                                 unsigned int M) const {
-  viewMatrix(output, M, m_prefix + "_A");
-  viewVectorValues(output, rhs, M, m_prefix + "_rhs");
+void TridiagonalSystem::save_system(std::ostream &output,
+                                    unsigned int system_size) const {
+  save_matrix(output, system_size, m_prefix + "_A");
+  save_vector(output, m_rhs, system_size, m_prefix + "_rhs");
+}
+
+//! Write system matrix, right-hand-side, and (provided) solution into an already-named m-file.
+void TridiagonalSystem::save_system_with_solution(const std::string &filename,
+                                                  unsigned int M,
+                                                  const std::vector<double> &x) {
+  std::ofstream output(filename);
+  output << "% system has 1-norm = " << norm1(M)
+         << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
+
+  save_system(output, M);
+  save_vector(output, x, M, m_prefix + "_x");
 }
 
 
-//! The actual code for solving a tridiagonal system.  Return code has diagnostic importance.
+//! The actual code for solving a tridiagonal system.
 /*!
 This is modified slightly from a Numerical Recipes version.
 
-Input size n is size of instance.  Requires n <= columnSystemCtx::m_nmax.
+Input size n is size of instance.  Requires n <= TridiagonalSystem::m_max_system_size.
 
 Solution of system in x.
-
-Success is return code zero.  Positive return code gives location of zero pivot.
-Negative return code indicates a software problem.
  */
-void columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vector<double> &x) {
-  assert(m_indicesValid == true);
-  assert(n >= 1);
-  assert(n <= m_nmax);
+void TridiagonalSystem::solve(unsigned int system_size, std::vector<double> &result) {
+  assert(system_size >= 1);
+  assert(system_size <= m_max_system_size);
 
-  if (D[0] == 0.0)
+  if (m_D[0] == 0.0) {
     throw RuntimeError("zero pivot at row 1");
+  }
 
-  x.resize(m_nmax);
+  result.resize(m_max_system_size);
 
-  double b = D[0];
+  double b = m_D[0];
 
-  x[0] = rhs[0] / b;
-  for (unsigned int k = 1; k < n; ++k) {
-    work[k] = U[k - 1] / b;
+  result[0] = m_rhs[0] / b;
+  for (unsigned int k = 1; k < system_size; ++k) {
+    m_work[k] = m_U[k - 1] / b;
 
-    b = D[k] - L[k] * work[k];
+    b = m_D[k] - m_L[k] * m_work[k];
 
     if (b == 0.0) {
       throw RuntimeError::formatted("zero pivot at row %d", k + 1);
     }
 
-    x[k] = (rhs[k] - L[k] * x[k-1]) / b;
+    result[k] = (m_rhs[k] - m_L[k] * result[k-1]) / b;
   }
 
-  for (int k = n - 2; k >= 0; --k)
-    x[k] -= work[k + 1] * x[k + 1];
-
-  m_indicesValid = false;
+  for (int k = system_size - 2; k >= 0; --k) {
+    result[k] -= m_work[k + 1] * result[k + 1];
+  }
 }
 
+//! A column system is a kind of a tridiagonal system.
+columnSystemCtx::columnSystemCtx(unsigned int max_system_size, const std::string &my_prefix,
+                                 double dx, double dy, double dz, double dt,
+                                 IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3)
+  : TridiagonalSystem(max_system_size, my_prefix),
+    m_dx(dx), m_dy(dy), m_dz(dz), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
+  assert(dx > 0.0);
+  assert(dy > 0.0);
+  assert(dz > 0.0);
+  assert(dt > 0.0);
+
+  m_u.resize(m_max_system_size);
+  m_v.resize(m_max_system_size);
+  m_w.resize(m_max_system_size);
+}
+
+columnSystemCtx::~columnSystemCtx() {
+}
+
+unsigned int columnSystemCtx::ks() const {
+  return m_ks;
+}
+
+void columnSystemCtx::init_column(int my_i, int my_j,
+                                  double ice_thickness) {
+  m_i  = my_i;
+  m_j  = my_j;
+  m_ks = static_cast<unsigned int>(floor(ice_thickness / m_dz));
+
+  // Force m_ks to be in the allowed range.
+  if (m_ks >= m_max_system_size) {
+    m_ks = m_max_system_size - 1;
+  }
+
+  reset();
+
+  // post-condition
+#if PISM_DEBUG==1
+  // check if m_ks is valid
+  if (m_ks >= m_max_system_size) {
+    throw RuntimeError::formatted("ks = %d computed at i = %d, j = %d is invalid,\n"
+                                  "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
+                                  m_ks, m_i, m_j, ice_thickness, m_dz);
+  }
+#endif
+}
 
 //! Write system matrix and right-hand-side into an m-file.  The file name contains ZERO_PIVOT_ERROR.
 void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
@@ -326,11 +332,12 @@ void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
   output << "% system has 1-norm = " << norm1(M)
          << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
 
-  viewSystem(output, M);
+  save_system(output, M);
 }
 
 
-//! Write system matrix, right-hand-side, and (provided) solution into an m-file.  Constructs file name from m_prefix.
+//! @brief Write system matrix, right-hand-side, and (provided)
+//! solution into an m-file. Constructs file name from m_prefix.
 /*!
 An example of the use of this procedure is from <c>examples/searise-greenland/</c>
 running the enthalpy formulation.  First run spinup.sh in that directory  (FIXME:
@@ -338,8 +345,9 @@ which was modified to have equal spacing in z, when I did this example) to
 generate `g20km_steady.nc`.  Then:
 
 \code
-  $ pismr -calving ocean_kill -e 3 -atmosphere searise_greenland -surface pdd -config_override  config_269.0_0.001_0.80_-0.500_9.7440.nc \
-    -no_mass -y 1 -i g20km_steady.nc -view_sys -id 19 -jd 79
+  $ pismr -calving ocean_kill -e 3 -atmosphere searise_greenland -surface pdd \
+          -config_override  config_269.0_0.001_0.80_-0.500_9.7440.nc \
+          -no_mass -y 1 -i g20km_steady.nc -view_sys -id 19 -jd 79
 
     ...
 
@@ -360,7 +368,7 @@ Of course we can also do `spy(A)`, `eig(A)`, and look at individual entries,
 and row and column sums, and so on.
  */
 void columnSystemCtx::viewColumnInfoMFile(const std::vector<double> &x,
-                                          unsigned int M) {
+                                          unsigned int system_size) {
   std::cout << "saving "
             << m_prefix << " column system at (i,j)"
             << " = (" << m_i << "," << m_j << ") to m-file...\n" << std::endl;
@@ -368,20 +376,7 @@ void columnSystemCtx::viewColumnInfoMFile(const std::vector<double> &x,
   char buffer[TEMPORARY_STRING_LENGTH];
   snprintf(buffer, sizeof(buffer), "%s_i%d_j%d.m", m_prefix.c_str(), m_i, m_j);
 
-  viewColumnInfoMFile(buffer, M, x);
-}
-
-
-//! Write system matrix, right-hand-side, and (provided) solution into an already-named m-file.
-void columnSystemCtx::viewColumnInfoMFile(const std::string &filename,
-                                          unsigned int M,
-                                          const std::vector<double> &x) {
-  std::ofstream output(filename);
-  output << "% system has 1-norm = " << norm1(M)
-         << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
-
-  viewSystem(output, M);
-  viewVectorValues(output, x, M, m_prefix + "_x");
+  save_system_with_solution(buffer, system_size, x);
 }
 
 } // end of namespace pism

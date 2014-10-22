@@ -40,17 +40,21 @@ namespace pism {
   The tridiagonal algorithm here comes from Numerical Recipes in C
   Section 2.4, page 50.  It solves the system:
 
+@verbatim
   [b_1  c_1   0   ...                           ] [  u_1  ]   [   r_1   ]
   [a_2  b_2  c_2  ...                           ] [  u_2  ]   [   r_2   ]
   [               ...                           ].[  ...  ] = [   ...   ]
   [               ...  a_{N-1}  b_{N-1}  c_{N-1}] [u_{N-1}]   [ r_{N-1} ]
   [               ...     0     a_N      b_N    ] [  u_N  ]   [   r_N   ]
+@endverbatim
 
   HOWEVER... the version in this code is different from Numerical
   Recipes in two ways:
-  a) Indexing is zero-based
-  b) Variables have been renamed.
 
+  - Indexing is zero-based
+  -  Variables have been renamed.
+
+@verbatim
   NR      PISM
   ==================
   a       L       "Lower Diagonal" (L doesn't use index 0)
@@ -62,62 +66,91 @@ namespace pism {
   j       k
   n       n
   gam     work
-
+@endverbatim
 
   Therefore... this version of the code solves the following problem:
 
+@verbatim
   [D_0  U_0   0   ...                           ] [  x_0  ]   [   r_0   ]
   [L_1  D_1  U_1  ...                           ] [  x_1  ]   [   r_1   ]
   [               ...                           ].[  ...  ] = [   ...   ]
   [               ...  L_{N-2}  D_{N-2}  U_{N-2}] [x_{N-2}]   [ r_{N-2} ]
   [               ...     0     L_{N-1}  D_{N-1}] [x_{N-1}]   [ r_{N-1} ]
-
+@endverbatim
 */
-class columnSystemCtx {
-
+class TridiagonalSystem {
 public:
-  columnSystemCtx(unsigned int my_nmax, const std::string &my_prefix);
-  virtual ~columnSystemCtx();
+  TridiagonalSystem(unsigned int max_size, const std::string &prefix);
 
-  void setIndicesAndClearThisColumn(int my_i, int my_j,
-                                    double ice_thickness, double dz,
-                                    unsigned int Mz);  
+protected:
+  double norm1(unsigned int system_size) const;
+  double ddratio(unsigned int system_size) const;
+  void reset();
+
+  void solve(unsigned int system_size, std::vector<double> &result);
+
+  void save_system_with_solution(const std::string &filename,
+                                 unsigned int system_size,
+                                 const std::vector<double> &solution);
+
+  //! Save the system to a stream using the ASCII MATLAB (Octave)
+  //! format. Virtual to allow saving more info in derived classes.
+  virtual void save_system(std::ostream &output,
+                           unsigned int system_size) const;
+
+
+  void save_matrix(std::ostream &output,
+                   unsigned int system_size,
+                   const std::string &info) const;
+
+  void save_vector(std::ostream &output,
+                   const std::vector<double> &v,
+                   unsigned int system_size, const std::string &info) const;
+
+  unsigned int m_max_system_size;         // maximum system size
+  std::vector<double> m_L, m_D, m_U, m_rhs, m_work; // vectors for tridiagonal system
+
+  std::string m_prefix;
+};
+
+class IceModelVec3;
+
+//! Base class for tridiagonal systems in the ice.
+/*! Adds data members used in time-dependent systems with advection
+  (dx, dy, dz, dt, velocity components).
+ */
+class columnSystemCtx : public TridiagonalSystem {
+public:
+  columnSystemCtx(unsigned int max_system_size, const std::string &prefix,
+                  double dx, double dy, double dz, double dt,
+                  IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3);
+  ~columnSystemCtx();
 
   void viewColumnInfoMFile(const std::vector<double> &x,
                            unsigned int M);
 
   unsigned int ks() const;
 protected:
-  unsigned int m_nmax;
-  std::vector<double> L, D, U, rhs, work; // vectors for tridiagonal system
-
-  int m_i, m_j;
+  //! current system size; corresponds to the highest vertical level within the ice
   unsigned int m_ks;
+  //! current column indexes
+  int m_i, m_j;
 
-  double norm1(unsigned int n) const;
-  double ddratio(unsigned int n) const;
+  double m_dx, m_dy, m_dz, m_dt;
 
-  void solveTridiagonalSystem(unsigned int n, std::vector<double> &x);
+  //! u-component if the ice velocity
+  std::vector<double> m_u;
+  //! v-component if the ice velocity
+  std::vector<double> m_v;
+  //! w-component if the ice velocity
+  std::vector<double> m_w;
 
-  void viewColumnInfoMFile(const std::string &filename,
-                           unsigned int M,
-                           const std::vector<double> &x);
+  //! pointers to 3D velocity components
+  IceModelVec3 *m_u3, *m_v3, *m_w3;
 
-  virtual void viewSystem(std::ostream &output,
-                          unsigned int M) const;
+  void init_column(int i, int j, double ice_thickness);
 
   void reportColumnZeroPivotErrorMFile(unsigned int M);
-  void viewMatrix(std::ostream &output,
-                  unsigned int M,
-                  const std::string &info) const;
-  void viewVectorValues(std::ostream &output,
-                        const std::vector<double> &v,
-                        unsigned int M, const std::string &info) const;
-
-  std::string m_prefix;
-private:
-  bool m_indicesValid;
-  void resetColumn();
 };
 
 } // end of namespace pism

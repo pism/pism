@@ -19,8 +19,6 @@
 #ifndef __tempSystem_hh
 #define __tempSystem_hh
 
-#include <petscsys.h>
-
 #include "columnSystem.hh"
 #include "pism_const.hh"
 #include "Mask.hh"
@@ -51,49 +49,47 @@ class IceModelVec3;
   \endcode
 */
 class tempSystemCtx : public columnSystemCtx {
-
 public:
-  tempSystemCtx(int my_Mz, const std::string &my_prefix);
-  PetscErrorCode initAllColumns();
-  PetscErrorCode setSchemeParamsThisColumn(MaskValue my_mask, bool my_isMarginal,
-                                           double my_lambda);
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(double my_Ts);
-  PetscErrorCode setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
+  tempSystemCtx(unsigned int Mz, const std::string &prefix,
+                double dx, double dy, double dz, double dt,
+                const Config &config,
+                IceModelVec3 *T3,
+                IceModelVec3 *u3,
+                IceModelVec3 *v3,
+                IceModelVec3 *w3,
+                IceModelVec3 *strain_heating3);
+
+  void initThisColumn(int i, int j, bool is_marginal, MaskValue new_mask, double ice_thickness);
+
+  void setSurfaceBoundaryValuesThisColumn(double my_Ts);
+  void setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
                                                   double my_Rb);
 
-  PetscErrorCode solveThisColumn(std::vector<double> &x);
+  void solveThisColumn(std::vector<double> &x);
 
-public:
-  // constants which should be set before calling initForAllColumns()
-  double  dx,
-    dy,
-    dtTemp,
-    dzEQ,
-    ice_rho,
-    ice_c_p,
-    ice_k;
-  // pointers which should be set before calling initForAllColumns()
-  double  *T,
-    *u,
-    *v,
-    *w,
-    *strain_heating;
-  IceModelVec3 *T3;
+  double lambda()
+  { return m_lambda; }
 
-protected: // used internally
-  int    Mz;
-  double lambda, Ts, G0, Tshelfbase, Rb;
-  MaskValue    mask;
-  bool        isMarginal;
-  double nuEQ,
-    rho_c_I,
-    iceK,
-    iceR;
-  bool        initAllDone,
-    indicesValid,
-    schemeParamsValid,
-    surfBCsValid,
-    basalBCsValid;
+  double w(int k)
+  { return m_w[k]; }
+protected:
+  double m_ice_density, m_ice_c, m_ice_k;
+  IceModelVec3 *m_T3, *m_strain_heating3;
+
+  std::vector<double>  m_T, m_strain_heating;
+  double m_lambda, m_Ts, m_G0, m_Tshelfbase, m_Rb;
+  MaskValue    m_mask;
+  bool        m_is_marginal;
+  double m_nu,
+    m_rho_c_I,
+    m_iceK,
+    m_iceR;
+private:
+  bool
+    m_surfBCsValid,
+    m_basalBCsValid;
+
+  double compute_lambda();
 };
 
 } // end of namespace pism

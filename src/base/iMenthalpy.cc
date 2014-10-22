@@ -227,8 +227,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   std::vector<double> Enthnew(grid.Mz_fine); // new enthalpy in column
 
-  enthSystemCtx esys(config, Enth3, grid.dx, grid.dy, dt_TempAge,
-                     grid.dz_fine, grid.Mz_fine, "enth", *EC);
+  enthSystemCtx system(grid.Mz_fine, "enth", grid.dx, grid.dy, grid.dz_fine, dt_TempAge,
+                       config, Enth3, u3, v3, w3, strain_heating3, *EC);
 
   // Now get map-plane coupler fields: Dirichlet upper surface
   // boundary and mass balance lower boundary under shelves
@@ -284,19 +284,18 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
     const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
-    esys.initThisColumn(i, j, isMarginal, ice_thickness(i, j),
-                        u3, v3, w3, strain_heating3);
+    system.initThisColumn(i, j, isMarginal, ice_thickness(i, j));
 
     // enthalpy and pressures at top of ice
     const double
-      depth_ks = ice_thickness(i, j) - esys.ks() * grid.dz_fine,
+      depth_ks = ice_thickness(i, j) - system.ks() * grid.dz_fine,
       p_ks     = EC->getPressureFromDepth(depth_ks); // FIXME issue #15
 
     double Enth_ks;
     ierr = EC->getEnthPermissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
                                  p_ks, Enth_ks); CHKERRQ(ierr);
 
-    const bool ice_free_column = (esys.ks() == 0);
+    const bool ice_free_column = (system.ks() == 0);
 
     // deal completely with columns with no ice; enthalpy and basal_melt_rate need setting
     if (ice_free_column) {
@@ -308,16 +307,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       continue;
     } // end of if (ice_free_column)
 
-    if (esys.lambda() < 1.0)
+    if (system.lambda() < 1.0)
       *vertSacrCount += 1; // count columns with lambda < 1
 
     const bool is_floating = mask.ocean(i, j);
 
-    bool base_is_cold = esys.Enth[0] < esys.Enth_s[0];
+    bool base_is_cold = system.Enth(0) < system.Enth_s(0);
 
     // set boundary conditions and update enthalpy
     {
-      esys.setDirichletSurface(Enth_ks);
+      system.setDirichletSurface(Enth_ks);
 
       // determine lowest-level equation at bottom of ice; see
       // decision chart in the source code browser and page
@@ -328,20 +327,20 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         double Enth0;
         ierr = EC->getEnthPermissive(shelfbtemp(i, j), 0.0, EC->getPressureFromDepth(ice_thickness(i, j)),
                                      Enth0); CHKERRQ(ierr);
-        esys.setDirichletBasal(Enth0);
+        system.setDirichletBasal(Enth0);
       } else if (base_is_cold) {
         // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
-        esys.setBasalHeatFlux(basal_heat_flux(i, j) + (*Rb)(i, j));
+        system.setBasalHeatFlux(basal_heat_flux(i, j) + (*Rb)(i, j));
       } else {
         // warm, grounded base case
-        esys.setBasalHeatFlux(0.0);
+        system.setBasalHeatFlux(0.0);
       }
 
       // solve the system
-      esys.solveThisColumn(Enthnew);
+      system.solveThisColumn(Enthnew);
 
       if (viewOneColumn && (i == id && j == jd)) {
-        esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine);
+        system.viewColumnInfoMFile(Enthnew, grid.Mz_fine);
       }
     }
 
@@ -351,11 +350,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     {
       // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
       //   using DrainageCalculator dc
-      for (unsigned int k=0; k < esys.ks(); k++) {
-        if (Enthnew[k] > esys.Enth_s[k]) { // avoid doing any more work if cold
-          if (Enthnew[k] >= esys.Enth_s[k] + 0.5 * L) {
+      for (unsigned int k=0; k < system.ks(); k++) {
+        if (Enthnew[k] > system.Enth_s(k)) { // avoid doing any more work if cold
+          if (Enthnew[k] >= system.Enth_s(k) + 0.5 * L) {
             liquifiedCount++; // count these rare events...
-            Enthnew[k] = esys.Enth_s[k] + 0.5 * L; //  but lose the energy
+            Enthnew[k] = system.Enth_s(k) + 0.5 * L; //  but lose the energy
           }
           const double depth = ice_thickness(i, j) - k * grid.dz_fine,
             p = EC->getPressureFromDepth(depth); // FIXME issue #15
@@ -373,7 +372,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
       // apply bulge limiter
       const double lowerEnthLimit = Enth_ks - bulgeEnthMax;
-      for (unsigned int k=0; k < esys.ks(); k++) {
+      for (unsigned int k=0; k < system.ks(); k++) {
         if (Enthnew[k] < lowerEnthLimit) {
           *bulgeCount += 1;      // count the columns which have very large cold
           Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
@@ -384,10 +383,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       // pressure-melting; that is, assume subglacial water is at the pressure-
       // melting temperature and enforce continuity of temperature
       {
-        if (Enthnew[0] < esys.Enth_s[0] && till_water_thickness(i,j) > 0.0) {
-          const double E_difference = esys.Enth_s[0] - Enthnew[0];
+        if (Enthnew[0] < system.Enth_s(0) && till_water_thickness(i,j) > 0.0) {
+          const double E_difference = system.Enth_s(0) - Enthnew[0];
 
-          Enthnew[0] = esys.Enth_s[0];
+          Enthnew[0] = system.Enth_s(0);
           // This adjustment creates energy out of nothing. We will
           // freeze some basal water, subtracting an equal amount of
           // energy, to make up for it.
@@ -422,7 +421,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
       // compute basal melt rate
     {
-      base_is_cold = (Enthnew[0] < esys.Enth_s[0]) && (till_water_thickness(i,j) == 0.0);
+      base_is_cold = (Enthnew[0] < system.Enth_s(0)) && (till_water_thickness(i,j) == 0.0);
       // Determine melt rate, but only preliminarily because of
       // drainage, from heat flux out of bedrock, heat flux into
       // ice, and frictional heating
@@ -447,11 +446,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
               Tpmp_0 = EC->getMeltingTemp(p_0),
               Tpmp_1 = EC->getMeltingTemp(p_1);
 
-            hf_up = -esys.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / grid.dz_fine;
+            hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / grid.dz_fine;
           } else {
             double T_0;
             ierr = EC->getAbsTemp(Enthnew[0], p_0, T_0); CHKERRQ(ierr);
-            const double K_0 = esys.k_from_T(T_0) / EC->c_from_T(T_0);
+            const double K_0 = system.k_from_T(T_0) / EC->c_from_T(T_0);
 
             hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / grid.dz_fine;
           }

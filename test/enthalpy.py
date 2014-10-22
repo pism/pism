@@ -12,31 +12,36 @@ class EnthalpyTest(object):
         self.EC = PISM.EnthalpyConverter(ctx.config)
         self.grid = ctx.newgrid()
 
+        grid = self.grid
+
         self.Lx = 1e5
         self.Ly = 1e5
         self.Lz = 1000.0
         self.Mx = 3
         self.My = 3
         self.Mz = Mz
-        self.dt = self.grid.convert(dt, "years", "seconds")
+        self.dt = grid.convert(dt, "years", "seconds")
 
-        PISM.model.initGrid(self.grid, self.Lx, self.Ly, self.Lz,
+        PISM.model.initGrid(grid, self.Lx, self.Ly, self.Lz,
                             self.Mx, self.My, self.Mz,
                             PISM.NOT_PERIODIC)
 
-        self.z = np.array(self.grid.zlevels_fine)
+        self.z = np.array(grid.zlevels_fine)
 
-        self.enthalpy = PISM.model.createEnthalpyVec(self.grid)
+        self.enthalpy = PISM.model.createEnthalpyVec(grid)
 
 
-        self.strain_heating = PISM.model.createStrainHeatingVec(self.grid)
+        self.strain_heating = PISM.model.createStrainHeatingVec(grid)
 
-        self.u, self.v, self.w = PISM.model.create3DVelocityVecs(self.grid)
+        self.u, self.v, self.w = PISM.model.create3DVelocityVecs(grid)
 
-        self.esys = PISM.enthSystemCtx(ctx.config, self.enthalpy,
-                                       self.grid.dx, self.grid.dy, self.dt,
-                                       self.grid.dz_fine, self.grid.Mz_fine,
-                                       "enth", self.EC)
+        self.esys = PISM.enthSystemCtx(grid.Mz_fine, "enth",
+                                       grid.dx, grid.dy, grid.dz_fine, self.dt,
+                                       ctx.config,
+                                       self.enthalpy,
+                                       self.u, self.v, self.w,
+                                       self.strain_heating,
+                                       self.EC)
         # zero ice velocity:
         self.reset_flow()
         # no strain heating:
@@ -51,8 +56,7 @@ class EnthalpyTest(object):
         self.strain_heating.set(0.0)
 
     def init_column(self):
-        self.esys.initThisColumn(1, 1, False, # NOT marginal (but it does not matter)
-                                 self.Lz, self.u, self.v, self.w, self.strain_heating)
+        self.esys.initThisColumn(1, 1, False, self.Lz) # NOT marginal (but it does not matter)
 
 def dirichlet_test(dt):
     """Test the enthalpy solver with Dirichlet B.C. at the base and

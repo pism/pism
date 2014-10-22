@@ -16,7 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petsc.h>
 #include <assert.h>
 #include "pism_const.hh"
 #include "iceModelVec.hh"
@@ -27,202 +26,192 @@
 
 namespace pism {
 
-tempSystemCtx::tempSystemCtx(int my_Mz, const std::string &my_prefix)
-  : columnSystemCtx(my_Mz, my_prefix), Mz(my_Mz) {
+tempSystemCtx::tempSystemCtx(unsigned int Mz, const std::string &prefix,
+                             double dx, double dy, double dz, double dt,
+                             const Config &config,
+                             IceModelVec3 *T3,
+                             IceModelVec3 *u3,
+                             IceModelVec3 *v3,
+                             IceModelVec3 *w3,
+                             IceModelVec3 *strain_heating3)
+  : columnSystemCtx(Mz, prefix, dx, dy, dz, dt, u3, v3, w3) {
 
   // set flags to indicate nothing yet set
-  initAllDone       = false;
-  schemeParamsValid = false;
-  surfBCsValid      = false;
-  basalBCsValid     = false;
+  m_surfBCsValid      = false;
+  m_basalBCsValid     = false;
 
-  // set values so we can check if init was called on all
-  dx      = -1;
-  dy      = -1;
-  dtTemp  = -1;
-  dzEQ    = -1;
-  ice_rho = -1;
-  ice_c_p = -1;
-  ice_k   = -1;
-  T       = NULL;
-  u       = NULL;
-  v       = NULL;
-  w       = NULL;
-  T3      = NULL;
-  strain_heating = NULL;
-}
+  m_T.resize(m_max_system_size);
+  m_strain_heating.resize(m_max_system_size);
 
-
-PetscErrorCode tempSystemCtx::initAllColumns() {
-  // check whether each parameter & pointer got set
-  assert(dx > 0.0);
-  assert(dy > 0.0);
-  assert(dtTemp > 0.0);
-  assert(dzEQ > 0.0);
-  assert(ice_rho > 0.0);
-  assert(ice_c_p > 0.0);
-  assert(ice_k > 0.0);
-
-  assert(T != NULL);
-  assert(u != NULL);
-  assert(v != NULL);
-  assert(w != NULL);
-  assert(strain_heating != NULL);
-  assert(T3 != NULL);
+  // set physical constants
+  m_ice_density = config.get("ice_density");
+  m_ice_c       = config.get("ice_specific_heat_capacity");
+  m_ice_k       = config.get("ice_thermal_conductivity");
 
   // set derived constants
-  nuEQ        = dtTemp / dzEQ;
-  rho_c_I     = ice_rho * ice_c_p;
-  iceK        = ice_k / rho_c_I;
-  iceR        = iceK * dtTemp / PetscSqr(dzEQ);
-  // done
-  initAllDone = true;
-  return 0;
+  m_nu    = m_dt / m_dz;
+  m_rho_c_I = m_ice_density * m_ice_c;
+  m_iceK    = m_ice_k / m_rho_c_I;
+  m_iceR    = m_iceK * m_dt / (m_dz*m_dz);
+
+  m_T3 = T3;
+  m_strain_heating3 = strain_heating3;
 }
 
+void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mask,
+                                   double ice_thickness) {
 
-PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(MaskValue my_mask,
-                                                        bool my_isMarginal, double my_lambda) {
-  assert(initAllDone == true);
-  // allow setting scheme parameters only once:
-  assert(schemeParamsValid == false);
+  m_is_marginal = is_marginal;
+  m_mask = mask;
 
-  mask              = my_mask;
-  isMarginal        = my_isMarginal;
-  lambda            = my_lambda;
-  schemeParamsValid = true;
-  return 0;
+  init_column(i, j, ice_thickness);
+
+  if (m_ks == 0) {
+    return;
+  }
+
+  m_u3->getValColumn(m_i, m_j, m_ks, &m_u[0]);
+  m_v3->getValColumn(m_i, m_j, m_ks, &m_v[0]);
+  m_w3->getValColumn(m_i, m_j, m_ks, &m_w[0]);
+  m_strain_heating3->getValColumn(m_i, m_j, m_ks, &m_strain_heating[0]);
+  m_T3->getValColumn(m_i, m_j, m_ks, &m_T[0]);
+
+  m_lambda = compute_lambda();
 }
 
-
-PetscErrorCode tempSystemCtx::setSurfaceBoundaryValuesThisColumn(double my_Ts) {
-  assert(initAllDone == true);
+void tempSystemCtx::setSurfaceBoundaryValuesThisColumn(double my_Ts) {
   // allow setting surface BCs only once:
-  assert(surfBCsValid == false);
+  assert(m_surfBCsValid == false);
 
-  Ts           = my_Ts;
-  surfBCsValid = true;
-  return 0;
+  m_Ts           = my_Ts;
+  m_surfBCsValid = true;
 }
 
 
-PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0,
-                                                               double my_Tshelfbase, double my_Rb) {
-  assert(initAllDone == true);
+void tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0,
+                                                     double my_Tshelfbase, double my_Rb) {
   // allow setting basal BCs only once:
-  assert(basalBCsValid == false);
+  assert(m_basalBCsValid == false);
 
-  G0            = my_G0;
-  Tshelfbase    = my_Tshelfbase;
-  Rb            = my_Rb;
-  basalBCsValid = true;
-  return 0;
+  m_G0            = my_G0;
+  m_Tshelfbase    = my_Tshelfbase;
+  m_Rb            = my_Rb;
+  m_basalBCsValid = true;
 }
 
+double tempSystemCtx::compute_lambda() {
+  double result = 1.0; // start with centered implicit for more accuracy
+  const double epsilon = 1e-6 / 3.15569259747e7;
 
-PetscErrorCode tempSystemCtx::solveThisColumn(std::vector<double> &x) {
+  for (unsigned int k = 0; k <= m_ks; k++) {
+    const double denom = (fabs(m_w[k]) + epsilon) * m_ice_density * m_ice_c * m_dz;
+    result = std::min(result, 2.0 * m_ice_k / denom);
+  }
+  return result;
+}
 
-  assert(initAllDone == true);
-  assert(schemeParamsValid == true);
-  assert(surfBCsValid == true);
-  assert(basalBCsValid == true);
+void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
+
+  assert(m_surfBCsValid == true);
+  assert(m_basalBCsValid == true);
 
   // bottom of ice; k=0 eqn
-  if (m_ks == 0) { // no ice; set T[0] to surface temp if grounded
-    // note L[0] not allocated 
-    D[0] = 1.0;
-    U[0] = 0.0;
+  if (m_ks == 0) { // no ice; set m_T[0] to surface temp if grounded
+    // note L[0] not allocated
+    m_D[0] = 1.0;
+    m_U[0] = 0.0;
     // if floating and no ice then worry only about bedrock temps
-    if (mask::ocean(mask)) {
+    if (mask::ocean(m_mask)) {
       // essentially no ice but floating ... ask OceanCoupler
-      rhs[0] = Tshelfbase;
+      m_rhs[0] = m_Tshelfbase;
     } else { // top of bedrock sees atmosphere
-      rhs[0] = Ts; 
+      m_rhs[0] = m_Ts;
     }
   } else { // m_ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
-    if (mask::ocean(mask)) {
+    if (mask::ocean(m_mask)) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
-      // note L[0] not allocated 
-      D[0] = 1.0;
-      U[0] = 0.0;
-      rhs[0] = Tshelfbase; // set by OceanCoupler
-    } else { 
+      // note that L[0] is not used
+      m_D[0] = 1.0;
+      m_U[0] = 0.0;
+      m_rhs[0] = m_Tshelfbase; // set by OceanCoupler
+    } else {
       // there is *grounded* ice; from FV across interface
-      rhs[0] = T[0] + dtTemp * (Rb / (rho_c_I * dzEQ));
-      if (!isMarginal) {
-        rhs[0] += dtTemp * 0.5 * strain_heating[0]/ rho_c_I;
+      m_rhs[0] = m_T[0] + m_dt * (m_Rb / (m_rho_c_I * m_dz));
+      if (!m_is_marginal) {
+        m_rhs[0] += m_dt * 0.5 * m_strain_heating[0]/ m_rho_c_I;
         planeStar<double> ss;
-        T3->getPlaneStar(m_i,m_j,0,&ss);
-        const double UpTu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
-                                              u[0] * (ss.ij  - ss.w) / dx;
-        const double UpTv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
-                                              v[0] * (ss.ij  - ss.s) / dy;
-        rhs[0] -= dtTemp  * (0.5 * (UpTu + UpTv));
+        m_T3->getPlaneStar(m_i, m_j, 0, &ss);
+        const double UpTu = ((m_u[0] < 0) ?
+                             m_u[0] * (ss.e -  ss.ij) / m_dx :
+                             m_u[0] * (ss.ij  - ss.w) / m_dx);
+        const double UpTv = ((m_v[0] < 0) ?
+                             m_v[0] * (ss.n -  ss.ij) / m_dy :
+                             m_v[0] * (ss.ij  - ss.s) / m_dy);
+        m_rhs[0] -= m_dt  * (0.5 * (UpTu + UpTv));
       }
       // vertical upwinding
-      // L[0] = 0.0;  (is not an allocated location!) 
-      D[0] = 1.0 + 2.0 * iceR;
-      U[0] = - 2.0 * iceR;
-      if (w[0] < 0.0) { // velocity downward: add velocity contribution
-        const double AA = dtTemp * w[0] / (2.0 * dzEQ);
-        D[0] -= AA;
-        U[0] += AA;
+      // L[0] = 0.0;  (is not used)
+      m_D[0] = 1.0 + 2.0 * m_iceR;
+      m_U[0] = - 2.0 * m_iceR;
+      if (m_w[0] < 0.0) { // velocity downward: add velocity contribution
+        const double AA = m_dt * m_w[0] / (2.0 * m_dz);
+        m_D[0] -= AA;
+        m_U[0] += AA;
       }
       // apply geothermal flux G0 here
-      rhs[0] += 2.0 * dtTemp * G0 / (rho_c_I * dzEQ);
+      m_rhs[0] += 2.0 * m_dt * m_G0 / (m_rho_c_I * m_dz);
     }
   }
 
   // generic ice segment; build 1:m_ks-1 eqns
   for (unsigned int k = 1; k < m_ks; k++) {
     planeStar<double> ss;
-    T3->getPlaneStar_fine(m_i,m_j,k,&ss);
-    const double UpTu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
-                                          u[k] * (ss.ij  - ss.w) / dx;
-    const double UpTv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
-                                          v[k] * (ss.ij  - ss.s) / dy;
-    const double AA = nuEQ * w[k];      
-    if (w[k] >= 0.0) {  // velocity upward
-      L[k] = - iceR - AA * (1.0 - lambda/2.0);
-      D[k] = 1.0 + 2.0 * iceR + AA * (1.0 - lambda);
-      U[k] = - iceR + AA * (lambda/2.0);
+    m_T3->getPlaneStar_fine(m_i, m_j, k, &ss);
+    const double UpTu = ((m_u[k] < 0) ?
+                         m_u[k] * (ss.e -  ss.ij) / m_dx :
+                         m_u[k] * (ss.ij  - ss.w) / m_dx);
+    const double UpTv = ((m_v[k] < 0) ?
+                         m_v[k] * (ss.n -  ss.ij) / m_dy :
+                         m_v[k] * (ss.ij  - ss.s) / m_dy);
+    const double AA = m_nu * m_w[k];
+    if (m_w[k] >= 0.0) {  // velocity upward
+      m_L[k] = - m_iceR - AA * (1.0 - m_lambda/2.0);
+      m_D[k] = 1.0 + 2.0 * m_iceR + AA * (1.0 - m_lambda);
+      m_U[k] = - m_iceR + AA * (m_lambda/2.0);
     } else {  // velocity downward
-      L[k] = - iceR - AA * (lambda/2.0);
-      D[k] = 1.0 + 2.0 * iceR - AA * (1.0 - lambda);
-      U[k] = - iceR + AA * (1.0 - lambda/2.0);
+      m_L[k] = - m_iceR - AA * (m_lambda/2.0);
+      m_D[k] = 1.0 + 2.0 * m_iceR - AA * (1.0 - m_lambda);
+      m_U[k] = - m_iceR + AA * (1.0 - m_lambda/2.0);
     }
-    rhs[k] = T[k];
-    if (!isMarginal) {
-      rhs[k] += dtTemp * (strain_heating[k] / rho_c_I - UpTu - UpTv);
+    m_rhs[k] = m_T[k];
+    if (!m_is_marginal) {
+      m_rhs[k] += m_dt * (m_strain_heating[k] / m_rho_c_I - UpTu - UpTv);
     }
   }
-      
+
   // surface b.c.
   if (m_ks>0) {
-    L[m_ks] = 0.0;
-    D[m_ks] = 1.0;
+    m_L[m_ks] = 0.0;
+    m_D[m_ks] = 1.0;
     // ignore U[m_ks]
-    rhs[m_ks] = Ts;
+    m_rhs[m_ks] = m_Ts;
   }
 
   // mark column as done
-  schemeParamsValid = false;
-  surfBCsValid = false;
-  basalBCsValid = false;
+  m_surfBCsValid = false;
+  m_basalBCsValid = false;
 
   // solve it; note melting not addressed yet
   try {
-    solveTridiagonalSystem(m_ks+1,x);
+    solve(m_ks + 1, x);
   }
   catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (tempSystemCtx) at (%d,%d)\n"
-                  "viewing system to m-file... ", m_i, m_j);
+                  "saving system to m-file... ", m_i, m_j);
     reportColumnZeroPivotErrorMFile(m_ks + 1);
     throw;
   }
-
-  return 0;
 }
 
 

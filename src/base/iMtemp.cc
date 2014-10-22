@@ -138,16 +138,11 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   double               fdz   = grid.dz_fine;
   std::vector<double> &fzlev = grid.zlevels_fine;
 
-  ierr = verbPrintf(5,grid.com,
-                    "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f]",
-                    grid.Mz_fine, fdz); CHKERRQ(ierr);
-
   bool viewOneColumn;
   ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   const double
     ice_density        = config.get("ice_density"),
-    ice_k              = config.get("ice_thermal_conductivity"),
     ice_c              = config.get("ice_specific_heat_capacity"),
     L                  = config.get("water_latent_heat_fusion"),
     melting_point_temp = config.get("water_melting_point_temperature"),
@@ -155,34 +150,13 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
   const bool allow_above_melting = config.get_flag("temperature_allow_above_melting");
 
-  tempSystemCtx system(grid.Mz_fine, "temperature");
-  system.dx      = grid.dx;
-  system.dy      = grid.dy;
-  system.dtTemp  = dt_TempAge;  // same time step for temp and age, currently
-  system.dzEQ    = fdz;
-  system.ice_rho = ice_density;
-  system.ice_k   = ice_k;
-  system.ice_c_p = ice_c;
-
-  std::vector<double> x(grid.Mz_fine);// space for solution of system
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
   const double bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice_c;
 
+  std::vector<double> x(grid.Mz_fine);// space for solution of system
   std::vector<double> Tnew(grid.Mz_fine);
-  // pointers to values in current column
-  system.u     = new double[grid.Mz_fine];
-  system.v     = new double[grid.Mz_fine];
-  system.w     = new double[grid.Mz_fine];
-  system.strain_heating = new double[grid.Mz_fine];
-  system.T     = new double[grid.Mz_fine];
-
-  // system needs access to T3 for T3.getPlaneStar_fine()
-  system.T3 = &T3;
-
-  // checks that all needed constants and pointers got set:
-  ierr = system.initAllColumns(); CHKERRQ(ierr);
 
   // now get map-plane fields, starting with coupler fields
   assert(surface != NULL);
@@ -223,6 +197,11 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
   ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
 
+  tempSystemCtx system(grid.Mz_fine, "temperature",
+                       grid.dx, grid.dy, fdz, dt_TempAge,
+                       config,
+                       &T3, u3, v3, w3, strain_heating3);
+
   list.add(*Rb);
 
   list.add(*u3);
@@ -237,48 +216,34 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   int maxLowTempCount = static_cast<int>(config.get("max_low_temp_count"));
   double globalMinAllowedTemp = config.get("global_min_allowed_temp");
 
-  const double epsilon = grid.convert(1e-6, "m/year", "m/second");
-
   MaskQuery mask(vMask);
+
+  const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // this should *not* be replaced by call to grid.kBelowHeight():
-    const int ks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
+    // if isMarginal then only do vertical conduction for ice; ignore advection
+    //   and strain heating if isMarginal
+    const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
+    MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
 
-    if (ks>0) { // if there are enough points in ice to bother ...
-      // this call will validate ks
-      system.setIndicesAndClearThisColumn(i, j,
-                                          ice_thickness(i,j), fdz, grid.Mz_fine);
+    system.initThisColumn(i, j, isMarginal, mask_value, ice_thickness(i,j));
 
-      ierr = u3->getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
-      ierr = v3->getValColumn(i,j,ks,system.v); CHKERRQ(ierr);
-      ierr = w3->getValColumn(i,j,ks,system.w); CHKERRQ(ierr);
-      ierr = strain_heating3->getValColumn(i,j,ks,system.strain_heating); CHKERRQ(ierr);
-      ierr = T3.getValColumn(i,j,ks,system.T); CHKERRQ(ierr);
+    const int ks = system.ks();
 
-      // go through column and find appropriate lambda for BOMBPROOF
-      double lambda = 1.0;  // start with centered implicit for more accuracy
-      for (int k = 1; k < ks; k++) {
-        const double denom = (PetscAbs(system.w[k]) + epsilon) * ice_density * ice_c * fdz;
-        lambda = PetscMin(lambda, 2.0 * ice_k / denom);
+    if (ks > 0) { // if there are enough points in ice to bother ...
+
+      if (system.lambda() < 1.0) {
+        *vertSacrCount += 1; // count columns with lambda < 1
       }
-      if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
-      // if isMarginal then only do vertical conduction for ice; ignore advection
-      //   and strain heating if isMarginal
-      const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
-      const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
-      MaskValue mask_value = static_cast<MaskValue>(vMask.as_int(i,j));
-      ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
-      CHKERRQ(ierr);
 
       // set boundary values for tridiagonal system
-      ierr = system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j)); CHKERRQ(ierr);
-      ierr = system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j)); CHKERRQ(ierr);
+      system.setSurfaceBoundaryValuesThisColumn(ice_surface_temp(i,j));
+      system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j));
 
       // solve the system for this column; melting not addressed yet
-      ierr = system.solveThisColumn(x); CHKERRQ(ierr);
+      system.solveThisColumn(x);
 
       if (viewOneColumn && (i == id && j == jd)) {
         ierr = PetscPrintf(grid.com,
@@ -314,7 +279,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
                            "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
                            " proc %d; mask=%d; w=%f m/year]]\n",
                            Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
-                           grid.convert(system.w[k],
+                           grid.convert(system.w(k),
                                         "m/s", "m/year")); CHKERRQ(ierr);
         myLowTempCount++;
       }
@@ -346,7 +311,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
                            "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                            " proc %d; mask=%d; w=%f]]\n",
                            Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
-                           grid.convert(system.w[0], "m/s", "m/year")); CHKERRQ(ierr);
+                           grid.convert(system.w(0), "m/s", "m/year")); CHKERRQ(ierr);
         myLowTempCount++;
       }
       if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {
@@ -377,8 +342,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     throw RuntimeError::formatted("too many low temps: %d", myLowTempCount);
   }
 
-  delete [] system.T;  delete [] system.strain_heating;
-  delete [] system.u;  delete [] system.v;  delete [] system.w;
   return 0;
 }
 

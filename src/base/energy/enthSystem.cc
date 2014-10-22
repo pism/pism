@@ -26,62 +26,59 @@
 
 namespace pism {
 
-enthSystemCtx::enthSystemCtx(const Config &config,
-                             IceModelVec3 &my_Enth3,
-                             double my_dx,  double my_dy,
-                             double my_dt,  double my_dz,
-                             int my_Mz, const std::string &my_prefix,
-                             const EnthalpyConverter &my_EC)
-  : columnSystemCtx(my_Mz, my_prefix), EC(my_EC) {  // <- critical: sets size of sys
-  Mz = my_Mz;
+enthSystemCtx::enthSystemCtx(int Mz, const std::string &prefix,
+                             double dx,  double dy, double dz,  double dt,
+                             const Config &config,
+                             IceModelVec3 &Enth3,
+                             IceModelVec3 *u3,
+                             IceModelVec3 *v3,
+                             IceModelVec3 *w3,
+                             IceModelVec3 *strain_heating3,
+                             const EnthalpyConverter &EC)
+  : columnSystemCtx(Mz, prefix, dx, dy, dz, dt, u3, v3, w3), m_EC(EC) {
 
   // set some values so we can check if init was called
-  R_cold   = -1.0;
-  R_temp   = -1.0;
+  m_R_cold   = -1.0;
+  m_R_temp   = -1.0;
   m_lambda = -1.0;
-  D0 = GSL_NAN;
-  U0 = GSL_NAN;
-  B0 = GSL_NAN;
+  m_D0 = GSL_NAN;
+  m_U0 = GSL_NAN;
+  m_B0 = GSL_NAN;
 
-  ice_rho = config.get("ice_density");
-  ice_c   = config.get("ice_specific_heat_capacity");
-  ice_k   = config.get("ice_thermal_conductivity");
-  p_air   = config.get("surface_pressure");
+  m_ice_density = config.get("ice_density");
+  m_ice_c   = config.get("ice_specific_heat_capacity");
+  m_ice_k   = config.get("ice_thermal_conductivity");
+  m_p_air   = config.get("surface_pressure");
 
-  ice_K  = ice_k / ice_c;
-  ice_K0 = ice_K * config.get("enthalpy_temperate_conductivity_ratio");
+  m_ice_K  = m_ice_k / m_ice_c;
+  m_ice_K0 = m_ice_K * config.get("enthalpy_temperate_conductivity_ratio");
 
-  u.resize(Mz);
-  v.resize(Mz);
-  w.resize(Mz);
-  Enth.resize(Mz);
-  Enth_s.resize(Mz);
-  strain_heating.resize(Mz);
-  R.resize(Mz);
+  m_Enth.resize(m_max_system_size);
+  m_Enth_s.resize(m_max_system_size);
+  m_strain_heating.resize(m_max_system_size);
+  m_R.resize(m_max_system_size);
 
-  Enth3 = &my_Enth3;  // points to IceModelVec3
+  // point to IceModelVec3
+  m_Enth3 = &Enth3;
+  m_strain_heating3 = strain_heating3;
 
-  dx = my_dx;
-  dy = my_dy;
-  dt = my_dt;
-  dz = my_dz;
-  nu = dt / dz;
+  m_nu = m_dt / m_dz;
 
-  R_factor = dt / (PetscSqr(dz) * ice_rho);
-  R_cold = ice_K * R_factor;
-  R_temp = ice_K0 * R_factor;
+  m_R_factor = m_dt / (PetscSqr(m_dz) * m_ice_density);
+  m_R_cold = m_ice_K * m_R_factor;
+  m_R_temp = m_ice_K0 * m_R_factor;
 
   if (config.get_flag("use_temperature_dependent_thermal_conductivity")) {
-    k_depends_on_T = true;
+    m_k_depends_on_T = true;
   } else {
-    k_depends_on_T = false;
+    m_k_depends_on_T = false;
   }
 
   // check if c(T) is a constant function:
   if (EC.c_from_T(260) != EC.c_from_T(270)) {
-    c_depends_on_T = true;
+    m_c_depends_on_T = true;
   } else {
-    c_depends_on_T = false;
+    m_c_depends_on_T = false;
   }
 }
 
@@ -94,34 +91,30 @@ enthSystemCtx::~enthSystemCtx() {
  */
 double enthSystemCtx::k_from_T(double T) {
 
-  if (k_depends_on_T) {
+  if (m_k_depends_on_T) {
     return 9.828 * exp(-0.0057 * T);
   }
 
-  return ice_k;
+  return m_ice_k;
 }
 
 void enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
-                                   double my_ice_thickness,
-                                   IceModelVec3 *u3,
-                                   IceModelVec3 *v3,
-                                   IceModelVec3 *w3,
-                                   IceModelVec3 *strain_heating3) {
-  ice_thickness = my_ice_thickness;
-  ismarginal    = my_ismarginal;
+                                   double my_ice_thickness) {
+  m_ice_thickness = my_ice_thickness;
+  m_ismarginal    = my_ismarginal;
 
-  setIndicesAndClearThisColumn(my_i, my_j, ice_thickness, dz, Mz);
+  init_column(my_i, my_j, m_ice_thickness);
 
   if (m_ks == 0) {
     return;
   }
 
-  u3->getValColumn(m_i, m_j, m_ks, &u[0]);
-  v3->getValColumn(m_i, m_j, m_ks, &v[0]);
-  w3->getValColumn(m_i, m_j, m_ks, &w[0]);
-  strain_heating3->getValColumn(m_i, m_j, m_ks, &strain_heating[0]);
+  m_u3->getValColumn(m_i, m_j, m_ks, &m_u[0]);
+  m_v3->getValColumn(m_i, m_j, m_ks, &m_v[0]);
+  m_w3->getValColumn(m_i, m_j, m_ks, &m_w[0]);
+  m_strain_heating3->getValColumn(m_i, m_j, m_ks, &m_strain_heating[0]);
+  m_Enth3->getValColumn(m_i, m_j, m_ks, &m_Enth[0]);
 
-  Enth3->getValColumn(m_i, m_j, m_ks, &Enth[0]);
   compute_enthalpy_CTS();
 
   m_lambda = compute_lambda();
@@ -130,22 +123,21 @@ void enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
 }
 
 //! Compute the CTS value of enthalpy in an ice column.
-/*!
-Return argument Enth_s[Mz] has the enthalpy value for the pressure-melting
-temperature at the corresponding z level.
+/*! m_Enth_s is set to the enthalpy value for the pressure-melting
+  temperature with zero water fraction at the corresponding z level.
  */
 void enthSystemCtx::compute_enthalpy_CTS() {
 
   for (unsigned int k = 0; k <= m_ks; k++) {
     const double
-      depth = ice_thickness - k * dz,
-      p = EC.getPressureFromDepth(depth); // FIXME issue #15
-    Enth_s[k] = EC.getEnthalpyCTS(p);
+      depth = m_ice_thickness - k * m_dz,
+      p = m_EC.getPressureFromDepth(depth); // FIXME issue #15
+    m_Enth_s[k] = m_EC.getEnthalpyCTS(p);
   }
 
-  const double Es_air = EC.getEnthalpyCTS(p_air);
-  for (unsigned int k = m_ks+1; k < Enth_s.size(); k++) {
-    Enth_s[k] = Es_air;
+  const double Es_air = m_EC.getEnthalpyCTS(m_p_air);
+  for (unsigned int k = m_ks+1; k < m_Enth_s.size(); k++) {
+    m_Enth_s[k] = Es_air;
   }
 }
 
@@ -158,11 +150,11 @@ double enthSystemCtx::compute_lambda() {
   const double epsilon = 1e-6 / 3.15569259747e7;
 
   for (unsigned int k = 0; k <= m_ks; k++) {
-    if (Enth[k] > Enth_s[k]) { // lambda = 0 if temperate ice present in column
+    if (m_Enth[k] > m_Enth_s[k]) { // lambda = 0 if temperate ice present in column
       result = 0.0;
     } else {
-      const double denom = (PetscAbs(w[k]) + epsilon) * ice_rho * ice_c * dz;
-      result = PetscMin(result, 2.0 * ice_k / denom);
+      const double denom = (PetscAbs(m_w[k]) + epsilon) * m_ice_density * m_ice_c * m_dz;
+      result = PetscMin(result, 2.0 * m_ice_k / denom);
     }
   }
   return result;
@@ -171,16 +163,16 @@ double enthSystemCtx::compute_lambda() {
 
 void enthSystemCtx::setDirichletSurface(double my_Enth_surface) {
 #if (PISM_DEBUG==1)
-  if ((nu < 0.0) || (R_cold < 0.0) || (R_temp < 0.0)) {
+  if ((m_nu < 0.0) || (m_R_cold < 0.0) || (m_R_temp < 0.0)) {
     throw RuntimeError("setDirichletSurface() should only be called after\n"
                        "initAllColumns() in enthSystemCtx");
   }
 #endif
-  Enth_ks = my_Enth_surface;
+  m_Enth_ks = my_Enth_surface;
 }
 
 void enthSystemCtx::checkReadyToSolve() {
-  if (nu < 0.0 || R_cold < 0.0 || R_temp < 0.0) {
+  if (m_nu < 0.0 || m_R_cold < 0.0 || m_R_temp < 0.0) {
     throw RuntimeError("not ready to solve: need initAllColumns() in enthSystemCtx");
   }
   if (m_lambda < 0.0) {
@@ -197,13 +189,13 @@ is already set.
 void enthSystemCtx::setDirichletBasal(double Y) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
-  if (gsl_isnan(D0) == 0 || gsl_isnan(U0) == 0 || gsl_isnan(B0) == 0) {
+  if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
     throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
-  D0 = 1.0;
-  U0 = 0.0;
-  B0  = Y;
+  m_D0 = 1.0;
+  m_U0 = 0.0;
+  m_B0  = Y;
 }
 
 
@@ -245,34 +237,34 @@ is already set.
 void enthSystemCtx::setBasalHeatFlux(double heat_flux) {
 #if (PISM_DEBUG==1)
  checkReadyToSolve();
-  if (gsl_isnan(D0) == 0 || gsl_isnan(U0) == 0 || gsl_isnan(B0) == 0) {
+  if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
     throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
   // extract K from R[0], so this code works even if K=K(T)
-  // recall:   R = (ice_K / ice_rho) * dt / PetscSqr(dz)
+  // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
-    K      = (ice_rho * PetscSqr(dz) * R[0]) / dt,
-    Rc     = R[0],
-    Rr     = R[1],
+    K      = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
+    Rc     = m_R[0],
+    Rr     = m_R[1],
     Rminus = Rc,
     Rplus  = 0.5 * (Rc + Rr);
-  D0 = 1.0 + Rminus + Rplus;
+  m_D0 = 1.0 + Rminus + Rplus;
   // modified upper-diagonal term:
-  U0 = - Rminus - Rplus;
-  // Enth[0] (below) is there due to the fully-implicit discretization
+  m_U0 = - Rminus - Rplus;
+  // m_Enth[0] (below) is there due to the fully-implicit discretization
   // in time, the second term is the modification of the right-hand
   // side implementing the Neumann B.C. (see the doxygen comment)
-  B0 = Enth[0] + 2.0 * Rminus * dz * heat_flux / K;
+  m_B0 = m_Enth[0] + 2.0 * Rminus * m_dz * heat_flux / K;
   // treat vertical velocity using first-order upwinding:
-  if (not ismarginal) {
+  if (not m_ismarginal) {
     planeStar<double> ss;
-    Enth3->getPlaneStar_fine(m_i,m_j,0,&ss);
-    const double UpEnthu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
-                                             u[0] * (ss.ij  - ss.w) / dx;
-    const double UpEnthv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
-                                             v[0] * (ss.ij  - ss.s) / dy;
-    B0 += dt * ((strain_heating[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
+    m_Enth3->getPlaneStar_fine(m_i,m_j,0,&ss);
+    const double UpEnthu = (m_u[0] < 0) ? m_u[0] * (ss.e -  ss.ij) / m_dx :
+                                             m_u[0] * (ss.ij  - ss.w) / m_dx;
+    const double UpEnthv = (m_v[0] < 0) ? m_v[0] * (ss.n -  ss.ij) / m_dy :
+                                             m_v[0] * (ss.ij  - ss.s) / m_dy;
+    m_B0 += m_dt * ((m_strain_heating[0] / m_ice_density) - UpEnthu - UpEnthv);  // = rhs[0]
   }
 }
 
@@ -292,25 +284,25 @@ Thus
   \f[ R = \frac{k \Delta t}{\rho c \Delta z^2}. \f]
  */
 void enthSystemCtx::assemble_R() {
-  if (k_depends_on_T == false && c_depends_on_T == false) {
+  if (m_k_depends_on_T == false && m_c_depends_on_T == false) {
 
     for (unsigned int k = 0; k <= m_ks; k++)
-      R[k] = (Enth[k] < Enth_s[k]) ? R_cold : R_temp;
+      m_R[k] = (m_Enth[k] < m_Enth_s[k]) ? m_R_cold : m_R_temp;
 
   } else {
 
     for (unsigned int k = 0; k <= m_ks; k++) {
-      if (Enth[k] < Enth_s[k]) {
+      if (m_Enth[k] < m_Enth_s[k]) {
         // cold case
-        const double depth = ice_thickness - k * dz;
+        const double depth = m_ice_thickness - k * m_dz;
         double T;
-        EC.getAbsTemp(Enth[k], EC.getPressureFromDepth(depth), // FIXME: issue #15
+        m_EC.getAbsTemp(m_Enth[k], m_EC.getPressureFromDepth(depth), // FIXME: issue #15
                       T);
 
-        R[k] = ((k_depends_on_T ? k_from_T(T) : ice_k) / EC.c_from_T(T)) * R_factor;
+        m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC.c_from_T(T)) * m_R_factor;
       } else {
         // temperate case
-        R[k] = R_temp;
+        m_R[k] = m_R_temp;
       }
     }
 
@@ -318,8 +310,8 @@ void enthSystemCtx::assemble_R() {
 
   // R[k] for k > m_ks are never used
 #if (PISM_DEBUG==1)
-  for (unsigned int k = m_ks + 1; k < R.size(); ++k) {
-    R[k] = GSL_NAN;
+  for (unsigned int k = m_ks + 1; k < m_R.size(); ++k) {
+    m_R[k] = GSL_NAN;
   }
 #endif
 }
@@ -363,88 +355,86 @@ void enthSystemCtx::assemble_R() {
 void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
 #if (PISM_DEBUG==1)
   checkReadyToSolve();
-  if (gsl_isnan(D0) || gsl_isnan(U0) || gsl_isnan(B0)) {
+  if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
     throw RuntimeError("solveThisColumn() should only be called after\n"
                        "  setting basal boundary condition in enthSystemCtx");
   }
 #endif
 
   // k=0 equation is already established
-  // L[0] = 0.0;  // not allocated
-  D[0]   = D0;
-  U[0]   = U0;
-  rhs[0] = B0;
+  // m_L[0] = 0.0;  // not used
+  m_D[0]   = m_D0;
+  m_U[0]   = m_U0;
+  m_rhs[0] = m_B0;
 
   // generic ice segment in k location (if any; only runs if m_ks >= 2)
   for (unsigned int k = 1; k < m_ks; k++) {
     const double
-        Rminus = 0.5 * (R[k-1] + R[k]),
-        Rplus  = 0.5 * (R[k]   + R[k+1]);
-    L[k] = - Rminus;
-    D[k] = 1.0 + Rminus + Rplus;
-    U[k] = - Rplus;
-    const double AA = nu * w[k];
-    if (w[k] >= 0.0) {  // velocity upward
-      L[k] -= AA * (1.0 - m_lambda/2.0);
-      D[k] += AA * (1.0 - m_lambda);
-      U[k] += AA * (m_lambda/2.0);
+        Rminus = 0.5 * (m_R[k-1] + m_R[k]),
+        Rplus  = 0.5 * (m_R[k]   + m_R[k+1]);
+    m_L[k] = - Rminus;
+    m_D[k] = 1.0 + Rminus + Rplus;
+    m_U[k] = - Rplus;
+    const double AA = m_nu * m_w[k];
+    if (m_w[k] >= 0.0) {  // velocity upward
+      m_L[k] -= AA * (1.0 - m_lambda/2.0);
+      m_D[k] += AA * (1.0 - m_lambda);
+      m_U[k] += AA * (m_lambda/2.0);
     } else {            // velocity downward
-      L[k] -= AA * (m_lambda/2.0);
-      D[k] -= AA * (1.0 - m_lambda);
-      U[k] += AA * (1.0 - m_lambda/2.0);
+      m_L[k] -= AA * (m_lambda/2.0);
+      m_D[k] -= AA * (1.0 - m_lambda);
+      m_U[k] += AA * (1.0 - m_lambda/2.0);
     }
-    rhs[k] = Enth[k];
-    if (not ismarginal) {
+    m_rhs[k] = m_Enth[k];
+    if (not m_ismarginal) {
       planeStar<double> ss;
-      Enth3->getPlaneStar_fine(m_i,m_j,k,&ss);
-      const double UpEnthu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
-                                               u[k] * (ss.ij  - ss.w) / dx;
-      const double UpEnthv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
-                                               v[k] * (ss.ij  - ss.s) / dy;
-      rhs[k] += dt * ((strain_heating[k] / ice_rho) - UpEnthu - UpEnthv);
+      m_Enth3->getPlaneStar_fine(m_i,m_j,k,&ss);
+      const double UpEnthu = (m_u[k] < 0) ? m_u[k] * (ss.e -  ss.ij) / m_dx :
+                                               m_u[k] * (ss.ij  - ss.w) / m_dx;
+      const double UpEnthv = (m_v[k] < 0) ? m_v[k] * (ss.n -  ss.ij) / m_dy :
+                                               m_v[k] * (ss.ij  - ss.s) / m_dy;
+      m_rhs[k] += m_dt * ((m_strain_heating[k] / m_ice_density) - UpEnthu - UpEnthv);
     }
   }
 
   // set Dirichlet boundary condition at top
   if (m_ks > 0) {
-    L[m_ks] = 0.0;
+    m_L[m_ks] = 0.0;
   }
-  D[m_ks] = 1.0;
-  if (m_ks < Mz-1) {
-    U[m_ks] = 0.0;
+  m_D[m_ks] = 1.0;
+  if (m_ks < m_max_system_size - 1) {
+    m_U[m_ks] = 0.0;
   }
-  rhs[m_ks] = Enth_ks;
+  m_rhs[m_ks] = m_Enth_ks;
 
   // Solve it; note drainage is not addressed yet and post-processing may occur
   try {
-    solveTridiagonalSystem(m_ks+1, x);
+    solve(m_ks + 1, x);
   }
   catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (enthSystemCtx) at (%d,%d)\n"
-                  "viewing system to m-file... ", m_i, m_j);
+                  "saving system to m-file... ", m_i, m_j);
     reportColumnZeroPivotErrorMFile(m_ks + 1);
     throw;
   }
 
   // air above
   for (unsigned int k = m_ks+1; k < x.size(); k++) {
-    x[k] = Enth_ks;
+    x[k] = m_Enth_ks;
   }
 
 #if (PISM_DEBUG==1)
   // if success, mark column as done by making scheme params and b.c. coeffs invalid
   m_lambda = -1.0;
-  D0       = GSL_NAN;
-  U0       = GSL_NAN;
-  B0       = GSL_NAN;
+  m_D0       = GSL_NAN;
+  m_U0       = GSL_NAN;
+  m_B0       = GSL_NAN;
 #endif
 }
 
-//! View the tridiagonal system A x = b to a PETSc viewer, both A as a full matrix and b as a vector.
-void enthSystemCtx::viewSystem(std::ostream &output, unsigned int M) const {
-  viewMatrix(output, M, m_prefix + "_A");
-  viewVectorValues(output, rhs, M, m_prefix + "_rhs");
-  viewVectorValues(output, R, M, m_prefix + "_R");
+void enthSystemCtx::save_system(std::ostream &output, unsigned int system_size) const {
+  TridiagonalSystem::save_system(output, system_size);
+  save_vector(output, m_R, system_size, m_prefix + "_R");
 }
 
 } // end of namespace pism

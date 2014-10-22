@@ -37,20 +37,20 @@ class EnthalpyConverter;
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(const Config &config,
-                IceModelVec3 &my_Enth3,
-                double my_dx,  double my_dy,
-                double my_dt,  double my_dz,
-                int my_Mz, const std::string &my_prefix,
-                const EnthalpyConverter &my_EC);
-  virtual ~enthSystemCtx();
+  enthSystemCtx(int max_system_size, const std::string &prefix,
+                double dx,  double dy,
+                double dz,  double dt,
+                const Config &config,
+                IceModelVec3 &Enth3,
+                IceModelVec3 *u3,
+                IceModelVec3 *v3,
+                IceModelVec3 *w3,
+                IceModelVec3 *strain_heating3,
+                const EnthalpyConverter &EC);
+  ~enthSystemCtx();
 
   void initThisColumn(int i, int j, bool my_ismarginal,
-                      double ice_thickness,
-                      IceModelVec3 *u3,
-                      IceModelVec3 *v3,
-                      IceModelVec3 *w3,
-                      IceModelVec3 *strain_heating3);
+                      double ice_thickness);
 
   double k_from_T(double T);
 
@@ -58,50 +58,46 @@ public:
   void setDirichletBasal(double Y);
   void setBasalHeatFlux(double hf);
 
-  void viewSystem(std::ostream &output, unsigned int M) const;
+  virtual void save_system(std::ostream &output, unsigned int M) const;
 
   void solveThisColumn(std::vector<double> &result);
 
   double lambda()
   { return m_lambda; }
-public:
-  // arrays must be filled before calling solveThisColumn():
 
-  // enthalpy in ice at previous time step
-  std::vector<double> Enth;
-  // enthalpy level for CTS; function only of pressure
-  std::vector<double> Enth_s;
+  double Enth(size_t i)
+  { return m_Enth[i]; }
+
+  double Enth_s(size_t i)
+  { return m_Enth_s[i]; }
 protected:
-  //! u-component if the ice velocity
-  std::vector<double> u;
-  //! v-component if the ice velocity
-  std::vector<double> v;
-  //! w-component if the ice velocity
-  std::vector<double> w;
+  // enthalpy in ice at previous time step
+  std::vector<double> m_Enth;
+  // enthalpy level for CTS; function only of pressure
+  std::vector<double> m_Enth_s;
+
   //! strain heating in the ice column
-  std::vector<double> strain_heating;
+  std::vector<double> m_strain_heating;
 
   //! values of @f$ k \Delta t / (\rho c \Delta x^2) @f$
-  std::vector<double> R;
+  std::vector<double> m_R;
 
-  unsigned int Mz;
+  double m_ice_density, m_ice_c, m_ice_k, m_ice_K, m_ice_K0, m_p_air,
+    m_nu, m_R_cold, m_R_temp, m_R_factor;
 
-  double ice_rho, ice_c, ice_k, ice_K, ice_K0, p_air,
-    dx, dy, dz, dt, nu, R_cold, R_temp, R_factor;
-
-  double ice_thickness,
+  double m_ice_thickness,
     m_lambda,              //!< implicit FD method parameter
-    Enth_ks;             //!< top surface Dirichlet B.C.
-  double D0, U0, B0;   // coefficients of the first (basal) equation
-  bool ismarginal, c_depends_on_T, k_depends_on_T;
+    m_Enth_ks;             //!< top surface Dirichlet B.C.
+  double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
+  bool m_ismarginal, m_c_depends_on_T, m_k_depends_on_T;
 
-  IceModelVec3 *Enth3;
-  const EnthalpyConverter &EC;  // conductivity has known dependence on T, not enthalpy
+  IceModelVec3 *m_Enth3, *m_strain_heating3;
+  const EnthalpyConverter &m_EC;  // conductivity has known dependence on T, not enthalpy
 
   void compute_enthalpy_CTS();
   double compute_lambda();
 
-  virtual void assemble_R();
+  void assemble_R();
   void checkReadyToSolve();
 };
 

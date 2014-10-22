@@ -30,70 +30,41 @@ namespace pism {
 
 //! Tridiagonal linear system for vertical column of age (pure advection) problem.
 class ageSystemCtx : public columnSystemCtx {
-
 public:
-  ageSystemCtx(int my_Mz, const std::string &my_prefix);
-  PetscErrorCode initAllColumns();
+  ageSystemCtx(int my_Mz, const std::string &my_prefix,
+               double dx, double dy, double dz, double dt,
+               IceModelVec3 *age, IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3);
+
+  void initThisColumn(int i, int j, double thickness);
 
   PetscErrorCode solveThisColumn(std::vector<double> &x);
-
-public:
-  // constants which should be set before calling initForAllColumns()
-  double  dx, dy, dtAge, dzEQ;
-  // pointers which should be set before calling initForAllColumns()
-  double  *u, *v, *w;
-  IceModelVec3 *tau3;
-
-protected: // used internally
-  double nuEQ;
-  bool initAllDone;
+protected:
+  IceModelVec3 *m_age3;
+  double m_nu;
 };
 
 
-ageSystemCtx::ageSystemCtx(int my_Mz, const std::string &my_prefix)
-      : columnSystemCtx(my_Mz, my_prefix) { // size of system is Mz
-  initAllDone = false;
-  // set values so we can check if init was called on all
-  dx = -1.0;
-  dy = -1.0;
-  dtAge = -1.0;
-  dzEQ = -1.0;
-  u = NULL;
-  v = NULL;
-  w = NULL;
-  tau3 = NULL;
+ageSystemCtx::ageSystemCtx(int my_Mz, const std::string &my_prefix,
+                           double dx, double dy, double dz, double dt,
+                           IceModelVec3 *age, IceModelVec3 *u3, IceModelVec3 *v3, IceModelVec3 *w3)
+  : columnSystemCtx(my_Mz, my_prefix, dx, dy, dz, dt, u3, v3, w3) {
+
+  assert(age != NULL);
+  m_age3 = age;
+
+  m_nu = m_dt / m_dz; // derived constant
 }
 
+void ageSystemCtx::initThisColumn(int i, int j, double thickness) {
+  init_column(i, j, thickness);
 
-PetscErrorCode ageSystemCtx::initAllColumns() {
-  // check whether each parameter & pointer got set
-  if (dx <= 0.0) {
-    throw RuntimeError("un-initialized dx in ageSystemCtx");
+  if (m_ks == 0) {
+    return;
   }
-  if (dy <= 0.0) {
-    throw RuntimeError("un-initialized dy in ageSystemCtx");
-  }
-  if (dtAge <= 0.0) {
-    throw RuntimeError("un-initialized dtAge in ageSystemCtx");
-  }
-  if (dzEQ <= 0.0) {
-    throw RuntimeError("un-initialized dzEQ in ageSystemCtx");
-  }
-  if (u == NULL) {
-    throw RuntimeError("un-initialized pointer u in ageSystemCtx");
-  }
-  if (v == NULL) {
-    throw RuntimeError("un-initialized pointer v in ageSystemCtx");
-  }
-  if (w == NULL) {
-    throw RuntimeError("un-initialized pointer w in ageSystemCtx");
-  }
-  if (tau3 == NULL) {
-    throw RuntimeError("un-initialized pointer tau3 in ageSystemCtx");
-  }
-  nuEQ = dtAge / dzEQ; // derived constant
-  initAllDone = true;
-  return 0;
+
+  m_u3->getValColumn(i, j, m_ks, &m_u[0]);
+  m_v3->getValColumn(i, j, m_ks, &m_v[0]);
+  m_w3->getValColumn(i, j, m_ks, &m_w[0]);
 }
 
 //! Conservative first-order upwind scheme with implicit in the vertical: one column solve.
@@ -106,7 +77,7 @@ Let
     \f[ \mathcal{U}(x,y_{i+1/2}) = x \, \begin{Bmatrix} y_i, \quad x \ge 0 \\ y_{i+1}, \quad x \le 0 \end{Bmatrix}. \f]
 Note that the two cases agree when \f$x=0\f$, so there is no conflict.  This is
 part of the upwind rule, and \f$x\f$ will be the cell-boundary (finite volume sense)
-value of the velocity.  Our discretization of the PDE uses this upwind notation 
+value of the velocity.  Our discretization of the PDE uses this upwind notation
 to build an explicit scheme for the horizontal terms and an implicit scheme for
 the vertical terms, as follows.
 
@@ -148,67 +119,68 @@ CODE STILL REFLECTS THE OLD SCHEME.
 FIXME:  CARE MUST BE TAKEN TO MAINTAIN CONSERVATISM AT SURFACE.
  */
 PetscErrorCode ageSystemCtx::solveThisColumn(std::vector<double> &x) {
-  PetscErrorCode ierr;
-  if (!initAllDone) {
-    throw RuntimeError("solveThisColumn() should only be called after initAllColumns() in ageSystemCtx");
-  }
-
   // set up system: 0 <= k < m_ks
   for (unsigned int k = 0; k < m_ks; k++) {
     planeStar<double> ss;  // note ss.ij = tau[k]
-    ierr = tau3->getPlaneStar_fine(m_i,m_j,k,&ss); CHKERRQ(ierr);
+    m_age3->getPlaneStar_fine(m_i,m_j,k,&ss);
     // do lowest-order upwinding, explicitly for horizontal
-    rhs[k] =  (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx
-                         : u[k] * (ss.ij  - ss.w) / dx;
-    rhs[k] += (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy
-                         : v[k] * (ss.ij  - ss.s) / dy;
+    m_rhs[k] =  (m_u[k] < 0) ? m_u[k] * (ss.e -  ss.ij) / m_dx
+      : m_u[k] * (ss.ij  - ss.w) / m_dx;
+    m_rhs[k] += (m_v[k] < 0) ? m_v[k] * (ss.n -  ss.ij) / m_dy
+      : m_v[k] * (ss.ij  - ss.s) / m_dy;
     // note it is the age eqn: dage/dt = 1.0 and we have moved the hor.
     //   advection terms over to right:
-    rhs[k] = ss.ij + dtAge * (1.0 - rhs[k]);
+    m_rhs[k] = ss.ij + m_dt * (1.0 - m_rhs[k]);
 
     // do lowest-order upwinding, *implicitly* for vertical
-    double AA = nuEQ * w[k];
+    double AA = m_nu * m_w[k];
     if (k > 0) {
       if (AA >= 0) { // upward velocity
-        L[k] = - AA;
-        D[k] = 1.0 + AA;
-        U[k] = 0.0;
+        m_L[k] = - AA;
+        m_D[k] = 1.0 + AA;
+        m_U[k] = 0.0;
       } else { // downward velocity; note  -AA >= 0
-        L[k] = 0.0;
-        D[k] = 1.0 - AA;
-        U[k] = + AA;
+        m_L[k] = 0.0;
+        m_D[k] = 1.0 - AA;
+        m_U[k] = + AA;
       }
     } else { // k == 0 case
-      // note L[0] not an allocated location
+      // note L[0] is not used
       if (AA > 0) { // if strictly upward velocity apply boundary condition:
                     // age = 0 because ice is being added to base
-        D[0] = 1.0;
-        U[0] = 0.0;
-        rhs[0] = 0.0;
+        m_D[0] = 1.0;
+        m_U[0] = 0.0;
+        m_rhs[0] = 0.0;
       } else { // downward velocity; note  -AA >= 0
-        D[0] = 1.0 - AA;
-        U[0] = + AA;
-        // keep rhs[0] as is
+        m_D[0] = 1.0 - AA;
+        m_U[0] = + AA;
+        // keep m_rhs[0] as is
       }
     }
   }  // done "set up system: 0 <= k < m_ks"
-      
+
   // surface b.c. at m_ks
-  if (m_ks>0) {
-    L[m_ks] = 0;
-    D[m_ks] = 1.0;   // ignore U[m_ks]
-    rhs[m_ks] = 0.0;  // age zero at surface
+  if (m_ks > 0) {
+    m_L[m_ks] = 0;
+    m_D[m_ks] = 1.0;   // ignore U[m_ks]
+    m_rhs[m_ks] = 0.0;  // age zero at surface
   }
 
   // solve it
   try {
-    solveTridiagonalSystem(m_ks+1,x);
+    solve(m_ks + 1,x);
   }
   catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (ageSystemCtx) at (%d,%d)\n"
-                  "viewing system to m-file... ", m_i, m_j);
+                  "saving system to m-file... ", m_i, m_j);
     reportColumnZeroPivotErrorMFile(m_ks + 1);
     throw;
+  }
+
+  // x[k] contains age for k=0,...,ks, but set age of ice above (and
+  // at) surface to zero years
+  for (unsigned int k = m_ks + 1; k < x.size(); k++) {
+    x[k] = 0.0;
   }
 
   return 0;
@@ -230,8 +202,8 @@ we can rewrite the equation as
     \f[ \frac{\partial \tau}{\partial t} + \nabla \left( (u,v,w) \tau \right) = 1 \f]
 There is a conservative first-order numerical method; see ageSystemCtx::solveThisColumn().
 
-The boundary condition is that when the ice falls as snow it has age zero.  
-That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas.  There is no 
+The boundary condition is that when the ice falls as snow it has age zero.
+That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas.  There is no
 boundary condition elsewhere on the ice upper surface, as the characteristics
 go outward in the ablation zone.  If the velocity in the bottom cell of ice
 is upward (\f$w>0\f$) then we also apply a zero age boundary condition,
@@ -253,31 +225,17 @@ ageSystemCtx::solveThisColumn() for the actual method.
 PetscErrorCode IceModel::ageStep() {
   PetscErrorCode  ierr;
 
-  // set up fine grid in ice
-  int    fMz = grid.Mz_fine;
-  double fdz = grid.dz_fine;
-
-  std::vector<double> x(fMz);   // space for solution
+  std::vector<double> x(grid.Mz_fine);   // space for solution
 
   bool viewOneColumn;
   ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-  ageSystemCtx system(fMz, "age"); // linear system to solve in each column
-  system.dx    = grid.dx;
-  system.dy    = grid.dy;
-  system.dtAge = dt_TempAge;
-  system.dzEQ  = fdz;
-  // pointers to values in current column
-  system.u     = new double[fMz];
-  system.v     = new double[fMz];
-  system.w     = new double[fMz];
-  // system needs access to tau3 for planeStar()
-  system.tau3  = &tau3;
-  // this checks that all needed constants and pointers got set
-  ierr = system.initAllColumns(); CHKERRQ(ierr);
-
   IceModelVec3 *u3, *v3, *w3;
-  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+
+  ageSystemCtx system(grid.Mz_fine, "age",
+                      grid.dx, grid.dy, grid.dz_fine, dt_TempAge,
+                      &tau3, u3, v3, w3); // linear system to solve in each column
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -290,42 +248,29 @@ PetscErrorCode IceModel::ageStep() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    // this should *not* be replaced by a call to grid.kBelowHeight()
-    const int  fks = static_cast<int>(floor(ice_thickness(i,j)/fdz));
+    system.initThisColumn(i, j, ice_thickness(i, j));
 
-    if (fks == 0) { // if no ice, set the entire column to zero age
+    if (system.ks() == 0) {
+      // if no ice, set the entire column to zero age
       ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
-    } else { // general case: solve advection PDE; start by getting 3D velocity ...
-
-      ierr = u3->getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
-      ierr = v3->getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
-      ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
-
-      // this call will validate ks
-      system.setIndicesAndClearThisColumn(i,j, ice_thickness(i,j), fdz, fMz);
+    } else {
+      // general case: solve advection PDE
 
       // solve the system for this column; call checks that params set
       ierr = system.solveThisColumn(x); CHKERRQ(ierr);
 
       if (viewOneColumn && (i == id && j == jd)) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
-                           "\n\nin ageStep(): viewing ageSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
+                           "\n"
+                           "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                            i, j); CHKERRQ(ierr);
-        system.viewColumnInfoMFile(x, fMz);
-      }
-
-      // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years
-      for (int k=fks+1; k<fMz; k++) {
-        x[k] = 0.0;
+        system.viewColumnInfoMFile(x, grid.Mz_fine);
       }
 
       // put solution in IceModelVec3
       ierr = vWork3d.setValColumnPL(i, j, x); CHKERRQ(ierr);
     }
   }
-
-
-  delete [] system.u;  delete [] system.v;  delete [] system.w;
 
   ierr = vWork3d.update_ghosts(tau3); CHKERRQ(ierr);
 
