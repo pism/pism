@@ -282,9 +282,10 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
       if (viewOneColumn && (i == id && j == jd)) {
         ierr = PetscPrintf(grid.com,
-                           "\n\nin temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
+                           "\n"
+                           "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
                            i, j); CHKERRQ(ierr);
-        ierr = system.viewColumnInfoMFile(x, grid.Mz_fine); CHKERRQ(ierr);
+        system.viewColumnInfoMFile(x, grid.Mz_fine);
       }
 
     }       // end of "if there are enough points in ice to bother ..."

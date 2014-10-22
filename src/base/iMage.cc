@@ -311,7 +311,7 @@ PetscErrorCode IceModel::ageStep() {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "\n\nin ageStep(): viewing ageSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
                            i, j); CHKERRQ(ierr);
-        ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
+        system.viewColumnInfoMFile(x, fMz);
       }
 
       // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years

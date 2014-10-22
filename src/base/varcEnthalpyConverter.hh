@@ -42,8 +42,6 @@ public:
   }
   virtual ~varcEnthalpyConverter() {}
 
-  virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
-
   virtual double         getEnthalpyCTS(double p) const;
 
   virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;

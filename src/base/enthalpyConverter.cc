@@ -39,49 +39,6 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   do_cold_ice_methods  = config.get_flag("do_cold_ice_methods");
 }
 
-
-//! Simple view of state of EnthalpyConverter.  viewer==NULL sends to stdout.
-PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
-  PetscErrorCode ierr;
-
-  PetscBool iascii;
-  if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
-  }
-  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
-  if (!iascii) {
-    throw RuntimeError("Only ASCII viewer for EnthalpyConverter");
-  }
-
-  ierr = PetscViewerASCIIPrintf(viewer,
-    "\n<showing EnthalpyConverter constants:\n"); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   beta  = %12.5e (K Pa-1)\n",    beta); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   c_i   = %12.5f (J kg-1 K-1)\n",c_i); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   g     = %12.5f (m s-2)\n",     g); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   L     = %12.5e (J kg-1)\n",    L); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   p_air = %12.5e (Pa)\n",        p_air); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   rho_i = %12.5f (kg m-3)\n",    rho_i); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   T_melting = %12.5f (K)\n",      T_melting); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   T_tol = %12.5f (K)\n",         T_tol); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   T_0   = %12.5f (K)\n",         T_0); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   do_cold_ice_methods = %s\n", (do_cold_ice_methods) ? "true" : "false");
-      CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      ">\n"); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Get pressure in ice from depth below surface using the hydrostatic assumption.
 /*! If \f$d\f$ is the depth then
      \f[ p = p_{\text{air}}  + \rho_i g d. \f]

@@ -101,35 +101,32 @@ double enthSystemCtx::k_from_T(double T) {
   return ice_k;
 }
 
-PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
-                                             double my_ice_thickness,
-                                             IceModelVec3 *u3,
-                                             IceModelVec3 *v3,
-                                             IceModelVec3 *w3,
-                                             IceModelVec3 *strain_heating3) {
-  PetscErrorCode ierr;
-
+void enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismarginal,
+                                   double my_ice_thickness,
+                                   IceModelVec3 *u3,
+                                   IceModelVec3 *v3,
+                                   IceModelVec3 *w3,
+                                   IceModelVec3 *strain_heating3) {
   ice_thickness = my_ice_thickness;
   ismarginal    = my_ismarginal;
 
   setIndicesAndClearThisColumn(my_i, my_j, ice_thickness, dz, Mz);
 
   if (m_ks == 0) {
-    return 0;
+    return;
   }
 
-  ierr = u3->getValColumn(m_i, m_j, m_ks, &u[0]); CHKERRQ(ierr);
-  ierr = v3->getValColumn(m_i, m_j, m_ks, &v[0]); CHKERRQ(ierr);
-  ierr = w3->getValColumn(m_i, m_j, m_ks, &w[0]); CHKERRQ(ierr);
-  ierr = strain_heating3->getValColumn(m_i, m_j, m_ks, &strain_heating[0]); CHKERRQ(ierr);
+  u3->getValColumn(m_i, m_j, m_ks, &u[0]);
+  v3->getValColumn(m_i, m_j, m_ks, &v[0]);
+  w3->getValColumn(m_i, m_j, m_ks, &w[0]);
+  strain_heating3->getValColumn(m_i, m_j, m_ks, &strain_heating[0]);
 
-  ierr = Enth3->getValColumn(m_i, m_j, m_ks, &Enth[0]); CHKERRQ(ierr);
-  ierr = compute_enthalpy_CTS(); CHKERRQ(ierr);
+  Enth3->getValColumn(m_i, m_j, m_ks, &Enth[0]);
+  compute_enthalpy_CTS();
 
   m_lambda = compute_lambda();
 
-  ierr = assemble_R(); CHKERRQ(ierr);
-  return 0;
+  assemble_R();
 }
 
 //! Compute the CTS value of enthalpy in an ice column.
@@ -137,7 +134,7 @@ PetscErrorCode enthSystemCtx::initThisColumn(int my_i, int my_j, bool my_ismargi
 Return argument Enth_s[Mz] has the enthalpy value for the pressure-melting
 temperature at the corresponding z level.
  */
-PetscErrorCode enthSystemCtx::compute_enthalpy_CTS() {
+void enthSystemCtx::compute_enthalpy_CTS() {
 
   for (unsigned int k = 0; k <= m_ks; k++) {
     const double
@@ -150,7 +147,6 @@ PetscErrorCode enthSystemCtx::compute_enthalpy_CTS() {
   for (unsigned int k = m_ks+1; k < Enth_s.size(); k++) {
     Enth_s[k] = Es_air;
   }
-  return 0;
 }
 
 //! Compute the lambda for BOMBPROOF.
@@ -173,7 +169,7 @@ double enthSystemCtx::compute_lambda() {
 }
 
 
-PetscErrorCode enthSystemCtx::setDirichletSurface(double my_Enth_surface) {
+void enthSystemCtx::setDirichletSurface(double my_Enth_surface) {
 #if (PISM_DEBUG==1)
   if ((nu < 0.0) || (R_cold < 0.0) || (R_temp < 0.0)) {
     throw RuntimeError("setDirichletSurface() should only be called after\n"
@@ -181,68 +177,15 @@ PetscErrorCode enthSystemCtx::setDirichletSurface(double my_Enth_surface) {
   }
 #endif
   Enth_ks = my_Enth_surface;
-  return 0;
 }
 
-
-PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer, bool show_col_dependent) {
-  PetscErrorCode ierr;
-
-  if (not viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
-  }
-
-  PetscBool iascii;
-  ierr = PetscObjectTypeCompare((PetscObject)viewer,PETSCVIEWERASCII,&iascii); CHKERRQ(ierr);
-  if (not iascii) {
-    throw RuntimeError("Only ASCII viewer for enthSystemCtx::viewConstants()");
-  }
-  
-  ierr = PetscViewerASCIIPrintf(viewer,
-                   "\n<<VIEWING enthSystemCtx with prefix '%s':\n",prefix.c_str()); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                     "for ALL columns:\n"); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                     "  dx,dy,dt,dz = %8.2f,%8.2f,%10.3e,%8.2f\n",
-                     dx,dy,dt,dz); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                     "  ice_rho,ice_c,ice_k,ice_K,ice_K0 = %10.3e,%10.3e,%10.3e,%10.3e,%10.3e\n",
-                     ice_rho,ice_c,ice_k,ice_K,ice_K0); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                     "  nu = %10.3e\n",
-                     nu); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                     "  R_cold,R_temp = %10.3e,%10.3e,\n",
-                     R_cold,R_temp); CHKERRQ(ierr);
-  if (show_col_dependent) {
-    ierr = PetscViewerASCIIPrintf(viewer,
-                     "for THIS column:\n"
-                     "  i,j,ks = %d,%d,%d\n",
-                     m_i,m_j,m_ks); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,
-                     "  ismarginal,lambda = %d,%10.3f\n",
-                     (int)ismarginal,m_lambda); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,
-                     "  Enth_ks = %10.3e\n",
-                     Enth_ks); CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,
-                     "  D0,U0,B0 = %10.3e,%10.3e\n",
-                     D0,U0,B0); CHKERRQ(ierr);
-  }
-  ierr = PetscViewerASCIIPrintf(viewer,
-                     ">>\n\n"); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode enthSystemCtx::checkReadyToSolve() {
+void enthSystemCtx::checkReadyToSolve() {
   if (nu < 0.0 || R_cold < 0.0 || R_temp < 0.0) {
     throw RuntimeError("not ready to solve: need initAllColumns() in enthSystemCtx");
   }
   if (m_lambda < 0.0) {
     throw RuntimeError("not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx");
   }
-  return 0;
 }
 
 
@@ -251,10 +194,9 @@ PetscErrorCode enthSystemCtx::checkReadyToSolve() {
 This method should only be called if everything but the basal boundary condition
 is already set.
  */
-PetscErrorCode enthSystemCtx::setDirichletBasal(double Y) {
+void enthSystemCtx::setDirichletBasal(double Y) {
 #if (PISM_DEBUG==1)
-  PetscErrorCode ierr;
-  ierr = checkReadyToSolve(); CHKERRQ(ierr);
+  checkReadyToSolve();
   if (gsl_isnan(D0) == 0 || gsl_isnan(U0) == 0 || gsl_isnan(B0) == 0) {
     throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
   }
@@ -262,7 +204,6 @@ PetscErrorCode enthSystemCtx::setDirichletBasal(double Y) {
   D0 = 1.0;
   U0 = 0.0;
   B0  = Y;
-  return 0;
 }
 
 
@@ -301,10 +242,9 @@ This method should only be called if everything but the basal boundary condition
 is already set.
 
  */
-PetscErrorCode enthSystemCtx::setBasalHeatFlux(double heat_flux) {
- PetscErrorCode ierr;
+void enthSystemCtx::setBasalHeatFlux(double heat_flux) {
 #if (PISM_DEBUG==1)
-  ierr = checkReadyToSolve(); CHKERRQ(ierr);
+ checkReadyToSolve();
   if (gsl_isnan(D0) == 0 || gsl_isnan(U0) == 0 || gsl_isnan(B0) == 0) {
     throw RuntimeError("setting basal boundary conditions twice in enthSystemCtx");
   }
@@ -327,14 +267,13 @@ PetscErrorCode enthSystemCtx::setBasalHeatFlux(double heat_flux) {
   // treat vertical velocity using first-order upwinding:
   if (not ismarginal) {
     planeStar<double> ss;
-    ierr = Enth3->getPlaneStar_fine(m_i,m_j,0,&ss); CHKERRQ(ierr);
+    Enth3->getPlaneStar_fine(m_i,m_j,0,&ss);
     const double UpEnthu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
                                              u[0] * (ss.ij  - ss.w) / dx;
     const double UpEnthv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
                                              v[0] * (ss.ij  - ss.s) / dy;
     B0 += dt * ((strain_heating[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
   }
-  return 0;
 }
 
 
@@ -352,9 +291,7 @@ In the case of conservation of energy [\ref AschwandenBuelerKhroulevBlatter],
 Thus
   \f[ R = \frac{k \Delta t}{\rho c \Delta z^2}. \f]
  */
-PetscErrorCode enthSystemCtx::assemble_R() {
-  PetscErrorCode ierr;
-
+void enthSystemCtx::assemble_R() {
   if (k_depends_on_T == false && c_depends_on_T == false) {
 
     for (unsigned int k = 0; k <= m_ks; k++)
@@ -367,8 +304,8 @@ PetscErrorCode enthSystemCtx::assemble_R() {
         // cold case
         const double depth = ice_thickness - k * dz;
         double T;
-        ierr = EC.getAbsTemp(Enth[k], EC.getPressureFromDepth(depth), // FIXME: issue #15
-                              T); CHKERRQ(ierr);
+        EC.getAbsTemp(Enth[k], EC.getPressureFromDepth(depth), // FIXME: issue #15
+                      T);
 
         R[k] = ((k_depends_on_T ? k_from_T(T) : ice_k) / EC.c_from_T(T)) * R_factor;
       } else {
@@ -381,11 +318,10 @@ PetscErrorCode enthSystemCtx::assemble_R() {
 
   // R[k] for k > m_ks are never used
 #if (PISM_DEBUG==1)
-  for (unsigned int k = m_ks + 1; k < R.size(); ++k)
+  for (unsigned int k = m_ks + 1; k < R.size(); ++k) {
     R[k] = GSL_NAN;
+  }
 #endif
-
-  return 0;
 }
 
 
@@ -424,10 +360,9 @@ PetscErrorCode enthSystemCtx::assemble_R() {
  * (Staggered-grid values are approximated by interpolating from the
  * regular grid).
  */
-PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
-  PetscErrorCode ierr;
+void enthSystemCtx::solveThisColumn(std::vector<double> &x) {
 #if (PISM_DEBUG==1)
-  ierr = checkReadyToSolve(); CHKERRQ(ierr);
+  checkReadyToSolve();
   if (gsl_isnan(D0) || gsl_isnan(U0) || gsl_isnan(B0)) {
     throw RuntimeError("solveThisColumn() should only be called after\n"
                        "  setting basal boundary condition in enthSystemCtx");
@@ -461,7 +396,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
     rhs[k] = Enth[k];
     if (not ismarginal) {
       planeStar<double> ss;
-      ierr = Enth3->getPlaneStar_fine(m_i,m_j,k,&ss); CHKERRQ(ierr);
+      Enth3->getPlaneStar_fine(m_i,m_j,k,&ss);
       const double UpEnthu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
                                                u[k] * (ss.ij  - ss.w) / dx;
       const double UpEnthv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
@@ -503,21 +438,13 @@ PetscErrorCode enthSystemCtx::solveThisColumn(std::vector<double> &x) {
   U0       = GSL_NAN;
   B0       = GSL_NAN;
 #endif
-  return 0;
 }
 
 //! View the tridiagonal system A x = b to a PETSc viewer, both A as a full matrix and b as a vector.
-PetscErrorCode enthSystemCtx::viewSystem(PetscViewer viewer,
-                                         unsigned int M) const {
-  PetscErrorCode ierr;
-  std::string info;
-  info = prefix + "_A";
-  ierr = viewMatrix(viewer, M, info.c_str()); CHKERRQ(ierr);
-  info = prefix + "_rhs";
-  viewVectorValues(viewer, rhs, M, info.c_str());
-  info = prefix + "_R";
-  viewVectorValues(viewer, R, M, info.c_str());
-  return 0;
+void enthSystemCtx::viewSystem(std::ostream &output, unsigned int M) const {
+  viewMatrix(output, M, m_prefix + "_A");
+  viewVectorValues(output, rhs, M, m_prefix + "_rhs");
+  viewVectorValues(output, R, M, m_prefix + "_R");
 }
 
 } // end of namespace pism

@@ -16,11 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petsc.h>
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
 #include <cassert>
+
+#include <fstream>
+#include <iostream>
 
 #include "error_handling.hh"
 
@@ -40,11 +42,9 @@ with the last row
 0       0     ...     0  L[N-1]  D[N-1]
 \endverbatim
 Thus the index into the arrays L, D, U is always the row number.
-
-Note L[0] is not allocated and U[N-1] is not allocated.
  */
 columnSystemCtx::columnSystemCtx(unsigned int nmax, const std::string &my_prefix)
-  : m_nmax(nmax), prefix(my_prefix) {
+  : m_nmax(nmax), m_prefix(my_prefix) {
   assert(m_nmax >= 1 && m_nmax < 1e6);
 
   L.resize(m_nmax);
@@ -55,7 +55,7 @@ columnSystemCtx::columnSystemCtx(unsigned int nmax, const std::string &my_prefix
 
   resetColumn();
 
-  indicesValid = false;
+  m_indicesValid = false;
 }
 
 
@@ -67,16 +67,14 @@ unsigned int columnSystemCtx::ks() const {
 }
 
 //! Zero all entries.
-PetscErrorCode columnSystemCtx::resetColumn() {
-  PetscErrorCode ierr;
+void columnSystemCtx::resetColumn() {
 #if PISM_DEBUG==1
-  ierr = PetscMemzero(&L[0],    (m_nmax)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(&U[0],    (m_nmax)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(&D[0],    (m_nmax)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(&rhs[0],  (m_nmax)*sizeof(double)); CHKERRQ(ierr);
-  ierr = PetscMemzero(&work[0], (m_nmax)*sizeof(double)); CHKERRQ(ierr);
+  memset(&L[0],    0, (m_nmax)*sizeof(double));
+  memset(&U[0],    0, (m_nmax)*sizeof(double));
+  memset(&D[0],    0, (m_nmax)*sizeof(double));
+  memset(&rhs[0],  0, (m_nmax)*sizeof(double));
+  memset(&work[0], 0, (m_nmax)*sizeof(double)); 
 #endif
-  return 0;
 }
 
 
@@ -88,9 +86,9 @@ double columnSystemCtx::norm1(unsigned int n) const {
   }
   double z = fabs(D[0]) + fabs(L[1]);
   for (unsigned int k = 1; k < n; k++) {  // k is column index (zero-based)
-    z = PetscMax(z, fabs(U[k-1])) + fabs(D[k]) + fabs(L[k+1]);
+    z = std::max(z, fabs(U[k-1])) + fabs(D[k]) + fabs(L[k+1]);
   }
-  z = PetscMax(z, fabs(U[n-2]) + fabs(D[n-1]));
+  z = std::max(z, fabs(U[n-2]) + fabs(D[n-1]));
   return z;
 }
 
@@ -113,17 +111,23 @@ double columnSystemCtx::ddratio(unsigned int n) const {
 
   const double scale = norm1(n);
 
-  if ((fabs(D[0]) / scale) < 1.0e-12)  return -1.0;
+  if ((fabs(D[0]) / scale) < 1.0e-12) {
+    return -1.0;
+  }
   double z = fabs(U[0]) / fabs(D[0]);
 
-  for (unsigned int k = 1; k < n-1; k++) {  // k is row index (zero-based)
-    if ((fabs(D[k]) / scale) < 1.0e-12)  return -1.0;
+  for (unsigned int k = 1; k < n - 1; k++) {  // k is row index (zero-based)
+    if ((fabs(D[k]) / scale) < 1.0e-12) {
+      return -1.0;
+    }
     const double s = fabs(L[k]) + fabs(U[k]);
-    z = PetscMax(z, s / fabs(D[k]));
+    z = std::max(z, s / fabs(D[k]));
   }
 
-  if ((fabs(D[n-1]) / scale) < 1.0e-12)  return -1.0;
-  z = PetscMax(z, fabs(L[n-1]) / fabs(D[n-1]));
+  if ((fabs(D[n - 1]) / scale) < 1.0e-12) {
+    return -1.0;
+  }
+  z = std::max(z, fabs(L[n - 1]) / fabs(D[n - 1]));
 
   return z;
 }
@@ -133,8 +137,9 @@ void columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
                                                    double ice_thickness,
                                                    double dz,
                                                    unsigned int Mz) {
+  // pre-condition
 #if PISM_DEBUG==1
-  if (indicesValid && m_i == my_i && m_j == my_j) {
+  if (m_indicesValid && m_i == my_i && m_j == my_j) {
     throw RuntimeError("setIndicesAndClearThisColumn() called twice in same column");
   }
 #endif
@@ -143,15 +148,6 @@ void columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
   m_j  = my_j;
   m_ks = static_cast<unsigned int>(floor(ice_thickness / dz));
 
-#if (PISM_DEBUG==1)
-  // check if m_ks is valid
-  if (m_ks >= Mz) {
-    throw RuntimeError::formatted("ks = %d computed at i = %d, j = %d is invalid,\n"
-                                  "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
-                                  m_ks, m_i, m_j, ice_thickness, dz);
-  }
-#endif
-
   // Force m_ks to be in the allowed range.
   if (m_ks >= Mz) {
     m_ks = Mz - 1;
@@ -159,7 +155,17 @@ void columnSystemCtx::setIndicesAndClearThisColumn(int my_i, int my_j,
 
   resetColumn();
 
-  indicesValid = true;
+  m_indicesValid = true;
+
+  // post-condition
+#if PISM_DEBUG==1
+  // check if m_ks is valid
+  if (m_ks >= Mz) {
+    throw RuntimeError::formatted("ks = %d computed at i = %d, j = %d is invalid,\n"
+                                  "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
+                                  m_ks, m_i, m_j, ice_thickness, dz);
+  }
+#endif
 }
 
 
@@ -173,39 +179,26 @@ Result should be executable as part of a Matlab/Octave script.
 
 Does not stop on non-fatal errors.
  */
-void columnSystemCtx::viewVectorValues(PetscViewer viewer,
+void columnSystemCtx::viewVectorValues(std::ostream &output,
                                        const std::vector<double> &v,
                                        unsigned int M,
-                                       const std::string &info) const {
-  PetscErrorCode ierr;
-
+                                       const std::string &variable) const {
   assert(M >= 1);
 
-  PetscBool iascii;
-  if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF, &viewer); CHKERRCONTINUE(ierr);
-  }
-  ierr = PetscObjectTypeCompare((PetscObject)viewer, PETSCVIEWERASCII, &iascii); CHKERRCONTINUE(ierr);
-  if (!iascii) {
-    throw RuntimeError("Only ASCII viewer for ColumnSystem");
-  }
+  output << "%% viewing ColumnSystem column object with description '" << variable << "'"
+         << " (columns  [k value])" << std::endl;
 
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "\n%% viewing ColumnSystem column object with description '%s' (columns  [k value])\n",
-                                info.c_str()); CHKERRCONTINUE(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                                "%s_with_index = [...\n", info.c_str()); CHKERRCONTINUE(ierr);
-  for (unsigned int k=0; k<M; k++) {
-    ierr = PetscViewerASCIIPrintf(viewer,
-                                  "  %5d %.12f", k, v[k]); CHKERRCONTINUE(ierr);
+  output << variable << "_with_index = [..." << std::endl;
+  for (unsigned int k = 0; k < M; k++) {
+    output << "  " << k << " " << v[k];
     if (k == M-1) {
-      ierr = PetscViewerASCIIPrintf(viewer, "];\n"); CHKERRCONTINUE(ierr);
+      output << "];" << std::endl;
     } else {
-      ierr = PetscViewerASCIIPrintf(viewer, ";\n"); CHKERRCONTINUE(ierr);
+      output << ";" << std::endl;
     }
   }
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "%s = %s_with_index(:,2);\n\n",info.c_str(),info.c_str()); CHKERRCONTINUE(ierr);
+
+  output << variable << " = " << variable << "_with_index(:,2);\n" << std::endl;
 }
 
 
@@ -215,88 +208,68 @@ Give first argument NULL to get standard out.  No binary viewer.
 
 Give description string as `info` argument.
  */
-PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer,
-                                           unsigned int M,
-                                           const std::string &info) const {
-  PetscErrorCode ierr;
-  PetscBool iascii;
-  if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF, &viewer); CHKERRQ(ierr);
-  }
-  ierr = PetscObjectTypeCompare((PetscObject)viewer, PETSCVIEWERASCII, &iascii); CHKERRQ(ierr);
-  if (!iascii) { throw RuntimeError("Only ASCII viewer for ColumnSystem"); }
+void columnSystemCtx::viewMatrix(std::ostream &output,
+                                 unsigned int M,
+                                 const std::string &variable) const {
 
   if (M < 2) {
-    ierr = PetscViewerASCIIPrintf(viewer,
-      "\n\n<nmax >= 2 required to view columnSystemCtx tridiagonal matrix '%s' ... skipping view\n",info.c_str());
-    CHKERRQ(ierr);
-    return 0;
+    std::cout << "\n\n<nmax >= 2 required to view tri-diagonal matrix " << variable
+              << " ... skipping view" << std::endl;
+    return;
   }
 
   if (M > 500) {
-    ierr = PetscViewerASCIIPrintf(viewer,
-      "\n\n<nmax > 500: columnSystemCtx matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n", info.c_str()); CHKERRQ(ierr);
-    char vinfo[PETSC_MAX_PATH_LEN];
-    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_super_diagonal_U", info.c_str());
-    viewVectorValues(viewer, U, M-1, vinfo);
-    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_diagonal_D", info.c_str());
-    viewVectorValues(viewer, D, M, vinfo);
-    snprintf(vinfo, PETSC_MAX_PATH_LEN, "%s_sub_diagonal_L", info.c_str());
-    {                           // discard L[0], which is not used
+    std::cout << "\n\n<nmax > 500:" << variable
+              << " matrix too big to display as full; viewing tridiagonal matrix diagonals..."
+              << std::endl;
+
+    viewVectorValues(output, U, M-1, variable + "_super_diagonal_U");
+    viewVectorValues(output, D, M,   variable + "_diagonal_D");
+
+    // discard L[0], which is not used
+    {
       std::vector<double> L_tmp(M - 1);
       for (unsigned int i = 0; i < M - 1; ++i) {
         L_tmp[i] = L[i + 1];
       }
-      viewVectorValues(viewer, L_tmp, M-1, vinfo);
+      viewVectorValues(output, L_tmp, M-1, variable + "_sub_diagonal_L");
     }
   } else {
-    ierr = PetscViewerASCIIPrintf(viewer,
-        "\n%s = [...\n", info.c_str()); CHKERRQ(ierr);
-    for (unsigned int k=0; k<M; k++) {    // k+1 is row  (while j+1 is column)
-      if (k == 0) {              // viewing first row
-        ierr = PetscViewerASCIIPrintf(viewer, "%.12f %.12f ", D[k], U[k]); CHKERRQ(ierr);
-        for (unsigned int n=2; n<M; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer, "%3.1f ", 0.0); CHKERRQ(ierr);
-        }
-      } else if (k < M-1) {   // viewing generic row
-        for (unsigned int n=0; n<k-1; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer, "%3.1f ", 0.0); CHKERRQ(ierr);
-        }
-        ierr = PetscViewerASCIIPrintf(viewer, "%.12f %.12f %.12f ", L[k], D[k], U[k]); CHKERRQ(ierr);
-        for (unsigned int n=k+2; n<M; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer, "%3.1f ", 0.0); CHKERRQ(ierr);
-        }
-      } else {                   // viewing last row
-        for (unsigned int n=0; n<k-1; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer, "%3.1f ", 0.0); CHKERRQ(ierr);
-        }
-        ierr = PetscViewerASCIIPrintf(viewer, "%.12f %.12f ", L[k], D[k]); CHKERRQ(ierr);
-      }
+    output << "\n"
+           << variable << " = [..." << std::endl;
 
-      if (k == M-1) {
-        ierr = PetscViewerASCIIPrintf(viewer, "];\n\n"); CHKERRQ(ierr);  // end final row
+    for (unsigned int i = 0; i < M; ++i) { // row
+      for (unsigned int j = 0; j < M; j++) { // column
+        double A_ij = 0.0;
+
+        if (j == i - 1) {
+          A_ij = L[i];
+        } else if (j == i) {
+          A_ij = D[i];
+        } else if (j == i + 1) {
+          A_ij = U[i];
+        } else {
+          A_ij = 0.0;
+        }
+
+        output << A_ij << " ";
+      } // column loop
+
+      if (i != M-1) {
+        output << ";" << std::endl;
       } else {
-        ierr = PetscViewerASCIIPrintf(viewer, ";\n"); CHKERRQ(ierr);  // end of generic row
+        output << "];" << std::endl;
       }
-    }
-  }
-
-  return 0;
+    } // row-loop
+  } // end of printing the full matrix
 }
 
 
-//! View the tridiagonal system A x = b to a PETSc viewer, both A as a full matrix and b as a vector.
-PetscErrorCode columnSystemCtx::viewSystem(PetscViewer viewer,
-                                           unsigned int M) const {
-  PetscErrorCode ierr;
-
-  std::string info = prefix + "_A";
-  ierr = viewMatrix(viewer, M, info.c_str()); CHKERRQ(ierr);
-
-  info = prefix + "_rhs";
-  viewVectorValues(viewer, rhs, M, info.c_str());
-
-  return 0;
+//! View the tridiagonal system A x = b to an output stream, both A as a full matrix and b as a vector.
+void columnSystemCtx::viewSystem(std::ostream &output,
+                                 unsigned int M) const {
+  viewMatrix(output, M, m_prefix + "_A");
+  viewVectorValues(output, rhs, M, m_prefix + "_rhs");
 }
 
 
@@ -312,7 +285,7 @@ Success is return code zero.  Positive return code gives location of zero pivot.
 Negative return code indicates a software problem.
  */
 void columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vector<double> &x) {
-  assert(indicesValid == true);
+  assert(m_indicesValid == true);
   assert(n >= 1);
   assert(n <= m_nmax);
 
@@ -339,28 +312,25 @@ void columnSystemCtx::solveTridiagonalSystem(unsigned int n, std::vector<double>
   for (int k = n - 2; k >= 0; --k)
     x[k] -= work[k + 1] * x[k + 1];
 
-  indicesValid = false;
+  m_indicesValid = false;
 }
 
 
 //! Write system matrix and right-hand-side into an m-file.  The file name contains ZERO_PIVOT_ERROR.
-PetscErrorCode columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
-  PetscErrorCode ierr;
-  char fname[PETSC_MAX_PATH_LEN];
-  snprintf(fname, PETSC_MAX_PATH_LEN,
-           "%s_i%d_j%d_ZERO_PIVOT_ERROR.m", prefix.c_str(), m_i, m_j);
+void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
+  char filename[TEMPORARY_STRING_LENGTH];
+  snprintf(filename, sizeof(filename), "%s_i%d_j%d_ZERO_PIVOT_ERROR.m",
+           m_prefix.c_str(), m_i, m_j);
 
-  PetscViewer viewer;
-  ierr = createViewer(fname, M, viewer); CHKERRQ(ierr);
+  std::ofstream output(filename);
+  output << "% system has 1-norm = " << norm1(M)
+         << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
 
-  ierr = viewSystem(viewer, M); CHKERRQ(ierr);
-
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-  return 0;
+  viewSystem(output, M);
 }
 
 
-//! Write system matrix, right-hand-side, and (provided) solution into an m-file.  Constructs file name from prefix.
+//! Write system matrix, right-hand-side, and (provided) solution into an m-file.  Constructs file name from m_prefix.
 /*!
 An example of the use of this procedure is from <c>examples/searise-greenland/</c>
 running the enthalpy formulation.  First run spinup.sh in that directory  (FIXME:
@@ -389,56 +359,29 @@ generate `g20km_steady.nc`.  Then:
 Of course we can also do `spy(A)`, `eig(A)`, and look at individual entries,
 and row and column sums, and so on.
  */
-PetscErrorCode columnSystemCtx::viewColumnInfoMFile(const std::vector<double> &x,
-                                                    unsigned int M) {
-  PetscErrorCode ierr;
-  char fname[PETSC_MAX_PATH_LEN];
+void columnSystemCtx::viewColumnInfoMFile(const std::vector<double> &x,
+                                          unsigned int M) {
+  std::cout << "saving "
+            << m_prefix << " column system at (i,j)"
+            << " = (" << m_i << "," << m_j << ") to m-file...\n" << std::endl;
 
-  ierr = PetscPrintf(PETSC_COMM_SELF,
-                     "\n\n"
-                     "saving %s column system at (i,j)=(%d,%d) to m-file...\n\n",
-                     prefix.c_str(), m_i, m_j); CHKERRQ(ierr);
+  char buffer[TEMPORARY_STRING_LENGTH];
+  snprintf(buffer, sizeof(buffer), "%s_i%d_j%d.m", m_prefix.c_str(), m_i, m_j);
 
-  snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d.m", prefix.c_str(), m_i, m_j);
-  ierr = viewColumnInfoMFile(fname, M, x); CHKERRQ(ierr);
-  return 0;
+  viewColumnInfoMFile(buffer, M, x);
 }
 
 
 //! Write system matrix, right-hand-side, and (provided) solution into an already-named m-file.
-/*!
-Because this may be called on only one processor, it builds a viewer on MPI
-communicator PETSC_COMM_SELF.
- */
-PetscErrorCode columnSystemCtx::viewColumnInfoMFile(const std::string &filename,
-                                                    unsigned int M,
-                                                    const std::vector<double> &x) {
-  PetscErrorCode ierr;
-  PetscViewer viewer;
-  ierr = createViewer(filename, M, viewer); CHKERRQ(ierr);
+void columnSystemCtx::viewColumnInfoMFile(const std::string &filename,
+                                          unsigned int M,
+                                          const std::vector<double> &x) {
+  std::ofstream output(filename);
+  output << "% system has 1-norm = " << norm1(M)
+         << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
 
-  ierr = viewSystem(viewer, M); CHKERRQ(ierr);
-
-  std::string info = prefix + "_x";
-  viewVectorValues(viewer, x, M, info.c_str());
-
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode columnSystemCtx::createViewer(const std::string &filename,
-                                             unsigned int M,
-                                             PetscViewer &result) {
-  PetscErrorCode ierr;
-  ierr = PetscViewerCreate(PETSC_COMM_SELF, &result); CHKERRQ(ierr);
-  ierr = PetscViewerSetType(result, PETSCVIEWERASCII); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(result, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(result, filename.c_str()); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(result,
-        "%%  system has 1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n",
-        norm1(M), ddratio(M)); CHKERRQ(ierr);
-
-  return 0;
+  viewSystem(output, M);
+  viewVectorValues(output, x, M, m_prefix + "_x");
 }
 
 } // end of namespace pism

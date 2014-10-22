@@ -62,8 +62,6 @@ public:
   EnthalpyConverter(const Config &config);
   virtual ~EnthalpyConverter() {}
 
-  virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
-
   virtual double         getPressureFromDepth(double depth) const;
   virtual double         getMeltingTemp(double p) const;
   virtual double         getEnthalpyCTS(double p) const;

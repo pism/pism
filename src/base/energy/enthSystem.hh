@@ -45,23 +45,22 @@ public:
                 const EnthalpyConverter &my_EC);
   virtual ~enthSystemCtx();
 
-  PetscErrorCode initThisColumn(int i, int j, bool my_ismarginal,
-                                double ice_thickness,
-                                IceModelVec3 *u3,
-                                IceModelVec3 *v3,
-                                IceModelVec3 *w3,
-                                IceModelVec3 *strain_heating3);
+  void initThisColumn(int i, int j, bool my_ismarginal,
+                      double ice_thickness,
+                      IceModelVec3 *u3,
+                      IceModelVec3 *v3,
+                      IceModelVec3 *w3,
+                      IceModelVec3 *strain_heating3);
 
   double k_from_T(double T);
 
-  PetscErrorCode setDirichletSurface(double my_Enth_surface);
-  PetscErrorCode setDirichletBasal(double Y);
-  PetscErrorCode setBasalHeatFlux(double hf);
+  void setDirichletSurface(double my_Enth_surface);
+  void setDirichletBasal(double Y);
+  void setBasalHeatFlux(double hf);
 
-  PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
-  PetscErrorCode viewSystem(PetscViewer viewer, unsigned int M) const;
+  void viewSystem(std::ostream &output, unsigned int M) const;
 
-  PetscErrorCode solveThisColumn(std::vector<double> &result);
+  void solveThisColumn(std::vector<double> &result);
 
   double lambda()
   { return m_lambda; }
@@ -99,11 +98,11 @@ protected:
   IceModelVec3 *Enth3;
   const EnthalpyConverter &EC;  // conductivity has known dependence on T, not enthalpy
 
-  PetscErrorCode compute_enthalpy_CTS();
+  void compute_enthalpy_CTS();
   double compute_lambda();
 
-  virtual PetscErrorCode assemble_R();
-  PetscErrorCode checkReadyToSolve();
+  virtual void assemble_R();
+  void checkReadyToSolve();
 };
 
 } // end of namespace pism

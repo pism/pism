@@ -230,11 +230,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
   enthSystemCtx esys(config, Enth3, grid.dx, grid.dy, dt_TempAge,
                      grid.dz_fine, grid.Mz_fine, "enth", *EC);
 
-  if (getVerbosityLevel() >= 4) {  // view: all column-independent constants correct?
-    ierr = EC->viewConstants(NULL); CHKERRQ(ierr);
-    ierr = esys.viewConstants(NULL, false); CHKERRQ(ierr);
-  }
-
   // Now get map-plane coupler fields: Dirichlet upper surface
   // boundary and mass balance lower boundary under shelves
   assert(surface != NULL);
@@ -289,8 +284,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
     const double thickness_threshold = config.get("energy_advection_ice_thickness_threshold");
     const bool isMarginal = checkThinNeigh(ice_thickness, i, j, thickness_threshold);
 
-    ierr = esys.initThisColumn(i, j, isMarginal, ice_thickness(i, j),
-                               u3, v3, w3, strain_heating3); CHKERRQ(ierr);
+    esys.initThisColumn(i, j, isMarginal, ice_thickness(i, j),
+                        u3, v3, w3, strain_heating3);
 
     // enthalpy and pressures at top of ice
     const double
@@ -322,7 +317,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
     // set boundary conditions and update enthalpy
     {
-      ierr = esys.setDirichletSurface(Enth_ks); CHKERRQ(ierr);
+      esys.setDirichletSurface(Enth_ks);
 
       // determine lowest-level equation at bottom of ice; see
       // decision chart in the source code browser and page
@@ -333,20 +328,20 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         double Enth0;
         ierr = EC->getEnthPermissive(shelfbtemp(i, j), 0.0, EC->getPressureFromDepth(ice_thickness(i, j)),
                                      Enth0); CHKERRQ(ierr);
-        ierr = esys.setDirichletBasal(Enth0); CHKERRQ(ierr);
+        esys.setDirichletBasal(Enth0);
       } else if (base_is_cold) {
         // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
-        ierr = esys.setBasalHeatFlux(basal_heat_flux(i, j) + (*Rb)(i, j)); CHKERRQ(ierr);
+        esys.setBasalHeatFlux(basal_heat_flux(i, j) + (*Rb)(i, j));
       } else {
         // warm, grounded base case
-        ierr = esys.setBasalHeatFlux(0.0); CHKERRQ(ierr);
+        esys.setBasalHeatFlux(0.0);
       }
 
       // solve the system
-      ierr = esys.solveThisColumn(Enthnew); CHKERRQ(ierr);
+      esys.solveThisColumn(Enthnew);
 
       if (viewOneColumn && (i == id && j == jd)) {
-        ierr = esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine); CHKERRQ(ierr);
+        esys.viewColumnInfoMFile(Enthnew, grid.Mz_fine);
       }
     }
 
