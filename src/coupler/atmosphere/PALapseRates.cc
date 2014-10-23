@@ -22,8 +22,8 @@ namespace pism {
 
 PALapseRates::PALapseRates(IceGrid &g, const Config &conf, AtmosphereModel* in)
   : PLapseRates<AtmosphereModel,PAModifier>(g, conf, in),
-    precipitation(g.get_unit_system()),
-    air_temp(g.get_unit_system())
+    precipitation(g.get_unit_system(), "precipitation", g),
+    air_temp(g.get_unit_system(), "air_temp", g)
 {
   precip_lapse_rate = 0;
   option_prefix     = "-atmosphere_lapse_rate";
@@ -41,14 +41,12 @@ PALapseRates::~PALapseRates() {
 PetscErrorCode PALapseRates::allocate_PALapseRates() {
   PetscErrorCode ierr;
 
-  precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name",
                            "ice-equivalent precipitation rate with a lapse-rate correction");
   ierr = precipitation.set_units("m s-1"); CHKERRQ(ierr);
   ierr = precipitation.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-  air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name",
                       "near-surface air temperature with a lapse-rate correction");

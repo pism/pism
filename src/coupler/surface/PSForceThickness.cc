@@ -32,9 +32,9 @@ namespace pism {
 ///// "Force-to-thickness" mechanism
 PSForceThickness::PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel *input)
   : PSModifier(g, conf, input),
-    m_climatic_mass_balance(g.get_unit_system()),
-    m_climatic_mass_balance_original(g.get_unit_system()),
-    m_ice_surface_temp(g.get_unit_system())
+    m_climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
+    m_climatic_mass_balance_original(g.get_unit_system(), "climatic_mass_balance_original", grid),
+    m_ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
 {
   PetscErrorCode ierr = allocate_PSForceThickness(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
@@ -67,7 +67,6 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   ierr = m_ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
   m_ftt_mask.write_in_glaciological_units = true;
 
-  m_climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   m_climatic_mass_balance.set_string("pism_intent", "diagnostic");
   m_climatic_mass_balance.set_string("long_name",
                                    "surface mass balance (accumulation/ablation) rate");
@@ -76,14 +75,12 @@ PetscErrorCode PSForceThickness::allocate_PSForceThickness() {
   ierr = m_climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
-  m_climatic_mass_balance_original.init_2d("climatic_mass_balance_original", grid);
   m_climatic_mass_balance_original.set_string("pism_intent", "diagnostic");
   m_climatic_mass_balance_original.set_string("long_name",
                                             "surface mass balance rate before the adjustment using -surface ...,forcing");
   ierr = m_climatic_mass_balance_original.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = m_climatic_mass_balance_original.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
-  m_ice_surface_temp.init_2d("ice_surface_temp", grid);
   m_ice_surface_temp.set_string("pism_intent", "diagnostic");
   m_ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");

@@ -25,8 +25,8 @@ namespace pism {
 
 PAAnomaly::PAAnomaly(IceGrid &g, const Config &conf, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, conf, in),
-    air_temp(g.get_unit_system()),
-    precipitation(g.get_unit_system())
+    air_temp(g.get_unit_system(), "air_temp", grid),
+    precipitation(g.get_unit_system(), "precipitation", grid)
 {
   PetscErrorCode ierr = allocate_PAAnomaly(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
@@ -63,12 +63,10 @@ PetscErrorCode PAAnomaly::allocate_PAAnomaly() {
   ierr = precipitation_anomaly->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   precipitation_anomaly->write_in_glaciological_units = true;
 
-  air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
   ierr = air_temp.set_units("K"); CHKERRQ(ierr);
 
-  precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);

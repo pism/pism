@@ -66,8 +66,8 @@ PetscErrorCode IceModelVec3Custom::create(IceGrid &mygrid,
 
   m_dof = 1;
 
-  m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
-  m_metadata[0].init_3d(m_name, mygrid, zlevels);
+  m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+                                         m_name, *grid, zlevels));
   m_metadata[0].get_z().set_name(z_name);
 
   std::map<std::string, std::string>::const_iterator j = z_attrs.begin();

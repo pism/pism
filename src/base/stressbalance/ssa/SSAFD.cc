@@ -1726,9 +1726,9 @@ SSAFD_nuH::SSAFD_nuH(SSAFD *m, IceGrid &g, Vars &my_vars)
 
   // set metadata:
   dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
-  vars[0].init_2d("nuH[0]", grid);
-  vars[1].init_2d("nuH[1]", grid);
+
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "nuH[0]", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "nuH[1]", grid));
 
   set_attrs("ice thickness times effective viscosity, i-offset", "",
             "Pa s m", "kPa s m", 0);

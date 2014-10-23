@@ -80,10 +80,10 @@ protected:
   bool pdd_annualize;
   PetscReal next_pdd_update;
 
-  NCSpatialVariable ice_surface_temp;
 private:
   PetscErrorCode allocate_PSTemperatureIndex_Old();
   std::string temperature_name, mass_balance_name;
+  NCSpatialVariable ice_surface_temp;
 };
 
 } // end of namespace pism

@@ -24,8 +24,8 @@ namespace pism {
 
 PO_delta_MBP::PO_delta_MBP(IceGrid &g, const Config &conf, OceanModel* in)
   : PScalarForcing<OceanModel,POModifier>(g, conf, in),
-    shelfbmassflux(g.get_unit_system()),
-    shelfbtemp(g.get_unit_system())
+    shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
+    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid)
 {
   PetscErrorCode ierr = allocate_PO_delta_MBP(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
@@ -47,14 +47,12 @@ PetscErrorCode PO_delta_MBP::allocate_PO_delta_MBP() {
   offset->get_metadata().set_string("long_name", "melange back pressure fraction");
   offset->get_dimension_metadata().set_units(grid.time->units_string());
 
-  shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
   shelfbmassflux.set_units("kg m-2 s-1");
   shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
-  shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");

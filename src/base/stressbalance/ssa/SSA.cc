@@ -395,10 +395,10 @@ SSA_taud::SSA_taud(SSA *m, IceGrid &g, Vars &my_vars)
   : Diag<SSA>(m, g, my_vars) {
 
   dof = 2;
-  vars.resize(dof,  NCSpatialVariable(g.get_unit_system()));
+
   // set metadata:
-  vars[0].init_2d("taud_x", grid);
-  vars[1].init_2d("taud_y", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_x", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_y", grid));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -428,7 +428,7 @@ SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars)
   : Diag<SSA>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("taud_mag", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_mag", grid));
 
   set_attrs("magnitude of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);

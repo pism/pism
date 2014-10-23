@@ -25,7 +25,8 @@
 namespace pism {
 
 PAConstantPIK::PAConstantPIK(IceGrid &g, const Config &conf)
-  : AtmosphereModel(g, conf), air_temp_snapshot(g.get_unit_system()) {
+  : AtmosphereModel(g, conf),
+    air_temp_snapshot(g.get_unit_system(), "air_temp_snapshot", g) {
   PetscErrorCode ierr = allocate_PAConstantPIK(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
     throw std::runtime_error("PAConstantPIK allocation failed");
@@ -55,7 +56,6 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
   air_temp.set_time_independent(true);
 
   // initialize metadata for "air_temp_snapshot"
-  air_temp_snapshot.init_2d("air_temp_snapshot", grid);
   air_temp_snapshot.set_string("pism_intent", "diagnostic");
   air_temp_snapshot.set_string("long_name",
                                "snapshot of the near-surface air temperature");

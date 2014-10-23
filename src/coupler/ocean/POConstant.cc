@@ -28,8 +28,8 @@ namespace pism {
 
 POConstant::POConstant(IceGrid &g, const Config &conf)
   : OceanModel(g, conf),
-    shelfbmassflux(g.get_unit_system()),
-    shelfbtemp(g.get_unit_system()) {
+    shelfbmassflux(g.get_unit_system(), "shelfbmassflux", grid),
+    shelfbtemp(g.get_unit_system(), "shelfbtemp", grid) {
   PetscErrorCode ierr = allocate_POConstant(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
     throw std::runtime_error("POConstant allocation failed");
@@ -40,14 +40,12 @@ PetscErrorCode POConstant::allocate_POConstant() {
   mymeltrate = 0.0;
   meltrate_set = false;
 
-  shelfbmassflux.init_2d("shelfbmassflux", grid);
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
   shelfbmassflux.set_units("kg m-2 s-1");
   shelfbmassflux.set_glaciological_units("kg m-2 year-1");
 
-  shelfbtemp.init_2d("shelfbtemp", grid);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");

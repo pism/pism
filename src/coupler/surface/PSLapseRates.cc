@@ -22,8 +22,8 @@ namespace pism {
 
 PSLapseRates::PSLapseRates(IceGrid &g, const Config &conf, SurfaceModel* in)
   : PLapseRates<SurfaceModel,PSModifier>(g, conf, in),
-    climatic_mass_balance(g.get_unit_system()),
-    ice_surface_temp(g.get_unit_system())
+    climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
+    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
 {
   smb_lapse_rate = 0;
   option_prefix = "-surface_lapse_rate";
@@ -42,7 +42,6 @@ PSLapseRates::~PSLapseRates() {
 PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
   PetscErrorCode ierr;
 
-  climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
                   "surface mass balance (accumulation/ablation) rate");
@@ -51,7 +50,6 @@ PetscErrorCode PSLapseRates::allocate_PSLapseRates() {
   ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
-  ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");

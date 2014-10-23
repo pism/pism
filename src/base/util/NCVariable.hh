@@ -124,11 +124,12 @@ enum RegriddingFlag {OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MI
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class NCSpatialVariable : public NCVariable {
 public:
-  NCSpatialVariable(const UnitSystem &system);
+  NCSpatialVariable(const UnitSystem &system, const std::string &name,
+                    IceGrid &g);
+  NCSpatialVariable(const UnitSystem &system, const std::string &name,
+                    IceGrid &g, std::vector<double> &zlevels);
   NCSpatialVariable(const NCSpatialVariable &other);
   virtual ~NCSpatialVariable();
-  void init_2d(const std::string &name, IceGrid &g);
-  void init_3d(const std::string &name, IceGrid &g, std::vector<double> &zlevels);
   void set_levels(const std::vector<double> &levels);
 
   void set_time_independent(bool flag);
@@ -168,6 +169,9 @@ private:
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode check_range(const std::string &filename, Vec v);
   PetscErrorCode define_dimensions(const PIO &nc) const;
+
+  void init_internal(const std::string &name, IceGrid &g,
+                     std::vector<double> &z_levels);
 };
 
 //! An internal class for reading, writing and converting time-series.

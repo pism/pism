@@ -617,10 +617,9 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const std::string & my_na
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
   m_name       = my_name;
 
-  m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
-
   if (m_dof == 1) {
-    metadata().init_2d(my_name, my_grid);
+    m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+                                           my_name, *grid));
   } else {
 
     for (unsigned int j = 0; j < m_dof; ++j) {
@@ -628,7 +627,8 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const std::string & my_na
 
       snprintf(tmp, TEMPORARY_STRING_LENGTH, "%s[%d]",
                m_name.c_str(), j);
-      metadata(j).init_2d(tmp, my_grid);
+      m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+                                             tmp, *grid));
     }
   }
 

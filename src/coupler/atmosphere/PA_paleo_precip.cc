@@ -23,8 +23,8 @@ namespace pism {
 
 PA_paleo_precip::PA_paleo_precip(IceGrid &g, const Config &conf, AtmosphereModel* in)
   : PScalarForcing<AtmosphereModel,PAModifier>(g, conf, in),
-    air_temp(g.get_unit_system()),
-    precipitation(g.get_unit_system())
+    air_temp(g.get_unit_system(), "air_temp", grid),
+    precipitation(g.get_unit_system(), "precipitation", grid)
 {
   offset = NULL;
   PetscErrorCode ierr = allocate_PA_paleo_precip(); CHKERRCONTINUE(ierr);
@@ -43,12 +43,10 @@ PetscErrorCode PA_paleo_precip::allocate_PA_paleo_precip() {
   offset->get_metadata().set_string("long_name", "air temperature offsets");
   offset->get_dimension_metadata().set_units(grid.time->units_string());
 
-  air_temp.init_2d("air_temp", grid);
   air_temp.set_string("pism_intent", "diagnostic");
   air_temp.set_string("long_name", "near-surface air temperature");
   ierr = air_temp.set_units("K"); CHKERRQ(ierr);
 
-  precipitation.init_2d("precipitation", grid);
   precipitation.set_string("pism_intent", "diagnostic");
   precipitation.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = precipitation.set_units("m / s"); CHKERRQ(ierr);

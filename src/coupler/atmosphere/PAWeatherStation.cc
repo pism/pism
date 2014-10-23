@@ -32,8 +32,8 @@ PAWeatherStation::PAWeatherStation(IceGrid &g, const Config &conf)
   : AtmosphereModel(g, conf),
     m_precipitation(&g, "precipitation", conf.get_string("time_dimension_name")),
     m_air_temperature(&g, "air_temp", conf.get_string("time_dimension_name")),
-    m_precip_metadata(g.get_unit_system()),
-    m_air_temp_metadata(g.get_unit_system())
+    m_precip_metadata(g.get_unit_system(), "precipitation", grid),
+    m_air_temp_metadata(g.get_unit_system(), "air_temp", grid)
 {
   PetscErrorCode ierr = allocate(); CHKERRCONTINUE(ierr);
 }
@@ -51,12 +51,10 @@ PetscErrorCode PAWeatherStation::allocate() {
   m_air_temperature.get_metadata().set_string("long_name",
                                               "near-surface air temperature");
 
-  m_air_temp_metadata.init_2d("air_temp", grid);
   m_air_temp_metadata.set_string("pism_intent", "diagnostic");
   m_air_temp_metadata.set_string("long_name", "near-surface air temperature");
   ierr = m_air_temp_metadata.set_units("K"); CHKERRQ(ierr);
 
-  m_precip_metadata.init_2d("precipitation", grid);
   m_precip_metadata.set_string("pism_intent", "diagnostic");
   m_precip_metadata.set_string("long_name", "precipitation, units of ice-equivalent thickness per time");
   ierr = m_precip_metadata.set_units("m / s"); CHKERRQ(ierr);

@@ -25,8 +25,8 @@ namespace pism {
 
 PS_delta_T::PS_delta_T(IceGrid &g, const Config &conf, SurfaceModel* in)
   : PScalarForcing<SurfaceModel,PSModifier>(g, conf, in),
-    climatic_mass_balance(g.get_unit_system()),
-    ice_surface_temp(g.get_unit_system())
+    climatic_mass_balance(g.get_unit_system(), "climatic_mass_balance", grid),
+    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
 {
   PetscErrorCode ierr = allocate_PS_delta_T(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
@@ -48,7 +48,6 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   offset->get_metadata().set_string("long_name", "ice-surface temperature offsets");
   offset->get_dimension_metadata().set_units(grid.time->units_string());
 
-  climatic_mass_balance.init_2d("climatic_mass_balance", grid);
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
                                    "surface mass balance (accumulation/ablation) rate");
@@ -57,7 +56,6 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   climatic_mass_balance.set_units("kg m-2 s-1");
   climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
-  ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");

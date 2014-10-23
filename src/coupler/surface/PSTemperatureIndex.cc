@@ -36,7 +36,7 @@ namespace pism {
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const Config &conf)
   : SurfaceModel(g, conf),
-    ice_surface_temp(g.get_unit_system())
+    ice_surface_temp(g.get_unit_system(), "ice_surface_temp", grid)
 {
   PetscErrorCode ierr = allocate_PSTemperatureIndex(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
@@ -186,7 +186,6 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
                               "m", ""); CHKERRQ(ierr);
   ierr = snow_depth.set(0.0); CHKERRQ(ierr);
 
-  ice_surface_temp.init_2d("ice_surface_temp", grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");

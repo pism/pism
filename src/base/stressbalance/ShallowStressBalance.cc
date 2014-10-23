@@ -357,10 +357,10 @@ SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
+
   // set metadata:
-  vars[0].init_2d("taud_x", grid);
-  vars[1].init_2d("taud_y", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_x", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_y", grid));
 
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -418,7 +418,7 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("taud_mag", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taud_mag", grid));
 
   set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -457,10 +457,10 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
 SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
   dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
+
   // set metadata:
-  vars[0].init_2d("taub_x", grid);
-  vars[1].init_2d("taub_y", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taub_x", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taub_y", grid));
 
   set_attrs("X-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -519,7 +519,7 @@ SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("taub_mag", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "taub_mag", grid));
 
   set_attrs("magnitude of the basal shear stress at the base of ice", "",
             "Pa", "Pa", 0);
@@ -601,7 +601,7 @@ PetscErrorCode PrescribedSliding::init(Vars &vars) {
 SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<ShallowStressBalance>(m, g, my_vars) {
   // set metadata:
-  vars[0].init_2d("beta", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "beta", grid));
 
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }

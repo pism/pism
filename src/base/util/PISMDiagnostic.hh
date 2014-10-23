@@ -60,7 +60,6 @@ public:
     : variables(my_vars), grid(g) {
     output_datatype = PISM_FLOAT;
     dof = 1;
-    vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
   }
   virtual ~Diagnostic() {}
 
@@ -94,7 +93,9 @@ public:
   //! Get a pointer to a metadata object corresponding to variable number N.
   virtual NCSpatialVariable get_metadata(int N = 0)
   {
-    if (N >= dof) return NCSpatialVariable(grid.get_unit_system());
+    if (N >= dof) {
+      return NCSpatialVariable(grid.get_unit_system(), "missing", grid);
+    }
 
     return vars[N];
   }

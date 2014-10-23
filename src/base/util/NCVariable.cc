@@ -105,13 +105,31 @@ Unit NCVariable::get_glaciological_units() const {
   return m_glaciological_units;
 }
 
-NCSpatialVariable::NCSpatialVariable(const UnitSystem &system)
+//! 3D version
+NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
+                                     IceGrid &g, std::vector<double> &zlevels)
   : NCVariable("unnamed", system),
     m_x("x", system),
     m_y("y", system),
     m_z("z", system) {
 
-  m_grid = NULL;
+  init_internal(name, g, zlevels);
+}
+
+//! 2D version
+NCSpatialVariable::NCSpatialVariable(const UnitSystem &system, const std::string &name,
+                                     IceGrid &g)
+  : NCVariable("unnamed", system),
+    m_x("x", system),
+    m_y("y", system),
+    m_z("z", system) {
+
+  std::vector<double> z(1, 0.0);
+  init_internal(name, g, z);
+}
+
+void NCSpatialVariable::init_internal(const std::string &name, IceGrid &g,
+                                      std::vector<double> &z_levels) {
   m_time_dimension_name = "t";        // will be overriden later
 
   m_x.set_string("axis", "X");
@@ -133,29 +151,7 @@ NCSpatialVariable::NCSpatialVariable(const UnitSystem &system)
   set_string("grid_mapping", "mapping");
 
   m_variable_order = "xyz";
-}
 
-NCSpatialVariable::NCSpatialVariable(const NCSpatialVariable &other)
-  : NCVariable(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
-  m_time_dimension_name = other.m_time_dimension_name;
-  m_variable_order      = other.m_variable_order;
-  m_zlevels             = other.m_zlevels;
-  m_grid                = other.m_grid;
-  m_com                 = other.m_com;
-}
-
-NCSpatialVariable::~NCSpatialVariable() {
-  // empty
-}
-
-void NCSpatialVariable::init_2d(const std::string &name, IceGrid &g) {
-  std::vector<double> z(1);
-
-  init_3d(name, g, z);
-}
-
-//! \brief Initialize a NCSpatialVariable instance.
-void NCSpatialVariable::init_3d(const std::string &name, IceGrid &g, std::vector<double> &z_levels) {
   set_name(name);
   m_grid = &g;
   m_com = g.com;
@@ -173,6 +169,19 @@ void NCSpatialVariable::init_3d(const std::string &name, IceGrid &g, std::vector
   }
 
   m_variable_order = m_grid->config.get_string("output_variable_order");
+}
+
+NCSpatialVariable::NCSpatialVariable(const NCSpatialVariable &other)
+  : NCVariable(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
+  m_time_dimension_name = other.m_time_dimension_name;
+  m_variable_order      = other.m_variable_order;
+  m_zlevels             = other.m_zlevels;
+  m_grid                = other.m_grid;
+  m_com                 = other.m_com;
+}
+
+NCSpatialVariable::~NCSpatialVariable() {
+  // empty
 }
 
 void NCSpatialVariable::set_levels(const std::vector<double> &levels) {

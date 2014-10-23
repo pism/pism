@@ -37,7 +37,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars)
   : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("schoofs_theta", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "schoofs_theta", grid));
 
   set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
             "1", "", 0);
@@ -66,7 +66,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
   : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("topgsmooth", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "topgsmooth", grid));
   set_attrs("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
             "", "m", "m", 0);
 }
@@ -89,7 +89,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
   : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("thksmooth", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "thksmooth", grid));
   set_attrs("thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
             "", "m", "m", 0);
 }
@@ -120,7 +120,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, Vars &my_vars)
   : Diag<SIAFD>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init_2d("diffusivity", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "diffusivity", grid));
 
   set_attrs("diffusivity of SIA mass continuity equation", "",
             "m2 s-1", "m2 s-1", 0);
@@ -145,9 +145,9 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, V
 
   // set metadata:
   dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
-  vars[0].init_2d("diffusivity_i", grid);
-  vars[1].init_2d("diffusivity_j", grid);
+
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "diffusivity_i", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "diffusivity_j", grid));
 
   set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)", "",
             "m2 s-1", "m2 s-1", 0);
@@ -176,9 +176,9 @@ SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars)
 
   // set metadata:
   dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
-  vars[0].init_2d("h_x_i", grid);
-  vars[1].init_2d("h_x_j", grid);
+
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "h_x_i", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "h_x_j", grid));
 
   set_attrs("the x-component of the surface gradient, i-offset", "",
             "", "", 0);
@@ -209,9 +209,9 @@ SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars)
 
   // set metadata:
   dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
-  vars[0].init_2d("h_y_i", grid);
-  vars[1].init_2d("h_y_j", grid);
+
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "h_y_i", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "h_y_j", grid));
 
   set_attrs("the y-component of the surface gradient, i-offset", "",
             "", "", 0);

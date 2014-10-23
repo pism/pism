@@ -29,7 +29,8 @@
 namespace pism {
 
 PAYearlyCycle::PAYearlyCycle(IceGrid &g, const Config &conf)
-  : AtmosphereModel(g, conf), m_air_temp_snapshot(g.get_unit_system()) {
+  : AtmosphereModel(g, conf),
+    m_air_temp_snapshot(g.get_unit_system(), "air_temp_snapshot", g) {
   PetscErrorCode ierr = allocate_PAYearlyCycle(); CHKERRCONTINUE(ierr);
   if (ierr != 0) {
     throw std::runtime_error("PAYearlyCycle allocation failed");
@@ -69,7 +70,6 @@ PetscErrorCode PAYearlyCycle::allocate_PAYearlyCycle() {
   m_precipitation.write_in_glaciological_units = true;
   m_precipitation.set_time_independent(true);
 
-  m_air_temp_snapshot.init_2d("air_temp_snapshot", grid);
   m_air_temp_snapshot.set_string("pism_intent", "diagnostic");
   m_air_temp_snapshot.set_string("long_name",
                          "snapshot of the near-surface air temperature");

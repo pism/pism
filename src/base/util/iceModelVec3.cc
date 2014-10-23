@@ -71,8 +71,8 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_
 
   m_name = my_name;
 
-  m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
-  m_metadata[0].init_3d(my_name, my_grid, zlevels);
+  m_metadata.push_back(NCSpatialVariable(grid->get_unit_system(),
+                                         my_name, *grid, zlevels));
 
   return 0;
 }

@@ -833,9 +833,8 @@ RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid 
 
   // set metadata:
   dof = 2;
-  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
-  vars[0].init_2d("bwatvel[0]", grid);
-  vars[1].init_2d("bwatvel[1]", grid);
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "bwatvel[0]", grid));
+  vars.push_back(NCSpatialVariable(grid.get_unit_system(), "bwatvel[1]", grid));
 
   set_attrs("velocity of water in subglacial layer, i-offset", "",
             "m s-1", "m year-1", 0);

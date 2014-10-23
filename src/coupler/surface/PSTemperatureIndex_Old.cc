@@ -31,7 +31,8 @@ namespace pism {
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
-  : SurfaceModel(g, conf), ice_surface_temp(g.get_unit_system()) {
+  : SurfaceModel(g, conf), temperature_name("ice_surface_temp"),
+    ice_surface_temp(g.get_unit_system(), temperature_name, g) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = config.get("pdd_factor_snow");
@@ -42,7 +43,6 @@ PSTemperatureIndex_Old::PSTemperatureIndex_Old(IceGrid &g, const Config &conf)
 
   pdd_annualize = false;
 
-  temperature_name = "ice_surface_temp";
   mass_balance_name = "climatic_mass_balance";
 
   PetscErrorCode ierr = allocate_PSTemperatureIndex_Old(); CHKERRABORT(grid.com, ierr);
@@ -192,7 +192,6 @@ PetscErrorCode PSTemperatureIndex_Old::init(Vars &vars) {
   // beginning of the run)
   next_pdd_update = grid.time->current();
 
-  ice_surface_temp.init_2d(temperature_name, grid);
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                   "ice temperature at the ice surface");
