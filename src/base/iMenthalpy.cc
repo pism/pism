@@ -62,8 +62,7 @@ PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceMod
     ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
     for (unsigned int k=0; k<grid.Mz; ++k) {
       const double depth = ice_thickness(i,j) - grid.zlevels[k]; // FIXME issue #15
-      ierr = EC->getEnthPermissive(Tij[k],0.0,EC->getPressureFromDepth(depth),
-                                   Enthij[k]); CHKERRQ(ierr);
+      Enthij[k] = EC->getEnthPermissive(Tij[k], 0.0, EC->getPressureFromDepth(depth));
     }
   }
 
@@ -100,8 +99,8 @@ PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
     ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
     for (unsigned int k=0; k<grid.Mz; ++k) {
       const double depth = ice_thickness(i,j) - grid.zlevels[k]; // FIXME issue #15
-      ierr = EC->getEnthPermissive(Tij[k],Liqfracij[k],
-                                   EC->getPressureFromDepth(depth), Enthij[k]); CHKERRQ(ierr);
+      Enthij[k] = EC->getEnthPermissive(Tij[k], Liqfracij[k],
+                                        EC->getPressureFromDepth(depth)); CHKERRQ(ierr);
     }
   }
 
@@ -141,8 +140,7 @@ PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
     ierr = enthalpy.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
     for (unsigned int k=0; k<grid.Mz; ++k) {
       const double depth = ice_thickness(i,j) - grid.zlevels[k]; // FIXME issue #15
-      ierr = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth),
-                                  omegaij[k]); CHKERRQ(ierr);
+      omegaij[k] = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth));
     }
   }
 
@@ -291,9 +289,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       depth_ks = ice_thickness(i, j) - system.ks() * grid.dz_fine,
       p_ks     = EC->getPressureFromDepth(depth_ks); // FIXME issue #15
 
-    double Enth_ks;
-    ierr = EC->getEnthPermissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
-                                 p_ks, Enth_ks); CHKERRQ(ierr);
+    double Enth_ks = EC->getEnthPermissive(ice_surface_temp(i, j), liqfrac_surface(i, j),
+                                           p_ks); CHKERRQ(ierr);
 
     const bool ice_free_column = (system.ks() == 0);
 
@@ -324,9 +321,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       if (is_floating) {
         // floating base: Dirichlet application of known temperature from ocean
         //   coupler; assumes base of ice shelf has zero liquid fraction
-        double Enth0;
-        ierr = EC->getEnthPermissive(shelfbtemp(i, j), 0.0, EC->getPressureFromDepth(ice_thickness(i, j)),
-                                     Enth0); CHKERRQ(ierr);
+        double Enth0 = EC->getEnthPermissive(shelfbtemp(i, j), 0.0,
+                                             EC->getPressureFromDepth(ice_thickness(i, j)));
+
         system.setDirichletBasal(Enth0);
       } else if (base_is_cold) {
         // cold, grounded base (Neumann) case:  q . n = q_lith . n + F_b
@@ -358,8 +355,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
           }
           const double depth = ice_thickness(i, j) - k * grid.dz_fine,
             p = EC->getPressureFromDepth(depth); // FIXME issue #15
-          double omega;
-          EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked
+          double omega = EC->getWaterFraction(Enthnew[k], p);
           if (omega > 0.01) {                          // FIXME: make "0.01" configurable here
             double fractiondrained = dc.get_drainage_rate(omega) * dt_TempAge; // pure number
 
@@ -448,8 +444,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
             hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / grid.dz_fine;
           } else {
-            double T_0;
-            ierr = EC->getAbsTemp(Enthnew[0], p_0, T_0); CHKERRQ(ierr);
+            double T_0 = EC->getAbsTemp(Enthnew[0], p_0);
             const double K_0 = system.k_from_T(T_0) / EC->c_from_T(T_0);
 
             hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / grid.dz_fine;

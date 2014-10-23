@@ -281,10 +281,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   list.add(ice_surface_temp);
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-
-    ierr = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air,
-                                 vWork2d[0](i,j));
-    CHKERRQ(ierr);
+    vWork2d[0](i,j) = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air);
   }
 
   // Model state 3D vectors:

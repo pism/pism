@@ -399,7 +399,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
         const double depth = HH - grid.zlevels[k];
         const double pressure = EC->getPressureFromDepth(depth);
         // reuse T to store enthalpy; assume that the ice is cold
-        ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
+        T[k]= EC->getEnthPermissive(T[k], 0.0, pressure); CHKERRQ(ierr);
       }
     }
 

@@ -85,9 +85,8 @@ int main(int argc, char *argv[]) {
         double T     = Tm + TpaC[j],
                omega = (j == 3) ? omega0 : 0.0;
 
-        double E, flowcoeff;
-        EC.getEnth(T, omega, p, E);
-        flowcoeff = flow_law->flow(sigma[i], E, p, gs);
+        double E = EC.getEnth(T, omega, p);
+        double flowcoeff = flow_law->flow(sigma[i], E, p, gs);
 
         printf("    %10.2e   %10.3f  %9.3f = %10.6e\n",
                sigma[i], T, omega, flowcoeff);

@@ -472,9 +472,8 @@ PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
     ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
     for (unsigned int k=0; k <grid.Mz; ++k) {
       const double depth = (*thickness)(i,j) - grid.zlevels[k];
-      ierr = model->EC->getAbsTemp(Enthij[k],
-                                   model->EC->getPressureFromDepth(depth),
-                                   Tij[k]);
+      Tij[k] = model->EC->getAbsTemp(Enthij[k],
+                                     model->EC->getPressureFromDepth(depth));
       if (ierr) {
         PetscPrintf(grid.com,
                     "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d,k=%d\n\n",
@@ -530,13 +529,7 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
     for (unsigned int k=0; k < grid.Mz; ++k) {
       const double depth = (*thickness)(i,j) - grid.zlevels[k],
         p = model->EC->getPressureFromDepth(depth);
-      ierr = model->EC->getPATemp(Enthij[k], p, Tij[k]);
-      if (ierr) {
-        PetscPrintf(grid.com,
-                    "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d,k=%d\n\n",
-                    i,j,k);
-      }
-      CHKERRQ(ierr);
+      Tij[k] = model->EC->getPATemp(Enthij[k], p);
 
       if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
         // is 273.15
@@ -591,14 +584,7 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
 
     const double depth = (*thickness)(i,j),
       p = model->EC->getPressureFromDepth(depth);
-    ierr = model->EC->getPATemp(Enthij[0], p,
-                                (*result)(i,j));
-    if (ierr) {
-      PetscPrintf(grid.com,
-                  "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d\n\n",
-                  i,j);
-    }
-    CHKERRQ(ierr);
+    (*result)(i,j) = model->EC->getPATemp(Enthij[0], p);
 
     if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
       // is 273.15
@@ -727,10 +713,7 @@ PetscErrorCode IceModel_tempbase::compute(IceModelVec* &output) {
     double depth = (*thickness)(i,j),
       pressure = model->EC->getPressureFromDepth(depth);
     if (mask.icy(i, j)) {
-      ierr = model->EC->getAbsTemp((*result)(i,j),
-                                   pressure,
-                                   (*result)(i,j));
-      CHKERRQ(ierr);
+      (*result)(i,j) = model->EC->getAbsTemp((*result)(i,j), pressure);
     } else {
       (*result)(i,j) = grid.config.get("fill_value");
     }
@@ -779,9 +762,7 @@ PetscErrorCode IceModel_tempsurf::compute(IceModelVec* &output) {
     const int i = p.i(), j = p.j();
 
     if ((*thickness)(i,j) > 1) {
-      ierr = model->EC->getAbsTemp((*result)(i,j),
-                                   pressure,
-                                   (*result)(i,j)); CHKERRQ(ierr);
+      (*result)(i,j) = model->EC->getAbsTemp((*result)(i,j), pressure);
     } else {
       (*result)(i,j) = grid.config.get("fill_value");
     }

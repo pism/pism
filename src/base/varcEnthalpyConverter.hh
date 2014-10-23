@@ -42,11 +42,11 @@ public:
   }
   virtual ~varcEnthalpyConverter() {}
 
-  virtual double         getEnthalpyCTS(double p) const;
+  virtual double getEnthalpyCTS(double p) const;
 
-  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
+  virtual double getAbsTemp(double E, double p) const;
 
-  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
+  virtual double getEnth(double T, double omega, double p) const;
 
   /*!
     Equation (4.39) in [\ref GreveBlatter2009] is
@@ -58,15 +58,16 @@ public:
 
   virtual double c_from_enth(double E, double p) const
   {
-    double T;
-    getAbsTemp(E, p, T);
-    return c_from_T(T);
+    return c_from_T(getAbsTemp(E, p));
   }
 
 protected:
-  const double T_r,  //!< reference temperature in the parameterization of C(T)
-    c_gradient;      //!< \brief the rate of change of C with respect to T in
-  //!< the parameterization of C(T)
+  //!< reference temperature in the parameterization of C(T)
+  const double T_r;
+  //!< \brief the rate of change of C with respect to T in the
+  //! parameterization of C(T)
+  const double c_gradient;
+
   double EfromT(double T) const;
   double TfromE(double E) const;
 };

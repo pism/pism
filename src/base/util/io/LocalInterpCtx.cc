@@ -116,15 +116,16 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   // Z
   start[Z] = 0;                    // always start at the base
-  count[Z] = PetscMax(input.z_len, 1); // read at least one level
+  count[Z] = std::max(input.z_len, 1u); // read at least one level
   zlevels = input.z;
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
-  a_len = count[X] * count[Y] * PetscMax(count[Z], 1);
-  int my_a_len = a_len;
-  MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, com);
+  a_len = count[X] * count[Y] * std::max(count[Z], 1u);
+  int my_a_len = a_len, max_a_len = a_len;
+  MPI_Reduce(&my_a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, com);
+  a_len = max_a_len;
   PetscMalloc(a_len * sizeof(double), &(a));
   // FIXME: we need error checking here
 

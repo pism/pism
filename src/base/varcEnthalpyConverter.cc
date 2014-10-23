@@ -89,19 +89,20 @@ double varcEnthalpyConverter::getEnthalpyCTS(double p) const {
 /*!
 Calls TfromE().
  */
-PetscErrorCode varcEnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+double varcEnthalpyConverter::getAbsTemp(double E, double p) const {
   double E_s, E_l;
-  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
+  getEnthalpyInterval(p, E_s, E_l);
+
   if (E >= E_l) { // enthalpy equals or exceeds that of liquid water
-    T = getMeltingTemp(p);
-    return 1;
+    throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
+                                  E, p);
   }
+
   if (E < E_s) {
-    T = TfromE(E);
+    return TfromE(E);
   } else {
-    T = getMeltingTemp(p);
+    return getMeltingTemp(p);
   }
-  return 0;
 }
 
 
@@ -109,9 +110,9 @@ PetscErrorCode varcEnthalpyConverter::getAbsTemp(double E, double p, double &T) 
 /*!
 Calls EfromT().
  */
-PetscErrorCode varcEnthalpyConverter::getEnth(
-                  double T, double omega, double p, double &E) const {
+double varcEnthalpyConverter::getEnth(double T, double omega, double p) const {
   const double T_m = getMeltingTemp(p);
+
   if (T <= 0.0) {
     throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
   }
@@ -124,12 +125,12 @@ PetscErrorCode varcEnthalpyConverter::getEnth(
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
     throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory",T,T_m,omega);
   }
+
   if (T < T_m) {
-    E = EfromT(T);
+    return EfromT(T);
   } else {
-    E = getEnthalpyCTS(p) + omega * L;
+    return getEnthalpyCTS(p) + omega * L;
   }
-  return 0;
 }
 
 

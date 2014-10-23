@@ -64,8 +64,7 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
     }
     // if you happen to be at center, record absolute basal temp there
     if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-      ierr = EC->getAbsTemp(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j)), temp0); // FIXME issue #15
-      CHKERRQ(ierr);
+      temp0 = EC->getAbsTemp(Enthbase(i,j),EC->getPressureFromDepth(ice_thickness(i,j))); // FIXME issue #15
     }
   }
 

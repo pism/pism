@@ -201,9 +201,7 @@ the pressure then the softness we compute is
    \f[A = A(T_{pa}(E, p))(1+184\omega).\f]
 The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by getPATemp().
  */
-double GPBLDIce::softness_parameter(
-                double enthalpy, double pressure) const {
-  PetscErrorCode ierr;
+double GPBLDIce::softness_parameter(double enthalpy, double pressure) const {
 
   if (EC == NULL) {
     throw RuntimeError("EC is NULL in GPBLDIce::softness_parameter()");
@@ -211,15 +209,10 @@ double GPBLDIce::softness_parameter(
   double E_s, E_l;
   EC->getEnthalpyInterval(pressure, E_s, E_l);
   if (enthalpy < E_s) {       // cold ice
-    double T_pa;
-    ierr = EC->getPATemp(enthalpy, pressure, T_pa);
-    if (ierr) {
-      throw RuntimeError("getPATemp() returned ierr>0 in GPBLDIce::softness_parameter()");
-    }
+    double T_pa = EC->getPATemp(enthalpy, pressure);
     return softness_parameter_paterson_budd(T_pa);
   } else { // temperate ice
-    double omega;
-    ierr = EC->getWaterFraction(enthalpy, pressure, omega);
+    double omega = EC->getWaterFraction(enthalpy, pressure);
     // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
     omega = PetscMin(omega, water_frac_observed_limit);
     // next line implements eqn (23) in \ref AschwandenBlatter2009
@@ -231,16 +224,14 @@ double GPBLDIce::softness_parameter(
 
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
 double ThermoGlenIce::softness_parameter(double E, double pressure) const {
-  double T_pa;
-  EC->getPATemp(E, pressure, T_pa);
+  double T_pa = EC->getPATemp(E, pressure);
   return softness_parameter_from_temp(T_pa);
 }
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
 double ThermoGlenIce::flow(double stress, double E,
-                                        double pressure, double gs) const {
-  double temp;
-  EC->getAbsTemp(E, pressure, temp);
+                           double pressure, double gs) const {
+  double temp = EC->getAbsTemp(E, pressure);
   return flow_from_temp(stress, temp, pressure, gs);
 }
 
@@ -321,9 +312,8 @@ GoldsbyKohlstedtIce::GoldsbyKohlstedtIce(MPI_Comm c, const std::string &pre,
 }
 
 double GoldsbyKohlstedtIce::flow(double stress, double E,
-                                    double pressure, double grainsize) const {
-  double temp;
-  EC->getAbsTemp(E, pressure, temp);
+                                 double pressure, double grainsize) const {
+  double temp = EC->getAbsTemp(E, pressure);
   return flow_from_temp(stress, temp, pressure, grainsize);
 }
 
@@ -347,7 +337,7 @@ double GoldsbyKohlstedtIce::hardness_parameter(double enthalpy, double pressure)
   // FIXME: The following is a re-implementation of the Paterson-Budd relation
   // for the hardness parameter. This should not be here, but we currently need
   // ice hardness to compute the strain heating. See SIAFD::compute_volumetric_strain_heating().
-  EC->getPATemp(enthalpy, pressure, T_pa);
+  T_pa = EC->getPATemp(enthalpy, pressure);
 
   if (T_pa < crit_temp) {
     softness = A_cold * exp(-Q_cold/(ideal_gas_constant * T_pa));

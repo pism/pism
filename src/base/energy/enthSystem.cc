@@ -295,9 +295,8 @@ void enthSystemCtx::assemble_R() {
       if (m_Enth[k] < m_Enth_s[k]) {
         // cold case
         const double depth = m_ice_thickness - k * m_dz;
-        double T;
-        m_EC.getAbsTemp(m_Enth[k], m_EC.getPressureFromDepth(depth), // FIXME: issue #15
-                      T);
+        double T = m_EC.getAbsTemp(m_Enth[k],
+                                   m_EC.getPressureFromDepth(depth)); // FIXME: issue #15
 
         m_R[k] = ((m_k_depends_on_T ? k_from_T(T) : m_ice_k) / m_EC.c_from_T(T)) * m_R_factor;
       } else {

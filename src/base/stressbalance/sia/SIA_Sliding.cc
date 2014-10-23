@@ -146,17 +146,15 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
         myhy = 0.25 * (h_y(i,j,0) + h_y(i-1,j,0)
                        + h_y(i,j,1) + h_y(i,j-1,1)),
         alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
-      double T, basalC;
 
       // change r1200: new meaning of H
       const double H = (*surface)(i,j) - (*bed)(i,j);
 
-      ierr = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0),
-                           EC.getPressureFromDepth(H), T); CHKERRQ(ierr);
+      double T = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0), EC.getPressureFromDepth(H));
 
-      basalC = basalVelocitySIA(myx, myy, H, T,
-                                alpha, mu_sliding,
-                                minimum_temperature_for_sliding);
+      double basalC = basalVelocitySIA(myx, myy, H, T,
+                                       alpha, mu_sliding,
+                                       minimum_temperature_for_sliding);
       m_velocity(i,j).u = - basalC * myhx;
       m_velocity(i,j).v = - basalC * myhy;
       // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
@@ -231,8 +229,8 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
 
   if ((eisII_experiment == "G") || (eisII_experiment == "H")) {
     const double  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
-    double pressure = EC.getPressureFromDepth(H), E;
-    EC.getEnthPermissive(T, 0.0, pressure, E);
+    double pressure = EC.getPressureFromDepth(H);
+    double E = EC.getEnthPermissive(T, 0.0, pressure);
 
     if (eisII_experiment == "G") {
       return Bfactor * ice_rho * standard_gravity * H;

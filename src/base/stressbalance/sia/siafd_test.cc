@@ -186,9 +186,8 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
     for (unsigned int k=0; k<grid.Mz; ++k) {
       double depth = thickness(i,j) - grid.zlevels[k];
-      ierr = EC.getEnthPermissive(T_ij[k], 0.0,
-                                  EC.getPressureFromDepth(depth),
-                                  E_ij[k]); CHKERRQ(ierr);
+      E_ij[k] = EC.getEnthPermissive(T_ij[k], 0.0,
+                                     EC.getPressureFromDepth(depth));
     }
 
   }

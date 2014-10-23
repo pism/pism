@@ -26,15 +26,15 @@
 namespace pism {
 
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
-  beta  = config.get("beta_CC");                                 // K Pa-1
-  c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
-  g     = config.get("standard_gravity");                        // m s-2
-  L     = config.get("water_latent_heat_fusion");                // J kg-1
-  p_air = config.get("surface_pressure");                        // Pa
-  rho_i = config.get("ice_density");                             // kg m-3
-  T_melting = config.get("water_melting_point_temperature");       // K  
-  T_tol = config.get("cold_mode_is_temperate_ice_tolerance");    // K 
-  T_0   = config.get("enthalpy_converter_reference_temperature");// K  
+  beta      = config.get("beta_CC"); // K Pa-1
+  c_i       = config.get("ice_specific_heat_capacity"); // J kg-1 K-1
+  g         = config.get("standard_gravity"); // m s-2
+  L         = config.get("water_latent_heat_fusion"); // J kg-1
+  p_air     = config.get("surface_pressure"); // Pa
+  rho_i     = config.get("ice_density"); // kg m-3
+  T_melting = config.get("water_melting_point_temperature"); // K  
+  T_tol     = config.get("cold_mode_is_temperate_ice_tolerance"); // K
+  T_0       = config.get("enthalpy_converter_reference_temperature"); // K
 
   do_cold_ice_methods  = config.get_flag("do_cold_ice_methods");
 }
@@ -42,10 +42,10 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
 //! Get pressure in ice from depth below surface using the hydrostatic assumption.
 /*! If \f$d\f$ is the depth then
      \f[ p = p_{\text{air}}  + \rho_i g d. \f]
-Frequently \f$d\f$ is computed from the thickess minus a level in the ice, 
+Frequently \f$d\f$ is computed from the thickess minus a level in the ice,
 something like "H[i][j] - z[k]".  The input depth to this routine is allowed to
 be negative, representing a position above the surface of the ice.
- */ 
+ */
 double EnthalpyConverter::getPressureFromDepth(double depth) const {
   if (depth > 0.0) {
     return p_air + rho_i * g * depth;
@@ -78,11 +78,9 @@ double EnthalpyConverter::getEnthalpyCTS(double p) const {
      \f[ E_s(p) = c_i (T_m(p) - T_0), \f]
      \f[ E_l(p) = E_s(p) + L. \f]
  */
-PetscErrorCode EnthalpyConverter::getEnthalpyInterval(
-                       double p, double &E_s, double &E_l) const {
+void EnthalpyConverter::getEnthalpyInterval(double p, double &E_s, double &E_l) const {
   E_s = getEnthalpyCTS(p);
   E_l = E_s + L;
-  return 0;
 }
 
 
@@ -96,19 +94,17 @@ than one for temperate ice and less than one for cold ice.  The output of this
 routine is normally only used for postprocessing.
 */
 double EnthalpyConverter::getCTS(double E, double p) const {
-  const double E_s = getEnthalpyCTS(p);
-  return E / E_s;
+  return E / getEnthalpyCTS(p);
 }
 
 
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::isTemperate(double E, double p) const {
   if (do_cold_ice_methods) {
-      double T_pa;
-      getPATemp(E, p, T_pa);
-      return (T_pa >= T_melting - T_tol);
-  } else
+      return (getPATemp(E, p) >= T_melting - T_tol);
+  } else {
       return (E >= getEnthalpyCTS(p));
+  }
 }
 
 
@@ -122,23 +118,19 @@ bool EnthalpyConverter::isTemperate(double E, double p) const {
 We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 return an error code of 1 if \f$E \ge E_l(p)\f$.
  */
-PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+double EnthalpyConverter::getAbsTemp(double E, double p) const {
   double E_s, E_l;
-  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l);
-#if PISM_DEBUG==1
-  CHKERRQ(ierr);
-#endif
+  getEnthalpyInterval(p, E_s, E_l);
+
+  if (E >= E_l) {
+    throw RuntimeError::formatted("E=%f at p=%f equals or exceeds that of liquid water",
+                                  E, p);
+  }
+
   if (E < E_s) {
-    T = (E / c_i) + T_0;
-    return 0;
+    return (E / c_i) + T_0;
   } else {
-    T = getMeltingTemp(p);
-
-    if (E < E_l)
-      return 0;
-
-    // enthalpy equals or exceeds that of liquid water
-    return 1;
+    return getMeltingTemp(p);
   }
 }
 
@@ -148,15 +140,8 @@ PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) cons
 The pressure-adjusted temperature is:
      \f[ T_{pa}(E,p) = T(E,p) - T_m(p) + T_{melting}. \f]
  */
-PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) const {
-  PetscErrorCode ierr;
-  double T = 0;  // initialized to avoid a compiler warning
-  ierr = getAbsTemp(E,p,T);
-#if PISM_DEBUG==1
-  CHKERRQ(ierr);
-#endif
-  T_pa = T - getMeltingTemp(p) + T_melting;
-  return 0;
+double EnthalpyConverter::getPATemp(double E, double p) const {
+  return getAbsTemp(E, p) - getMeltingTemp(p) + T_melting;
 }
 
 
@@ -167,23 +152,18 @@ From \ref AschwandenBuelerKhroulevBlatter,
                                     (E-E_s(p)) / L, & E_s(p) < E < E_l(p).
                      \end{cases} \f]
 
-We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we return
-error code 1 if \f$E \ge E_l(p)\f$, but we still compute \f$\omega=1.0\f$.
+We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$).
  */
-PetscErrorCode EnthalpyConverter::getWaterFraction(double E, double p, double &omega) const {
+double EnthalpyConverter::getWaterFraction(double E, double p) const {
   double E_s, E_l;
-  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l);
-#if PISM_DEBUG==1
-  CHKERRQ(ierr);
-#endif
+  getEnthalpyInterval(p, E_s, E_l);
   if (E >= E_l) {
-    omega = 1.0;
-    return 1;
+    throw RuntimeError::formatted("E=%f and p=%f correspond to liquid water", E, p);
   }
   if (E <= E_s) {
-    omega = 0.0;
+    return 0.0;
   } else {
-    omega = (E - E_s) / L;
+    return (E - E_s) / L;
   }
   return 0;
 }
@@ -212,9 +192,9 @@ Certain cases are not allowed and return errors:
 - \f$T<T_m(p)\f$ and \f$\omega > 0\f$ (error code 4)
 These inequalities may be violated in the sixth digit or so, however.
  */
-PetscErrorCode EnthalpyConverter::getEnth(
-                  double T, double omega, double p, double &E) const {
+double EnthalpyConverter::getEnth(double T, double omega, double p) const {
   const double T_m = getMeltingTemp(p);
+
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
     throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
@@ -229,12 +209,12 @@ PetscErrorCode EnthalpyConverter::getEnth(
     throw RuntimeError::formatted("T < T_m AND omega > 0 is contradictory",T,T_m,omega);
   }
 #endif
+
   if (T < T_m) {
-    E = c_i * (T - T_0);
+    return c_i * (T - T_0);
   } else {
-    E = getEnthalpyCTS(p) + omega * L;
+    return getEnthalpyCTS(p) + omega * L;
   }
-  return 0;
 }
 
 
@@ -248,7 +228,7 @@ Treats temperatures above pressure-melting point as \e at the pressure-melting
 point.  Interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$
 as cold ice, ignoring the water fraction (\f$\omega\f$) value.
 
-Checks if \f$T <= 0\f$ and returns error code 1 if so.
+Checks if \f$T <= 0\f$ and throws an exception if so.
 
 Computes:
   \f[E = \begin{cases}
@@ -258,27 +238,19 @@ Computes:
 but ensures \f$0\le \omega \le 1\f$ in second case.  Calls getEnth() for
 \f$E(T,\omega,p)\f$.
  */
-PetscErrorCode EnthalpyConverter::getEnthPermissive(
-                  double T, double omega, double p, double &E) const {
-  PetscErrorCode ierr;
+double EnthalpyConverter::getEnthPermissive(double T, double omega, double p) const {
 #if (PISM_DEBUG==1)
   if (T <= 0.0) {
-    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature",T);
+    throw RuntimeError::formatted("T = %f <= 0 is not a valid absolute temperature", T);
   }
 #endif
+
   const double T_m = getMeltingTemp(p);
   if (T < T_m) {
-    ierr = getEnth(T, 0.0, p, E);
-#if PISM_DEBUG==1
-    CHKERRQ(ierr);
-#endif
+    return getEnth(T, 0.0, p);
   } else { // T >= T_m(p) replaced with T = T_m(p)
-    ierr = getEnth(T_m, PetscMax(0.0,PetscMin(omega,1.0)), p, E);
-#if PISM_DEBUG==1
-    CHKERRQ(ierr);
-#endif
+    return getEnth(T_m, std::max(0.0, std::min(omega, 1.0)), p);
   }
-  return 0;
 }
 
 
@@ -289,15 +261,13 @@ Only the following case returns an error:
 - \f$\omega < 0\f$ or \f$\omega > 1\f$ (error code 2)
 These inequalities may be violated in the sixth digit or so, however.
  */
-PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
-                        double omega, double p, double &E) const {
+double EnthalpyConverter::getEnthAtWaterFraction(double omega, double p) const {
 #if (PISM_DEBUG==1)
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
     throw RuntimeError::formatted("water fraction omega=%f not in range [0,1]",omega);
   }
 #endif
-  E = getEnthalpyCTS(p) + omega * L;
-  return 0;
+  return getEnthalpyCTS(p) + omega * L;
 }
 
 

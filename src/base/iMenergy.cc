@@ -212,12 +212,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
         result(i,j) = ice_surface_temp(i,j);
       } else { // ice: sees temp of base of ice
         const double pressure = EC->getPressureFromDepth(ice_thickness(i,j));
-        double temp;
-        // ignore return code when getting temperature: we are committed to
-        //   this enthalpy field; getAbsTemp() only returns temperatures at or
-        //   below pressure melting
-        EC->getAbsTemp(result(i,j), pressure, temp);
-        result(i,j) = temp;
+        result(i,j) = EC->getAbsTemp(result(i,j), pressure);
       }
     } else { // floating: apply pressure melting temp as top of bedrock temp
       result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
