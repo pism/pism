@@ -132,8 +132,10 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
 
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant
   ierr = bed.set(-1000.0); CHKERRQ(ierr); // assures shelf is floating
-  ierr = enthalpy.set(528668.35); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
-  CHKERRQ(ierr);
+
+
+  double enth0  = enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
+  ierr = enthalpy.set(enth0); CHKERRQ(ierr);
 
   IceModelVec::AccessList list;
   list.add(thickness);

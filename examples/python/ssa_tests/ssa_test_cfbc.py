@@ -83,7 +83,10 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
     vecs.tauc.set(0.0)     # irrelevant
     vecs.bed.set(-1000.0); # assures shelf is floating
-    vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
+
+    EC = PISM.EnthalpyConverter(PISM.Context().config)
+    enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
+    vecs.enthalpy.set(enth0)
 
     grid      = self.grid
     thickness = vecs.thickness;

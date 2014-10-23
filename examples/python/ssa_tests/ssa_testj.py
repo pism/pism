@@ -48,7 +48,9 @@ class testj(PISM.ssa.SSAExactTestCase):
     vecs.ice_mask.set(PISM.MASK_FLOATING)
     vecs.bc_mask.set(0) # No dirichlet data.
 
-    vecs.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.
+    EC = PISM.EnthalpyConverter(PISM.Context().config)
+    enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
+    vecs.enthalpy.set(enth0)
 
     ocean_rho = self.config.get("sea_water_density");
     ice_rho = self.config.get("ice_density");

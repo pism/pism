@@ -29,7 +29,8 @@ tauc_hi = 2e6       # Pa
 tauc_lo = 1e4       # Pa
 tauc_free_bedrock = 0  # Will get set later
 
-enth0  = 528668.35; # Hmmm. 263.15 Kelvin at depth=0.
+EC = PISM.EnthalpyConverter(PISM.Context().config)
+enth0  = EC.getEnth(273.15, 0.01, 0) # 0.01 water fraction
 bed0  = 0;
 
 def geometry(x,y):

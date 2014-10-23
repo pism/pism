@@ -85,8 +85,9 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant for test J
   ierr = bed.set(0.0); CHKERRQ(ierr); // assures shelf is floating
   ierr = ice_mask.set(MASK_FLOATING); CHKERRQ(ierr);
-  ierr = enthalpy.set(528668.35);
-  CHKERRQ(ierr); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
+
+  double enth0  = enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
+  ierr = enthalpy.set(enth0); CHKERRQ(ierr);
 
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   double ocean_rho = config.get("sea_water_density"),
