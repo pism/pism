@@ -28,17 +28,19 @@
 
 namespace pism {
 
-PetscBool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
+bool IceFlowLawUsesGrainSize(IceFlowLaw *flow_law) {
   static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
   double ref = flow_law->flow(s, E, p, gs[0]);
   for (int i=1; i<4; i++) {
-    if (flow_law->flow(s, E, p, gs[i]) != ref) return PETSC_TRUE;
+    if (flow_law->flow(s, E, p, gs[i]) != ref) {
+      return true;
+    }
   }
-  return PETSC_FALSE;
+  return false;
 }
 
 // Rather than make this part of the base class, we just check at some reference values.
-PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
+bool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &config,
                                        EnthalpyConverter *EC) {
   static const struct {double s, E, p, gs;} v[] = {
     {1e3, 223, 1e6, 1e-3}, {450000, 475000, 500000, 525000}, {5e4, 268, 5e6, 3e-3}, {1e5, 273, 8e6, 5e-3}};
@@ -47,16 +49,20 @@ PetscBool IceFlowLawIsPatersonBuddCold(IceFlowLaw *flow_law, const Config &confi
     const double left  = flow_law->flow(v[i].s, v[i].E, v[i].p, v[i].gs),
                     right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
     if (PetscAbs((left - right)/left)>1.0e-15) {
-      return PETSC_FALSE;
+      return false;
     }
   }
-  return PETSC_TRUE;
+  return true;
 }
 
 IceFlowLaw::IceFlowLaw(MPI_Comm c, const std::string &pre, const Config &config,
                        EnthalpyConverter *my_EC) : EC(my_EC), e(1), com(c) {
 
   prefix = pre;
+
+  if (EC == NULL) {
+    throw RuntimeError("EC is NULL in IceFlowLaw::IceFlowLaw()");
+  }
 
   standard_gravity   = config.get("standard_gravity");
   ideal_gas_constant = config.get("ideal_gas_constant");
@@ -202,10 +208,6 @@ the pressure then the softness we compute is
 The pressure-melting temperature \f$T_{pa}(E, p)\f$ is computed by getPATemp().
  */
 double GPBLDIce::softness_parameter(double enthalpy, double pressure) const {
-
-  if (EC == NULL) {
-    throw RuntimeError("EC is NULL in GPBLDIce::softness_parameter()");
-  }
   double E_s, E_l;
   EC->getEnthalpyInterval(pressure, E_s, E_l);
   if (enthalpy < E_s) {       // cold ice
