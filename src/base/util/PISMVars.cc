@@ -24,6 +24,18 @@
 
 namespace pism {
 
+bool Vars::is_available(const std::string &name) const {
+  // check if "name" is a standard name
+  if (standard_names.find(name) != standard_names.end()) {
+    return true;
+  }
+  // check if "name" is a short name
+  if (variables.find(name) != variables.end()) {
+    return true;
+  }
+  return false;
+}
+
 //! \brief Add an IceModelVec v using the name `name`.
 void Vars::add(IceModelVec &v, const std::string &name) {
   variables[name] = &v;
@@ -88,6 +100,14 @@ void Vars::remove(const std::string &name) {
  * Checks standard_name first, then short name
  */
 IceModelVec* Vars::get(const std::string &name) const {
+  IceModelVec *tmp = get_internal(name);
+  if (tmp == NULL) {
+    throw RuntimeError("variable '" + name + "' is not available");
+  }
+  return tmp;
+}
+
+IceModelVec* Vars::get_internal(const std::string &name) const {
   std::map<std::string, IceModelVec* >::const_iterator j = standard_names.find(name);
   if (j != standard_names.end())
     return (j->second);
@@ -100,7 +120,7 @@ IceModelVec* Vars::get(const std::string &name) const {
 }
 
 IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
-  IceModelVec2S *tmp = dynamic_cast<IceModelVec2S*>(this->get(name));
+  IceModelVec2S *tmp = dynamic_cast<IceModelVec2S*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D scalar variable '" + name + "' is not available");
   }
@@ -108,7 +128,7 @@ IceModelVec2S* Vars::get_2d_scalar(const std::string &name) const {
 }
 
 IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
-  IceModelVec2V *tmp = dynamic_cast<IceModelVec2V*>(this->get(name));
+  IceModelVec2V *tmp = dynamic_cast<IceModelVec2V*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D vector variable '" + name + "' is not available");
   }
@@ -116,7 +136,7 @@ IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
 }
 
 IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
-  IceModelVec2Int *tmp = dynamic_cast<IceModelVec2Int*>(this->get(name));
+  IceModelVec2Int *tmp = dynamic_cast<IceModelVec2Int*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("2D mask variable '" + name + "' is not available");
   }
@@ -124,7 +144,7 @@ IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
 }
 
 IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
-  IceModelVec3* tmp = dynamic_cast<IceModelVec3*>(this->get(name));
+  IceModelVec3* tmp = dynamic_cast<IceModelVec3*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError("3D scalar variable '" + name + "' is not available");
       }
@@ -157,7 +177,7 @@ void Vars::check_for_nan() const {
 
   std::set<std::string>::iterator i = names.begin();
   while (i != names.end()) {
-    get(*i)->has_nan();
+    get_internal(*i)->has_nan();
     ++i;
   }
 }

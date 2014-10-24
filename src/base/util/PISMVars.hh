@@ -39,6 +39,7 @@ public:
   void add(IceModelVec &);
   void add(IceModelVec &, const std::string &name);
   void remove(const std::string &name);
+  bool is_available(const std::string &name) const;
   IceModelVec* get(const std::string &name) const;
   IceModelVec2S* get_2d_scalar(const std::string &name) const;
   IceModelVec2V* get_2d_vector(const std::string &name) const;
@@ -48,6 +49,7 @@ public:
   std::set<std::string> keys() const;
   void check_for_nan() const;
 private:
+  IceModelVec* get_internal(const std::string &name) const;
   std::map<std::string, IceModelVec*> variables,
     standard_names;             //!< stores standard names of variables that
   //! have standard names, allowing looking them

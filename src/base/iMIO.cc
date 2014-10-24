@@ -159,9 +159,9 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
   {
     std::set<std::string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
-      v = variables.get(*i);
 
-      if (v != NULL) {
+      if (variables.is_available(*i)) {
+        v = variables.get(*i);
         // It has dedicated storage.
         if (*i == "mask") {
           ierr = v->define(nc, PISM_BYTE); CHKERRQ(ierr); // use the default data type
@@ -232,11 +232,11 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
   // Write all the IceModel variables:
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end();) {
-    v = variables.get(*i);
 
-    if (v == NULL) {
+    if (not variables.is_available(*i)) {
       ++i;
     } else {
+      v = variables.get(*i);
       ierr = v->write(nc); CHKERRQ(ierr); // use the default data type
 
       vars.erase(i++);          // note that it only erases variables that were
@@ -524,13 +524,17 @@ PetscErrorCode IceModel::regrid_variables(const std::string &filename, const std
 
   std::set<std::string>::iterator i;
   for (i = vars.begin(); i != vars.end(); ++i) {
+
+    if (not variables.is_available(*i)) {
+      continue;
+    }
+
     IceModelVec *v = variables.get(*i);
-
-    if (v == NULL) continue;
-
     NCSpatialVariable &m = v->metadata();
 
-    if (v->get_ndims() != ndims) continue;
+    if (v->get_ndims() != ndims) {
+      continue;
+    }
 
     std::string pism_intent = m.get_string("pism_intent");
     if (pism_intent != "model_state") {
