@@ -234,8 +234,7 @@ PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, 0, da2); CHKERRQ(ierr);
+  PISMDM::Ptr da2 = grid->get_dm(1, 0);
 
   ierr = DMGetGlobalVector(*da2, &tmp); CHKERRQ(ierr);
 
@@ -270,8 +269,7 @@ PetscErrorCode IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, 0, da2); CHKERRQ(ierr);
+  PISMDM::Ptr da2 = grid->get_dm(1, 0);
 
   Vec tmp;                      // a temporary one-component vector,
                                 // distributed across processors the same way v is
@@ -308,8 +306,7 @@ PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, 0, da2); CHKERRQ(ierr);
+  PISMDM::Ptr da2 = grid->get_dm(1, 0);
 
   Vec tmp;                      // a temporary one-component vector,
                                 // distributed across processors the same way v is
@@ -368,8 +365,7 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
-  PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, 0, da2); CHKERRQ(ierr);
+  PISMDM::Ptr da2 = grid->get_dm(1, 0);
 
   ierr = DMGetGlobalVector(*da2, &tmp); CHKERRQ(ierr);
 
@@ -606,7 +602,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const std::string & my_na
   }
 
   // initialize the da member:
-  ierr = grid->get_dm(this->m_dof, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
+  m_da = grid->get_dm(this->m_dof, this->m_da_stencil_width);
 
   if (ghostedp) {
     ierr = DMCreateLocalVector(*m_da, &m_v); CHKERRQ(ierr);

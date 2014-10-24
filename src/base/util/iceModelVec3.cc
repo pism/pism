@@ -59,7 +59,7 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const std::string &my_
   m_n_levels = (unsigned int)zlevels.size();
   m_da_stencil_width = stencil_width;
 
-  ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
+  m_da = grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
 
@@ -389,8 +389,7 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, double z) const {
   PetscErrorCode ierr;
   double    **slice_val;
 
-  PISMDM::Ptr da2;
-  ierr = grid->get_dm(1, grid->config.get("grid_max_stencil_width"), da2); CHKERRQ(ierr);
+  PISMDM::Ptr da2 = grid->get_dm(1, grid->config.get("grid_max_stencil_width"));
 
   IceModelVec::AccessList list(*this);
   ierr = DMDAVecGetArray(*da2, gslice, &slice_val); CHKERRQ(ierr);
@@ -546,7 +545,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   for (unsigned int i = 0; i < m_dof; ++i)
     m_metadata[0].set_levels(zlevels);
 
-  ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, da_new); CHKERRQ(ierr);
+  da_new = grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
   if (m_has_ghosts) {
     ierr = DMCreateLocalVector(*da_new, &v_new); CHKERRQ(ierr);

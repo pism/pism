@@ -161,7 +161,7 @@ public:
   unsigned int kBelowHeight(double height);
   PetscErrorCode create_viewer(int viewer_size, const std::string &title, PetscViewer &viewer);
   double radius(int i, int j);
-  PetscErrorCode get_dm(int dm_dof, int stencil_width, PISMDM::Ptr &result);
+  PISMDM::Ptr get_dm(int dm_dof, int stencil_width);
   double convert(double, const std::string &, const std::string &) const;
   UnitSystem get_unit_system() const;
 
@@ -246,7 +246,7 @@ private:
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();
 
-  PetscErrorCode create_dm(int da_dof, int stencil_width, DM &result);
+  DM create_dm(int da_dof, int stencil_width);
 
   int dm_key(int, int);
   PetscErrorCode init_calendar(std::string &result);

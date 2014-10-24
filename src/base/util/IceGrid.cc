@@ -410,19 +410,21 @@ PetscErrorCode IceGrid::allocate() {
     throw RuntimeError("IceGrid::allocate(): Ly has to be positive.");
   }
 
-  PISMDM::Ptr tmp;
 
   unsigned int max_stencil_width = (int)config.get("grid_max_stencil_width");
 
-  ierr = this->get_dm(1, max_stencil_width, tmp);
-  if (ierr != 0) {
+
+  try {
+    PISMDM::Ptr tmp = this->get_dm(1, max_stencil_width);
+  }
+  catch (RuntimeError) {
     throw RuntimeError::formatted("can't distribute the %d x %d grid across %d processors.",
                                   Mx, My, size);
   }
 
   // hold on to a DM corresponding to dof=1, stencil_width=0 (it will
   // be needed for I/O operations)
-  ierr = this->get_dm(1, 0, m_dm_scalar_global); CHKERRQ(ierr);
+  m_dm_scalar_global = this->get_dm(1, 0);
 
   DMDALocalInfo info;
   ierr = DMDAGetLocalInfo(*m_dm_scalar_global, &info); CHKERRQ(ierr);
@@ -835,8 +837,8 @@ void IceGrid::check_parameters() {
 
 }
 
-PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, PISMDM::Ptr &result) {
-  PetscErrorCode ierr;
+PISMDM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) {
+  PISMDM::Ptr result;
 
   if (da_dof < 0 || da_dof > 10000) {
     throw RuntimeError::formatted("Invalid da_dof argument: %d", da_dof);
@@ -849,8 +851,7 @@ PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, PISMDM::Ptr &resul
   int j = this->dm_key(da_dof, stencil_width);
 
   if (m_dms[j].expired() == true) {
-    DM tmp = NULL;
-    ierr = this->create_dm(da_dof, stencil_width, tmp); CHKERRQ(ierr);
+    DM tmp = this->create_dm(da_dof, stencil_width);
 
     result = PISMDM::Ptr(new PISMDM(tmp));
     m_dms[j] = result;
@@ -858,7 +859,7 @@ PetscErrorCode IceGrid::get_dm(int da_dof, int stencil_width, PISMDM::Ptr &resul
     result = m_dms[j].lock();
   }
 
-  return 0;
+  return result;
 }
 
 UnitSystem IceGrid::get_unit_system() const {
@@ -869,34 +870,29 @@ double IceGrid::convert(double value, const std::string &unit1, const std::strin
   return m_unit_system.convert(value, unit1, unit2);
 }
 
-PetscErrorCode IceGrid::create_dm(int da_dof, int stencil_width, DM &result) {
+DM IceGrid::create_dm(int da_dof, int stencil_width) {
+  DM result;
+
+  verbPrintf(3, com,
+             "* Creating a DM with dof=%d and stencil_width=%d...\n",
+             da_dof, stencil_width);
+
   PetscErrorCode ierr;
-
-  ierr = verbPrintf(3, com,
-                    "* Creating a DM with dof=%d and stencil_width=%d...\n",
-                    da_dof, stencil_width); CHKERRQ(ierr);
-
+  ierr = DMDACreate2d(com,
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = DMDACreate2d(com,
                       DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
-                      DMDA_STENCIL_BOX,
-                      My, Mx, // N, M
-                      Ny, Nx, // n, m
-                      da_dof, stencil_width,
-                      &procs_y[0], &procs_x[0], // ly, lx
-                      &result); CHKERRQ(ierr);
 #else
-  ierr = DMDACreate2d(com,
                       DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+#endif
                       DMDA_STENCIL_BOX,
                       My, Mx, // N, M
                       Ny, Nx, // n, m
                       da_dof, stencil_width,
                       &procs_y[0], &procs_x[0], // ly, lx
-                      &result); CHKERRQ(ierr);
-#endif
+                      &result);
+  PISM_PETSC_CHK(ierr,"DMDACreate2d");
 
-  return 0;
+  return result;
 }
 
 // Computes the key corresponding to the DM with given dof and stencil_width.

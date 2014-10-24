@@ -53,7 +53,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
   zlevels.back() = 0;
 
   m_da_stencil_width = stencil_width;
-  ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
+  m_da = grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
   m_has_ghosts = local;
   if (local) {

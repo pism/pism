@@ -73,7 +73,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const std::string &my_sho
   ierr = IceModelVec2S::create(my_grid, my_short_name, WITHOUT_GHOSTS, width); CHKERRQ(ierr);
 
   // initialize the m_da3 member:
-  ierr = grid->get_dm(this->n_records, this->m_da_stencil_width, m_da3); CHKERRQ(ierr);
+  m_da3 = grid->get_dm(this->n_records, this->m_da_stencil_width);
 
   // allocate the 3D Vec:
   ierr = DMCreateGlobalVector(*m_da3, &m_v3); CHKERRQ(ierr);

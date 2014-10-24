@@ -471,20 +471,6 @@ using namespace pism;
 %shared_ptr(pism::PISMDM)
 %ignore pism::PISMDM::operator DM;
 
-%typemap(in, numinputs=0, noblock=1) pism::PISMDM::Ptr & OUTPUT (pism::PISMDM::Ptr temp) {
-  $1 = &temp;
-}
-
-%typemap(argout,noblock=1) pism::PISMDM::Ptr & OUTPUT
-{
-  {
-    pism::PISMDM::Ptr *smartresult = new pism::PISMDM::Ptr(*$1);
-    %append_output(SWIG_NewPointerObj(%as_voidptr(smartresult), $descriptor, SWIG_POINTER_OWN));
-  }
-};
-
-%apply pism::PISMDM::Ptr & OUTPUT { pism::PISMDM::Ptr &result };
-
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
 // following works for now.

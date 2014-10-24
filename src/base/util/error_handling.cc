@@ -128,4 +128,19 @@ void handle_fatal_errors(MPI_Comm com) {
   }
 }
 
+void check_c_call(int errcode, int success,
+                  const char* function_name, const char *file, int line) {
+  if (errcode != success) {
+    throw RuntimeError::formatted("External library function %s failed at %s:%d",
+                                  function_name, file, line);
+  }
+}
+
+void check_petsc_call(int errcode,
+                      const char* function_name, const char *file, int line) {
+  // tell PETSc to print the error message
+  CHKERRCONTINUE(errcode);
+  check_c_call(errcode, 0, function_name, file, line);
+}
+
 } // end of namespace pism
