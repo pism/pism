@@ -247,13 +247,49 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     // set the enhancement factor for every grid point from our particle cloud
     ierr = PISMFEvoR::pointcloud_to_grid(p_x, p_z, p_e,
                                          m_enhancement_factor); CHKERRQ(ierr);
-
+    
+    // update particle positions -- don't want to update until grid is updated
+    for (unsigned int i = 0; i < n_particles; ++i) {
+      double p_u = 0.0,
+             p_v = 0.0,
+             p_w = 0.0;
+      
+      ierr = PISMFEvoR::evaluate_at_point(*u, p_x[i], p_y[i], p_z[i], p_u);   CHKERRQ(ierr);
+      ierr = PISMFEvoR::evaluate_at_point(*v, p_x[i], p_y[i], p_z[i], p_v);   CHKERRQ(ierr);
+      ierr = PISMFEvoR::evaluate_at_point(*w, p_x[i], p_y[i], p_z[i], p_w);   CHKERRQ(ierr);
+      
+      ierr = PISMFEvoR::update_particle_position(p_x[i], p_y[i], p_z[i], p_u, p_v, p_w, m_dt); CHKERRQ(ierr);
+    }
   }
 
   delete pressure;
   delete tauxz;
   delete tauyz;
 
+  return 0;
+}
+
+/**
+ * Evaluate new particle position from velocity
+ *
+ * @param x, y, z coordinates of a point within the domain
+ * @param u, v, w velocities of x, y, z
+ * @param m_dt
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double &z,
+                                                const double &u,
+                                                const double &v, 
+                                                const double &w,
+                                                const double &m_dt) {
+  PetscErrorCode ierr;
+    
+    // stupid basic Euler method. Assuming u, v, w are 'good' 
+    x += u*m_dt;
+    y += v*m_dt; // probably not needed and v should be zero in 2D flow line model
+    z += w*m_dt; // w should be zero
+    
   return 0;
 }
 

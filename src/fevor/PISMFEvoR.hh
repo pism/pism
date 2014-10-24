@@ -50,7 +50,13 @@ public:
   virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
 private:
   PetscErrorCode allocate();
-
+  
+  PetscErrorCode update_particle_position(double &x, double &y, double &z,
+                                          const double &u,
+                                          const double &v, 
+                                          const double &w,
+                                          const double &m_dt);
+  
   PetscErrorCode evaluate_at_point(IceModelVec3 &input,
                                    double x, double y, double z, 
                                    double &result);
