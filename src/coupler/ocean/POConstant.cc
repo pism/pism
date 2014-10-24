@@ -23,6 +23,7 @@
 #include "pism_options.hh"
 #include "iceModelVec.hh"
 #include <stdexcept>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -63,13 +64,15 @@ PetscErrorCode POConstant::init(Vars &vars) {
     ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
   }
 
-  ierr = PetscOptionsBegin(grid.com, "", "Ocean model", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Ocean model", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   ierr = OptionsReal("-shelf_base_melt_rate",
                           "Specifies a sub shelf ice-equivalent melt rate in meters/year",
                           mymeltrate, meltrate_set); CHKERRQ(ierr);
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (meltrate_set) {
     ierr = verbPrintf(2, grid.com,

@@ -68,7 +68,7 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
-                           CHKERRQ(ierr);
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-pdd_rand",
                             "Use a PDD implementation based on simulating a random process",
@@ -89,7 +89,8 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
                           "Standard deviation data reference year",
                           sd_ref_year, sd_ref_year_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (randomized_repeatable) {
     mbscheme = new PDDrandMassBalance(config, true);

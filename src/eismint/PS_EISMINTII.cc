@@ -22,6 +22,7 @@
 #include "PISMConfig.hh"
 #include "pism_options.hh"
 #include <stdexcept>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -63,7 +64,8 @@ PetscErrorCode PS_EISMINTII::init(Vars &vars) {
 
   (void) vars;
 
-  ierr = PetscOptionsBegin(grid.com, "", "EISMINT II climate input options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "EISMINT II climate input options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   ierr = verbPrintf(2, grid.com, 
                     "setting parameters for surface mass balance"
@@ -128,7 +130,8 @@ PetscErrorCode PS_EISMINTII::init(Vars &vars) {
   if (option_set)
     m_R_el = grid.convert(myRel, "km", "m");
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   ierr = initialize_using_formulas(); CHKERRQ(ierr);
 

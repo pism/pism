@@ -49,7 +49,8 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
   CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling '-atmosphere yearly_cycle'",
-                           ""); CHKERRQ(ierr);
+                           "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-atmosphere_yearly_cycle_file",
                              "PACosineYearlyCycle input file name",
@@ -58,7 +59,8 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
                              "PACosineYearlyCycle amplitude scaling input file name",
                              scaling_file, scaling_flag); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (input_file_flag == false) {
     throw RuntimeError("Please specify an '-atmosphere yearly_cycle' input file\n"

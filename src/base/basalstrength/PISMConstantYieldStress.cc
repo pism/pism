@@ -31,7 +31,8 @@ PetscErrorCode ConstantYieldStress::init(Vars &/*vars*/) {
 
   ierr = verbPrintf(2, grid.com, "* Initializing the constant basal yield stress model...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "ConstantYieldStress options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "ConstantYieldStress options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
@@ -39,7 +40,8 @@ PetscErrorCode ConstantYieldStress::init(Vars &/*vars*/) {
     ierr = OptionsReal("-tauc", "set basal yield stress to a constant (units of Pa)",
                            constant_tauc, tauc_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // if -tauc was set we just use that value
   if (tauc_set) {

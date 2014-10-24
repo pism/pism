@@ -45,14 +45,16 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = verbPrintf(3, grid.com,
                     "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options overriding config flags and parameters", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options overriding config flags and parameters", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   ierr = set_config_from_options(config); CHKERRQ(ierr);
 
   ierr = OptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
   ierr = OptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // Set global attributes using the config database:
   global_attributes.set_string("title", config.get_string("run_title"));

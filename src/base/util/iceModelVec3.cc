@@ -131,7 +131,8 @@ PetscErrorCode IceModelVec3D::setColumn(int i, int j, double c) {
   double ***arr = (double***) array;
 
   if (c == 0.0) {
-    ierr = PetscMemzero(arr[i][j], m_n_levels * sizeof(double)); CHKERRQ(ierr);
+    ierr = PetscMemzero(arr[i][j], m_n_levels * sizeof(double));
+    PISM_PETSC_CHK(ierr, "PetscMemzero");
   } else {
     for (unsigned int k=0; k < m_n_levels; k++) {
       arr[i][j][k] = c;
@@ -461,7 +462,8 @@ PetscErrorCode  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {
 #endif
   double ***arr = (double***) array;
   PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, m_n_levels*sizeof(double));
-  CHKERRQ(ierr);
+  PISM_PETSC_CHK(ierr, "PetscMemcpy");
+
   return 0;
 }
 
@@ -598,7 +600,8 @@ PetscErrorCode  IceModelVec3D::has_nan() const {
         if (retval <= max_print_this_rank) {
           ierr = PetscSynchronizedPrintf(grid->com, 
                                          "IceModelVec3 %s: NAN (or uninitialized) at i = %d, j = %d, k = %d on rank = %d\n",
-                                         m_name.c_str(), i, j, k, grid->rank); CHKERRQ(ierr);
+                                         m_name.c_str(), i, j, k, grid->rank);
+          PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
         }
         break;
       }
@@ -608,13 +611,16 @@ PetscErrorCode  IceModelVec3D::has_nan() const {
   if (retval > 0) {
     ierr = PetscSynchronizedPrintf(grid->com, 
        "IceModelVec3 %s: detected %d NANs (or uninitialized) on rank = %d\n",
-             m_name.c_str(), retval, grid->rank); CHKERRQ(ierr);
+                                   m_name.c_str(), retval, grid->rank);
+    PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
   }
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(grid->com); CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(grid->com);
+  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #else
-  ierr = PetscSynchronizedFlush(grid->com, NULL); CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(grid->com, NULL);
+  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #endif
 
   return retval;

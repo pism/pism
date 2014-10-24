@@ -146,7 +146,7 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
   std::string time_file_name;
   bool time_file_set;
   ierr = OptionsString("-time_file", "name of the file specifying the run duration",
-                           time_file_name, time_file_set); CHKERRQ(ierr);
+                       time_file_name, time_file_set); CHKERRQ(ierr);
   if (time_file_set) {
     PIO nc(*this, "netcdf3");    // OK to use netcdf3
 
@@ -708,13 +708,16 @@ PetscErrorCode IceGrid::create_viewer(int viewer_size, const std::string &title,
 
   // note we reverse x <-> y; see IceGrid::allocate() for original reversal
   ierr = PetscViewerDrawOpen(com, NULL, title.c_str(),
-                             PETSC_DECIDE, PETSC_DECIDE, Y, X, &viewer);  CHKERRQ(ierr);
+                             PETSC_DECIDE, PETSC_DECIDE, Y, X, &viewer);
+  PISM_PETSC_CHK(ierr, "PetscViewerDrawOpen");
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
   // there is a no titles bug
   PetscDraw draw;
-  ierr = PetscViewerDrawGetDraw(viewer, 0, &draw); CHKERRQ(ierr);
-  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+  ierr = PetscViewerDrawGetDraw(viewer, 0, &draw);
+  PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
+  ierr = PetscDrawSetTitle(draw, title.c_str());
+  PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 
   return 0;
 }

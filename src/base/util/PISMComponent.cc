@@ -41,9 +41,11 @@ PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid
   // read file names:
   char i_file[PETSC_MAX_PATH_LEN], boot_file_file[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(NULL, "-i", i_file, 
-                               PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+                               PETSC_MAX_PATH_LEN, &i_set);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
   ierr = PetscOptionsGetString(NULL, "-boot_file", boot_file_file, 
-                               PETSC_MAX_PATH_LEN, &boot_file_set); CHKERRQ(ierr);
+                               PETSC_MAX_PATH_LEN, &boot_file_set);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
   if (i_set) {
     if (boot_file_set) {
       throw RuntimeError("both '-i' and '-boot_file' are used.");
@@ -97,13 +99,15 @@ PetscErrorCode Component::regrid(const std::string &module_name, IceModelVec *va
 
   assert(variable != NULL);
 
-  ierr = PetscOptionsBegin(grid.com, "", title.c_str(), ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", title.c_str(), "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-regrid_file", "regridding file name", file, file_set); CHKERRQ(ierr);
     ierr = OptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
                                 "", vars, vars_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (file_set == false)
     return 0;

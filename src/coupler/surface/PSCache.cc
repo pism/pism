@@ -85,13 +85,15 @@ PetscErrorCode PSCache::init(Vars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the 'caching' surface model modifier...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "-surface ...,cache options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "-surface ...,cache options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsInt("-surface_cache_update_interval",
                       "Interval (in years) between surface model updates",
                       update_interval, flag); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (update_interval <= 0) {
     throw RuntimeError::formatted("-surface_cache_update_interval has to be strictly positive.");

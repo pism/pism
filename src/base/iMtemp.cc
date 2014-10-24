@@ -249,7 +249,8 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         ierr = PetscPrintf(grid.com,
                            "\n"
                            "in temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file... \n",
-                           i, j); CHKERRQ(ierr);
+                           i, j);
+        PISM_PETSC_CHK(ierr, "PetscPrintf");
         system.viewColumnInfoMFile(x, grid.Mz_fine);
       }
 
@@ -280,7 +281,8 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
                            " proc %d; mask=%d; w=%f m/year]]\n",
                            Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),
                            grid.convert(system.w(k),
-                                        "m/s", "m/year")); CHKERRQ(ierr);
+                                        "m/s", "m/year"));
+        PISM_PETSC_CHK(ierr, "PetscPrintf");
         myLowTempCount++;
       }
       if (Tnew[k] < ice_surface_temp(i,j) - bulgeMax) {
@@ -311,7 +313,8 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
                            "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                            " proc %d; mask=%d; w=%f]]\n",
                            Tnew[0],i,j,grid.rank,vMask.as_int(i,j),
-                           grid.convert(system.w(0), "m/s", "m/year")); CHKERRQ(ierr);
+                           grid.convert(system.w(0), "m/s", "m/year"));
+        PISM_PETSC_CHK(ierr, "PetscPrintf");
         myLowTempCount++;
       }
       if (Tnew[0] < ice_surface_temp(i,j) - bulgeMax) {

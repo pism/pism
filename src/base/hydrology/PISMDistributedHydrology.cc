@@ -77,7 +77,8 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
   std::string filename;
   bool init_P_from_steady = false, strip_set = false, hold_flag = false;
   ierr = PetscOptionsBegin(grid.com, "",
-            "Options controlling the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
+                           "Options controlling the 'distributed' subglacial hydrology model", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-report_mass_accounting",
       "Report to stdout on mass accounting in hydrology models",
@@ -99,7 +100,8 @@ PetscErrorCode DistributedHydrology::init(Vars &vars) {
                             "Specifies a file to get velbase_mag from, for 'distributed' hydrology model",
                             filename, hold_flag); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   ierr = Hydrology::init(vars); CHKERRQ(ierr);
 
@@ -132,13 +134,15 @@ PetscErrorCode DistributedHydrology::init_bwp(Vars &vars) {
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool i_set = false, bootstrap_set = false;
   ierr = PetscOptionsBegin(grid.com, "",
-            "Options for initializing bwp in the 'distributed' subglacial hydrology model", ""); CHKERRQ(ierr);
+                           "Options for initializing bwp in the 'distributed' subglacial hydrology model", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // initialize P: present or -i file or -bootstrap file or set to constant;
   //   then overwrite by regrid; then overwrite by -init_P_from_steady

@@ -172,14 +172,16 @@ int main(int argc, char *argv[]) {
     double dt_years = 1.0;
     std::string outname="unnamed_btutest.nc";
     int tmp = grid.Mz;
-    ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", "");
+    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       ierr = OptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
       ierr = OptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
       ierr = OptionsInt("-Mz", "number of vertical layers in ice", tmp, flag); CHKERRQ(ierr);
       ierr = OptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd();
+    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     if (tmp > 0) {
       grid.Mz = tmp;

@@ -83,7 +83,8 @@ PetscErrorCode Hydrology::init(Vars &vars) {
     "entering Hydrology::init() ...\n"); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "",
-            "Options controlling the base class Hydrology", ""); CHKERRQ(ierr);
+                           "Options controlling the base class Hydrology", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-hydrology_bmelt_file",
       "Read time-independent values for bmelt from a file; replaces bmelt computed through conservation of energy",
@@ -101,7 +102,8 @@ PetscErrorCode Hydrology::init(Vars &vars) {
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   variables = &vars;
 

@@ -59,11 +59,13 @@ PetscErrorCode  IceModel::writeFiles(const std::string &default_filename) {
 
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "PISM output options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (!ends_with(filename, ".nc")) {
     ierr = verbPrintf(2, grid.com,
@@ -476,7 +478,8 @@ PetscErrorCode IceModel::regrid(int dimensions) {
   }
 
   ierr = PetscOptionsBegin(grid.com, NULL, "Options controlling regridding",
-                           NULL); CHKERRQ(ierr);
+                           NULL);
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-regrid_file", "Specifies the file to regrid from",
                              filename, regrid_file_set); CHKERRQ(ierr);
@@ -484,7 +487,8 @@ PetscErrorCode IceModel::regrid(int dimensions) {
     ierr = OptionsStringSet("-regrid_vars", "Specifies the list of variables to regrid",
                                 "", regrid_vars, regrid_vars_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // Return if no regridding is requested:
   if (!regrid_file_set) return 0;
@@ -653,7 +657,8 @@ PetscErrorCode IceModel::init_snapshots() {
   std::string tmp;
   current_snapshot = 0;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-save_file", "Specifies a snapshot filename",
                              snapshots_filename, save_file_set); CHKERRQ(ierr);
@@ -667,7 +672,8 @@ PetscErrorCode IceModel::init_snapshots() {
     ierr = output_size_from_option("-save_size", "Sets the 'size' of a snapshot file.",
                                    "small", snapshot_vars); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (save_file_set ^ save_times_set) {
     throw RuntimeError("you need to specify both -save_file and -save_times to save snapshots.");
@@ -806,7 +812,8 @@ PetscErrorCode IceModel::init_backups() {
 
   backup_interval = config.get("backup_interval");
 
-  ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "PISM output options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-o", "Output file name", backup_filename, o_set); CHKERRQ(ierr);
     if (!o_set)
@@ -820,7 +827,8 @@ PetscErrorCode IceModel::init_backups() {
     ierr = output_size_from_option("-backup_size", "Sets the 'size' of a backup file.",
                                    "small", backup_vars); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   last_backup_time = 0.0;
 

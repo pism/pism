@@ -111,7 +111,8 @@ int main(int argc, char *argv[]) {
       ierr = topg_smoothed.view(window);  CHKERRQ(ierr);
       ierr = theta.view(window);  CHKERRQ(ierr);
       printf("[showing topg, topg_smoothed, theta in X windows for 10 seconds ...]\n");
-      ierr = PetscSleep(10); CHKERRQ(ierr);
+      ierr = PetscSleep(10);
+      PISM_PETSC_CHK(ierr, "PetscSleep");
     }
 
     double topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;

@@ -514,7 +514,8 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
     int remaining_levels = grid.Mz - (ks + 1);
     if (remaining_levels > 0) {
       ierr = PetscMemzero(&Sigma[ks+1],
-                          remaining_levels*sizeof(double)); CHKERRQ(ierr);
+                          remaining_levels*sizeof(double));
+      PISM_PETSC_CHK(ierr, "PetscMemzero");
     }
   }
 

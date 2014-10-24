@@ -82,12 +82,14 @@ int main(int argc, char *argv[]) {
     // determine test (and whether to report error)
     std::string testname = "A";
     bool   test_chosen;
-    ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", "");
+    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       ierr = OptionsString("-test", "Specifies PISM verification test",
                                testname, test_chosen); CHKERRQ(ierr);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd();
+    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     // transform to uppercase:
     transform(testname.begin(), testname.end(), testname.begin(), pism_toupper);

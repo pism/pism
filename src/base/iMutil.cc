@@ -121,7 +121,8 @@ PetscErrorCode IceModel::update_run_stats() {
   PetscErrorCode ierr;
 
   MPI_Datatype mpi_type;
-  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
+  ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type);
+  PISM_PETSC_CHK(ierr, "PetscDataTypeToMPIDataType");
 
   // timing stats
   PetscLogDouble current_time, my_current_time;
@@ -141,7 +142,8 @@ PetscErrorCode IceModel::update_run_stats() {
   // get PETSc's reported number of floating point ops (*not* per time) on this
   //   process, then sum over all processes
   PetscLogDouble flops, my_flops;
-  ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
+  ierr = PetscGetFlops(&my_flops);
+  PISM_PETSC_CHK(ierr, "PetscGetFlops");
   MPI_Allreduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, grid.com);
 
   run_stats.set_double("wall_clock_hours", wall_clock_hours);

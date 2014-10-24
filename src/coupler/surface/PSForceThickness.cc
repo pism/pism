@@ -99,7 +99,8 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "* Initializing force-to-thickness mass-balance modifier...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Surface model forcing", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Surface model forcing", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   bool file_set = false;
   ierr = OptionsString("-force_to_thickness_file",
@@ -144,7 +145,8 @@ PetscErrorCode PSForceThickness::init(Vars &vars) {
                     m_alpha_ice_free_factor * grid.convert(m_alpha, "s-1", "yr-1"),
                     m_ice_free_thickness_threshold); CHKERRQ(ierr);
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // m_input_file now contains name of -force_to_thickness file; now check
   // it is really there; and regrid the target thickness

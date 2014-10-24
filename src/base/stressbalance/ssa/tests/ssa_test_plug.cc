@@ -192,8 +192,10 @@ int main(int argc, char *argv[]) {
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
     PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set);
+    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+    ierr = PetscOptionsHasName(NULL, "-help", &help_set);
+    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"
@@ -215,7 +217,8 @@ int main(int argc, char *argv[]) {
     // double H0dim = 1.;
     double glen_n = 3.;
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TEST_PLUG options", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(com, "", "SSA_TEST_PLUG options", "");
+    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       bool flag;
       int my_verbosity_level;
@@ -234,7 +237,8 @@ int main(int argc, char *argv[]) {
                             my_verbosity_level, flag); CHKERRQ(ierr);
       if (flag) setVerbosityLevel(my_verbosity_level);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd();
+    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;

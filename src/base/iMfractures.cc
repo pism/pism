@@ -80,6 +80,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   double soft_residual = 1.0;
   PetscBool fracture_soft;
   ierr = PetscOptionsGetScalar(NULL, "-fracture_softening", &soft_residual, &fracture_soft);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetScalar");
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
   // more: T. Albrecht, A. Levermann; Fracture-induced softening for
@@ -99,7 +100,8 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   double inarrayf[4] = {1.0, 7.0e4, 0.0, 2.0e-10};
   PetscBool  fractures_set;
   ierr = PetscOptionsGetRealArray(NULL, "-fractures", inarrayf, &Nparamf, &fractures_set);
-  CHKERRQ(ierr);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
+
   if (Nparamf != 4) {
     throw RuntimeError("option -fractures requires exactly 4 arguments");
   }
@@ -114,29 +116,37 @@ PetscErrorCode IceModel::calculateFractureDensity() {
                     gamma, initThreshold, gammaheal, healThreshold, soft_residual); CHKERRQ(ierr);
 
   PetscBool do_fracground;
-  ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground);
+  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
 
   double fdBoundaryValue = 0.0;
   ierr = PetscOptionsGetScalar(NULL, "-phi0", &fdBoundaryValue, NULL);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetScalar");
 
   PetscBool constant_healing;
-  ierr = PetscOptionsHasName(NULL,"-constant_healing",&constant_healing); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,"-constant_healing",&constant_healing);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetScalar");
 
   PetscBool fracture_weighted_healing;
   ierr = PetscOptionsHasName(NULL,"-fracture_weighted_healing",
-                             &fracture_weighted_healing); CHKERRQ(ierr);
+                             &fracture_weighted_healing);
+  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
 
   PetscBool max_shear_stress;
-  ierr = PetscOptionsHasName(NULL,"-max_shear",&max_shear_stress); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,"-max_shear",&max_shear_stress);
+  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
 
   PetscBool lefm;
-  ierr = PetscOptionsHasName(NULL,"-lefm",&lefm); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,"-lefm",&lefm);
+  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
 
   PetscBool constant_fd;
-  ierr = PetscOptionsHasName(NULL,"-constant_fd",&constant_fd); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,"-constant_fd",&constant_fd);
+  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
 
   PetscBool fd2d_scheme;
-  ierr = PetscOptionsHasName(NULL,"-scheme_fd2d",&fd2d_scheme); CHKERRQ(ierr);
+  ierr = PetscOptionsHasName(NULL,"-scheme_fd2d",&fd2d_scheme);
+  PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();

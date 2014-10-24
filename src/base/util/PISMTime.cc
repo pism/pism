@@ -187,13 +187,15 @@ PetscErrorCode Time::init() {
   // override all this by using settings from -time_file, so that is
   // fine, too.
 
-  ierr = PetscOptionsBegin(m_com, "", "PISM model time options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(m_com, "", "PISM model time options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = process_y(y_seconds, y_set); CHKERRQ(ierr);
     ierr = process_ys(ys_seconds, ys_set); CHKERRQ(ierr);
     ierr = process_ye(ye_seconds, ye_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (ys_set && ye_set && y_set) {
     throw RuntimeError("all of -y, -ys, -ye are set.");
@@ -462,14 +464,16 @@ PetscErrorCode Time::parse_date(const std::string &spec, double *result) {
   if (spec.empty() == true) {
     ierr = PetscPrintf(m_com,
                        "PISM ERROR: got an empty string '%s'.\n",
-                       spec.c_str()); CHKERRQ(ierr);
+                       spec.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
     return 1;
   }
 
   d = strtod(spec.c_str(), &endptr);
   if (*endptr != '\0') {
     ierr = PetscPrintf(m_com, "PISM ERROR: '%s' is not a number.\n",
-                       spec.c_str()); CHKERRQ(ierr);
+                       spec.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
     return 1;
   }
 

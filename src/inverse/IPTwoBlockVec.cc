@@ -18,6 +18,7 @@
 
 #include "IPTwoBlockVec.hh"
 #include <assert.h>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -37,8 +38,10 @@ PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   PetscErrorCode ierr;
   
   MPI_Comm comm, comm_b;
-  ierr = PetscObjectGetComm((PetscObject)a,&comm); CHKERRQ(ierr);
-  ierr = PetscObjectGetComm((PetscObject)a,&comm_b); CHKERRQ(ierr);
+  ierr = PetscObjectGetComm((PetscObject)a,&comm);
+  PISM_PETSC_CHK(ierr, "PetscObjectGetComm");
+  ierr = PetscObjectGetComm((PetscObject)a,&comm_b);
+  PISM_PETSC_CHK(ierr, "PetscObjectGetComm");
   assert(comm==comm_b);
   
   PetscInt lo_a, hi_a;

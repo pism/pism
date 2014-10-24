@@ -64,11 +64,13 @@ PetscErrorCode verbosityLevelFromOptions() {
   PetscBool     verbose, levelSet;
 
   ierr = setVerbosityLevel(2);
-  ierr = PetscOptionsGetInt(NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(NULL, "-verbose", &myLevel, &levelSet);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetInt");
   if (levelSet == PETSC_TRUE) {
     ierr = setVerbosityLevel(myLevel);
   } else {
-    ierr = PetscOptionsHasName(NULL, "-verbose", &verbose); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-verbose", &verbose);
+    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
     if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(3);
   }
   return 0;
@@ -80,7 +82,8 @@ PetscErrorCode ignore_option(MPI_Comm com, std::string name) {
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
 
   if (option_is_set) {
     ierr = verbPrintf(1, com, "PISM WARNING: ignoring command-line option '%s'.\n",
@@ -96,7 +99,8 @@ PetscErrorCode check_old_option_and_stop(std::string old_name, std::string new_n
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(NULL, old_name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, old_name.c_str(), tmp, 1, &option_is_set);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
 
   if (option_is_set) {
     throw RuntimeError::formatted("command-line option '%s' is deprecated. Please use '%s' instead.",
@@ -112,7 +116,8 @@ PetscErrorCode stop_if_set(std::string name) {
   PetscBool option_is_set;
 
   char tmp[1]; // dummy string
-  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, name.c_str(), tmp, 1, &option_is_set);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
 
   if (option_is_set) {
     throw RuntimeError::formatted("command-line option '%s' is not allowed.",
@@ -246,7 +251,8 @@ PetscErrorCode OptionsList(std::string opt, std::string description,
   descr = description + " Choose one of " + list;
 
   ierr = PetscOptionsString(opt.c_str(), descr.c_str(), "", default_value.c_str(),
-                            tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+                            tmp, TEMPORARY_STRING_LENGTH, &opt_set);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
   // return the default value if the option was not set
   if (!opt_set) {
@@ -282,7 +288,8 @@ PetscErrorCode OptionsString(std::string option, std::string text,
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
                             result.c_str(), tmp,
-                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            TEMPORARY_STRING_LENGTH, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
   is_set = (flag == PETSC_TRUE);
 
@@ -309,7 +316,8 @@ PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string
   PetscBool opt_set = PETSC_FALSE;
 
   ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
-                            tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+                            tmp, TEMPORARY_STRING_LENGTH, &opt_set);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
   result.clear();
 
@@ -363,7 +371,8 @@ PetscErrorCode OptionsInt(std::string option, std::string text,
   char *endptr;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", "none", str,
-                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            TEMPORARY_STRING_LENGTH, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
   is_set = (flag == PETSC_TRUE);
 
@@ -396,7 +405,8 @@ PetscErrorCode OptionsReal(std::string option, std::string text,
   snprintf(str, TEMPORARY_STRING_LENGTH, "%f", result);
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "", str, str,
-                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            TEMPORARY_STRING_LENGTH, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
   is_set = (flag == PETSC_TRUE);
 
@@ -426,7 +436,8 @@ PetscErrorCode OptionsRealArray(std::string option, std::string text,
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
                             "none", str,
-                            TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            TEMPORARY_STRING_LENGTH, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
   is_set = (flag == PETSC_TRUE);
 
@@ -487,7 +498,8 @@ PetscErrorCode OptionsIsSet(std::string option, bool &result) {
   char tmp[1];
   PetscBool flag;
 
-  ierr = PetscOptionsGetString(NULL, option.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(NULL, option.c_str(), tmp, 1, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsGetString");
 
   result = (flag == PETSC_TRUE);
 
@@ -502,7 +514,8 @@ PetscErrorCode OptionsIsSet(std::string option, std::string text,
   PetscBool flag;
 
   ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
-                            "", tmp, 1, &flag); CHKERRQ(ierr);
+                            "", tmp, 1, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
 
   result = (flag == PETSC_TRUE);
 
@@ -543,14 +556,16 @@ PetscErrorCode init_config(MPI_Comm com,
     override_config;
   bool use_alt_config, use_override_config;
 
-  ierr = PetscOptionsBegin(com, "", "PISM config file options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(com, "", "PISM config file options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-config", "Specifies the name of an alternative config file",
                              alt_config, use_alt_config); CHKERRQ(ierr);
     ierr = OptionsString("-config_override", "Specifies a config override file name",
                              override_config, use_override_config); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   ierr = config.read(alt_config); CHKERRQ(ierr);
 

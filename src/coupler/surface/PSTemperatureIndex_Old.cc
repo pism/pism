@@ -104,7 +104,7 @@ PetscErrorCode PSTemperatureIndex_Old::init(Vars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Temperature-index (PDD) scheme for surface (snow) processes", "");
-  CHKERRQ(ierr);
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-pdd_rand",
                             "Use a PDD implementation based on simulating a random process",
@@ -132,7 +132,8 @@ PetscErrorCode PSTemperatureIndex_Old::init(Vars &vars) {
                            "PDD uses this temp in K to determine 'positive' temperatures",
                            base_pddThresholdTemp, pSet); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
 
   ierr = verbPrintf(2, grid.com,

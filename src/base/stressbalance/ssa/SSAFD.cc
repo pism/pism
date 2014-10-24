@@ -221,7 +221,8 @@ PetscErrorCode SSAFD::init(Vars &vars) {
   ierr = verbPrintf(2,grid.com,
                     "  [using the KSP-based finite difference implementation]\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "SSAFD options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "SSAFD options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     bool flag;
     ierr = OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
@@ -229,7 +230,8 @@ PetscErrorCode SSAFD::init(Vars &vars) {
     ierr = OptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer",
                             view_nuh); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (config.get_flag("calving_front_stress_boundary_condition")) {
     ierr = verbPrintf(2,grid.com,
@@ -1642,10 +1644,12 @@ PetscErrorCode SSAFD::write_system_petsc(const std::string &namepart) {
                     CHKERRQ(ierr);
   PetscViewer viewer;
   ierr = PetscViewerBinaryOpen(grid.com, filename.c_str(), FILE_MODE_WRITE,
-                               &viewer); CHKERRQ(ierr);
+                               &viewer);
+  PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
   ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer);
+  PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
 
   return 0;
 }
@@ -1672,10 +1676,14 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   ierr = verbPrintf(2, grid.com,
                     "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
                     file_name.c_str()); CHKERRQ(ierr);
-  ierr = PetscViewerCreate(grid.com, &viewer); CHKERRQ(ierr);
-  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(viewer, file_name.c_str()); CHKERRQ(ierr);
+  ierr = PetscViewerCreate(grid.com, &viewer);
+  PISM_PETSC_CHK(ierr, "PetscViewerCreate");
+  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);
+  PISM_PETSC_CHK(ierr, "PetscViewerSetType");
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
+  PISM_PETSC_CHK(ierr, "PetscViewerSetFormat");
+  ierr = PetscViewerFileSetName(viewer, file_name.c_str());
+  PISM_PETSC_CHK(ierr, "PetscViewerFileSetName");
 
   // get the command which started the run
   std::string cmdstr = pism_args_string();
@@ -1693,30 +1701,41 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
     "%% Also writes i-offsetvalues of vertically-integrated viscosity\n"
     "%% (nuH_0 = nu * H), and j-offset version of same thing (nuH_1 = nu * H);\n"
     "%% these are on the staggered grid.\n",
-    cmdstr.c_str());  CHKERRQ(ierr);
+                                cmdstr.c_str());
+  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
-  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");  CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) m_A,"A"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");
+  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+  ierr = PetscObjectSetName((PetscObject) m_A,"A");
+  PISM_PETSC_CHK(ierr, "PetscObjectSetName");
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");
+  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
-  ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs"); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs");
+  PISM_PETSC_CHK(ierr, "PetscObjectSetName");
   ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv"); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv");
+  PISM_PETSC_CHK(ierr, "PetscObjectSetName");
   ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",
                                 grid.convert(grid.time->current(), "seconds", "years"));
-  CHKERRQ(ierr);
+  
+  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
   ierr = PetscViewerASCIIPrintf(viewer,
             "x=%12.3f + (0:%d)*%12.3f;\n"
             "y=%12.3f + (0:%d)*%12.3f;\n",
-            -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");  CHKERRQ(ierr);
+                                -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy);
+  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");
+  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");
+  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+  ierr = PetscViewerDestroy(&viewer);
+  PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
 
   return 0;
 }

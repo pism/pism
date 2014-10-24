@@ -128,7 +128,8 @@ PetscErrorCode  IceModelVec::destroy() {
     std::map<std::string,PetscViewer>::iterator i;
     for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
       if (i->second != NULL) {
-        ierr = PetscViewerDestroy(&i->second); CHKERRQ(ierr);
+        ierr = PetscViewerDestroy(&i->second);
+        PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
       }
     }
   }
@@ -337,7 +338,8 @@ PetscErrorCode IceModelVec::get_dof(PISMDM::Ptr da_result, Vec result,
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     ierr = PetscMemcpy(result_a[i][j], &source_a[i][j][start],
-                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
+                       count*sizeof(PetscScalar));
+    PISM_PETSC_CHK(ierr, "PetscMemcpy");
   }
 
   ierr = DMDAVecRestoreArray(*da_result, result, &tmp_res); CHKERRQ(ierr);
@@ -364,7 +366,8 @@ PetscErrorCode IceModelVec::set_dof(PISMDM::Ptr da_source, Vec source,
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     ierr = PetscMemcpy(&result_a[i][j][start], source_a[i][j],
-                       count*sizeof(PetscScalar)); CHKERRQ(ierr);
+                       count*sizeof(PetscScalar));
+    PISM_PETSC_CHK(ierr, "PetscMemcpy");
   }
 
   ierr = DMDAVecRestoreArray(*da_source, source, &tmp_src); CHKERRQ(ierr);
@@ -513,7 +516,8 @@ PetscErrorCode IceModelVec::regrid_impl(const PIO &nc, RegriddingFlag flag,
   Vec tmp;
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", m_name.c_str()); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", m_name.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   if (m_dof != 1) {
@@ -542,7 +546,8 @@ PetscErrorCode IceModelVec::read_impl(const PIO &nc, const unsigned int time) {
   Vec tmp;
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str()); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   if (m_dof != 1) {
@@ -610,7 +615,8 @@ PetscErrorCode IceModelVec::write_impl(const PIO &nc, IO_Type nctype) const {
   Vec tmp;
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Writing %s...\n", m_name.c_str()); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid->com, "  Writing %s...\n", m_name.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   if (m_dof != 1) {

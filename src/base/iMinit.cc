@@ -272,7 +272,8 @@ PetscErrorCode IceModel::grid_setup() {
 
   ierr = PetscOptionsBegin(grid.com, "",
                            "Options controlling input and computational grid parameters",
-                           ""); CHKERRQ(ierr);
+                           "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   ierr = verbPrintf(3, grid.com,
                     "Setting up the computational grid...\n"); CHKERRQ(ierr);
@@ -424,7 +425,8 @@ PetscErrorCode IceModel::grid_setup() {
 
   ierr = grid.allocate(); CHKERRQ(ierr);
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   return 0;
 }
@@ -832,7 +834,8 @@ PetscErrorCode IceModel::allocate_couplers() {
   POFactory po(grid, config);
   AtmosphereModel *atmosphere;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options choosing PISM boundary models", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   if (surface == NULL) {
     ps.create(surface);
@@ -846,7 +849,8 @@ PetscErrorCode IceModel::allocate_couplers() {
     po.create(ocean);
     external_ocean_model = false;
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   return 0;
 }

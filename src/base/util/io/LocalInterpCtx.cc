@@ -251,14 +251,18 @@ PetscErrorCode LocalInterpCtx::printArray() {
   PetscErrorCode ierr;
 
   ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printArray():  rank = %d, a_len = %d\n",
-             rank, a_len); CHKERRQ(ierr);
+                                 rank, a_len);
+  PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
   for (unsigned int k = 0; k < a_len; k++) {
-    ierr = PetscSynchronizedPrintf(com," %5.4f,",a[k]); CHKERRQ(ierr);
+    ierr = PetscSynchronizedPrintf(com," %5.4f,",a[k]);
+    PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
   }
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(com); CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(com);
+  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #else
-  ierr = PetscSynchronizedFlush(com, NULL); CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(com, NULL);
+  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #endif
   return 0;
 }

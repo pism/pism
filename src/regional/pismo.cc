@@ -483,7 +483,8 @@ int main(int argc, char *argv[]) {
       "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     if ((!iset) && (!bfset)) {
       ierr = PetscPrintf(com,
-         "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
+                         "\nPISM ERROR: one of options -i,-boot_file is required\n\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
       ierr = show_usage_and_quit(com, "pismo", usage); CHKERRQ(ierr);
     } else {
       std::vector<std::string> required;

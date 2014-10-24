@@ -138,15 +138,20 @@ int main(int argc, char *argv[]) {
       const int  windowx = 500,
                       windowy = (int) (((float) windowx) * Ly / Lx);
       ierr = PetscViewerDrawOpen(PETSC_COMM_SELF, NULL, "bed elev (m)",
-           PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &viewer);  CHKERRQ(ierr);
+                                 PETSC_DECIDE, PETSC_DECIDE, windowy, windowx, &viewer);
+      PISM_PETSC_CHK(ierr, "PetscViewerDrawOpen");
       // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
       // there is a no-titles bug
-      ierr = PetscViewerDrawGetDraw(viewer,0,&draw); CHKERRQ(ierr);
-      ierr = PetscDrawSetDoubleBuffer(draw); CHKERRQ(ierr);  // remove flicker while we are at it
-      ierr = PetscDrawSetTitle(draw,"bed elev (m)"); CHKERRQ(ierr);
+      ierr = PetscViewerDrawGetDraw(viewer,0,&draw);
+      PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
+      ierr = PetscDrawSetDoubleBuffer(draw);
+      PISM_PETSC_CHK(ierr, "PetscDrawSetDoubleBuffer");  // remove flicker while we are at it
+      ierr = PetscDrawSetTitle(draw,"bed elev (m)");
+      PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 
       // make disc load
-      ierr = PetscPrintf(PETSC_COMM_SELF,"creating disc load\n"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"creating disc load\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
       // see "Results: Earth deformation only" section of Bueler et al "Fast computation ..."
       const double dx = (2.0*Lx)/((double) Mx - 1), 
                         dy = (2.0*Ly)/((double) My - 1);
@@ -187,19 +192,23 @@ int main(int argc, char *argv[]) {
         ierr = VecSet(uplift, 0.0); CHKERRQ(ierr);
       }
 
-      ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
       ierr = bdlc.settings(config,
                            include_elastic, Mx, My, dx, dy, Z,
                            &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
 
-      ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
       ierr = bdlc.alloc(); CHKERRQ(ierr);
       
-      ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"initializing BedDeformLC from uplift map\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
       ierr = bdlc.init(); CHKERRQ(ierr);
       ierr = bdlc.uplift_init(); CHKERRQ(ierr);
       
-      ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"stepping BedDeformLC\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
       const int     KK = (int) (tfinalyears / dtyears);
       double **b;
       ierr = VecGetArray2d(bedstart, Mx, My, 0, 0, &b); CHKERRQ(ierr);
@@ -216,21 +225,25 @@ int main(int argc, char *argv[]) {
 
         ierr = PetscPrintf(PETSC_COMM_SELF,
                   "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/year)\n",
-                  tyears, b0new, dbdt0); CHKERRQ(ierr);
+                           tyears, b0new, dbdt0);
+        PISM_PETSC_CHK(ierr, "PetscPrintf");
 
         char title[100];
         snprintf(title,100, "bed elev (m)  [t = %9.1f]", tyears);
-        ierr = PetscDrawSetTitle(draw,title); CHKERRQ(ierr);
+        ierr = PetscDrawSetTitle(draw,title);
+        PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
         b0old = b0new;
       }
-      ierr = PetscPrintf(PETSC_COMM_SELF,"\ndone\n"); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_SELF,"\ndone\n");
+      PISM_PETSC_CHK(ierr, "PetscPrintf");
 
       ierr = VecDestroy(&H); CHKERRQ(ierr);
       ierr = VecDestroy(&bed); CHKERRQ(ierr);
       ierr = VecDestroy(&Hstart); CHKERRQ(ierr);
       ierr = VecDestroy(&bedstart); CHKERRQ(ierr);
       ierr = VecDestroy(&uplift); CHKERRQ(ierr);
-      ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+      ierr = PetscViewerDestroy(&viewer);
+      PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
       ierr = DMDestroy(&da2); CHKERRQ(ierr);
     }
   }

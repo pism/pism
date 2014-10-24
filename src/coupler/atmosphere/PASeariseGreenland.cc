@@ -60,14 +60,16 @@ PetscErrorCode PA_SeaRISE_Greenland::init(Vars &vars) {
 
   bool precip_file_set = false;
   ierr = PetscOptionsBegin(grid.com, "",
-                           "-atmosphere searise_greenland options", ""); CHKERRQ(ierr);
+                           "-atmosphere searise_greenland options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     std::string option_prefix = "-atmosphere_searise_greenland";
     ierr = OptionsString(option_prefix + "_file",
                              "Specifies a file with boundary conditions",
                              m_precip_filename, precip_file_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (precip_file_set == true) {
     m_variables = &vars;

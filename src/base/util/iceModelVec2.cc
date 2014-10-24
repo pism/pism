@@ -59,7 +59,8 @@ PetscErrorCode IceModelVec2S::allocate_proc0_copy(Vec &result) const {
   PetscErrorCode ierr;
   Vec v_proc0 = NULL;
 
-  ierr = PetscObjectQuery((PetscObject)m_da->get(), "v_proc0", (PetscObject*)&v_proc0); CHKERRQ(ierr)
+  ierr = PetscObjectQuery((PetscObject)m_da->get(), "v_proc0", (PetscObject*)&v_proc0);
+  PISM_PETSC_CHK(ierr, "PetscObjectQuery")
                                                                                           ;
   if (v_proc0 == NULL) {
 
@@ -68,7 +69,8 @@ PetscErrorCode IceModelVec2S::allocate_proc0_copy(Vec &result) const {
     ierr = DMDACreateNaturalVector(*m_da, &natural_work); CHKERRQ(ierr);
     // this increments the reference counter of natural_work
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "natural_work",
-                              (PetscObject)natural_work); CHKERRQ(ierr);
+                              (PetscObject)natural_work);
+    PISM_PETSC_CHK(ierr, "PetscObjectCompose");
 
     // initialize the scatter to processor 0 and create storage on processor 0
     VecScatter scatter_to_zero = NULL;
@@ -79,13 +81,15 @@ PetscErrorCode IceModelVec2S::allocate_proc0_copy(Vec &result) const {
 
     // this increments the reference counter of scatter_to_zero
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "scatter_to_zero",
-                              (PetscObject)scatter_to_zero); CHKERRQ(ierr);
+                              (PetscObject)scatter_to_zero);
+    PISM_PETSC_CHK(ierr, "PetscObjectCompose");
     // decrement the reference counter; will be destroyed once m_da is destroyed
     ierr = VecScatterDestroy(&scatter_to_zero); CHKERRQ(ierr);
 
     // this increments the reference counter of v_proc0
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "v_proc0",
-                              (PetscObject)v_proc0); CHKERRQ(ierr);
+                              (PetscObject)v_proc0);
+    PISM_PETSC_CHK(ierr, "PetscObjectCompose");
 
     // We DO NOT call VecDestroy(v_proc0): the caller is expected to call VecDestroy
     result = v_proc0;
@@ -104,9 +108,11 @@ PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0) const {
   VecScatter scatter_to_zero = NULL;
   Vec natural_work = NULL;
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
-                          (PetscObject*)&scatter_to_zero); CHKERRQ(ierr);
+                          (PetscObject*)&scatter_to_zero);
+  PISM_PETSC_CHK(ierr, "PetscObjectQuery");
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
-                          (PetscObject*)&natural_work); CHKERRQ(ierr);
+                          (PetscObject*)&natural_work);
+  PISM_PETSC_CHK(ierr, "PetscObjectQuery");
 
   if (natural_work == NULL || scatter_to_zero == NULL) {
     throw RuntimeError("call allocate_proc0_copy() before calling put_on_proc0");
@@ -144,9 +150,11 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0) {
   VecScatter scatter_to_zero = NULL;
   Vec natural_work = NULL;
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "scatter_to_zero",
-                          (PetscObject*)&scatter_to_zero); CHKERRQ(ierr);
+                          (PetscObject*)&scatter_to_zero);
+  PISM_PETSC_CHK(ierr, "PetscObjectQuery");
   ierr = PetscObjectQuery((PetscObject)m_da->get(), "natural_work",
-                          (PetscObject*)&natural_work); CHKERRQ(ierr);
+                          (PetscObject*)&natural_work);
+  PISM_PETSC_CHK(ierr, "PetscObjectQuery");
 
   if (natural_work == NULL || scatter_to_zero == NULL) {
     throw RuntimeError("call allocate_proc0_copy() before calling get_from_proc0");
@@ -239,7 +247,8 @@ PetscErrorCode IceModelVec2::write_impl(const PIO &nc, IO_Type nctype) const {
   ierr = DMGetGlobalVector(*da2, &tmp); CHKERRQ(ierr);
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Writing %s...\n", m_name.c_str()); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid->com, "  Writing %s...\n", m_name.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   for (unsigned int j = 0; j < m_dof; ++j) {
@@ -262,7 +271,8 @@ PetscErrorCode IceModelVec2::read_impl(const PIO &nc, const unsigned int time) {
   }
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str()); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   assert(m_v != NULL);
@@ -301,7 +311,8 @@ PetscErrorCode IceModelVec2::regrid_impl(const PIO &nc, RegriddingFlag flag,
   }
 
   if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", m_name.c_str()); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid->com, "  Regridding %s...\n", m_name.c_str());
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
@@ -377,8 +388,10 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
       title = long_name + " (" + units + ")";
 
     PetscDraw draw;
-    ierr = PetscViewerDrawGetDraw(viewers[i], 0, &draw); CHKERRQ(ierr);
-    ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+    ierr = PetscViewerDrawGetDraw(viewers[i], 0, &draw);
+    PISM_PETSC_CHK(ierr, "PetscViewerDrawGetDraw");
+    ierr = PetscDrawSetTitle(draw, title.c_str());
+    PISM_PETSC_CHK(ierr, "PetscDrawSetTitle");
 
     ierr = IceModelVec2::get_dof(da2, tmp, i); CHKERRQ(ierr);
 
@@ -413,7 +426,8 @@ PetscErrorCode IceModelVec2S::has_nan() const {
       if (retval <= max_print_this_rank) {
         ierr = PetscSynchronizedPrintf(grid->com, 
                                        "IceModelVec2S %s: NAN (or uninitialized) at i = %d, j = %d on rank = %d\n",
-                                       m_name.c_str(), i, j, grid->rank); CHKERRQ(ierr);
+                                       m_name.c_str(), i, j, grid->rank);
+        PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
       }
     }
   }
@@ -421,13 +435,16 @@ PetscErrorCode IceModelVec2S::has_nan() const {
   if (retval > 0) {
     ierr = PetscSynchronizedPrintf(grid->com, 
        "IceModelVec2S %s: detected %d NANs (or uninitialized) on rank = %d\n",
-             m_name.c_str(), retval, grid->rank); CHKERRQ(ierr);
+                                   m_name.c_str(), retval, grid->rank);
+    PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
   }
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(grid->com); CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(grid->com);
+  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #else
-  ierr = PetscSynchronizedFlush(grid->com, NULL); CHKERRQ(ierr);
+  ierr = PetscSynchronizedFlush(grid->com, NULL);
+  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #endif
   return retval;
 }

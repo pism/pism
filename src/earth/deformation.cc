@@ -25,6 +25,7 @@
 #include "greens.hh"
 #include "deformation.hh"
 #include "PISMConfig.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -168,7 +169,8 @@ PetscErrorCode BedDeformLC::init() {
   // compare geforconv.m
   if (include_elastic == true) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
-           "     computing spherical elastic load response matrix ..."); CHKERRQ(ierr);
+                       "     computing spherical elastic load response matrix ...");
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
     PetscVecAccessor2D II(lrmE, Nxge, Nyge);
     ge_params ge_data;
     ge_data.dx = dx;
@@ -182,7 +184,8 @@ PetscErrorCode BedDeformLC::init() {
       }
     }
 
-    ierr = PetscPrintf(PETSC_COMM_SELF, " done\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_SELF, " done\n");
+    PISM_PETSC_CHK(ierr, "PetscPrintf");
   }
 
   return 0;

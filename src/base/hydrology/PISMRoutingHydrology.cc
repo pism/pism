@@ -102,7 +102,8 @@ PetscErrorCode RoutingHydrology::init(Vars &vars) {
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool stripset;
   ierr = PetscOptionsBegin(grid.com, "",
-            "Options controlling the 'routing' subglacial hydrology model", ""); CHKERRQ(ierr);
+                           "Options controlling the 'routing' subglacial hydrology model", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-report_mass_accounting",
       "Report to stdout on mass accounting in hydrology models",
@@ -117,7 +118,8 @@ PetscErrorCode RoutingHydrology::init(Vars &vars) {
       stripwidth = grid.convert(stripwidth, "km", "m");
     }
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   ierr = Hydrology::init(vars); CHKERRQ(ierr);
 
@@ -133,13 +135,15 @@ PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool i, bootstrap;
   ierr = PetscOptionsBegin(grid.com, "",
-            "Options for initializing bwat in the 'routing' subglacial hydrology model", ""); CHKERRQ(ierr);
+                           "Options for initializing bwat in the 'routing' subglacial hydrology model", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
     ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
                             bootstrap); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   const PetscReal bwatdefault = config.get("bootstrapping_bwat_value_no_var");
   IceModelVec2S *W_input = NULL;

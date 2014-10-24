@@ -927,7 +927,8 @@ PetscErrorCode IceModel::run() {
                         pause_time, flag); CHKERRQ(ierr);
   if (pause_time > 0) {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
-    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+    ierr = PetscSleep(pause_time);
+    PISM_PETSC_CHK(ierr, "PetscSleep");
   }
 
   if (stepcount >= 0) {
@@ -949,7 +950,8 @@ explanations of their intended uses.
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;
 
-  ierr = PetscOptionsBegin(grid.com, "", "PISM options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "PISM options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   // Build PISM with -DPISM_WAIT_FOR_GDB=1 and run with -wait_for_gdb to
   // make it wait for a connection.
@@ -990,7 +992,8 @@ PetscErrorCode IceModel::init() {
   //! regridding.
   ierr = misc_setup();
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   //! The following flow-chart illustrates the process.
   //!
@@ -1001,7 +1004,8 @@ PetscErrorCode IceModel::init() {
   {
     MPI_Datatype mpi_type;
     double my_start_time;
-    ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
+    ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type);
+    PISM_PETSC_CHK(ierr, "PetscDataTypeToMPIDataType");
 
     ierr = GetTime(&my_start_time); CHKERRQ(ierr);
     MPI_Allreduce(&my_start_time, &start_time, 1, mpi_type, MPI_MAX, grid.com);

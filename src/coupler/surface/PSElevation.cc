@@ -43,13 +43,14 @@ PetscErrorCode PSElevation::init(Vars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Elevation-dependent surface model options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Elevation-dependent surface model options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     PetscInt T_param_number = 4;
     double T_array[4] = {-5, 0, 1325, 1350};
 
     ierr = PetscOptionsGetRealArray(NULL, "-ice_surface_temp", T_array, &T_param_number, &T_is_set);
-    CHKERRQ(ierr);
+    PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
 
     T_min = grid.convert(T_array[0], "Celsius", "Kelvin");
     T_max = grid.convert(T_array[1], "Celsius", "Kelvin");
@@ -60,7 +61,7 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     double m_array[5] = {-3, 4, 1100, 1450, 1700};
 
     ierr = PetscOptionsGetRealArray(NULL, "-climatic_mass_balance", m_array, &m_param_number, &m_is_set);
-    CHKERRQ(ierr);
+    PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
 
     m_min = grid.convert(m_array[0], "m year-1", "m s-1");
     m_max = grid.convert(m_array[1], "m year-1", "m s-1");
@@ -73,7 +74,8 @@ PetscErrorCode PSElevation::init(Vars &vars) {
 
     ierr = PetscOptionsGetRealArray(NULL,
                                     "-climatic_mass_balance_limits",
-                                    limitsarray, &Nlimitsparam, &m_limits_set); CHKERRQ(ierr);
+                                    limitsarray, &Nlimitsparam, &m_limits_set);
+    PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
 
     if (m_limits_set)
       {
@@ -87,7 +89,8 @@ PetscErrorCode PSElevation::init(Vars &vars) {
       }
 
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   ierr = verbPrintf(3, grid.com,
                     "     temperature at %.0f m a.s.l. = %.2f deg C\n"

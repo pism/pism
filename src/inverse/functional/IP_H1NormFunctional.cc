@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_H1NormFunctional.hh"
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -217,7 +218,8 @@ PetscErrorCode IP_H1NormFunctional2S::assemble_form(Mat form) {
       }
 
       // Build the element-local Jacobian.
-      ierr = PetscMemzero(K, sizeof(K)); CHKERRQ(ierr);
+      ierr = PetscMemzero(K, sizeof(K));
+      PISM_PETSC_CHK(ierr, "PetscMemzero");
       for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
         for (unsigned int k = 0; k < FEQuadrature::Nk; k++) {   // Test functions
           for (unsigned int l = 0; l < FEQuadrature::Nk; l++) { // Trial functions

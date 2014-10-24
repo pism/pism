@@ -37,7 +37,8 @@ PetscErrorCode IceModel::init_timeseries() {
   std::string times, vars;
   bool append;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling scalar diagnostic time-series", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling scalar diagnostic time-series", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-ts_file", "Specifies the time-series output file name",
                              ts_filename, ts_file_set); CHKERRQ(ierr);
@@ -51,7 +52,8 @@ PetscErrorCode IceModel::init_timeseries() {
     // default behavior is to move the file aside if it exists already; option allows appending
     ierr = OptionsIsSet("-ts_append", append); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   IO_Mode mode = PISM_READWRITE;
   if (append == false) {
@@ -212,7 +214,8 @@ PetscErrorCode IceModel::init_extras() {
   last_extra = 0;               // will be set in write_extras()
   next_extra = 0;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling 2D and 3D diagnostic output", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling 2D and 3D diagnostic output", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-extra_file", "Specifies the output file",
                              extra_filename, extra_file_set); CHKERRQ(ierr);
@@ -226,7 +229,8 @@ PetscErrorCode IceModel::init_extras() {
     ierr = OptionsIsSet("-extra_split", "Specifies whether to save to separate files",
                             split); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (extra_file_set ^ extra_times_set) {
     throw RuntimeError("you need to specify both -extra_file and -extra_times to save spatial time-series.");

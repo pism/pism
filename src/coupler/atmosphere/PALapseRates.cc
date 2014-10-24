@@ -68,13 +68,15 @@ PetscErrorCode PALapseRates::init(Vars &vars) {
 
   ierr = init_internal(vars); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Lapse rate options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsReal("-precip_lapse_rate",
                            "Elevation lapse rate for the surface mass balance, in m/year per km",
                            precip_lapse_rate, precip_lapse_rate_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   ierr = verbPrintf(2, grid.com,
                     "   air temperature lapse rate: %3.3f K per km\n"

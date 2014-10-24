@@ -83,13 +83,15 @@ PetscErrorCode PAWeatherStation::init(Vars &vars) {
     option = "-atmosphere_one_station_file";
   bool bc_file_set = false;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Climate forcing options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Climate forcing options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString(option,
                          "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.",
                          filename, bc_file_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (bc_file_set == false) {
     throw RuntimeError::formatted("Command-line option %s is required.", option.c_str());

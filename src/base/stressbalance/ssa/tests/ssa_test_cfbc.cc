@@ -224,8 +224,10 @@ int main(int argc, char *argv[]) {
     ierr = setVerbosityLevel(5); CHKERRQ(ierr);
 
     PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set);
+    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+    ierr = PetscOptionsHasName(NULL, "-help", &help_set);
+    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"
@@ -239,7 +241,8 @@ int main(int argc, char *argv[]) {
     int My=61;
     std::string output_file = "ssa_test_cfbc.nc";
 
-    ierr = PetscOptionsBegin(com, "", "SSA_TESTCFBC options", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(com, "", "SSA_TESTCFBC options", "");
+    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       bool flag;
       int my_verbosity_level;
@@ -253,7 +256,8 @@ int main(int argc, char *argv[]) {
                             my_verbosity_level, flag); CHKERRQ(ierr);
       if (flag) setVerbosityLevel(my_verbosity_level);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd();
+    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     SSAFactory ssafactory = SSAFDFactory;
 

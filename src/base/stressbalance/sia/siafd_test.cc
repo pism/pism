@@ -318,8 +318,10 @@ int main(int argc, char *argv[]) {
     config.set_flag("compute_grain_size_using_age", false);
 
     PetscBool usage_set, help_set;
-    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set); CHKERRQ(ierr);
-    ierr = PetscOptionsHasName(NULL, "-help", &help_set); CHKERRQ(ierr);
+    ierr = PetscOptionsHasName(NULL, "-usage", &usage_set);
+    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
+    ierr = PetscOptionsHasName(NULL, "-help", &help_set);
+    PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"
@@ -337,7 +339,8 @@ int main(int argc, char *argv[]) {
 
     std::string output_file = "siafd_test_F.nc";
     int tmp = grid.Mz;
-    ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(grid.com, "", "SIAFD_TEST options", "");
+    PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
     {
       bool flag;
       ierr = OptionsInt("-Mx", "Number of grid points in the X direction",
@@ -349,7 +352,8 @@ int main(int argc, char *argv[]) {
       ierr = OptionsString("-o", "Set the output file name",
                                output_file, flag); CHKERRQ(ierr);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    ierr = PetscOptionsEnd();
+    PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     if (tmp > 0) {
       grid.Mz = tmp;

@@ -126,7 +126,8 @@ PetscErrorCode BedThermalUnit::allocate() {
   PetscErrorCode ierr;
   bool i_set, Mbz_set, Lbz_set;
 
-  ierr = PetscOptionsBegin(grid.com, "", "BedThermalUnit options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "BedThermalUnit options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-i", "PISM input file name",
                              m_input_file, i_set); CHKERRQ(ierr);
@@ -139,7 +140,8 @@ PetscErrorCode BedThermalUnit::allocate() {
     ierr = OptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer, in meters",
                            Lbz, Lbz_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
 
   if (i_set) {

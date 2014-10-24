@@ -90,12 +90,14 @@ PetscErrorCode verbPrintf(const int threshold,
     va_list Argp;
     if (verbosityLevel >= threshold) {
       va_start(Argp, format);
-      ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp); CHKERRQ(ierr);
+      ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp);
+      PISM_PETSC_CHK(ierr, "PetscVFPrintf");
       va_end(Argp);
     }
     if (petsc_history) { // always print to history
       va_start(Argp, format);
-      ierr = PetscVFPrintf(petsc_history, format, Argp); CHKERRQ(ierr);
+      ierr = PetscVFPrintf(petsc_history, format, Argp);
+      PISM_PETSC_CHK(ierr, "PetscVFPrintf");
       va_end(Argp);
     }
   }
@@ -144,10 +146,12 @@ std::string pism_username_prefix(MPI_Comm com) {
 
   char username[50];
   ierr = PetscGetUserName(username, sizeof(username));
+  PISM_PETSC_CHK(ierr, "PetscGetUserName");
   if (ierr != 0)
     username[0] = '\0';
   char hostname[100];
   ierr = PetscGetHostName(hostname, sizeof(hostname));
+  PISM_PETSC_CHK(ierr, "PetscGetHostName");
   if (ierr != 0)
     hostname[0] = '\0';
   
@@ -219,9 +223,11 @@ std::string pism_filename_add_suffix(std::string filename, std::string separator
 
 PetscErrorCode GetTime(PetscLogDouble *result) {
 #if PETSC_VERSION_LT(3,4,0)
-  PetscErrorCode ierr = PetscGetTime(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = PetscGetTime(result);
+  PISM_PETSC_CHK(ierr, "PetscGetTime");
 #else
-  PetscErrorCode ierr = PetscTime(result); CHKERRQ(ierr);
+  PetscErrorCode ierr = PetscTime(result);
+  PISM_PETSC_CHK(ierr, "PetscTime");
 #endif
   return 0;
 }

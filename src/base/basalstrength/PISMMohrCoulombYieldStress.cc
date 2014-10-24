@@ -178,7 +178,8 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
   m_bed_topography = vars.get_2d_scalar("bedrock_altitude");
   m_mask = vars.get_2d_mask("mask");
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till yield stress model", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till yield stress model", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsIsSet("-plastic_phi", plastic_phi_set); CHKERRQ(ierr);
     ierr = OptionsIsSet("-topg_to_phi",
@@ -191,7 +192,8 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
                             "Turn on, and specify, the till friction angle computation which uses basal yield stress (tauc) and the rest of the model state",
                             tauc_to_phi_set); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // Get the till friction angle from the the context and ignore options that
   // would be used to set it otherwise.

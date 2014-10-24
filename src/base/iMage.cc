@@ -263,7 +263,8 @@ PetscErrorCode IceModel::ageStep() {
         ierr = PetscPrintf(PETSC_COMM_SELF,
                            "\n"
                            "in ageStep(): saving ageSystemCtx at (i,j)=(%d,%d) to m-file... \n",
-                           i, j); CHKERRQ(ierr);
+                           i, j);
+        PISM_PETSC_CHK(ierr, "PetscPrintf");
         system.viewColumnInfoMFile(x, grid.Mz_fine);
       }
 

@@ -23,6 +23,8 @@
 #include <mpi.h>
 #include <cstdio>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 PetscInitializer::PetscInitializer(int argc, char **argv, const char *help) {
@@ -30,9 +32,11 @@ PetscInitializer::PetscInitializer(int argc, char **argv, const char *help) {
   PetscErrorCode ierr = 0;
   PetscBool initialized = PETSC_FALSE;
 
-  ierr = PetscInitialized(&initialized); CHKERRCONTINUE(ierr);
+  ierr = PetscInitialized(&initialized);
+  PISM_PETSC_CHK(ierr, "PetscInitialized");
   if (initialized == PETSC_FALSE) {
-    ierr = PetscInitialize(&argc, &argv, NULL, help); CHKERRCONTINUE(ierr);
+    ierr = PetscInitialize(&argc, &argv, NULL, help);
+    PISM_PETSC_CHK(ierr, "PetscInitialize");
     if (ierr != 0) {
       printf("PETSc initialization failed. Aborting...\n");
       MPI_Abort(MPI_COMM_WORLD, -1);

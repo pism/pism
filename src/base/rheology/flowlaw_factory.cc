@@ -132,7 +132,8 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
   bool flag;
   std::string my_type_name;
 
-  ierr = PetscOptionsBegin(com, prefix.c_str(), "IceFlowLawFactory options", "IceFlowLaw"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(com, prefix.c_str(), "IceFlowLawFactory options", "IceFlowLaw");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
 
     // build the list of choices
@@ -151,7 +152,8 @@ PetscErrorCode IceFlowLawFactory::setFromOptions()
     }
 
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   return 0;
 }

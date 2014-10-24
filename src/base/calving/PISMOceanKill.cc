@@ -54,12 +54,14 @@ PetscErrorCode OceanKill::init(Vars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "* Initializing calving at a fixed calving front...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", "");
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-ocean_kill_file", "Specifies a file to get ocean_kill thickness from",
                              filename, flag); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   IceModelVec2Int *mask = vars.get_2d_mask("mask");
   MaskQuery m(*mask);

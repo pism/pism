@@ -120,18 +120,21 @@ PetscErrorCode IceModel::init_viewers() {
 
   ierr = PetscOptionsBegin(grid.com, NULL,
                            "Options controlling run-time diagnostic viewers",
-                           NULL); CHKERRQ(ierr);
+                           NULL);
+  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   PetscInt viewer_size = (int)config.get("viewer_size");
   ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
-                         "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
+                         "", viewer_size, &viewer_size, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsInt");
 
   if (flag)
     config.set_double("viewer_size", viewer_size);
 
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",
-                            tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+                            tmp, TEMPORARY_STRING_LENGTH, &flag);
+  PISM_PETSC_CHK(ierr, "PetscOptionsString");
   std::string var_name;
   if (flag) {
     std::istringstream arg(tmp);
@@ -142,7 +145,8 @@ PetscErrorCode IceModel::init_viewers() {
   }
 
   // Done with the options.
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd();
+  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   return 0;
 }
