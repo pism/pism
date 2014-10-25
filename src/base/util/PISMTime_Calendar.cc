@@ -564,11 +564,8 @@ PetscErrorCode Time_Calendar::compute_times(double time_start, double delta, dou
     return compute_times_yearly(result);
   }
 
-  PetscErrorCode ierr = PetscPrintf(m_com,
-                                    "PISM ERROR: '%s' reporting is not implemented.\n");
-  CHKERRQ(ierr);
-
-  return 1;
+  throw RuntimeError::formatted("'%s' reporting is not implemented", keyword.c_str());
+  return 0;
 }
 
 } // end of namespace pism
