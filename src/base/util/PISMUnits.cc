@@ -180,12 +180,15 @@ PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {
   UnitConverter c(from, to);
 
   PetscInt data_size = 0;
-  ierr = VecGetLocalSize(v, &data_size); CHKERRQ(ierr);
+  ierr = VecGetLocalSize(v, &data_size);
+  PISM_PETSC_CHK(ierr, "VecGetLocalSize");
 
   double *data = NULL;
-  ierr = VecGetArray(v, &data); CHKERRQ(ierr);
+  ierr = VecGetArray(v, &data);
+  PISM_PETSC_CHK(ierr, "VecGetArray");
   c.convert_doubles(data, data_size);
-  ierr = VecRestoreArray(v, &data); CHKERRQ(ierr);
+  ierr = VecRestoreArray(v, &data);
+  PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
   return 0;
 }

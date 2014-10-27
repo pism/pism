@@ -426,7 +426,8 @@ PetscErrorCode NCSpatialVariable::regrid(const PIO &nc, unsigned int t_start,
                       spacer.c_str(), c(default_value),
                       get_string("glaciological_units").c_str());
     CHKERRQ(ierr);
-    ierr = VecSet(v, default_value); CHKERRQ(ierr);
+    ierr = VecSet(v, default_value);
+    PISM_PETSC_CHK(ierr, "VecSet");
   } // end of if (exists)
 
   return 0;
@@ -438,8 +439,10 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   PetscErrorCode ierr;
   double min, max;
 
-  ierr = VecMin(v, NULL, &min); CHKERRQ(ierr);
-  ierr = VecMax(v, NULL, &max); CHKERRQ(ierr);
+  ierr = VecMin(v, NULL, &min);
+  PISM_PETSC_CHK(ierr, "VecMin");
+  ierr = VecMax(v, NULL, &max);
+  PISM_PETSC_CHK(ierr, "VecMax");
 
   assert(UnitConverter::are_convertible(get_units(), get_glaciological_units()) == true);
   UnitConverter c(this->get_units(), this->get_glaciological_units());
@@ -487,8 +490,10 @@ PetscErrorCode NCSpatialVariable::check_range(const std::string &filename, Vec v
   assert(m_grid != NULL);
 
   // Vec v is always global here (so VecMin and VecMax work as expected)
-  ierr = VecMin(v, NULL, &min); CHKERRQ(ierr);
-  ierr = VecMax(v, NULL, &max); CHKERRQ(ierr);
+  ierr = VecMin(v, NULL, &min);
+  PISM_PETSC_CHK(ierr, "VecMin");
+  ierr = VecMax(v, NULL, &max);
+  PISM_PETSC_CHK(ierr, "VecMax");
 
   const std::string &units_string = get_string("units");
 

@@ -222,7 +222,8 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector before SSASolve_FE\n");
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
-    ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
+    ierr = VecView(m_velocity_global.get_vec(), viewer);
+    PISM_PETSC_CHK(ierr, "VecView");
     ierr = PetscViewerDestroy(&viewer);
     PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
   }
@@ -254,7 +255,8 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
     ierr = PetscViewerASCIIPrintf(viewer, "solution vector after SSASolve\n");
     PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
 
-    ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
+    ierr = VecView(m_velocity_global.get_vec(), viewer);
+    PISM_PETSC_CHK(ierr, "VecView");
     ierr = PetscViewerDestroy(&viewer);
     PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
   }

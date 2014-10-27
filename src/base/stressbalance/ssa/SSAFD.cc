@@ -55,21 +55,27 @@ PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
   PC pc;
 
-  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetType(m_KSP, KSPGMRES);
+  PISM_PETSC_CHK(ierr, "KSPSetType");
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #endif
 
   // Get the PC from the KSP solver:
-  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_KSP, &pc);
+  PISM_PETSC_CHK(ierr, "KSPGetPC");
 
   // Set the PC type:
-  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
+  ierr = PCSetType(pc, PCBJACOBI);
+  PISM_PETSC_CHK(ierr, "PCSetType");
 
   // Process options:
-  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(m_KSP);
+  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
 
   return 0;
 }
@@ -81,21 +87,27 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   // Set parameters equivalent to
   // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
 
-  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+  ierr = KSPSetType(m_KSP, KSPGMRES);
+  PISM_PETSC_CHK(ierr, "KSPSetType");
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_KSP, m_A, m_A);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #endif
     
   // Switch to using the "unpreconditioned" norm.
-  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
+  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED);
+  PISM_PETSC_CHK(ierr, "KSPSetNormType");
 
   // Switch to "right" preconditioning.
-  ierr = KSPSetPCSide(m_KSP, PC_RIGHT); CHKERRQ(ierr);
+  ierr = KSPSetPCSide(m_KSP, PC_RIGHT);
+  PISM_PETSC_CHK(ierr, "KSPSetPCSide");
 
   // Get the PC from the KSP solver:
-  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_KSP, &pc);
+  PISM_PETSC_CHK(ierr, "KSPGetPC");
   
   // Set the PC type:
   ierr = PCSetType(pc, PCASM); CHKERRQ(ierr);
@@ -105,16 +117,19 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   ierr = PCSetUp(pc); CHKERRQ(ierr);
   ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp); CHKERRQ(ierr);
 
-  ierr = KSPSetType(*sub_ksp, KSPPREONLY); CHKERRQ(ierr);
+  ierr = KSPSetType(*sub_ksp, KSPPREONLY);
+  PISM_PETSC_CHK(ierr, "KSPSetType");
 
   // Set the PC of the sub-KSP to "LU".
-  ierr = KSPGetPC(*sub_ksp, &sub_pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(*sub_ksp, &sub_pc);
+  PISM_PETSC_CHK(ierr, "KSPGetPC");
 
   ierr = PCSetType(sub_pc, PCLU); CHKERRQ(ierr);
     
   // Let the user override all this:
   // Process options:
-  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(m_KSP);
+  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
 
   return 0;
 }
@@ -141,12 +156,15 @@ PetscErrorCode SSAFD::allocate_fd() {
   ierr = DMCreateMatrix(*m_da, &m_A); CHKERRQ(ierr);
 #endif
 
-  ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
-  ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_"); CHKERRQ(ierr);
+  ierr = KSPCreate(grid.com, &m_KSP);
+  PISM_PETSC_CHK(ierr, "KSPCreate");
+  ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
+  PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
 
   // Use non-zero initial guess (i.e. SSA velocities from the last
   // solve() call).
-  ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE); CHKERRQ(ierr);
+  ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE);
+  PISM_PETSC_CHK(ierr, "KSPSetInitialGuessNonzero");
 
   ierr = m_b.create(grid, "right_hand_side", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
@@ -197,7 +215,8 @@ PetscErrorCode SSAFD::deallocate_fd() {
   PetscErrorCode ierr;
 
   if (m_KSP != NULL) {
-    ierr = KSPDestroy(&m_KSP); CHKERRQ(ierr);
+    ierr = KSPDestroy(&m_KSP);
+    PISM_PETSC_CHK(ierr, "KSPDestroy");
   }
 
   if (m_A != NULL) {
@@ -951,14 +970,18 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 
     // Call PETSc to solve linear system by iterative method; "inner iteration":
 #if PETSC_VERSION_LT(3,5,0)
-    ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+    ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
+    PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
-    ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+    ierr = KSPSetOperators(m_KSP, m_A, m_A);
+    PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #endif
-    ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec()); CHKERRQ(ierr); // SOLVE
+    ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec());
+    PISM_PETSC_CHK(ierr, "KSPSolve"); // SOLVE
 
     // Check if diverged; report to standard out about iteration
-    ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
+    ierr = KSPGetConvergedReason(m_KSP, &reason);
+    PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
 
     if (reason < 0) {
       // KSP diverged
@@ -974,7 +997,8 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     }
 
     // report on KSP success; the "inner" iteration is done
-    ierr = KSPGetIterationNumber(m_KSP, &ksp_iterations); CHKERRQ(ierr);
+    ierr = KSPGetIterationNumber(m_KSP, &ksp_iterations);
+    PISM_PETSC_CHK(ierr, "KSPGetIterationNumber");
     ksp_iterations_total += ksp_iterations;
 
     if (very_verbose) {
@@ -1647,7 +1671,8 @@ PetscErrorCode SSAFD::write_system_petsc(const std::string &namepart) {
                                &viewer);
   PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
-  ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
+  ierr = VecView(m_b.get_vec(), viewer);
+  PISM_PETSC_CHK(ierr, "VecView");
   ierr = PetscViewerDestroy(&viewer);
   PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
 
@@ -1714,10 +1739,12 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
 
   ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs");
   PISM_PETSC_CHK(ierr, "PetscObjectSetName");
-  ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
+  ierr = VecView(m_b.get_vec(), viewer);
+  PISM_PETSC_CHK(ierr, "VecView");
   ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv");
   PISM_PETSC_CHK(ierr, "PetscObjectSetName");
-  ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
+  ierr = VecView(m_velocity_global.get_vec(), viewer);
+  PISM_PETSC_CHK(ierr, "VecView");
 
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",

@@ -46,8 +46,10 @@ PetscErrorCode IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Ve
   ierr = design_param.fromDesignVariable(hardav_min,&zeta_min); CHKERRQ(ierr);
   ierr = design_param.fromDesignVariable(hardav_max,&zeta_max); CHKERRQ(ierr);
 
-  ierr = VecSet(lo,zeta_min); CHKERRQ(ierr);
-  ierr = VecSet(hi,zeta_max); CHKERRQ(ierr);
+  ierr = VecSet(lo,zeta_min);
+  PISM_PETSC_CHK(ierr, "VecSet");
+  ierr = VecSet(hi,zeta_max);
+  PISM_PETSC_CHK(ierr, "VecSet");
   return 0;
 }
 

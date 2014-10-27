@@ -103,12 +103,18 @@ PetscErrorCode BedSmoother::allocate(int maxGHOSTS) {
 PetscErrorCode BedSmoother::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&topgp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&topgsmoothp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&maxtlp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&C2p0); CHKERRQ(ierr);
-  ierr = VecDestroy(&C3p0); CHKERRQ(ierr);
-  ierr = VecDestroy(&C4p0); CHKERRQ(ierr);
+  ierr = VecDestroy(&topgp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&topgsmoothp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&maxtlp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&C2p0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&C3p0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&C4p0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
   // no need to destroy topgsmooth,maxtl,C2,C3,C4; their destructors do it
   return 0;
 }
@@ -192,8 +198,10 @@ PetscErrorCode BedSmoother::smooth_the_bed_on_proc0() {
   if (grid.rank == 0) {
     PetscErrorCode ierr;
     double **b0, **bs;
-    ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0); CHKERRQ(ierr);
-    ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs); CHKERRQ(ierr);
+    ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
 
     for (int i=0; i < grid.Mx; i++) {
       for (int j=0; j < grid.My; j++) {
@@ -213,8 +221,10 @@ PetscErrorCode BedSmoother::smooth_the_bed_on_proc0() {
       }
     }
 
-    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs); CHKERRQ(ierr);
-    ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0); CHKERRQ(ierr);
+    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+    ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
   }
 
   return 0;
@@ -226,12 +236,18 @@ PetscErrorCode BedSmoother::compute_coefficients_on_proc0() {
   if (grid.rank == 0) {
     PetscErrorCode ierr;
     double **b0, **bs, **c2, **c3, **c4, **mt;
-    ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0); CHKERRQ(ierr);
-    ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs); CHKERRQ(ierr);
-    ierr = VecGetArray2d(maxtlp0,      grid.Mx, grid.My, 0, 0, &mt); CHKERRQ(ierr);
-    ierr = VecGetArray2d(C2p0,         grid.Mx, grid.My, 0, 0, &c2); CHKERRQ(ierr);
-    ierr = VecGetArray2d(C3p0,         grid.Mx, grid.My, 0, 0, &c3); CHKERRQ(ierr);
-    ierr = VecGetArray2d(C4p0,         grid.Mx, grid.My, 0, 0, &c4); CHKERRQ(ierr);
+    ierr = VecGetArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    ierr = VecGetArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    ierr = VecGetArray2d(maxtlp0,      grid.Mx, grid.My, 0, 0, &mt);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    ierr = VecGetArray2d(C2p0,         grid.Mx, grid.My, 0, 0, &c2);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    ierr = VecGetArray2d(C3p0,         grid.Mx, grid.My, 0, 0, &c3);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
+    ierr = VecGetArray2d(C4p0,         grid.Mx, grid.My, 0, 0, &c4);
+    PISM_PETSC_CHK(ierr, "VecGetArray2d");
 
     for (int i=0; i < grid.Mx; i++) {
       for (int j=0; j < grid.My; j++) {
@@ -266,12 +282,18 @@ PetscErrorCode BedSmoother::compute_coefficients_on_proc0() {
       }
     }
 
-    ierr = VecRestoreArray2d(C4p0,         grid.Mx, grid.My, 0, 0, &c4); CHKERRQ(ierr);
-    ierr = VecRestoreArray2d(C3p0,         grid.Mx, grid.My, 0, 0, &c3); CHKERRQ(ierr);
-    ierr = VecRestoreArray2d(C2p0,         grid.Mx, grid.My, 0, 0, &c2); CHKERRQ(ierr);
-    ierr = VecRestoreArray2d(maxtlp0,      grid.Mx, grid.My, 0, 0, &mt); CHKERRQ(ierr);
-    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs); CHKERRQ(ierr);
-    ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0); CHKERRQ(ierr);
+    ierr = VecRestoreArray2d(C4p0,         grid.Mx, grid.My, 0, 0, &c4);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+    ierr = VecRestoreArray2d(C3p0,         grid.Mx, grid.My, 0, 0, &c3);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+    ierr = VecRestoreArray2d(C2p0,         grid.Mx, grid.My, 0, 0, &c2);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+    ierr = VecRestoreArray2d(maxtlp0,      grid.Mx, grid.My, 0, 0, &mt);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+    ierr = VecRestoreArray2d(topgsmoothp0, grid.Mx, grid.My, 0, 0, &bs);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+    ierr = VecRestoreArray2d(topgp0,       grid.Mx, grid.My, 0, 0, &b0);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
 
     // scale the coeffs in Taylor series
     const double
@@ -280,9 +302,12 @@ PetscErrorCode BedSmoother::compute_coefficients_on_proc0() {
       s2 = k * (2 * n + 2) / (2 * n),
       s3 = s2 * (3 * n + 2) / (3 * n),
       s4 = s3 * (4 * n + 2) / (4 * n);
-    ierr = VecScale(C2p0,s2); CHKERRQ(ierr);
-    ierr = VecScale(C3p0,s3); CHKERRQ(ierr);
-    ierr = VecScale(C4p0,s4); CHKERRQ(ierr);
+    ierr = VecScale(C2p0,s2);
+    PISM_PETSC_CHK(ierr, "VecScale");
+    ierr = VecScale(C3p0,s3);
+    PISM_PETSC_CHK(ierr, "VecScale");
+    ierr = VecScale(C4p0,s4);
+    PISM_PETSC_CHK(ierr, "VecScale");
   }
 
   return 0;

@@ -52,8 +52,8 @@ void check_c_call(int errcode, int success, const char* function_name,
 void check_petsc_call(int errcode, const char* function_name,
                       const char *file, int line);
 
-#define PISM_CHK(errcode,success,name) do { check_c_call(errcode, success, name, __FILE__, __LINE__); } while (0)
-#define PISM_PETSC_CHK(errcode,name) do { check_petsc_call(errcode, name, __FILE__, __LINE__); } while (0)
+#define PISM_CHK(errcode,success,name) do { pism::check_c_call(errcode, success, name, __FILE__, __LINE__); } while (0)
+#define PISM_PETSC_CHK(errcode,name) do { pism::check_petsc_call(errcode, name, __FILE__, __LINE__); } while (0)
 
 } // end of namespace pism
 

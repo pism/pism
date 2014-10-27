@@ -64,13 +64,17 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
   ierr = DMCreateMatrix(*m_da, &m_J_state); CHKERRQ(ierr);
 #endif
 
-  ierr = KSPCreate(m_grid.com, &m_ksp); CHKERRQ(ierr);
+  ierr = KSPCreate(m_grid.com, &m_ksp);
+  PISM_PETSC_CHK(ierr, "KSPCreate");
   double ksp_rtol = 1e-12;
-  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT); CHKERRQ(ierr);
+  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  PISM_PETSC_CHK(ierr, "KSPSetTolerances");
   PC pc;
-  ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_ksp, &pc);
+  PISM_PETSC_CHK(ierr, "KSPGetPC");
   ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(m_ksp);
+  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
 
   return 0;
 }
@@ -78,7 +82,8 @@ PetscErrorCode IP_SSATaucForwardProblem::construct() {
 PetscErrorCode IP_SSATaucForwardProblem::destruct() {
   PetscErrorCode ierr;
   ierr = MatDestroy(&m_J_state); CHKERRQ(ierr);
-  ierr = KSPDestroy(&m_ksp); CHKERRQ(ierr);
+  ierr = KSPDestroy(&m_ksp);
+  PISM_PETSC_CHK(ierr, "KSPDestroy");
   return 0;
 }
 
@@ -542,15 +547,19 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzet
 
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #endif
 
-  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
+  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
+  PISM_PETSC_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason  reason;
-  ierr = KSPGetConvergedReason(m_ksp, &reason); CHKERRQ(ierr);
+  ierr = KSPGetConvergedReason(m_ksp, &reason);
+  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
   if (reason < 0) {
     throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
@@ -610,14 +619,18 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
 
   // call PETSc to solve linear system by iterative method.
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state, SAME_NONZERO_PATTERN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp, m_J_state, m_J_state);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #endif
-  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec()); CHKERRQ(ierr); // SOLVE
+  ierr = KSPSolve(m_ksp, m_du_global.get_vec(), m_du_global.get_vec());
+  PISM_PETSC_CHK(ierr, "KSPSolve"); // SOLVE
 
   KSPConvergedReason  reason;
-  ierr = KSPGetConvergedReason(m_ksp, &reason); CHKERRQ(ierr);
+  ierr = KSPGetConvergedReason(m_ksp, &reason);
+  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
   if (reason < 0) {
     throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);

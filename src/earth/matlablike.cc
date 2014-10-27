@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2009 Ed Bueler
+/* Copyright (C) 2004-2009, 2014 Ed Bueler
 
  This file is part of PISM.
 
@@ -21,6 +21,7 @@
 #include <gsl/gsl_spline.h>
 #include <petscvec.h>
 #include "cubature.h"
+#include "error_handling.hh"
 
 
 PetscErrorCode conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
@@ -29,9 +30,12 @@ PetscErrorCode conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
   double sum, **A, **B, **result;
   int i,j,r,s;
 
-  ierr = VecGetArray2d(vA, mA, nA, 0, 0, &A); CHKERRQ(ierr);
-  ierr = VecGetArray2d(vB, mB, nB, 0, 0, &B); CHKERRQ(ierr);
-  ierr = VecGetArray2d(vresult, mA, nA, 0, 0, &result); CHKERRQ(ierr);
+  ierr = VecGetArray2d(vA, mA, nA, 0, 0, &A);
+  PISM_PETSC_CHK(ierr, "VecGetArray2d");
+  ierr = VecGetArray2d(vB, mB, nB, 0, 0, &B);
+  PISM_PETSC_CHK(ierr, "VecGetArray2d");
+  ierr = VecGetArray2d(vresult, mA, nA, 0, 0, &result);
+  PISM_PETSC_CHK(ierr, "VecGetArray2d");
   for (i=0; i < mA; i++) {
     for (j=0; j < nA; j++) {
       sum = 0.0;
@@ -43,9 +47,12 @@ PetscErrorCode conv2_same(Vec vA, int mA, int nA,  Vec vB, int mB, int nB,
       result[i][j] = sum;
     }
   }
-  ierr = VecRestoreArray2d(vA, mA, nA, 0, 0, &A); CHKERRQ(ierr);
-  ierr = VecRestoreArray2d(vB, mB, nB, 0, 0, &B); CHKERRQ(ierr);
-  ierr = VecRestoreArray2d(vresult, mA, nA, 0, 0, &result); CHKERRQ(ierr);
+  ierr = VecRestoreArray2d(vA, mA, nA, 0, 0, &A);
+  PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+  ierr = VecRestoreArray2d(vB, mB, nB, 0, 0, &B);
+  PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+  ierr = VecRestoreArray2d(vresult, mA, nA, 0, 0, &result);
+  PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
   return 0;
 }
 

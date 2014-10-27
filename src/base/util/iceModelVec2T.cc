@@ -87,7 +87,8 @@ PetscErrorCode IceModelVec2T::destroy() {
   ierr = IceModelVec2S::destroy(); CHKERRQ(ierr);
 
   if (m_v3 != NULL) {
-    ierr = VecDestroy(&m_v3); CHKERRQ(ierr);
+    ierr = VecDestroy(&m_v3);
+    PISM_PETSC_CHK(ierr, "VecDestroy");
     m_v3 = NULL;
   }
 

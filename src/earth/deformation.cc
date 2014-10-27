@@ -106,16 +106,23 @@ PetscErrorCode BedDeformLC::alloc() {
   assert(settingsDone == true);
   assert(allocDone == false);
 
-  ierr = VecDuplicate(*H, &Hdiff); CHKERRQ(ierr);  // allocate working space
-  ierr = VecDuplicate(*H, &dbedElastic); CHKERRQ(ierr);  // allocate working space
+  ierr = VecDuplicate(*H, &Hdiff);
+  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  ierr = VecDuplicate(*H, &dbedElastic);
+  PISM_PETSC_CHK(ierr, "VecDuplicate");
 
   // allocate plate displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, Nx * Ny, &U); CHKERRQ(ierr);
-  ierr = VecDuplicate(U, &U_start); CHKERRQ(ierr);
+  ierr = VecCreateSeq(PETSC_COMM_SELF, Nx * Ny, &U);
+  PISM_PETSC_CHK(ierr, "VecCreateSeq");
+  ierr = VecDuplicate(U, &U_start);
+  PISM_PETSC_CHK(ierr, "VecDuplicate");
   // FFT - side coefficient fields (i.e. multiplication form of operators)
-  ierr = VecDuplicate(U, &vleft); CHKERRQ(ierr);
-  ierr = VecDuplicate(U, &vright); CHKERRQ(ierr);
-  ierr = VecCreateSeq(PETSC_COMM_SELF, Nxge * Nyge, &lrmE); CHKERRQ(ierr);
+  ierr = VecDuplicate(U, &vleft);
+  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  ierr = VecDuplicate(U, &vright);
+  PISM_PETSC_CHK(ierr, "VecDuplicate");
+  ierr = VecCreateSeq(PETSC_COMM_SELF, Nxge * Nyge, &lrmE);
+  PISM_PETSC_CHK(ierr, "VecCreateSeq");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
 
@@ -251,10 +258,12 @@ PetscErrorCode BedDeformLC::uplift_init() {
 
     av = av / ((double) (Nx + Ny));
 
-    ierr = VecShift(U_start, -av); CHKERRQ(ierr);
+    ierr = VecShift(U_start, -av);
+    PISM_PETSC_CHK(ierr, "VecShift");
   }
 
-  ierr = VecCopy(U_start, U); CHKERRQ(ierr);
+  ierr = VecCopy(U_start, U);
+  PISM_PETSC_CHK(ierr, "VecCopy");
 
   return 0;
 }
@@ -274,7 +283,8 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   PetscVecAccessor2D left(vleft, Nx, Ny), right(vright, Nx, Ny);
 
   // Compute Hdiff
-  PetscErrorCode ierr = VecWAXPY(Hdiff, -1, *H_start, *H); CHKERRQ(ierr);
+  PetscErrorCode ierr = VecWAXPY(Hdiff, -1, *H_start, *H);
+  PISM_PETSC_CHK(ierr, "VecWAXPY");
 
   // Compute fft2(-ice_rho * g * dH * dt), where H = H - H_start.
   clear_fftw_input();
@@ -325,9 +335,11 @@ PetscErrorCode BedDeformLC::step(const double dt_seconds, const double seconds_f
   if (include_elastic == true) {
     // Matlab:     ue=rhoi*conv2(H-H_start, II, 'same')
     ierr = conv2_same(Hdiff, Mx, My, lrmE, Nxge, Nyge, dbedElastic);  CHKERRQ(ierr);
-    ierr = VecScale(dbedElastic, icerho);  CHKERRQ(ierr);
+    ierr = VecScale(dbedElastic, icerho);
+    PISM_PETSC_CHK(ierr, "VecScale");
   } else {
-    ierr = VecSet(dbedElastic, 0.0); CHKERRQ(ierr);
+    ierr = VecSet(dbedElastic, 0.0);
+    PISM_PETSC_CHK(ierr, "VecSet");
   }
 
   // now sum contributions to get new bed elevation:

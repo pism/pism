@@ -993,7 +993,8 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
                             start, count, imap);
 
     double *a_petsc;
-    ierr = VecGetArray(result, &a_petsc); CHKERRQ(ierr);
+    ierr = VecGetArray(result, &a_petsc);
+    PISM_PETSC_CHK(ierr, "VecGetArray");
 
     bool mapped_io = true;
     use_mapped_io(var_name, mapped_io);
@@ -1003,7 +1004,8 @@ PetscErrorCode PIO::get_vec(IceGrid *grid, const string &var_name,
       get_vara_double(var_name, start, count, (double*)a_petsc);
     }
 
-    ierr = VecRestoreArray(result, &a_petsc); CHKERRQ(ierr);
+    ierr = VecRestoreArray(result, &a_petsc);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' from '%s'", var_name.c_str(), inq_filename().c_str());
@@ -1075,7 +1077,8 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int 
                             start, count, imap);
 
     double *a_petsc;
-    ierr = VecGetArray(input, &a_petsc); CHKERRQ(ierr);
+    ierr = VecGetArray(input, &a_petsc);
+    PISM_PETSC_CHK(ierr, "VecGetArray");
 
     if (grid->config.get_string("output_variable_order") == "xyz") {
       // Use the faster and safer (avoids a NetCDF bug) call if the aray storage
@@ -1086,7 +1089,8 @@ PetscErrorCode PIO::put_vec(IceGrid *grid, const string &var_name, unsigned int 
       put_varm_double(var_name, start, count, imap, (double*)a_petsc);
     }
 
-    ierr = VecRestoreArray(input, &a_petsc); CHKERRQ(ierr);
+    ierr = VecRestoreArray(input, &a_petsc);
+    PISM_PETSC_CHK(ierr, "VecRestoreArray");
   } catch (RuntimeError &e) {
     e.add_context("writing variable '%s' to '%s'", var_name.c_str(), inq_filename().c_str());
     throw;
@@ -1257,7 +1261,8 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out,
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
   double *output_array;
-  ierr = VecGetArray(result, &output_array); CHKERRQ(ierr);
+  ierr = VecGetArray(result, &output_array);
+  PISM_PETSC_CHK(ierr, "VecGetArray");
 
   // NOTE: make sure that the traversal order is correct!
   for (Points p(*grid); p; p.next()) {
@@ -1337,7 +1342,8 @@ PetscErrorCode PIO::regrid(IceGrid *grid, const vector<double> &zlevels_out,
     }
   }
 
-  ierr = VecRestoreArray(result, &output_array); CHKERRQ(ierr);
+  ierr = VecRestoreArray(result, &output_array);
+  PISM_PETSC_CHK(ierr, "VecRestoreArray");
 
   return 0;
 }

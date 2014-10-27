@@ -74,17 +74,20 @@ PetscErrorCode IceModelVec2S::allocate_proc0_copy(Vec &result) const {
 
     // initialize the scatter to processor 0 and create storage on processor 0
     VecScatter scatter_to_zero = NULL;
-    ierr = VecScatterCreateToZero(natural_work, &scatter_to_zero, &v_proc0); CHKERRQ(ierr);
+    ierr = VecScatterCreateToZero(natural_work, &scatter_to_zero, &v_proc0);
+    PISM_PETSC_CHK(ierr, "VecScatterCreateToZero");
 
     // decrement the reference counter; will be destroyed once m_da is destroyed
-    ierr = VecDestroy(&natural_work); CHKERRQ(ierr);
+    ierr = VecDestroy(&natural_work);
+    PISM_PETSC_CHK(ierr, "VecDestroy");
 
     // this increments the reference counter of scatter_to_zero
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "scatter_to_zero",
                               (PetscObject)scatter_to_zero);
     PISM_PETSC_CHK(ierr, "PetscObjectCompose");
     // decrement the reference counter; will be destroyed once m_da is destroyed
-    ierr = VecScatterDestroy(&scatter_to_zero); CHKERRQ(ierr);
+    ierr = VecScatterDestroy(&scatter_to_zero);
+    PISM_PETSC_CHK(ierr, "VecScatterDestroy");
 
     // this increments the reference counter of v_proc0
     ierr = PetscObjectCompose((PetscObject)m_da->get(), "v_proc0",
@@ -94,7 +97,8 @@ PetscErrorCode IceModelVec2S::allocate_proc0_copy(Vec &result) const {
     // We DO NOT call VecDestroy(v_proc0): the caller is expected to call VecDestroy
     result = v_proc0;
   } else {
-    ierr = VecDuplicate(v_proc0, &result); CHKERRQ(ierr);
+    ierr = VecDuplicate(v_proc0, &result);
+    PISM_PETSC_CHK(ierr, "VecDuplicate");
   }
 
   return 0;
@@ -135,7 +139,8 @@ PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0) const {
   }
 
   ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
-                         INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+                         INSERT_VALUES, SCATTER_FORWARD);
+  PISM_PETSC_CHK(ierr, "VecScatterBegin");
   ierr =   VecScatterEnd(scatter_to_zero, natural_work, onp0,
                          INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
 
@@ -161,7 +166,8 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0) {
   }
 
   ierr = VecScatterBegin(scatter_to_zero, onp0, natural_work,
-                         INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+                         INSERT_VALUES, SCATTER_REVERSE);
+  PISM_PETSC_CHK(ierr, "VecScatterBegin");
   ierr =   VecScatterEnd(scatter_to_zero, onp0, natural_work,
                          INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
@@ -399,7 +405,8 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
                        m_metadata[i].get_units(),
                        m_metadata[i].get_glaciological_units()); CHKERRQ(ierr);
 
-    ierr = VecView(tmp, viewers[i]); CHKERRQ(ierr);
+    ierr = VecView(tmp, viewers[i]);
+    PISM_PETSC_CHK(ierr, "VecView");
   }
 
   ierr = DMRestoreGlobalVector(*da2, &tmp); CHKERRQ(ierr);

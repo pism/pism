@@ -212,7 +212,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraints(Tao, Vec x, 
   ierr = m_ssaforward.assemble_residual(m_u, r); CHKERRQ(ierr);
 
   ierr = VecScale(r,1./m_constraintsScale);
-
+  PISM_PETSC_CHK(ierr, "VecScale");
   return 0;
 }
 
@@ -255,7 +255,8 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(V
   
   ierr = m_ssaforward.apply_jacobian_design(m_u_Jdesign, m_dzeta, y); CHKERRQ(ierr);
   
-  ierr = VecScale(y,1./m_constraintsScale); CHKERRQ(ierr);
+  ierr = VecScale(y,1./m_constraintsScale);
+  PISM_PETSC_CHK(ierr, "VecScale");
   
   return 0;
 }
@@ -269,7 +270,8 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTr
 
   ierr = m_ssaforward.apply_jacobian_design_transpose(m_u_Jdesign, m_du, y); CHKERRQ(ierr);
 
-  ierr = VecScale(y,1./m_constraintsScale); CHKERRQ(ierr);
+  ierr = VecScale(y,1./m_constraintsScale);
+  PISM_PETSC_CHK(ierr, "VecScale");
 
   return 0;
 }

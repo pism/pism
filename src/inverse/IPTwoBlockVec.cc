@@ -45,13 +45,17 @@ PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   assert(comm==comm_b);
   
   PetscInt lo_a, hi_a;
-  ierr = VecGetOwnershipRange(a,&lo_a,&hi_a); CHKERRQ(ierr); 
-  ierr = VecGetSize(a,&m_na_global); CHKERRQ(ierr);
+  ierr = VecGetOwnershipRange(a,&lo_a,&hi_a);
+  PISM_PETSC_CHK(ierr, "VecGetOwnershipRange");
+  ierr = VecGetSize(a,&m_na_global);
+  PISM_PETSC_CHK(ierr, "VecGetSize");
   m_na_local = hi_a-lo_a;
 
   PetscInt lo_b, hi_b;
-  ierr = VecGetOwnershipRange(b,&lo_b,&hi_b); CHKERRQ(ierr); 
-  ierr = VecGetSize(b,&m_nb_global); CHKERRQ(ierr);
+  ierr = VecGetOwnershipRange(b,&lo_b,&hi_b);
+  PISM_PETSC_CHK(ierr, "VecGetOwnershipRange");
+  ierr = VecGetSize(b,&m_nb_global);
+  PISM_PETSC_CHK(ierr, "VecGetSize");
   m_nb_local = hi_b-lo_b;
 
   IS is_a, is_b;
@@ -60,12 +64,17 @@ PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
   ierr = ISCreateStride(comm,m_nb_local,lo_b,1,&is_b); CHKERRQ(ierr); // b in b
   ierr = ISCreateStride(comm,m_nb_local,lo_a+lo_b+m_na_local,1,&m_b_in_ab); CHKERRQ(ierr);  // b in ab
 
-  ierr = VecCreate(comm,&m_ab); CHKERRQ(ierr);
-  ierr = VecSetType(m_ab,"mpi"); CHKERRQ(ierr);
-  ierr = VecSetSizes(m_ab,m_na_local+m_nb_local,m_na_global+m_nb_global); CHKERRQ(ierr);
+  ierr = VecCreate(comm,&m_ab);
+  PISM_PETSC_CHK(ierr, "VecCreate");
+  ierr = VecSetType(m_ab,"mpi");
+  PISM_PETSC_CHK(ierr, "VecSetType");
+  ierr = VecSetSizes(m_ab,m_na_local+m_nb_local,m_na_global+m_nb_global);
+  PISM_PETSC_CHK(ierr, "VecSetSizes");
 
-  ierr = VecScatterCreate(m_ab,m_a_in_ab,a,is_a,&m_scatter_a); CHKERRQ(ierr);
-  ierr = VecScatterCreate(m_ab,m_b_in_ab,b,is_b,&m_scatter_b); CHKERRQ(ierr);
+  ierr = VecScatterCreate(m_ab,m_a_in_ab,a,is_a,&m_scatter_a);
+  PISM_PETSC_CHK(ierr, "VecScatterCreate");
+  ierr = VecScatterCreate(m_ab,m_b_in_ab,b,is_b,&m_scatter_b);
+  PISM_PETSC_CHK(ierr, "VecScatterCreate");
   
   ierr = ISDestroy(&is_a); CHKERRQ(ierr);
   ierr = ISDestroy(&is_b); CHKERRQ(ierr);
@@ -76,11 +85,14 @@ PetscErrorCode IPTwoBlockVec::construct(Vec a, Vec b)  {
 PetscErrorCode IPTwoBlockVec::destruct() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&m_ab); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_ab);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
   ierr = ISDestroy(&m_a_in_ab); CHKERRQ(ierr);
   ierr = ISDestroy(&m_b_in_ab); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(&m_scatter_a); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(&m_scatter_b); CHKERRQ(ierr);  
+  ierr = VecScatterDestroy(&m_scatter_a);
+  PISM_PETSC_CHK(ierr, "VecScatterDestroy");
+  ierr = VecScatterDestroy(&m_scatter_b);
+  PISM_PETSC_CHK(ierr, "VecScatterDestroy");
   return 0;
 }
 
@@ -116,14 +128,18 @@ PetscErrorCode IPTwoBlockVec::scatter(Vec ab, Vec a, Vec b) {
 }
 PetscErrorCode IPTwoBlockVec::scatterToA(Vec ab, Vec a) {
   PetscErrorCode ierr;
-  ierr = VecScatterBegin(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);  
+  ierr = VecScatterBegin(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD);
+  PISM_PETSC_CHK(ierr, "VecScatterBegin");
+  ierr = VecScatterEnd(m_scatter_a, ab, a, INSERT_VALUES, SCATTER_FORWARD);
+  PISM_PETSC_CHK(ierr, "VecScatterEnd");
   return 0;
 }
 PetscErrorCode IPTwoBlockVec::scatterToB(Vec ab, Vec b) {
   PetscErrorCode ierr;
-  ierr = VecScatterBegin(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterBegin(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD);
+  PISM_PETSC_CHK(ierr, "VecScatterBegin");
+  ierr = VecScatterEnd(m_scatter_b, ab, b, INSERT_VALUES, SCATTER_FORWARD);
+  PISM_PETSC_CHK(ierr, "VecScatterEnd");
   return 0;
 }
 
@@ -153,14 +169,18 @@ PetscErrorCode IPTwoBlockVec::gather(Vec a, Vec b, Vec ab) {
 PetscErrorCode IPTwoBlockVec::gatherFromA(Vec a, Vec ab) {
   PetscErrorCode ierr;
   
-  ierr = VecScatterBegin(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE);
+  PISM_PETSC_CHK(ierr, "VecScatterBegin");
+  ierr = VecScatterEnd(m_scatter_a, a, ab, INSERT_VALUES, SCATTER_REVERSE);
+  PISM_PETSC_CHK(ierr, "VecScatterEnd");
   return 0;
 }
 PetscErrorCode IPTwoBlockVec::gatherFromB(Vec b, Vec ab) {
   PetscErrorCode ierr;
-  ierr = VecScatterBegin(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE);
+  PISM_PETSC_CHK(ierr, "VecScatterBegin");
+  ierr = VecScatterEnd(m_scatter_b, b, ab, INSERT_VALUES, SCATTER_REVERSE);
+  PISM_PETSC_CHK(ierr, "VecScatterEnd");
   return 0;
 }
 

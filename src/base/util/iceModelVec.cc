@@ -119,7 +119,8 @@ PetscErrorCode  IceModelVec::destroy() {
   PetscErrorCode ierr;
 
   if (m_v != NULL) {
-    ierr = VecDestroy(&m_v); CHKERRQ(ierr);
+    ierr = VecDestroy(&m_v);
+    PISM_PETSC_CHK(ierr, "VecDestroy");
     m_v = NULL;
   }
 
@@ -151,8 +152,10 @@ PetscErrorCode IceModelVec::range(double &min, double &max) const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  ierr = VecMin(m_v, NULL, &my_min); CHKERRQ(ierr);
-  ierr = VecMax(m_v, NULL, &my_max); CHKERRQ(ierr);
+  ierr = VecMin(m_v, NULL, &my_min);
+  PISM_PETSC_CHK(ierr, "VecMin");
+  ierr = VecMax(m_v, NULL, &my_max);
+  PISM_PETSC_CHK(ierr, "VecMax");
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax;
@@ -204,7 +207,8 @@ PetscErrorCode IceModelVec::norm(int n, double &out) const {
 
   NormType type = int_to_normtype(n);
 
-  ierr = VecNorm(m_v, type, &my_norm); CHKERRQ(ierr);
+  ierr = VecNorm(m_v, type, &my_norm);
+  PISM_PETSC_CHK(ierr, "VecNorm");
 
   if (m_has_ghosts == true) {
     // needs a reduce operation; use GlobalMax if NORM_INFINITY,
@@ -239,7 +243,8 @@ PetscErrorCode IceModelVec::squareroot() {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
-  ierr = VecSqrtAbs(m_v); CHKERRQ(ierr);
+  ierr = VecSqrtAbs(m_v);
+  PISM_PETSC_CHK(ierr, "VecSqrtAbs");
   return 0;
 }
 
@@ -250,7 +255,8 @@ PetscErrorCode IceModelVec::add(double alpha, IceModelVec &x) {
 
   PetscErrorCode ierr = checkCompatibility("add", x); CHKERRQ(ierr);
 
-  ierr = VecAXPY(m_v, alpha, x.m_v); CHKERRQ(ierr);
+  ierr = VecAXPY(m_v, alpha, x.m_v);
+  PISM_PETSC_CHK(ierr, "VecAXPY");
 
   inc_state_counter();          // mark as modified
   return 0;
@@ -260,7 +266,8 @@ PetscErrorCode IceModelVec::add(double alpha, IceModelVec &x) {
 PetscErrorCode IceModelVec::shift(double alpha) {
   assert(m_v != NULL);
 
-  PetscErrorCode ierr = VecShift(m_v, alpha); CHKERRQ(ierr);
+  PetscErrorCode ierr = VecShift(m_v, alpha);
+  PISM_PETSC_CHK(ierr, "VecShift");
 
   inc_state_counter();          // mark as modified
   return 0;
@@ -270,7 +277,8 @@ PetscErrorCode IceModelVec::shift(double alpha) {
 PetscErrorCode IceModelVec::scale(double alpha) {
   assert(m_v != NULL);
 
-  PetscErrorCode ierr = VecScale(m_v, alpha); CHKERRQ(ierr);
+  PetscErrorCode ierr = VecScale(m_v, alpha);
+  PISM_PETSC_CHK(ierr, "VecScale");
 
   inc_state_counter();          // mark as modified
   return 0;
@@ -312,7 +320,8 @@ PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
     ierr =   DMGlobalToLocalBegin(*m_da, source, INSERT_VALUES, m_v);  CHKERRQ(ierr);
     ierr =     DMGlobalToLocalEnd(*m_da, source, INSERT_VALUES, m_v);  CHKERRQ(ierr);
   } else {
-    ierr = VecCopy(source, m_v); CHKERRQ(ierr);
+    ierr = VecCopy(source, m_v);
+    PISM_PETSC_CHK(ierr, "VecCopy");
   }
 
   inc_state_counter();          // mark as modified
@@ -385,7 +394,8 @@ PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) const {
 
   ierr = checkCompatibility("copy_to", destination); CHKERRQ(ierr);
 
-  ierr = VecCopy(m_v, destination.m_v); CHKERRQ(ierr);
+  ierr = VecCopy(m_v, destination.m_v);
+  PISM_PETSC_CHK(ierr, "VecCopy");
   destination.inc_state_counter();          // mark as modified
   return 0;
 }
@@ -667,8 +677,10 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, const IceModelV
                                   func);
   }
 
-  ierr = VecGetSize(m_v, &X_size); CHKERRQ(ierr);
-  ierr = VecGetSize(other.m_v, &Y_size); CHKERRQ(ierr);
+  ierr = VecGetSize(m_v, &X_size);
+  PISM_PETSC_CHK(ierr, "VecGetSize");
+  ierr = VecGetSize(other.m_v, &Y_size);
+  PISM_PETSC_CHK(ierr, "VecGetSize");
   if (X_size != Y_size) {
     throw RuntimeError::formatted("IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
                                   func, m_name.c_str(), func, other.m_name.c_str());
@@ -780,7 +792,8 @@ PetscErrorCode  IceModelVec::update_ghosts(IceModelVec &destination) const {
 PetscErrorCode  IceModelVec::set(const double c) {
   PetscErrorCode ierr;
   assert(m_v != NULL);
-  ierr = VecSet(m_v,c); CHKERRQ(ierr);
+  ierr = VecSet(m_v,c);
+  PISM_PETSC_CHK(ierr, "VecSet");
   inc_state_counter();          // mark as modified
   return 0;
 }
@@ -881,7 +894,8 @@ PetscErrorCode IceModelVec::norm_all(int n, std::vector<double> &result) const {
 
   NormType type = this->int_to_normtype(n);
 
-  ierr = VecStrideNormAll(m_v, type, &norm_result[0]); CHKERRQ(ierr);
+  ierr = VecStrideNormAll(m_v, type, &norm_result[0]);
+  PISM_PETSC_CHK(ierr, "VecStrideNormAll");
 
   if (m_has_ghosts) {
     // needs a reduce operation; use GlobalMax() if NORM_INFINITY,

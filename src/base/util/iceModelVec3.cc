@@ -570,7 +570,8 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   ierr = DMDAVecRestoreArrayDOF(*da_new, v_new, &a_new); CHKERRQ(ierr);
 
   // Deallocate old Vec:
-  ierr = VecDestroy(&m_v); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_v);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
   m_v = v_new;
   m_da = da_new;
 

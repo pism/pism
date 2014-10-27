@@ -110,10 +110,14 @@ int main(int argc, char *argv[]) {
     
     if (rank == 0) { // only runs on proc 0; all sequential
       // allocate the variables needed before BedDeformLC can work:
-      ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, &H); CHKERRQ(ierr);
-      ierr = VecDuplicate(H, &Hstart); CHKERRQ(ierr);
-      ierr = VecDuplicate(H, &bedstart); CHKERRQ(ierr);
-      ierr = VecDuplicate(H, &uplift); CHKERRQ(ierr);
+      ierr = VecCreateSeq(PETSC_COMM_SELF, Mx*My, &H);
+      PISM_PETSC_CHK(ierr, "VecCreateSeq");
+      ierr = VecDuplicate(H, &Hstart);
+      PISM_PETSC_CHK(ierr, "VecDuplicate");
+      ierr = VecDuplicate(H, &bedstart);
+      PISM_PETSC_CHK(ierr, "VecDuplicate");
+      ierr = VecDuplicate(H, &uplift);
+      PISM_PETSC_CHK(ierr, "VecDuplicate");
 
       // in order to show bed elevation as a picture, create a da 
 #if PETSC_VERSION_LT(3,5,0)
@@ -157,7 +161,8 @@ int main(int argc, char *argv[]) {
                         dy = (2.0*Ly)/((double) My - 1);
       const int    imid = (Mx-1)/2, jmid = (My-1)/2;
       double **HH;
-      ierr = VecGetArray2d(H, Mx, My, 0, 0, &HH); CHKERRQ(ierr);
+      ierr = VecGetArray2d(H, Mx, My, 0, 0, &HH);
+      PISM_PETSC_CHK(ierr, "VecGetArray2d");
       for (int i=0; i<Mx; i++) {
         for (int j=0; j<My; j++) {
           const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
@@ -168,15 +173,19 @@ int main(int argc, char *argv[]) {
           }
         }
       }
-      ierr = VecRestoreArray2d(H, Mx, My, 0, 0, &HH); CHKERRQ(ierr);
-      ierr = VecSet(Hstart, 0.0); CHKERRQ(ierr);    // load was zero up till t=0
-      ierr = VecSet(bedstart, 0.0); CHKERRQ(ierr);       // initially flat bed
+      ierr = VecRestoreArray2d(H, Mx, My, 0, 0, &HH);
+      PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
+      ierr = VecSet(Hstart, 0.0);
+      PISM_PETSC_CHK(ierr, "VecSet");
+      ierr = VecSet(bedstart, 0.0);
+      PISM_PETSC_CHK(ierr, "VecSet");
       
       const double peak_up = unit_system.convert(10, "mm/year", "m/s");  // 10 mm/year
       // initialize uplift
       if (do_uplift == PETSC_TRUE) {
         double **upl;
-        ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
+        ierr = VecGetArray2d(uplift, Mx, My, 0, 0, &upl);
+        PISM_PETSC_CHK(ierr, "VecGetArray2d");
         for (int i=0; i<Mx; i++) {
           for (int j=0; j<My; j++) {
             const double r = sqrt(PetscSqr(dx * (i - imid)) + PetscSqr(dy * (j - jmid)));
@@ -187,9 +196,11 @@ int main(int argc, char *argv[]) {
             }
           }
         }
-        ierr = VecRestoreArray2d(uplift, Mx, My, 0, 0, &upl); CHKERRQ(ierr);
+        ierr = VecRestoreArray2d(uplift, Mx, My, 0, 0, &upl);
+        PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
       } else {
-        ierr = VecSet(uplift, 0.0); CHKERRQ(ierr);
+        ierr = VecSet(uplift, 0.0);
+        PISM_PETSC_CHK(ierr, "VecSet");
       }
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n");
@@ -211,16 +222,21 @@ int main(int argc, char *argv[]) {
       PISM_PETSC_CHK(ierr, "PetscPrintf");
       const int     KK = (int) (tfinalyears / dtyears);
       double **b;
-      ierr = VecGetArray2d(bedstart, Mx, My, 0, 0, &b); CHKERRQ(ierr);
+      ierr = VecGetArray2d(bedstart, Mx, My, 0, 0, &b);
+      PISM_PETSC_CHK(ierr, "VecGetArray2d");
       double b0old = b[imid][jmid];
-      ierr = VecRestoreArray2d(bedstart, Mx, My, 0, 0, &b); CHKERRQ(ierr);
+      ierr = VecRestoreArray2d(bedstart, Mx, My, 0, 0, &b);
+      PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
       for (int k=0; k<KK; k++) {
         const double tyears = k*dtyears;
         ierr = bdlc.step(dtyears, tyears); CHKERRQ(ierr);
-        ierr = VecView(bed,viewer); CHKERRQ(ierr);
-        ierr = VecGetArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
+        ierr = VecView(bed,viewer);
+        PISM_PETSC_CHK(ierr, "VecView");
+        ierr = VecGetArray2d(bed, Mx, My, 0, 0, &b);
+        PISM_PETSC_CHK(ierr, "VecGetArray2d");
         const double b0new = b[imid][jmid];
-        ierr = VecRestoreArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
+        ierr = VecRestoreArray2d(bed, Mx, My, 0, 0, &b);
+        PISM_PETSC_CHK(ierr, "VecRestoreArray2d");
         const double dbdt0 = (b0new - b0old) / (dtyears);
 
         ierr = PetscPrintf(PETSC_COMM_SELF,
@@ -237,11 +253,16 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(PETSC_COMM_SELF,"\ndone\n");
       PISM_PETSC_CHK(ierr, "PetscPrintf");
 
-      ierr = VecDestroy(&H); CHKERRQ(ierr);
-      ierr = VecDestroy(&bed); CHKERRQ(ierr);
-      ierr = VecDestroy(&Hstart); CHKERRQ(ierr);
-      ierr = VecDestroy(&bedstart); CHKERRQ(ierr);
-      ierr = VecDestroy(&uplift); CHKERRQ(ierr);
+      ierr = VecDestroy(&H);
+      PISM_PETSC_CHK(ierr, "VecDestroy");
+      ierr = VecDestroy(&bed);
+      PISM_PETSC_CHK(ierr, "VecDestroy");
+      ierr = VecDestroy(&Hstart);
+      PISM_PETSC_CHK(ierr, "VecDestroy");
+      ierr = VecDestroy(&bedstart);
+      PISM_PETSC_CHK(ierr, "VecDestroy");
+      ierr = VecDestroy(&uplift);
+      PISM_PETSC_CHK(ierr, "VecDestroy");
       ierr = PetscViewerDestroy(&viewer);
       PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
       ierr = DMDestroy(&da2); CHKERRQ(ierr);

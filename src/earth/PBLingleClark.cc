@@ -24,6 +24,7 @@
 #include "PISMConfig.hh"
 
 #include <stdexcept>
+#include "error_handling.hh"
 
 namespace pism {
 
@@ -71,11 +72,16 @@ PetscErrorCode PBLingleClark::allocate() {
 PetscErrorCode PBLingleClark::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&Hp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&bedp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&Hstartp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&bedstartp0); CHKERRQ(ierr);
-  ierr = VecDestroy(&upliftp0); CHKERRQ(ierr);
+  ierr = VecDestroy(&Hp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&bedp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&Hstartp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&bedstartp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
+  ierr = VecDestroy(&upliftp0);
+  PISM_PETSC_CHK(ierr, "VecDestroy");
 
   return 0;
 }

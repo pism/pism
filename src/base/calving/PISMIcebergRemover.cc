@@ -95,11 +95,13 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
 
     if (grid.rank == 0) {
       double *mask;
-      ierr = VecGetArray(m_mask_p0, &mask); CHKERRQ(ierr);
+      ierr = VecGetArray(m_mask_p0, &mask);
+      PISM_PETSC_CHK(ierr, "VecGetArray");
 
       cc(mask, grid.Mx, grid.My, true, mask_grounded_ice);
 
-      ierr = VecRestoreArray(m_mask_p0, &mask); CHKERRQ(ierr);
+      ierr = VecRestoreArray(m_mask_p0, &mask);
+      PISM_PETSC_CHK(ierr, "VecRestoreArray");
     }
 
     ierr = m_iceberg_mask.get_from_proc0(m_mask_p0); CHKERRQ(ierr);
@@ -159,7 +161,7 @@ PetscErrorCode IcebergRemover::allocate() {
 PetscErrorCode IcebergRemover::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&m_mask_p0); CHKERRQ(ierr);
+  ierr = VecDestroy(&m_mask_p0); CHKERRCONTINUE(ierr);
 
   return 0;
 }

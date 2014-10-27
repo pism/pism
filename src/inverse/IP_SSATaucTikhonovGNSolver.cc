@@ -24,11 +24,12 @@
 namespace pism {
 
 IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward,
-DesignVec &d0, StateVec &u_obs, double eta,
-IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional):
-m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
-m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
-m_target_misfit(0.)
+                                                       DesignVec &d0, StateVec &u_obs, double eta,
+                                                       IPInnerProductFunctional<DesignVec> &designFunctional,
+                                                       IPInnerProductFunctional<StateVec> &stateFunctional)
+  : m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
+    m_designFunctional(designFunctional), m_stateFunctional(stateFunctional),
+    m_target_misfit(0.0)
 {
   PetscErrorCode ierr;
   ierr = this->construct();
@@ -80,15 +81,27 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
   ierr = m_grad_state.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
   ierr = m_gradient.create(grid, "grad design", WITHOUT_GHOSTS); CHKERRQ(ierr);
 
-  ierr = KSPCreate(grid.com, &m_ksp); CHKERRQ(ierr);
-  ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_"); CHKERRQ(ierr);
+  ierr = KSPCreate(grid.com, &m_ksp);
+  PISM_PETSC_CHK(ierr, "KSPCreate");
+
+  ierr = KSPSetOptionsPrefix(m_ksp, "inv_gn_");
+  PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
+
   double ksp_rtol = 1e-5; // Soft tolerance
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
-  ierr = KSPSetType(m_ksp, KSPCG); CHKERRQ(ierr);
+  PISM_PETSC_CHK(ierr, "KSPSetTolerances");
+
+  ierr = KSPSetType(m_ksp, KSPCG);
+  PISM_PETSC_CHK(ierr, "KSPSetType");
+
   PC pc;
-  ierr = KSPGetPC(m_ksp, &pc); CHKERRQ(ierr);
+  ierr = KSPGetPC(m_ksp, &pc);
+  PISM_PETSC_CHK(ierr, "KSPGetPC");
+
   ierr = PCSetType(pc, PCNONE); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(m_ksp); CHKERRQ(ierr);  
+
+  ierr = KSPSetFromOptions(m_ksp);
+  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");  
 
   int nLocalNodes  = grid.xm*grid.ym;
   int nGlobalNodes = grid.Mx*grid.My;
@@ -115,7 +128,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::construct() {
 PetscErrorCode IP_SSATaucTikhonovGNSolver::destruct() {
   PetscErrorCode ierr;
   ierr = KSPDestroy(&m_ksp); CHKERRQ(ierr);
-  ierr = MatDestroy(&m_mat_GN);
+  ierr = MatDestroy(&m_mat_GN); CHKERRQ(ierr);
   return 0;
 }
 
@@ -152,7 +165,8 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   ierr = m_designFunctional.interior_product(m_x,tmp_gD); CHKERRQ(ierr);
   ierr = GNx.add(m_alpha,tmp_gD); CHKERRQ(ierr);
 
-  ierr = VecCopy(GNx.get_vec(), y); CHKERRQ(ierr);
+  ierr = VecCopy(GNx.get_vec(), y);
+  PISM_PETSC_CHK(ierr, "VecCopy");
 
   return 0;
 }
@@ -179,14 +193,18 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::solve_linearized(TerminationReason::P
   ierr = this->assemble_GN_rhs(m_GN_rhs); CHKERRQ(ierr);
 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #endif
-  ierr = KSPSolve(m_ksp,m_GN_rhs.get_vec(),m_hGlobal.get_vec()); CHKERRQ(ierr);
+  ierr = KSPSolve(m_ksp,m_GN_rhs.get_vec(),m_hGlobal.get_vec());
+  PISM_PETSC_CHK(ierr, "KSPSolve");
 
   KSPConvergedReason ksp_reason;
-  ierr = KSPGetConvergedReason(m_ksp,&ksp_reason); CHKERRQ(ierr);
+  ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
+  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
   
   ierr = m_h.copy_from(m_hGlobal); CHKERRQ(ierr);
 
@@ -233,13 +251,16 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::check_convergence(TerminationReason::
 
   ierr = m_gradient.norm(NORM_2,sumNorm); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",designNorm,stateNorm,sumNorm); CHKERRQ(ierr);
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale); CHKERRQ(ierr);
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"----------------------------------------------------------\n",
+                    designNorm,stateNorm,sumNorm); CHKERRQ(ierr);
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"IP_SSATaucTikhonovGNSolver Iteration %d: misfit %g; functional %g \n",
+                    m_iter,sqrt(m_val_state)*m_vel_scale,m_value*m_vel_scale*m_vel_scale); CHKERRQ(ierr);
   if (m_tikhonov_adaptive) {
     ierr = verbPrintf(2,PETSC_COMM_WORLD,"alpha %g; log(alpha) %g\n",m_alpha,m_logalpha); CHKERRQ(ierr);
   }
   double relsum = (sumNorm/PetscMax(designNorm,stateNorm));
-  ierr = verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",designNorm,stateNorm,sumNorm,relsum); CHKERRQ(ierr);
+  ierr = verbPrintf(2,PETSC_COMM_WORLD,"design norm %g stateNorm %g sum %g; relative difference %g\n",
+                    designNorm,stateNorm,sumNorm,relsum); CHKERRQ(ierr);
 
   // If we have an adaptive tikhonov parameter, check if we have met
   // this constraint first.
@@ -317,7 +338,7 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::linesearch(TerminationReason::Ptr &re
 
   ierr = m_tmp_D1Global.copy_from(m_h); CHKERRQ(ierr);
   ierr = VecDot(m_gradient.get_vec(),m_tmp_D1Global.get_vec(),&descent_derivative);
-
+  PISM_PETSC_CHK(ierr, "VecDot");
   if (descent_derivative >=0) {
     printf("descent derivative: %g\n",descent_derivative);
     reason.reset(new GenericTerminationReason(-1,"Not descent direction"));
@@ -426,15 +447,19 @@ PetscErrorCode IP_SSATaucTikhonovGNSolver::compute_dlogalpha(double *dlogalpha, 
 
   // Solve linear equation for dh/dalpha. 
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN,SAME_NONZERO_PATTERN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
-  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN); CHKERRQ(ierr);
+  ierr = KSPSetOperators(m_ksp,m_mat_GN,m_mat_GN);
+  PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #endif
-  ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec()); CHKERRQ(ierr);
+  ierr = KSPSolve(m_ksp,m_dalpha_rhs.get_vec(),m_dh_dalphaGlobal.get_vec());
+  PISM_PETSC_CHK(ierr, "KSPSolve");
   ierr = m_dh_dalpha.copy_from(m_dh_dalphaGlobal); CHKERRQ(ierr);
 
   KSPConvergedReason ksp_reason;
-  ierr = KSPGetConvergedReason(m_ksp,&ksp_reason); CHKERRQ(ierr);
+  ierr = KSPGetConvergedReason(m_ksp,&ksp_reason);
+  PISM_PETSC_CHK(ierr, "KSPGetConvergedReason");
   if (ksp_reason<0) {
     reason.reset(new KSPTerminationReason(ksp_reason));
     return 0;
