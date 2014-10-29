@@ -38,6 +38,8 @@ PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
   option_prefix = "-ocean_delta_mass_flux";
   offset_name   = "delta_mass_flux";
 
+  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
+
   offset->set_units("m s-1", "");
   offset->set_dimension_units(grid.time->units_string(), "");
   offset->set_attr("long_name", "ice-shelf-base mass flux offsets, ice equivalent thickness per time");
@@ -54,8 +56,6 @@ PetscErrorCode PO_delta_SMB::allocate_PO_delta_SMB() {
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");
   shelfbtemp.set_units("Kelvin");
-
-  offset = new Timeseries(&grid, offset_name, config.get_string("time_dimension_name"));
 
   return 0;
 }
