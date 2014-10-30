@@ -257,7 +257,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &
   list.add(u);
 
   IceModelVec2S *dzeta_local;
-  if (dzeta.has_ghosts()) {
+  if (dzeta.get_stencil_width() > 0) {
     dzeta_local = &dzeta;
   } else {
     ierr = m_dzeta_local.copy_from(dzeta); CHKERRQ(ierr);
@@ -436,7 +436,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceMo
   list.add(u);
 
   IceModelVec2V *du_local;
-  if (du.has_ghosts()) {
+  if (du.get_stencil_width() > 0) {
     du_local = &du;
   } else {
     ierr = m_du_local.copy_from(du); CHKERRQ(ierr);
@@ -667,7 +667,7 @@ PetscErrorCode IP_SSAHardavForwardProblem::apply_linearization_transpose(IceMode
   ierr = this->apply_jacobian_design_transpose(m_velocity, m_du_global, dzeta); CHKERRQ(ierr);
   ierr = dzeta.scale(-1); CHKERRQ(ierr);
 
-  if (dzeta.has_ghosts()) {
+  if (dzeta.get_stencil_width() > 0) {
     ierr = dzeta.update_ghosts();
   }
 

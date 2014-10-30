@@ -99,7 +99,9 @@ bool IceModelVec::was_created() const {
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
 unsigned int IceModelVec::get_ndims() const {
-  if (zlevels.size() > 1) return 3;
+  if (zlevels.size() > 1) {
+    return 3;
+  }
 
   return 2;
 }
@@ -407,6 +409,8 @@ PetscErrorCode  IceModelVec::copy_from(const IceModelVec &source) {
   return 0;
 }
 
+//! @brief Get the stencil width of the current IceModelVec. Returns 0
+//! if ghosts are not available.
 unsigned int IceModelVec::get_stencil_width() const {
   if (m_has_ghosts) {
     return m_da_stencil_width;
@@ -854,13 +858,13 @@ void compute_params(const IceModelVec* const x, const IceModelVec* const y,
 		    const IceModelVec* const z, int &ghosts, bool &scatter) {
 
   // We have 2^3=8 cases here (x,y,z having or not having ghosts).
-  if (z->has_ghosts() == false) {
+  if (z->get_stencil_width() == 0) {
     // z has no ghosts; we can update everything locally
     // (This covers 4 cases.)
     ghosts = 0;
     scatter = false;
-  } else if (x->has_ghosts() == false ||
-             y->has_ghosts() == false) {
+  } else if (x->get_stencil_width() == 0 ||
+             y->get_stencil_width() == 0) {
     // z has ghosts, but at least one of x and y does not. we have to scatter
     // ghosts.
     // (This covers 3 cases.)

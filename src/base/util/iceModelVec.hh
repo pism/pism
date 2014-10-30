@@ -172,7 +172,6 @@ public:
   unsigned int get_stencil_width() const;
   int nlevels() const { return m_n_levels; }
   std::vector<double>  get_levels() const { return zlevels; }
-  bool has_ghosts() const { return m_has_ghosts; }
 
   virtual PetscErrorCode  range(double &min, double &max) const;
   virtual PetscErrorCode  norm(int n, double &out) const;
