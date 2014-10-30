@@ -587,6 +587,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   PetscErrorCode ierr;
   bool flag;
 
+  ierr = config.keyword_from_option("periodicity", "grid_periodicity", "none,x,y,xy"); CHKERRQ(ierr);
+
   // Energy modeling
   ierr = config.flag_from_option("varc", "use_linear_in_temperature_heat_capacity");  CHKERRQ(ierr);
   ierr = config.flag_from_option("vark",

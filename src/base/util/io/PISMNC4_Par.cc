@@ -34,7 +34,7 @@ int NC4_Par::integer_open_mode(IO_Mode input) const {
   }
 }
 
-int NC4_Par::open(const std::string &fname, IO_Mode mode) {
+int NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -43,14 +43,14 @@ int NC4_Par::open(const std::string &fname, IO_Mode mode) {
   int nc_mode = integer_open_mode(mode);
   stat = nc_open_par(m_filename.c_str(),
                      nc_mode | NC_MPIIO,
-                     com, info, &ncid);
+                     m_com, info, &m_file_id);
 
-  define_mode = false;
+  m_define_mode = false;
 
   return stat;
 }
 
-int NC4_Par::create(const std::string &fname) {
+int NC4_Par::create_impl(const std::string &fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -58,8 +58,8 @@ int NC4_Par::create(const std::string &fname) {
 
   stat = nc_create_par(m_filename.c_str(),
                        NC_NETCDF4 | NC_MPIIO,
-                       com, info, &ncid);
-  define_mode = true;
+                       m_com, info, &m_file_id);
+  m_define_mode = true;
 
   return stat;
 }
@@ -72,11 +72,11 @@ int NC4_Par::set_access_mode(int varid, bool mapped) const {
     // better to use collective mode, but I/O performance is ruined by
     // "mapping" anyway.
 
-    stat = nc_var_par_access(ncid, varid, NC_INDEPENDENT); check(stat);
+    stat = nc_var_par_access(m_file_id, varid, NC_INDEPENDENT); check(stat);
   } else {
     // Use collective parallel access mode because it is faster (and because it
     // works in this case).
-    stat = nc_var_par_access(ncid, varid, NC_COLLECTIVE); check(stat);
+    stat = nc_var_par_access(m_file_id, varid, NC_COLLECTIVE); check(stat);
   }
 
   return stat;

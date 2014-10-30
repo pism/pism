@@ -180,7 +180,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
-    z_spacing_set, periodicity_set;
+    z_spacing_set;
   double x_scale = grid.Lx / 1000.0,
     y_scale = grid.Ly / 1000.0,
     z_scale = grid.Lz;
@@ -236,25 +236,6 @@ PetscErrorCode IceModel::set_grid_from_options() {
     grid.ice_vertical_spacing = QUADRATIC;
   } else {
     grid.ice_vertical_spacing = EQUAL;
-  }
-
-  // Determine grid periodicity:
-  std::set<std::string> periodicity_choices;
-  periodicity_choices.insert("none");
-  periodicity_choices.insert("x");
-  periodicity_choices.insert("y");
-  periodicity_choices.insert("xy");
-  ierr = OptionsList(grid.com, "-periodicity", "Horizontal grid periodicity.",
-                         periodicity_choices, "none", keyword, periodicity_set); CHKERRQ(ierr);
-  if (periodicity_set) {
-    if (keyword == "none")
-      grid.periodicity = NONE;
-    else if (keyword == "x")
-      grid.periodicity = X_PERIODIC;
-    else if (keyword == "y")
-      grid.periodicity = Y_PERIODIC;
-    else if (keyword == "xy")
-      grid.periodicity = XY_PERIODIC;
   }
 
   // Use the information obtained above:

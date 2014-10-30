@@ -21,16 +21,6 @@
 
 #include "iceModelVec.hh"
 
-#ifdef PISM_USE_TR1
-#include <tr1/memory>
-using std::tr1::shared_ptr;
-using std::tr1::weak_ptr;
-#else
-#include <memory>
-using std::shared_ptr;
-using std::weak_ptr;
-#endif
-
 namespace pism {
 
 //! A class for storing and accessing 2D time-series (for climate forcing)

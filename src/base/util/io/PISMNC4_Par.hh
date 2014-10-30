@@ -29,13 +29,12 @@ public:
   NC4_Par(MPI_Comm c)
     : NC4File(c, 0) {}
   virtual ~NC4_Par() {}
-
-  // open/create/close
-  virtual int open(const std::string &filename, IO_Mode mode);
-
-  virtual int create(const std::string &filename);
-
 protected:
+  // open/create/close
+  virtual int open_impl(const std::string &filename, IO_Mode mode);
+
+  virtual int create_impl(const std::string &filename);
+
   virtual int integer_open_mode(IO_Mode input) const;
   virtual int set_access_mode(int varid, bool mapped) const;
 };
