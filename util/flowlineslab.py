@@ -15,7 +15,7 @@ Lx         = 1000e3                     # 1000 km
 Mx         = 501
 topg_slope = -1e-4
 thk_0      = 1e3                        # meters
-climatic_mass_balance_0 = 0             # m / year
+climatic_mass_balance_0 = 0             # kg m-2 s-1
 ice_surface_temp_0      = -10           # Celsius
 
 nc = netCDF4.Dataset("slab.nc", 'w')
@@ -34,7 +34,7 @@ thk[:] =  maximum(minimum(5e3 - abs(x[:])*0.01, thk_0),0)
 thk.units = "m"
 
 climatic_mass_balance[:] = climatic_mass_balance_0;
-climatic_mass_balance.units = "m / year"
+climatic_mass_balance.units = "kg m-2 s-1"
 ice_surface_temp[:] = ice_surface_temp_0;
 ice_surface_temp.units = "Celsius"
 
