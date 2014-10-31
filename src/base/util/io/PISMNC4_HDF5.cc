@@ -482,7 +482,7 @@ int NC4_HDF5::open_impl(const std::string &filename, IO_Mode mode) {
 // Creates a file for writing.
 int NC4_HDF5::create_impl(const std::string &filename) {
 
-  MPI_Info info = NULL;
+  MPI_Info info = (MPI_Info)NULL;
   MPI_Info_create(&info);
 
   hid_t plist_id = create_file_access_plist(m_com, info, m_xm, m_ym); check(plist_id);
