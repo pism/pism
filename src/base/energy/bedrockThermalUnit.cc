@@ -26,75 +26,6 @@
 
 namespace pism {
 
-bool IceModelVec3BTU::good_init() {
-  return ((m_n_levels >= 2) && (Lbz > 0.0) && (m_v != NULL));
-}
-
-
-PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_short_name, bool local,
-                                      int Mbz, double myLbz, int stencil_width) {
-  PetscErrorCode ierr;
-  grid = &mygrid;
-
-  if (m_v != NULL) {
-    SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated\n",m_name.c_str());
-  }
-
-  m_name = my_short_name;
-
-  m_n_levels = Mbz;
-  Lbz = myLbz;
-  zlevels.resize(m_n_levels);
-  double dz = Lbz / (Mbz - 1);
-  for (unsigned int i = 0; i < m_n_levels; ++i)
-    zlevels[i] = -Lbz + i * dz;
-  zlevels.back() = 0;
-
-  m_da_stencil_width = stencil_width;
-  ierr = grid->get_dm(this->m_n_levels, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
-
-  m_has_ghosts = local;
-  if (local) {
-    ierr = DMCreateLocalVector(*m_da, &m_v); CHKERRQ(ierr);
-  } else {
-    ierr = DMCreateGlobalVector(*m_da, &m_v); CHKERRQ(ierr);
-  }
-
-  m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));
-  m_metadata[0].init_3d(m_name, mygrid, zlevels);
-
-  NCVariable &z = m_metadata[0].get_z();
-  z.set_name("zb");
-  z.set_string("axis", "Z");
-  z.set_string("long_name", "Z-coordinate in bedrock");
-  z.set_string("positive", "up");
-  ierr = z.set_units("m"); CHKERRQ(ierr);
-  // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
-
-  if (!good_init()) {
-    SETERRQ1(grid->com, 1,"create() says IceModelVec3BTU with name %s was not properly created\n",
-             m_name.c_str());  }
-  return 0;
-}
-
-PetscErrorCode IceModelVec3BTU::get_layer_depth(double &depth) {
-  if (!good_init()) {
-    SETERRQ1(grid->com, 1,"get_layer_depth() says IceModelVec3BTU with name %s was not properly created\n",
-             m_name.c_str());
-  }
-  depth = Lbz;
-  return 0;
-}
-
-PetscErrorCode IceModelVec3BTU::get_spacing(double &dzb) {
-  if (!good_init()) {
-    SETERRQ1(grid->com, 1,"get_spacing() says IceModelVec3BTU with name %s was not properly created\n",
-             m_name.c_str());
-  }
-  dzb = Lbz / (m_n_levels - 1);
-  return 0;
-}
-
 BedThermalUnit::BedThermalUnit(IceGrid &g, const Config &conf)
     : Component_TS(g, conf) {
   bedtoptemp = NULL;
@@ -182,7 +113,20 @@ PetscErrorCode BedThermalUnit::allocate() {
             " and more than one layers\n"); }
 
   if (Mbz > 1) {
-    ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
+    std::map<std::string, std::string> attrs;
+    attrs["units"] = "m";
+    attrs["long_name"] = "Z-coordinate in bedrock";
+    attrs["axis"] = "Z";
+    attrs["positive"] = "up";
+
+    std::vector<double> z(Mbz);
+    double dz = Lbz / (Mbz - 1);
+    for (unsigned int i = 0; i < Mbz; ++i) {
+      z[i] = -Lbz + i * dz;
+    }
+    z.back() = 0;
+    ierr = temp.create(grid, "litho_temp", "zb", z, attrs); CHKERRQ(ierr);
+
     ierr = temp.set_attrs("model_state",
                           "lithosphere (bedrock) temperature, in BedThermalUnit",
                           "K", ""); CHKERRQ(ierr);
@@ -260,9 +204,7 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
  */
 double BedThermalUnit::get_vertical_spacing() {
   if (temp.was_created() == true) {
-    double dzb = 0.0;
-    temp.get_spacing(dzb);
-    return dzb;
+    return Lbz / (Mbz - 1.0);
   } else {
     return 0.0;
   }
@@ -315,8 +257,7 @@ The above describes the general case where Mbz > 1.
 PetscErrorCode BedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
 
   if (temp.was_created()) {
-    double dzb;
-    temp.get_spacing(dzb);
+    double dzb = this->get_vertical_spacing();
     my_dt = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
     restrict = true;
   } else {
@@ -386,8 +327,7 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
   assert(bedtoptemp != NULL);
   assert(ghf != NULL);
 
-  double dzb;
-  temp.get_spacing(dzb);
+  double dzb = this->get_vertical_spacing();
   const int  k0  = Mbz - 1;          // Tb[k0] = ice/bed interface temp, at z=0
 
 #if (PISM_DEBUG==1)
@@ -446,8 +386,7 @@ PetscErrorCode BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result)
     return 0;
   }
 
-  double dzb;
-  temp.get_spacing(dzb);
+  double dzb = this->get_vertical_spacing();
   const int  k0  = Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
   double *Tb;
@@ -481,8 +420,7 @@ PetscErrorCode BedThermalUnit::bootstrap() {
   CHKERRQ(ierr);
 
   double* Tb;
-  double dzb;
-  temp.get_spacing(dzb);
+  double dzb = this->get_vertical_spacing();
   const int k0 = Mbz-1; // Tb[k0] = ice/bedrock interface temp
 
   IceModelVec::AccessList list;
