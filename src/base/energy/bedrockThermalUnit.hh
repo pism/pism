@@ -119,8 +119,8 @@ protected:
     bed_k,        //!< bedrock thermal conductivity
     bed_D;        //!< diffusivity of the heat flow within the bedrock layer
   
-  unsigned int Mbz;             //!< number of vertical levels within the bedrock
-  double Lbz;                   //!< thickness of the bedrock layer, in meters
+  unsigned int m_Mbz;             //!< number of vertical levels within the bedrock
+  double m_Lbz;                   //!< thickness of the bedrock layer, in meters
   std::string m_input_file;             //!< non-empty if "-i" was set
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached
