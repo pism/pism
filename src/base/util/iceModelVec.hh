@@ -330,8 +330,8 @@ public:
   virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
-  PetscErrorCode get_component(unsigned int n, Vec result);
-  PetscErrorCode set_component(unsigned int n, Vec source);
+  PetscErrorCode get_component(unsigned int n, DM da_result, Vec result) const;
+  PetscErrorCode set_component(unsigned int n, DM da_source,Vec source);
 };
 
 /** A class for storing and accessing scalar 2D fields.
