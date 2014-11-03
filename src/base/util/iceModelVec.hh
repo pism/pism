@@ -165,7 +165,7 @@ public:
   unsigned int get_ndims();
   //! \brief Returns the number of degrees of freedom per grid point.
   unsigned int get_dof() { return m_dof; }
-  unsigned int get_stencil_width() { return m_da_stencil_width; }
+  unsigned int get_stencil_width() const { return m_da_stencil_width; }
   int nlevels() { return m_n_levels; }
   std::vector<double>  get_levels() { return zlevels; }
   bool has_ghosts() { return m_has_ghosts; }
@@ -182,6 +182,7 @@ public:
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual Vec get_vec();
+  DM get_dm() const;
   virtual PetscErrorCode  has_nan();
   virtual PetscErrorCode  set_name(std::string name, int component = 0);
   virtual std::string name() const;
@@ -224,7 +225,7 @@ protected:
   std::vector<double> zlevels;
   unsigned int m_n_levels;                 //!< number of vertical levels
 
-  Vec  v;                       //!< Internal storage
+  Vec  m_v;                       //!< Internal storage
   std::string m_name;
 
   //! stores metadata (NetCDF variable attributes)
@@ -338,7 +339,7 @@ public:
   using IceModelVec2::create;
   virtual PetscErrorCode  create(IceGrid &my_grid, std::string my_name,
                                  IceModelVecKind ghostedp, int width = 1);
-  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
+  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) const ;
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   using IceModelVec::copy_to;
   using IceModelVec::copy_from;

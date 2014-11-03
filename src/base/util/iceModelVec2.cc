@@ -34,7 +34,7 @@
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
 PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, std::string my_name, IceModelVecKind ghostedp, int width) {
-  assert(v == NULL);
+  assert(m_v == NULL);
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, ghostedp, width, m_dof); CHKERRQ(ierr);
   return 0;
 }
@@ -48,54 +48,67 @@ PetscErrorCode IceModelVec2S::get_array(double** &a) {
 
 //! Puts a local IceModelVec2S on processor 0.
 /*!
- <ul>
- <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
- <li> g2 is a preallocated temporary global vector,
- <li> g2natural is a preallocated temporary global vector with natural ordering.
- </ul>
+ - onp0 and ctx should be created by calling VecScatterCreateToZero or
+   be identical to one,
+ - g2 is a preallocated temporary global vector (not used and can be
+   NULL if this IceModelVec has no ghosts)
+ - g2natural is a preallocated temporary global vector with natural
+   ordering.
 */
-PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter scatter, Vec global_work,
+                                           Vec natural_work) const {
   PetscErrorCode ierr;
-  assert(v != NULL);
+  assert(m_v != NULL);
   assert(m_has_ghosts == true);
 
   DM da2;
   ierr = grid->get_dm(1, this->get_stencil_width(), da2); CHKERRQ(ierr);
 
-  ierr = DMLocalToGlobalBegin(m_da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
-  ierr =   DMLocalToGlobalEnd(m_da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
-  ierr = DMDAGlobalToNaturalBegin(da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
-  ierr =   DMDAGlobalToNaturalEnd(da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
+  Vec global = m_has_ghosts ? global_work : m_v;
 
-  ierr = VecScatterBegin(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(ctx, g2natural, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  if (m_has_ghosts) {
+    ierr = this->copy_to_vec(global); CHKERRQ(ierr);
+  }
+
+  ierr = DMDAGlobalToNaturalBegin(da2, global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
+  ierr =   DMDAGlobalToNaturalEnd(da2, global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
+
+  ierr = VecScatterBegin(scatter, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(scatter, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Gets a local IceModelVec2 from processor 0.
 /*!
- <ul>
- <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
- <li> g2 is a preallocated temporary global vector,
- <li> g2natural is a preallocated temporary global vector with natural ordering.
- </ul>
+ - onp0 and ctx should be created by calling VecScatterCreateToZero or
+   be identical to one,
+ - g2 is a preallocated temporary global vector (not used if this
+   IceModelVec has no ghosts)
+ - g2natural is a preallocated temporary global vector with natural
+   ordering.
 */
-PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter scatter, Vec global_work, Vec natural_work) {
   PetscErrorCode ierr;
-  assert(v != NULL);
+  assert(m_v != NULL);
   assert(m_has_ghosts == true);
 
   DM da2;
   ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
 
-  ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterBegin(scatter, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(scatter, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = DMDANaturalToGlobalBegin(da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DMDANaturalToGlobalEnd(da2, g2natural, INSERT_VALUES, g2); CHKERRQ(ierr);
-  ierr =   DMGlobalToLocalBegin(m_da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
-  ierr =     DMGlobalToLocalEnd(m_da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
+  Vec global = m_has_ghosts ? global_work : m_v;
+
+  ierr = DMDANaturalToGlobalBegin(da2, natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
+  ierr =   DMDANaturalToGlobalEnd(da2, natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
+
+  if (m_has_ghosts) {
+    ierr = this->copy_from_vec(global); CHKERRQ(ierr);
+  }
+
+  inc_state_counter();          // mark as modified
 
   return 0;
 }
@@ -145,7 +158,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, double fill) {
 PetscErrorCode IceModelVec2::write(const PIO &nc, PISM_IO_Type nctype) {
   PetscErrorCode ierr;
 
-  assert(v != NULL);
+  assert(m_v != NULL);
 
   Vec tmp;                      // a temporary one-component vector,
                                 // distributed across processors the same way v is
@@ -188,7 +201,7 @@ PetscErrorCode IceModelVec2::read(const PIO &nc, const unsigned int time) {
     ierr = PetscPrintf(grid->com, "  Reading %s...\n", m_name.c_str()); CHKERRQ(ierr);
   }
 
-  assert(v != NULL);
+  assert(m_v != NULL);
 
   DM da2;
   ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
@@ -326,7 +339,7 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   if (m_has_ghosts) {
     ierr = copy_to(tmp); CHKERRQ(ierr);
   } else {
-    ierr = VecCopy(v, tmp); CHKERRQ(ierr);
+    ierr = VecCopy(m_v, tmp); CHKERRQ(ierr);
   }
 
   ierr = convert_vec(tmp,
@@ -549,7 +562,7 @@ PetscErrorCode IceModelVec2::get_component(unsigned int N, Vec result) {
   ierr = DMDAVecGetArray(da2, result, &tmp_res); CHKERRQ(ierr);
   double **res = static_cast<double**>(tmp_res);
 
-  ierr = DMDAVecGetArrayDOF(m_da, v, &tmp_v); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(m_da, m_v, &tmp_v); CHKERRQ(ierr);
   double ***a_dof = static_cast<double***>(tmp_v);
 
   for (int i = grid->xs; i < grid->xs+grid->xm; ++i)
@@ -557,7 +570,7 @@ PetscErrorCode IceModelVec2::get_component(unsigned int N, Vec result) {
       res[i][j] = a_dof[i][j][N];
 
   ierr = DMDAVecRestoreArray(da2, result, &tmp_res); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArrayDOF(m_da, v, &tmp_v); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(m_da, m_v, &tmp_v); CHKERRQ(ierr);
 
   return 0;
 }
@@ -580,7 +593,7 @@ PetscErrorCode IceModelVec2::set_component(unsigned int N, Vec source) {
   ierr = DMDAVecGetArray(da2, source, &tmp_src); CHKERRQ(ierr);
   double **src = static_cast<double**>(tmp_src);
 
-  ierr = DMDAVecGetArrayDOF(m_da, v, &tmp_v); CHKERRQ(ierr);
+  ierr = DMDAVecGetArrayDOF(m_da, m_v, &tmp_v); CHKERRQ(ierr);
   double ***a_dof = static_cast<double***>(tmp_v);
 
   for (int i = grid->xs; i < grid->xs+grid->xm; ++i)
@@ -588,7 +601,7 @@ PetscErrorCode IceModelVec2::set_component(unsigned int N, Vec source) {
       a_dof[i][j][N] = src[i][j];
 
   ierr = DMDAVecRestoreArray(da2, source, &tmp_src); CHKERRQ(ierr);
-  ierr = DMDAVecRestoreArrayDOF(m_da, v, &tmp_v); CHKERRQ(ierr);
+  ierr = DMDAVecRestoreArrayDOF(m_da, m_v, &tmp_v); CHKERRQ(ierr);
 
   return 0;
 }
@@ -596,7 +609,7 @@ PetscErrorCode IceModelVec2::set_component(unsigned int N, Vec source) {
 PetscErrorCode IceModelVec2::get_component(unsigned int n, IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = IceModelVec2::get_component(n, result.v); CHKERRQ(ierr);
+  ierr = IceModelVec2::get_component(n, result.m_v); CHKERRQ(ierr);
 
   return 0;
 }
@@ -604,7 +617,7 @@ PetscErrorCode IceModelVec2::get_component(unsigned int n, IceModelVec2S &result
 PetscErrorCode IceModelVec2::set_component(unsigned int n, IceModelVec2S &source) {
   PetscErrorCode ierr;
 
-  ierr = IceModelVec2::set_component(n, source.v); CHKERRQ(ierr);
+  ierr = IceModelVec2::set_component(n, source.m_v); CHKERRQ(ierr);
 
   return 0;
 }
@@ -613,7 +626,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, std::string my_name, IceM
                                      unsigned int stencil_width, int my_dof) {
   PetscErrorCode ierr;
 
-  assert(v == NULL);
+  assert(m_v == NULL);
 
   m_dof  = my_dof;
   grid = &my_grid;
@@ -628,9 +641,9 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, std::string my_name, IceM
   ierr = grid->get_dm(this->m_dof, this->m_da_stencil_width, m_da); CHKERRQ(ierr);
 
   if (ghostedp) {
-    ierr = DMCreateLocalVector(m_da, &v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(m_da, &m_v); CHKERRQ(ierr);
   } else {
-    ierr = DMCreateGlobalVector(m_da, &v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(m_da, &m_v); CHKERRQ(ierr);
   }
 
   m_has_ghosts = (ghostedp == WITH_GHOSTS);
