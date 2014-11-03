@@ -31,7 +31,7 @@
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
 #include "bedrockThermalUnit.hh"
-#include "IceModelVec3Custom.hh"
+#include "iceModelVec3Custom.hh"
 
 namespace pism {
 
