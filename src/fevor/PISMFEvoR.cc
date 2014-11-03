@@ -175,8 +175,6 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
 
       std::vector<double> bulkEdot(9, 0.0);
 
-      unsigned int nMigRe_iso = 0,
-        nPoly_iso  = 0;
       std::vector<double> bulkEdot_iso(9, 0.0);
 
       // interpolate these values from PISM
@@ -217,7 +215,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
 
       d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe[i] , nPoly[i] , bulkEdot);
-      d_iso.stepInTime(T, stress, m_t, m_dt, nMigRe_iso, nPoly_iso, bulkEdot_iso);
+      d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
 
       const double M = FEvoR::tensorMagnitude(bulkEdot),
         M_iso = FEvoR::tensorMagnitude(bulkEdot_iso);
@@ -231,8 +229,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       }
 
       // some bounds for the enhancement factor
-      if (p_e[i] < 1.0) {
-        p_e[i] = 1.0;
+      if (p_e[i] < 0.4) {
+        p_e[i] = 0.4;
         // Enhance, not diminish.
       } else if (p_e[i] > 10.0) {
         p_e[i] = 10.0;
