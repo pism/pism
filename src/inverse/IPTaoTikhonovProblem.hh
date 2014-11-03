@@ -379,7 +379,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   PetscErrorCode ierr;
 
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
-  ierr = m_d.copy_from(x); CHKERRQ(ierr);
+  ierr = m_d.copy_from_vec(x); CHKERRQ(ierr);
 
   TerminationReason::Ptr reason;
   ierr = m_forward.linearize_at(m_d, reason); CHKERRQ(ierr);
@@ -408,7 +408,7 @@ template<class ForwardProblem> PetscErrorCode IPTaoTikhonovProblem<ForwardProble
   ierr = m_grad.scale(1./m_eta); CHKERRQ(ierr);    
   ierr = m_grad.add(1,m_grad_state); CHKERRQ(ierr);
 
-  ierr = m_grad.copy_to(gradient); CHKERRQ(ierr);      
+  ierr = m_grad.copy_to_vec(gradient); CHKERRQ(ierr);      
 
   double valDesign, valState;
   ierr = m_designFunctional.valueAt(m_d_diff,&valDesign); CHKERRQ(ierr);

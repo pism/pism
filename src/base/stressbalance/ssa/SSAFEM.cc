@@ -120,7 +120,7 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears SSAX.
 
-  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to_vec(SSAX); CHKERRQ(ierr);
 
   // Store coefficient data at the quadrature points.
   ierr = cacheQuadPtValues(); CHKERRQ(ierr);
@@ -234,7 +234,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason)
   }
 
   // Extract the solution back from SSAX to velocity and communicate.
-  ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_from_vec(SSAX); CHKERRQ(ierr);
   ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL,"-ssa_view_solution",&flg);CHKERRQ(ierr);

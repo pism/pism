@@ -46,66 +46,127 @@ PetscErrorCode IceModelVec2S::get_array(double** &a) {
   return 0;
 }
 
+/*! Allocate a copy on processor zero and the scatter needed to move data.
+ *
+ * The caller is responsible for de-allocating result by calling VecDestroy.
+ */
+PetscErrorCode IceModelVec2S::allocate_proc0_copy(Vec &result) const {
+  PetscErrorCode ierr;
+  Vec v_proc0 = NULL;
+
+  ierr = PetscObjectQuery((PetscObject)m_da, "v_proc0", (PetscObject*)&v_proc0); CHKERRQ(ierr);
+  if (v_proc0 == NULL) {
+
+    Vec natural_work = NULL;
+    // create a work vector with natural ordering:
+    ierr = DMDACreateNaturalVector(m_da, &natural_work); CHKERRQ(ierr);
+    // this increments the reference counter of natural_work
+    ierr = PetscObjectCompose((PetscObject)m_da, "natural_work",
+                              (PetscObject)natural_work); CHKERRQ(ierr);
+
+    // initialize the scatter to processor 0 and create storage on processor 0
+    VecScatter scatter_to_zero = NULL;
+    ierr = VecScatterCreateToZero(natural_work, &scatter_to_zero, &v_proc0); CHKERRQ(ierr);
+
+    // decrement the reference counter; will be destroyed once m_da is destroyed
+    ierr = VecDestroy(&natural_work); CHKERRQ(ierr);
+
+    // this increments the reference counter of scatter_to_zero
+    ierr = PetscObjectCompose((PetscObject)m_da, "scatter_to_zero",
+                              (PetscObject)scatter_to_zero); CHKERRQ(ierr);
+    // decrement the reference counter; will be destroyed once m_da is destroyed
+    ierr = VecScatterDestroy(&scatter_to_zero); CHKERRQ(ierr);
+
+    // this increments the reference counter of v_proc0
+    ierr = PetscObjectCompose((PetscObject)m_da, "v_proc0",
+                              (PetscObject)v_proc0); CHKERRQ(ierr);
+
+    // We DO NOT call VecDestroy(v_proc0): the caller is expected to call VecDestroy
+    result = v_proc0;
+  } else {
+    ierr = VecDuplicate(v_proc0, &result); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 //! Puts a local IceModelVec2S on processor 0.
-/*!
- - onp0 and ctx should be created by calling VecScatterCreateToZero or
-   be identical to one,
- - g2 is a preallocated temporary global vector (not used and can be
-   NULL if this IceModelVec has no ghosts)
- - g2natural is a preallocated temporary global vector with natural
-   ordering.
-*/
-PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter scatter, Vec global_work,
-                                           Vec natural_work) const {
+PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0) const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
   assert(m_has_ghosts == true);
 
-  DM da2;
-  ierr = grid->get_dm(1, this->get_stencil_width(), da2); CHKERRQ(ierr);
+  VecScatter scatter_to_zero = NULL;
+  Vec natural_work = NULL;
+  ierr = PetscObjectQuery((PetscObject)m_da, "scatter_to_zero",
+                          (PetscObject*)&scatter_to_zero); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)m_da, "natural_work",
+                          (PetscObject*)&natural_work); CHKERRQ(ierr);
 
-  Vec global = m_has_ghosts ? global_work : m_v;
-
-  if (m_has_ghosts) {
-    ierr = this->copy_to_vec(global); CHKERRQ(ierr);
+  if (natural_work == NULL || scatter_to_zero == NULL) {
+    SETERRQ(grid->com, 1, "call allocate_proc0_copy() before calling put_on_proc0");
   }
 
-  ierr = DMDAGlobalToNaturalBegin(da2, global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
-  ierr =   DMDAGlobalToNaturalEnd(da2, global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
+  Vec global = NULL;
 
-  ierr = VecScatterBegin(scatter, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(scatter, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  if (m_has_ghosts) {
+    ierr = DMGetGlobalVector(m_da, &global); CHKERRQ(ierr);
+    ierr = this->copy_to_vec(global); CHKERRQ(ierr);
+  } else {
+    global = m_v;
+  }
+
+  ierr = DMDAGlobalToNaturalBegin(m_da, global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
+  ierr =   DMDAGlobalToNaturalEnd(m_da, global, INSERT_VALUES, natural_work); CHKERRQ(ierr);
+
+  if (m_has_ghosts) {
+    ierr = DMRestoreGlobalVector(m_da, &global); CHKERRQ(ierr);
+  }
+
+  ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
+                         INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(scatter_to_zero, natural_work, onp0,
+                         INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Gets a local IceModelVec2 from processor 0.
-/*!
- - onp0 and ctx should be created by calling VecScatterCreateToZero or
-   be identical to one,
- - g2 is a preallocated temporary global vector (not used if this
-   IceModelVec has no ghosts)
- - g2natural is a preallocated temporary global vector with natural
-   ordering.
-*/
-PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter scatter, Vec global_work, Vec natural_work) {
+PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0) {
   PetscErrorCode ierr;
   assert(m_v != NULL);
   assert(m_has_ghosts == true);
 
-  DM da2;
-  ierr = grid->get_dm(1, grid->max_stencil_width, da2); CHKERRQ(ierr);
+  VecScatter scatter_to_zero = NULL;
+  Vec natural_work = NULL;
+  ierr = PetscObjectQuery((PetscObject)m_da, "scatter_to_zero",
+                          (PetscObject*)&scatter_to_zero); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)m_da, "natural_work",
+                          (PetscObject*)&natural_work); CHKERRQ(ierr);
 
-  ierr = VecScatterBegin(scatter, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr =   VecScatterEnd(scatter, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  if (natural_work == NULL || scatter_to_zero == NULL) {
+    SETERRQ(grid->com, 1, "call allocate_proc0_copy() before calling get_from_proc0");
+  }
 
-  Vec global = m_has_ghosts ? global_work : m_v;
+  ierr = VecScatterBegin(scatter_to_zero, onp0, natural_work,
+                         INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr =   VecScatterEnd(scatter_to_zero, onp0, natural_work,
+                         INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
 
-  ierr = DMDANaturalToGlobalBegin(da2, natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
-  ierr =   DMDANaturalToGlobalEnd(da2, natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
+  Vec global = NULL;
+
+  if (m_has_ghosts) {
+    ierr = DMGetGlobalVector(m_da, &global); CHKERRQ(ierr);
+  } else {
+    global = m_v;
+  }
+
+  ierr = DMDANaturalToGlobalBegin(m_da, natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
+  ierr =   DMDANaturalToGlobalEnd(m_da, natural_work, INSERT_VALUES, global); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
     ierr = this->copy_from_vec(global); CHKERRQ(ierr);
+    ierr = DMRestoreGlobalVector(m_da, &global); CHKERRQ(ierr);
   }
 
   inc_state_counter();          // mark as modified
@@ -337,7 +398,7 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   ierr = DMGetGlobalVector(da2, &tmp); CHKERRQ(ierr);
 
   if (m_has_ghosts) {
-    ierr = copy_to(tmp); CHKERRQ(ierr);
+    ierr = copy_to_vec(tmp); CHKERRQ(ierr);
   } else {
     ierr = VecCopy(m_v, tmp); CHKERRQ(ierr);
   }
@@ -675,7 +736,7 @@ PetscErrorCode IceModelVec2S::add(double alpha, IceModelVec &x, IceModelVec &res
   return add_2d<IceModelVec2S>(this, alpha, &x, &result);
 }
 
-PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) {
+PetscErrorCode IceModelVec2S::copy_to(IceModelVec &destination) const {
   return copy_2d<IceModelVec2S>(this, &destination);
 }
 

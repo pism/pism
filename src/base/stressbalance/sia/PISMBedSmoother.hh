@@ -101,8 +101,6 @@ protected:
   PetscErrorCode allocate(int MAX_GHOSTS);
   PetscErrorCode deallocate();
 
-  Vec g2, g2natural;  //!< global Vecs used to transfer data to/from processor 0.
-  VecScatter scatter; //!< VecScatter used to transfer data to/from processor 0.
   Vec topgp0,         //!< original bed elevation on processor 0
       topgsmoothp0,   //!< smoothed bed elevation on processor 0
       maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)

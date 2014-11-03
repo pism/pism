@@ -58,8 +58,6 @@ protected:
   virtual PetscErrorCode write_variables(std::set<std::string> vars, const PIO& nc);
   
   IceModelVec2S m_iceberg_mask;
-  Vec m_g2natural;  //!< global Vec used to transfer data to/from processor 0.
-  VecScatter m_scatter; //!< VecScatter used to transfer data to/from processor 0.
   Vec m_mask_p0;
 
   IceModelVec2Int *m_bcflag;

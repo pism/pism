@@ -267,7 +267,7 @@ PetscErrorCode IceModelVec::scale(double alpha) {
 /*! This is potentially dangerous: make sure that `destination` has the same
     dimensions as the current IceModelVec.
  */
-PetscErrorCode  IceModelVec::copy_to(Vec destination) {
+PetscErrorCode  IceModelVec::copy_to_vec(Vec destination) const {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
@@ -282,7 +282,7 @@ PetscErrorCode  IceModelVec::copy_to(Vec destination) {
 
 //! \brief Copies data from a Vec `source` to this IceModelVec. Updates ghost
 //! points if necessary.
-PetscErrorCode IceModelVec::copy_from(Vec source) {
+PetscErrorCode IceModelVec::copy_from_vec(Vec source) {
   PetscErrorCode ierr;
   assert(m_v != NULL);
 
@@ -296,7 +296,7 @@ PetscErrorCode IceModelVec::copy_from(Vec source) {
 }
 
 //! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
-PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
+PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) const {
   PetscErrorCode ierr;
   assert(m_v != NULL && destination.m_v != NULL);
 
@@ -562,7 +562,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
 }
 
 //! Checks if two IceModelVecs have compatible sizes, dimensions and numbers of degrees of freedom.
-PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &other) {
+PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &other) const {
   PetscErrorCode ierr;
   int X_size, Y_size;
 
@@ -583,7 +583,7 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 }
 
 //! Checks if an IceModelVec is allocated and calls DAVecGetArray.
-PetscErrorCode  IceModelVec::begin_access() {
+PetscErrorCode  IceModelVec::begin_access() const {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   assert(m_v != NULL);
@@ -607,7 +607,7 @@ PetscErrorCode  IceModelVec::begin_access() {
 }
 
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
-PetscErrorCode  IceModelVec::end_access() {
+PetscErrorCode  IceModelVec::end_access() const {
   PetscErrorCode ierr;
 #if (PISM_DEBUG==1)
   assert(m_v != NULL);
@@ -711,7 +711,7 @@ PetscErrorCode IceModelVec::has_nan() {
   return 0;
 }
 
-void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
+void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   double ghost_width = 0;
   if (m_has_ghosts) ghost_width = m_da_stencil_width;
   bool out_of_range = (i < grid->xs - ghost_width) ||
@@ -732,8 +732,8 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) {
  * "ghosts" is the width of the stencil that can be updated locally.
  * "scatter" is false if all ghosts can be updated locally.
  */
-void compute_params(IceModelVec* const x, IceModelVec* const y,
-                    IceModelVec* const z, int &ghosts, bool &scatter) {
+void compute_params(const IceModelVec* const x, const IceModelVec* const y,
+                    const IceModelVec* const z, int &ghosts, bool &scatter) {
 
   // We have 2^3=8 cases here (x,y,z having or not having ghosts).
   if (z->has_ghosts() == false) {

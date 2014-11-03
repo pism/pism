@@ -168,7 +168,7 @@ public:
   unsigned int get_stencil_width() const { return m_da_stencil_width; }
   int nlevels() { return m_n_levels; }
   std::vector<double>  get_levels() { return zlevels; }
-  bool has_ghosts() { return m_has_ghosts; }
+  bool has_ghosts() const { return m_has_ghosts; }
 
   virtual PetscErrorCode  range(double &min, double &max);
   virtual PetscErrorCode  norm(int n, double &out);
@@ -177,9 +177,9 @@ public:
   virtual PetscErrorCode  squareroot();
   virtual PetscErrorCode  shift(double alpha);
   virtual PetscErrorCode  scale(double alpha);
-  virtual PetscErrorCode  copy_to(Vec destination);
-  virtual PetscErrorCode  copy_from(Vec source);
-  virtual PetscErrorCode  copy_to(IceModelVec &destination);
+  virtual PetscErrorCode  copy_to_vec(Vec destination) const;
+  virtual PetscErrorCode  copy_from_vec(Vec source);
+  virtual PetscErrorCode  copy_to(IceModelVec &destination) const;
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual Vec get_vec();
   DM get_dm() const;
@@ -204,8 +204,8 @@ public:
   virtual PetscErrorCode  regrid(const PIO &nc, RegriddingFlag flag,
                                  double default_value = 0.0);
 
-  virtual PetscErrorCode  begin_access();
-  virtual PetscErrorCode  end_access();
+  virtual PetscErrorCode  begin_access() const;
+  virtual PetscErrorCode  end_access() const;
   virtual PetscErrorCode  update_ghosts();
   virtual PetscErrorCode  update_ghosts(IceModelVec &destination);
 
@@ -244,16 +244,16 @@ protected:
   //! different quantities
   std::map<std::string,PetscViewer> map_viewers;
 
-  void *array;  // will be cast to double** or double*** in derived classes
+  mutable void *array;  // will be cast to double** or double*** in derived classes
 
-  int access_counter;           // used in begin_access() and end_access()
+  mutable int access_counter;           // used in begin_access() and end_access()
   int state_counter;            //!< Internal IceModelVec "revision number"
 
   virtual PetscErrorCode destroy();
-  virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
+  virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other) const;
 
   //! \brief Check the array indices and warn if they are out of range.
-  void check_array_indices(int i, int j, unsigned int k);
+  void check_array_indices(int i, int j, unsigned int k) const;
   virtual PetscErrorCode reset_attrs(unsigned int N);
   NormType int_to_normtype(int input);
 private:
@@ -321,6 +321,12 @@ public:
 #endif
     return static_cast<double***>(array)[i][j][k];
   }
+  inline const double& operator() (int i, int j, int k) const {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j, k);
+#endif
+    return static_cast<double***>(array)[i][j][k];
+  }
   virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
 protected:
@@ -339,11 +345,10 @@ public:
   using IceModelVec2::create;
   virtual PetscErrorCode  create(IceGrid &my_grid, std::string my_name,
                                  IceModelVecKind ghostedp, int width = 1);
-  virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) const ;
-  virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
-  using IceModelVec::copy_to;
-  using IceModelVec::copy_from;
-  virtual PetscErrorCode  copy_to(IceModelVec &destination);
+  PetscErrorCode allocate_proc0_copy(Vec &result) const;
+  PetscErrorCode put_on_proc0(Vec onp0) const;
+  PetscErrorCode get_from_proc0(Vec onp0);
+  virtual PetscErrorCode  copy_to(IceModelVec &destination) const;
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   PetscErrorCode  get_array(double** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
@@ -370,6 +375,13 @@ public:
     Note that i corresponds to the x direction and j to the y.
   */
   inline double& operator() (int i, int j) {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j, 0);
+#endif
+    return static_cast<double**>(array)[i][j];
+  }
+
+  inline const double& operator() (int i, int j) const {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
 #endif
@@ -510,9 +522,7 @@ public:
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, std::string my_short_name,
                                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-  using IceModelVec::copy_to;
-  using IceModelVec::copy_from;
-  virtual PetscErrorCode copy_to(IceModelVec &destination);
+  virtual PetscErrorCode copy_to(IceModelVec &destination) const;
   virtual PetscErrorCode copy_from(IceModelVec &source);
   virtual PetscErrorCode add(double alpha, IceModelVec &x);
   virtual PetscErrorCode add(double alpha, IceModelVec &x, IceModelVec &result);
@@ -522,6 +532,13 @@ public:
   virtual PetscErrorCode get_array(PISMVector2 ** &a);
   virtual PetscErrorCode magnitude(IceModelVec2S &result);
   inline PISMVector2& operator()(int i, int j) {
+#if (PISM_DEBUG==1)
+    check_array_indices(i, j, 0);
+#endif
+    return static_cast<PISMVector2**>(array)[i][j];
+  }
+
+  inline const PISMVector2& operator()(int i, int j) const {
 #if (PISM_DEBUG==1)
     check_array_indices(i, j, 0);
 #endif

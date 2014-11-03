@@ -36,10 +36,6 @@ protected:
   PetscErrorCode correct_topg();
   PetscErrorCode allocate();
   PetscErrorCode deallocate();
-  PetscErrorCode transfer_to_proc0(IceModelVec2S *source, Vec result);
-  PetscErrorCode transfer_from_proc0(Vec source, IceModelVec2S *result);
-  Vec g2, g2natural;  //!< global Vecs used to transfer data to/from processor 0.
-  VecScatter scatter; //!< VecScatter used to transfer data to/from processor 0.
   // Vecs on processor 0:
   Vec Hp0,                      //!< ice thickness
     bedp0,                      //!< bed elevation

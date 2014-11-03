@@ -62,8 +62,6 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
   // prepare the mask that will be handed to the connected component
   // labeling code:
   {
-    ierr = VecSet(m_g2, 0.0); CHKERRQ(ierr);
-
     ierr = m_iceberg_mask.begin_access(); CHKERRQ(ierr);
     ierr = pism_mask.begin_access(); CHKERRQ(ierr);
     for (int   i = grid.xs; i < grid.xs+grid.xm; ++i) {
@@ -93,7 +91,7 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
 
   // identify icebergs using serial code on processor 0:
   {
-    ierr = m_iceberg_mask.put_on_proc0(m_mask_p0, m_scatter, NULL, m_g2natural); CHKERRQ(ierr);
+    ierr = m_iceberg_mask.put_on_proc0(m_mask_p0); CHKERRQ(ierr);
 
     if (grid.rank == 0) {
       double *mask;
@@ -104,7 +102,7 @@ PetscErrorCode PISMIcebergRemover::update(IceModelVec2Int &pism_mask,
       ierr = VecRestoreArray(m_mask_p0, &mask); CHKERRQ(ierr);
     }
 
-    ierr = m_iceberg_mask.get_from_proc0(m_mask_p0, m_scatter, NULL, m_g2natural); CHKERRQ(ierr);
+    ierr = m_iceberg_mask.get_from_proc0(m_mask_p0); CHKERRQ(ierr);
   }
 
   // correct ice thickness and the cell type mask using the resulting
@@ -154,15 +152,7 @@ PetscErrorCode PISMIcebergRemover::allocate() {
   PetscErrorCode ierr;
 
   ierr = m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
-
-  PISMDM::Ptr da2 = m_iceberg_mask.get_dm();
-
-  // We want a global Vec but reordered in the natural ordering so
-  // when it is scattered to proc zero it is not all messed up
-  ierr = DMDACreateNaturalVector(da2->get(), &m_g2natural); CHKERRQ(ierr);
-
-  // Get scatter context *and* allocate mask on processor 0:
-  ierr = VecScatterCreateToZero(m_g2natural, &m_scatter, &m_mask_p0); CHKERRQ(ierr);
+  ierr = m_iceberg_mask.allocate_proc0_copy(m_mask_p0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -170,8 +160,6 @@ PetscErrorCode PISMIcebergRemover::allocate() {
 PetscErrorCode PISMIcebergRemover::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = VecDestroy(&m_g2natural); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(&m_scatter); CHKERRQ(ierr);
   ierr = VecDestroy(&m_mask_p0); CHKERRQ(ierr);
 
   return 0;
