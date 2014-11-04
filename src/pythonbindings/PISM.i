@@ -355,6 +355,8 @@
     }
 };
 
+%ignore IceModelVec3D::getInternalColumn(int,int,double const **) const;
+
 %rename(__mult__) PISMVector2::operator*;
 %rename(__add__) PISMVector2::operator+;
 %ignore PISMVector2::operator=;
