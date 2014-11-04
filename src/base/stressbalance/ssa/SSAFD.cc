@@ -940,7 +940,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     very_verbose = getVerbosityLevel() > 2;
 
   // set the initial guess:
-  ierr = m_velocity.copy_to_vec(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to_vec(SSADA, SSAX); CHKERRQ(ierr);
 
   stdout_ssa.clear();
 

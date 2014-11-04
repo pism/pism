@@ -487,6 +487,15 @@ PetscErrorCode  IceModelVec3D::getInternalColumn(int i, int j, double **valsPTR)
   return 0;
 }
 
+PetscErrorCode  IceModelVec3D::getInternalColumn(int i, int j, const double **valsPTR) const {
+#if (PISM_DEBUG==1)
+  check_array_indices(i, j, 0);
+#endif
+  double ***arr = (double***) array;
+  *valsPTR = arr[i][j];
+  return 0;
+}
+
 
 PetscErrorCode  IceModelVec3D::setInternalColumn(int i, int j, double *valsIN) {
 #if (PISM_DEBUG==1)
@@ -613,9 +622,9 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 //! Checks if the current IceModelVec3 has NANs and reports if it does.
 /*! Up to a fixed number of messages are printed at stdout.  Returns the full
  count of NANs (which is a nonzero) on this rank. */
-PetscErrorCode  IceModelVec3D::has_nan() {
+PetscErrorCode  IceModelVec3D::has_nan() const {
   PetscErrorCode ierr;
-  double *tmp;
+  const double *tmp;
   int retval=0;
   const int max_print_this_rank=10;
 
