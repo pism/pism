@@ -45,6 +45,20 @@ PetscErrorCode SIAFD_FEvoR::init(Vars &vars) {
   return 0;
 }
 
+PetscErrorCode SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+  PetscErrorCode ierr;
+
+  if (config.get_flag("siafd_fevor_use_constant_slope")) {
+    double slope = (config.get("siafd_fevor_surface_slope_degrees") / 180.0) * M_PI;
+
+    ierr = h_x.set(slope); CHKERRQ(ierr);
+    ierr = h_y.set(0.0); CHKERRQ(ierr);
+  } else {
+    ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
 
 PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                    IceModelVec2Stag &result, bool fast) {

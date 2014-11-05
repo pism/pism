@@ -32,6 +32,7 @@ public:
   virtual ~SIAFD_FEvoR();
   virtual PetscErrorCode init(Vars &vars);
 protected:
+  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                 IceModelVec2Stag &result, bool fast);
 private:
