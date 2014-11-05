@@ -736,7 +736,7 @@ PetscErrorCode IceModel::allocate_stressbalance() {
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
     modifier = new ConstantInColumn(grid, *EC, config);
-  } else if (model == "prescribed_sliding+sia" || "ssa+sia") {
+  } else if (model == "prescribed_sliding+sia" || model == "ssa+sia") {
     modifier = new SIAFD(grid, *EC, config);
   } else if (model == "sia_fevor") {
     modifier = new SIAFD_FEvoR(grid, *EC, config);
