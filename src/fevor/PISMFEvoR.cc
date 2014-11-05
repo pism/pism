@@ -225,6 +225,14 @@ PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double 
   y += v*dt; // probably not needed and v should be zero in 2D flow line model
   z += w*dt; // w should be zero
 
+  // check if the point (x,y,z) is within the domain:
+  assert(0.0 <= z && z <= grid.Lz);
+  // PISM's horizontal grid is cell-centered, so (-grid.Lx,
+  // -grid.Ly) is actually outside of the convex hull of all grid
+  // points.
+  assert(grid.x.front() <= x && x <= grid.x.back());
+  assert(grid.y.front() <= y && y <= grid.y.back());
+
   return 0;
 }
 
