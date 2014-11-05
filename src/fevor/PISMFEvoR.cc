@@ -212,18 +212,18 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
  *
  * @param x, y, z coordinates of a point within the domain
  * @param u, v, w velocities of x, y, z
- * @param m_dt
+ * @param dt time step length
  *
  * @return 0 on success
  */
 PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double &z,
                                                    double u, double v, double w,
-                                                   double m_dt) {
+                                                   double dt) {
 
   // stupid basic Euler method. Assuming u, v, w are 'good'
-  x += u*m_dt;
-  y += v*m_dt; // probably not needed and v should be zero in 2D flow line model
-  z += w*m_dt; // w should be zero
+  x += u*dt;
+  y += v*dt; // probably not needed and v should be zero in 2D flow line model
+  z += w*dt; // w should be zero
 
   return 0;
 }
