@@ -106,8 +106,6 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     list.add(*tauyz3);
     list.add(*m_enthalpy);
 
-    ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
-
     unsigned int n_particles = m_distributions.size();
 
     // Ensure that we have enough storage for diagnostics
@@ -404,6 +402,8 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
                     "* Initializing the Fabric Evolution with Recrystallization"
                     " (FEvoR) model...\n"); CHKERRQ(ierr);
 
+  // set enhancement factor to something reasonable
+  ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
   // make enhancement factor available to other PISM components:
   ierr = vars.add(m_enhancement_factor); CHKERRQ(ierr); //IceModelVec
 
