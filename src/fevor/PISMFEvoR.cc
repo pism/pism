@@ -512,6 +512,13 @@ PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
     // Get packing dimensions:
     std::vector<double> pd;
     ierr = nc.get_att_double("PISM_GLOBAL", "packing_dimensions", pd); CHKERRQ(ierr);
+
+    if (pd.size() != 3) {
+      ierr = PetscPrintf(grid.com, "PISM ERROR: cannot load FEvoR distributions from %s.\n",
+                         input_file.c_str()); CHKERRQ(ierr);
+      PISMEnd();
+    }
+
     for (unsigned int k = 0; k < 3; ++k) {
       m_packing_dimensions[k] = pd[k];
     }
