@@ -454,6 +454,10 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
  * @return 0 on success
  */
 PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
+  PetscErrorCode ierr;
+
+  ierr = verbPrintf(2, grid.com,
+                    "  Setting initial distribution parameters...\n"); CHKERRQ(ierr);
 
   // Initialize distributions
   assert(m_packing_dimensions.size() == 3);
@@ -501,6 +505,10 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
 PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
 
   PetscErrorCode ierr;
+
+  ierr = verbPrintf(2, grid.com,
+                    "  Reading distribution data from %s...\n",
+                    input_file.c_str()); CHKERRQ(ierr);
 
   PIO nc(grid, "guess_mode");
   ierr = nc.open(input_file, PISM_READONLY); CHKERRQ(ierr);

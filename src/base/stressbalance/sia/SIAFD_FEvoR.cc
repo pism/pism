@@ -40,6 +40,9 @@ PetscErrorCode SIAFD_FEvoR::init(Vars &vars) {
 
   ierr = SIAFD::init(vars); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2, grid.com,
+                    "  [using the enhancement factor computed using FEvoR]\n"); CHKERRQ(ierr);
+
   m_variables = &vars;
 
   return 0;
