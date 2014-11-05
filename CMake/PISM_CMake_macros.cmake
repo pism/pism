@@ -8,7 +8,7 @@ macro(pism_use_rpath)
   set (CMAKE_SKIP_BUILD_RPATH FALSE)
   # when building, don't use the install RPATH already
   # (but later on when installing)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   # the RPATH to be used when installing
   set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   # add the automatically determined parts of the RPATH
@@ -23,7 +23,7 @@ endmacro(pism_use_rpath)
 # Set CMake variables to disable rpath
 macro(pism_dont_use_rpath)
   set (CMAKE_SKIP_BUILD_RPATH TRUE)
-  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
   set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 endmacro(pism_dont_use_rpath)
@@ -253,7 +253,8 @@ macro(pism_set_dependencies)
     ${GSL_INCLUDES}
     ${UDUNITS2_INCLUDES}
     ${NETCDF_INCLUDES}
-    ${MPI_C_INCLUDE_PATH})
+    ${MPI_C_INCLUDE_PATH}
+    ${FEvoR_INCLUDES})
 
   list (APPEND Pism_EXTERNAL_LIBS
     ${PETSC_LIBRARIES}

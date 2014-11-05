@@ -25,35 +25,34 @@
 
 using namespace pism;
 
-int fevor_load_distribution(const std::string &filename,
-                            MPI_Comm comm, const UnitSystem &sys,
-                            unsigned int index, FEvoR::Distribution &distribution) {
+int fevor_load_distribution(const PIO &nc,
+                            unsigned int index,
+                            unsigned int time_index,
+                            FEvoR::Distribution &distribution) {
   PetscErrorCode ierr;
 
-  PIO nc(comm, "netcdf3", sys);
-  ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
+  size_t data_size = distribution.getNumberCrystals() * FEvoR::Distribution::numberParameters;
+  std::vector<double> data(data_size);
 
-  std::vector<double> data(distribution.getNumberCrystals() * FEvoR::Distribution::numberParameters);
-
-  std::string variable_name = "distributions";
-  std::vector<unsigned int> start(3), count(3);
-  start[0] = index;
-  start[1] = 0;
+  std::vector<unsigned int> start(4), count(4);
+  start[0] = time_index;
+  start[1] = index;
   start[2] = 0;
+  start[3] = 0;
 
   count[0] = 1;
-  count[1] = distribution.getNumberCrystals();
-  count[2] = FEvoR::Distribution::numberParameters;
-  ierr = nc.get_vara_double(variable_name, start, count, &data[0]); CHKERRQ(ierr);
+  count[1] = 1;
+  count[2] = distribution.getNumberCrystals();
+  count[3] = FEvoR::Distribution::numberParameters;
 
-  ierr = nc.close(); CHKERRQ(ierr);
+  ierr = nc.get_vara_double("distributions", start, count, &data[0]); CHKERRQ(ierr);
 
   distribution.loadDistribution(data);
 
   return 0;
 }
 
-/** 
+/**
  * Save a distribution to a file at position index.
  *
  * @param filename output file name
@@ -62,41 +61,27 @@ int fevor_load_distribution(const std::string &filename,
  *
  * @return 0 on success
  */
-int fevor_save_distribution(const std::string &filename,
-                            MPI_Comm comm, const UnitSystem &sys,
-                            unsigned int index, const FEvoR::Distribution &distribution) {
+int fevor_save_distribution(const PIO &nc,
+                            unsigned int index,
+                            unsigned int time_index,
+                            const FEvoR::Distribution &distribution) {
   PetscErrorCode ierr;
-
-  PIO nc(comm, "netcdf3", sys);
-  ierr = nc.open(filename, PISM_READWRITE); CHKERRQ(ierr);
-
-  std::string variable_name = "distributions";
-  bool variable_exists = false;
-  ierr = nc.inq_var(variable_name, variable_exists); CHKERRQ(ierr);
-  if (not variable_exists) {
-    std::vector<std::string> dimensions;
-    dimensions.push_back("distribution_index");
-    dimensions.push_back("crystal_index");
-    dimensions.push_back("parameter_index");
-    ierr = nc.redef(); CHKERRQ(ierr);
-    ierr = nc.def_var(variable_name, PISM_DOUBLE, dimensions); CHKERRQ(ierr);
-  }
 
   std::vector<double> data;
   distribution.saveDistribution(data);
 
-  std::vector<unsigned int> start(3), count(3);
-  start[0] = index;
-  start[1] = 0;
+  std::vector<unsigned int> start(4), count(4);
+  start[0] = time_index;
+  start[1] = index;
   start[2] = 0;
+  start[3] = 0;
 
   count[0] = 1;
-  count[1] = distribution.getNumberCrystals();
-  count[2] = FEvoR::Distribution::numberParameters;
+  count[1] = 1;
+  count[2] = distribution.getNumberCrystals();
+  count[3] = FEvoR::Distribution::numberParameters;
 
-  ierr = nc.put_vara_double(variable_name, start, count, &data[0]); CHKERRQ(ierr);
-
-  ierr = nc.close();
+  ierr = nc.put_vara_double("distributions", start, count, &data[0]); CHKERRQ(ierr);
 
   return 0;
 }
@@ -106,19 +91,35 @@ int fevor_save_distribution(const std::string &filename,
  *
  * @param filename output file name
  * @param n_distributions number of distributions
- * @param n_crystals number of crystals per distribution
+ * @param packing_dimensions number of crystals per distribution in each spatial direction
+ *
+ * Total number of crystals per distribution is equal to the product
+ * of numbers in packing_dimensions.
  *
  * @return 0 on success
  */
-int fevor_prepare_file(const std::string &filename,
-                       MPI_Comm comm, const UnitSystem &sys,
+int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
                        unsigned int n_distributions,
-                       unsigned int n_crystals) {
+                       const std::vector<unsigned int> packing_dimensions) {
   PetscErrorCode ierr;
 
-  PIO nc(comm, "netcdf3", sys);
+  // FIXME: these should be configurable
+  ierr = nc.def_time("time", "standard", "seconds"); CHKERRQ(ierr);
 
-  ierr = nc.open(filename, PISM_READWRITE_MOVE); CHKERRQ(ierr);
+  // save packing dimensions
+  {
+    // make a copy that uses "double"
+    std::vector<double> pd(packing_dimensions.size());
+    for (unsigned int i = 0; i < pd.size(); ++i) {
+      pd[i] = packing_dimensions[i];
+    }
+    // save packing dimensions
+    ierr = nc.put_att_double("PISM_GLOBAL", "packing_dimensions",
+                             PISM_INT, pd); CHKERRQ(ierr);
+  }
+
+  assert(packing_dimensions.size() == 3);
+  unsigned int n_crystals = packing_dimensions[0] * packing_dimensions[1] * packing_dimensions[2];
 
   std::vector<double> index;
   std::vector<unsigned int> start(1, 0), count(1, 0);
@@ -164,7 +165,105 @@ int fevor_prepare_file(const std::string &filename,
                               start, count, &index[0]); CHKERRQ(ierr);
   }
 
-  ierr = nc.close();
+  {
+    std::string variable_name = "distributions";
+    bool variable_exists = false;
+    ierr = nc.inq_var(variable_name, variable_exists); CHKERRQ(ierr);
+    if (not variable_exists) {
+      std::vector<std::string> dimensions;
+      dimensions.push_back("time");
+      dimensions.push_back("distribution_index");
+      dimensions.push_back("crystal_index");
+      dimensions.push_back("parameter_index");
+      ierr = nc.redef(); CHKERRQ(ierr);
+      ierr = nc.def_var(variable_name, PISM_DOUBLE, dimensions); CHKERRQ(ierr);
+    }
+  }
 
+  std::vector<std::string> dims(2);
+  dims[0] = "time";
+  dims[1] = "distribution_index";
+  // particle positions
+  {
+    ierr = nc.def_var("p_x", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    ierr = nc.def_var("p_y", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    ierr = nc.def_var("p_z", PISM_DOUBLE, dims); CHKERRQ(ierr);
+  }
+
+  // diagnostics
+  {
+    ierr = nc.def_var("n_migration_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    ierr = nc.def_var("n_polygonization_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+int fevor_load_particle_positions(const pism::PIO &nc,
+                                  unsigned int time_index,
+                                  std::vector<double> &x,
+                                  std::vector<double> &y,
+                                  std::vector<double> &z) {
+  PetscErrorCode ierr;
+  assert(x.size() == y.size());
+  assert(x.size() == z.size());
+
+  std::vector<unsigned int> start(2), count(2);
+  start[0] = time_index;
+  start[1] = 0;
+
+  count[0] = 1;
+  count[1] = x.size();
+
+  ierr = nc.get_vara_double("p_x", start, count, &x[0]); CHKERRQ(ierr);
+  ierr = nc.get_vara_double("p_y", start, count, &y[0]); CHKERRQ(ierr);
+  ierr = nc.get_vara_double("p_z", start, count, &z[0]); CHKERRQ(ierr);
+
+  return 0;
+}
+
+int fevor_save_particle_positions(const PIO &nc,
+                                  unsigned int time_index,
+                                  std::vector<double> &x,
+                                  std::vector<double> &y,
+                                  std::vector<double> &z) {
+  PetscErrorCode ierr;
+  assert(x.size() == y.size());
+  assert(x.size() == z.size());
+
+  std::vector<unsigned int> start(2), count(2);
+  start[0] = time_index;
+  start[1] = 0;
+
+  count[0] = 1;
+  count[1] = x.size();
+
+  ierr = nc.put_vara_double("p_x", start, count, &x[0]); CHKERRQ(ierr);
+  ierr = nc.put_vara_double("p_y", start, count, &y[0]); CHKERRQ(ierr);
+  ierr = nc.put_vara_double("p_z", start, count, &z[0]); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+int fevor_save_recrystallization_numbers(const PIO &nc,
+                                         unsigned int time_index,
+                                         std::vector<double> &migration,
+                                         std::vector<double> &polygonization) {
+  PetscErrorCode ierr;
+  assert(migration.size() == polygonization.size());
+
+  std::vector<unsigned int> start(2), count(2);
+  start[0] = time_index;
+  start[1] = 0;
+
+  count[0] = 1;
+  count[1] = migration.size();
+
+  ierr = nc.put_vara_double("n_migration_recrystallizations", start, count,
+                            &migration[0]); CHKERRQ(ierr);
+
+  ierr = nc.put_vara_double("n_polygonization_recrystallizations", start, count,
+                            &polygonization[0]); CHKERRQ(ierr);
   return 0;
 }

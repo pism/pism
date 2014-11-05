@@ -262,6 +262,7 @@ PetscErrorCode enthSystemCtx::setDirichletBasal(double Y) {
   D0 = 1.0;
   U0 = 0.0;
   B0  = Y;
+  assert(gsl_isnan(B0) != 1);
   return 0;
 }
 
@@ -334,6 +335,7 @@ PetscErrorCode enthSystemCtx::setBasalHeatFlux(double heat_flux) {
                                              v[0] * (ss.ij  - ss.s) / dy;
     B0 += dt * ((strain_heating[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
   }
+  assert(gsl_isnan(B0) != 1);
   return 0;
 }
 

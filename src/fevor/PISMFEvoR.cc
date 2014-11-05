@@ -36,12 +36,16 @@
 #include "enthalpyConverter.hh"
 
 #include "FEvoR_IO.hh"
+#include "pism_options.hh"
 
 namespace pism {
 
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
                      StressBalance *stress_balance)
-  : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC) {
+  : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
+    m_packing_dimensions(std::vector<unsigned int>(3, 3)),
+    m_d_iso(m_packing_dimensions, 0.0)
+{
 
   assert(m_EC != NULL);
   assert(m_stress_balance != NULL);
@@ -92,7 +96,6 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
   ierr = m_tauyz->compute(tauyz); CHKERRQ(ierr);
   IceModelVec3 *tauyz3 = static_cast<IceModelVec3*>(tauyz);
 
-
   {
     IceModelVec::AccessList list;
     list.add(*u);
@@ -105,77 +108,14 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
 
     ierr = m_enhancement_factor.set(config.get("sia_enhancement_factor")); CHKERRQ(ierr);
 
-    unsigned int n_particles = 10;
-    /* terminology:
-     *   particles exist in pism and contain one or more distrobutions
-     *   of crystals that are tracked through time. They essentially are
-     *   infinitesimely small. Distributions exist in FEvoR and contain
-     *   sets of independent crystals (or in the case of NNI weakly
-     *   dependant). In PISM-FEvoR you will likely not need to access the
-     *   crystals directly. Methods should be provided through FEvoR's
-     *   distribution class FEvoR::Distribution.
-     */
+    unsigned int n_particles = m_distributions.size();
 
-    /* TODO method to load in our cloud of particles. Will need the values
-     * below for each particle.
-     *
-     * Just making a fake one:
-     */
-    std::vector<unsigned int> packingDimensions(3, 3);
-    /* This should be the same for each distribution, but a loaded parameter.
-     *
-     * Also, should be at minimum 10x10x10 to get an accurate result! low here for testing
-     */
-    std::vector<double> p_x(n_particles), p_y(n_particles), p_z(n_particles),
-      p_e(n_particles);
+    // Ensure that we have enough storage for diagnostics
+    m_n_migration_recrystallizations.resize(n_particles);
+    m_n_polygonization_recrystallizations.resize(n_particles);
 
-    // Initialize particle positions and corresponding enhancement factors
-    const double x_min = grid.x.front(), x_max = grid.x.back(),
-      dx = (x_max - x_min) / (double)(n_particles / 2 - 1);
+    // Get enhancement factor for every particle
     for (unsigned int i = 0; i < n_particles; ++i) {
-      unsigned int I = i < n_particles / 2 ? i : i - n_particles / 2;
-      p_x[i] = x_min + I * dx;
-      p_y[i] = 0.0;
-      p_z[i] = i < n_particles / 2 ? 0.0 : grid.Lz;
-      p_e[i] = 1.0;
-
-      if (p_x[i] < x_min) {
-        p_x[i] = x_min;
-      } else if (p_x[i] > x_max) {
-        p_x[i] = x_max;
-      }
-    }
-
-    // Diagnostics -- total number of recrystallization events in time step
-    std::vector<unsigned int> nMigRe(n_particles, 0), nPoly(n_particles, 0);
-
-    // Prepare a file to write distributions to:
-
-    // FIXME: I'd like to use Distribution::getNumberCrystals(), but
-    // we don't have a distribution created yet.
-    ierr = fevor_prepare_file("distributions.nc", grid.com, grid.get_unit_system(),
-                              n_particles, 3*3*3 /* FIXME */); CHKERRQ(ierr);
-
-    // get enhancement factor for every particle!
-    for (unsigned int i = 0; i < n_particles; ++i) {
-      /* FIXME this should get the appropriate distribution!
-       *
-       * Just create one from a Watson concentration parameter.
-       */
-      double w_i = -3.0; // This makes a weak bi-polar (single maximum)
-      FEvoR::Distribution d_i(packingDimensions, w_i);
-
-      /* Make an isotropic distribution for calculating enhancement factor. The
-       * enhancement factor is defined as ratio of ice's resonse relative to
-       * isotropic ice. Since we need isotropic ice's responce to any input
-       * stress, this is the easiest way to provide it but it may be the most
-       * computationally heavy. Possible efficienty improvement here.
-       */
-      FEvoR::Distribution d_iso(packingDimensions, 0.0);
-
-      std::vector<double> bulkEdot(9, 0.0);
-
-      std::vector<double> bulkEdot_iso(9, 0.0);
 
       // interpolate these values from PISM
       double P = 0.0,
@@ -185,21 +125,21 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         T      = 0.0;
 
       // check if the point (x,y,z) is within the domain:
-      assert(0.0 <= p_z[i] && p_z[i] <= grid.Lz);
+      assert(0.0 <= m_p_z[i] && m_p_z[i] <= grid.Lz);
       // PISM's horizontal grid is cell-centered, so (-grid.Lx,
       // -grid.Ly) is actually outside of the convex hull of all grid
       // points.
-      assert(grid.x.front() <= p_x[i] && p_x[i] <= grid.x.back());
-      assert(grid.y.front() <= p_y[i] && p_y[i] <= grid.y.back());
+      assert(grid.x.front() <= m_p_x[i] && m_p_x[i] <= grid.x.back());
+      assert(grid.y.front() <= m_p_y[i] && m_p_y[i] <= grid.y.back());
 
-      ierr = PISMFEvoR::evaluate_at_point(*pressure3, p_x[i], p_y[i], p_z[i], P);   CHKERRQ(ierr);
-      ierr = PISMFEvoR::evaluate_at_point(*tauxz3,    p_x[i], p_y[i], p_z[i], txz); CHKERRQ(ierr);
-      ierr = PISMFEvoR::evaluate_at_point(*tauyz3,    p_x[i], p_y[i], p_z[i], tyz); CHKERRQ(ierr);
+      ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P); CHKERRQ(ierr);
+      ierr = evaluate_at_point(*tauxz3, m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
+      ierr = evaluate_at_point(*tauyz3, m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
 
       /*std::vector<double> stress = {   P,   0, txz,
        *                                 0,   P, tyz,
        *                               txz, tyz,   P};
-       * Woops, no list initialization in c++98.
+       * Whoops, no list initialization in c++98.
        *
        * Indexing: {0, 1, 2,
        *            3, 4, 5,
@@ -211,52 +151,54 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       stress[5] = stress[7] = tyz;           // FIXME correct sign?
       // don't strictly need P here as we only need the deviatoric stress.
 
-      ierr = PISMFEvoR::evaluate_at_point(*m_enthalpy, p_x[i], p_y[i], p_z[i], E); CHKERRQ(ierr);
+      ierr = evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
 
-      d_i.stepInTime  (T, stress, m_t, m_dt, nMigRe[i] , nPoly[i] , bulkEdot);
-      d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
+      std::vector<double> bulkEdot(9, 0.0);
+      // http://en.wikipedia.org/wiki/Step_in_Time
+      m_distributions[i].stepInTime(T, stress, m_t, m_dt,
+                                    m_n_migration_recrystallizations[i],
+                                    m_n_polygonization_recrystallizations[i],
+                                    bulkEdot);
+
+      std::vector<double> bulkEdot_iso(9, 0.0);
+      m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
 
       const double M = FEvoR::tensorMagnitude(bulkEdot),
         M_iso = FEvoR::tensorMagnitude(bulkEdot_iso);
 
       if (M_iso != 0.0) {
-        p_e[i] = M / M_iso;
+        m_p_e[i] = M / M_iso;
       } else {
         // If a particle is outside the ice blob, then pressure == 0
         // and M_iso == 0, so we need this special case.
-        p_e[i] = 1.0;
+        m_p_e[i] = 1.0;
       }
 
       // some bounds for the enhancement factor
-      if (p_e[i] < 0.4) {
-        p_e[i] = 0.4;
-        // Enhance, not diminish.
-      } else if (p_e[i] > 10.0) {
-        p_e[i] = 10.0;
+      if (m_p_e[i] < 0.4) {
+        m_p_e[i] = 0.4;
+      } else if (m_p_e[i] > 10.0) {
+        m_p_e[i] = 10.0;
         // upper bound.
       }
-
-      ierr = fevor_save_distribution("distributions.nc", grid.com, grid.get_unit_system(),
-                                     i, d_i); CHKERRQ(ierr);
-
     } // end of the for-loop over particles
 
     // set the enhancement factor for every grid point from our particle cloud
-    ierr = PISMFEvoR::pointcloud_to_grid(p_x, p_z, p_e,
-                                         m_enhancement_factor); CHKERRQ(ierr);
-    
-    // update particle positions -- don't want to update until grid is updated
+    ierr = pointcloud_to_grid(m_p_x, m_p_z, m_p_e, m_enhancement_factor); CHKERRQ(ierr);
+
+    // update particle positions -- don't want to update until gridded
+    // enhancement factor is updated
     for (unsigned int i = 0; i < n_particles; ++i) {
       double p_u = 0.0,
              p_v = 0.0,
              p_w = 0.0;
-      
-      ierr = PISMFEvoR::evaluate_at_point(*u, p_x[i], p_y[i], p_z[i], p_u);   CHKERRQ(ierr);
-      ierr = PISMFEvoR::evaluate_at_point(*v, p_x[i], p_y[i], p_z[i], p_v);   CHKERRQ(ierr);
-      ierr = PISMFEvoR::evaluate_at_point(*w, p_x[i], p_y[i], p_z[i], p_w);   CHKERRQ(ierr);
-      
-      ierr = PISMFEvoR::update_particle_position(p_x[i], p_y[i], p_z[i], p_u, p_v, p_w, m_dt); CHKERRQ(ierr);
+
+      ierr = evaluate_at_point(*u, m_p_x[i], m_p_y[i], m_p_z[i], p_u);   CHKERRQ(ierr);
+      ierr = evaluate_at_point(*v, m_p_x[i], m_p_y[i], m_p_z[i], p_v);   CHKERRQ(ierr);
+      ierr = evaluate_at_point(*w, m_p_x[i], m_p_y[i], m_p_z[i], p_w);   CHKERRQ(ierr);
+
+      ierr = update_particle_position(m_p_x[i], m_p_y[i], m_p_z[i], p_u, p_v, p_w, m_dt); CHKERRQ(ierr);
     }
   }
 
@@ -277,17 +219,14 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
  * @return 0 on success
  */
 PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double &z,
-                                                const double &u,
-                                                const double &v, 
-                                                const double &w,
-                                                const double &m_dt) {
-  PetscErrorCode ierr;
-    
-    // stupid basic Euler method. Assuming u, v, w are 'good' 
-    x += u*m_dt;
-    y += v*m_dt; // probably not needed and v should be zero in 2D flow line model
-    z += w*m_dt; // w should be zero
-    
+                                                   double u, double v, double w,
+                                                   double m_dt) {
+
+  // stupid basic Euler method. Assuming u, v, w are 'good'
+  x += u*m_dt;
+  y += v*m_dt; // probably not needed and v should be zero in 2D flow line model
+  z += w*m_dt; // w should be zero
+
   return 0;
 }
 
@@ -407,6 +346,7 @@ PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
 void PISMFEvoR::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
   if (keyword != "none") {
     result.insert(m_enhancement_factor.metadata().get_string("short_name"));
+    result.insert("distributions");
   }
 }
 
@@ -417,6 +357,11 @@ PetscErrorCode PISMFEvoR::define_variables(const std::set<std::string> &vars, co
     ierr = m_enhancement_factor.define(nc, nctype); CHKERRQ(ierr);
   }
 
+  if (set_contains(vars, "distributions") or set_contains(vars, "recrystallizations")) {
+    ierr = fevor_prepare_file(nc, grid.get_unit_system(),
+                              m_distributions.size(), m_packing_dimensions); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -424,6 +369,14 @@ PetscErrorCode PISMFEvoR::write_variables(const std::set<std::string> &vars, con
   PetscErrorCode ierr;
   if (set_contains(vars, "enhancement_factor")) {
     ierr = m_enhancement_factor.write(nc); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "distributions")) {
+    ierr = save_distributions(nc); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "recrystallizations")) {
+    ierr = save_diagnostics(nc); CHKERRQ(ierr);
   }
 
   return 0;
@@ -459,6 +412,8 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
     SETERRQ(grid.com, 1, "enthalpy field is not available");
   }
 
+  // FIXME: load packing dimensions here
+
   // It would be nice to be able to allocate these in
   // PISMFEvoR::allocate() or in the constructor, but pism::Vars is
   // not available there...
@@ -476,6 +431,164 @@ PetscErrorCode PISMFEvoR::init(Vars &vars) {
     m_tauyz = new PSB_tauyz(m_stress_balance, grid, vars);
     assert(m_tauyz != NULL);
   }
+
+  bool i_set = false;
+  std::string input_file;
+  ierr = OptionsString("-i", "input file name", input_file, i_set); CHKERRQ(ierr);
+
+  if (i_set) {
+    ierr = load_distributions(input_file); CHKERRQ(ierr);
+  } else {
+    ierr = set_initial_distribution_parameters(); CHKERRQ(ierr);
+  }
+
+
+  return 0;
+}
+
+
+/** Create an initial state (cloud of "particles").
+ *
+ * Use this for testing or bootstrapping only.
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
+
+  // Initialize distributions
+  assert(m_packing_dimensions.size() == 3);
+  unsigned int n_particles = (m_packing_dimensions[0] *
+                              m_packing_dimensions[1] *
+                              m_packing_dimensions[2]);
+
+  double w_i = -3.0; // This makes a weak bi-polar (single maximum)
+  FEvoR::Distribution d_i(m_packing_dimensions, w_i);
+
+  m_distributions.resize(n_particles, FEvoR::Distribution(m_packing_dimensions, w_i));
+
+  // Initialize particle positions and corresponding enhancement factors
+  const double x_min = grid.x.front(), x_max = grid.x.back(),
+    dx = (x_max - x_min) / (double)(n_particles / 2 - 1);
+
+  m_p_x.resize(n_particles);
+  m_p_y.resize(n_particles);
+  m_p_z.resize(n_particles);
+  m_p_e.resize(n_particles);
+
+  for (unsigned int i = 0; i < n_particles; ++i) {
+    unsigned int I = i < n_particles / 2 ? i : i - n_particles / 2;
+    m_p_x[i] = x_min + I * dx;
+    m_p_y[i] = 0.0;
+    m_p_z[i] = i < n_particles / 2 ? 0.0 : grid.Lz;
+    m_p_e[i] = 1.0;
+
+    if (m_p_x[i] < x_min) {
+      m_p_x[i] = x_min;
+    } else if (m_p_x[i] > x_max) {
+      m_p_x[i] = x_max;
+    }
+  }
+
+  return 0;
+}
+
+/** Load distributions and particle positions from a file specified using the "-i" option.
+ *
+ * Uses the last time record.
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
+
+  PetscErrorCode ierr;
+
+  PIO nc(grid, "guess_mode");
+  ierr = nc.open(input_file, PISM_READONLY); CHKERRQ(ierr);
+  {
+    unsigned int n_records = 0;
+    ierr = nc.inq_nrecords(n_records); CHKERRQ(ierr);
+    unsigned int last_record = n_records - 1;
+
+    // Get packing dimensions:
+    std::vector<double> pd;
+    ierr = nc.get_att_double("PISM_GLOBAL", "packing_dimensions", pd); CHKERRQ(ierr);
+    for (unsigned int k = 0; k < 3; ++k) {
+      m_packing_dimensions[k] = pd[k];
+    }
+
+    // Get the number of distributions:
+    unsigned int n_particles = (m_packing_dimensions[0] *
+                                m_packing_dimensions[1] *
+                                m_packing_dimensions[2]);
+
+    // Create the isotropic distribution:
+    m_d_iso = FEvoR::Distribution(m_packing_dimensions, 0.0);
+
+    // Fill all distributions with copies of the isotropic one:
+    m_distributions = std::vector<FEvoR::Distribution>(n_particles, m_d_iso);
+
+    for (unsigned int k = 0; k < n_particles; ++k) {
+      ierr = fevor_load_distribution(nc, k, last_record, m_distributions[k]); CHKERRQ(ierr);
+    }
+
+    // Load particle positions:
+    m_p_x.resize(n_particles, 0);
+    m_p_y.resize(n_particles, 0);
+    m_p_z.resize(n_particles, 0);
+    ierr = fevor_load_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z); CHKERRQ(ierr);
+
+    // Resize storage for enhancement factors:
+    m_p_e.resize(n_particles, 0);
+  }
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/** Save distributions and particle positions to a file
+ *
+ * Uses the last time record.
+ *
+ * @param nc file to save to
+ *
+ * @return 0 on success
+ */
+PetscErrorCode PISMFEvoR::save_distributions(const PIO &nc) {
+
+  PetscErrorCode ierr;
+
+  unsigned int n_records = 0;
+  ierr = nc.inq_nrecords(n_records); CHKERRQ(ierr);
+  unsigned int last_record = n_records - 1;
+
+  unsigned int n_particles = m_distributions.size();
+
+  for (unsigned int k = 0; k < n_particles; ++k) {
+    ierr = fevor_save_distribution(nc, k, last_record, m_distributions[k]); CHKERRQ(ierr);
+  }
+
+  // Save particle positions:
+  ierr = fevor_save_particle_positions(nc, last_record, m_p_x, m_p_y, m_p_z); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PISMFEvoR::save_diagnostics(const PIO &nc) {
+  PetscErrorCode ierr;
+
+  unsigned int n_particles = m_distributions.size();
+
+  std::vector<double> tmp_m(n_particles), tmp_p(n_particles);
+  for (unsigned int k = 0; k < n_particles; ++k) {
+    tmp_m[k] = m_n_migration_recrystallizations[k];
+    tmp_p[k] = m_n_polygonization_recrystallizations[k];
+  }
+
+  unsigned int n_records = 0;
+  ierr = nc.inq_nrecords(n_records); CHKERRQ(ierr);
+  unsigned int last_record = n_records - 1;
+
+  ierr = fevor_save_recrystallization_numbers(nc, last_record, tmp_m, tmp_p); CHKERRQ(ierr);
 
   return 0;
 }
