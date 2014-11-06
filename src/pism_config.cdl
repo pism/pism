@@ -28,10 +28,10 @@ netcdf pism_config {
     pism_config:stress_balance_model = "sia_only";
     pism_config:stress_balance_model_doc = "stress balance model; choose from 'none', 'sia', 'ssa', 'ssa+sia', 'prescribed_sliding', 'prescribed_sliding+sia'";
 
-    pism_config:siafd_fevor_use_constant_slope = "no";
-    pism_config:siafd_fevor_use_constant_slope_doc = "Use constant surface slope in the x direction (0 in the y direction).";
-    pism_config:siafd_fevor_surface_slope_degrees = -5.0;
-    pism_config:siafd_fevor_surface_slope_degrees_doc = "degrees; surface slope in the x direction for the slab-on-a-slope SIAFD_FEvoR setup";
+    pism_config:sia_fevor_use_constant_slope = "no";
+    pism_config:sia_fevor_use_constant_slope_doc = "Use constant surface slope in the x direction (0 in the y direction).";
+    pism_config:sia_fevor_surface_slope_degrees = -5.0;
+    pism_config:sia_fevor_surface_slope_degrees_doc = "degrees; surface slope in the x direction for the slab-on-a-slope SIAFD_FEvoR setup";
 
     pism_config:do_skip = "no";
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";

@@ -918,10 +918,10 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("meltfactor_pik", "ocean_pik_melt_factor"); CHKERRQ(ierr);
 
   // SIAFD_FEvoR options
-  ierr = config.flag_from_option("siafd_fevor_use_constant_slope",
-                                 "siafd_fevor_use_constant_slope"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("siafd_fevor_surface_slope_degrees",
-                                   "siafd_fevor_surface_slope_degrees"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("sia_fevor_use_constant_slope",
+                                 "sia_fevor_use_constant_slope"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("sia_fevor_surface_slope_degrees",
+                                   "sia_fevor_surface_slope_degrees"); CHKERRQ(ierr);
 
   // old options
   ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",

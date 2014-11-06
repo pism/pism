@@ -730,18 +730,18 @@ PetscErrorCode IceModel::allocate_stressbalance() {
     }
 
   } else {
-    SETERRQ(grid.com, 1, "invalid stress balance model");
+    SETERRQ1(grid.com, 1, "invalid stress balance model: %s", model.c_str());
   }
 
   SSB_Modifier *modifier = NULL;
   if (model == "none" || model == "ssa" || model == "prescribed_sliding") {
     modifier = new ConstantInColumn(grid, *EC, config);
-  } else if (model == "prescribed_sliding+sia" || model == "ssa+sia") {
+  } else if (model == "prescribed_sliding+sia" || model == "ssa+sia" || model == "sia") {
     modifier = new SIAFD(grid, *EC, config);
   } else if (model == "sia_fevor") {
     modifier = new SIAFD_FEvoR(grid, *EC, config);
   } else {
-    SETERRQ(grid.com, 1, "invalid stress balance model");
+    SETERRQ1(grid.com, 1, "invalid stress balance model: %s", model.c_str());
   }
 
   // ~StressBalance() will de-allocate sliding and modifier.

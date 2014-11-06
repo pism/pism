@@ -51,8 +51,8 @@ PetscErrorCode SIAFD_FEvoR::init(Vars &vars) {
 PetscErrorCode SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
 
-  if (config.get_flag("siafd_fevor_use_constant_slope")) {
-    double slope = (config.get("siafd_fevor_surface_slope_degrees") / 180.0) * M_PI;
+  if (config.get_flag("sia_fevor_use_constant_slope")) {
+    double slope = (config.get("sia_fevor_surface_slope_degrees") / 180.0) * M_PI;
 
     ierr = h_x.set(slope); CHKERRQ(ierr);
     ierr = h_y.set(0.0); CHKERRQ(ierr);

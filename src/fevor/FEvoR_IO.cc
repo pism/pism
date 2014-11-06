@@ -124,7 +124,9 @@ int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
   std::vector<double> index;
   std::vector<unsigned int> start(1, 0), count(1, 0);
   // distributions
-  {
+  bool dim_exists = false;
+  ierr = nc.inq_dim("distribution_index", dim_exists); CHKERRQ(ierr);
+  if (dim_exists == false) {
     NCVariable distribution_index("distribution_index", sys, 1);
     ierr = nc.def_dim(n_distributions, distribution_index); CHKERRQ(ierr);
 
@@ -138,7 +140,8 @@ int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
   }
 
   // crystals
-  {
+  ierr = nc.inq_dim("crystal_index", dim_exists); CHKERRQ(ierr);
+  if (dim_exists == false) {
     NCVariable crystal_index("crystal_index", sys, 1);
     ierr = nc.def_dim(n_crystals, crystal_index); CHKERRQ(ierr);
 
@@ -152,7 +155,8 @@ int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
   }
 
   // parameters
-  {
+  ierr = nc.inq_dim("parameter_index", dim_exists); CHKERRQ(ierr);
+  if (dim_exists == false)  {
     NCVariable parameter_index("parameter_index", sys, 1);
     ierr = nc.def_dim(FEvoR::Distribution::numberParameters, parameter_index); CHKERRQ(ierr);
 
@@ -185,15 +189,34 @@ int fevor_prepare_file(const pism::PIO &nc, const pism::UnitSystem &sys,
   dims[1] = "distribution_index";
   // particle positions
   {
-    ierr = nc.def_var("p_x", PISM_DOUBLE, dims); CHKERRQ(ierr);
-    ierr = nc.def_var("p_y", PISM_DOUBLE, dims); CHKERRQ(ierr);
-    ierr = nc.def_var("p_z", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    bool exists = false;
+    ierr = nc.inq_var("p_x", exists); CHKERRQ(ierr);
+    if (not exists) {
+      ierr = nc.def_var("p_x", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    }
+
+    ierr = nc.inq_var("p_y", exists); CHKERRQ(ierr);
+    if (not exists) {
+      ierr = nc.def_var("p_y", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    }
+
+    ierr = nc.inq_var("p_z", exists); CHKERRQ(ierr);
+    if (not exists) {
+      ierr = nc.def_var("p_z", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    }
   }
 
   // diagnostics
   {
-    ierr = nc.def_var("n_migration_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
-    ierr = nc.def_var("n_polygonization_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    bool exists = false;
+    ierr = nc.inq_var("n_migration_recrystallizations", exists); CHKERRQ(ierr);
+    if (not exists) {
+      ierr = nc.def_var("n_migration_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    }
+    ierr = nc.inq_var("n_polygonization_recrystallizations", exists); CHKERRQ(ierr);
+    if (not exists) {
+      ierr = nc.def_var("n_polygonization_recrystallizations", PISM_DOUBLE, dims); CHKERRQ(ierr);
+    }
   }
 
   return 0;

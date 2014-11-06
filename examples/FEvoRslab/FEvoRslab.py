@@ -10,7 +10,8 @@ import netCDF4
 
 Lx         = 10e3                       # 10 km
 Mx         = 201
-topg_slope = -0.08748866352             # 5 degrees
+# topg_slope = -0.08748866352             # 5 degrees
+topg_slope = 0                          # zero degrees (we prescribe the surface gradient)
 thk_0      = 1e3                        # 1000 meters
 climatic_mass_balance_0 = 0             # kg m-2 s-1
 ice_surface_temp_0      = -60           # Celsius
