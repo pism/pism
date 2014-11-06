@@ -1,3 +1,21 @@
+## Changes since 0.6.1 (May 29, 2014)
+
+  - Adds "pressure", "tauxz", "tauyz" diagnostics (see
+    [#280](https://github.com/pism/pism/issues/280)).
+  - Adds PETSc 3.5 support. PISM 0.6.2 supports PETSc 3.3 through
+    3.5.2 (latest at the time of writing).
+  - Fixes bug [#281](https://github.com/pism/pism/issues/281).
+  - Implements "-atmosphere one_station" which reads scalar time-series of
+    near-surface air temperature and precipitation and uses them
+    throughout the domain. This atmosphere model should be used with
+    atmosphere "modifiers" such as the lapse rate modifier.
+  - Fixes ice discharge reporting (see commit 0859af56e).
+  - Fixes handling of the units of the sub-shelf mass flux (see commit
+    b1f5ed318).
+  - Fixes bug [#299](https://github.com/pism/pism/issues/299).
+  - Fixes an unreported bug in "-ocean ...,delta_SMB" (PISM crashed with
+    this option).
+
 ## Changes since 0.6 (February 13, 2014)
 
 ### Improvements
