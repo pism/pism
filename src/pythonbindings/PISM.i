@@ -355,6 +355,8 @@
     }
 };
 
+%ignore IceModelVec3D::getInternalColumn(int,int,double const **) const;
+
 %rename(__mult__) PISMVector2::operator*;
 %rename(__add__) PISMVector2::operator+;
 %ignore PISMVector2::operator=;
@@ -574,6 +576,8 @@ in fact be equal to PETSC_NULL, and this is OK. */
 // it is used.
 %template(PISMDiag_SSA) PISMDiag<SSA>;
 %include "stressbalance/ssa/SSA.hh"
+%ignore SSAFEFunction;
+%ignore SSAFEJacobian;
 %include "stressbalance/ssa/SSAFEM.hh"
 %template(PISMDiag_SSAFD) PISMDiag<SSAFD>;
 %include "stressbalance/ssa/SSAFD.hh"

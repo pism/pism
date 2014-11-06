@@ -239,6 +239,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
 
   assert(ocean != NULL);
   ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+  // convert from [kg m-2 s-1] to [m s-1]:
+  ierr = shelfbmassflux.scale(1.0 / ice_density); CHKERRQ(ierr);
+
   ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
 
   IceModelVec2S &basal_heat_flux = vWork2d[0];
@@ -309,8 +312,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       if (ice_free_column) {
         ierr = vWork3d.setColumn(i, j, Enth_ks); CHKERRQ(ierr);
         if (mask.floating_ice(i, j)) {
-          // convert from [kg m-2 s-1] to [m s-1]:
-          basal_melt_rate(i, j) = shelfbmassflux(i, j) / ice_density;
+          basal_melt_rate(i, j) = shelfbmassflux(i, j);
         } else {
           // no basal melt rate on ice free land and ice free ocean
           basal_melt_rate(i, j) = 0.0;
@@ -437,8 +439,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
         // drainage, from heat flux out of bedrock, heat flux into
         // ice, and frictional heating
         if (is_floating) {
-          // convert from [kg m-2 s-1] to [m s-1]:
-          basal_melt_rate(i, j) = shelfbmassflux(i, j) / ice_density;
+          basal_melt_rate(i, j) = shelfbmassflux(i, j);
         } else {
           if (base_is_cold) {
             basal_melt_rate(i, j) = 0.0;  // zero melt rate if cold base

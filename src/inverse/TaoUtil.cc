@@ -1,4 +1,4 @@
-// Copyright (C) 2012  David Maxwell
+// Copyright (C) 2012, 2014  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include "TaoUtil.hh"
 
+#if PETSC_VERSION_LT(3,5,0)
 TaoInitializer::TaoInitializer(int *argc, char ***argv, char *file, char *help) {
   PetscErrorCode ierr = TaoInitialize(argc,argv,file,help);
   CHKERRCONTINUE(ierr);
@@ -54,33 +55,62 @@ TaoInitializer::~TaoInitializer() {
   }
 }
 
-// TAO failure codes are negative and success codes are positive.  We declare 
-// associated description strings as an array and then point to the middle 
+// TAO failure codes are negative and success codes are positive.  We declare
+// associated description strings as an array and then point to the middle
 // of the array so that we can look up description strings via the error code.
 const char *TaoConvergedReasonsShifted[] = {
-    " ", " ", 
-    "TAO_DIVERGED_USER",
-    "TAO_DIVERGED_TR_REDUCTION",
-    "TAO_DIVERGED_LS_FAILURE",
-    "TAO_DIVERGED_MAXFCN",
-    "TAO_DIVERGED_NAN",
+    " ", " ",
+    "DIVERGED_USER",
+    "DIVERGED_TR_REDUCTION",
+    "DIVERGED_LS_FAILURE",
+    "DIVERGED_MAXFCN",
+    "DIVERGED_NAN",
     " ",
-    "TAO_DIVERGED_MAXITS",
+    "DIVERGED_MAXITS",
     " ",
-    "TAO_CONTINUE_ITERATING",
-    "TAO_CONVERGED_FATOL",
-    "TAO_CONVERGED_FRTOL",
-    "TAO_CONVERGED_GATOL",
-    "TAO_CONVERGED_GRTOL",
-    "TAO_CONVERGED_GTTOL",
-    "TAO_CONVERGED_STEPTOL",
-    "TAO_CONVERGED_MINF",
-    "TAO_CONVERGED_USER" };
+    "CONTINUE_ITERATING",
+    "CONVERGED_FATOL",
+    "CONVERGED_FRTOL",
+    "CONVERGED_GATOL",
+    "CONVERGED_GRTOL",
+    "CONVERGED_GTTOL",
+    "CONVERGED_STEPTOL",
+    "CONVERGED_MINF",
+    "CONVERGED_USER" };
 const char *const* TaoConvergedReasons = TaoConvergedReasonsShifted + 10;
 
-TAOTerminationReason::TAOTerminationReason( TaoSolverTerminationReason r)  {
+#else
+
+TaoInitializer::TaoInitializer(int *argc, char ***argv, char *file, char *help) {
+  (void) argc;
+  (void) argv;
+  (void) file;
+  (void) help;
+  // noop
+}
+
+TaoInitializer::TaoInitializer(int *argc, char ***argv, char *help) {
+  (void) argc;
+  (void) argv;
+  (void) help;
+  // noop
+}
+
+TaoInitializer::TaoInitializer(int *argc, char ***argv) {
+  (void) argc;
+  (void) argv;
+  // noop
+}
+
+TaoInitializer::~TaoInitializer() {
+  // noop
+}
+#endif
+
+TAOTerminationReason::TAOTerminationReason(TaoConvergedReason r)  {
   m_reason = r;
 }
+
 void TAOTerminationReason::get_description( std::ostream &desc, int indent_level) {
   for( int i=0; i < indent_level; i++) {
     desc << sm_indent;

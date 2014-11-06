@@ -53,7 +53,11 @@ PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PC pc;
 
   ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+#if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+#else
+  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+#endif
 
   // Get the PC from the KSP solver:
   ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
@@ -75,7 +79,11 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
 
   ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
+#if PETSC_VERSION_LT(3,5,0)
   ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+#else
+  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+#endif
     
   // Switch to using the "unpreconditioned" norm.
   ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
@@ -126,7 +134,12 @@ PetscErrorCode SSAFD::allocate_fd() {
   // note SSADA and SSAX are allocated in SSA::allocate()
   ierr = VecDuplicate(SSAX, &m_b); CHKERRQ(ierr);
 
+#if PETSC_VERSION_LT(3,5,0)
   ierr = DMCreateMatrix(SSADA, MATAIJ, &m_A); CHKERRQ(ierr);
+#else
+  ierr = DMSetMatType(SSADA, MATAIJ); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(SSADA, &m_A); CHKERRQ(ierr);
+#endif
 
   ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
   ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_"); CHKERRQ(ierr);
@@ -927,7 +940,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     very_verbose = getVerbosityLevel() > 2;
 
   // set the initial guess:
-  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to_vec(SSADA, SSAX); CHKERRQ(ierr);
 
   stdout_ssa.clear();
 
@@ -958,7 +971,11 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
       stdout_ssa += "A:";
 
     // Call PETSc to solve linear system by iterative method; "inner iteration":
+#if PETSC_VERSION_LT(3,5,0)
     ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+#else
+    ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
+#endif
     ierr = KSPSolve(m_KSP, m_b, SSAX); CHKERRQ(ierr); // SOLVE
 
     // Check if diverged; report to standard out about iteration
@@ -989,7 +1006,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     // Communicate so that we have stencil width for evaluation of effective
     // viscosity on next "outer" iteration (and geometry etc. if done):
     // Note that copy_from() updates ghosts of m_velocity.
-    ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+    ierr = m_velocity.copy_from_vec(SSAX); CHKERRQ(ierr);
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc == true) {

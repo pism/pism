@@ -19,7 +19,7 @@
 
 #include "IP_SSATaucTaoTikhonovProblem.hh"
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblem::connect(TaoSolver tao) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblem::connect(Tao tao) {
   PetscErrorCode ierr;
 
   ierr = IPTaoTikhonovProblem<IP_SSATaucForwardProblem>::connect(tao); CHKERRQ(ierr);
@@ -33,7 +33,7 @@ PetscErrorCode IP_SSATaucTaoTikhonovProblem::connect(TaoSolver tao) {
 }
 
 
-PetscErrorCode IP_SSATaucTaoTikhonovProblem::getVariableBounds(TaoSolver /*tao*/, Vec lo, Vec hi) {
+PetscErrorCode IP_SSATaucTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec hi) {
   PetscErrorCode ierr;
   double zeta_min, zeta_max, tauc_min, tauc_max;
 

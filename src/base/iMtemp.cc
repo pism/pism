@@ -189,6 +189,9 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
     assert(ocean != NULL);
     ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+    // convert from [kg m-2 s-1] to [m s-1]:
+    ierr = shelfbmassflux.scale(1.0 / ice_density); CHKERRQ(ierr);
+
     ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
 
     IceModelVec2S &G0 = vWork2d[0];
@@ -363,13 +366,10 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
-        // convert from [kg m-2 s-1] to [m s-1]:
-        double sub_shelf_flux = shelfbmassflux(i,j) / ice_density;
-
         // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
         if (mask.ocean(i,j)) {
           if (mask.icy(i,j)) {
-            basal_melt_rate(i,j) = sub_shelf_flux;
+            basal_melt_rate(i,j) = shelfbmassflux(i,j);
           } else {
             basal_melt_rate(i,j) = 0.0;
           }
@@ -382,7 +382,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
         }
 
         if (sub_gl == true) {
-          basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * sub_shelf_flux + gl_mask(i,j) * basal_melt_rate(i,j);
+          basal_melt_rate(i,j) = (1.0 - gl_mask(i,j)) * shelfbmassflux(i,j) + gl_mask(i,j) * basal_melt_rate(i,j);
         }
 
     }

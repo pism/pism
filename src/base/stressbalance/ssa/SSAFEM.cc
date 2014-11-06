@@ -22,12 +22,14 @@
 #include "basal_resistance.hh"
 #include "flowlaws.hh"
 
-typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*,void*,Mat,Mat,MatStructure*,void*);
-typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*,void*,void*,void*);
+#if PETSC_VERSION_LT(3,5,0)
+// FIXME: we should never define PETSc objects!
+typedef PetscErrorCode (*DMDASNESJacobianLocal)(DMDALocalInfo*, void*, Mat, Mat, MatStructure*, void*);
+typedef PetscErrorCode (*DMDASNESFunctionLocal)(DMDALocalInfo*, void*, void*, void*);
+#endif
 
-SSA *SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c)
-{
-  return new SSAFEM(g,ec,c);
+SSA* SSAFEMFactory(IceGrid &g, EnthalpyConverter &ec, const PISMConfig &c) {
+  return new SSAFEM(g, ec, c);
 }
 
 SSAFEM::SSAFEM(IceGrid &g, EnthalpyConverter &e, const PISMConfig &c)
@@ -59,8 +61,17 @@ PetscErrorCode SSAFEM::allocate_fem() {
   // methods via SSAFEFunction and SSAFEJ
   callback_data.da = SSADA;
   callback_data.ssa = this;
-  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES, (DMDASNESFunctionLocal)SSAFEFunction, &callback_data); CHKERRQ(ierr);
-  ierr = DMDASNESSetJacobianLocal(SSADA, (DMDASNESJacobianLocal)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
+#if PETSC_VERSION_LT(3,5,0)
+  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES,
+                                  (DMDASNESFunctionLocal)SSAFEFunction, &callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA,
+                                  (DMDASNESJacobianLocal)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
+#else
+  ierr = DMDASNESSetFunctionLocal(SSADA, INSERT_VALUES,
+                                  (DMDASNESFunction)SSAFEFunction, &callback_data); CHKERRQ(ierr);
+  ierr = DMDASNESSetJacobianLocal(SSADA,
+                                  (DMDASNESJacobian)SSAFEJacobian, &callback_data); CHKERRQ(ierr);
+#endif
 
   ierr = DMSetMatType(SSADA, "baij"); CHKERRQ(ierr);
   ierr = DMSetApplicationContext(SSADA, &callback_data); CHKERRQ(ierr);
@@ -109,7 +120,7 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears SSAX.
 
-  ierr = m_velocity.copy_to(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_to_vec(SSADA, SSAX); CHKERRQ(ierr);
 
   // Store coefficient data at the quadrature points.
   ierr = cacheQuadPtValues(); CHKERRQ(ierr);
@@ -223,7 +234,7 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason)
   }
 
   // Extract the solution back from SSAX to velocity and communicate.
-  ierr = m_velocity.copy_from(SSAX); CHKERRQ(ierr);
+  ierr = m_velocity.copy_from_vec(SSAX); CHKERRQ(ierr);
   ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
 
   ierr = PetscOptionsHasName(NULL,"-ssa_view_solution",&flg);CHKERRQ(ierr);
@@ -572,7 +583,11 @@ PetscErrorCode SSAFEM::compute_local_function(DMDALocalInfo *info, const PISMVec
                                        i,j,xg[i][j].u,xg[i][j].v,yg[i][j].u,yg[i][j].v);CHKERRQ(ierr);
       }
     }
-    ierr = PetscSynchronizedFlush(grid.com);CHKERRQ(ierr);
+#if PETSC_VERSION_LT(3,5,0)
+    ierr = PetscSynchronizedFlush(grid.com); CHKERRQ(ierr);
+#else
+    ierr = PetscSynchronizedFlush(grid.com, NULL); CHKERRQ(ierr);
+#endif
   }
 
   return 0;
@@ -768,14 +783,27 @@ PetscErrorCode SSAFEFunction(DMDALocalInfo *info,
   return fe->ssa->compute_local_function(info,xg,yg);
 }
 
-PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **xg,
-                             Mat /*A*/, Mat J,
-                             MatStructure *str, SSAFEM_SNESCallbackData *fe)
-{
-  PetscErrorCode ierr = fe->ssa->compute_local_jacobian(info, xg, J); CHKERRQ(ierr);
+#if PETSC_VERSION_LT(3,5,0)
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
+			     Mat A, Mat J, MatStructure *str, SSAFEM_SNESCallbackData *fe) {
+
+  (void) A;
+
+  PetscErrorCode ierr = fe->ssa->compute_local_jacobian(info, velocity, J); CHKERRQ(ierr);
 
   *str = SAME_NONZERO_PATTERN;
 
   return 0;
 }
+#else
+PetscErrorCode SSAFEJacobian(DMDALocalInfo *info, const PISMVector2 **velocity,
+			     Mat A, Mat J, SSAFEM_SNESCallbackData *fe) {
+
+  (void) A;
+
+  PetscErrorCode ierr = fe->ssa->compute_local_jacobian(info, velocity, J); CHKERRQ(ierr);
+
+  return 0;
+}
+#endif
 

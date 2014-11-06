@@ -112,11 +112,19 @@ int main(int argc, char *argv[]) {
       ierr = VecDuplicate(H, &uplift); CHKERRQ(ierr);
 
       // in order to show bed elevation as a picture, create a da 
+#if PETSC_VERSION_LT(3,5,0)
       ierr = DMDACreate2d(PETSC_COMM_SELF,
                           DMDA_BOUNDARY_PERIODIC, DMDA_BOUNDARY_PERIODIC,
                           DMDA_STENCIL_STAR,
                           My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
-                          PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+                          NULL, NULL, &da2); CHKERRQ(ierr);
+#else
+      ierr = DMDACreate2d(PETSC_COMM_SELF,
+                          DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
+                          DMDA_STENCIL_STAR,
+                          My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 0,
+                          NULL, NULL, &da2); CHKERRQ(ierr);
+#endif
       ierr = DMDASetUniformCoordinates(da2, -Ly, Ly, -Lx, Lx, 0, 0); CHKERRQ(ierr);
       ierr = DMCreateGlobalVector(da2, &bed); CHKERRQ(ierr);
 

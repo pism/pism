@@ -95,7 +95,7 @@ PetscErrorCode IceModelVec2T::get_array3(double*** &a3) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::begin_access() {
+PetscErrorCode IceModelVec2T::begin_access() const {
   PetscErrorCode ierr;
   if (access_counter == 0) {
     ierr = DMDAVecGetArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
@@ -107,7 +107,7 @@ PetscErrorCode IceModelVec2T::begin_access() {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::end_access() {
+PetscErrorCode IceModelVec2T::end_access() const {
   // this call will decrement the access_counter
   PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
 
@@ -360,7 +360,7 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
 
   for (unsigned int j = 0; j < missing; ++j) {
     ierr = m_metadata[0].regrid(nc, start + j,
-                                CRITICAL, m_report_range, 0.0, v); CHKERRQ(ierr);
+                                CRITICAL, m_report_range, 0.0, m_v); CHKERRQ(ierr);
 
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %s...\n",
                       m_name.c_str(),

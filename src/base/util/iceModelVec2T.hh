@@ -118,8 +118,8 @@ public:
   virtual PetscErrorCode average(double my_t, double my_dt);
   virtual PetscErrorCode average(int i, int j, double &result);
 
-  virtual PetscErrorCode begin_access();
-  virtual PetscErrorCode end_access();
+  virtual PetscErrorCode begin_access() const;
+  virtual PetscErrorCode end_access() const;
   virtual PetscErrorCode init_interpolation(const double *ts, unsigned int ts_length);
 
 protected:
@@ -128,7 +128,7 @@ protected:
   std::string filename;         //!< file to read (regrid) from
   DM da3;
   Vec v3;                       //!< a 3D Vec used to store records
-  void ***array3;
+  mutable void ***array3;
   unsigned int n_records, //!< maximum number of records to store in memory
     N,                    //!< number of records kept in memory
     n_evaluations_per_year;     //!< number of evaluations per year

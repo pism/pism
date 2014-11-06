@@ -25,7 +25,7 @@
 #include "PISMConfig.hh"
 
 bool IceModelVec3BTU::good_init() {
-  return ((m_n_levels >= 2) && (Lbz > 0.0) && (v != NULL));
+  return ((m_n_levels >= 2) && (Lbz > 0.0) && (m_v != NULL));
 }
 
 
@@ -34,7 +34,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
   PetscErrorCode ierr;
   grid = &mygrid;
 
-  if (v != PETSC_NULL) {
+  if (m_v != PETSC_NULL) {
     SETERRQ1(grid->com, 2,"IceModelVec3BTU with name='%s' already allocated\n",m_name.c_str());
   }
 
@@ -53,9 +53,9 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
 
   m_has_ghosts = local;
   if (local) {
-    ierr = DMCreateLocalVector(m_da, &v); CHKERRQ(ierr);
+    ierr = DMCreateLocalVector(m_da, &m_v); CHKERRQ(ierr);
   } else {
-    ierr = DMCreateGlobalVector(m_da, &v); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(m_da, &m_v); CHKERRQ(ierr);
   }
 
   m_metadata.resize(m_dof, NCSpatialVariable(grid->get_unit_system()));

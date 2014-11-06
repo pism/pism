@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cassert>
 
 #include "NCVariable.hh"
 
@@ -54,72 +55,45 @@ int getVerbosityLevel() {
 //! Print messages to standard out according to verbosity threshhold.
 /*!
 Verbosity level version of PetscPrintf.  We print according to whether 
-(thresh <= verbosityLevel), in which case print, or (thresh > verbosityLevel)
+(threshold <= verbosityLevel), in which case print, or (threshold > verbosityLevel)
 in which case no print.
 
 verbosityLevelFromOptions() actually reads the threshold.
 
-The range 1 <= thresh <= 5  is enforced.
+The range 1 <= threshold <= 5  is enforced.
 
 Use this method for messages and warnings which should
 - go to stdout and
 - appear only once (regardless of number of processors).
 
+For each communicator, rank 0 does the printing. Calls from other
+ranks are ignored.
+
 Should not be used for reporting fatal errors.
  */
-PetscErrorCode verbPrintf(const int thresh, 
-                          MPI_Comm comm,const char format[],...)
-{
+PetscErrorCode verbPrintf(const int threshold,
+                          MPI_Comm comm, const char format[], ...) {
   PetscErrorCode ierr;
-  PetscMPIInt    rank;
-  size_t         len;
-  char           *buffer,*sub1,*sub2;
-  const char     *nformat;
-  double      value;
-
-  extern FILE *petsc_history;
-
+  int            rank;
 
   PetscFunctionBegin;
-  if (!comm) comm = PETSC_COMM_WORLD;
 
-  if ((thresh < 1) || (thresh > 5)) { SETERRQ(comm, 1,"invalid threshold in verbPrintf()"); }
+  extern FILE *petsc_history;
+  assert(1 <= threshold && threshold <= 5);
 
-  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
-  if (!rank && ((verbosityLevel >= thresh) || petsc_history) ) {
+  ierr = MPI_Comm_rank(comm, &rank); CHKERRQ(ierr);
+  if (rank == 0) {
     va_list Argp;
-    va_start(Argp,format);
-
-    ierr = PetscStrstr(format,"%A",&sub1);CHKERRQ(ierr);
-    if (sub1) {
-      ierr = PetscStrstr(format,"%",&sub2);CHKERRQ(ierr);
-      if (sub1 != sub2) SETERRQ(comm, PETSC_ERR_ARG_WRONG,"%%A format must be first in format string");
-      ierr    = PetscStrlen(format,&len);CHKERRQ(ierr);
-      ierr    = PetscMalloc((len+16)*sizeof(char),&buffer);CHKERRQ(ierr);
-      ierr    = PetscStrcpy(buffer,format);CHKERRQ(ierr);
-      ierr    = PetscStrstr(buffer,"%",&sub2);CHKERRQ(ierr);
-      sub2[0] = 0;
-      value   = (double)va_arg(Argp,double);
-      if (PetscAbsReal(value) < 1.e-12) {
-        ierr    = PetscStrcat(buffer,"< 1.e-12");CHKERRQ(ierr);
-      } else {
-        ierr    = PetscStrcat(buffer,"%g");CHKERRQ(ierr);
-        va_end(Argp);
-        va_start(Argp,format);
-      }
-      ierr    = PetscStrcat(buffer,sub1+2);CHKERRQ(ierr);
-      nformat = buffer;
-    } else {
-      nformat = format;
-    }
-    if (verbosityLevel >= thresh) {
-      ierr = PetscVFPrintf(PETSC_STDOUT,nformat,Argp);CHKERRQ(ierr);
+    if (verbosityLevel >= threshold) {
+      va_start(Argp, format);
+      ierr = PetscVFPrintf(PETSC_STDOUT, format, Argp); CHKERRQ(ierr);
+      va_end(Argp);
     }
     if (petsc_history) { // always print to history
-      ierr = PetscVFPrintf(petsc_history,nformat,Argp);CHKERRQ(ierr);
+      va_start(Argp, format);
+      ierr = PetscVFPrintf(petsc_history, format, Argp); CHKERRQ(ierr);
+      va_end(Argp);
     }
-    va_end(Argp);
-    if (sub1) {ierr = PetscFree(buffer);CHKERRQ(ierr);}
   }
   PetscFunctionReturn(0);
 }

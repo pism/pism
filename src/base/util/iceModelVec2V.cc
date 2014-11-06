@@ -145,7 +145,7 @@ PetscErrorCode IceModelVec2V::add(double alpha, IceModelVec &x, IceModelVec &res
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 
-PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) {
+PetscErrorCode IceModelVec2V::copy_to(IceModelVec &destination) const {
   return copy_2d<IceModelVec2V>(this, &destination);
 }
 
