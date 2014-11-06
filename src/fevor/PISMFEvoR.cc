@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <vector>
+#include <algorithm>
 
 #include <fevor_distribution.hh>
 #include <vector_tensor_operations.hh>
@@ -124,9 +125,6 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
 
       // check if the point (x,y,z) is within the domain:
       assert(0.0 <= m_p_z[i] && m_p_z[i] <= grid.Lz);
-      // PISM's horizontal grid is cell-centered, so (-grid.Lx,
-      // -grid.Ly) is actually outside of the convex hull of all grid
-      // points.
       assert(grid.x.front() <= m_p_x[i] && m_p_x[i] <= grid.x.back());
       assert(grid.y.front() <= m_p_y[i] && m_p_y[i] <= grid.y.back());
 
@@ -134,20 +132,14 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = evaluate_at_point(*tauxz3, m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
       ierr = evaluate_at_point(*tauyz3, m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
 
-      /*std::vector<double> stress = {   P,   0, txz,
-       *                                 0,   P, tyz,
-       *                               txz, tyz,   P};
-       * Whoops, no list initialization in c++98.
-       *
-       * Indexing: {0, 1, 2,
+      /* Indexing: {0, 1, 2,
        *            3, 4, 5,
        *            6, 7, 8}
        */
       std::vector<double> stress(9,0.0);
-      stress[0] = stress[4] = stress[8] = P; // FIXME correct sign?
-      stress[2] = stress[6] = txz;           // FIXME correct sign?
-      stress[5] = stress[7] = tyz;           // FIXME correct sign?
-      // don't strictly need P here as we only need the deviatoric stress.
+      stress[0] = stress[4] = stress[8] = -P;
+      stress[2] = stress[6] = txz;           
+      stress[5] = stress[7] = tyz;           
 
       ierr = evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
@@ -222,7 +214,7 @@ PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double 
                                                    double u, double v, double w,
                                                    double dt) {
 
-  // stupid basic Euler method. Assuming u, v, w are 'good'
+  // basic Euler method. Assuming u, v, w are 'good'
   x += u*dt;
   y += v*dt; // probably not needed and v should be zero in 2D flow line model
   z += w*dt; // w should be zero
@@ -232,17 +224,19 @@ PetscErrorCode PISMFEvoR::update_particle_position(double &x, double &y, double 
   } else if (z < 0.0) {
     z = 0.0;
   }
-
+  
+  // assuming periodic x... 
   if (x < grid.x.front()) {
-    x = grid.x.front();
+    x += grid.x.back()-grid.x.front();
   } else if (x > grid.x.back()) {
-    x = grid.x.back();
+    x -= grid.x.back()-grid.x.front();
   }
   
+  // assuming periodic y... 
   if (y < grid.y.front()) {
-    y = grid.y.front();
+    y += grid.y.back()-grid.y.front();
   } else if (y > grid.y.back()) {
-    y = grid.y.back();
+    y -= grid.y.back()-grid.y.front();
   }
 
   // check if the point (x,y,z) is within the domain:
@@ -365,23 +359,30 @@ PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
       // make sure point is in convex hull!
       if(!norm.third) {
         // FIXME this is dumb logic. Works for only the Enhancement factor now!!
-        if (grid.zlevels[k] > grid.zlevels[grid.Mz]/2.0) {
+        if (grid.zlevels[k] > grid.zlevels[grid.Mz-1]/2.0) {
           // above the middle
           res = Field_type(1.0); // isotropic.
         } else {
-          res = Field_type(10.0); // max.
+          res = Field_type( *std::max_element(values.begin(), values.end()) ); // max.
         } 
       } else {
         res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm.second, Value_access(function_values));
       }
-
+      
       // set result for all y grid points at INTERP(x,z)
       for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
         result(i,j,k) = double(res);
       }
     }
   }
-
+  
+  // deal with side boundaries. 
+  for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (unsigned int k=0; k<grid.Mz; ++k) {
+      result(grid.xs,j,k) = result(grid.xs+1,j,k);
+      result(grid.xs+grid.xm-1,j,k) = result(grid.xs+grid.xm-2,j,k);
+    }
+  } 
   return 0;
 }
 
@@ -506,7 +507,7 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
                     "  Setting initial distribution parameters...\n"); CHKERRQ(ierr);
 
 
-  unsigned int n_particles = (grid.Mz-2)*(grid.Mx-2);
+  unsigned int n_particles = (grid.Mz-2)*(grid.Mx-1);
   
   // Initialize distributions
   assert(m_packing_dimensions.size() == 3);
@@ -522,8 +523,8 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
   m_p_e.resize(n_particles);
   
   for (unsigned int zz = 0; zz < grid.Mz-2; ++zz) {
-    for (unsigned int xx = 0; xx < grid.Mx-2; ++xx) {
-      unsigned int i = xx + zz*(grid.Mx-2);
+    for (unsigned int xx = 0; xx < grid.Mx-1; ++xx) {
+      unsigned int i = xx + zz*(grid.Mx-1);
       
       m_p_x[i] = grid.x[xx];
       m_p_y[i] = 0.0;
