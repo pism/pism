@@ -43,7 +43,7 @@ namespace pism {
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
                      StressBalance *stress_balance)
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
-    m_packing_dimensions(std::vector<unsigned int>(3, 3)),
+    m_packing_dimensions(std::vector<unsigned int>(3, 5)),
     m_d_iso(m_packing_dimensions, 0.0)
 {
 
@@ -505,37 +505,30 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
   ierr = verbPrintf(2, grid.com,
                     "  Setting initial distribution parameters...\n"); CHKERRQ(ierr);
 
+
+  unsigned int n_particles = (grid.Mz-2)*(grid.Mx-2);
+  
   // Initialize distributions
   assert(m_packing_dimensions.size() == 3);
-  unsigned int n_particles = (m_packing_dimensions[0] *
-                              m_packing_dimensions[1] *
-                              m_packing_dimensions[2]);
-
   double w_i = -3.0; // This makes a weak bi-polar (single maximum)
   FEvoR::Distribution d_i(m_packing_dimensions, w_i);
 
   m_distributions.resize(n_particles, FEvoR::Distribution(m_packing_dimensions, w_i));
 
   // Initialize particle positions and corresponding enhancement factors
-  const double x_min = grid.x.front(), x_max = grid.x.back(),
-    dx = (x_max - x_min) / (double)(n_particles / 2 - 1);
-
   m_p_x.resize(n_particles);
   m_p_y.resize(n_particles);
   m_p_z.resize(n_particles);
   m_p_e.resize(n_particles);
-
-  for (unsigned int i = 0; i < n_particles; ++i) {
-    unsigned int I = i < n_particles / 2 ? i : i - n_particles / 2;
-    m_p_x[i] = x_min + I * dx;
-    m_p_y[i] = 0.0;
-    m_p_z[i] = i < n_particles / 2 ? 0.0 : grid.Lz;
-    m_p_e[i] = 1.0;
-
-    if (m_p_x[i] < x_min) {
-      m_p_x[i] = x_min;
-    } else if (m_p_x[i] > x_max) {
-      m_p_x[i] = x_max;
+  
+  for (unsigned int zz = 0; zz < grid.Mz-2; ++zz) {
+    for (unsigned int xx = 0; xx < grid.Mx-2; ++xx) {
+      unsigned int i = xx + zz*(grid.Mx-2);
+      
+      m_p_x[i] = grid.x[xx];
+      m_p_y[i] = 0.0;
+      m_p_z[i] = (grid.zlevels[zz]+grid.zlevels[zz+1])/2.0;
+      m_p_e[i] = 1.0;
     }
   }
 

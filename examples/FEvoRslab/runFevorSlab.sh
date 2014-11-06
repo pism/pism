@@ -11,7 +11,7 @@ pismr -surface given -boot_file pism-in.nc -periodicity xy \
  -bed_smoother_range 0 \
  -stress_balance sia_fevor \
  -sia_fevor_use_constant_slope \
- -sia_fevor_constant_slope_degrees -0.1 \
+ -sia_fevor_surface_slope_degrees -0.1 \
  -extra_file ex.nc -extra_times 0.1 \
  -extra_vars distributions,recrystallizations,thk,flux_mag,velsurf_mag,h_x,h_y,taud_mag,enhancement_factor \
  -o pism-out.nc
