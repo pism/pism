@@ -4,9 +4,9 @@ set -x
 
 ./FEvoRslab.py 
 
-flowline.py -o fevor-slab-in.nc --expand -d y fevor-slab.nc
+flowline.py -o fevor-slab.nc --expand -d y fevor-slab-in.nc
 
-pismr -surface given -boot_file fevor-slab-in.nc -periodicity xy \
+pismr -surface given -boot_file fevor-slab.nc -periodicity xy \
  -Mx 21 -My 11 -Lx 10.05 -Mz 11 -Lz 210 -y 1 \
  -bed_smoother_range 0 \
  -stress_balance sia_fevor \

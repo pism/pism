@@ -16,7 +16,7 @@ thk_0      = 2e2                        # 200 meters
 climatic_mass_balance_0 = 0             # kg m-2 s-1
 ice_surface_temp_0      = -30           # Celsius
 
-nc = netCDF4.Dataset("fevor-slab.nc", 'w')
+nc = netCDF4.Dataset("fevor-slab-in.nc", 'w')
 nc.createDimension('x', Mx)
 
 x    = nc.createVariable('x',    'f4', ('x',))
