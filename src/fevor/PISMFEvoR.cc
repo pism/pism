@@ -315,6 +315,9 @@ typedef K::Point_2 Point;
 typedef K::Less_xy_2 Map_compare;
 // field number type -- has models for what we construct our points out of
 typedef K::FT Field_type;
+// finding the neighbors
+typedef std::vector< std::pair< Point, Field_type  > > Point_coordinate_vector;
+typedef CGAL::Triple< std::back_insert_iterator<Point_coordinate_vector>,Field_type, bool > The_neighbors;
 
 /**
  * Interpolate values defined at locations (x, z) to the grid and store in result.
@@ -355,9 +358,22 @@ PetscErrorCode PISMFEvoR::pointcloud_to_grid(const std::vector<double> &x,
       Point INTERP( grid.x[i],grid.zlevels[k] );
 
       // make a vector of the iterpolation point and type
-      std::vector< std::pair< Point, Field_type > > coord;
-      Field_type norm = CGAL::natural_neighbor_coordinates_2 (D_TRI, INTERP, std::back_inserter(coord) ).second;
-      Field_type res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm, Value_access(function_values));
+      Point_coordinate_vector coord;
+      The_neighbors norm = CGAL::natural_neighbor_coordinates_2 (D_TRI, INTERP, std::back_inserter(coord) );
+      
+      Field_type res;
+      // make sure point is in convex hull!
+      if(!norm.third) {
+        // FIXME this is dumb logic. Works for only the Enhancement factor now!!
+        if (grid.zlevels[k] > grid.zlevels[grid.Mz]/2.0) {
+          // above the middle
+          res = Field_type(1.0); // isotropic.
+        } else {
+          res = Field_type(10.0); // max.
+        } 
+      } else {
+        res =  CGAL::linear_interpolation (coord.begin(), coord.end(), norm.second, Value_access(function_values));
+      }
 
       // set result for all y grid points at INTERP(x,z)
       for (int j=grid.ys; j<grid.ys+grid.ym; ++j) {
