@@ -185,6 +185,8 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
     // set the enhancement factor for every grid point from our particle cloud
     ierr = pointcloud_to_grid(m_p_x, m_p_z, m_p_e, m_enhancement_factor); CHKERRQ(ierr);
 
+    ierr = m_enhancement_factor.update_ghosts(); CHKERRQ(ierr);
+
     // update particle positions -- don't want to update until gridded
     // enhancement factor is updated
     for (unsigned int i = 0; i < n_particles; ++i) {
@@ -409,8 +411,10 @@ PetscErrorCode PISMFEvoR::write_variables(const std::set<std::string> &vars, con
 PetscErrorCode PISMFEvoR::allocate() {
   PetscErrorCode ierr;
 
-  // SIAFD diffusive flux computation requires stencil width of 1
-  const unsigned int stencil_width = 1;
+  // SIAFD diffusive flux computation requires stencil width of 2 (we
+  // traverse the grid *with ghosts* and we need staggered grid offset
+  // data at each point)
+  const unsigned int stencil_width = 2;
 
   ierr = m_enhancement_factor.create(grid, "enhancement_factor", WITH_GHOSTS,
                                      stencil_width); CHKERRQ(ierr);
