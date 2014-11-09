@@ -21,6 +21,7 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+#include <math.h>
 
 #include <fevor_distribution.hh>
 #include <vector_tensor_operations.hh>
@@ -191,12 +192,15 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       }
       
       if (bulkEdot_iso[2] != 0.0) {
-        m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
+        m_p_e[i] = abs(bulkEdot[2] / bulkEdot_iso[2]);
       } else {
         // If a particle is outside the ice blob, then pressure == 0
         // and bulkEdot_iso == 0, so we need this special case.
         m_p_e[i] = 1.0;
       }
+      
+      if (i == 5)
+        std::cout << "E before bounds:" << m_p_e[i] << std::endl;
       
       // some bounds for the enhancement factor -- in shear only
       if (m_p_e[i] < 1.0) {
@@ -205,6 +209,10 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         m_p_e[i] = 10.0;
         // upper bound.
       }
+      
+      if (i == 5)
+        std::cout << "E after bounds:" << m_p_e[i] << std::endl;
+      
       
     } // end of the for-loop over particles
 
