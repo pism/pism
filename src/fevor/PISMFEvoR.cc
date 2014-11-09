@@ -44,10 +44,10 @@ namespace pism {
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
                      StressBalance *stress_balance)
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
-    m_packing_dimensions(std::vector<unsigned int>(3, 5)),
+    m_packing_dimensions(std::vector<unsigned int>(3, 3)),
     m_d_iso(m_packing_dimensions, 0.0)
 {
-
+  
   assert(m_EC != NULL);
   assert(m_stress_balance != NULL);
 
@@ -76,6 +76,8 @@ PetscErrorCode PISMFEvoR::max_timestep(double t, double &dt, bool &restrict) {
 
 PetscErrorCode PISMFEvoR::update(double t, double dt) {
   m_t = t;
+  double m_t_dis = t;
+  double m_t_iso = t;
   m_dt = dt;
   PetscErrorCode ierr;
 
@@ -143,35 +145,36 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
 
       ierr = evaluate_at_point(*m_enthalpy, m_p_x[i], m_p_y[i], m_p_z[i], E); CHKERRQ(ierr);
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
-
+      
       std::vector<double> bulkEdot(9, 0.0);
+      
+      std::vector<double> bulkM;
       // http://en.wikipedia.org/wiki/Step_in_Time
-      m_distributions[i].stepInTime(T, stress, m_t, m_dt,
+      bulkM = m_distributions[i].stepInTime(T, stress, m_t_dis, m_dt,
                                     m_n_migration_recrystallizations[i],
                                     m_n_polygonization_recrystallizations[i],
                                     bulkEdot);
-
+      
       std::vector<double> bulkEdot_iso(9, 0.0);
-      m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
-
-      const double M = FEvoR::tensorMagnitude(bulkEdot),
-        M_iso = FEvoR::tensorMagnitude(bulkEdot_iso);
-
-      if (M_iso != 0.0) {
-        m_p_e[i] = M / M_iso;
+      std::vector<double> bulkM_iso;
+      bulkM_iso = m_d_iso.stepInTime(T, stress, m_t_iso, m_dt, bulkEdot_iso);
+      
+      if (bulkEdot_iso[2] != 0.0) {
+        m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
       } else {
         // If a particle is outside the ice blob, then pressure == 0
-        // and M_iso == 0, so we need this special case.
+        // and bulkEdot_iso == 0, so we need this special case.
         m_p_e[i] = 1.0;
       }
-
-      // some bounds for the enhancement factor
-      if (m_p_e[i] < 0.4) {
-        m_p_e[i] = 0.4;
+      
+      // some bounds for the enhancement factor -- in shear only
+      if (m_p_e[i] < 1.0) {
+        m_p_e[i] = 1.0;
       } else if (m_p_e[i] > 10.0) {
         m_p_e[i] = 10.0;
         // upper bound.
       }
+      
     } // end of the for-loop over particles
 
     // set the enhancement factor for every grid point from our particle cloud
@@ -507,7 +510,7 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
                     "  Setting initial distribution parameters...\n"); CHKERRQ(ierr);
 
 
-  unsigned int n_particles = (grid.Mz-2)*(grid.Mx-1);
+  unsigned int n_particles = (grid.Mz-1)*(grid.Mx-1);
   
   // Initialize distributions
   assert(m_packing_dimensions.size() == 3);
@@ -522,7 +525,7 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
   m_p_z.resize(n_particles);
   m_p_e.resize(n_particles);
   
-  for (unsigned int zz = 0; zz < grid.Mz-2; ++zz) {
+  for (unsigned int zz = 0; zz < grid.Mz-1; ++zz) {
     for (unsigned int xx = 0; xx < grid.Mx-1; ++xx) {
       unsigned int i = xx + zz*(grid.Mx-1);
       

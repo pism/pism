@@ -7,7 +7,7 @@ set -x
 flowline.py -o pism-in.nc --expand -d y fevor-slab-in.nc
 
 pismr -surface given -boot_file pism-in.nc -periodicity xy \
- -Mx 21 -My 11 -Lx 10.05 -Mz 11 -Lz 210 -y 100 \
+ -Mx 21 -My 11 -Lx 50.05 -Mz 11 -Lz 210 -y 100 \
  -bed_smoother_range 0 \
  -stress_balance sia_fevor \
  -sia_fevor_use_constant_slope \

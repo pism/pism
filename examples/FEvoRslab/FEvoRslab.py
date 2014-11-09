@@ -8,13 +8,13 @@
 from numpy import linspace, minimum, maximum, abs
 import netCDF4
 
-Lx         = 10e3                       # 10 km
+Lx         = 50e3                       # 50 km
 Mx         = 201
 # topg_slope = -0.08748866352             # 5 degrees
 topg_slope = 0                          # zero degrees (we prescribe the surface gradient)
 thk_0      = 2e2                        # 200 meters
 climatic_mass_balance_0 = 0             # kg m-2 s-1
-ice_surface_temp_0      = -30           # Celsius
+ice_surface_temp_0      = -10           # Celsius
 
 nc = netCDF4.Dataset("fevor-slab-in.nc", 'w')
 nc.createDimension('x', Mx)
