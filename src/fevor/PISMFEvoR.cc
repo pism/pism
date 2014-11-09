@@ -76,8 +76,6 @@ PetscErrorCode PISMFEvoR::max_timestep(double t, double &dt, bool &restrict) {
 
 PetscErrorCode PISMFEvoR::update(double t, double dt) {
   m_t = t;
-  double m_t_dis = t;
-  double m_t_iso = t;
   m_dt = dt;
   PetscErrorCode ierr;
 
@@ -150,14 +148,14 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       
       std::vector<double> bulkM;
       // http://en.wikipedia.org/wiki/Step_in_Time
-      bulkM = m_distributions[i].stepInTime(T, stress, m_t_dis, m_dt,
+      bulkM = m_distributions[i].stepInTime(T, stress, m_t, m_dt,
                                     m_n_migration_recrystallizations[i],
                                     m_n_polygonization_recrystallizations[i],
                                     bulkEdot);
       
       std::vector<double> bulkEdot_iso(9, 0.0);
       std::vector<double> bulkM_iso;
-      bulkM_iso = m_d_iso.stepInTime(T, stress, m_t_iso, m_dt, bulkEdot_iso);
+      bulkM_iso = m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
       
       if (bulkEdot_iso[2] != 0.0) {
         m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
