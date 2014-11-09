@@ -146,7 +146,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       
       std::vector<double> bulkEdot(9, 0.0);
       
-      std::vector<double> bulkM;
+      std::vector<double> bulkM(81, 0.0);
       // http://en.wikipedia.org/wiki/Step_in_Time
       bulkM = m_distributions[i].stepInTime(T, stress, m_t, m_dt,
                                     m_n_migration_recrystallizations[i],
@@ -154,7 +154,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
                                     bulkEdot);
       
       std::vector<double> bulkEdot_iso(9, 0.0);
-      std::vector<double> bulkM_iso;
+      std::vector<double> bulkM_iso(81, 0.0);
       bulkM_iso = m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
       
       if (bulkEdot_iso[2] != 0.0) {
