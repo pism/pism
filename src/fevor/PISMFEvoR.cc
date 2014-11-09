@@ -20,6 +20,7 @@
 #include <cassert>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
 
 #include <fevor_distribution.hh>
 #include <vector_tensor_operations.hh>
@@ -44,9 +45,15 @@ namespace pism {
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
                      StressBalance *stress_balance)
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
-    m_packing_dimensions(std::vector<unsigned int>(3, 3)),
+    m_packing_dimensions(std::vector<unsigned int>(3, 5)),
     m_d_iso(m_packing_dimensions, 0.0)
 {
+ 
+  unsigned int n_particles =  m_packing_dimensions[0]*
+                              m_packing_dimensions[1]*
+                              m_packing_dimensions[2];
+                
+  m_distributions = std::vector<FEvoR::Distribution>(n_particles, m_d_iso);
   
   assert(m_EC != NULL);
   assert(m_stress_balance != NULL);
@@ -147,15 +154,41 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       std::vector<double> bulkEdot(9, 0.0);
       
       std::vector<double> bulkM(81, 0.0);
+      
+      if (i == 5) {
+        m_distributions[i].saveDistribution();
+        
+        std::cout << "\n Passed Parameters! \n"
+                  << "   i: " << i << "\n"
+                  << "   T: " << T << "\n"
+                  << " m_t: " << m_t << "\n"
+                  << "m_dt: " << m_dt << "\n"
+                  << " n_m: " << m_n_migration_recrystallizations[i] << "\n"
+                  << " n_p: " << m_n_polygonization_recrystallizations[i] << "\n"
+                  << "stress:" << std::endl;
+        FEvoR::tensorDisplay(stress,3,3);
+        std::cout << "bulkEdot:" << std::endl;
+        FEvoR::tensorDisplay(bulkEdot,3,3);
+      }
       // http://en.wikipedia.org/wiki/Step_in_Time
       bulkM = m_distributions[i].stepInTime(T, stress, m_t, m_dt,
                                     m_n_migration_recrystallizations[i],
                                     m_n_polygonization_recrystallizations[i],
                                     bulkEdot);
       
+      if (i == 5)
+        m_distributions[i].saveDistribution();
+      
       std::vector<double> bulkEdot_iso(9, 0.0);
       std::vector<double> bulkM_iso(81, 0.0);
       bulkM_iso = m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
+      
+      if (i == 5) {
+        std::cout << "bulkEdot:" << std::endl;
+        FEvoR::tensorDisplay(bulkEdot,3,3);
+        std::cout << "bulkEdot_iso:" << std::endl;
+        FEvoR::tensorDisplay(bulkEdot_iso,3,3);
+      }
       
       if (bulkEdot_iso[2] != 0.0) {
         m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
@@ -508,14 +541,14 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
                     "  Setting initial distribution parameters...\n"); CHKERRQ(ierr);
 
 
-  unsigned int n_particles = (grid.Mz-1)*(grid.Mx-1);
+  unsigned int n_particles = (grid.Mz-1)*(grid.Mx-1);  
   
   // Initialize distributions
   assert(m_packing_dimensions.size() == 3);
   double w_i = -3.0; // This makes a weak bi-polar (single maximum)
   FEvoR::Distribution d_i(m_packing_dimensions, w_i);
 
-  m_distributions.resize(n_particles, FEvoR::Distribution(m_packing_dimensions, w_i));
+  m_distributions.resize(n_particles, d_i);
 
   // Initialize particle positions and corresponding enhancement factors
   m_p_x.resize(n_particles);
