@@ -138,6 +138,12 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = evaluate_at_point(*tauxz3, m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
       ierr = evaluate_at_point(*tauyz3, m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
 
+      // Make sure that the pressure is positive. (Zero pressure
+      // probably means that the current particle exited the ice blob.
+      // This is a failure of the PISMFEvoR logic: such particles need
+      // to be discarded and replaced by new ones *within* the ice.)
+      assert(P > 0.0);
+
       /* Indexing: {0, 1, 2,
        *            3, 4, 5,
        *            6, 7, 8}
