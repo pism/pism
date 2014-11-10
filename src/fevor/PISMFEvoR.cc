@@ -50,9 +50,7 @@ PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
     m_d_iso(m_packing_dimensions, 0.0)
 {
  
-  unsigned int n_particles =  m_packing_dimensions[0]*
-                              m_packing_dimensions[1]*
-                              m_packing_dimensions[2];
+  unsigned int n_particles = (unsigned int)config.get("fevor_n_particles");
                 
   m_distributions = std::vector<FEvoR::Distribution>(n_particles, m_d_iso);
   
@@ -614,9 +612,8 @@ PetscErrorCode PISMFEvoR::load_distributions(const std::string &input_file) {
     }
 
     // Get the number of distributions:
-    unsigned int n_particles = (m_packing_dimensions[0] *
-                                m_packing_dimensions[1] *
-                                m_packing_dimensions[2]);
+    unsigned int n_particles = 0;
+    ierr = nc.inq_dimlen("distribution_index", n_particles); CHKERRQ(ierr);
 
     // Create the isotropic distribution:
     m_d_iso = FEvoR::Distribution(m_packing_dimensions, 0.0);

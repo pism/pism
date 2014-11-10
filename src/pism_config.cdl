@@ -33,6 +33,9 @@ netcdf pism_config {
     pism_config:sia_fevor_surface_slope_degrees = -5.0;
     pism_config:sia_fevor_surface_slope_degrees_doc = "degrees; surface slope in the x direction for the slab-on-a-slope SIAFD_FEvoR setup";
 
+    pism_config:fevor_n_particles = 125;
+    pism_config:fevor_n_particles_doc = "count; number of 'particles' (distributions) to use";
+
     pism_config:do_skip = "no";
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
 

@@ -923,6 +923,9 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   ierr = config.scalar_from_option("sia_fevor_surface_slope_degrees",
                                    "sia_fevor_surface_slope_degrees"); CHKERRQ(ierr);
 
+  // PISMFEvoR options
+  ierr = config.scalar_from_option("fevor_n_particles", "fevor_n_particles"); CHKERRQ(ierr);
+
   // old options
   ierr = check_old_option_and_stop(com, "-sliding_scale_brutal",
                                    "-brutal_sliding' and '-brutal_sliding_scale"); CHKERRQ(ierr);
