@@ -262,7 +262,7 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
          velunitstr[90] = "";
 
     const double major_dt = grid.time->convert_time_interval(mass_cont_sub_dtsum, tunitstr);
-    if (mass_cont_sub_counter == 1) {
+    if (mass_cont_sub_counter <= 1) {
       snprintf(tempstr,90, " (dt=%.5f)", major_dt);
     } else {
       snprintf(tempstr,90, " (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)",
