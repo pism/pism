@@ -48,7 +48,7 @@ protected:
   // var
   int def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   // att
-  using NCFile::put_att_double;
+  using NCFile::put_att_double_impl;
   int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
 
   int put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
