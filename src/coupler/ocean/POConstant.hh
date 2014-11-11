@@ -34,8 +34,12 @@ public:
 
   virtual PetscErrorCode init(Vars &vars);
 
-  virtual PetscErrorCode update(double my_t, double my_dt)
-  { m_t = my_t; m_dt = my_dt; return 0; } // do nothing
+  virtual PetscErrorCode update(double my_t, double my_dt) {
+    // do nothing
+    m_t = my_t;
+    m_dt = my_dt;
+    return 0;
+  }
 
   virtual PetscErrorCode sea_level_elevation(double &result);
   virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);

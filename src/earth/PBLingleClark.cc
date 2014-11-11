@@ -123,7 +123,9 @@ PetscErrorCode PBLingleClark::correct_topg() {
                           use_special_regrid_semantics); CHKERRQ(ierr);
 
   // Stop if topg correction was not requiested.
-  if (!use_special_regrid_semantics) return 0;
+  if (not use_special_regrid_semantics) {
+    return 0;
+  }
 
   ierr = OptionsString("-regrid_file", "Specifies the name of a file to regrid from",
                            regrid_filename, regrid_file_set); CHKERRQ(ierr);
@@ -132,7 +134,9 @@ PetscErrorCode PBLingleClark::correct_topg() {
                            boot_filename, boot_file_set); CHKERRQ(ierr);
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
-  if (! (regrid_file_set && boot_file_set)) return 0;
+  if (not (regrid_file_set && boot_file_set)) {
+    return 0;
+  }
 
   nc.open(regrid_filename, PISM_READONLY);
 

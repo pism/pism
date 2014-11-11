@@ -341,7 +341,9 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
     first = start;
   }
 
-  if (missing <= 0) return 0;
+  if (missing <= 0) {
+    return 0;
+  }
   
   N = kept + missing;
 

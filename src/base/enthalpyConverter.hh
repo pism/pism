@@ -69,8 +69,9 @@ public:
   virtual double getEnthPermissive(double T, double omega, double p) const;
   virtual double getEnthAtWaterFraction(double omega, double p) const;
 
-  virtual double c_from_T(double /*T*/) const
-  { return c_i; }
+  virtual double c_from_T(double /*T*/) const {
+    return c_i;
+  }
 
 protected:
   double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;

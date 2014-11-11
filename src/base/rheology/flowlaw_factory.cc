@@ -64,37 +64,44 @@ PetscErrorCode IceFlowLawFactory::removeType(const std::string &name) {
 
 static PetscErrorCode create_isothermal_glen(MPI_Comm com,const std::string &pre,
                                              const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (IsothermalGlenIce)(com, pre, config, EC);  return 0;
+  *i = new (IsothermalGlenIce)(com, pre, config, EC);
+  return 0;
 }
 
 static PetscErrorCode create_pb(MPI_Comm com,const std::string &pre,
                                 const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenIce)(com, pre, config, EC);  return 0;
+  *i = new (ThermoGlenIce)(com, pre, config, EC);
+  return 0;
 }
 
 static PetscErrorCode create_gpbld(MPI_Comm com,const std::string &pre,
                                    const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (GPBLDIce)(com, pre, config, EC);  return 0;
+  *i = new (GPBLDIce)(com, pre, config, EC);
+  return 0;
 }
 
 static PetscErrorCode create_hooke(MPI_Comm com,const std::string &pre,
                                    const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (HookeIce)(com, pre, config, EC);  return 0;
+  *i = new (HookeIce)(com, pre, config, EC);
+  return 0;
 }
 
 static PetscErrorCode create_arr(MPI_Comm com,const std::string &pre,
                                  const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIce)(com, pre, config, EC);  return 0;
+  *i = new (ThermoGlenArrIce)(com, pre, config, EC);
+  return 0;
 }
 
 static PetscErrorCode create_arrwarm(MPI_Comm com,const std::string &pre,
                                      const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (ThermoGlenArrIceWarm)(com, pre, config, EC);  return 0;
+  *i = new (ThermoGlenArrIceWarm)(com, pre, config, EC);
+  return 0;
 }
 
 static PetscErrorCode create_goldsby_kohlstedt(MPI_Comm com,const std::string &pre,
                                                const Config &config, EnthalpyConverter *EC, IceFlowLaw **i) {
-  *i = new (GoldsbyKohlstedtIce)(com, pre, config, EC);  return 0;
+  *i = new (GoldsbyKohlstedtIce)(com, pre, config, EC);
+  return 0;
 }
 
 PetscErrorCode IceFlowLawFactory::registerAll()
@@ -116,7 +123,7 @@ PetscErrorCode IceFlowLawFactory::registerAll()
 PetscErrorCode IceFlowLawFactory::setType(const std::string &type)
 {
   IceFlowLawCreator r = flow_laws[type];
-  if (!r) {
+  if (not r) {
     throw RuntimeError::formatted("Selected ice type \"%s\" is not available.\n",
                                   type.c_str());
   }

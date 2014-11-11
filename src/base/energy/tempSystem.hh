@@ -67,11 +67,13 @@ public:
 
   void solveThisColumn(std::vector<double> &x);
 
-  double lambda()
-  { return m_lambda; }
+  double lambda() {
+    return m_lambda;
+  }
 
-  double w(int k)
-  { return m_w[k]; }
+  double w(int k) {
+    return m_w[k];
+  }
 protected:
   double m_ice_density, m_ice_c, m_ice_k;
   IceModelVec3 *m_T3, *m_strain_heating3;

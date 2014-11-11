@@ -67,7 +67,9 @@ public:
   LocalMassBalance_Old(const Config &myconfig)
     : config(myconfig) {}
   virtual ~LocalMassBalance_Old() {}
-  virtual PetscErrorCode init() { return 0; };
+  virtual PetscErrorCode init() {
+    return 0;
+  };
 
   /*! Call before getMassFluxFromTemperatureTimeSeries() so that mass balance method can
     decide how to cut up the time interval.  Most implementations will ignore

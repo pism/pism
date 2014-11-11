@@ -364,7 +364,9 @@ double GoldsbyKohlstedtIce::flow_from_temp(double stress, double temp,
                                     double pressure, double gs) const {
   double eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
-  if (PetscAbs(stress) < 1e-10) return 0;
+  if (PetscAbs(stress) < 1e-10) {
+    return 0;
+  }
   const double T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
   const double pV = pressure * V_act_vol;
   const double RT = ideal_gas_constant * T;
@@ -453,7 +455,9 @@ double GoldsbyKohlstedtIceStripped::flow_from_temp(double stress, double temp, d
   // note no diffusional flow
   double eps_disl, eps_basal, eps_gbs;
 
-  if (PetscAbs(stress) < 1e-10) return 0;
+  if (PetscAbs(stress) < 1e-10) {
+    return 0;
+  }
   const double T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
   const double RT = ideal_gas_constant * T;
   // NO Diffusional Flow

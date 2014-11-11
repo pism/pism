@@ -140,7 +140,6 @@ PetscErrorCode SSAFEM::init(Vars &vars) {
 PetscErrorCode SSAFEM::setFromOptions() {
   PetscErrorCode ierr;
 
-  PetscFunctionBegin;
   ierr = PetscOptionsHead("SSA FEM options");
   PISM_PETSC_CHK(ierr, "PetscOptionsHead");
   m_dirichletScale = 1.0e9;
@@ -152,7 +151,7 @@ PetscErrorCode SSAFEM::setFromOptions() {
   PISM_PETSC_CHK(ierr, "PetscOptionsReal");
   ierr = PetscOptionsTail();
   PISM_PETSC_CHK(ierr, "PetscOptionsTail");
-  PetscFunctionReturn(0);
+  return 0;
 }
 
 //! Solve the SSA.  The FEM solver exchanges time for memory by computing

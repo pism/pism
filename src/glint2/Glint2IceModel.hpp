@@ -45,8 +45,9 @@ public:
 	virtual PetscErrorCode allocate_couplers();
 
 	/** @return Our instance of PSConstantGLINT2 */
-	PSConstantGLINT2 *ps_constant_glint2()
-		{ return dynamic_cast<PSConstantGLINT2 *>(surface); }
+	PSConstantGLINT2 *ps_constant_glint2() {
+          return dynamic_cast<PSConstantGLINT2 *>(surface);
+        }
 };
 
 }}

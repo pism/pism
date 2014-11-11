@@ -1570,7 +1570,9 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
 PetscErrorCode SSAFD::update_nuH_viewers() {
   PetscErrorCode ierr;
 
-  if (!view_nuh) return 0;
+  if (not view_nuh) {
+    return 0;
+  }
 
   IceModelVec2S tmp;
   ierr = tmp.create(grid, "nuH", WITHOUT_GHOSTS); CHKERRQ(ierr);

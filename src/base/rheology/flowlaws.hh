@@ -33,12 +33,14 @@ class Config;
 // This uses the definition of squared second invariant from Hutter and several others, namely the output is
 // \f$ D^2 = \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
 static inline double secondInvariant_2D(double u_x, double u_y,
-                                        double v_x, double v_y)
-{ return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
+                                        double v_x, double v_y) {
+  return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x));
+}
 
 // The squared second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
-static inline double secondInvariantDu_2D(const double Du[])
-{ return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2])); }
+static inline double secondInvariantDu_2D(const double Du[]) {
+  return 0.5 * (PetscSqr(Du[0]) + PetscSqr(Du[1]) + PetscSqr(Du[0]+Du[1]) + 2*PetscSqr(Du[2]));
+}
 
 
 //! Abstract class containing the constitutive relation for the flow of ice (of
@@ -113,8 +115,12 @@ public:
                                                IceModelVec3& enthalpy, IceModelVec2S &hardav) const;
 
   virtual std::string name() const = 0;
-  virtual double exponent() const { return n; }
-  virtual double enhancement_factor() const { return e; }
+  virtual double exponent() const {
+    return n;
+  }
+  virtual double enhancement_factor() const {
+    return e;
+  }
 
   virtual double hardness_parameter(double E, double p) const;
   virtual double softness_parameter(double E, double p) const = 0;
@@ -162,8 +168,9 @@ public:
 
   virtual double softness_parameter(double enthalpy,
                                     double pressure) const;
-  virtual std::string name() const
-  { return "Glen-Paterson-Budd-Lliboutry-Duval"; }
+  virtual std::string name() const {
+    return "Glen-Paterson-Budd-Lliboutry-Duval";
+  }
 protected:
   double T_0, water_frac_coeff, water_frac_observed_limit;
 };
@@ -183,15 +190,18 @@ public:
 
   virtual double flow(double stress, double E,
                       double pressure, double gs) const;
-  virtual std::string name() const
-  { return "Paterson-Budd"; }
+  virtual std::string name() const {
+    return "Paterson-Budd";
+  }
 
 protected:
-  virtual double softness_parameter_from_temp(double T_pa) const
-  { return softness_parameter_paterson_budd(T_pa); }
+  virtual double softness_parameter_from_temp(double T_pa) const {
+    return softness_parameter_paterson_budd(T_pa);
+  }
 
-  virtual double hardness_parameter_from_temp(double T_pa) const
-  { return pow(softness_parameter_from_temp(T_pa), hardness_power); }
+  virtual double hardness_parameter_from_temp(double T_pa) const {
+    return pow(softness_parameter_from_temp(T_pa), hardness_power);
+  }
 
   // special temperature-dependent method
   virtual double flow_from_temp(double stress, double temp,
@@ -207,24 +217,30 @@ public:
   virtual ~IsothermalGlenIce() {}
 
   virtual double averaged_hardness(double, int,
-                                   const double*, const double*) const
-  { return hardness_B; }
+                                   const double*, const double*) const {
+    return hardness_B;
+  }
 
-  virtual double flow(double stress, double, double, double) const
-  { return softness_A * pow(stress, n-1); }
+  virtual double flow(double stress, double, double, double) const {
+    return softness_A * pow(stress, n-1);
+  }
 
-  virtual double softness_parameter(double, double) const
-  { return softness_A; }
+  virtual double softness_parameter(double, double) const {
+    return softness_A;
+  }
 
-  virtual double hardness_parameter(double, double) const
-  { return hardness_B; }
+  virtual double hardness_parameter(double, double) const {
+    return hardness_B;
+  }
 
-  virtual std::string name() const
-  { return "isothermal Glen"; }
+  virtual std::string name() const {
+    return "isothermal Glen";
+  }
 
 protected:
-  virtual double flow_from_temp(double stress, double, double, double) const
-  { return softness_A * pow(stress,n-1); }
+  virtual double flow_from_temp(double stress, double, double, double) const {
+    return softness_A * pow(stress,n-1);
+  }
 
 protected:
   double softness_A, hardness_B;
@@ -237,8 +253,9 @@ public:
            const Config &config,
            EnthalpyConverter *EC);
   virtual ~HookeIce() {}
-  virtual std::string name() const
-  { return "Hooke"; }
+  virtual std::string name() const {
+    return "Hooke";
+  }
 protected:
   virtual double softness_parameter_from_temp(double T_pa) const;
 
@@ -256,25 +273,33 @@ public:
   virtual ~ThermoGlenArrIce() {}
 
   //! Return the temperature T corresponding to a given value A=A(T).
-  double tempFromSoftness(double myA) const
-  { return - Q() / (ideal_gas_constant * (log(myA) - log(A()))); }
+  double tempFromSoftness(double myA) const {
+    return - Q() / (ideal_gas_constant * (log(myA) - log(A())));
+  }
 
-  virtual std::string name() const
-  { return "Paterson-Budd (cold case)"; }
+  virtual std::string name() const {
+    return "Paterson-Budd (cold case)";
+  }
 
 protected:
-  virtual double A() const { return A_cold; }
-  virtual double Q() const { return Q_cold; }
+  virtual double A() const {
+    return A_cold;
+  }
+  virtual double Q() const {
+    return Q_cold;
+  }
 
   // takes care of hardness_parameter...
-  virtual double softness_parameter_from_temp(double T_pa) const
-  { return A() * exp(-Q()/(ideal_gas_constant * T_pa)); }
+  virtual double softness_parameter_from_temp(double T_pa) const {
+    return A() * exp(-Q()/(ideal_gas_constant * T_pa));
+  }
 
 
   // ignores pressure and uses non-pressure-adjusted temperature
   virtual double flow_from_temp(double stress, double temp,
-                                double , double) const
-  { return softness_parameter_from_temp(temp) * pow(stress,n-1); }
+                                double , double) const {
+    return softness_parameter_from_temp(temp) * pow(stress,n-1);
+  }
 };
 
 //! Warm case of Paterson-Budd
@@ -285,12 +310,17 @@ public:
     : ThermoGlenArrIce(c, pre, config, my_EC) {}
   virtual ~ThermoGlenArrIceWarm() {}
 
-  virtual std::string name() const
-  { return "Paterson-Budd (warm case)"; }
+  virtual std::string name() const {
+    return "Paterson-Budd (warm case)";
+  }
 
 protected:
-  virtual double A() const { return A_warm; }
-  virtual double Q() const { return Q_warm; }
+  virtual double A() const {
+    return A_warm;
+  }
+  virtual double Q() const {
+    return Q_warm;
+  }
 };
 
 // Hybrid (Goldsby-Kohlstedt/Glen) ice flow law
@@ -329,8 +359,9 @@ public:
 
   virtual double softness_parameter(double E, double p) const;
 
-  virtual std::string name() const
-  { return "Goldsby-Kohlstedt / Paterson-Budd (hybrid)"; }
+  virtual std::string name() const {
+    return "Goldsby-Kohlstedt / Paterson-Budd (hybrid)";
+  }
 
 protected:
   virtual double flow_from_temp(double stress, double temp,
@@ -358,8 +389,9 @@ class GoldsbyKohlstedtIceStripped : public GoldsbyKohlstedtIce {
 public:
   GoldsbyKohlstedtIceStripped(MPI_Comm c, const std::string &pre,
                               const Config &config, EnthalpyConverter *my_EC);
-  virtual std::string name() const
-  { return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)"; }
+  virtual std::string name() const {
+    return "Goldsby-Kohlstedt / Paterson-Budd (hybrid, simplified)";
+  }
 
 protected:
   virtual double flow_from_temp(double stress, double temp,

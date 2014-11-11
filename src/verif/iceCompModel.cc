@@ -454,7 +454,9 @@ public:
 
 //! Comparison used initTestL() in generating sorted list for ODE solver.
 struct rgridReverseSort {
-  bool operator()(rgrid a, rgrid b) { return (a.r > b.r); }
+  bool operator()(rgrid a, rgrid b) {
+    return (a.r > b.r);
+  }
 };
 
 PetscErrorCode IceCompModel::initTestL() {

@@ -35,17 +35,33 @@ enum MaskValue {
 
 namespace mask {
   //! \brief An ocean cell (floating ice or ice-free).
-  inline bool ocean(int M) { return M >= MASK_FLOATING; }
+  inline bool ocean(int M) {
+    return M >= MASK_FLOATING;
+  }
   //! \brief Grounded cell (grounded ice or ice-free).
-  inline bool grounded(int M) { return !ocean(M); }
+  inline bool grounded(int M) {
+    return not ocean(M);
+  }
   //! \brief Ice-filled cell (grounded or floating).
-  inline bool icy(int M) { return (M == MASK_GROUNDED) || (M == MASK_FLOATING); }
-  inline bool grounded_ice(int M) { return icy(M) && grounded(M); }
-  inline bool floating_ice(int M) { return icy(M) && ocean(M); }
+  inline bool icy(int M) {
+    return (M == MASK_GROUNDED) || (M == MASK_FLOATING);
+  }
+  inline bool grounded_ice(int M) {
+    return icy(M) && grounded(M);
+  }
+  inline bool floating_ice(int M) {
+    return icy(M) && ocean(M);
+  }
   //! \brief Ice-free cell (grounded or ocean).
-  inline bool ice_free(int M) { return !icy(M); }
-  inline bool ice_free_ocean(int M) { return ocean(M) && ice_free(M); }
-  inline bool ice_free_land(int M) { return grounded(M) && ice_free(M); }
+  inline bool ice_free(int M) {
+    return not icy(M);
+  }
+  inline bool ice_free_ocean(int M) {
+    return ocean(M) && ice_free(M);
+  }
+  inline bool ice_free_land(int M) {
+    return grounded(M) && ice_free(M);
+  }
 }
 
 class GeometryCalculator
@@ -74,7 +90,7 @@ public:
     int mask_result;
     double surface_result;
 
-    if (is_floating && (!is_dry_simulation)) {
+    if (is_floating && (not is_dry_simulation)) {
       surface_result = hfloating;
 
       if (ice_free)
@@ -119,21 +135,37 @@ class MaskQuery
 public:
   MaskQuery(IceModelVec2Int &m) : mask(m) {}
   
-  inline bool ocean(int i, int j) { return mask::ocean(mask.as_int(i, j)); }
+  inline bool ocean(int i, int j) {
+    return mask::ocean(mask.as_int(i, j));
+  }
 
-  inline bool grounded(int i, int j) { return !ocean(i, j); }
+  inline bool grounded(int i, int j) {
+    return not ocean(i, j);
+  }
 
-  inline bool icy(int i, int j) { return mask::icy(mask.as_int(i, j)); }
+  inline bool icy(int i, int j) {
+    return mask::icy(mask.as_int(i, j));
+  }
 
-  inline bool grounded_ice(int i, int j) { return mask::grounded_ice(mask.as_int(i, j)); }
+  inline bool grounded_ice(int i, int j) {
+    return mask::grounded_ice(mask.as_int(i, j));
+  }
 
-  inline bool floating_ice(int i, int j) { return mask::floating_ice(mask.as_int(i, j)); }
+  inline bool floating_ice(int i, int j) {
+    return mask::floating_ice(mask.as_int(i, j));
+  }
 
-  inline bool ice_free(int i, int j) { return mask::ice_free(mask.as_int(i, j)); }
+  inline bool ice_free(int i, int j) {
+    return mask::ice_free(mask.as_int(i, j));
+  }
 
-  inline bool ice_free_ocean(int i, int j) { return mask::ice_free_ocean(mask.as_int(i, j)); }
+  inline bool ice_free_ocean(int i, int j) {
+    return mask::ice_free_ocean(mask.as_int(i, j));
+  }
 
-  inline bool ice_free_land(int i, int j) { return mask::ice_free_land(mask.as_int(i, j)); }
+  inline bool ice_free_land(int i, int j) {
+    return mask::ice_free_land(mask.as_int(i, j));
+  }
 
   //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
   inline bool ice_margin(int i, int j)

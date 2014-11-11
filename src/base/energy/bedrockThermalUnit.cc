@@ -472,7 +472,9 @@ PetscErrorCode BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result)
 PetscErrorCode BedThermalUnit::bootstrap() {
   PetscErrorCode ierr;
 
-  if (Mbz < 2) return 0;
+  if (Mbz < 2) {
+    return 0;
+  }
 
   ierr = verbPrintf(2,grid.com,
                     "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"

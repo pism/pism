@@ -722,7 +722,9 @@ PetscErrorCode BTU_Verification::get_temp(IceModelVec3BTU* &result) {
 PetscErrorCode BTU_Verification::bootstrap() {
   PetscErrorCode ierr;
 
-  if (Mbz < 2) return 0;
+  if (Mbz < 2) {
+    return 0;
+  }
 
   std::vector<double> Tbcol(Mbz),
     zlevels = temp.get_levels();

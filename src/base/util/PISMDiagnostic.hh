@@ -76,7 +76,9 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result) = 0;
 
   //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
-  virtual int get_nvars() { return dof; }
+  virtual int get_nvars() {
+    return dof;
+  }
 
   //! Reset vertical levels corresponding to the z dimension.
   /** This is called after the automatic grid extension.

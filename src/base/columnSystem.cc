@@ -70,7 +70,7 @@ void TridiagonalSystem::reset() {
 //! Compute 1-norm, which is max sum of absolute values of columns.
 double TridiagonalSystem::norm1(unsigned int system_size) const {
   assert(system_size <= m_max_system_size);
-  if (system_size == 1)  {
+  if (system_size == 1) {
     return fabs(m_D[0]);   // only 1x1 case is special
   }
   double z = fabs(m_D[0]) + fabs(m_L[1]);

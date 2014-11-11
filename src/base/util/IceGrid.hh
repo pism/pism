@@ -275,8 +275,12 @@ public:
     m_done = false;
   }
 
-  int i() const { return m_i; }
-  int j() const { return m_j; }
+  int i() const {
+    return m_i;
+  }
+  int j() const {
+    return m_j;
+  }
 
   void next() {
     assert(m_done == false);
@@ -291,7 +295,9 @@ public:
     }
   }
 
-  operator bool() const { return m_done == false; }
+  operator bool() const {
+    return m_done == false;
+  }
 private:
   int m_i, m_j;
   int m_i_first, m_i_last, m_j_first, m_j_last;

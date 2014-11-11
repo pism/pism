@@ -112,8 +112,9 @@ public:
   ~PetscVecAccessor2D()
   { VecRestoreArray2d(v, Mx, My, 0, 0, &array); }
 
-  inline double& operator()(int i, int j)
-  { return array[i + i_offset][j + j_offset]; }
+  inline double& operator()(int i, int j) {
+    return array[i + i_offset][j + j_offset];
+  }
 private:
   int Mx, My, i_offset, j_offset;
   Vec v;
@@ -129,8 +130,9 @@ public:
   VecAccessor2D(T* a, int my_Mx, int my_My)
     : Mx(my_Mx), My(my_My), i_offset(0), j_offset(0), array(a) {}
 
-  inline T& operator()(int i, int j)
-  { return array[(j_offset + j) + My * (i_offset + i)]; }
+  inline T& operator()(int i, int j) {
+    return array[(j_offset + j) + My * (i_offset + i)];
+  }
 
 private:
   int Mx, My, i_offset, j_offset;

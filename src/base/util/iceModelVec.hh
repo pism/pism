@@ -165,13 +165,21 @@ public:
   virtual ~IceModelVec();
 
   virtual bool was_created() const;
-  IceGrid* get_grid() const { return grid; }
+  IceGrid* get_grid() const {
+    return grid;
+  }
   unsigned int get_ndims() const;
   //! \brief Returns the number of degrees of freedom per grid point.
-  unsigned int get_ndof() const { return m_dof; }
+  unsigned int get_ndof() const {
+    return m_dof;
+  }
   unsigned int get_stencil_width() const;
-  int nlevels() const { return m_n_levels; }
-  std::vector<double>  get_levels() const { return zlevels; }
+  int nlevels() const {
+    return m_n_levels;
+  }
+  std::vector<double>  get_levels() const {
+    return zlevels;
+  }
 
   virtual PetscErrorCode  range(double &min, double &max) const;
   virtual PetscErrorCode  norm(int n, double &out) const;

@@ -123,7 +123,9 @@ bool ends_with(std::string str, std::string suffix) {
 bool is_increasing(const std::vector<double> &a) {
   int len = (int)a.size();
   for (int k = 0; k < len-1; k++) {
-    if (a[k] >= a[k+1])  return false;
+    if (a[k] >= a[k+1]) {
+      return false;
+    }
   }
   return true;
 }

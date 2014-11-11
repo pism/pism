@@ -62,14 +62,17 @@ public:
 
   void solveThisColumn(std::vector<double> &result);
 
-  double lambda()
-  { return m_lambda; }
+  double lambda() {
+    return m_lambda;
+  }
 
-  double Enth(size_t i)
-  { return m_Enth[i]; }
+  double Enth(size_t i) {
+    return m_Enth[i];
+  }
 
-  double Enth_s(size_t i)
-  { return m_Enth_s[i]; }
+  double Enth_s(size_t i) {
+    return m_Enth_s[i];
+  }
 protected:
   // enthalpy in ice at previous time step
   std::vector<double> m_Enth;

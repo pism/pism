@@ -60,8 +60,9 @@ public:
     return input;               // return unchanged CF units
   }
 
-  virtual bool use_reference_date()
-  { return true; }
+  virtual bool use_reference_date() {
+    return true;
+  }
 
   virtual double calendar_year_start(double T);
 

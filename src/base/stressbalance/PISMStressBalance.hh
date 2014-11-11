@@ -118,12 +118,14 @@ public:
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 
   //! \brief Returns a pointer to a stress balance solver implementation.
-  virtual ShallowStressBalance* get_stressbalance()
-  { return m_stress_balance; }
+  virtual ShallowStressBalance* get_stressbalance() {
+    return m_stress_balance;
+  }
 
   //! \brief Returns a pointer to a stress balance modifier implementation.
-  virtual SSB_Modifier* get_ssb_modifier()
-  { return m_modifier; }
+  virtual SSB_Modifier* get_ssb_modifier() {
+    return m_modifier;
+  }
 protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,

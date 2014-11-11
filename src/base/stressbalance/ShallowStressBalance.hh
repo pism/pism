@@ -43,8 +43,9 @@ public:
 
   //  initialization and I/O:
 
-  virtual PetscErrorCode init(Vars &vars)
-  { variables = &vars; return 0; }
+  virtual PetscErrorCode init(Vars &vars) {
+    variables = &vars;
+    return 0; }
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
                                                  IceModelVec2V &velocities)
@@ -67,12 +68,16 @@ public:
                                std::map<std::string, TSDiagnostic*> &/*ts_dict*/);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result)
-  { result = &m_velocity; return 0; }
+  virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result) {
+    result = &m_velocity;
+    return 0;
+  }
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result)
-  { result = &basal_frictional_heating; return 0; }
+  virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result) {
+    result = &basal_frictional_heating;
+    return 0;
+  }
 
   virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity,
                                                            IceModelVec2Int &mask,
@@ -88,20 +93,26 @@ public:
   // helpers:
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int /*old_Mz*/)
-  { return 0; }
+  virtual PetscErrorCode extend_the_grid(int /*old_Mz*/) {
+    return 0;
+  }
   //! \brief Produce a report string for the standard output.
-  virtual PetscErrorCode stdout_report(std::string &result)
-  { result = ""; return 0; }
+  virtual PetscErrorCode stdout_report(std::string &result) {
+    result = "";
+    return 0;
+  }
 
-  const IceFlowLaw* get_flow_law()
-  { return flow_law; }
+  const IceFlowLaw* get_flow_law() {
+    return flow_law;
+  }
 
-  EnthalpyConverter& get_enthalpy_converter()
-  { return EC; }
+  EnthalpyConverter& get_enthalpy_converter() {
+    return EC;
+  }
 
-  const IceBasalResistancePlasticLaw* get_sliding_law()
-  { return basal_sliding_law; }
+  const IceBasalResistancePlasticLaw* get_sliding_law() {
+    return basal_sliding_law;
+  }
 protected:
   virtual PetscErrorCode allocate();
 

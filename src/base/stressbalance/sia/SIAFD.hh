@@ -70,19 +70,21 @@ public:
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/)
-  { }
+  virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
+  }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
   virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/)
-  { return 0; }
+                                          IO_Type /*nctype*/) {
+    return 0;
+  }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/)
-  { return 0; }
+  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
+    return 0;
+  }
 
 protected:
   virtual PetscErrorCode allocate();

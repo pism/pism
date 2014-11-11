@@ -218,7 +218,9 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   int N = 0;                    // the number of new levels
 
   ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
-  if (grid.Lz >= H_max) return 0;
+  if (grid.Lz >= H_max) {
+    return 0;
+  }
 
   if (grid.initial_Mz == 0) {
     grid.initial_Mz = grid.Mz;
