@@ -171,7 +171,7 @@ void UnitConverter::convert_doubles(double *data, size_t length) const {
 }
 
 bool Unit::is_valid() const {
-  return m_unit != NULL;
+  return m_unit != NULL;        // FIXME: this method should not be needed (a Unit should always be valid)
 }
 
 PetscErrorCode convert_vec(Vec v, Unit from, Unit to) {

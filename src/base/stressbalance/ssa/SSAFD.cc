@@ -785,7 +785,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, grid.com);
   if (zero_pivot_flag_global != 0) {
     fprintf(stderr, "PISM ERROR: zero pivot detected.\n");
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   return 0;
@@ -900,7 +900,7 @@ PetscErrorCode SSAFD::solve() {
     PetscPrintf(grid.com,
                 "PISM ERROR: all SSAFD strategies failed.\n");
     write_system_petsc("allstrategiesfailed");
-    return ierr;
+    return ierr;                // FIXME: return code to indicate success/failure
   }
 
   if (dump_system_matlab) {
@@ -993,7 +993,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 
       // Tell the caller that we failed. (The caller might try again,
       // though.)
-      return 1;
+      return 1;                 // FIXME: return code to indicate success/failure
     }
 
     // report on KSP success; the "inner" iteration is done
@@ -1053,7 +1053,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
                     "  with nuH_regularization=%8.2e.\n",
                     max_iterations, nuH_regularization); CHKERRQ(ierr);
 
-  return 2;
+  return 2;                     // FIXME: return code to indicate success/failure
 
  done:
 
@@ -1088,7 +1088,7 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
       ierr = verbPrintf(1, grid.com,
                         "PISM WARNING: will not attempt over-regularization of nuH\n"
                         "  because nuH_regularization == 0.0.\n"); CHKERRQ(ierr);
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
   
   while (k < max_tries) {
@@ -1109,8 +1109,9 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
 
     k += 1;
 
-    if (ierr != 0 && k == max_tries)
-      return ierr;
+    if (ierr != 0 && k == max_tries) {
+      return ierr;              // FIXME: return code to indicate success/failure
+    }
   }
 
   return 0;
@@ -1132,7 +1133,7 @@ PetscErrorCode SSAFD::strategy_2_asm() {
                           config.get("epsilon_ssa"),
                           1.0);
 
-  return ierr;
+  return ierr;                  // FIXME: return code to indicate success/failure
 }
 
 //! \brief Compute the norm of nu H and the change in nu H.

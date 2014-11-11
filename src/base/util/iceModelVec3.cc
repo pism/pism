@@ -624,7 +624,7 @@ PetscErrorCode  IceModelVec3D::has_nan() const {
   PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #endif
 
-  return retval;
+  return retval;                // FIXME: return code to indicate success/failure
 }
 
 } // end of namespace pism

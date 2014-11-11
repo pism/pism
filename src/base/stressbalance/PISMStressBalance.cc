@@ -105,7 +105,7 @@ PetscErrorCode StressBalance::update(bool fast, double sea_level,
   grid.profiling.end("SSB");
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: Shallow stress balance solver failed.\n");
-    return ierr;
+    return ierr;                // FIXME: return code to indicate success/failure
   }
 
   ierr = m_stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);

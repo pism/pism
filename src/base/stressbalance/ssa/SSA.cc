@@ -181,7 +181,7 @@ PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
   ierr = solve();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: SSA solver failed.\n");
-    return ierr;
+    return ierr;                // FIXME: return code to indicate success/failure
   }
 
   ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,

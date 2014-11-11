@@ -812,7 +812,7 @@ PetscErrorCode IceModelVec::has_nan() const {
 
   if (gsl_isnan(tmp)) {
     PetscPrintf(grid->com, "IceModelVec %s has uninitialized grid points (or NANs)\n", m_name.c_str());
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   return 0;

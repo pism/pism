@@ -453,7 +453,7 @@ PetscErrorCode IceModelVec2S::has_nan() const {
   ierr = PetscSynchronizedFlush(grid->com, NULL);
   PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
 #endif
-  return retval;
+  return retval;                // FIXME: return code to indicate success/failure
 }
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite

@@ -313,8 +313,9 @@ PetscErrorCode Time::parse_list(const std::string &spec, std::vector<double> &re
   for (unsigned int k = 0; k < parts.size(); ++k) {
     double d;
     int errcode = parse_date(parts[k], &d);
-    if (errcode != 0)
-      return 1;
+    if (errcode != 0) {
+      return 1;                 // FIXME: return code to indicate success/failure
+    }
 
     result.push_back(d);
   }
@@ -396,7 +397,7 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
   } else {
     PetscPrintf(m_com, "PISM ERROR: invalid interval length: '%s'\n",
                 spec.c_str());
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   return 0;
@@ -428,27 +429,27 @@ PetscErrorCode Time::parse_range(const std::string &spec, std::vector<double> &r
 
     if (parts.size() == 1) {
       errcode = parse_interval_length(parts[0], keyword, &delta);
-      if (errcode != 0)
-        return 1;
-
+      if (errcode != 0) {
+        return 1;               // FIXME: return code to indicate success/failure
+      }
     } else if (parts.size() == 3) {
       errcode = parse_date(parts[0], &time_start);
-      if (errcode != 0)
-        return 1;
-
+      if (errcode != 0) {
+        return 1;               // FIXME: return code to indicate success/failure
+      }
       errcode = parse_interval_length(parts[1], keyword, &delta);
-      if (errcode != 0)
-        return 1;
-
+      if (errcode != 0) {
+        return 1;               // FIXME: return code to indicate success/failure
+      }
       errcode = parse_date(parts[2], &time_end);
-      if (errcode != 0)
-        return 1;
-
+      if (errcode != 0) {
+        return 1;               // FIXME: return code to indicate success/failure
+      }
     } else {
       PetscPrintf(m_com,
                   "PISM ERROR: A time range must consist of exactly 3 parts, separated by colons. (Got '%s'.)\n",
                   spec.c_str());
-      return 1;
+      return 1;                 // FIXME: return code to indicate success/failure
     }
   }
 
@@ -466,7 +467,7 @@ PetscErrorCode Time::parse_date(const std::string &spec, double *result) {
                        "PISM ERROR: got an empty string '%s'.\n",
                        spec.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   d = strtod(spec.c_str(), &endptr);
@@ -474,7 +475,7 @@ PetscErrorCode Time::parse_date(const std::string &spec, double *result) {
     ierr = PetscPrintf(m_com, "PISM ERROR: '%s' is not a number.\n",
                        spec.c_str());
     PISM_PETSC_CHK(ierr, "PetscPrintf");
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   if (result)
@@ -500,12 +501,12 @@ PetscErrorCode Time::compute_times_simple(double time_start, double delta, doubl
                                               std::vector<double> &result) {
   if (time_start >= time_end) {
     PetscPrintf(m_com, "PISM ERROR: a >= b in time range a:dt:b.\n");
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   if (delta <= 0) {
     PetscPrintf(m_com, "PISM ERROR: dt <= 0 in time range a:dt:b.\n");
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   int k = 0;
@@ -533,7 +534,7 @@ PetscErrorCode Time::compute_times(double time_start, double delta, double time_
   } else if (keyword != "simple") {
     PetscPrintf(m_com, "PISM ERROR: Unknown time range keyword: %s.\n",
                 keyword.c_str());
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   return compute_times_simple(time_start, delta, time_end, result);

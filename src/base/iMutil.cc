@@ -71,7 +71,7 @@ int IceModel::endOfTimeStepHook() {
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
              grid.time->date().c_str());
     stampHistory(str);
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
   
   if (pism_signal == SIGUSR1) {

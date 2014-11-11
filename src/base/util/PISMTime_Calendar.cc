@@ -447,7 +447,7 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
   PetscPrintf(m_com, "PISM ERROR: invalid date: '%s'\n",
               spec.c_str());
 
-  return 1;
+  return 1;                     // FIXME: return code to indicate success/failure
 }
 
 int Time_Calendar::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
@@ -455,8 +455,9 @@ int Time_Calendar::parse_interval_length(const std::string &spec, std::string &k
   int ierr;
 
   ierr = Time::parse_interval_length(spec, keyword, result);
-  if (ierr != 0)
-    return 1;
+  if (ierr != 0) {
+    return 1;                   // FIXME: return code to indicate success/failure
+  }
 
   // This is called *only* if the 'spec' is *not* one of "monthly",
   // "yearly", "daily", "hourly", so we don't need to worry about
@@ -466,7 +467,7 @@ int Time_Calendar::parse_interval_length(const std::string &spec, std::string &k
   if (spec.find("year") != std::string::npos || spec.find("month") != std::string::npos) {
     PetscPrintf(m_com, "PISM ERROR: interval length '%s' with the calendar '%s' is not supported.\n",
                 spec.c_str(), m_calendar_string.c_str());
-    return 1;
+    return 1;                   // FIXME: return code to indicate success/failure
   }
 
   return 0;
