@@ -730,13 +730,16 @@ void NCVariable::set_string(const std::string &name, const std::string &value) {
  * Returns an empty string if an attribute is not set.
  */
 std::string NCVariable::get_string(const std::string &name) const {
-  if (name == "short_name") return get_name();
+  if (name == "short_name") {
+     return get_name();
+  }
 
   std::map<std::string,std::string>::const_iterator j = m_strings.find(name);
-  if (j != m_strings.end())
+  if (j != m_strings.end()) {
     return j->second;
-  else
+  } else {
     return std::string();
+  }
 }
 
 PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshold) const {
@@ -749,7 +752,9 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
     std::string name  = i->first;
     std::string value = i->second;
 
-    if (value.empty()) continue;
+    if (value.empty()) {
+      continue;
+    }
 
     ierr = verbPrintf(verbosity_threshold, com, "  %s = \"%s\"\n",
                       name.c_str(), value.c_str()); CHKERRQ(ierr);
@@ -796,8 +801,9 @@ std::string NCTimeseries::get_dimension_name() const {
 PetscErrorCode NCTimeseries::define(const PIO &nc, IO_Type nctype, bool) const {
 
   bool exists = nc.inq_var(get_name());
-  if (exists)
+  if (exists) {
     return 0;
+  }
 
   nc.redef();
 

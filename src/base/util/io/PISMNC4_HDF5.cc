@@ -473,10 +473,11 @@ int NC4_HDF5::open_impl(const std::string &filename, IO_Mode mode) {
 
   H5Pclose(plist_id);
 
-  if (m_hdf5_file_id >= 0)
+  if (m_hdf5_file_id >= 0) {
     return 0;
-  else
+  } else {
     return 1;
+  }
 }
 
 
@@ -493,10 +494,11 @@ int NC4_HDF5::create_impl(const std::string &filename) {
   H5Pclose(plist_id);
   MPI_Info_free(&info);
 
-  if (m_hdf5_file_id >= 0)
+  if (m_hdf5_file_id >= 0) {
     return 0;
-  else
+  } else {
     return 1;
+  }
 }
 
 
@@ -508,10 +510,11 @@ int NC4_HDF5::close_impl() {
   m_hdf5_file_id = -1;
   m_filename.clear();
 
-  if (stat >= 0)
+  if (stat >= 0) {
     return 0;
-  else
+  } else {
     return 1;
+  }
 }
 
 
@@ -537,8 +540,9 @@ int NC4_HDF5::def_dim_impl(const std::string &name, size_t length) const {
   herr_t stat = H5LTfind_dataset(m_hdf5_file_id, name.c_str()); check(stat);
 
   // Check if this variable already exists and return if it does.
-  if (stat > 0)
+  if (stat > 0) {
     return 0;
+  }
 
   if (length == PISM_UNLIMITED) {
     hsize_t zero = 0, one = 1, unlimited = H5S_UNLIMITED;
@@ -565,10 +569,11 @@ int NC4_HDF5::def_dim_impl(const std::string &name, size_t length) const {
   stat = H5Sclose(dataspace_id); check(stat);
   stat = H5Dclose(dim_id); check(stat);
 
-  if (stat >= 0)
+  if (stat >= 0) {
     return 0;
-  else
+  } else {
     return 1;
+  }
 }
 
 
@@ -677,8 +682,9 @@ int NC4_HDF5::def_var_impl(const std::string &name, IO_Type xtype, const std::ve
   herr_t stat = H5LTfind_dataset(m_hdf5_file_id, name.c_str()); check(stat);
 
   // Check if this variable already exists and return if it does.
-  if (stat > 0)
+  if (stat > 0) {
     return 0;
+  }
 
   int max_xm = 0, max_ym = 0;
   MPI_Allreduce(&m_xm, &max_xm, 1, MPI_INT, MPI_MAX, m_com);
@@ -789,10 +795,11 @@ int NC4_HDF5::get_vara_double_impl(const std::string &variable_name,
   stat = H5Sclose(mem_space); check(stat);
   stat = H5Dclose(dset_id); check(stat);
 
-  if (stat >= 0)
+  if (stat >= 0) {
     return 0;
-  else
+  } else {
     return 1;
+  }
 }
 
 
@@ -865,10 +872,11 @@ int NC4_HDF5::put_vara_double_impl(const std::string &variable_name,
   stat = H5Sclose(mem_space); check(stat);
   stat = H5Dclose(dset_id); check(stat);
 
-  if (stat >= 0)
+  if (stat >= 0) {
     return 0;
-  else
+  } else {
     return 1;
+  }
 }
 
 // Read a variable from a file, mapping from one storage order to another.
@@ -928,10 +936,11 @@ int NC4_HDF5::inq_vardimid_impl(const std::string &variable_name, std::vector<st
 
   stat = H5Dclose(var_id); check(stat);
 
-  if (stat >= 0)
+  if (stat >= 0) {
     return 0;
-  else
+  } else {
     return 1;
+  }
 }
 
 // Get the number of attributes a variable has.

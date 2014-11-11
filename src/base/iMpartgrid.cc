@@ -73,7 +73,7 @@ double IceModel::get_threshold_thickness(planeStar<int> M,
   if (N == 0) {
     // If there are no "icy" neighbors, return the threshold thickness
     // of zero, forcing Href to be converted to H immediately.
-    return 0;
+    return 0.0;
   }
 
   H_average = H_average / N;

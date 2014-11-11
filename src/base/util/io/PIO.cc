@@ -335,11 +335,9 @@ unsigned int PIO::inq_nrecords() const {
     m_nc->inq_unlimdim(dim);
 
     if (dim.empty()) {
-      return 1;
+      return 1;                 // one record
     } else {
-      unsigned int result;
-      m_nc->inq_dimlen(dim, result);
-      return result;
+      return this->inq_dimlen(dim);
     }
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records in file " + inq_filename());
@@ -366,13 +364,11 @@ unsigned int PIO::inq_nrecords(const string &name, const string &std_name) const
       AxisType dimtype = inq_dimtype(dims[j]);
 
       if (dimtype == T_AXIS) {
-        unsigned int result = 0;
-        m_nc->inq_dimlen(dims[j], result);
-        return result;
+        return this->inq_dimlen(dims[j]);
       }
     }
 
-    return 1;
+    return 1;                   // one record
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records of variable '%s' ('%s') in '%s'", name.c_str(), std_name.c_str(), inq_filename().c_str());
     throw;
@@ -747,7 +743,8 @@ grid_info PIO::inq_grid_info(const string &name, Periodicity p) const {
         }
       default:
         {
-          throw RuntimeError("can't figure out which direction dimension '" + dimname + "' corresponds to.");
+          throw RuntimeError::formatted("can't figure out which direction dimension '%s' corresponds to.",
+                                        dimname.c_str());
         }
       } // switch
     }   // for loop

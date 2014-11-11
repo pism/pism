@@ -491,7 +491,9 @@ PetscErrorCode IceModel::regrid(int dimensions) {
   PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // Return if no regridding is requested:
-  if (!regrid_file_set) return 0;
+  if (!regrid_file_set) {
+     return 0;
+  }
 
   if (dimensions != 0) {
     ierr = verbPrintf(2, grid.com, "regridding %dD variables from file %s ...\n",

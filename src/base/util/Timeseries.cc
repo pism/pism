@@ -208,13 +208,15 @@ double Timeseries::operator()(double t) {
 
     j = lower_bound(time_bounds.begin(), time_bounds.end(), t); // binary search
 
-    if (j == time_bounds.end())
+    if (j == time_bounds.end()) {
       return values.back(); // out of range (on the right)
+    }
 
     int i = (int)(j - time_bounds.begin());
 
-    if (i == 0)
+    if (i == 0) {
       return values[0];         // out of range (on the left)
+    }
 
     if (i % 2 == 0) {
       throw RuntimeError::formatted("time bounds array in %s does not represent continguous time intervals.\n"
@@ -230,8 +232,9 @@ double Timeseries::operator()(double t) {
   
   j = lower_bound(time.begin(), end, t); // binary search
 
-  if (j == end)
+  if (j == end) {
     return values.back(); // out of range (on the right)
+  }
 
   int i = (int)(j - time.begin());
 
@@ -436,11 +439,13 @@ PetscErrorCode DiagnosticTimeseries::flush() {
 
   // return cleanly if this DiagnosticTimeseries object was created but never
   // used:
-  if (output_filename.empty())
+  if (output_filename.empty()) {
     return 0;
+  }
 
-  if (time.empty())
+  if (time.empty()) {
     return 0;
+  }
 
   nc.open(output_filename, PISM_READWRITE);
   len = nc.inq_dimlen(dimension.get_name());

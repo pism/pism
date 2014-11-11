@@ -107,11 +107,13 @@ PetscErrorCode verbPrintf(const int threshold,
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(std::string str, std::string suffix) {
-  if (str.empty() == true && suffix.empty() == false)
+  if (str.empty() == true && suffix.empty() == false) {
     return false;
+  }
 
-  if (str.rfind(suffix) + suffix.size() == str.size())
+  if (str.rfind(suffix) + suffix.size() == str.size()) {
     return true;
+  }
 
   return false;
 }
@@ -215,8 +217,9 @@ std::string pism_filename_add_suffix(std::string filename, std::string separator
 
   result = basename + separator + suffix;
 
-  if (ends_with(filename, ".nc"))
+  if (ends_with(filename, ".nc")) {
     result += ".nc";
+  }
 
   return result;
 }

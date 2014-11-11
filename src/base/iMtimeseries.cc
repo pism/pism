@@ -165,16 +165,20 @@ PetscErrorCode IceModel::write_timeseries() {
   PetscErrorCode ierr;
 
   // return if no time-series requested
-  if (!save_ts) return 0;
+  if (!save_ts) {
+     return 0;
+  }
 
   // return if wrote all the records already
-  if (current_ts == ts_times.size())
+  if (current_ts == ts_times.size()) {
     return 0;
+  }
 
   // return if did not yet reach the time we need to save at
-  if (ts_times[current_ts] > grid.time->current())
+  if (ts_times[current_ts] > grid.time->current()) {
     return 0;
-  
+  }
+
   for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
     TSDiagnostic *diag = ts_diagnostics[*j];
 
