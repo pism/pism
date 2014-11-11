@@ -40,17 +40,6 @@ class Config;
   }   
   \endcode
 
-  Some methods are functions which return the computed values or a boolean.  These
-  do no error checking.  Others return PetscErrorCode and the modify pass-by-reference
-  arguments.  These check either that the enthalpy is below that of liquid water,
-  or they check that the temperature (in K) is positive.
-
-  Specifically, getAbsTemp() gives return value 1 if the input enthalpy exceeded
-  that of liquid water, but it puts the temperature of
-  temperate ice into its computed value for T.  Method getWaterFraction() gives
-  return value of 1 under the same condition, but puts the maximum-liquid-content
-  into its computed value for omega.
-
   The three methods that get the enthalpy from temperatures and liquid fractions, 
   namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict
   about error checking.  They throw RuntimeError if their arguments are invalid.

@@ -116,7 +116,7 @@ bool EnthalpyConverter::isTemperate(double E, double p) const {
                      \end{cases} \f]
 
 We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
-return an error code of 1 if \f$E \ge E_l(p)\f$.
+throw an exception if \f$E \ge E_l(p)\f$.
  */
 double EnthalpyConverter::getAbsTemp(double E, double p) const {
   double E_s, E_l;
@@ -185,7 +185,7 @@ bool EnthalpyConverter::isLiquified(double E, double p) const {
          c_i (T - T_0),     & T < T_m(p) \quad\text{and}\quad \omega = 0, \\
          E_s(p) + \omega L, & T = T_m(p) \quad\text{and}\quad \omega \ge 0.
        \end{cases} \f]
-Certain cases are not allowed and return errors:
+Certain cases are not allowed and throw exceptions:
 - \f$T<=0\f$ (error code 1)
 - \f$\omega < 0\f$ or \f$\omega > 1\f$ (error code 2)
 - \f$T>T_m(p)\f$ (error code 3)
