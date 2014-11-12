@@ -57,8 +57,9 @@ public:
     my_t = Mod::grid.time->mod(my_t - bc_reference_time,  bc_period);
 
     if ((fabs(my_t - t) < 1e-12) &&
-        (fabs(my_dt - dt) < 1e-12))
+        (fabs(my_dt - dt) < 1e-12)) {
       return 0;
+    }
 
     t  = my_t;
     dt = my_dt;
@@ -85,15 +86,18 @@ public:
     max_dt = reference_surface.max_timestep(t);
 
     if (restrict == true) {
-      if (max_dt > 0)
+      if (max_dt > 0) {
         dt = PetscMin(max_dt, dt);
+      }
+    } else {
+      dt = max_dt;
     }
-    else dt = max_dt;
 
-    if (dt > 0)
+    if (dt > 0) {
       restrict = true;
-    else
+    } else {
       restrict = false;
+    }
 
     return 0;
   }
@@ -194,8 +198,9 @@ protected:
 
   PetscErrorCode lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
   {
-    if (PetscAbs(lapse_rate) < 1e-12)
+    if (PetscAbs(lapse_rate) < 1e-12) {
       return 0;
+    }
 
     IceModelVec::AccessList list;
     list.add(*thk);

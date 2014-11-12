@@ -337,10 +337,11 @@ PetscErrorCode IceModel::putTempAtDepth() {
   }
 
   IceModelVec3 *result;
-  if (do_cold)
+  if (do_cold) {
     result = &T3;
-  else
+  } else {
     result = &Enth3;
+  }
 
   IceModelVec::AccessList list;
   list.add(ice_surface_temp);
@@ -390,8 +391,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
     }
 
     // above ice
-    for (unsigned int k = ks; k < grid.Mz; k++)
+    for (unsigned int k = ks; k < grid.Mz; k++) {
       T[k] = ice_surface_temp(i,j);
+    }
 
     // convert to enthalpy if that's what we are calculating
     if (do_cold == false) {

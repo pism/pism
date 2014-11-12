@@ -62,8 +62,9 @@ PetscErrorCode PBPointwiseIsostasy::init(Vars &vars) {
 PetscErrorCode PBPointwiseIsostasy::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
   if ((fabs(my_t - m_t)   < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12))
+      (fabs(my_dt - m_dt) < 1e-12)) {
     return 0;
+  }
 
   m_t  = my_t;
   m_dt = my_dt;
@@ -74,8 +75,9 @@ PetscErrorCode PBPointwiseIsostasy::update(double my_t, double my_dt) {
   double dt_beddef = t_final - t_beddef_last; // in seconds
   if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < grid.time->end()) ||
-      dt_beddef < 1e-12)
+      dt_beddef < 1e-12) {
     return 0;
+  }
 
   t_beddef_last = t_final;
 

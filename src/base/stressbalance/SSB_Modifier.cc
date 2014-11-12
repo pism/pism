@@ -104,8 +104,9 @@ ConstantInColumn::~ConstantInColumn()
 PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   PetscErrorCode ierr;
 
-  if (fast)
+  if (fast) {
     return 0;
+  }
 
   // horizontal velocity and its maximum:
   IceModelVec::AccessList list;

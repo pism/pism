@@ -137,11 +137,13 @@ PetscErrorCode IceEISModel::allocate_stressbalance() {
 PetscErrorCode IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
-  if (surface == NULL)
+  if (surface == NULL) {
     surface = new PS_EISMINTII(grid, config, m_experiment);
+  }
 
-  if (ocean == NULL)
+  if (ocean == NULL) {
     ocean = new POConstant(grid, config);
+  }
 
   return 0;
 }

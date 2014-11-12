@@ -59,8 +59,9 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
 
     if (mask.icy(i, j)) {
       // accumulate area of base which is at melt point
-      if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) // FIXME issue #15
+      if (EC->isTemperate(Enthbase(i,j), EC->getPressureFromDepth(ice_thickness(i,j)))) { // FIXME issue #15
         meltarea += a;
+      }
     }
     // if you happen to be at center, record absolute basal temp there
     if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
@@ -72,8 +73,11 @@ PetscErrorCode IceModel::energyStats(double iarea, double &gmeltfrac) {
   ierr = GlobalSum(grid.com, &meltarea,  &gmeltfrac); CHKERRQ(ierr);
 
   // normalize fraction correctly
-  if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
-  else gmeltfrac = 0.0;
+  if (iarea > 0.0) {
+    gmeltfrac = gmeltfrac / iarea;
+  } else {
+    gmeltfrac = 0.0;
+  }
 
   return 0;
 }
@@ -90,8 +94,9 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
 
   gorigfrac = -1.0;  // result value if not do_age
 
-  if (!config.get_flag("do_age"))
+  if (!config.get_flag("do_age")) {
     return 0;  // leave now
+  }
 
   const double  a = grid.dx * grid.dy * 1e-3 * 1e-3, // area unit (km^2)
     currtime = grid.time->current(); // seconds
@@ -116,8 +121,9 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
       const int  ks = grid.kBelowHeight(ice_thickness(i,j));
       for (int k=1; k<=ks; k++) {
         // ice in segment is original if it is as old as one year less than current time
-        if (0.5*(tau[k-1]+tau[k]) > currtime - one_year)
+        if (0.5*(tau[k-1]+tau[k]) > currtime - one_year) {
           origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
+        }
       }
     }
   }
@@ -127,8 +133,11 @@ PetscErrorCode IceModel::ageStats(double ivol, double &gorigfrac) {
   ierr = GlobalSum(grid.com, &origvol,   &gorigfrac); CHKERRQ(ierr);
 
   // normalize fraction correctly
-  if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
-  else gorigfrac = 0.0;
+  if (ivol > 0.0) {
+    gorigfrac = gorigfrac / ivol;
+  } else {
+    gorigfrac = 0.0;
+  }
 
   return 0;
 }
@@ -251,8 +260,9 @@ PetscErrorCode IceModel::summaryPrintLine(PetscBool printPrototype,  bool tempAn
   static std::string stdout_flags_count0;
   static int         mass_cont_sub_counter = 0;
   static double      mass_cont_sub_dtsum   = 0.0;
-  if (mass_cont_sub_counter == 0)
+  if (mass_cont_sub_counter == 0) {
     stdout_flags_count0 = stdout_flags;
+  }
   if (delta_t > 0.0) {
     mass_cont_sub_counter++;
     mass_cont_sub_dtsum += delta_t;
@@ -314,8 +324,9 @@ PetscErrorCode IceModel::compute_ice_volume(double &result) {
 
       // count all ice, including cells which have so little they
       // are considered "ice-free"
-      if (ice_thickness(i,j) > 0.0)
+      if (ice_thickness(i,j) > 0.0) {
         volume += ice_thickness(i,j) * cell_area(i,j);
+      }
     }
   }
 
@@ -457,8 +468,9 @@ PetscErrorCode IceModel::compute_ice_area(double &result) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.icy(i, j))
+    if (mask.icy(i, j)) {
       area += cell_area(i,j);
+    }
   }
 
   ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);
@@ -534,8 +546,9 @@ PetscErrorCode IceModel::compute_ice_area_grounded(double &result) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.grounded_ice(i,j))
+    if (mask.grounded_ice(i,j)) {
       area += cell_area(i,j);
+    }
   }
 
   ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);
@@ -555,8 +568,9 @@ PetscErrorCode IceModel::compute_ice_area_floating(double &result) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.floating_ice(i,j))
+    if (mask.floating_ice(i,j)) {
       area += cell_area(i,j);
+    }
   }
 
   ierr = GlobalSum(grid.com, &area,  &result); CHKERRQ(ierr);

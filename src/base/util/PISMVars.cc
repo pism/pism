@@ -62,9 +62,9 @@ void Vars::add(IceModelVec &v) {
     }
   }
 
-  if (variables[name] == NULL)
+  if (variables[name] == NULL) {
     variables[name] = &v;
-  else {
+  } else {
     throw RuntimeError("Vars::add(): an IceModelVec with the short_name '" + name + "' was added already.");
   }
 }
@@ -109,12 +109,14 @@ IceModelVec* Vars::get(const std::string &name) const {
 
 IceModelVec* Vars::get_internal(const std::string &name) const {
   std::map<std::string, IceModelVec* >::const_iterator j = standard_names.find(name);
-  if (j != standard_names.end())
+  if (j != standard_names.end()) {
     return (j->second);
+  }
 
   j = variables.find(name);
-  if (j != variables.end())
+  if (j != variables.end()) {
     return (j->second);
+  }
 
   return NULL;
 }

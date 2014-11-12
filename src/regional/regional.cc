@@ -57,41 +57,45 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
     // x-component, i-offset
     if (nmm(i, j) > 0.5 || nmm(i + 1, j) > 0.5) {
 
-      if (i < 0 || i + 1 > Mx - 1)
+      if (i < 0 || i + 1 > Mx - 1) {
         h_x(i, j, 0) = 0.0;
-      else
+      } else {
         h_x(i, j, 0) = (hst(i + 1, j) - hst(i, j)) / dx;
+      }
     }
 
     // x-component, j-offset
     if (nmm(i - 1, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
         nmm(i - 1, j)     > 0.5 || nmm(i + 1, j)     > 0.5) {
 
-      if (i - 1 < 0 || j + 1 > My - 1 || i + 1 > Mx - 1)
+      if (i - 1 < 0 || j + 1 > My - 1 || i + 1 > Mx - 1) {
         h_x(i, j, 1) = 0.0;
-      else
+      } else {
         h_x(i, j, 1) = ( + hst(i + 1, j + 1) + hst(i + 1, j)
                          - hst(i - 1, j + 1) - hst(i - 1, j)) / (4.0 * dx);
+      }
 
     }
 
     // y-component, i-offset
     if (nmm(i, j + 1) > 0.5 || nmm(i + 1, j + 1) > 0.5 ||
         nmm(i, j - 1) > 0.5 || nmm(i + 1, j - 1) > 0.5) {
-      if (i < 0 || j + 1 > My - 1 || i + 1 > Mx - 1 || j - 1 < 0)
+      if (i < 0 || j + 1 > My - 1 || i + 1 > Mx - 1 || j - 1 < 0) {
         h_y(i, j, 0) = 0.0;
-      else
+      } else {
         h_y(i, j, 0) = ( + hst(i + 1, j + 1) + hst(i, j + 1)
                          - hst(i + 1, j - 1) - hst(i, j - 1)) / (4.0 * dy);
+      }
     }
 
     // y-component, j-offset
     if (nmm(i, j) > 0.5 || nmm(i, j + 1) > 0.5) {
         
-      if (j < 0 || j + 1 > My - 1)
+      if (j < 0 || j + 1 > My - 1) {
         h_y(i, j, 1) = 0.0;
-      else
+      } else {
         h_y(i, j, 1) = (hst(i, j + 1) - hst(i, j)) / dy;
+      }
     }
 
   }
@@ -144,20 +148,24 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
     const int i = p.i(), j = p.j();
 
     double pressure = EC.getPressureFromDepth((*thkstore)(i,j));
-    if (pressure <= 0) pressure = 0;
+    if (pressure <= 0) {
+      pressure = 0;
+    }
 
     if (nmm(i, j) > 0.5 || nmm(i - 1, j) > 0.5 || nmm(i + 1, j) > 0.5) {
-      if (i - 1 < 0 || i + 1 > grid.Mx - 1)
+      if (i - 1 < 0 || i + 1 > grid.Mx - 1) {
         result(i, j).u = 0;
-      else
+      } else {
         result(i, j).u = - pressure * usurfstore->diff_x(i,j);
+      }
     }
 
     if (nmm(i, j) > 0.5 || nmm(i, j - 1) > 0.5 || nmm(i, j + 1) > 0.5) {
-      if (j - 1 < 0 || j + 1 > grid.My - 1)
+      if (j - 1 < 0 || j + 1 > grid.My - 1) {
         result(i, j).v = 0;
-      else
+      } else {
         result(i, j).v = - pressure * usurfstore->diff_y(i,j);
+      }
     }
   }
 

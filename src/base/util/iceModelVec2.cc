@@ -500,30 +500,34 @@ double IceModelVec2S::diff_y_stagN(int i, int j) const {
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
 double IceModelVec2S::diff_x_p(int i, int j) const {
-  if (grid->periodicity & X_PERIODIC)
+  if (grid->periodicity & X_PERIODIC) {
     return diff_x(i,j);
+  }
   
-  if (i == 0)
+  if (i == 0) {
     return ((*this)(i + 1,j) - (*this)(i,j)) / (grid->dx);
-  else if (i == grid->Mx - 1)
+  } else if (i == grid->Mx - 1) {
     return ((*this)(i,j) - (*this)(i - 1,j)) / (grid->dx);
-  else
+  } else {
     return diff_x(i,j);
+ }
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
 double IceModelVec2S::diff_y_p(int i, int j) const {
-  if (grid->periodicity & Y_PERIODIC)
+  if (grid->periodicity & Y_PERIODIC) {
     return diff_y(i,j);
+  }
   
-  if (j == 0)
+  if (j == 0) {
     return ((*this)(i,j + 1) - (*this)(i,j)) / (grid->dy);
-  else if (j == grid->My - 1)
+  } else if (j == grid->My - 1) {
     return ((*this)(i,j) - (*this)(i,j - 1)) / (grid->dy);
-  else
+  } else {
     return diff_y(i,j);
+  }
 }
 
 //! Sums up all the values in an IceModelVec2S object. Ignores ghosts.

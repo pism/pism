@@ -83,8 +83,9 @@ PetscErrorCode compute_strain_heating_errors(const Config &config,
       bothexact(0.0,r,&grid.zlevels[0],Mz,0.0,
                 &junk0,&junk1,dummy1,dummy2,dummy3,strain_heating_exact,dummy4);
 
-      for (int k = 0; k < Mz; k++)
+      for (int k = 0; k < Mz; k++) {
         strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
+      }
       const int ks = grid.kBelowHeight(thickness(i,j));
       ierr = strain_heating.getInternalColumn(i,j,&strain_heating_ij); CHKERRQ(ierr);
       for (int k = 0; k < ks; k++) {  // only eval error if below num surface
@@ -235,8 +236,9 @@ PetscErrorCode setInitStateF(IceGrid &grid,
       Ts = Tmin + ST * r;
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       (*thickness)(i, j) = 0.0;
-      for (int k = 0; k < Mz; k++)
+      for (int k = 0; k < Mz; k++) {
         T[k]=Ts;
+      }
     } else {
       r = PetscMax(r, 1.0); // avoid singularity at origin
       bothexact(0.0, r, &grid.zlevels[0], Mz, 0.0,

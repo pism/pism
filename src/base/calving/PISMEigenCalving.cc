@@ -147,8 +147,9 @@ PetscErrorCode EigenCalving::update(double dt,
         H_average += ice_thickness(i, j - 1);
       }
 
-      if (N_floating_neighbors > 0)
+      if (N_floating_neighbors > 0) {
         H_average /= N_floating_neighbors;
+      }
 
       for (int p = -1; p < 2; p += 2) {
         int i_offset = p * offset;
@@ -205,8 +206,9 @@ PetscErrorCode EigenCalving::update(double dt,
 
           // additional mass loss will be distributed among
           // N_floating_neighbors:
-          if (N_floating_neighbors > 0)
+          if (N_floating_neighbors > 0) {
             m_thk_loss(i, j) /= N_floating_neighbors;
+          }
         }
       }
 
@@ -304,8 +306,9 @@ PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
     // find partially filled or empty grid boxes on the ice-free
     // ocean which have floating ice neighbors
     if ((mask.ice_free_ocean(i, j) &&
-         mask.next_to_floating_ice(i, j)) == false)
+         mask.next_to_floating_ice(i, j)) == false) {
       continue;
+    }
 
     double
       calving_rate_horizontal = 0.0,
@@ -346,7 +349,9 @@ PetscErrorCode EigenCalving::max_timestep(double /*my_t*/,
         j0 = j;
       }
       my_calving_rate_max = PetscMax(my_calving_rate_max, calving_rate_horizontal);
-    } else calving_rate_horizontal = 0.0;
+    } else {
+      calving_rate_horizontal = 0.0;
+    }
 
   }
 
@@ -455,10 +460,12 @@ PetscErrorCode EigenCalving::remove_narrow_tongues(IceModelVec2Int &pism_mask,
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (mask.ice_free(i, j))  // FIXME: it might be better to have access to bedrock elevation b(i,j)
+    if (mask.ice_free(i, j)) {
+      // FIXME: it might be better to have access to bedrock elevation b(i,j)
       // and sea level SL so that the predicate can be
       //   mask.ice_free(i,j) || (mask.grounded_ice(i,j) && (b(i,j) >= SL)))
       continue;
+    }
 
     bool ice_free_N = false,  ice_free_E = false,
       ice_free_S = false, ice_free_W = false,

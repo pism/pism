@@ -167,8 +167,9 @@ PetscErrorCode IceModel::set_output_size(const std::string &keyword,
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
-      if (!tmp.empty())                // this ignores multiple spaces separating variable names
+      if (!tmp.empty()) {                // this ignores multiple spaces separating variable names
        result.insert(tmp);
+      }
     }
   } else if (keyword == "big") {
     // add all the variables listed in the config file ("big" size):
@@ -177,42 +178,53 @@ PetscErrorCode IceModel::set_output_size(const std::string &keyword,
 
     // split the list; note that this also removes any duplicate entries
     while (getline(keywords, tmp, ' ')) {
-      if (!tmp.empty())                // this ignores multiple spaces separating variable names
+      if (!tmp.empty()) {                // this ignores multiple spaces separating variable names
        result.insert(tmp);
+      }
     }
 
-    if (!config.get_flag("do_age"))
+    if (!config.get_flag("do_age")) {
       result.erase("age");
+    }
   }
 
-  if (config.get_flag("do_age"))
+  if (config.get_flag("do_age")) {
     result.insert("age");
+  }
 
-  if (ocean_kill_calving != NULL)
+  if (ocean_kill_calving != NULL) {
     ocean_kill_calving->add_vars_to_output(keyword, result);
+  }
 
-  if (beddef != NULL)
+  if (beddef != NULL) {
     beddef->add_vars_to_output(keyword, result);
+  }
 
-  if (btu != NULL)
+  if (btu != NULL) {
     btu->add_vars_to_output(keyword, result);
+  }
 
-  if (basal_yield_stress_model != NULL)
+  if (basal_yield_stress_model != NULL) {
     basal_yield_stress_model->add_vars_to_output(keyword, result);
+  }
 
   // Ask the stress balance module to add more variables:
-  if (stress_balance != NULL)
+  if (stress_balance != NULL) {
     stress_balance->add_vars_to_output(keyword, result);
+  }
 
-  if (subglacial_hydrology != NULL)
+  if (subglacial_hydrology != NULL) {
     subglacial_hydrology->add_vars_to_output(keyword, result);
+  }
 
   // Ask ocean and surface models to add more variables to the list:
-  if (ocean != NULL)
+  if (ocean != NULL) {
     ocean->add_vars_to_output(keyword, result);
+  }
 
-  if (surface != NULL)
+  if (surface != NULL) {
     surface->add_vars_to_output(keyword, result);
+  }
 
   return 0;
 }

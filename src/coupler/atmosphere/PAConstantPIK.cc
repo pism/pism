@@ -91,14 +91,16 @@ PetscErrorCode PAConstantPIK::end_pointwise_access() {
 }
 
 PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
-  for (unsigned int k = 0; k < m_ts_times.size(); k++)
+  for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = air_temp(i,j);
+  }
   return 0;
 }
 
 PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
-  for (unsigned int k = 0; k < m_ts_times.size(); k++)
+  for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = precipitation(i,j);
+  }
   return 0;
 }
 

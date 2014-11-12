@@ -48,8 +48,12 @@ PetscErrorCode PDDMassBalance_Old::getNForTemperatureSeries(PetscScalar /* t */,
   PetscInt    NperYear = static_cast<PetscInt>(config.get("pdd_max_evals_per_year"));
   PetscScalar dt_years = dt / secpera;
   N = (int) ceil((NperYear - 1) * (dt_years) + 1);
-  if (N < 3) N = 3;
-  if ((N % 2) == 0)  N++;  // guarantee N is odd
+  if (N < 3) {
+    N = 3;
+  }
+  if ((N % 2) == 0) {
+    N++;  // guarantee N is odd
+  }
   return 0;
 }
 
@@ -90,7 +94,9 @@ PetscScalar PDDMassBalance_Old::getPDDSumFromTemperatureTimeSeries(
   //   integral \approx (h/3) * sum([1 4 2 4 2 4 ... 4 1] .* [f(t_0) f(t_1) ... f(t_N-1)])
   for (PetscInt m = 0; m < Nsimp; ++m) {
     PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
-    if ((m == 0) || (m == (Nsimp-1)))  coeff = 1.0;
+    if ((m == 0) || (m == (Nsimp-1))) {
+      coeff = 1.0;
+    }
     pdd_sum += coeff * CalovGreveIntegrand(pddStdDev,T[m]-pddThresholdTemp);  // pass in temp in K
   }
   pdd_sum = (h_days / 3.0) * pdd_sum;
@@ -286,7 +292,9 @@ PetscErrorCode PDDrandMassBalance_Old::getNForTemperatureSeries(
                    PetscScalar /* t */, PetscScalar dt, PetscInt &N) {
   const PetscScalar sperd = 8.64e4;
   N = (int) ceil(dt / sperd);
-  if (N < 2) N = 2;
+  if (N < 2) {
+    N = 2;
+  }
   return 0;
 }
 
@@ -301,8 +309,9 @@ PetscScalar PDDrandMassBalance_Old::getPDDSumFromTemperatureTimeSeries(
   for (PetscInt m = 0; m < N-1; ++m) {
     PetscScalar temp = 0.5*(T[m] + T[m+1]); // av temp in [t+m*dt,t+(m+1)*dt]
     temp += gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
-    if (temp > pddThresholdTemp)
+    if (temp > pddThresholdTemp) {
       pdd_sum += h_days * (temp - pddThresholdTemp);
+    }
   }
   return pdd_sum;
 }

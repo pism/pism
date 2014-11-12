@@ -183,8 +183,9 @@ PetscErrorCode IceModelVec2T::init(const std::string &fname, unsigned int period
 
         // time bounds data overrides the time variable: we make t[j] be the
         // right end-point of the j-th interval
-        for (unsigned int k = 0; k < time.size(); ++k)
+        for (unsigned int k = 0; k < time.size(); ++k) {
           time[k] = time_bounds[2*k + 1];
+        }
       } else {
         // no time bounds attribute
         throw RuntimeError::formatted("Variable '%s' does not have the time_bounds attribute.\n"
@@ -274,8 +275,9 @@ PetscErrorCode IceModelVec2T::update(double my_t, double my_dt) {
       t1 = time_bounds[last * 2 + 1];
 
     // just return if we have all the data we need:
-    if (my_t >= t0 && my_t + my_dt <= t1)
+    if (my_t >= t0 && my_t + my_dt <= t1) {
       return 0;
+    }
   }
 
   // i will point to the smallest t so that t >= my_t 
@@ -321,8 +323,10 @@ PetscErrorCode IceModelVec2T::update(unsigned int start) {
 
   unsigned int missing = PetscMin(n_records, time_size - start);
 
-  if (start == static_cast<unsigned int>(first))
-    return 0;                   // nothing to do
+  if (start == static_cast<unsigned int>(first)) {
+    // nothing to do
+    return 0;
+  }
 
   int kept = 0;
   if (first >= 0) {
@@ -385,8 +389,9 @@ PetscErrorCode IceModelVec2T::discard(int number) {
   PetscErrorCode ierr;
   double **a2, ***a3;
 
-  if (number == 0)
+  if (number == 0) {
     return 0;
+  }
 
   N -= number;
 
@@ -451,14 +456,16 @@ double IceModelVec2T::max_timestep(double my_t) {
   if (l != time_bounds.end()) {
     double tmp = *l - my_t;
 
-    if (tmp > 1)                // never take time-steps shorter than 1 second
+    if (tmp > 1) {                // never take time-steps shorter than 1 second
       return tmp;
-    else if ((l + 1) != time_bounds.end() && (l + 2) != time_bounds.end())
+    } else if ((l + 1) != time_bounds.end() && (l + 2) != time_bounds.end()) {
       return *(l + 2) - *l;
-    else
+    } else {
       return -1;
-  } else
+    }
+  } else {
     return -1;
+  }
 
 }
 
@@ -505,13 +512,15 @@ PetscErrorCode IceModelVec2T::average(double my_t, double my_dt) {
 
   // Determine the number of small time-steps to use for averaging:
   int M = (int) ceil(n_evaluations_per_year * (dt_years));
-  if (M < 1)
+  if (M < 1) {
     M = 1;
+  }
 
   std::vector<double> ts(M);
   double dt = my_dt / M;
-  for (int k = 0; k < M; k++)
+  for (int k = 0; k < M; k++) {
     ts[k] = my_t + k * dt;
+  }
 
   ierr = init_interpolation(ts); CHKERRQ(ierr);
 
@@ -542,11 +551,13 @@ PetscErrorCode IceModelVec2T::init_interpolation(const std::vector<double> &ts) 
   // Compute "periodized" times if necessary.
   std::vector<double> times_requested(ts_length);
   if (m_period != 0) {
-    for (unsigned int k = 0; k < ts_length; ++k)
+    for (unsigned int k = 0; k < ts_length; ++k) {
       times_requested[k] = grid->time->mod(ts[k] - m_reference_time, m_period);
+    }
   } else {
-    for (unsigned int k = 0; k < ts_length; ++k)
+    for (unsigned int k = 0; k < ts_length; ++k) {
       times_requested[k] = ts[k];
+    }
   }
 
   m_interp_indices.resize(ts_length);
@@ -559,8 +570,10 @@ PetscErrorCode IceModelVec2T::init_interpolation(const std::vector<double> &ts) 
 
   for (unsigned int k = 0; k < ts_length; ++k) {
 
-    if (k > 0 && times_requested[k] < times_requested[k-1])
-      index = 0; // reset the index: times_requested are not increasing!
+    if (k > 0 && times_requested[k] < times_requested[k-1]) {
+      // reset the index: times_requested are not increasing!
+      index = 0;
+    }
 
     // extrapolate on the left:
     if (times_requested[k] < time_bounds[2*first]) {
@@ -576,8 +589,9 @@ PetscErrorCode IceModelVec2T::init_interpolation(const std::vector<double> &ts) 
 
     while (index < N) {
       if (time_bounds[2*(first + index) + 0] <= times_requested[k] &&
-          time_bounds[2*(first + index) + 1] >  times_requested[k])
+          time_bounds[2*(first + index) + 1] >  times_requested[k]) {
         break;
+      }
 
       index++;
     }
@@ -628,8 +642,9 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double &result) {
     // rectangular rule (uses the fact that points are equally-spaces
     // in time)
     result = 0;
-    for (unsigned int k = 0; k < M; ++k)
+    for (unsigned int k = 0; k < M; ++k) {
       result += values[k];
+    }
     result /= (double)M;
   }
   return 0;

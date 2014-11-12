@@ -94,8 +94,9 @@ PetscErrorCode IceModel::init_timeseries() {
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
     std::istringstream arg(vars);
 
-    while (getline(arg, var_name, ','))
+    while (getline(arg, var_name, ',')) {
       ts_vars.insert(var_name);
+    }
 
   } else {
     std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
@@ -117,8 +118,9 @@ PetscErrorCode IceModel::init_timeseries() {
     if (time_exists == true) {
       nc.inq_dim_limits(time_name, NULL, &time_max);
 
-      while (current_ts < ts_times.size() && ts_times[current_ts] < time_max)
+      while (current_ts < ts_times.size() && ts_times[current_ts] < time_max) {
         current_ts++;
+      }
 
       if (current_ts > 0) {
         ierr = verbPrintf(2, grid.com,
@@ -141,8 +143,9 @@ PetscErrorCode IceModel::init_timeseries() {
   }
 
   // ignore times before (and including) the beginning of the run:
-  while (current_ts < ts_times.size() && ts_times[current_ts] < grid.time->start())
+  while (current_ts < ts_times.size() && ts_times[current_ts] < grid.time->start()) {
     current_ts++;
+  }
 
   if (ts_times.size() == current_ts) {
     save_ts = false;
@@ -151,8 +154,9 @@ PetscErrorCode IceModel::init_timeseries() {
 
   // discard requested times before the beginning of the run
   std::vector<double> tmp(ts_times.size() - current_ts);
-  for (unsigned int k = 0; k < tmp.size(); ++k)
+  for (unsigned int k = 0; k < tmp.size(); ++k) {
     tmp[k] = ts_times[current_ts + k];
+  }
 
   ts_times = tmp;
   current_ts = 0;
@@ -193,8 +197,9 @@ PetscErrorCode IceModel::write_timeseries() {
 
     // the very first time (current_ts == 0) defines the left endpoint of the
     // first time interval; we don't write a report at that time
-    if (current_ts == 0)
+    if (current_ts == 0) {
       continue;
+    }
 
     for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
       TSDiagnostic *diag = ts_diagnostics[*j];
@@ -272,8 +277,9 @@ PetscErrorCode IceModel::init_extras() {
       double time_max;
       nc.inq_dim_limits(time_name, NULL, &time_max);
 
-      while (next_extra + 1 < extra_times.size() && extra_times[next_extra + 1] < time_max)
+      while (next_extra + 1 < extra_times.size() && extra_times[next_extra + 1] < time_max) {
         next_extra++;
+      }
 
       if (next_extra > 0) {
         ierr = verbPrintf(2, grid.com,
@@ -283,8 +289,9 @@ PetscErrorCode IceModel::init_extras() {
 
       // discard requested times before the beginning of the run
       std::vector<double> tmp(extra_times.size() - next_extra);
-      for (unsigned int k = 0; k < tmp.size(); ++k)
+      for (unsigned int k = 0; k < tmp.size(); ++k) {
         tmp[k] = extra_times[next_extra + k];
+      }
 
       extra_times = tmp;
       next_extra = 0;
@@ -326,8 +333,9 @@ PetscErrorCode IceModel::init_extras() {
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
     std::istringstream arg(vars);
 
-    while (getline(arg, var_name, ','))
+    while (getline(arg, var_name, ',')) {
       extra_vars.insert(var_name);
+    }
 
   } else {
     ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
@@ -350,8 +358,9 @@ PetscErrorCode IceModel::init_extras() {
     }
 
     std::set<std::string> list;
-    if (stress_balance)
+    if (stress_balance) {
       stress_balance->add_vars_to_output("small", extra_vars);
+    }
 
   } // end of the else clause after "if (extra_vars_set)"
 
@@ -374,8 +383,9 @@ PetscErrorCode IceModel::write_extras() {
   char filename[PETSC_MAX_PATH_LEN];
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
-  if (!save_extra)
+  if (!save_extra) {
     return 0;
+  }
 
   // do we need to save *now*?
   if (next_extra < extra_times.size() &&
@@ -389,8 +399,9 @@ PetscErrorCode IceModel::write_extras() {
     // update next_extra
     while (next_extra < extra_times.size() &&
            (extra_times[next_extra] <= grid.time->current() ||
-            fabs(grid.time->current() - extra_times[next_extra]) < 1.0))
+            fabs(grid.time->current() - extra_times[next_extra]) < 1.0)) {
       next_extra++;
+    }
 
     saving_after = extra_times[current_extra];
   } else {

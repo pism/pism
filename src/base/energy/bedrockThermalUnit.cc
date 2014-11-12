@@ -48,8 +48,9 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const std::string &my_sh
   Lbz = myLbz;
   zlevels.resize(m_n_levels);
   double dz = Lbz / (Mbz - 1);
-  for (unsigned int i = 0; i < m_n_levels; ++i)
+  for (unsigned int i = 0; i < m_n_levels; ++i) {
     zlevels[i] = -Lbz + i * dz;
+  }
   zlevels.back() = 0;
 
   m_da_stencil_width = stencil_width;
@@ -339,14 +340,16 @@ FIXME:  now a trapezoid rule could be used
 PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
-  if (temp.was_created() == false)
+  if (temp.was_created() == false) {
     return 0;  // in this case we are up to date
+  }
 
   // as a derived class of Component_TS, has t,dt members which keep track
   // of last update time-interval; so we do some checks ...
   // CHECK: has the desired time-interval already been dealt with?
-  if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12))
+  if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12)) {
     return 0;
+  }
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (my_dt < 0) {
@@ -357,11 +360,13 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
     bool contiguous = true;
 
     if (fabs(m_t + m_dt) < 1) {
-      if (fabs(my_t - (m_t + m_dt)) >= 1e-12) // check if the absolute difference is small
+      if (fabs(my_t - (m_t + m_dt)) >= 1e-12) { // check if the absolute difference is small
         contiguous = false;
+      }
     } else {
-      if (fabs(my_t - (m_t + m_dt)) / (m_t + m_dt) >= 1e-12) // check if the relative difference is small
+      if (fabs(my_t - (m_t + m_dt)) / (m_t + m_dt) >= 1e-12) { // check if the relative difference is small
         contiguous = false;
+      }
     }
 
     if (contiguous == false) {

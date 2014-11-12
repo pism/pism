@@ -177,10 +177,11 @@ double IceFlowLaw::averaged_hardness(double thickness, int kbelowH,
   B += depth * hardness_parameter(enthalpy[kbelowH], p);
 
   // Now B is an integral of ice hardness; next, compute the average:
-  if (thickness > 0)
+  if (thickness > 0) {
     B = B / thickness;
-  else
+  } else {
     B = 0;
+  }
 
   return B;
 }
@@ -373,23 +374,27 @@ double GoldsbyKohlstedtIce::flow_from_temp(double stress, double temp,
   // Diffusional Flow
   const double diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
   diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
-  if (T > diff_crit_temp) diff_D_b *= 1000; // Coble creep scaling
+  if (T > diff_crit_temp) {
+    diff_D_b *= 1000; // Coble creep scaling
+  }
   eps_diff = 14 * diff_V_m *
     (diff_D_v + M_PI * diff_delta * diff_D_b / gs) / (RT*PetscSqr(gs));
   // Dislocation Creep
-  if (T > disl_crit_temp)
+  if (T > disl_crit_temp) {
     eps_disl = disl_A_warm * pow(stress, disl_n-1) * exp(-(disl_Q_warm + pV)/RT);
-  else
+  } else {
     eps_disl = disl_A_cold * pow(stress, disl_n-1) * exp(-(disl_Q_cold + pV)/RT);
+  }
   // Basal Slip
   eps_basal = basal_A * pow(stress, basal_n-1) * exp(-(basal_Q + pV)/RT);
   // Grain Boundary Sliding
-  if (T > gbs_crit_temp)
+  if (T > gbs_crit_temp) {
     eps_gbs = gbs_A_warm * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
       exp(-(gbs_Q_warm + pV)/RT);
-  else
+  } else {
     eps_gbs = gbs_A_cold * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
       exp(-(gbs_Q_cold + pV)/RT);
+  }
 
   return eps_diff + eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
@@ -413,24 +418,28 @@ GKparts GoldsbyKohlstedtIce::flowParts(double stress, double temp, double pressu
   // Diffusional Flow
   const double diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
   diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
-  if (T > diff_crit_temp) diff_D_b *= 1000; // Coble creep scaling
+  if (T > diff_crit_temp) {
+    diff_D_b *= 1000; // Coble creep scaling
+  }
   gs = d_grain_size;
   eps_diff = 14 * diff_V_m *
     (diff_D_v + M_PI * diff_delta * diff_D_b / gs) / (RT*PetscSqr(gs));
   // Dislocation Creep
-  if (T > disl_crit_temp)
+  if (T > disl_crit_temp) {
     eps_disl = disl_A_warm * pow(stress, disl_n-1) * exp(-(disl_Q_warm + pV)/RT);
-  else
+  } else {
     eps_disl = disl_A_cold * pow(stress, disl_n-1) * exp(-(disl_Q_cold + pV)/RT);
+  }
   // Basal Slip
   eps_basal = basal_A * pow(stress, basal_n-1) * exp(-(basal_Q + pV)/RT);
   // Grain Boundary Sliding
-  if (T > gbs_crit_temp)
+  if (T > gbs_crit_temp) {
     eps_gbs = gbs_A_warm * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
       exp(-(gbs_Q_warm + pV)/RT);
-  else
+  } else {
     eps_gbs = gbs_A_cold * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
       exp(-(gbs_Q_cold + pV)/RT);
+  }
 
   p.eps_diff=eps_diff;
   p.eps_disl=eps_disl;
@@ -462,21 +471,23 @@ double GoldsbyKohlstedtIceStripped::flow_from_temp(double stress, double temp, d
   const double RT = ideal_gas_constant * T;
   // NO Diffusional Flow
   // Dislocation Creep
-  if (T > disl_crit_temp)
+  if (T > disl_crit_temp) {
     eps_disl = disl_A_warm * pow(stress, disl_n-1) * exp(-disl_Q_warm/RT);
-  else
+  } else {
     eps_disl = disl_A_cold * pow(stress, disl_n-1) * exp(-disl_Q_cold/RT);
+  }
   // Basal Slip
   eps_basal = basal_A * pow(stress, basal_n-1) * exp(-basal_Q/RT);
   // Grain Boundary Sliding
-  if (T > gbs_crit_temp)
+  if (T > gbs_crit_temp) {
     eps_gbs = gbs_A_warm *
               (pow(stress, gbs_n-1) / pow(d_grain_size_stripped, p_grain_sz_exp)) *
               exp(-gbs_Q_warm/RT);
-  else
+  } else {
     eps_gbs = gbs_A_cold *
               (pow(stress, gbs_n-1) / pow(d_grain_size_stripped, p_grain_sz_exp)) *
               exp(-gbs_Q_cold/RT);
+  }
 
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }

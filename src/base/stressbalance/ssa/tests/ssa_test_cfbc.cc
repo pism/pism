@@ -254,7 +254,9 @@ int main(int argc, char *argv[]) {
                                               output_file, flag); CHKERRQ(ierr);
       ierr = OptionsInt("-verbose", "Verbosity level",
                             my_verbosity_level, flag); CHKERRQ(ierr);
-      if (flag) setVerbosityLevel(my_verbosity_level);
+      if (flag) {
+        setVerbosityLevel(my_verbosity_level);
+      }
     }
     ierr = PetscOptionsEnd();
     PISM_PETSC_CHK(ierr, "PetscOptionsEnd");

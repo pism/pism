@@ -37,8 +37,9 @@ public:
     : Mod(g, conf, in), input(in) {}
   virtual ~PScalarForcing()
   {
-    if (offset)
+    if (offset) {
       delete offset;
+    }
   }
 
   virtual PetscErrorCode update(double my_t, double my_dt)

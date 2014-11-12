@@ -225,13 +225,14 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         sigmatau = 0.5*(T1-T2)*sin(2*sigmabetatest);
         //shayam_wu90
         if (sigmamu*sigmanor<0.0) {//compressive case
-          if (abs(sigmatau) <= abs(sigmamu*sigmanor))
+          if (abs(sigmatau) <= abs(sigmamu*sigmanor)) {
             sigmatau=0.0;
-          else {
-            if (sigmatau>0) //coulomb friction opposing sliding
+          } else {
+            if (sigmatau>0) { //coulomb friction opposing sliding
               sigmatau+=(sigmamu*sigmanor);
-            else
+            } else {
               sigmatau-=(sigmamu*sigmanor);
+            }
           }
         }
 
@@ -239,10 +240,11 @@ PetscErrorCode IceModel::calculateFractureDensity() {
         Kone = sigmanor*sqrt(M_PI*sigmac);//normal
         Ktwo = sigmatau*sqrt(M_PI*sigmac);//shear
 
-        if (Ktwo==0.0)
+        if (Ktwo==0.0) {
           sigmatetanull=0.0;
-        else //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
+        } else { //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
           sigmatetanull=-2.0*atan((sqrt(PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo)) - Kone)/(4.0*Ktwo));
+        }
 
         KSI = cos(0.5*sigmatetanull)*(Kone*cos(0.5*sigmatetanull)*cos(0.5*sigmatetanull) - 0.5*3.0*Ktwo*sin(sigmatetanull));
         // mode I stress intensity
@@ -265,16 +267,18 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     if (ice_thickness(i,j)>0.0) {
       if (constant_healing) {
         fdheal = gammaheal*(-healThreshold);
-        if (fracture_weighted_healing)
+        if (fracture_weighted_healing) {
           vFDnew(i,j)+= fdheal*dt*(1-vFD(i,j));
-        else
+        } else {
           vFDnew(i,j)+= fdheal*dt;
+        }
       }
       else if (strain_rates(i,j,0) < healThreshold) {
-        if (fracture_weighted_healing)
+        if (fracture_weighted_healing) {
           vFDnew(i,j)+= fdheal*dt*(1-vFD(i,j));
-        else
+        } else {
           vFDnew(i,j)+= fdheal*dt;
+        }
       }
     }
 
@@ -336,8 +340,10 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     //boundary condition
     if (dirichlet_bc && !do_fracground) {
       if (vBCMask.as_int(i,j) == 1) {
-        if (vBCvel(i,j).u != 0.0 || vBCvel(i,j).v != 0.0)
+        if (vBCvel(i,j).u != 0.0 || vBCvel(i,j).v != 0.0) {
           vFDnew(i,j)=fdBoundaryValue;
+        }
+
         if (write_fd) {
           vFAnew(i,j)=0.0;
           vFG(i,j)=0.0;

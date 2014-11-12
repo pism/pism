@@ -286,8 +286,9 @@ Thus
 void enthSystemCtx::assemble_R() {
   if (m_k_depends_on_T == false && m_c_depends_on_T == false) {
 
-    for (unsigned int k = 0; k <= m_ks; k++)
+    for (unsigned int k = 0; k <= m_ks; k++) {
       m_R[k] = (m_Enth[k] < m_Enth_s[k]) ? m_R_cold : m_R_temp;
+    }
 
   } else {
 

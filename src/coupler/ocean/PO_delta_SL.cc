@@ -80,8 +80,9 @@ PetscErrorCode PO_delta_SL::init(Vars &vars) {
 PetscErrorCode PO_delta_SL::sea_level_elevation(double &result) {
   PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
 
-  if (offset)
+  if (offset) {
     result += (*offset)(m_t + 0.5*m_dt);
+  }
 
   return 0;
 }

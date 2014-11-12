@@ -60,9 +60,9 @@ void IceBasalResistancePlasticLaw::drag_with_derivative(double tauc, double vx, 
 
   *beta = tauc / sqrt(magreg2);
 
-  if (dbeta)
+  if (dbeta) {
     *dbeta = -1 * (*beta) / magreg2;
-
+  }
 }
 
 /* Pseudo-plastic */
@@ -179,8 +179,9 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
     *beta =  tauc * pow(magreg2, 0.5*(pseudo_q - 1)) * pow(pseudo_u_threshold, -pseudo_q);
   }
 
-  if (dbeta)
+  if (dbeta) {
     *dbeta = (pseudo_q - 1) * (*beta) / magreg2;
+  }
 
 }
 

@@ -146,8 +146,9 @@ int copy_spatial_variable(std::string filename, std::string var_name, pism::NC4_
 
     // allocate a buffer...
     unsigned long long int buffer_size = 1;
-    for (unsigned int k = 0; k < count.size(); ++k)
+    for (unsigned int k = 0; k < count.size(); ++k) {
       buffer_size *= count[k];
+    }
 
     double *data = (double*)malloc(sizeof(double) * buffer_size);
     if (data == NULL) {

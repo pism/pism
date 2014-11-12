@@ -93,10 +93,11 @@ PetscErrorCode OceanKill::init(Vars &vars) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if ((*tmp)(i, j) > 0 || m.grounded(i, j)) // FIXME: use GeometryCalculator
+    if ((*tmp)(i, j) > 0 || m.grounded(i, j)) { // FIXME: use GeometryCalculator
       m_ocean_kill_mask(i, j) = 0;
-    else
+    } else {
       m_ocean_kill_mask(i, j) = 1;
+    }
   }
 
   ierr = m_ocean_kill_mask.update_ghosts(); CHKERRQ(ierr);
@@ -128,8 +129,9 @@ PetscErrorCode OceanKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
 }
 
 void OceanKill::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  if (keyword == "medium" || keyword == "big")
+  if (keyword == "medium" || keyword == "big") {
     result.insert(m_ocean_kill_mask.metadata().get_string("short_name"));
+  }
 }
 
 PetscErrorCode OceanKill::define_variables(const std::set<std::string> &vars, const PIO &nc,

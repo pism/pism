@@ -102,8 +102,7 @@ PetscErrorCode SSA::init(Vars &vars) {
     start = nc.inq_nrecords() - 1;
     nc.close();
 
-    if (u_ssa_found && v_ssa_found &&
-        (! dont_read_initial_guess)) {
+    if (u_ssa_found && v_ssa_found && (not dont_read_initial_guess)) {
       ierr = verbPrintf(3,grid.com,"Reading u_ssa and v_ssa...\n"); CHKERRQ(ierr);
 
       ierr = m_velocity.read(filename, start); CHKERRQ(ierr);
@@ -173,8 +172,9 @@ PetscErrorCode SSA::deallocate() {
 PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
 
-  if (fast)
+  if (fast) {
     return 0;
+  }
 
   (void) melange_back_pressure;
 
@@ -274,53 +274,67 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
           // x-derivative
           {
             double west = 1, east = 1;
-            if ((m.grounded(i,j) && m.floating_ice(i+1,j)) || (m.floating_ice(i,j) && m.grounded(i+1,j)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i+1,j)))
+            if ((m.grounded(i,j) && m.floating_ice(i+1,j)) ||
+                (m.floating_ice(i,j) && m.grounded(i+1,j)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i+1,j))) {
               east = 0;
-            if ((m.grounded(i,j) && m.floating_ice(i-1,j)) || (m.floating_ice(i,j) && m.grounded(i-1,j)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i-1,j)))
+            }
+            if ((m.grounded(i,j) && m.floating_ice(i-1,j)) ||
+                (m.floating_ice(i,j) && m.grounded(i-1,j)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i-1,j))) {
               west = 0;
+            }
 
             // This driving stress computation has to match the calving front
             // stress boundary condition in SSAFD::assemble_rhs().
             if (cfbc) {
-              if (m.icy(i,j) && m.ice_free(i+1,j))
+              if (m.icy(i,j) && m.ice_free(i+1,j)) {
                 east = 0;
-              if (m.icy(i,j) && m.ice_free(i-1,j))
+              }
+              if (m.icy(i,j) && m.ice_free(i-1,j)) {
                 west = 0;
+              }
             }
 
-            if (east + west > 0)
+            if (east + west > 0) {
               h_x = 1.0 / (west + east) * (west * surface->diff_x_stagE(i-1,j) +
                                            east * surface->diff_x_stagE(i,j));
-            else
+            } else {
               h_x = 0.0;
+            }
           }
 
           // y-derivative
           {
             double south = 1, north = 1;
-            if ((m.grounded(i,j) && m.floating_ice(i,j+1)) || (m.floating_ice(i,j) && m.grounded(i,j+1)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i,j+1)))
+            if ((m.grounded(i,j) && m.floating_ice(i,j+1)) ||
+                (m.floating_ice(i,j) && m.grounded(i,j+1)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i,j+1))) {
               north = 0;
-            if ((m.grounded(i,j) && m.floating_ice(i,j-1)) || (m.floating_ice(i,j) && m.grounded(i,j-1)) ||
-                (m.floating_ice(i,j) && m.ice_free_ocean(i,j-1)))
+            }
+            if ((m.grounded(i,j) && m.floating_ice(i,j-1)) ||
+                (m.floating_ice(i,j) && m.grounded(i,j-1)) ||
+                (m.floating_ice(i,j) && m.ice_free_ocean(i,j-1))) {
               south = 0;
+            }
 
             // This driving stress computation has to match the calving front
             // stress boundary condition in SSAFD::assemble_rhs().
             if (cfbc) {
-              if (m.icy(i,j) && m.ice_free(i,j+1))
+              if (m.icy(i,j) && m.ice_free(i,j+1)) {
                 north = 0;
-              if (m.icy(i,j) && m.ice_free(i,j-1))
+              }
+              if (m.icy(i,j) && m.ice_free(i,j-1)) {
                 south = 0;
+              }
             }
 
-            if (north + south > 0)
+            if (north + south > 0) {
               h_y = 1.0 / (south + north) * (south * surface->diff_y_stagN(i,j-1) +
                                              north * surface->diff_y_stagN(i,j));
-            else
+            } else {
               h_y = 0.0;
+            }
           }
 
         } // end of "general case"
@@ -405,9 +419,10 @@ SSA_taud::SSA_taud(SSA *m, IceGrid &g, Vars &my_vars)
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < dof; ++k)
+  for (int k = 0; k < dof; ++k) {
     vars[k].set_string("comment",
                        "this is the driving stress used by the SSA solver");
+  }
 }
 
 PetscErrorCode SSA_taud::compute(IceModelVec* &output) {

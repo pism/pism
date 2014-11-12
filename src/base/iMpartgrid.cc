@@ -79,9 +79,9 @@ double IceModel::get_threshold_thickness(planeStar<int> M,
   H_average = H_average / N;
   h_average = h_average / N;
 
-  if (bed_elevation + H_average > h_average)
+  if (bed_elevation + H_average > h_average) {
     H_threshold = h_average - bed_elevation;
-  else {
+  } else {
     H_threshold = H_average;
     // reduces the guess at the front
     if (reduce_frontal_thickness) {
@@ -152,8 +152,9 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (H_residual(i,j) <= 0.0)
+      if (H_residual(i,j) <= 0.0) {
         continue;
+      }
 
       planeStar<int> m = vMask.int_star(i,j);
       int N = 0; // number of empty or partially filled neighbors
@@ -181,14 +182,18 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
         // Remaining ice mass will be redistributed equally among all
         // adjacent partially-filled cells (is there a more physical
         // way?)
-        if (neighbors.e)
+        if (neighbors.e) {
           vHref(i + 1, j) += H_residual(i, j) / N;
-        if (neighbors.w)
+        }
+        if (neighbors.w) {
           vHref(i - 1, j) += H_residual(i, j) / N;
-        if (neighbors.n)
+        }
+        if (neighbors.n) {
           vHref(i, j + 1) += H_residual(i, j) / N;
-        if (neighbors.s)
+        }
+        if (neighbors.s) {
           vHref(i, j - 1) += H_residual(i, j) / N;
+        }
 
         H_residual(i, j) = 0.0;
       } else {
@@ -222,8 +227,9 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (vHref(i,j) <= 0.0)
+      if (vHref(i,j) <= 0.0) {
         continue;
+      }
 
       double H_threshold = get_threshold_thickness(vMask.int_star(i, j),
                                                    ice_thickness.star(i, j),
@@ -232,8 +238,9 @@ PetscErrorCode IceModel::residual_redistribution_iteration(IceModelVec2S &H_resi
                                                    reduce_frontal_thickness);
 
       double coverage_ratio = 1.0;
-      if (H_threshold > 0.0)
+      if (H_threshold > 0.0) {
         coverage_ratio = vHref(i, j) / H_threshold;
+      }
       if (coverage_ratio >= 1.0) {
         // The current partially filled grid cell is considered to be full
         H_residual(i, j) = vHref(i, j) - H_threshold;

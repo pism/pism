@@ -439,25 +439,27 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
 
     // in the ice:
     if (M.grounded(i,j)) {
-      for (int k = 0; k <= ks ; k++)
+      for (int k = 0; k <= ks ; k++) {
         res[k] = w[k] + (*uplift)(i,j) + u[k] * bed->diff_x_p(i,j) + v[k] * bed->diff_y_p(i,j);
+      }
 
     } else {                  // floating
       const double
         z_sl = R * (*thickness)(i,j),
         w_sl = w3->getValZ(i, j, z_sl);
 
-      for (int k = 0; k <= ks ; k++)
+      for (int k = 0; k <= ks ; k++) {
         res[k] = w[k] - w_sl;
+      }
 
     }
 
     // above the ice:
-    for (unsigned int k = ks+1; k < grid.Mz ; k++)
+    for (unsigned int k = ks+1; k < grid.Mz ; k++) {
       res[k] = 0.0;
+    }
 
   }
-
 
   output = result;
   return 0;
@@ -511,8 +513,9 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(i, j))
+    if (M.ice_free(i, j)) {
       (*result)(i, j) = fill_value;
+    }
   }
 
 
@@ -567,8 +570,9 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ice_free(i, j))
+    if (M.ice_free(i, j)) {
       (*result)(i, j) = fill_value;
+    }
   }
 
 

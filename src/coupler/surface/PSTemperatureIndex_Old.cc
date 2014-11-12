@@ -205,10 +205,11 @@ PetscErrorCode PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &m
   PetscErrorCode ierr;
 
   if (pdd_annualize) {
-    if (PetscAbs(my_t - next_pdd_update) < 1e-12)
+    if (PetscAbs(my_t - next_pdd_update) < 1e-12) {
       my_dt = grid.convert(1.0, "years", "seconds");
-    else
+    } else {
       my_dt = next_pdd_update - my_t;
+    }
   } else {
     my_dt = -1;
   }
@@ -217,16 +218,18 @@ PetscErrorCode PSTemperatureIndex_Old::max_timestep(PetscReal my_t, PetscReal &m
   ierr = atmosphere->max_timestep(my_t, dt_atmosphere, restrict); CHKERRQ(ierr);
 
   if (restrict) {
-    if (my_dt > 0)
+    if (my_dt > 0) {
       my_dt = PetscMin(my_dt, dt_atmosphere);
-    else
+    } else {
       my_dt = dt_atmosphere;
+    }
   }
 
-  if (my_dt > 0)
+  if (my_dt > 0) {
     restrict = true;
-  else
+  } else {
     restrict = false;
+  }
 
   return 0;
 }
@@ -237,8 +240,9 @@ PetscErrorCode PSTemperatureIndex_Old::update(PetscReal my_t, PetscReal my_dt) {
   PetscReal one_year = grid.convert(1.0, "years", "seconds");
 
   if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12))
+      (fabs(my_dt - m_dt) < 1e-12)) {
     return 0;
+  }
 
   m_t  = my_t;
   m_dt = my_dt;
@@ -282,8 +286,9 @@ PetscErrorCode PSTemperatureIndex_Old::update_internal(PetscReal my_t, PetscReal
 
   // times for the air temperature time-series, in years:
   std::vector<PetscScalar> ts(Nseries), T(Nseries);
-  for (PetscInt k = 0; k < Nseries; ++k)
+  for (PetscInt k = 0; k < Nseries; ++k) {
     ts[k] = my_t + k * dtseries;
+  }
 
   IceModelVec::AccessList list;
 

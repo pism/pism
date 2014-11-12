@@ -328,7 +328,9 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
       // Compute dzeta at the nodes
       m_dofmap.extractLocalDOFs(i, j, *dzeta_local, dzeta_e);
-      if (fixedZeta) fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
+      if (fixedZeta) {
+        fixedZeta.update_homogeneous(m_dofmap, dzeta_e);
+      }
 
       // Compute the change in tau_c with respect to zeta at the quad points.
       m_dofmap.extractLocalDOFs(i, j, *m_zeta, zeta_e);
@@ -468,11 +470,15 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceMode
       // Obtain the value of the solution at the nodes adjacent to the element.
       // Compute the solution values and symmetric gradient at the quadrature points.
       m_dofmap.extractLocalDOFs(i, j, *du_local, du_e);
-      if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, du_e);
+      if (dirichletBC) {
+        dirichletBC.update_homogeneous(m_dofmap, du_e);
+      }
       m_quadrature_vector.computeTrialFunctionValues(du_e, du_q);
 
       m_dofmap.extractLocalDOFs(i, j, u, u_e);
-      if (dirichletBC) dirichletBC.update(m_dofmap, u_e);
+      if (dirichletBC) {
+        dirichletBC.update(m_dofmap, u_e);
+      }
       m_quadrature_vector.computeTrialFunctionValues(u_e, u_q);
 
       // Zero out the element-local residual in prep for updating it.
@@ -563,9 +569,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzet
   if (reason < 0) {
     throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  }
-  else
-  {
+  } else {
     verbPrintf(4, grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }
@@ -612,7 +616,9 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   DirichletData_Vector dirichletBC;
   ierr = dirichletBC.init(m_dirichletLocations, m_dirichletValues, m_dirichletWeight); CHKERRQ(ierr);
 
-  if (dirichletBC) dirichletBC.fix_residual_homogeneous(du_a);
+  if (dirichletBC) {
+    dirichletBC.fix_residual_homogeneous(du_a);
+  }
 
   ierr = dirichletBC.finish(); CHKERRQ(ierr);
   ierr = m_du_global.end_access(); CHKERRQ(ierr);
@@ -634,9 +640,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelV
   if (reason < 0) {
     throw RuntimeError::formatted("IP_SSATaucForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
-  }
-  else
-  {
+  } else {
     verbPrintf(4, grid.com, "IP_SSATaucForwardProblem::apply_linearization converged (KSP reason %s)\n",
                KSPConvergedReasons[reason]);
   }

@@ -283,8 +283,9 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
   ierr = OptionsString("-report_file", "NetCDF error report file",
                            filename, flag); CHKERRQ(ierr);
 
-  if (flag == false)
+  if (flag == false) {
     return 0;
+  }
 
   err.set_units("1");
 

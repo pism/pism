@@ -125,26 +125,32 @@ PetscErrorCode IceModel::init_diagnostics() {
   ts_diagnostics["sum_divQ_flux"]  = new IceModel_sum_divQ_flux(this, grid, variables);
 
   // Get diagnostics supported by the stress balance object:
-  if (stress_balance != NULL)
+  if (stress_balance != NULL) {
     stress_balance->get_diagnostics(diagnostics, ts_diagnostics);
+  }
 
   // Get diagnostics supported by the surface model:
-  if (surface != NULL)
+  if (surface != NULL) {
     surface->get_diagnostics(diagnostics, ts_diagnostics);
+  }
 
   // Get diagnostics supported by the ocean model:
-  if (ocean != NULL)
+  if (ocean != NULL) {
     ocean->get_diagnostics(diagnostics, ts_diagnostics);
+  }
 
   // Get diagnostics supported by the bed deformation model:
-  if (beddef != NULL)
+  if (beddef != NULL) {
     beddef->get_diagnostics(diagnostics, ts_diagnostics);
+  }
 
-  if (basal_yield_stress_model != NULL)
+  if (basal_yield_stress_model != NULL) {
     basal_yield_stress_model->get_diagnostics(diagnostics, ts_diagnostics);
+  }
 
-  if (subglacial_hydrology != NULL)
+  if (subglacial_hydrology != NULL) {
     subglacial_hydrology->get_diagnostics(diagnostics, ts_diagnostics);
+  }
 
   return 0;
 }
@@ -157,26 +163,33 @@ PetscErrorCode IceModel::list_diagnostics() {
   {
     std::set<std::string> list = variables.keys();
 
-    if (beddef != NULL)
+    if (beddef != NULL) {
       beddef->add_vars_to_output("big", list);
+    }
 
-    if (btu != NULL)
+    if (btu != NULL) {
       btu->add_vars_to_output("big", list);
+    }
 
-    if (basal_yield_stress_model != NULL)
+    if (basal_yield_stress_model != NULL) {
       basal_yield_stress_model->add_vars_to_output("big", list);
+    }
 
-    if (subglacial_hydrology != NULL)
+    if (subglacial_hydrology != NULL) {
       subglacial_hydrology->add_vars_to_output("big", list);
+    }
 
-    if (stress_balance != NULL)
+    if (stress_balance != NULL) {
       stress_balance->add_vars_to_output("big", list);
+    }
 
-    if (ocean != NULL)
+    if (ocean != NULL) {
       ocean->add_vars_to_output("big", list);
+    }
 
-    if (surface != NULL)
+    if (surface != NULL) {
       surface->add_vars_to_output("big", list);
+    }
 
     for (unsigned int d = 3; d > 1; --d) {
 
@@ -197,8 +210,9 @@ PetscErrorCode IceModel::list_diagnostics() {
             glaciological_units = var.get_string("glaciological_units"),
             long_name           = var.get_string("long_name");
 
-          if (glaciological_units.empty() == false)
+          if (glaciological_units.empty() == false) {
             units = glaciological_units;
+          }
 
             PetscPrintf(grid.com,
                         "   Name: %s [%s]\n"
@@ -226,8 +240,9 @@ PetscErrorCode IceModel::list_diagnostics() {
         units               = diag->get_metadata().get_string("units"),
         glaciological_units = diag->get_metadata().get_string("glaciological_units");
 
-      if (glaciological_units.empty() == false)
+      if (glaciological_units.empty() == false) {
         units = glaciological_units;
+      }
 
       if (diag->get_metadata().get_n_spatial_dimensions() == d) {
 
@@ -261,8 +276,9 @@ PetscErrorCode IceModel::list_diagnostics() {
       units = diag->get_string("units"),
       glaciological_units = diag->get_string("glaciological_units");
 
-    if (glaciological_units.empty() == false)
+    if (glaciological_units.empty() == false) {
       units = glaciological_units;
+    }
 
     PetscPrintf(grid.com,
                 "   Name: %s [%s]\n"
@@ -637,8 +653,9 @@ PetscErrorCode IceModel_enthalpysurf::compute(IceModelVec* &output) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (model->ice_thickness(i,j) <= 1.0)
+    if (model->ice_thickness(i,j) <= 1.0) {
       (*result)(i,j) = fill_value;
+    }
   }
 
   output = result;
@@ -924,10 +941,11 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
     while (k <= ks) {         // FIXME issue #15
       pressure = EC->getPressureFromDepth(thk - grid.zlevels[k]);
 
-      if (EC->isTemperate(Enth[k],pressure))
+      if (EC->isTemperate(Enth[k],pressure)) {
         k++;
-      else
+      } else {
         break;
+      }
     }
     // after this loop 'pressure' is equal to the pressure at the first level
     // that is cold
@@ -1678,8 +1696,9 @@ PetscErrorCode IceModel_ivolg::update(double a, double b) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.grounded_ice(i,j))
+    if (mask.grounded_ice(i,j)) {
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);
+    }
   }
 
   ierr = GlobalSum(grid.com, &volume,  &value); CHKERRQ(ierr);
@@ -1714,8 +1733,9 @@ PetscErrorCode IceModel_ivolf::update(double a, double b) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.floating_ice(i,j))
+    if (mask.floating_ice(i,j)) {
       volume += model->cell_area(i,j) * model->ice_thickness(i,j);
+    }
   }
 
   ierr = GlobalSum(grid.com, &volume,  &value); CHKERRQ(ierr);
@@ -1932,8 +1952,9 @@ IceModel_lat_lon_bounds::IceModel_lat_lon_bounds(IceModel *m, IceGrid &g, Vars &
 
   // set metadata:
   std::vector<double> levels(4);
-  for (int k = 0; k < 4; ++k)
+  for (int k = 0; k < 4; ++k) {
     levels[k] = k;
+  }
 
   vars.push_back(NCSpatialVariable(grid.get_unit_system(), m_var_name + "_bnds", grid, levels));
   vars[0].get_z().set_name("nv4");
@@ -1984,8 +2005,9 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
   double y_offsets[] = {-dy2, -dy2, dy2, dy2};
 
   bool latitude = true;
-  if (m_var_name == "lon")
+  if (m_var_name == "lon") {
     latitude = false;
+  }
 
   IceModelVec::AccessList list;
   list.add(*result);
@@ -2008,10 +2030,11 @@ PetscErrorCode IceModel_lat_lon_bounds::compute(IceModelVec* &output) {
 
       // NB! proj.4 converts x,y pairs into lon,lat pairs in *radians*.
 
-      if (latitude)
+      if (latitude) {
         values[k] = y * RAD_TO_DEG;
-      else
+      } else {
         values[k] = x * RAD_TO_DEG;
+      }
     }
   }
 

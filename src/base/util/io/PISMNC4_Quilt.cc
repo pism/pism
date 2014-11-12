@@ -140,8 +140,9 @@ int NC4_Quilt::def_var_impl(const std::string &name, IO_Type nctype,
 
   // Replace "x|y" with "x|y" + suffix (for 2D and 3D variables).
   for (unsigned int j = 0; dims.size() > 1 && j < dims.size(); ++j) {
-    if (dims[j] == "x" || dims[j] == "y")
+    if (dims[j] == "x" || dims[j] == "y") {
       dims[j] = dims[j] + suffix;
+    }
   }
 
   stat = NC4File::def_var_impl(name, nctype, dims); check(stat);

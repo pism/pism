@@ -165,8 +165,9 @@ PetscErrorCode PAAnomaly::temp_time_series(int i, int j, std::vector<double> &re
   m_temp_anomaly.reserve(m_ts_times.size());
   ierr = air_temp_anomaly->interp(i, j, m_temp_anomaly); CHKERRQ(ierr);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_temp_anomaly[k];
+  }
 
   return 0;
 }
@@ -179,8 +180,9 @@ PetscErrorCode PAAnomaly::precip_time_series(int i, int j, std::vector<double> &
   m_mass_flux_anomaly.reserve(m_ts_times.size());
   ierr = precipitation_anomaly->interp(i, j, m_mass_flux_anomaly); CHKERRQ(ierr);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_mass_flux_anomaly[k];
+  }
 
   return 0;
 }

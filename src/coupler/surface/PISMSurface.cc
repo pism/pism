@@ -42,8 +42,9 @@ SurfaceModel::~SurfaceModel() {
 
 void SurfaceModel::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                        std::map<std::string, TSDiagnostic*> &ts_dict) {
-  if (atmosphere)
+  if (atmosphere) {
     atmosphere->get_diagnostics(dict, ts_dict);
+  }
 }
 
 void SurfaceModel::attach_atmosphere_model(AtmosphereModel *input) {

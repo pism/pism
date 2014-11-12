@@ -97,8 +97,9 @@ int PNCFile::close_impl() {
 
 int PNCFile::enddef_impl() const {
 
-  if (m_define_mode == false)
+  if (m_define_mode == false) {
     return 0;
+  }
 
   int stat = ncmpi_enddef(m_file_id); check(stat);
 
@@ -110,8 +111,9 @@ int PNCFile::enddef_impl() const {
 
 int PNCFile::redef_impl() const {
 
-  if (m_define_mode == true)
+  if (m_define_mode == true) {
     return 0;
+  }
 
   int stat = ncmpi_redef(m_file_id); check(stat);
 
@@ -326,10 +328,11 @@ int PNCFile::inq_varid_impl(const std::string &variable_name, bool &exists) cons
 
   stat = ncmpi_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     flag = 1;
-  else
+  } else {
     flag = 0;
+  }
 
   exists = (flag == 1);
 
@@ -376,11 +379,11 @@ int PNCFile::get_att_double_impl(const std::string &variable_name, const std::st
 
   stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
-  else if (stat == NC_ENOTATT)
+  } else if (stat == NC_ENOTATT) {
     len = 0;
-  else {
+  } else {
     check(stat);
     len = 0;
   }
@@ -419,10 +422,11 @@ int PNCFile::get_att_text_impl(const std::string &variable_name, const std::stri
   }
 
   stat = ncmpi_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
-  else
+  } else {
     len = 0;
+  }
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
@@ -565,8 +569,9 @@ int PNCFile::get_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false)
+  if (mapped == false) {
     imap.resize(ndims);
+  }
 
   std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
     nc_imap(ndims), nc_stride(ndims);
@@ -616,8 +621,9 @@ int PNCFile::put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false)
+  if (mapped == false) {
     imap.resize(ndims);
+  }
 
   std::vector<MPI_Offset> nc_start(ndims), nc_count(ndims),
     nc_imap(ndims), nc_stride(ndims);
@@ -652,8 +658,9 @@ void PNCFile::init_hints() {
     std::istringstream arg(*j);
     std::vector<std::string> words;
     std::string word;
-    while (getline(arg, word, ':'))
+    while (getline(arg, word, ':')) {
       words.push_back(word);
+    }
 
     if (words.size() == 2) {
       // printf("Setting MPI I/O hint \"%s\" to \"%s\"...\n",

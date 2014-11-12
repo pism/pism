@@ -84,8 +84,9 @@ PetscErrorCode IceModel::do_calving() {
  * floating ice neighbor.
  */
 PetscErrorCode IceModel::Href_cleanup() {
-  if (vHref.was_created() == false)
+  if (vHref.was_created() == false) {
     return 0;
+  }
 
   MaskQuery mask(vMask);
 
@@ -166,16 +167,18 @@ PetscErrorCode IceModel::update_cumulative_discharge(IceModelVec2S &thickness,
         // for several time-steps as the calving front advances. In
         // this case delta_Href is real, but does not correspond to
         // either loss or gain of mass.)
-        if (delta_Href > 0.0)
+        if (delta_Href > 0.0) {
           delta_Href = 0.0;
+        }
       } else {
         delta_Href = 0.0;
       }
 
       discharge = (delta_H + delta_Href) * cell_area(i,j) * ice_density;
 
-      if (update_2d_discharge)
+      if (update_2d_discharge) {
         discharge_flux_2D_cumulative(i,j) += discharge;
+      }
 
       my_total_discharge += discharge;
     }

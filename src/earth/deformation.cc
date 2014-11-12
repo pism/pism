@@ -161,17 +161,21 @@ PetscErrorCode BedDeformLC::init() {
 
   // coeffs for Fourier spectral method Laplacian
   // Matlab version:  cx=(pi/Lx)*[0:Nx/2 Nx/2-1:-1:1]
-  for (int i = 0; i <= Nx / 2; i++)
+  for (int i = 0; i <= Nx / 2; i++) {
     cx[i] = (M_PI / Lx_fat) * i;
+  }
 
-  for (int i = Nx / 2 + 1; i < Nx; i++)
+  for (int i = Nx / 2 + 1; i < Nx; i++) {
     cx[i] = (M_PI / Lx_fat) * (Nx - i);
+  }
 
-  for (int j = 0; j <= Ny / 2; j++)
+  for (int j = 0; j <= Ny / 2; j++) {
     cy[j] = (M_PI / Ly_fat) * j;
+  }
 
-  for (int j = Ny / 2 + 1; j < Ny; j++)
+  for (int j = Ny / 2 + 1; j < Ny; j++) {
     cy[j] = (M_PI / Ly_fat) * (Ny - j);
+  }
 
   // compare geforconv.m
   if (include_elastic == true) {
@@ -250,11 +254,13 @@ PetscErrorCode BedDeformLC::uplift_init() {
     PetscVecAccessor2D u_start(U_start, Nx, Ny);
 
     double av = 0.0;
-    for (int i = 0; i < Nx; i++)
+    for (int i = 0; i < Nx; i++) {
       av += u_start(i, 0);
+    }
 
-    for (int j = 0; j < Ny; j++)
+    for (int j = 0; j < Ny; j++) {
       av += u_start(0, j);
+    }
 
     av = av / ((double) (Nx + Ny));
 
@@ -366,11 +372,13 @@ void BedDeformLC::tweak(double seconds_from_start) {
   // note domain is periodic, so think of cut locus of torus (!)
   // (will remove it:   uun1=uun1-(sum(uun1(1, :))+sum(uun1(:, 1)))/(2*N);)
   double av = 0.0;
-  for (int i = 0; i < Nx; i++)
+  for (int i = 0; i < Nx; i++) {
     av += u(i, 0);
+  }
 
-  for (int j = 0; j < Ny; j++)
+  for (int j = 0; j < Ny; j++) {
     av += u(0, j);
+  }
 
   av = av / ((double) (Nx + Ny));
 

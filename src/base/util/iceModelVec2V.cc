@@ -88,8 +88,7 @@ PetscErrorCode IceModelVec2V::rename(const std::string &short_name, const std::s
 {
   (void) component;
 
-  if (!short_name.empty())
-  {
+  if (!short_name.empty()) {
     std::string tmp = short_name;
     m_name = "vel" + tmp;
 
@@ -117,8 +116,7 @@ PetscErrorCode IceModelVec2V::rename(const std::string & short_name,
                                      const std::vector<std::string> &long_names, 
                                      const std::string & standard_name)
 {
-  if (!short_name.empty())
-  {
+  if (!short_name.empty()) {
     std::string tmp = short_name;
 
     m_name = "vel" + tmp;

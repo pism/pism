@@ -100,10 +100,13 @@ public:
     const double
       my_nu = 0.5 * hardness * pow(schoofReg + gamma, viscosity_power);
 
-    if (PetscLikely(nu != NULL))
+    if (PetscLikely(nu != NULL)) {
       *nu = my_nu;
-    if (PetscLikely(dnu != NULL))
+    }
+
+    if (PetscLikely(dnu != NULL)) {
       *dnu = viscosity_power * my_nu / (schoofReg + gamma);
+    }
   }
 
   virtual double averaged_hardness(double thickness,

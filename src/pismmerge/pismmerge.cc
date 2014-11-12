@@ -127,8 +127,9 @@ int process_all_variables(std::string input_file, std::string output_file,
 
     input.inq_varname(j, var_name);
 
-    if (var_name == "x_patch" || var_name == "y_patch")
+    if (var_name == "x_patch" || var_name == "y_patch") {
       continue;
+    }
 
     ierr = define_variable(input, output, var_name); check(ierr);
   }

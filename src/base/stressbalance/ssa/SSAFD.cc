@@ -371,15 +371,23 @@ PetscErrorCode SSAFD::assemble_rhs() {
         int aMM = 1, aPP = 1, bMM = 1, bPP = 1;
         // direct neighbors
         if (bedrock_boundary) {
-          if (ice_free_ocean(M_e)) aPP = 0;
-          if (ice_free_ocean(M_w)) aMM = 0;
-          if (ice_free_ocean(M_n)) bPP = 0;
-          if (ice_free_ocean(M_s)) bMM = 0;
+          if (ice_free_ocean(M_e))
+            aPP = 0;
+          if (ice_free_ocean(M_w))
+            aMM = 0;
+          if (ice_free_ocean(M_n))
+            bPP = 0;
+          if (ice_free_ocean(M_s))
+            bMM = 0;
         } else {
-          if (ice_free(M_e)) aPP = 0;
-          if (ice_free(M_w)) aMM = 0;
-          if (ice_free(M_n)) bPP = 0;
-          if (ice_free(M_s)) bMM = 0;
+          if (ice_free(M_e))
+            aPP = 0;
+          if (ice_free(M_w))
+            aMM = 0;
+          if (ice_free(M_n))
+            bPP = 0;
+          if (ice_free(M_s))
+            bMM = 0;
         }
 
         const double H_ij2 = H_ij*H_ij,
@@ -638,37 +646,65 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         // at a CFBC location.
         if (bedrock_boundary) {
 
-          if (ice_free_ocean(M_e)) aPP = 0;
-          if (ice_free_ocean(M_w)) aMM = 0;
-          if (ice_free_ocean(M_n)) bPP = 0;
-          if (ice_free_ocean(M_s)) bMM = 0;
+          if (ice_free_ocean(M_e))
+            aPP = 0;
+          if (ice_free_ocean(M_w))
+            aMM = 0;
+          if (ice_free_ocean(M_n))
+            bPP = 0;
+          if (ice_free_ocean(M_s))
+            bMM = 0;
 
           // decide whether to use centered or one-sided differences
-          if (ice_free_ocean(M_n) || ice_free_ocean(M_ne)) aPn = 0;
-          if (ice_free_ocean(M_e) || ice_free_ocean(M_ne)) bPe = 0;
-          if (ice_free_ocean(M_e) || ice_free_ocean(M_se)) bMe = 0;
-          if (ice_free_ocean(M_s) || ice_free_ocean(M_se)) aPs = 0;
-          if (ice_free_ocean(M_s) || ice_free_ocean(M_sw)) aMs = 0;
-          if (ice_free_ocean(M_w) || ice_free_ocean(M_sw)) bMw = 0;
-          if (ice_free_ocean(M_w) || ice_free_ocean(M_nw)) bPw = 0;
-          if (ice_free_ocean(M_n) || ice_free_ocean(M_nw)) aMn = 0;
-        } else {
-          if (ice_free(M_e)) aPP = 0;
-          if (ice_free(M_w)) aMM = 0;
-          if (ice_free(M_n)) bPP = 0;
-          if (ice_free(M_s)) bMM = 0;
+          if (ice_free_ocean(M_n) || ice_free_ocean(M_ne))
+            aPn = 0;
+          if (ice_free_ocean(M_e) || ice_free_ocean(M_ne))
+            bPe = 0;
+          if (ice_free_ocean(M_e) || ice_free_ocean(M_se))
+            bMe = 0;
+          if (ice_free_ocean(M_s) || ice_free_ocean(M_se))
+            aPs = 0;
+          if (ice_free_ocean(M_s) || ice_free_ocean(M_sw))
+            aMs = 0;
+          if (ice_free_ocean(M_w) || ice_free_ocean(M_sw))
+            bMw = 0;
+          if (ice_free_ocean(M_w) || ice_free_ocean(M_nw))
+            bPw = 0;
+          if (ice_free_ocean(M_n) || ice_free_ocean(M_nw))
+            aMn = 0;
+
+        } else {                // if (not bedrock_boundary)
+
+          if (ice_free(M_e))
+            aPP = 0;
+          if (ice_free(M_w))
+            aMM = 0;
+          if (ice_free(M_n))
+            bPP = 0;
+          if (ice_free(M_s))
+            bMM = 0;
 
           // decide whether to use centered or one-sided differences
-          if (ice_free(M_n) || ice_free(M_ne)) aPn = 0;
-          if (ice_free(M_e) || ice_free(M_ne)) bPe = 0;
-          if (ice_free(M_e) || ice_free(M_se)) bMe = 0;
-          if (ice_free(M_s) || ice_free(M_se)) aPs = 0;
-          if (ice_free(M_s) || ice_free(M_sw)) aMs = 0;
-          if (ice_free(M_w) || ice_free(M_sw)) bMw = 0;
-          if (ice_free(M_w) || ice_free(M_nw)) bPw = 0;
-          if (ice_free(M_n) || ice_free(M_nw)) aMn = 0;                           }
-      }
-    } // end of "if (use_cfbc)"
+          if (ice_free(M_n) || ice_free(M_ne))
+            aPn = 0;
+          if (ice_free(M_e) || ice_free(M_ne))
+            bPe = 0;
+          if (ice_free(M_e) || ice_free(M_se))
+            bMe = 0;
+          if (ice_free(M_s) || ice_free(M_se))
+            aPs = 0;
+          if (ice_free(M_s) || ice_free(M_sw))
+            aMs = 0;
+          if (ice_free(M_w) || ice_free(M_sw))
+            bMw = 0;
+          if (ice_free(M_w) || ice_free(M_nw))
+            bPw = 0;
+          if (ice_free(M_n) || ice_free(M_nw))
+            aMn = 0;
+
+        } // end of the else clause following "if (bedrock_boundary)"
+      }   // end of "if (is_marginal(i, j, bedrock_boundary))"
+    }     // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
     const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
@@ -965,8 +1001,10 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     // assemble (or re-assemble) matrix, which depends on updated viscosity
     ierr = assemble_matrix(true, m_A); CHKERRQ(ierr);
 
-    if (very_verbose)
+    if (very_verbose) {
+      
       stdout_ssa += "A:";
+    }
 
     // Call PETSc to solve linear system by iterative method; "inner iteration":
 #if PETSC_VERSION_LT(3,5,0)
@@ -1040,8 +1078,10 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 
     outer_iterations = k + 1;
 
-    if (nuH_norm == 0 || nuH_norm_change / nuH_norm < ssa_relative_tolerance)
+    if (nuH_norm == 0 || nuH_norm_change / nuH_norm < ssa_relative_tolerance) {
+      
       goto done;
+    }
     
   } // outer loop (k)
 
@@ -1070,8 +1110,10 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     stdout_ssa += tempstr;
   }
 
-  if (verbose)
+  if (verbose) {
+    
     stdout_ssa = "  SSA: " + stdout_ssa;
+  }
 
   return 0;
 }
@@ -1104,8 +1146,10 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
                             config.get("ssafd_relative_convergence"),
                             nuH_regularization,
                             1.0);
-    if (ierr == 0)
+    if (ierr == 0) {
+      
       break;
+    }
 
     k += 1;
 
@@ -1197,12 +1241,13 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
       const int oi = 1-o, oj=o;
       double H;
 
-      if (m.icy(i,j) && m.icy(i+oi,j+oj))
+      if (m.icy(i,j) && m.icy(i+oi,j+oj)) {
         H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
-      else if (m.icy(i,j))
+      } else if (m.icy(i,j)) {
         H = (*thickness)(i,j);
-      else
+      }  else {
         H = (*thickness)(i+oi,j+oj);
+      }
 
       if (H == 0) {
         hardness(i,j,o) = -1e6; // an obviously impossible value
@@ -1261,8 +1306,9 @@ PetscErrorCode SSAFD::compute_hardav_staggered() {
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
 PetscErrorCode SSAFD::fracture_induced_softening() {
-  if (config.get_flag("do_fracture_density") == false)
+  if (config.get_flag("do_fracture_density") == false) {
     return 0;
+  }
 
   const double
     epsilon = config.get("fracture_density_softening_lower_limit"),
@@ -1486,12 +1532,14 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
     double u_x, u_y, v_x, v_y, H, nu, W;
     // i-offset
     {
-      if (m.icy(i,j) && m.icy(i+1,j))
+      if (m.icy(i,j) && m.icy(i+1,j)) {
         H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+1,j));
-      else if (m.icy(i,j))
+      }
+      else if (m.icy(i,j)) {
         H = (*thickness)(i,j);
-      else
+      } else {
         H = (*thickness)(i+1,j);
+      }
 
       if (H >= strength_extension->get_min_thickness()) {
         u_x = m_work(i,j,U_X);
@@ -1519,12 +1567,13 @@ PetscErrorCode SSAFD::compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
       
     // j-offset
     {
-      if (m.icy(i,j) && m.icy(i,j+1))
+      if (m.icy(i,j) && m.icy(i,j+1)) {
         H = 0.5 * ((*thickness)(i,j) + (*thickness)(i,j+1));
-      else if (m.icy(i,j))
+      } else if (m.icy(i,j)) {
         H = (*thickness)(i,j);
-      else
+      } else {
         H = (*thickness)(i,j+1);
+      }
 
       if (H >= strength_extension->get_min_thickness()) {
         u_y = m_work(i,j,U_Y);

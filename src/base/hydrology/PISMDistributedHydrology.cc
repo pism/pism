@@ -300,10 +300,11 @@ PetscErrorCode DistributedHydrology::P_from_W_steady(IceModelVec2S &result) {
     if (W(i, j) == 0.0) {
       // see P(W) formula in steady state; note P(W) is continuous (in steady
       // state); these facts imply:
-      if (sb > 0.0)
+      if (sb > 0.0) {
         result(i, j) = 0.0;        // no water + cavitation = underpressure
-      else
+      } else {
         result(i, j) = Pover(i, j); // no water + no cavitation = creep repressurizes = overburden
+      }
     } else {
       double Wratio = PetscMax(0.0, Wr - W(i, j)) / W(i, j);
       // in cases where steady state is actually possible this will
@@ -349,10 +350,11 @@ PetscErrorCode DistributedHydrology::adaptive_for_WandP_evolution(
   // dt = min([te-t dtmax dtCFL dtDIFFW dtDIFFP]);
   dt_result = PetscMin(dt_result, dtDIFFP);
 
-  if (dtDIFFP > 0.0)
+  if (dtDIFFP > 0.0) {
     PtoCFLratio = PetscMax(1.0, dtCFL / dtDIFFP);
-  else
+  } else {
     PtoCFLratio = 1.0;
+  }
 
   ierr = verbPrintf(3,grid.com,
                     "   [%.5e  %.7f  %.6f  %.9f  -->  dt = %.9f (a)  at  t = %.6f (a)]\n",
@@ -378,8 +380,9 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
   //   interval on which we are solving
-  if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12))
+  if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12)) {
     return 0;
+  }
   // update Component times: t = current time, t+dt = target time
   m_t = icet;
   m_dt = icedt;
@@ -479,17 +482,18 @@ PetscErrorCode DistributedHydrology::update(double icet, double icedt) {
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M.ice_free_land(i,j))
+      if (M.ice_free_land(i,j)) {
         Pnew(i,j) = 0.0;
-      else if (M.ocean(i,j))
+      } else if (M.ocean(i,j)) {
         Pnew(i,j) = Pover(i,j);
-      else if (W(i,j) <= 0.0) {
+      } else if (W(i,j) <= 0.0) {
         // see P(W) formula *in steady state*; note P(W) is continuous (in steady
         // state); these facts imply:
-        if (velbase_mag(i,j) > 0.0)
+        if (velbase_mag(i,j) > 0.0) {
           Pnew(i,j) = 0.0;        // no water + cavitation = underpressure
-        else
+        } else {
           Pnew(i,j) = Pover(i,j); // no water + no cavitation = creep repressurizes = overburden
+        }
       } else {
         // opening and closure terms in pressure equation
         Open = PetscMax(0.0,c1 * velbase_mag(i,j) * (Wr - W(i,j)));

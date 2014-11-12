@@ -44,7 +44,9 @@ public:
     ierr = DMDASetLocalJacobian(dm,(DMDALocalFunction1) SNESDMCallbacks<Problem,VecArrayType>::formJacobianCallback); CHKERRQ(ierr);
     ierr = SNESSetDM(snes, dm); CHKERRQ(ierr);
     ierr = SNESSetFunction(snes, r, SNESDAFormFunction, &m_cbData); CHKERRQ(ierr);
-    if (Jpc==NULL) Jpc = J;
+    if (Jpc==NULL) {
+      Jpc = J;
+    }
     ierr = SNESSetJacobian(snes, J, Jpc, SNESDAComputeJacobian, &m_cbData); CHKERRQ(ierr);
     return 0;
   }
@@ -87,7 +89,9 @@ public:
     PetscErrorCode ierr;
     
     ierr = SNESSetFunction(snes,r,SNESCallbacks<Problem>::formFunctionCallback,&p); CHKERRQ(ierr);
-    if (Jpc==NULL) Jpc = J;
+    if (Jpc==NULL) {
+      Jpc = J;
+    }
     ierr = SNESSetJacobian(snes,J,Jpc,SNESCallbacks<Problem>::formJacobianCallback,&p); CHKERRQ(ierr);
     return 0;
   }

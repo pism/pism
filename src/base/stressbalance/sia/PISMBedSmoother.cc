@@ -141,8 +141,12 @@ PetscErrorCode BedSmoother::preprocess_bed(IceModelVec2S &topg) {
   // determine Nx, Ny, which are always at least one if m_smoothing_range > 0
   Nx = static_cast<int>(ceil(m_smoothing_range / grid.dx));
   Ny = static_cast<int>(ceil(m_smoothing_range / grid.dy));
-  if (Nx < 1)  Nx = 1;
-  if (Ny < 1)  Ny = 1;
+  if (Nx < 1) {
+    Nx = 1;
+  }
+  if (Ny < 1) {
+    Ny = 1;
+  }
   //PetscPrintf(grid.com,"BedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
 
   ierr = preprocess_bed(topg, Nx, Ny); CHKERRQ(ierr);
@@ -440,13 +444,18 @@ PetscErrorCode BedSmoother::get_theta(IceModelVec2S &usurf, IceModelVec2S *theta
                                       "in BedSmoother.get_theta() ... ending", i, j);
       }
 
-      if (omega < 0.001)      // this check *should not* be necessary
+      if (omega < 0.001) {      // this check *should not* be necessary
         omega = 0.001;
+      }
 
       result(i, j) = pow(omega,-m_Glen_exponent);
       // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
-      if (result(i, j) > 1.0)  result(i, j) = 1.0;
-      if (result(i, j) < 0.0)  result(i, j) = 0.0;
+      if (result(i, j) > 1.0) {
+        result(i, j) = 1.0;
+      }
+      if (result(i, j) < 0.0) {
+        result(i, j) = 0.0;
+      }
     } else {
       result(i, j) = 0.00;  // FIXME = min_theta; make configurable
     }

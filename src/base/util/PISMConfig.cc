@@ -129,9 +129,9 @@ double Config::get_quiet(const std::string &name) const {
 
 std::string Config::get_string_quiet(const std::string &name) const {
   const NCVariable::StringAttrs& strings = m_data.get_all_strings();
-  if (strings.find(name) != strings.end())
+  if (strings.find(name) != strings.end()) {
     return m_data.get_string(name);
-  else {
+  } else {
     throw RuntimeError::formatted("Parameter '%s' was not set. (Read from '%s'.)\n",
                                   name.c_str(), m_config_filename.c_str());
   }
@@ -148,13 +148,15 @@ bool Config::get_flag_quiet(const std::string &name) const {
 
     if ((value == "false") ||
         (value == "no") ||
-        (value == "off"))
+        (value == "off")) {
       return false;
+    }
 
     if ((value == "true") ||
         (value == "yes") ||
-        (value == "on"))
+        (value == "on")) {
       return true;
+    }
 
     throw RuntimeError::formatted("Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
                                   "Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.",
@@ -170,8 +172,9 @@ bool Config::get_flag_quiet(const std::string &name) const {
 
 //! Returns a `double` parameter. Stops if it was not found.
 double Config::get(const std::string &name) const {
-  if (m_options_left_set)
+  if (m_options_left_set) {
     m_parameters_used.insert(name);
+  }
 
   return this->get_quiet(name);
 }
@@ -189,26 +192,29 @@ double Config::get(const std::string & name, const std::string & u1, const std::
   Any other string produces an error.
 */
 bool Config::get_flag(const std::string &name) const {
-  if (m_options_left_set)
+  if (m_options_left_set) {
     m_parameters_used.insert(name);
+  }
 
   return this->get_flag_quiet(name);
 }
 
 //! \brief Get a string attribute by name.
 std::string Config::get_string(const std::string &name) const {
-  if (m_options_left_set)
+  if (m_options_left_set) {
     m_parameters_used.insert(name);
+  }
 
   return this->get_string_quiet(name);
 }
 
 //! Set a value of a boolean flag.
 void Config::set_flag(const std::string &name, bool value) {
-  if (value)
+  if (value) {
     m_data.set_string(name, "true");
-  else
+  } else {
     m_data.set_string(name, "false");
+  }
 }
 
 //! Get a flag from a command-line option.
@@ -237,11 +243,13 @@ PetscErrorCode Config::flag_from_option(const std::string &name, const std::stri
                                   name.c_str(), name.c_str());
   }
 
-  if (foo)
+  if (foo) {
     set_flag_from_option(flag, true);
+  }
 
-  if (no_foo)
+  if (no_foo) {
     set_flag_from_option(flag, false);
+  }
 
   return 0;
 }
@@ -302,8 +310,9 @@ PetscErrorCode Config::keyword_from_option(const std::string &name,
   bool flag;
 
   // Split the list:
-  while (getline(arg, tmp, ','))
+  while (getline(arg, tmp, ',')) {
     choices.insert(tmp);
+  }
 
   ierr = OptionsList("-" + name,
                      get_string_quiet(parameter + "_doc"),
@@ -366,13 +375,15 @@ PetscErrorCode Config::print_to_stdout(int vt) const {
 
   for (k = m_parameters_set.begin(); k != m_parameters_set.end(); ++k) {
 
-    if (ends_with(*k, "_doc"))
+    if (ends_with(*k, "_doc")) {
       continue;
+    }
 
-    if (k == m_parameters_set.begin())
+    if (k == m_parameters_set.begin()) {
       output += *k;
-    else
+    } else {
       output += std::string(", ") + (*k);
+    }
   }
 
   if (output.empty() == false) {
@@ -441,14 +452,16 @@ void Config::update_from(const Config &other) {
 PetscErrorCode Config::warn_about_unused_parameters() const {
   PetscErrorCode ierr;
 
-  if (m_options_left_set == false)
+  if (m_options_left_set == false) {
     return 0;
+  }
 
   std::set<std::string>::const_iterator k;
   for (k = m_parameters_set.begin(); k != m_parameters_set.end(); ++k) {
 
-    if (ends_with(*k, "_doc"))
+    if (ends_with(*k, "_doc")) {
       continue;
+    }
 
     if (m_parameters_used.find(*k) == m_parameters_used.end()) {
       ierr = verbPrintf(2, m_com,

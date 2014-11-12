@@ -437,23 +437,26 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
     {
       if (w_j(i,j) > 0) {
         double W = w_i(i,j) + w_i(i-1,j) + w_i(i-1,j+1) + w_i(i,j+1);
-        if (W > 0)
+        if (W > 0) {
           h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0) + h_x(i-1,j+1,0) + h_x(i,j+1,0));
-        else
+        } else {
           h_x(i,j,1) = 0.0;
+        }
       } else {
         if (m.icy(i,j)) {
           double W = w_i(i,j) + w_i(i-1,j);
-          if (W > 0)
+          if (W > 0) {
             h_x(i,j,1) = 1.0/W * (h_x(i,j,0) + h_x(i-1,j,0));
-          else
+          } else {
             h_x(i,j,1) = 0.0;
+          }
         } else {
           double W = w_i(i,j+1) + w_i(i-1,j+1);
-          if (W > 0)
+          if (W > 0) {
             h_x(i,j,1) = 1.0/W * (h_x(i-1,j+1,0) + h_x(i,j+1,0));
-          else
+          } else {
             h_x(i,j,1) = 0.0;
+          }
         }
       }
     } // end of "x-derivative, j-offset"
@@ -462,23 +465,26 @@ PetscErrorCode SIAFD::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelV
     {
       if (w_i(i,j) > 0) {
         double W = w_j(i,j) + w_j(i,j-1) + w_j(i+1,j-1) + w_j(i+1,j);
-        if (W > 0)
+        if (W > 0) {
           h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1) + h_y(i+1,j-1,1) + h_y(i+1,j,1));
-        else
+        } else {
           h_y(i,j,0) = 0.0;
+        }
       } else {
         if (m.icy(i,j)) {
           double W = w_j(i,j) + w_j(i,j-1);
-          if (W > 0)
+          if (W > 0) {
             h_y(i,j,0) = 1.0/W * (h_y(i,j,1) + h_y(i,j-1,1));
-          else
+          } else {
             h_y(i,j,0) = 0.0;
+          }
         } else {
           double W = w_j(i+1,j-1) + w_j(i+1,j);
-          if (W > 0)
+          if (W > 0) {
             h_y(i,j,0) = 1.0/W * (h_y(i+1,j-1,1) + h_y(i+1,j,1));
-          else
+          } else {
             h_y(i,j,0) = 0.0;
+          }
         }
       }
     } // end of "y-derivative, i-offset"
@@ -669,8 +675,9 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
       // this adjustment lets us avoid taking very small time-steps
       // because of the possible thickness and bed elevation
       // "discontinuities" at the boundary.)
-      if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
+      if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1) {
         Dfoffset = 0.0;
+      }
 
       my_D_max = PetscMax(my_D_max, Dfoffset);
 

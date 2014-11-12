@@ -31,8 +31,9 @@ PACosineYearlyCycle::PACosineYearlyCycle(IceGrid &g, const Config &conf)
 }
 
 PACosineYearlyCycle::~PACosineYearlyCycle() {
-  if (A != NULL)
+  if (A != NULL) {
     delete A;
+  }
 }
 
 PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
@@ -97,8 +98,9 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
     nc.close();
 
   } else {
-    if (A != NULL)
+    if (A != NULL) {
       delete A;
+    }
     A = NULL;
   }
 
@@ -142,8 +144,9 @@ PetscErrorCode PACosineYearlyCycle::init_timeseries(const std::vector<double> &t
   ierr = PAYearlyCycle::init_timeseries(ts); CHKERRQ(ierr);
 
   if (A != NULL) {
-    for (unsigned int k = 0; k < ts.size(); ++k)
+    for (unsigned int k = 0; k < ts.size(); ++k) {
       m_cosine_cycle[k] *= (*A)(ts[k]);
+    }
   }
 
   return 0;

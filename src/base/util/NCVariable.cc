@@ -237,11 +237,13 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
     while (j != input_dims.end()) {
       AxisType tmp = nc.inq_dimtype(*j);
 
-      if (tmp != T_AXIS)
+      if (tmp != T_AXIS) {
         ++input_ndims;
+      }
 
-      if (axes.find(tmp) != axes.end())
+      if (axes.find(tmp) != axes.end()) {
         ++matching_dim_count;
+      }
 
       ++j;
     }
@@ -252,8 +254,9 @@ PetscErrorCode NCSpatialVariable::read(const PIO &nc, unsigned int time, Vec v) 
       // Join input dimension names:
       j = input_dims.begin();
       std::string tmp = *j++;
-      while (j != input_dims.end())
+      while (j != input_dims.end()) {
         tmp += std::string(", ") + *j++;
+      }
 
       // Print the error message and stop:
       throw RuntimeError::formatted("found the %dD variable %s (%s) in '%s' while trying to read\n"
@@ -564,16 +567,18 @@ PetscErrorCode NCSpatialVariable::define(const PIO &nc, IO_Type nctype,
   std::vector<std::string> dims;
 
   bool exists = nc.inq_var(get_name());
-  if (exists)
+  if (exists) {
     return 0;
+  }
 
   ierr = define_dimensions(nc); CHKERRQ(ierr);
   std::string variable_order = m_variable_order;
   // "..._bounds" should be stored with grid corners (corresponding to
   // the "z" dimension here) last, so we override the variable storage
   // order here
-  if (ends_with(get_name(), "_bounds") && variable_order == "zyx")
+  if (ends_with(get_name(), "_bounds") && variable_order == "zyx") {
     variable_order = "yxz";
+  }
 
   std::string x = get_x().get_name(),
     y = get_y().get_name(),
@@ -648,14 +653,16 @@ bool NCVariable::has_attribute(const std::string &name) const {
 
   std::map<std::string,std::string>::const_iterator j = m_strings.find(name);
   if (j != m_strings.end()) {
-    if (name != "units" && (j->second).empty())
+    if (name != "units" && (j->second).empty()) {
       return false;
+    }
 
     return true;
   }
 
-  if (m_doubles.find(name) != m_doubles.end())
+  if (m_doubles.find(name) != m_doubles.end()) {
     return true;
+  }
 
   return false;
 }
@@ -689,19 +696,21 @@ std::string NCVariable::get_name() const {
 //! Get a single-valued scalar attribute.
 double NCVariable::get_double(const std::string &name) const {
   std::map<std::string,std::vector<double> >::const_iterator j = m_doubles.find(name);
-  if (j != m_doubles.end())
+  if (j != m_doubles.end()) {
     return (j->second)[0];
-  else
+  } else {
     return GSL_NAN;
+  }
 }
 
 //! Get an array-of-doubles attribute.
 std::vector<double> NCVariable::get_doubles(const std::string &name) const {
   std::map<std::string,std::vector<double> >::const_iterator j = m_doubles.find(name);
-  if (j != m_doubles.end())
+  if (j != m_doubles.end()) {
     return j->second;
-  else
+  } else {
     return std::vector<double>();
+  }
 }
 
 const std::map<std::string,std::string>& NCVariable::get_all_strings() const {
@@ -767,7 +776,9 @@ PetscErrorCode NCVariable::report_to_stdout(MPI_Comm com, int verbosity_threshol
     std::string name  = j->first;
     std::vector<double> values = j->second;
 
-    if (values.empty()) continue;
+    if (values.empty()) {
+      continue;
+    }
 
     if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
@@ -847,8 +858,9 @@ PetscErrorCode NCTimeBounds::define(const PIO &nc, IO_Type nctype, bool) const {
   UnitSystem system = get_units().get_system();
 
   exists = nc.inq_var(get_name());
-  if (exists)
+  if (exists) {
     return 0;
+  }
 
   nc.redef();
 

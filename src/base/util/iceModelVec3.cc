@@ -155,13 +155,16 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
 #endif
 
   double ***arr = (double***) array;
-  if (z >= zlevels.back())
+  if (z >= zlevels.back()) {
     return arr[i][j][m_n_levels - 1];
-  else if (z <= zlevels.front())
+  } else if (z <= zlevels.front()) {
     return arr[i][j][0];
+  }
 
   int mcurr = 0;
-  while (zlevels[mcurr+1] < z) mcurr++;
+  while (zlevels[mcurr+1] < z) {
+    mcurr++;
+  }
 
   const double incr = (z - zlevels[mcurr]) / (zlevels[mcurr+1] - zlevels[mcurr]);
   const double valm = arr[i][j][mcurr];
@@ -189,8 +192,9 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(int i, int j, double z,
     incr = 0.0;
   } else {
     kbz = 0;
-    while (zlevels[kbz+1] < z)
+    while (zlevels[kbz+1] < z) {
       kbz++;
+    }
 
     incr = (z - zlevels[kbz]) / (zlevels[kbz+1] - zlevels[kbz]);
   }
@@ -308,8 +312,9 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(int i, int j, unsigned int ks,
 
   unsigned int k = 0, m = 0;
   for (m = 0; m < m_n_levels - 2; m++) {
-    if (k > ks)
+    if (k > ks) {
       break;
+    }
 
     const double
       z0 = zlevels[m],
@@ -328,8 +333,9 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(int i, int j, unsigned int ks,
 
     double z_fine = k * dz_fine;
     while (z_fine < z1) {
-      if (k > ks)
+      if (k > ks) {
         break;
+      }
 
       const double s = z_fine - z0;
 
@@ -490,8 +496,9 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, double fill_value) {
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    for (unsigned int k = old_Mz; k < m_n_levels; k++)
+    for (unsigned int k = old_Mz; k < m_n_levels; k++) {
       a[i][j][k] = fill_value;
+    }
   }
   ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &a); CHKERRQ(ierr);
 
@@ -519,8 +526,9 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    for (unsigned int k = old_Mz; k < m_n_levels; k++)
+    for (unsigned int k = old_Mz; k < m_n_levels; k++) {
       a[i][j][k] = filler[i][j];
+    }
   }
   ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &a); CHKERRQ(ierr);
   ierr = fill_values.end_access(); CHKERRQ(ierr);
@@ -544,8 +552,9 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 
   zlevels = grid->zlevels;
   m_n_levels = (unsigned int)zlevels.size();
-  for (unsigned int i = 0; i < m_dof; ++i)
+  for (unsigned int i = 0; i < m_dof; ++i) {
     m_metadata[0].set_levels(zlevels);
+  }
 
   da_new = grid->get_dm(this->m_n_levels, this->m_da_stencil_width);
 
@@ -563,8 +572,9 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    for (int k=0; k < old_Mz; k++)
+    for (int k=0; k < old_Mz; k++) {
       a_new[i][j][k] = a_old[i][j][k];
+    }
   }
   ierr = DMDAVecRestoreArrayDOF(*m_da, m_v, &a_old); CHKERRQ(ierr);
   ierr = DMDAVecRestoreArrayDOF(*da_new, v_new, &a_new); CHKERRQ(ierr);

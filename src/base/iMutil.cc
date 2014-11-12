@@ -237,10 +237,15 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   dz_top = grid.Lz - grid.zlevels[old_Mz - 2];
 
   // Find the number of new levels:
-  while (grid.Lz + N * dz_top <= H_max) N++;
+  while (grid.Lz + N * dz_top <= H_max) {
+    N++;
+  }
   // This makes sure that we always have *exactly* two levels strictly above the ice:
-  if (grid.Lz + N * dz_top > H_max) N += 1;
-  else N += 2;
+  if (grid.Lz + N * dz_top > H_max) {
+    N += 1;
+  } else {
+    N += 2;
+  }
 
   if (H_max - grid.Lz > 1000) {
     throw RuntimeError::formatted("Max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)\n"
@@ -258,8 +263,9 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   new_zlevels = grid.zlevels;
 
   // Fill the new levels:
-  for (int j = 0; j < N; j++)
+  for (int j = 0; j < N; j++) {
     new_zlevels.push_back(grid.Lz + dz_top * (j + 1));
+  }
 
   ierr = grid.set_vertical_levels(new_zlevels); CHKERRQ(ierr);
 

@@ -206,8 +206,9 @@ PetscErrorCode PAYearlyCycle::init_timeseries(const std::vector<double> &ts) {
 }
 
 PetscErrorCode PAYearlyCycle::precip_time_series(int i, int j, std::vector<double> &result) {
-  for (unsigned int k = 0; k < m_ts_times.size(); k++)
+  for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
+  }
   return 0;
 }
 

@@ -189,8 +189,9 @@ PetscErrorCode Timeseries::write(const PIO &nc) {
  * @param[in] scaling_factor multiplicative scaling factor
  */
 void Timeseries::scale(double scaling_factor) {
-  for (unsigned int i = 0; i < values.size(); ++i)
+  for (unsigned int i = 0; i < values.size(); ++i) {
     values[i] *= scaling_factor;
+  }
 }
 
 //! Get a value of timeseries at time `t`.

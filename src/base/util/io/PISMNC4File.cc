@@ -59,8 +59,9 @@ int NC4File::close_impl() {
 // redef/enddef
 int NC4File::enddef_impl() const {
 
-  if (m_define_mode == false)
+  if (m_define_mode == false) {
     return 0;
+  }
 
   int stat = nc_enddef(m_file_id); check(stat);
 
@@ -71,8 +72,9 @@ int NC4File::enddef_impl() const {
 
 int NC4File::redef_impl() const {
 
-  if (m_define_mode == true)
+  if (m_define_mode == true) {
     return 0;
+  }
 
   int stat = nc_redef(m_file_id); check(stat);
 
@@ -292,10 +294,11 @@ int NC4File::inq_varid_impl(const std::string &variable_name, bool &exists) cons
 
   stat = nc_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     flag = 1;
-  else
+  } else {
     flag = 0;
+  }
 
   exists = (flag == 1);
 
@@ -343,11 +346,11 @@ int NC4File::get_att_double_impl(const std::string &variable_name, const std::st
 
   stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
-  else if (stat == NC_ENOTATT)
+  } else if (stat == NC_ENOTATT) {
     len = 0;
-  else {
+  } else {
     check(stat);
     len = 0;
   }
@@ -386,10 +389,11 @@ int NC4File::get_att_text_impl(const std::string &variable_name, const std::stri
   }
 
   stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
-  if (stat == NC_NOERR)
+  if (stat == NC_NOERR) {
     len = static_cast<int>(attlen);
-  else
+  } else {
     len = 0;
+  }
 
   // Allocate some memory or set result to NULL and return:
   if (len == 0) {
@@ -534,8 +538,9 @@ int NC4File::get_put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false)
+  if (mapped == false) {
     imap.resize(ndims);
+  }
 
   std::vector<size_t> nc_start(ndims), nc_count(ndims);
   std::vector<ptrdiff_t> nc_imap(ndims), nc_stride(ndims);

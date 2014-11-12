@@ -116,8 +116,9 @@ PIO::PIO(MPI_Comm c, const string &mode, const UnitSystem &units_system)
 PIO::PIO(IceGrid &grid, const string &mode)
   : m_unit_system(grid.get_unit_system()) {
   constructor(grid.com, mode);
-  if (m_nc)
+  if (m_nc) {
     set_local_extent(grid.xs, grid.xm, grid.ys, grid.ym);
+  }
 }
 
 PIO::PIO(const PIO &other)
@@ -397,8 +398,9 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
 
         string attribute = get_att_text(name, "standard_name");
 
-        if (attribute.empty())
+        if (attribute.empty()) {
           continue;
+        }
 
         if (attribute == std_name) {
           if (exists == false) {
@@ -418,10 +420,11 @@ void PIO::inq_var(const string &short_name, const string &std_name, bool &exists
 
     if (exists == false) {
       m_nc->inq_varid(short_name, exists);
-      if (exists == true)
+      if (exists == true) {
         result = short_name;
-      else
+      } else {
         result.clear();
+      }
 
       found_by_standard_name = false;
     }
@@ -653,8 +656,9 @@ void PIO::inq_units(const string &name, bool &has_units, Unit &units) const {
     }
 
     // strip trailing spaces
-    while (ends_with(units_string, " "))
+    while (ends_with(units_string, " ")) {
       units_string.resize(units_string.size() - 1);
+    }
 
     // this may fail if the unit string is invalid
     units = Unit(units.get_system(), units_string);
@@ -686,11 +690,13 @@ grid_info PIO::inq_grid_info(const string &name, Periodicity p) const {
     // use "global" dimensions (as opposed to dimensions of a patch)
     if (m_mode == "quilt") {
       for (unsigned int i = 0; i < dims.size(); ++i) {
-        if (dims[i] == "x_patch")
+        if (dims[i] == "x_patch") {
           dims[i] = "x";
+        }
 
-        if (dims[i] == "y_patch")
+        if (dims[i] == "y_patch") {
           dims[i] = "y";
+        }
       }
     }
 
@@ -1222,8 +1228,9 @@ int PIO::k_below(double z, const vector<double> &zlevels) const {
                                   z, z_min, z_max);
   }
 
-  while (zlevels[mcurr+1] < z)
+  while (zlevels[mcurr+1] < z) {
     mcurr++;
+  }
 
   return mcurr;
 }
@@ -1521,8 +1528,9 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
     if (var.has_attribute("units")) {
       string output_units = var.get_string("units");
 
-      if (write_in_glaciological_units)
+      if (write_in_glaciological_units) {
         output_units = var.get_string("glaciological_units");
+      }
 
       put_att_text(var_name, "units", output_units);
     }
@@ -1570,8 +1578,9 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
         name  = i->first,
         value = i->second;
 
-      if (name == "units" || name == "glaciological_units" || value.empty())
+      if (name == "units" || name == "glaciological_units" || value.empty()) {
         continue;
+      }
 
       put_att_text(var_name, name, value);
     }
@@ -1587,8 +1596,9 @@ void PIO::write_attributes(const NCVariable &var, IO_Type nctype,
           name == "valid_max" ||
           name == "valid_range" ||
           name == "_FillValue" ||
-          values.empty())
+          values.empty()) {
         continue;
+      }
 
       put_att_double(var_name, name, nctype, values);
     }

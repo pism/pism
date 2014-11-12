@@ -32,8 +32,9 @@
 namespace pism {
 
 static inline std::string string_strip(std::string input) {
-  if (input.empty() == true)
+  if (input.empty() == true) {
     return input;
+  }
 
   // strip leading spaces
   input.erase(0, input.find_first_not_of(" \t"));
@@ -386,8 +387,9 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
 
   std::istringstream arg(spec);
 
-  if (spec.empty() == true)
+  if (spec.empty() == true) {
     goto failure;
+  }
 
   // ignore negative years
   if (spec[0] == '-') {
@@ -398,25 +400,29 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
   while(getline(arg, tmp, '-')) {
 
     // an empty part in the date specification (corresponds to "--")
-    if (tmp.empty() == true)
+    if (tmp.empty() == true) {
       goto failure;
+    }
 
     // check if strtol can parse it:
     char *endptr = NULL;
     long int n = strtol(tmp.c_str(), &endptr, 10);
-    if (*endptr != '\0')
+    if (*endptr != '\0') {
       goto failure;
+    }
 
     // FIXME: this may overflow!
     numbers.push_back((int)n);
   }
 
   // wrong number of parts in the YYYY-MM-DD date:
-  if (numbers.size() != 3)
+  if (numbers.size() != 3) {
     goto failure;
+  }
 
-  if (year_is_negative)
+  if (year_is_negative) {
     numbers[0] *= -1;
+  }
 
   cal = ccs_init_calendar(m_calendar_string.c_str());
   assert(cal != NULL);
@@ -434,8 +440,9 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
     double time;
     errcode = utInvCalendar2_cal(numbers[0], numbers[1], numbers[2], 0, 0, 0.0,
                                  m_time_units.get(), &time, m_calendar_string.c_str());
-    if (errcode != 0)
+    if (errcode != 0) {
       goto failure;
+    }
 
     *result = time;
   }
@@ -497,11 +504,13 @@ PetscErrorCode Time_Calendar::compute_times_monthly(std::vector<double> &result)
                                  m_time_units.get(), &time,
                                  m_calendar_string.c_str());
 
-    if (time > m_run_end)
+    if (time > m_run_end) {
       break;
+    }
 
-    if (time >= m_run_start && time <= m_run_end)
+    if (time >= m_run_start && time <= m_run_end) {
       result.push_back(time);
+    }
 
     if (month == 12) {
       year  += 1;
@@ -538,11 +547,13 @@ PetscErrorCode Time_Calendar::compute_times_yearly(std::vector<double> &result) 
                                  m_time_units.get(), &time,
                                  m_calendar_string.c_str());
 
-    if (time > m_run_end)
+    if (time > m_run_end) {
       break;
+    }
 
-    if (time >= m_run_start && time <= m_run_end)
+    if (time >= m_run_start && time <= m_run_end) {
       result.push_back(time);
+    }
 
     year  += 1;
   }

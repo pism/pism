@@ -112,23 +112,27 @@ PetscErrorCode PS_EISMINTII::init(Vars &vars) {
 
   ierr = OptionsReal("-Mmax", "Maximum accumulation, m/year",
                          myMmax, option_set); CHKERRQ(ierr);
-  if (option_set)
+  if (option_set) {
     m_M_max = grid.convert(myMmax, "m/year", "m/second");
+  }
 
   ierr = OptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
                          mySb, option_set); CHKERRQ(ierr);
-  if (option_set)
+  if (option_set) {
     m_S_b = grid.convert(mySb, "m/year/km", "m/second/m");
+  }
 
   ierr = OptionsReal("-ST", "radial gradient of surface temperature, K/km",
                          myST, option_set); CHKERRQ(ierr);
-  if (option_set)
+  if (option_set) {
     m_S_T = grid.convert(myST, "K/km", "K/m");
+  }
 
   ierr = OptionsReal("-Rel", "radial distance to equilibrium line, km",
                          myRel, option_set); CHKERRQ(ierr);
-  if (option_set)
+  if (option_set) {
     m_R_el = grid.convert(myRel, "km", "m");
+  }
 
   ierr = PetscOptionsEnd();
   PISM_PETSC_CHK(ierr, "PetscOptionsEnd");

@@ -358,8 +358,9 @@ PetscErrorCode RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &r
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (M.ocean(i,j))
+    if (M.ocean(i,j)) {
       result(i,j) = Pover(i,j);
+    }
   }
   return 0;
 }
@@ -380,27 +381,33 @@ PetscErrorCode RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &res
     const int i = p.i(), j = p.j();
 
     // east
-    if (M.grounded_ice(i,j))
-      if (M.grounded_ice(i+1,j))
+    if (M.grounded_ice(i,j)) {
+      if (M.grounded_ice(i+1,j)) {
         result(i,j,0) = 0.5 * (W(i,j) + W(i+1,j));
-      else
+      } else {
         result(i,j,0) = W(i,j);
-    else
-      if (M.grounded_ice(i+1,j))
+      }
+    } else {
+      if (M.grounded_ice(i+1,j)) {
         result(i,j,0) = W(i+1,j);
-      else
+      } else {
         result(i,j,0) = 0.0;
+      }
+    }
     // north
-    if (M.grounded_ice(i,j))
-      if (M.grounded_ice(i,j+1))
+    if (M.grounded_ice(i,j)) {
+      if (M.grounded_ice(i,j+1)) {
         result(i,j,1) = 0.5 * (W(i,j) + W(i,j+1));
-      else
+      } else {
         result(i,j,1) = W(i,j);
-    else
-      if (M.grounded_ice(i,j+1))
+      }
+    } else {
+      if (M.grounded_ice(i,j+1)) {
         result(i,j,1) = W(i,j+1);
-      else
+      } else {
         result(i,j,1) = 0.0;
+      }
+    }
   }
   return 0;
 }
@@ -541,8 +548,9 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
         dRdy += (R(i,j) - R(i,j-1)) / (2.0 * grid.dy);
       }
       result(i,j) = CC * pow(W(i,j),alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
-    } else
+    } else {
       result(i,j) = 0.0;
+    }
   }
 
   return 0;
@@ -590,18 +598,25 @@ PetscErrorCode RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
       dPdx = (R(i+1,j) - R(i,j)) / grid.dx;
       dbdx = ((*bed)(i+1,j) - (*bed)(i,j)) / grid.dx;
       result(i,j,0) = - Kstag(i,j,0) * (dPdx + rg * dbdx);
-    } else
+    } else {
       result(i,j,0) = 0.0;
+    }
+    
     if (Wstag(i,j,1) > 0.0) {
       dPdy = (R(i,j+1) - R(i,j)) / grid.dy;
       dbdy = ((*bed)(i,j+1) - (*bed)(i,j)) / grid.dy;
       result(i,j,1) = - Kstag(i,j,1) * (dPdy + rg * dbdy);
-    } else
+    } else {
       result(i,j,1) = 0.0;
-    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth))
+    }
+
+    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i+1,j, stripwidth)) {
       result(i,j,0) = 0.0;
-    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth))
+    }
+
+    if (grid.in_null_strip(i,j, stripwidth) || grid.in_null_strip(i,j+1, stripwidth)) {
       result(i,j,1) = 0.0;
+    }
   }
   return 0;
 }
@@ -743,8 +758,9 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
   //   interval on which we are solving
-  if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12))
+  if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12)) {
     return 0;
+  }
   // update Component times: t = current time, t+dt = target time
   m_t = icet;
   m_dt = icedt;

@@ -340,26 +340,29 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
     if (icy(mask_current) && icy(mask_neighbor)) {
 
       // Case 1: both sides of the interface are icy
-      if (direction == East || direction == West)
+      if (direction == East || direction == West) {
         out_SSA_velocity[direction] = 0.5 * (in_SSA_velocity.ij.u + in_SSA_velocity[direction].u);
-      else
+      } else {
         out_SSA_velocity[direction] = 0.5 * (in_SSA_velocity.ij.v + in_SSA_velocity[direction].v);
+      }
 
     } else if (icy(mask_current) && ice_free(mask_neighbor)) {
 
       // Case 2: icy cell next to an ice-free cell
-      if (direction == East || direction == West)
+      if (direction == East || direction == West) {
         out_SSA_velocity[direction] = in_SSA_velocity.ij.u;
-      else
+      } else {
         out_SSA_velocity[direction] = in_SSA_velocity.ij.v;
+      }
 
     } else if (ice_free(mask_current) && icy(mask_neighbor)) {
 
       // Case 3: ice-free cell next to icy cell
-      if (direction == East || direction == West)
+      if (direction == East || direction == West) {
         out_SSA_velocity[direction] = in_SSA_velocity[direction].u;
-      else
+      } else {
         out_SSA_velocity[direction] = in_SSA_velocity[direction].v;
+      }
 
     } else if (ice_free(mask_current) && ice_free(mask_neighbor)) {
 
@@ -375,26 +378,29 @@ void IceModel::cell_interface_fluxes(bool dirichlet_bc,
 
         // Case 1: both sides of the interface are B.C. locations: average from
         // the regular grid onto the staggered grid.
-        if (direction == East || direction == West)
+        if (direction == East || direction == West) {
           out_SSA_velocity[direction] = 0.5 * (bc_velocity.ij.u + bc_velocity[direction].u);
-        else
+        } else {
           out_SSA_velocity[direction] = 0.5 * (bc_velocity.ij.v + bc_velocity[direction].v);
+        }
 
       } else if (bc_mask.ij == 1 && bc_mask[direction] == 0) {
 
         // Case 2: at a Dirichlet B.C. location
-        if (direction == East || direction == West)
+        if (direction == East || direction == West) {
           out_SSA_velocity[direction] = bc_velocity.ij.u;
-        else                    // North or South
+        } else {                    // North or South
           out_SSA_velocity[direction] = bc_velocity.ij.v;
+        }
 
       } else if (bc_mask.ij == 0 && bc_mask[direction] == 1) {
 
         // Case 3: next to a Dirichlet B.C. location
-        if (direction == East || direction == West)
+        if (direction == East || direction == West) {
           out_SSA_velocity[direction] = bc_velocity[direction].u;
-        else                  // North or South
+        } else {                  // North or South
           out_SSA_velocity[direction] = bc_velocity[direction].v;
+        }
 
       } else {
         // Case 4: elsewhere.
@@ -666,13 +672,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
                                                      bed_topography(i,j),
                                                      reduce_frontal_thickness);
         double coverage_ratio = 1.0;
-        if (H_threshold > 0.0)
+        if (H_threshold > 0.0) {
           coverage_ratio = vHref(i, j) / H_threshold;
+        }
 
         if (coverage_ratio >= 1.0) {
           // A partially filled grid cell is now considered to be full.
-          if (do_redist)
+          if (do_redist) {
             H_residual(i, j) = vHref(i, j) - H_threshold; // residual ice thickness
+          }
 
           vHref(i, j) = 0.0;
 
@@ -720,9 +728,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
     if (vHnew(i, j) < 0.0) {
       nonneg_rule_flux += -vHnew(i, j);
 
-      if (compute_cumulative_nonneg_flux)
+      if (compute_cumulative_nonneg_flux) {
         // convert from [m] to [kg m-2]:
         nonneg_flux_2D_cumulative(i, j) += nonneg_rule_flux * ice_density; // units: [kg m-2]
+      }
 
       // this has to go *after* accounting above!
       vHnew(i, j) = 0.0;
@@ -880,8 +889,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
    This explains if-clauses like this one:
    ~~~ c++
-   if (lambda_g < 0.5)
+   if (lambda_g < 0.5) {
      gl_mask_gr_x += (lambda_g - 0.5);
+   }
    ~~~
 
    they convert the sub-grid grounding line position into the form
@@ -940,8 +950,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g < 0.5)
+        if (lambda_g < 0.5) {
           gl_mask_gr_x += (lambda_g - 0.5);
+        }
 
       } else if (mask.ocean(i - 1, j)) {
 
@@ -951,8 +962,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g < 0.5)
+        if (lambda_g < 0.5) {
           gl_mask_gr_x += (lambda_g - 0.5);
+        }
 
       } else if (mask.ocean(i, j + 1)) {
 
@@ -962,8 +974,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g < 0.5)
+        if (lambda_g < 0.5) {
           gl_mask_gr_y += (lambda_g - 0.5);
+        }
 
       } else if (mask.ocean(i, j - 1)) {
 
@@ -973,8 +986,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g < 0.5)
+        if (lambda_g < 0.5) {
           gl_mask_gr_y += (lambda_g - 0.5);
+        }
 
       }
 
@@ -995,8 +1009,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g >= 0.5)
+        if (lambda_g >= 0.5) {
           gl_mask_fl_x -= (lambda_g - 0.5);
+        }
 
       } else if (mask.grounded(i + 1, j)) {
 
@@ -1006,8 +1021,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g >= 0.5)
+        if (lambda_g >= 0.5) {
           gl_mask_fl_x -= (lambda_g - 0.5);
+        }
 
       } else if (mask.grounded(i, j - 1)) {
 
@@ -1017,8 +1033,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g >= 0.5)
+        if (lambda_g >= 0.5) {
           gl_mask_fl_y -= (lambda_g - 0.5);
+        }
 
       } else if (mask.grounded(i, j + 1)) {
 
@@ -1028,8 +1045,9 @@ PetscErrorCode IceModel::update_floatation_mask() {
         lambda_g = alpha / (alpha - beta);
         lambda_g = std::max(0.0, std::min(lambda_g, 1.0));
 
-        if (lambda_g >= 0.5)
+        if (lambda_g >= 0.5) {
           gl_mask_fl_y -= (lambda_g - 0.5);
+        }
 
       }
 

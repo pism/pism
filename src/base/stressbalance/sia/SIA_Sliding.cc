@@ -77,8 +77,9 @@ PetscErrorCode SIA_Sliding::init(Vars &vars) {
   standard_gravity = config.get("standard_gravity");
   verification_mode = config.get_flag("sia_sliding_verification_mode");
 
-  if (config.is_set("EISMINT_II_experiment"))
+  if (config.is_set("EISMINT_II_experiment")) {
     eisII_experiment = config.get_string("EISMINT_II_experiment");
+  }
 
   thickness = vars.get_2d_scalar("land_ice_thickness");
   mask      = vars.get_2d_mask("mask");
@@ -210,10 +211,11 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
     const double x = fabs(xIN), y = fabs(yIN);
     const double r = sqrt(x * x + y * y);
     double       theta;
-    if (x < 1.0)
+    if (x < 1.0) {
       theta = M_PI / 2.0;
-    else
+    } else {
       theta = atan(y / x);
+    }
 
     if ((r > r1) && (r < r2) && (theta > theta1) && (theta < theta2)) {
       // now INSIDE sliding region
@@ -223,8 +225,9 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
       double muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot)
         * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
       return muE * ice_rho * standard_gravity * H;
-    } else
+    } else {
       return 0.0;
+    }
   }
 
   if ((eisII_experiment == "G") || (eisII_experiment == "H")) {
@@ -395,22 +398,42 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
           icefreeSE = (H(i+1,j-1) <= Hicefree);
 
         double hhE = h(i+1,j);  // east pseudo-surface elevation
-        if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
-        if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
+        if (icefreeE  && (b(i+1,j)   > h(i,j))) {
+          hhE  = h(i,j);
+        }
+        if (icefreeP  && (b(i,j)     > h(i+1,j))) {
+          hhE  = h(i,j);
+        }
         h_x(i,j,o) = (hhE - h(i,j)) / dx;
 
         double hhN  = h(i,j+1);  // north pseudo-surface elevation
-        if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
-        if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
+        if (icefreeN  && (b(i,j+1)   > h(i,j))) {
+          hhN  = h(i,j);
+        }
+        if (icefreeP  && (b(i,j)     > h(i,j+1))) {
+          hhN  = h(i,j);
+        }
         double hhS  = h(i,j-1);  // south pseudo-surface elevation
-        if (icefreeS  && (b(i,j-1)   > h(i,j)))  hhS  = h(i,j);
-        if (icefreeP  && (b(i,j)     > h(i,j-1)))  hhS  = h(i,j);
+        if (icefreeS  && (b(i,j-1)   > h(i,j))) {
+          hhS  = h(i,j);
+        }
+        if (icefreeP  && (b(i,j)     > h(i,j-1))) {
+          hhS  = h(i,j);
+        }
         double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
-        if (icefreeNE && (b(i+1,j+1) > h(i+1,j)))  hhNE = h(i+1,j);
-        if (icefreeE  && (b(i+1,j)   > h(i+1,j+1)))  hhNE = h(i+1,j);
+        if (icefreeNE && (b(i+1,j+1) > h(i+1,j))) {
+          hhNE = h(i+1,j);
+        }
+        if (icefreeE  && (b(i+1,j)   > h(i+1,j+1))) {
+          hhNE = h(i+1,j);
+        }
         double hhSE = h(i+1,j-1);// southeast pseudo-surface elevation
-        if (icefreeSE && (b(i+1,j-1) > h(i+1,j)))  hhSE = h(i+1,j);
-        if (icefreeE  && (b(i+1,j)   > h(i+1,j-1)))  hhSE = h(i+1,j);
+        if (icefreeSE && (b(i+1,j-1) > h(i+1,j))) {
+          hhSE = h(i+1,j);
+        }
+        if (icefreeE  && (b(i+1,j)   > h(i+1,j-1))) {
+          hhSE = h(i+1,j);
+        }
         h_y(i,j,o) = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
       } else {        // J-offset
         const bool icefreeP  = (H(i,j)     <= Hicefree),
@@ -421,22 +444,42 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
           icefreeNW = (H(i-1,j+1) <= Hicefree);
 
         double hhN  = h(i,j+1);  // north pseudo-surface elevation
-        if (icefreeN  && (b(i,j+1)   > h(i,j)))  hhN  = h(i,j);
-        if (icefreeP  && (b(i,j)     > h(i,j+1)))  hhN  = h(i,j);
+        if (icefreeN  && (b(i,j+1)   > h(i,j))) {
+          hhN  = h(i,j);
+        }
+        if (icefreeP  && (b(i,j)     > h(i,j+1))) {
+          hhN  = h(i,j);
+        }
         h_y(i,j,o) = (hhN - h(i,j)) / dy;
 
         double hhE  = h(i+1,j);  // east pseudo-surface elevation
-        if (icefreeE  && (b(i+1,j)   > h(i,j)))  hhE  = h(i,j);
-        if (icefreeP  && (b(i,j)     > h(i+1,j)))  hhE  = h(i,j);
+        if (icefreeE  && (b(i+1,j)   > h(i,j))) {
+          hhE  = h(i,j);
+        }
+        if (icefreeP  && (b(i,j)     > h(i+1,j))) {
+          hhE  = h(i,j);
+        }
         double hhW  = h(i-1,j);  // west pseudo-surface elevation
-        if (icefreeW  && (b(i-1,j)   > h(i,j)))  hhW  = h(i,j);
-        if (icefreeP  && (b(i,j)     > h(i-1,j)))  hhW  = h(i,j);
+        if (icefreeW  && (b(i-1,j)   > h(i,j))) {
+          hhW  = h(i,j);
+        }
+        if (icefreeP  && (b(i,j)     > h(i-1,j))) {
+          hhW  = h(i,j);
+        }
         double hhNE = h(i+1,j+1);// northeast pseudo-surface elevation
-        if (icefreeNE && (b(i+1,j+1) > h(i,j+1)))  hhNE = h(i,j+1);
-        if (icefreeN  && (b(i,j+1)   > h(i+1,j+1)))  hhNE = h(i,j+1);
+        if (icefreeNE && (b(i+1,j+1) > h(i,j+1))) {
+          hhNE = h(i,j+1);
+        }
+        if (icefreeN  && (b(i,j+1)   > h(i+1,j+1))) {
+          hhNE = h(i,j+1);
+        }
         double hhNW = h(i-1,j+1);// northwest pseudo-surface elevation
-        if (icefreeNW && (b(i-1,j+1) > h(i,j+1)))  hhNW = h(i,j+1);
-        if (icefreeN  && (b(i,j+1)   > h(i-1,j+1)))  hhNW = h(i,j+1);
+        if (icefreeNW && (b(i-1,j+1) > h(i,j+1))) {
+          hhNW = h(i,j+1);
+        }
+        if (icefreeN  && (b(i,j+1)   > h(i-1,j+1))) {
+          hhNW = h(i,j+1);
+        }
         h_x(i,j,o) = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
       }
 

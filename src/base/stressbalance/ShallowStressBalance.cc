@@ -50,10 +50,11 @@ PetscErrorCode ShallowStressBalance::allocate() {
   PetscErrorCode ierr;
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
 
-  if (config.get_flag("do_pseudo_plastic_till") == true)
+  if (config.get_flag("do_pseudo_plastic_till") == true) {
     basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(config);
-  else
+  } else {
     basal_sliding_law = new IceBasalResistancePlasticLaw(config);
+  }
 
   ierr = m_velocity.create(grid, "bar", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr); // components ubar, vbar
   ierr = m_velocity.set_attrs("model_state",
@@ -118,8 +119,9 @@ PetscErrorCode ZeroSliding::write_variables(const std::set<std::string> &/*vars*
 //! \brief Update the trivial shallow stress balance object.
 PetscErrorCode ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
-  if (fast)
+  if (fast) {
     return 0;
+  }
 
   (void) melange_back_pressure;
 
@@ -233,14 +235,18 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
     // x-derivative is set to zero (see u_x, v_x initialization above).
     //
     // Similarly in other directions.
-    if (ice_free(m.e))
+    if (ice_free(m.e)) {
       east = 0;
-    if (ice_free(m.w))
+    }
+    if (ice_free(m.w)) {
       west = 0;
-    if (ice_free(m.n))
+    }
+    if (ice_free(m.n)) {
       north = 0;
-    if (ice_free(m.s))
+    }
+    if (ice_free(m.s)) {
       south = 0;
+    }
 
     if (west + east > 0) {
       u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
@@ -318,14 +324,18 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
     // x-derivative is set to zero (see u_x, v_x initialization above).
     //
     // Similarly in y-direction.
-    if (ice_free(m.e))
+    if (ice_free(m.e)) {
       east = 0;
-    if (ice_free(m.w))
+    }
+    if (ice_free(m.w)) {
       west = 0;
-    if (ice_free(m.n))
+    }
+    if (ice_free(m.n)) {
       north = 0;
-    if (ice_free(m.s))
+    }
+    if (ice_free(m.s)) {
       south = 0;
+    }
 
     if (west + east > 0) {
       u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
@@ -367,9 +377,10 @@ SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   set_attrs("Y-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < dof; ++k)
+  for (int k = 0; k < dof; ++k) {
     vars[k].set_string("comment",
                        "this field is purely diagnostic (not used by the model)");
+  }
 }
 
 /*!
@@ -467,9 +478,10 @@ SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   set_attrs("Y-component of the shear stress at the base of ice", "",
             "Pa", "Pa", 1);
 
-  for (int k = 0; k < dof; ++k)
+  for (int k = 0; k < dof; ++k) {
     vars[k].set_string("comment",
                        "this field is purely diagnostic (not used by the model)");
+  }
 }
 
 
@@ -572,8 +584,9 @@ PrescribedSliding::~PrescribedSliding() {
 
 PetscErrorCode PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   PetscErrorCode ierr;
-  if (fast == true)
+  if (fast == true) {
     return 0;
+  }
 
   (void) melange_back_pressure;
 

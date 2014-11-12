@@ -174,22 +174,25 @@ public:
   virtual PetscErrorCode update(double a, double b) = 0;
 
   virtual PetscErrorCode save(double a, double b) {
-    if (ts)
+    if (ts) {
       return ts->interp(a, b);
+    }
 
     return 0;
   }
 
   virtual PetscErrorCode flush() {
-    if (ts)
+    if (ts) {
       return ts->flush();
+    }
 
     return 0;
   }
 
   virtual PetscErrorCode init(std::string filename) {
-    if (ts)
+    if (ts) {
       return ts->init(filename);
+    }
     return 0;
   }
 

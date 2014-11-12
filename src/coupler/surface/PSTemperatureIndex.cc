@@ -124,8 +124,9 @@ PetscErrorCode PSTemperatureIndex::allocate_PSTemperatureIndex() {
     // If -..._period is not set, make ..._n_records the minimum of the
     // buffer size and the number of available records. Otherwise try
     // to keep all available records in memory.
-    if (sd_period == 0)
+    if (sd_period == 0) {
       n_records = std::min(n_records, buffer_size);
+    }
 
     if (n_records < 1) {
       throw RuntimeError::formatted("Can't find '%s' in %s.",
@@ -300,8 +301,9 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12))
+      (fabs(my_dt - m_dt) < 1e-12)) {
     return 0;
+  }
 
   m_t  = my_t;
   m_dt = my_dt;
@@ -315,8 +317,9 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
 
   const double dtseries = my_dt / Nseries;
   std::vector<double> ts(Nseries), T(Nseries), S(Nseries), P(Nseries), PDDs(Nseries);
-  for (int k = 0; k < Nseries; ++k)
+  for (int k = 0; k < Nseries; ++k) {
     ts[k] = my_t + k * dtseries;
+  }
 
   // update standard deviation time series
   if (sd_file_set == true) {
@@ -427,8 +430,9 @@ PetscErrorCode PSTemperatureIndex::update(double my_t, double my_dt) {
       for (int k = 0; k < Nseries; ++k) {
         if (ts[k] >= next_snow_depth_reset) {
           snow_depth(i,j)       = 0.0;
-          while (next_snow_depth_reset <= ts[k])
+          while (next_snow_depth_reset <= ts[k]) {
             next_snow_depth_reset = grid.time->increment_date(next_snow_depth_reset, 1);
+          }
         }
 
         double accumulation     = P[k] * dtseries;

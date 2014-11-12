@@ -35,8 +35,9 @@ PetscErrorCode stop_on_version_option() {
 
   bool vSet = false;
   ierr = OptionsIsSet("-version", vSet); CHKERRQ(ierr);
-  if (vSet == false)
+  if (vSet == false) {
     return 0;
+  }
 
   // FIXME!
   // PISMEndQuiet();
@@ -71,7 +72,9 @@ PetscErrorCode verbosityLevelFromOptions() {
   } else {
     ierr = PetscOptionsHasName(NULL, "-verbose", &verbose);
     PISM_PETSC_CHK(ierr, "PetscOptionsHasName");
-    if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(3);
+    if (verbose == PETSC_TRUE) {
+      ierr = setVerbosityLevel(3);
+    }
   }
   return 0;
 }
@@ -264,8 +267,9 @@ PetscErrorCode OptionsList(std::string opt, std::string description,
   std::string keyword = tmp;
   // find ":" and discard everything that goes after
   size_t n = keyword.find(":");
-  if (n != std::string::npos)
+  if (n != std::string::npos) {
     keyword.resize(n);
+  }
 
   // return the choice if it is valid and stop if it is not
   if (choices.find(keyword) != choices.end()) {
@@ -295,14 +299,15 @@ PetscErrorCode OptionsString(std::string option, std::string text,
 
   if (is_set) {
     if (strlen(tmp) == 0) {
-      if (allow_empty_arg)
+      if (allow_empty_arg) {
         result.clear();
-      else {
+      } else {
         throw RuntimeError::formatted("command line option '%s' requires an argument.\n",
                                       option.c_str());
       }
-    } else
+    } else {
       result = tmp;
+    }
   }
 
   return 0;
@@ -324,8 +329,9 @@ PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string
   std::string word;
   if (opt_set) {
     std::istringstream arg(tmp);
-    while (getline(arg, word, ','))
+    while (getline(arg, word, ',')) {
       result.push_back(word);
+    }
 
     if (result.empty()) {
       throw RuntimeError::formatted("command line option '%s' requires an argument.\n",
@@ -335,8 +341,9 @@ PetscErrorCode OptionsStringArray(std::string opt, std::string text, std::string
     flag = true;
   } else {                      // parse the default list given
     std::istringstream arg(default_value);
-    while (getline(arg, word, ','))
+    while (getline(arg, word, ',')) {
       result.push_back(word);
+    }
 
     flag = false;
   }
@@ -376,8 +383,9 @@ PetscErrorCode OptionsInt(std::string option, std::string text,
 
   is_set = (flag == PETSC_TRUE);
 
-  if (is_set == false)
+  if (is_set == false) {
     return 0;
+  }
 
   if (strlen(str) == 0) {
     throw RuntimeError::formatted("command line option '%s' requires an argument.",
@@ -410,8 +418,9 @@ PetscErrorCode OptionsReal(std::string option, std::string text,
 
   is_set = (flag == PETSC_TRUE);
 
-  if (is_set == false)
+  if (is_set == false) {
     return 0;
+  }
 
   if (strlen(str) == 0) {
     throw RuntimeError::formatted("command line option '%s' requires an argument.",
@@ -474,8 +483,9 @@ PetscErrorCode OptionsIntArray(std::string option, std::string text,
   ierr = OptionsRealArray(option, text, tmp, is_set); CHKERRQ(ierr);
 
   result.clear();
-  for (unsigned int j = 0; j < tmp.size(); ++j)
+  for (unsigned int j = 0; j < tmp.size(); ++j) {
     result.push_back(static_cast<int>(tmp[j]));
+  }
 
   return 0;
 }
@@ -537,8 +547,9 @@ PetscErrorCode OptionsHasArgument(std::string option, bool &result) {
 
   ierr = OptionsString(option, "", tmp, result, true); CHKERRQ(ierr);
 
-  if (result == false || tmp.empty() == true)
+  if (result == false || tmp.empty() == true) {
     result = false;
+  }
 
   return 0;
 }

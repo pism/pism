@@ -42,10 +42,12 @@ public:
       if (omega > OM2) {
         if (omega > OM3) {
           return DR3;
-        } else
+        } else {
           return DR2 + (DR3 - DR2) * (omega - OM2) / OM1;
-      } else
+        }
+      } else {
         return DR2 * (omega - OM1) / OM1;
+      }
     } else {
       return 0.0;
     }

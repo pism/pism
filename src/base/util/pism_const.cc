@@ -151,13 +151,15 @@ std::string pism_username_prefix(MPI_Comm com) {
   char username[50];
   ierr = PetscGetUserName(username, sizeof(username));
   PISM_PETSC_CHK(ierr, "PetscGetUserName");
-  if (ierr != 0)
+  if (ierr != 0) {
     username[0] = '\0';
+  }
   char hostname[100];
   ierr = PetscGetHostName(hostname, sizeof(hostname));
   PISM_PETSC_CHK(ierr, "PetscGetHostName");
-  if (ierr != 0)
+  if (ierr != 0) {
     hostname[0] = '\0';
+  }
   
   std::ostringstream message;
   message << username << "@" << hostname << " " << pism_timestamp() << ": ";
@@ -184,7 +186,9 @@ std::string pism_args_string() {
     argument = argv[j];
 
     // enclose arguments containing spaces with double quotes:
-    if (argument.find(" ") != std::string::npos) argument = "\"" + argument + "\"";
+    if (argument.find(" ") != std::string::npos) {
+      argument = "\"" + argument + "\"";
+    }
 
     cmdstr += std::string(" ") + argument;
   }

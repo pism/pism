@@ -118,8 +118,9 @@ int NC3File::close_impl() {
 int NC3File::enddef_impl() const {
   int stat;
 
-  if (m_define_mode == false)
+  if (m_define_mode == false) {
     return 0;
+  }
 
   if (m_rank == 0) {
     //! 50000 (below) means that we allocate ~50Kb for metadata in NetCDF files
@@ -139,8 +140,9 @@ int NC3File::enddef_impl() const {
 int NC3File::redef_impl() const {
   int stat;
 
-  if (m_define_mode == true)
+  if (m_define_mode == true) {
     return 0;
+  }
 
   if (m_rank == 0) {
     stat = nc_redef(m_file_id);
@@ -176,10 +178,11 @@ int NC3File::inq_dimid_impl(const std::string &dimension_name, bool &exists) con
   if (m_rank == 0) {
     stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &flag);
 
-    if (stat == NC_NOERR)
+    if (stat == NC_NOERR) {
       flag = 1;
-    else
+    } else {
       flag = 0;
+    }
 
   }
   MPI_Barrier(m_com);
@@ -350,15 +353,17 @@ int NC3File::get_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false)
+  if (mapped == false) {
     imap.resize(ndims);
+  }
 
   // get the size of the communicator
   MPI_Comm_size(m_com, &com_size);
 
   // compute the size of a local chunk
-  for (int k = 0; k < ndims; ++k)
+  for (int k = 0; k < ndims; ++k) {
     local_chunk_size *= count[k];
+  }
 
   // compute the maximum and send it to processor 0; this is the size of the
   // buffer processor 0 will need
@@ -413,8 +418,9 @@ int NC3File::get_var_double(const std::string &variable_name,
       if (r != 0) {
         MPI_Send(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
       } else {
-        for (unsigned int k = 0; k < local_chunk_size; ++k)
+        for (unsigned int k = 0; k < local_chunk_size; ++k) {
           ip[k] = processor_0_buffer[k];
+        }
       }
 
     } // end of the for loop
@@ -485,15 +491,17 @@ int NC3File::put_var_double(const std::string &variable_name,
   }
 #endif
 
-  if (mapped == false)
+  if (mapped == false) {
     imap.resize(ndims);
+  }
 
   // get the size of the communicator
   MPI_Comm_size(m_com, &com_size);
 
   // compute the size of a local chunk
-  for (int k = 0; k < ndims; ++k)
+  for (int k = 0; k < ndims; ++k) {
     local_chunk_size *= count[k];
+  }
 
   // compute the maximum and send it to processor 0; this is the size of the
   // buffer processor 0 will need
@@ -524,8 +532,9 @@ int NC3File::put_var_double(const std::string &variable_name,
 
         MPI_Recv(processor_0_buffer, local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
       } else {
-        for (unsigned int k = 0; k < local_chunk_size; ++k)
+        for (unsigned int k = 0; k < local_chunk_size; ++k) {
           processor_0_buffer[k] = op[k];
+        }
       }
 
       // This for loop uses start, count and imap passed in as arguments when r
@@ -553,14 +562,17 @@ int NC3File::put_var_double(const std::string &variable_name,
         fprintf(stderr, "while writing '%s' to '%s'\n",
                 variable_name.c_str(), m_filename.c_str());
 
-        for (int k = 0; k < ndims; ++k)
+        for (int k = 0; k < ndims; ++k) {
           fprintf(stderr, "start[%d] = %d\n", k, start[k]);
+        }
 
-        for (int k = 0; k < ndims; ++k)
+        for (int k = 0; k < ndims; ++k) {
           fprintf(stderr, "count[%d] = %d\n", k, count[k]);
+        }
 
-        for (int k = 0; k < ndims; ++k)
+        for (int k = 0; k < ndims; ++k) {
           fprintf(stderr, "imap[%d] = %d\n", k, imap[k]);
+        }
       }
 
     } // end of the for loop
@@ -665,10 +677,11 @@ int NC3File::inq_varid_impl(const std::string &variable_name, bool &exists) cons
   if (m_rank == 0) {
     stat = nc_inq_varid(m_file_id, variable_name.c_str(), &flag);
 
-    if (stat == NC_NOERR)
+    if (stat == NC_NOERR) {
       flag = 1;
-    else
+    } else {
       flag = 0;
+    }
 
   }
   MPI_Barrier(m_com);
@@ -740,11 +753,11 @@ int NC3File::get_att_double_impl(const std::string &variable_name, const std::st
 
     stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
-    if (stat == NC_NOERR)
+    if (stat == NC_NOERR) {
       len = static_cast<int>(attlen);
-    else if (stat == NC_ENOTATT)
+    } else if (stat == NC_ENOTATT) {
       len = 0;
-    else {
+    } else {
       check(stat);
       len = 0;
     }
@@ -794,10 +807,11 @@ int NC3File::get_att_text_impl(const std::string &variable_name, const std::stri
     }
 
     stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
-    if (stat == NC_NOERR)
+    if (stat == NC_NOERR) {
       len = static_cast<int>(attlen);
-    else
+    } else {
       len = 0;
+    }
   }
   MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
 

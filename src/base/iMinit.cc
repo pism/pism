@@ -227,9 +227,15 @@ PetscErrorCode IceModel::set_grid_from_options() {
   }
 
   // Use the information obtained above:
-  if (Lx_set)    grid.Lx  = x_scale * 1000.0; // convert to meters
-  if (Ly_set)    grid.Ly  = y_scale * 1000.0; // convert to meters
-  if (Lz_set)    grid.Lz  = z_scale;          // in meters already
+  if (Lx_set) {
+    grid.Lx  = x_scale * 1000.0; // convert to meters
+  }
+  if (Ly_set) {
+    grid.Ly  = y_scale * 1000.0; // convert to meters
+  }
+  if (Lz_set) {
+    grid.Lz  = z_scale;          // in meters already
+  }
 
   if (x_range_set && y_range_set) {
     if (x_range.size() != 2 || y_range.size() != 2) {
@@ -411,11 +417,13 @@ PetscErrorCode IceModel::grid_setup() {
       grid.procs_x.resize(grid.Nx);
       grid.procs_y.resize(grid.Ny);
 
-      for (int j=0; j < grid.Nx; j++)
+      for (int j=0; j < grid.Nx; j++) {
         grid.procs_x[j] = tmp_x[j];
+      }
 
-      for (int j=0; j < grid.Ny; j++)
+      for (int j=0; j < grid.Ny; j++) {
         grid.procs_y[j] = tmp_y[j];
+      }
     } else {
       grid.compute_ownership_ranges();
     }
@@ -562,32 +570,41 @@ PetscErrorCode IceModel::model_state_setup() {
     }
     nc.close();
 
-    if (run_stats.has_attribute("grounded_basal_ice_flux_cumulative"))
+    if (run_stats.has_attribute("grounded_basal_ice_flux_cumulative")) {
       grounded_basal_ice_flux_cumulative = run_stats.get_double("grounded_basal_ice_flux_cumulative");
+    }
 
-    if (run_stats.has_attribute("nonneg_rule_flux_cumulative"))
+    if (run_stats.has_attribute("nonneg_rule_flux_cumulative")) {
       nonneg_rule_flux_cumulative = run_stats.get_double("nonneg_rule_flux_cumulative");
+    }
 
-    if (run_stats.has_attribute("sub_shelf_ice_flux_cumulative"))
+    if (run_stats.has_attribute("sub_shelf_ice_flux_cumulative")) {
       sub_shelf_ice_flux_cumulative = run_stats.get_double("sub_shelf_ice_flux_cumulative");
+    }
 
-    if (run_stats.has_attribute("surface_ice_flux_cumulative"))
+    if (run_stats.has_attribute("surface_ice_flux_cumulative")) {
       surface_ice_flux_cumulative = run_stats.get_double("surface_ice_flux_cumulative");
+    }
 
-    if (run_stats.has_attribute("sum_divQ_SIA_cumulative"))
+    if (run_stats.has_attribute("sum_divQ_SIA_cumulative")) {
       sum_divQ_SIA_cumulative = run_stats.get_double("sum_divQ_SIA_cumulative");
+    }
 
-    if (run_stats.has_attribute("sum_divQ_SSA_cumulative"))
+    if (run_stats.has_attribute("sum_divQ_SSA_cumulative")) {
       sum_divQ_SSA_cumulative = run_stats.get_double("sum_divQ_SSA_cumulative");
+    }
 
-    if (run_stats.has_attribute("Href_to_H_flux_cumulative"))
+    if (run_stats.has_attribute("Href_to_H_flux_cumulative")) {
       Href_to_H_flux_cumulative = run_stats.get_double("Href_to_H_flux_cumulative");
+    }
 
-    if (run_stats.has_attribute("H_to_Href_flux_cumulative"))
+    if (run_stats.has_attribute("H_to_Href_flux_cumulative")) {
       H_to_Href_flux_cumulative = run_stats.get_double("H_to_Href_flux_cumulative");
+    }
 
-    if (run_stats.has_attribute("discharge_flux_cumulative"))
+    if (run_stats.has_attribute("discharge_flux_cumulative")) {
       discharge_flux_cumulative = run_stats.get_double("discharge_flux_cumulative");
+    }
   }
 
   ierr = compute_cell_areas(); CHKERRQ(ierr);
@@ -642,8 +659,9 @@ PetscErrorCode IceModel::set_vars_from_options() {
 //! \brief Decide which enthalpy converter to use.
 PetscErrorCode IceModel::allocate_enthalpy_converter() {
 
-  if (EC != NULL)
+  if (EC != NULL) {
     return 0;
+  }
 
   if (config.get_flag("use_linear_in_temperature_heat_capacity")) {
     EC = new varcEnthalpyConverter(config);
@@ -658,8 +676,9 @@ PetscErrorCode IceModel::allocate_enthalpy_converter() {
 PetscErrorCode IceModel::allocate_stressbalance() {
   PetscErrorCode ierr;
 
-  if (stress_balance != NULL)
+  if (stress_balance != NULL) {
     return 0;
+  }
 
   std::string model = config.get_string("stress_balance_model");
 
@@ -711,8 +730,9 @@ PetscErrorCode IceModel::allocate_stressbalance() {
 PetscErrorCode IceModel::allocate_iceberg_remover() {
   PetscErrorCode ierr;
 
-  if (iceberg_remover != NULL)
+  if (iceberg_remover != NULL) {
     return 0;
+  }
 
   if (config.get_flag("kill_icebergs")) {
 
@@ -730,8 +750,9 @@ PetscErrorCode IceModel::allocate_iceberg_remover() {
 //! \brief Decide which bedrock thermal unit to use.
 PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 
-  if (btu != NULL)
+  if (btu != NULL) {
     return 0;
+  }
 
   btu = new BedThermalUnit(grid, config);
 
@@ -742,15 +763,17 @@ PetscErrorCode IceModel::allocate_bedrock_thermal_unit() {
 PetscErrorCode IceModel::allocate_subglacial_hydrology() {
   std::string hydrology_model = config.get_string("hydrology_model");
 
-  if (subglacial_hydrology != NULL) // indicates it has already been allocated
+  if (subglacial_hydrology != NULL) { // indicates it has already been allocated
     return 0;
-  if      (hydrology_model == "null")
+  }
+
+  if (hydrology_model == "null") {
     subglacial_hydrology = new NullTransportHydrology(grid, config);
-  else if (hydrology_model == "routing")
+  } else if (hydrology_model == "routing") {
     subglacial_hydrology = new RoutingHydrology(grid, config);
-  else if (hydrology_model == "distributed")
+  } else if (hydrology_model == "distributed") {
     subglacial_hydrology = new DistributedHydrology(grid, config, stress_balance);
-  else {
+  } else {
     throw RuntimeError::formatted("unknown value for configuration string 'hydrology_model':\n"
                                   "has value '%s'", hydrology_model.c_str());
   }
@@ -761,8 +784,9 @@ PetscErrorCode IceModel::allocate_subglacial_hydrology() {
 //! \brief Decide which basal yield stress model to use.
 PetscErrorCode IceModel::allocate_basal_yield_stress() {
 
-  if (basal_yield_stress_model != NULL)
+  if (basal_yield_stress_model != NULL) {
     return 0;
+  }
 
   std::string model = config.get_string("stress_balance_model");
 
@@ -892,21 +916,25 @@ PetscErrorCode IceModel::init_step_couplers() {
 
   double apcc_dt = 0.0;
   ierr = surface->max_timestep(current_time, apcc_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt)
+  if (restrict_dt) {
     dt_restrictions.push_back(apcc_dt);
+  }
 
   double opcc_dt = 0.0;
   ierr = ocean->max_timestep(current_time, opcc_dt, restrict_dt); CHKERRQ(ierr);
-  if (restrict_dt)
+  if (restrict_dt) {
     dt_restrictions.push_back(opcc_dt);
+  }
 
   // find the smallest of the max. time-steps reported by boundary models:
-  if (dt_restrictions.empty() == false)
+  if (dt_restrictions.empty() == false) {
     max_dt = *std::min_element(dt_restrictions.begin(), dt_restrictions.end());
+  }
 
   // Do not take time-steps shorter than 1 second
-  if (max_dt < 1.0)
+  if (max_dt < 1.0) {
     max_dt = 1.0;
+  }
 
   ierr = surface->update(current_time, max_dt); CHKERRQ(ierr);
   ierr = ocean->update(current_time, max_dt); CHKERRQ(ierr);
@@ -985,8 +1013,9 @@ PetscErrorCode IceModel::init_calving() {
   std::string method_name;
   std::set<std::string> methods;
 
-    while (getline(arg, method_name, ','))
+    while (getline(arg, method_name, ',')) {
       methods.insert(method_name);
+    }
 
   if (methods.find("ocean_kill") != methods.end()) {
 

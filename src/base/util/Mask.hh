@@ -93,22 +93,28 @@ public:
     if (is_floating && (not is_dry_simulation)) {
       surface_result = hfloating;
 
-      if (ice_free)
+      if (ice_free) {
         mask_result = MASK_ICE_FREE_OCEAN;
-      else
+      } else {
         mask_result = MASK_FLOATING;
+      }
     } else {  // Grounded
       surface_result = hgrounded;
 
-      if (ice_free)
+      if (ice_free) {
         mask_result = MASK_ICE_FREE_BEDROCK;
-      else
+      } else {
         mask_result = MASK_GROUNDED;
+      }
     }
 
-    if (out_surface != NULL) *out_surface = surface_result;
+    if (out_surface != NULL) {
+      *out_surface = surface_result;
+    }
 
-    if (out_mask != NULL) *out_mask = mask_result;
+    if (out_mask != NULL) {
+      *out_mask = mask_result;
+    }
   }
 
   inline int mask(double bed, double thickness)

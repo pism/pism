@@ -85,8 +85,9 @@ PetscErrorCode PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
   size_t N = ts.size();
 
   m_scaling_values.resize(N);
-  for (unsigned int k = 0; k < N; ++k)
+  for (unsigned int k = 0; k < N; ++k) {
     m_scaling_values[k] = exp(m_precipexpfactor * (*offset)(m_ts_times[k]));
+  }
 
   return 0;
 }
@@ -100,8 +101,9 @@ PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
 PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] *= m_scaling_values[k];
+  }
 
   return 0;
 }

@@ -72,8 +72,9 @@ There is no tranportable water thickness variable and no interaction with it.
  */
 PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
-  if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6))
+  if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6)) {
     return 0;
+  }
   m_t = icet;
   m_dt = icedt;
 

@@ -207,8 +207,9 @@ PetscErrorCode IceRegionalModel::model_state_setup() {
 PetscErrorCode IceRegionalModel::allocate_stressbalance() {
   PetscErrorCode ierr;
 
-  if (stress_balance != NULL)
+  if (stress_balance != NULL) {
     return 0;
+  }
 
   std::string model = config.get_string("stress_balance_model");
 
@@ -251,8 +252,9 @@ PetscErrorCode IceRegionalModel::allocate_stressbalance() {
 
 PetscErrorCode IceRegionalModel::allocate_basal_yield_stress() {
 
-  if (basal_yield_stress_model != NULL)
+  if (basal_yield_stress_model != NULL) {
     return 0;
+  }
 
   std::string model = config.get_string("stress_balance_model");
 
@@ -399,8 +401,7 @@ void IceRegionalModel::cell_interface_fluxes(bool dirichlet_bc,
   for (int n = 0; n < 4; ++n) {
     Direction direction = dirs[n];
 
-      if ((nmm.ij == 1) ||
-          (nmm.ij == 0 && nmm[direction] == 1)) {
+      if ((nmm.ij == 1) || (nmm.ij == 0 && nmm[direction] == 1)) {
       output_velocity[direction] = 0.0;
       output_flux[direction] = 0.0;
     }
@@ -425,14 +426,16 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (no_model_mask(i, j) < 0.5)
+    if (no_model_mask(i, j) < 0.5) {
       continue;
+    }
 
     ierr = vWork3d.getInternalColumn(i, j, &new_enthalpy); CHKERRQ(ierr);
     ierr = Enth3.getInternalColumn(i, j, &old_enthalpy); CHKERRQ(ierr);
 
-    for (unsigned int k = 0; k < grid.Mz; ++k)
+    for (unsigned int k = 0; k < grid.Mz; ++k) {
       new_enthalpy[k] = old_enthalpy[k];
+    }
   }
 
   // set basal_melt_rate; ghosts are comminucated later (in IceModel::energyStep()).
@@ -441,8 +444,9 @@ PetscErrorCode IceRegionalModel::enthalpyAndDrainageStep(double* vertSacrCount, 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (no_model_mask(i, j) < 0.5)
+    if (no_model_mask(i, j) < 0.5) {
       continue;
+    }
 
     basal_melt_rate(i, j) = bmr_stored(i, j);
   }

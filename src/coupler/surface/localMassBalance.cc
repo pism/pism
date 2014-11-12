@@ -200,16 +200,18 @@ void PDDMassBalance::step(const DegreeDayFactors &ddf,
     melt                    = snow_melted + ice_melted,
     ice_created_by_refreeze = 0.0, runoff = 0.0;
 
-  if (refreeze_ice_melt)
+  if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * ddf.refreezeFrac;
-  else
+  } else {
     ice_created_by_refreeze = snow_melted * ddf.refreezeFrac;
+  }
 
   runoff = melt - ice_created_by_refreeze;
 
   snow_depth -= snow_melted;
-  if (snow_depth < 0.0)
+  if (snow_depth < 0.0) {
     snow_depth = 0.0;
+  }
 
   cumulative_melt   += melt;
   cumulative_runoff += runoff;
@@ -273,8 +275,9 @@ void PDDrandMassBalance::get_PDDs(double *S, double dt_series,
     // average temperature in k-th interval
     double T_k = T[k] + gsl_ran_gaussian(pddRandGen, S[k]); // add random: N(0,sigma)
 
-    if (T_k > pdd_threshold_temp)
+    if (T_k > pdd_threshold_temp) {
       PDDs[k] = h_days * (T_k - pdd_threshold_temp);
+    }
   }
 }
 

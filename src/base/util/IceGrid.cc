@@ -68,25 +68,25 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   ym = 0;
 
   std::string word = config.get_string("grid_periodicity");
-  if (word == "none")
+  if (word == "none") {
     periodicity = NONE;
-  else if (word == "x")
+  } else if (word == "x") {
     periodicity = X_PERIODIC;
-  else if (word == "y")
+  } else if (word == "y") {
     periodicity = Y_PERIODIC;
-  else if (word == "xy")
+  } else if (word == "xy") {
     periodicity = XY_PERIODIC;
-  else {
+  } else {
     throw RuntimeError::formatted("grid periodicity type '%s' is invalid.",
                                   word.c_str());
   }
 
   word = config.get_string("grid_ice_vertical_spacing");
-  if (word == "quadratic")
+  if (word == "quadratic") {
     ice_vertical_spacing = QUADRATIC;
-  else if (word == "equal")
+  } else if (word == "equal") {
     ice_vertical_spacing = EQUAL;
-  else {
+  } else {
     throw RuntimeError::formatted("ice vertical spacing type '%s' is invalid.",
                                   word.c_str());
   }
@@ -156,8 +156,9 @@ PetscErrorCode IceGrid::init_calendar(std::string &result) {
       bool time_exists = nc.inq_var(time_name);
       if (time_exists) {
         std::string tmp = nc.get_att_text(time_name, "calendar");
-        if (tmp.empty() == false)
+        if (tmp.empty() == false) {
           result = tmp;
+        }
       }
     }
     nc.close();
@@ -329,11 +330,15 @@ void IceGrid::compute_nprocs() {
 
   Nx = (int)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
 
-  if (Nx == 0) Nx = 1;
+  if (Nx == 0) {
+    Nx = 1;
+  }
 
   while (Nx > 0) {
     Ny = size/Nx;
-    if (Nx*Ny == size) break;
+    if (Nx*Ny == size) {
+      break;
+    }
     Nx--;
   }
 
@@ -523,8 +528,9 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
   zlevels_fine.resize(Mz_fine);
 
   // compute levels in the ice:
-  for (unsigned int k = 0; k < Mz_fine; k++)
+  for (unsigned int k = 0; k < Mz_fine; k++) {
     zlevels_fine[k] = ((double) k) * dz_fine;
+  }
   // Note that it's allowed to go over Lz.
 
   ierr = init_interpolation(); CHKERRQ(ierr);
@@ -694,8 +700,12 @@ PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
   }
 
   // make sure minimum dimension is sufficient to see
-  if (X < 20)   X = 20;
-  if (Y < 20)   Y = 20;
+  if (X < 20) {
+    X = 20;
+  }
+  if (Y < 20) {
+    Y = 20;
+  }
   return 0;
 }
 

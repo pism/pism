@@ -179,8 +179,9 @@ protected:
       // If -..._period is not set, make ..._n_records the minimum of the
       // buffer size and the number of available records. Otherwise try
       // to keep all available records in memory.
-      if (bc_period == 0)
+      if (bc_period == 0) {
         n_records = PetscMin(n_records, buffer_size);
+      }
 
       if (n_records < 1) {
         throw RuntimeError::formatted("Can't find '%s' (%s) in %s.",
@@ -207,8 +208,9 @@ protected:
     my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
 
     if ((fabs(my_t - Model::m_t) < 1e-12) &&
-        (fabs(my_dt - Model::m_dt) < 1e-12))
+        (fabs(my_dt - Model::m_dt) < 1e-12)) {
       return 0;
+    }
 
     Model::m_t  = my_t;
     Model::m_dt = my_dt;

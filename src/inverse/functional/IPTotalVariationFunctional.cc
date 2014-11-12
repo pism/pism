@@ -54,7 +54,9 @@ PetscErrorCode IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *O
 
       // Obtain values of x at the quadrature points for the element.
       m_dofmap.extractLocalDOFs(x, x_e);
-      if (dirichletBC) dirichletBC.update_homogeneous(m_dofmap, x_e);
+      if (dirichletBC) {
+        dirichletBC.update_homogeneous(m_dofmap, x_e);
+      }
       m_quadrature.computeTrialFunctionValues(x_e, x_q, dxdx_q, dxdy_q);
 
       for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {

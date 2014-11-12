@@ -98,21 +98,25 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
 
   // X
   start[X] = 0;
-  while (start[X] + 1 < input.x_len && input.x[start[X] + 1] < x_min_proc)
+  while (start[X] + 1 < input.x_len && input.x[start[X] + 1] < x_min_proc) {
     start[X]++;
+  }
 
   count[X] = 1;
-  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X] - 1] <= x_max_proc)
+  while (start[X] + count[X] < input.x_len && input.x[start[X] + count[X] - 1] <= x_max_proc) {
     count[X]++;
+  }
 
   // Y
   start[Y] = 0;
-  while (start[Y] + 1 < input.y_len && input.y[start[Y] + 1] < y_min_proc)
+  while (start[Y] + 1 < input.y_len && input.y[start[Y] + 1] < y_min_proc) {
     start[Y]++;
+  }
 
   count[Y] = 1;
-  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y] - 1] <= y_max_proc)
+  while (start[Y] + count[Y] < input.y_len && input.y[start[Y] + count[Y] - 1] <= y_max_proc) {
     count[Y]++;
+  }
 
   // Z
   start[Z] = 0;                    // always start at the base

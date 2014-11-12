@@ -145,12 +145,15 @@ IceModel::~IceModel() {
 
   // de-allocate time-series diagnostics
   std::map<std::string,TSDiagnostic*>::iterator i = ts_diagnostics.begin();
-  while (i != ts_diagnostics.end()) delete (i++)->second;
+  while (i != ts_diagnostics.end()) {
+    delete (i++)->second;
+  }
 
   // de-allocate diagnostics
   std::map<std::string,Diagnostic*>::iterator j = diagnostics.begin();
-  while (j != diagnostics.end()) delete (j++)->second;
-
+  while (j != diagnostics.end()) {
+    delete (j++)->second;
+  }
 
   // de-allocate viewers
   std::map<std::string,PetscViewer>::iterator k = viewers.begin();
@@ -163,11 +166,13 @@ IceModel::~IceModel() {
 
   delete stress_balance;
 
-  if (external_ocean_model == false)
+  if (external_ocean_model == false) {
     delete ocean;
+  }
 
-  if (external_surface_model == false)
+  if (external_surface_model == false) {
     delete surface;
+  }
 
   delete beddef;
 
@@ -206,8 +211,9 @@ PetscErrorCode IceModel::createVecs() {
   std::string calving_method_name;
   std::set<std::string> calving_methods;
 
-  while (getline(calving_methods_list, calving_method_name, ','))
+  while (getline(calving_methods_list, calving_method_name, ',')) {
     calving_methods.insert(calving_method_name);
+  }
 
   // The following code creates (and documents -- to some extent) the
   // variables. The main (and only) principle here is using standard names from
@@ -661,7 +667,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     grid.profiling.end("basal yield stress");
     ierr = basal_yield_stress_model->basal_material_yield_stress(basal_yield_stress); CHKERRQ(ierr);
     stdout_flags += "y";
-  } else stdout_flags += "$";
+  } else {
+    stdout_flags += "$";
+  }
 
   // Update the fractional grounded/floating mask (used by the SSA
   // stress balance and the energy code)
@@ -780,8 +788,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
     // This is why the following two lines appear here and are executed only
     // if do_mass_continuity == true.
-    if (do_skip == true && skipCountDown > 0)
+    if (do_skip == true && skipCountDown > 0) {
       skipCountDown--;
+    }
     stdout_flags += "h";
   } else {
     stdout_flags += "$";
@@ -805,8 +814,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     if (bed_topography.get_state_counter() != topg_state_counter) {
       stdout_flags += "b";
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-    } else
+    } else {
       stdout_flags += " ";
+    }
   }
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
@@ -915,8 +925,12 @@ PetscErrorCode IceModel::run() {
 
     ierr = update_viewers(); CHKERRQ(ierr);
 
-    if (stepcount >= 0) stepcount++;
-    if (endOfTimeStepHook() != 0) break;
+    if (stepcount >= 0) {
+      stepcount++;
+    }
+    if (endOfTimeStepHook() != 0) {
+      break;
+    }
   } // end of the time-stepping loop
 
   grid.profiling.stage_end("time-stepping loop");

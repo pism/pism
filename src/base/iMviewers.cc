@@ -57,8 +57,9 @@ PetscErrorCode IceModel::update_viewers() {
     }
 
     // if still not found, ignore
-    if (v == NULL)
+    if (v == NULL) {
       continue;
+    }
 
     unsigned int dims = v->get_ndims();
 
@@ -106,7 +107,9 @@ PetscErrorCode IceModel::update_viewers() {
       ierr = v2d->view(v1, v2); CHKERRQ(ierr);
     }
 
-    if (de_allocate) delete v;
+    if (de_allocate) {
+      delete v;
+    }
   }
 
   return 0;
@@ -128,8 +131,9 @@ PetscErrorCode IceModel::init_viewers() {
                          "", viewer_size, &viewer_size, &flag);
   PISM_PETSC_CHK(ierr, "PetscOptionsInt");
 
-  if (flag)
+  if (flag) {
     config.set_double("viewer_size", viewer_size);
+  }
 
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",

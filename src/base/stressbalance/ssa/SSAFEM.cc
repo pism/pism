@@ -173,13 +173,10 @@ PetscErrorCode SSAFEM::solve() {
 
   TerminationReason::Ptr reason;
   ierr = solve_nocache(reason); CHKERRQ(ierr);
-  if (reason->failed())
-  {
+  if (reason->failed()) {
     throw RuntimeError::formatted("SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
-  }
-  else if (getVerbosityLevel() > 2)
-  {
+  } else if (getVerbosityLevel() > 2) {
     stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
   }
 
@@ -228,8 +225,9 @@ PetscErrorCode SSAFEM::solve_nocache(TerminationReason::Ptr &reason) {
   }
 
   stdout_ssa.clear();
-  if (getVerbosityLevel() >= 2)
+  if (getVerbosityLevel() >= 2) {
     stdout_ssa = "  SSA: ";
+  }
 
   // Solve:
   ierr = SNESSolve(m_snes, NULL, m_velocity_global.get_vec()); CHKERRQ(ierr);
@@ -277,8 +275,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
 
   double ice_density = config.get("ice_density");
 
-  for (unsigned int q=0; q<FEQuadrature::Nq; q++)
-  {
+  for (unsigned int q=0; q<FEQuadrature::Nq; q++) {
     Enth_q[q] = new double[grid.Mz];
   }
 
@@ -375,8 +372,7 @@ PetscErrorCode SSAFEM::cacheQuadPtValues() {
     } // j-loop
   } // i-loop
 
-  for (unsigned int q = 0; q < FEQuadrature::Nq; q++)
-  {
+  for (unsigned int q = 0; q < FEQuadrature::Nq; q++) {
     delete [] Enth_q[q];
   }
 

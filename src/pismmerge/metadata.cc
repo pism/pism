@@ -30,12 +30,14 @@ int define_dimension(pism::NC4_Serial &input, pism::NC4_Serial &output, std::str
   bool exists;
 
   input.inq_dimid(dim_name, exists);
-  if (exists == false)
+  if (exists == false) {
     return 0;
+  }
 
   output.inq_dimid(dim_name, exists);
-  if (exists == true)
+  if (exists == true) {
     return 0;
+  }
 
   if (dim_name == "time") {
     output.def_dim("time", pism::PISM_UNLIMITED);
@@ -61,12 +63,14 @@ int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
   std::vector<std::string> dimensions;
 
   input.inq_varid(variable_name, exists);
-  if (exists == false)
+  if (exists == false) {
     return 0;
+  }
 
   output.inq_varid(variable_name, exists);
-  if (exists == true)
+  if (exists == true) {
     return 0;
+  }
 
   input.inq_vardimid(variable_name, dimensions);
 
@@ -74,11 +78,13 @@ int define_variable(pism::NC4_Serial &input, pism::NC4_Serial &output, std::stri
 
     std::string dim_name = dimensions[k];
 
-    if (dim_name == "x_patch")
+    if (dim_name == "x_patch") {
       dim_name = "x";
+    }
 
-    if (dim_name == "y_patch")
+    if (dim_name == "y_patch") {
       dim_name = "y";
+    }
 
     stat = define_dimension(input, output, dim_name); check(stat);
 

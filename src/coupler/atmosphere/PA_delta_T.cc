@@ -79,8 +79,9 @@ PetscErrorCode PA_delta_T::init_timeseries(const std::vector<double> &ts) {
   ierr = PAModifier::init_timeseries(ts); CHKERRQ(ierr);
 
   m_offset_values.resize(m_ts_times.size());
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     m_offset_values[k] = (*offset)(m_ts_times[k]);
+  }
 
   return 0;
 }
@@ -94,8 +95,9 @@ PetscErrorCode PA_delta_T::mean_annual_temp(IceModelVec2S &result) {
 PetscErrorCode PA_delta_T::temp_time_series(int i, int j, std::vector<double> &result) {
   PetscErrorCode ierr = input_model->temp_time_series(i, j, result); CHKERRQ(ierr);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k)
+  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] += m_offset_values[k];
+  }
 
   return 0;
 }

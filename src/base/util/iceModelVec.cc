@@ -431,8 +431,9 @@ PISMDM::Ptr IceModelVec::get_dm() const {
 PetscErrorCode  IceModelVec::set_name(const std::string &new_name, int N) {
   reset_attrs(N);
 
-  if (N == 0)
+  if (N == 0) {
     m_name = new_name;
+  }
 
   metadata(N).set_name(new_name);
 
@@ -448,7 +449,9 @@ PetscErrorCode IceModelVec::rename(const std::string &short_name, const std::str
                                    const std::string &standard_name, int N) {
 
   if (short_name.empty() == false) {
-    if (N == 0) m_name = short_name;
+    if (N == 0) {
+      m_name = short_name;
+    }
     metadata(N).set_name(short_name);
   }
 
@@ -748,8 +751,9 @@ PetscErrorCode  IceModelVec::end_access() const {
 //! Updates ghost points.
 PetscErrorCode  IceModelVec::update_ghosts() {
   PetscErrorCode ierr;
-  if (m_has_ghosts == false)
+  if (m_has_ghosts == false) {
     return 0;
+  }
 
   assert(m_v != NULL);
 #if PETSC_VERSION_LT(3,5,0)

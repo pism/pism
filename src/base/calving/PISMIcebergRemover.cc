@@ -69,10 +69,11 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M.grounded_ice(i,j) == true)
+      if (M.grounded_ice(i,j) == true) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      else if (M.floating_ice(i,j) == true)
+      } else if (M.floating_ice(i,j) == true) {
         m_iceberg_mask(i,j) = mask_floating_ice;
+      }
     }
 
     // Mark icy SSA Dirichlet B.C. cells as "grounded" because we
@@ -83,8 +84,9 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
       for (Points p(grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        if ((*m_bcflag)(i,j) > 0.5 && M.icy(i,j))
+        if ((*m_bcflag)(i,j) > 0.5 && M.icy(i,j)) {
           m_iceberg_mask(i,j) = mask_grounded_ice;
+        }
       }
     }
   }

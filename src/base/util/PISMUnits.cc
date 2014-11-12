@@ -99,8 +99,9 @@ Unit::Unit(const Unit &other)
 }
 
 Unit& Unit::operator=(const Unit& other) {
-  if (this == &other)
+  if (this == &other) {
     return *this;
+  }
 
   reset();
 

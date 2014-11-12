@@ -81,8 +81,9 @@ PetscErrorCode IceCompModel::initTestFG() {
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       ice_thickness(i, j) = 0.0;
-      for (int k = 0; k < Mz; k++)
+      for (int k = 0; k < Mz; k++) {
         T[k] = Tmin + ST * r;
+      }
     } else {
       r = PetscMax(r, 1.0); // avoid singularity at origin
       if (testname == 'F') {
@@ -149,8 +150,10 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
         bothexact(grid.time->current(), r, &grid.zlevels[0], grid.Mz, ApforG,
                   &dummy0, &accum, dummy1, dummy2, dummy3, dummy4, strain_heating_C);
       }
-      for (unsigned int k=0;  k<grid.Mz;  k++) // scale strain_heating to J/(s m^3)
+      for (unsigned int k=0;  k<grid.Mz;  k++) {
+        // scale strain_heating to J/(s m^3)
         strain_heating_C[k] = strain_heating_C[k] * ice_rho * ice_c;
+      }
       ierr = strain_heating3_comp.setInternalColumn(i, j, strain_heating_C); CHKERRQ(ierr);
     }
   }
@@ -522,8 +525,10 @@ PetscErrorCode IceCompModel::compute_strain_heating_errors(
       default:
         throw RuntimeError("strain-heating (strain_heating) errors only computable for tests F and G");
       }
-      for (unsigned int k = 0; k < grid.Mz; k++)
-        strain_heating_exact[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
+      for (unsigned int k = 0; k < grid.Mz; k++) {
+        // scale exact strain_heating to J/(s m^3)
+        strain_heating_exact[k] *= ice_rho * ice_c;
+      }
       const unsigned int ks = grid.kBelowHeight(ice_thickness(i,j));
       ierr = strain_heating3->getInternalColumn(i,j,&strain_heating); CHKERRQ(ierr);
       for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
@@ -736,9 +741,10 @@ PetscErrorCode BTU_Verification::bootstrap() {
     case 'K':
       for (unsigned int k=0; k<Mbz; k++) {
         if (exactK(grid.time->current(), zlevels[k], &Tbcol[k], &FF,
-                   (bedrock_is_ice==PETSC_TRUE)))
+                   (bedrock_is_ice==PETSC_TRUE))) {
           throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                         zlevels[k]);
+        }
       }
       break;
     case 'O':

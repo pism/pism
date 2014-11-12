@@ -220,8 +220,9 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
 PetscErrorCode IceCompModel::allocate_enthalpy_converter() {
 
-  if (EC != NULL)
+  if (EC != NULL) {
     return 0;
+  }
 
   // allocate the "special" enthalpy converter;
   EC = new ICMEnthalpyConverter(config);
@@ -232,8 +233,9 @@ PetscErrorCode IceCompModel::allocate_enthalpy_converter() {
 PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
   PetscErrorCode ierr;
 
-  if (btu != NULL)
+  if (btu != NULL) {
     return 0;
+  }
 
   // this switch changes Test K to make material properties for bedrock the same as for ice
   bool biiSet;
@@ -271,8 +273,9 @@ PetscErrorCode IceCompModel::allocate_bedrock_thermal_unit() {
 PetscErrorCode IceCompModel::allocate_stressbalance() {
   PetscErrorCode ierr;
 
-  if (stress_balance != NULL)
+  if (stress_balance != NULL) {
     return 0;
+  }
 
   if (testname == 'E') {
     config.set_flag("sia_sliding_verification_mode", true);
@@ -496,8 +499,9 @@ PetscErrorCode IceCompModel::initTestL() {
   // get soln to test L at these radii; solves ODE only once (on each processor)
   std::vector<double> rr(MM), HH(MM), bb(MM), aa(MM);
 
-  for (k = 0; k < MM; k++)
+  for (k = 0; k < MM; k++) {
     rr[k] = rrv[k].r;
+  }
 
   ierr = exactL_list(&rr[0], MM, &HH[0], &bb[0], &aa[0]);
   switch (ierr) {
@@ -550,8 +554,9 @@ PetscErrorCode IceCompModel::reset_thickness_tests_AE() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (grid.radius(i, j) > LforAE)
+    if (grid.radius(i, j) > LforAE) {
       ice_thickness(i, j) = 0;
+    }
   }
 
   ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
@@ -849,8 +854,9 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(double &exactmaxspeed, d
 PetscErrorCode IceCompModel::additionalAtStartTimestep() {
   PetscErrorCode    ierr;
 
-  if (exactOnly == PETSC_TRUE && testname != 'K')
+  if (exactOnly == PETSC_TRUE && testname != 'K') {
     dt_force = config.get("maximum_time_step_years", "years", "seconds");
+  }
 
   if (testname == 'F' || testname == 'G') {
     ierr = getCompSourcesTestFG(); CHKERRQ(ierr);
@@ -869,8 +875,9 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
 
   // do nothing at the end of the time step unless the user has asked for the
   // exact solution to overwrite the numerical solution
-  if (exactOnly == PETSC_FALSE)
+  if (exactOnly == PETSC_FALSE) {
     return 0;
+  }
 
   // because user wants exact solution, fill gridded values from exact formulas;
   // important notes:
@@ -958,8 +965,9 @@ PetscErrorCode IceCompModel::reportErrors() {
   ierr = OptionsIsSet("-no_report", "Don't report numerical errors",
                           dont_report); CHKERRQ(ierr);
 
-  if (dont_report)
+  if (dont_report) {
     return 0;
+  }
 
   IceFlowLaw* flow_law = stress_balance->get_ssb_modifier()->get_flow_law();
   if (testname != 'V' &&

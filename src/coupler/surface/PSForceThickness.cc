@@ -359,23 +359,27 @@ PetscErrorCode PSForceThickness::max_timestep(double my_t, double &my_dt, bool &
   ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
 
   if (restrict) {
-    if (max_dt > 0)
+    if (max_dt > 0) {
       my_dt = PetscMin(max_dt, my_dt);
+    }
+  } else {
+    my_dt = max_dt;
   }
-  else my_dt = max_dt;
 
-  if (my_dt > 0)
+  if (my_dt > 0) {
     restrict = true;
-  else
+  } else {
     restrict = false;
+  }
 
   return 0;
 }
 
 //! Adds variables to output files.
 void PSForceThickness::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  if (input_model != NULL)
+  if (input_model != NULL) {
     input_model->add_vars_to_output(keyword, result);
+  }
 
   if (keyword == "medium" || keyword == "big") {
     result.insert("ice_surface_temp");

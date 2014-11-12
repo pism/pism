@@ -77,16 +77,13 @@ PetscErrorCode PSElevation::init(Vars &vars) {
                                     limitsarray, &Nlimitsparam, &m_limits_set);
     PISM_PETSC_CHK(ierr, "PetscOptionsGetRealArray");
 
-    if (m_limits_set)
-      {
-        m_limit_min = grid.convert(limitsarray[0], "m year-1", "m s-1");
-        m_limit_max = grid.convert(limitsarray[1], "m year-1", "m s-1");
-      }
-    else
-      {
-        m_limit_min = m_min;
-        m_limit_max = m_max;
-      }
+    if (m_limits_set) {
+      m_limit_min = grid.convert(limitsarray[0], "m year-1", "m s-1");
+      m_limit_max = grid.convert(limitsarray[1], "m year-1", "m s-1");
+    } else {
+      m_limit_min = m_min;
+      m_limit_max = m_max;
+    }
 
   }
   ierr = PetscOptionsEnd();
@@ -114,15 +111,15 @@ PetscErrorCode PSElevation::init(Vars &vars) {
 
   climatic_mass_balance.set_string("pism_intent", "diagnostic");
   climatic_mass_balance.set_string("long_name",
-                  "surface mass balance (accumulation/ablation) rate");
+                                   "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
-                  "land_ice_surface_specific_mass_balance_flux");
+                                   "land_ice_surface_specific_mass_balance_flux");
   ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
   ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
-                  "ice temperature at the ice surface");
+                              "ice temperature at the ice surface");
   ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
@@ -140,10 +137,9 @@ PetscErrorCode PSElevation::init(Vars &vars) {
   // parameterizing the ice surface mass balance 'climatic_mass_balance'
   ierr = verbPrintf(2, grid.com, "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n"); CHKERRQ(ierr);
 
-  if (m_limits_set)
-    {
-      ierr = verbPrintf(2, grid.com, "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n"); CHKERRQ(ierr);
-    }
+  if (m_limits_set) {
+    ierr = verbPrintf(2, grid.com, "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n"); CHKERRQ(ierr);
+  }
 
   ierr = verbPrintf(2, grid.com,
                     "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"

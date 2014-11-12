@@ -222,16 +222,22 @@ int main(int argc, char *argv[]) {
 
       ierr = OptionsInt("-verbose", "Verbosity level",
                             my_verbosity_level, flag); CHKERRQ(ierr);
-      if (flag) setVerbosityLevel(my_verbosity_level);
+      if (flag) {
+        setVerbosityLevel(my_verbosity_level);
+      }
     }
     ierr = PetscOptionsEnd();
     PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
-    if (driver == "fem") ssafactory = SSAFEMFactory;
-    else if (driver == "fd") ssafactory = SSAFDFactory;
-    else { /* can't happen */ }
+    if (driver == "fem") {
+      ssafactory = SSAFEMFactory;
+    } else if (driver == "fd") {
+      ssafactory = SSAFDFactory;
+    } else {
+      /* can't happen */
+    }
 
     SSATestCaseExp testcase(com,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);

@@ -123,8 +123,9 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
 
     if (mask.icy(i, j)) {
       const double denom = PetscAbs(vel(i,j).u)/grid.dx + PetscAbs(vel(i,j).v)/grid.dy;
-      if (denom > 0.0)
+      if (denom > 0.0) {
         maxtimestep = PetscMin(maxtimestep, 1.0/denom);
+      }
     }
   }
 
@@ -428,8 +429,12 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
 
     // check horizontal CFL conditions at each point
     for (int k=0; k<=fks; k++) {
-      if (PetscAbs(u[k]) > CFL_x)  *CFLviol += 1.0;
-      if (PetscAbs(v[k]) > CFL_y)  *CFLviol += 1.0;
+      if (PetscAbs(u[k]) > CFL_x) {
+        *CFLviol += 1.0;
+      }
+      if (PetscAbs(v[k]) > CFL_y) {
+        *CFLviol += 1.0;
+      }
     }
   }
 

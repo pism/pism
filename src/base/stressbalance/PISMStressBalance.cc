@@ -268,28 +268,34 @@ PetscErrorCode StressBalance::compute_vertical_velocity(IceModelVec3 *u, IceMode
 
     // x-derivative
     {
-      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j)))
+      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j))) {
         east = 0;
-      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j)))
+      }
+      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j))) {
         west = 0;
+      }
 
-      if (east + west > 0)
+      if (east + west > 0) {
         D_x = 1.0 / (grid.dx * (east + west));
-      else
+      } else {
         D_x = 0.0;
+      }
     }
 
     // y-derivative
     {
-      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1)))
+      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1))) {
         north = 0;
-      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1)))
+      }
+      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1))) {
         south = 0;
+      }
 
-      if (north + south > 0)
+      if (north + south > 0) {
         D_y = 1.0 / (grid.dy * (north + south));
-      else
+      } else {
         D_y = 0.0;
+      }
     }
 
     double u_x = D_x * (west * (u_ij[0] - u_w[0]) + east * (u_e[0] - u_ij[0])),
@@ -446,28 +452,34 @@ PetscErrorCode StressBalance::compute_volumetric_strain_heating() {
 
     // x-derivative
     {
-      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j)))
+      if ((m.icy(i,j) && m.ice_free(i+1,j)) || (m.ice_free(i,j) && m.icy(i+1,j))) {
         east = 0;
-      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j)))
+      }
+      if ((m.icy(i,j) && m.ice_free(i-1,j)) || (m.ice_free(i,j) && m.icy(i-1,j))) {
         west = 0;
+      }
 
-      if (east + west > 0)
+      if (east + west > 0) {
         D_x = 1.0 / (grid.dx * (east + west));
-      else
+      } else {
         D_x = 0.0;
+      }
     }
 
     // y-derivative
     {
-      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1)))
+      if ((m.icy(i,j) && m.ice_free(i,j+1)) || (m.ice_free(i,j) && m.icy(i,j+1))) {
         north = 0;
-      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1)))
+      }
+      if ((m.icy(i,j) && m.ice_free(i,j-1)) || (m.ice_free(i,j) && m.icy(i,j-1))) {
         south = 0;
+      }
 
-      if (north + south > 0)
+      if (north + south > 0) {
         D_y = 1.0 / (grid.dy * (north + south));
-      else
+      } else {
         D_y = 0.0;
+      }
     }
 
 

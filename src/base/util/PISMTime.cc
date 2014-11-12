@@ -115,8 +115,9 @@ void Time::step(double delta_t) {
   // If we are less than 0.001 second from the end of the run, reset
   // m_time_in_seconds to avoid taking a very small (and useless) time step.
   if (m_run_end > m_time_in_seconds &&
-      m_run_end - m_time_in_seconds < 1e-3)
+      m_run_end - m_time_in_seconds < 1e-3) {
     m_time_in_seconds = m_run_end;
+  }
 }
 
 std::string Time::units_string() {
@@ -134,12 +135,14 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) {
     This is done to ignore the reference date in the time units string (the
     reference date specification always starts with this word).
   */
-  if (n != std::string::npos)
+  if (n != std::string::npos) {
     units.resize(n);
+  }
 
   // strip trailing spaces
-  while (ends_with(units, " ") && units.empty() == false)
-    units.resize(units.size() - 1); // this would fail on empty strings
+  while (ends_with(units, " ") && units.empty() == false) {
+    units.resize(units.size() - 1);  // this would fail on empty strings
+  }
 
   return units;
 }
@@ -253,15 +256,17 @@ std::string Time::run_length() {
 }
 
 double Time::mod(double time, unsigned int period_years) {
-  if (period_years == 0)
+  if (period_years == 0) {
     return time;
+  }
 
   double period_seconds = years_to_seconds(period_years);
 
   double tmp = time - floor(time / period_seconds) * period_seconds;
 
-  if (fabs(tmp - period_seconds) < 1)
+  if (fabs(tmp - period_seconds) < 1) {
     tmp = 0;
+  }
 
   return tmp;
 }
@@ -306,8 +311,9 @@ PetscErrorCode Time::parse_list(const std::string &spec, std::vector<double> &re
   std::istringstream arg(spec);
   std::string tmp;
 
-  while(getline(arg, tmp, ','))
+  while(getline(arg, tmp, ',')) {
     parts.push_back(tmp);
+  }
 
   result.clear();
   for (unsigned int k = 0; k < parts.size(); ++k) {
@@ -339,22 +345,25 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
   // check if it is a keyword
   if (spec == "hourly") {
     keyword = "simple";
-    if (result)
+    if (result) {
       *result = 3600;
+    }
     return 0;
   }
 
   if (spec == "daily") {
     keyword = "simple";
-    if (result)
+    if (result) {
       *result = 86400;
+    }
     return 0;
   }
 
   if (spec == "monthly" || spec == "yearly") {
     keyword = spec;
-    if (result)
+    if (result) {
       *result = 0;
+    }
     return 0;
   }
 
@@ -424,8 +433,9 @@ PetscErrorCode Time::parse_range(const std::string &spec, std::vector<double> &r
     std::vector<std::string> parts;
     std::string         tmp;
 
-    while(getline(arg, tmp, ':'))
+    while(getline(arg, tmp, ':')) {
       parts.push_back(tmp);
+    }
 
     if (parts.size() == 1) {
       errcode = parse_interval_length(parts[0], keyword, &delta);
@@ -478,8 +488,9 @@ PetscErrorCode Time::parse_date(const std::string &spec, double *result) {
     return 1;                   // FIXME: return code to indicate success/failure
   }
 
-  if (result)
+  if (result) {
     *result = years_to_seconds(d);
+  }
 
   return 0;
 }

@@ -90,8 +90,12 @@ PetscErrorCode IPDesignVariableParameterization::convertFromDesignVariable(IceMo
 PetscErrorCode IPDesignVariableParamIdent::toDesignVariable(double p, double *value,
                                           double *derivative)
 {
-  if (value != NULL) *value = m_d_scale*p;
-  if (derivative != NULL) *derivative = m_d_scale;
+  if (value != NULL) {
+    *value = m_d_scale*p;
+  }
+  if (derivative != NULL) {
+    *derivative = m_d_scale;
+  }
   return 0;
 }
 
@@ -105,8 +109,12 @@ PetscErrorCode IPDesignVariableParamIdent::fromDesignVariable(double d, double *
 PetscErrorCode IPDesignVariableParamSquare::toDesignVariable(double p, double *value,
                                            double *derivative)
 {
-  if (value != NULL) *value = m_d_scale*p*p;
-  if (derivative != NULL) *derivative = m_d_scale*2*p;
+  if (value != NULL) {
+    *value = m_d_scale*p*p;
+  }
+  if (derivative != NULL) {
+    *derivative = m_d_scale*2*p;
+  }
   return 0;
 }
 
@@ -137,14 +145,15 @@ PetscErrorCode IPDesignVariableParamExp::toDesignVariable(double p, double *valu
     *value = m_d_scale*exp(p);
   }
 
-  if (derivative != NULL) *derivative = m_d_scale*exp(p);
+  if (derivative != NULL) {
+    *derivative = m_d_scale*exp(p);
+  }
   return 0;
 }
 
 PetscErrorCode IPDesignVariableParamExp::fromDesignVariable(double d, double *OUTPUT)
 {
-  if (d < m_d_eps)
-  {
+  if (d < m_d_eps) {
     d = m_d_eps;
   }
   *OUTPUT = log(d / m_d_scale);
@@ -179,15 +188,18 @@ PetscErrorCode IPDesignVariableParamTruncatedIdent::toDesignVariable(double p,
                                                                      double *derivative)
 {
   double alpha = sqrt(p*p + 4*m_d0_sq);
-  if (value != NULL) *value = m_d_scale*(p + alpha)*0.5;
-  if (derivative != NULL) *derivative = m_d_scale*(1 + p / alpha)*0.5;
+  if (value != NULL) {
+    *value = m_d_scale*(p + alpha)*0.5;
+  }
+  if (derivative != NULL) {
+    *derivative = m_d_scale*(1 + p / alpha)*0.5;
+  }
   return 0;
 }
 
 PetscErrorCode IPDesignVariableParamTruncatedIdent::fromDesignVariable(double d, double *OUTPUT)
 {
-  if (d < m_d_eps)
-  {
+  if (d < m_d_eps) {
     d = m_d_eps;
   }
   double d_dimensionless = d / m_d_scale;

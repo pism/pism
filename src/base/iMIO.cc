@@ -303,9 +303,9 @@ PetscErrorCode IceModel::write_variables(const PIO &nc, const std::set<std::stri
   for (i = vars.begin(); i != vars.end();) {
     Diagnostic *diag = diagnostics[*i];
 
-    if (diag == NULL)
+    if (diag == NULL) {
       ++i;
-    else {
+    } else {
       v = NULL;
 
       ierr = diag->compute(v); CHKERRQ(ierr);
@@ -394,8 +394,9 @@ PetscErrorCode IceModel::initFromFile(const std::string &filename) {
       // of them a little later
       if (m.get_string("short_name") == "enthalpy" ||
           m.get_string("short_name") == "age"      ||
-          m.get_string("short_name") == "Href")
+          m.get_string("short_name") == "Href") {
         continue;
+      }
 
       ierr = var->read(filename, last_record); CHKERRQ(ierr);
     }
@@ -506,13 +507,15 @@ PetscErrorCode IceModel::regrid(int dimensions) {
     // defaults if user gives no regrid_vars list
     regrid_vars.insert("litho_temp");
 
-    if (config.get_flag("do_age"))
+    if (config.get_flag("do_age")) {
       regrid_vars.insert("age");
+    }
 
-    if (config.get_flag("do_cold_ice_methods"))
+    if (config.get_flag("do_cold_ice_methods")) {
       regrid_vars.insert("temp");
-    else
+    } else {
       regrid_vars.insert("enthalpy");
+    }
   }
 
   if (dimensions == 0) {
@@ -731,16 +734,18 @@ PetscErrorCode IceModel::write_snapshot() {
   char filename[PETSC_MAX_PATH_LEN];
 
   // determine if the user set the -save_times and -save_file options
-  if (!save_snapshots)
+  if (!save_snapshots) {
     return 0;
+  }
 
   // do we need to save *now*?
   if ((grid.time->current() >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size())) {
     saving_after = snapshot_times[current_snapshot];
 
     while ((current_snapshot < snapshot_times.size()) &&
-           (snapshot_times[current_snapshot] <= grid.time->current()))
+           (snapshot_times[current_snapshot] <= grid.time->current())) {
       current_snapshot++;
+    }
   } else {
     // we don't need to save now, so just return
     return 0;
@@ -818,10 +823,11 @@ PetscErrorCode IceModel::init_backups() {
   PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     ierr = OptionsString("-o", "Output file name", backup_filename, o_set); CHKERRQ(ierr);
-    if (!o_set)
+    if (!o_set) {
       backup_filename = executable_short_name + "_backup.nc";
-    else
+    } else {
       backup_filename = pism_filename_add_suffix(backup_filename, "_backup", "");
+    }
 
     ierr = OptionsReal("-backup_interval", "Automatic backup interval, hours",
                            backup_interval, o_set); CHKERRQ(ierr);
@@ -850,8 +856,9 @@ PetscErrorCode IceModel::write_backup() {
 
   MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
-  if (wall_clock_hours - last_backup_time < backup_interval)
+  if (wall_clock_hours - last_backup_time < backup_interval) {
     return 0;
+  }
 
   last_backup_time = wall_clock_hours;
 

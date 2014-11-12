@@ -109,8 +109,9 @@ PetscErrorCode Component::regrid(const std::string &module_name, IceModelVec *va
   ierr = PetscOptionsEnd();
   PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
-  if (file_set == false)
+  if (file_set == false) {
     return 0;
+  }
 
   NCSpatialVariable &m = variable->metadata();
 

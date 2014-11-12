@@ -84,10 +84,11 @@ PetscErrorCode Hydrology_bwprel::compute(IceModelVec* &output) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if ((*Po)(i,j) > 0.0)
+    if ((*Po)(i,j) > 0.0) {
       (*result)(i,j) /= (*Po)(i,j);
-    else
+    } else {
       (*result)(i,j) = fill;
+    }
   }
 
   output = result;

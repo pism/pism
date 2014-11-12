@@ -304,8 +304,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
       continue;
     } // end of if (ice_free_column)
 
-    if (system.lambda() < 1.0)
+    if (system.lambda() < 1.0) {
       *vertSacrCount += 1; // count columns with lambda < 1
+    }
 
     const bool is_floating = mask.ocean(i, j);
 
@@ -458,8 +459,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(double* vertSacrCount,
           // there is no available basal water
           basal_melt_rate(i, j) = ((*Rb)(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * L);
 
-          if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0)
+          if (till_water_thickness(i, j) <= 0 && basal_melt_rate(i, j) < 0) {
             basal_melt_rate(i, j) = 0.0;
+          }
         }
 
         // Add drained water from the column to basal melt rate.

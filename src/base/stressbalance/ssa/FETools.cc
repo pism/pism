@@ -46,33 +46,29 @@ FEElementMap::FEElementMap(const IceGrid &g) {
   // Now correct if needed. The only way there will not be ghosts is if the
   // grid is not periodic and we are up against the grid boundary.
 
-  if (!(g.periodicity & X_PERIODIC))
-    {
-      // Leftmost element has x-index 0.
-      if (xs < 0) {
-        xs = 0;
-      }
-      // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
-      if (xf > g.Mx - 2)
-        {
-          xf = g.Mx - 2;
-          lxf = g.Mx - 2;
-        }
+  if (!(g.periodicity & X_PERIODIC)) {
+    // Leftmost element has x-index 0.
+    if (xs < 0) {
+      xs = 0;
     }
+    // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
+    if (xf > g.Mx - 2) {
+      xf = g.Mx - 2;
+      lxf = g.Mx - 2;
+    }
+  }
 
-  if (!(g.periodicity & Y_PERIODIC))
-    {
-      // Bottom element has y-index 0.
-      if (ys < 0) {
-        ys = 0;
-      }
-      // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
-      if (yf > g.My - 2)
-        {
-          yf = g.My - 2;
-          lyf = g.My - 2;
-        }
+  if (!(g.periodicity & Y_PERIODIC)) {
+    // Bottom element has y-index 0.
+    if (ys < 0) {
+      ys = 0;
     }
+    // Topmost vertex has index g.My - 1, so the topmost element has index g.My - 2
+    if (yf > g.My - 2) {
+      yf = g.My - 2;
+      lyf = g.My - 2;
+    }
+  }
 
   // Tally up the number of elements in each direction
   xm = xf - xs + 1;
@@ -219,8 +215,9 @@ void FEDOFMap::markColInvalid(int k) {
 /*! The element-local residual should be an array of Nk values.*/
 void FEDOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].k == 1)
+    if (m_row[k].k == 1) {
       continue;
+    }
     yg[m_row[k].j][m_row[k].i].u += y[k].u;
     yg[m_row[k].j][m_row[k].i].v += y[k].v;
   }
@@ -228,16 +225,18 @@ void FEDOFMap::addLocalResidualBlock(const Vector2 *y, Vector2 **yg) {
 
 void FEDOFMap::addLocalResidualBlock(const double *y, double **yg) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].k == 1)
+    if (m_row[k].k == 1) {
       continue;
+    }
     yg[m_row[k].j][m_row[k].i] += y[k];
   }
 }
 
 void FEDOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].k == 1)
+    if (m_row[k].k == 1) {
       continue;
+    }
     y_global(m_row[k].j, m_row[k].i).u += y[k].u;
     y_global(m_row[k].j, m_row[k].i).v += y[k].v;
   }
@@ -245,8 +244,9 @@ void FEDOFMap::addLocalResidualBlock(const Vector2 *y, IceModelVec2V &y_global) 
 
 void FEDOFMap::addLocalResidualBlock(const double *y, IceModelVec2S &y_global) {
   for (unsigned int k = 0; k < Nk; k++) {
-    if (m_row[k].k == 1)
+    if (m_row[k].k == 1) {
       continue;
+    }
     y_global(m_row[k].j, m_row[k].i) += y[k];
   }
 }

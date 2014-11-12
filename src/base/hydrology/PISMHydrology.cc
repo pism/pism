@@ -326,8 +326,9 @@ PetscErrorCode Hydrology::get_input_rate(double hydro_t, double hydro_dt,
       if (inputtobed != NULL) {
         result(i,j) += (*inputtobed)(i,j);
       }
-    } else
+    } else {
       result(i,j) = 0.0;
+    }
   }
   return 0;
 }

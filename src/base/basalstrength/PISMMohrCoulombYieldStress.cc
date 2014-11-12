@@ -366,8 +366,9 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
   PetscErrorCode ierr;
 
   if ((fabs(my_t - m_t) < 1e-12) &&
-      (fabs(my_dt - m_dt) < 1e-12))
+      (fabs(my_dt - m_dt) < 1e-12)) {
     return 0;
+  }
 
   m_t = my_t; m_dt = my_dt;
   // this model does no internal time-stepping
