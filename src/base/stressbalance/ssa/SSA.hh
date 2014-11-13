@@ -152,7 +152,7 @@ public:
 
   virtual PetscErrorCode init(Vars &vars);
 
-  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
@@ -171,7 +171,7 @@ protected:
 
   virtual PetscErrorCode deallocate();
 
-  virtual PetscErrorCode solve() = 0;
+  virtual void solve() = 0;
 
   IceModelVec2Int *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;

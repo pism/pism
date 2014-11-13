@@ -103,14 +103,13 @@ PetscErrorCode SIA_Sliding::init(Vars &vars) {
 
   The strain heating contribution is ignored by this code.
  */
-PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
-  PetscErrorCode ierr;
+void SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   IceModelVec2Stag &h_x = work_2d_stag[0], &h_y = work_2d_stag[1];
 
   (void) fast;
   (void) melange_back_pressure;
 
-  ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+  compute_surface_gradient(h_x, h_y);
 
   double mu_sliding = config.get("mu_sliding"),
     minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding"),
@@ -166,12 +165,7 @@ PetscErrorCode SIA_Sliding::update(bool fast, IceModelVec2S &melange_back_pressu
     }
   }
 
-
-
-
-  ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  m_velocity.update_ghosts();
 }
 
 //! \brief Compute the coefficient of surface gradient, for basal sliding

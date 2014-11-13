@@ -110,7 +110,7 @@ protected:
 
   virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
 
-  virtual PetscErrorCode solve();
+  virtual void solve();
 
   virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
 

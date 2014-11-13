@@ -100,31 +100,31 @@ PetscErrorCode StressBalance::update(bool fast, double sea_level,
   // Tell the ShallowStressBalance object about the current sea level:
   m_stress_balance->set_sea_level_elevation(sea_level);
 
-  grid.profiling.begin("SSB");
-  ierr = m_stress_balance->update(fast, melange_back_pressure);
-  grid.profiling.end("SSB");
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: Shallow stress balance solver failed.\n");
-    return ierr;                // FIXME: return code to indicate success/failure
+  try {
+    grid.profiling.begin("SSB");
+    m_stress_balance->update(fast, melange_back_pressure);
+    grid.profiling.end("SSB");
+    ierr = m_stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);
+
+    grid.profiling.begin("SB modifier");
+    ierr = m_modifier->update(velocity_2d, fast); CHKERRQ(ierr);
+    grid.profiling.end("SB modifier");
+
+    if (fast == false) {
+
+      ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
+
+      grid.profiling.begin("SB strain heat");
+      ierr = this->compute_volumetric_strain_heating(); CHKERRQ(ierr);
+      grid.profiling.end("SB strain heat");
+
+      grid.profiling.begin("SB vert. vel.");
+      ierr = this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w); CHKERRQ(ierr);
+      grid.profiling.end("SB vert. vel.");
+    }
   }
-
-  ierr = m_stress_balance->get_2D_advective_velocity(velocity_2d); CHKERRQ(ierr);
-
-  grid.profiling.begin("SB modifier");
-  ierr = m_modifier->update(velocity_2d, fast); CHKERRQ(ierr);
-  grid.profiling.end("SB modifier");
-
-  if (fast == false) {
-
-    ierr = m_modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
-
-    grid.profiling.begin("SB strain heat");
-    ierr = this->compute_volumetric_strain_heating(); CHKERRQ(ierr);
-    grid.profiling.end("SB strain heat");
-
-    grid.profiling.begin("SB vert. vel.");
-    ierr = this->compute_vertical_velocity(u, v, m_basal_melt_rate, m_w); CHKERRQ(ierr);
-    grid.profiling.end("SB vert. vel.");
+  catch (RuntimeError &e) {
+    e.add_context("updating the stress balance");
   }
 
   return 0;

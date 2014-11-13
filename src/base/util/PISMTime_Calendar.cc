@@ -388,7 +388,7 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
   std::istringstream arg(spec);
 
   if (spec.empty() == true) {
-    goto failure;
+    goto failure; // FIXME: throw an exception instead
   }
 
   // ignore negative years
@@ -401,14 +401,14 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
 
     // an empty part in the date specification (corresponds to "--")
     if (tmp.empty() == true) {
-      goto failure;
+      goto failure; // FIXME: throw an exception instead
     }
 
     // check if strtol can parse it:
     char *endptr = NULL;
     long int n = strtol(tmp.c_str(), &endptr, 10);
     if (*endptr != '\0') {
-      goto failure;
+      goto failure; // FIXME: throw an exception instead
     }
 
     // FIXME: this may overflow!
@@ -417,7 +417,7 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
 
   // wrong number of parts in the YYYY-MM-DD date:
   if (numbers.size() != 3) {
-    goto failure;
+    goto failure; // FIXME: throw an exception instead
   }
 
   if (year_is_negative) {
@@ -434,14 +434,14 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
     if (errcode != 0) {
       PetscPrintf(m_com, "PISM ERROR: date %s is invalid in the %s calendar\n",
                   spec.c_str(), m_calendar_string.c_str());
-      goto failure;
+      goto failure; // FIXME: throw an exception instead
     }
 
     double time;
     errcode = utInvCalendar2_cal(numbers[0], numbers[1], numbers[2], 0, 0, 0.0,
                                  m_time_units.get(), &time, m_calendar_string.c_str());
     if (errcode != 0) {
-      goto failure;
+      goto failure; // FIXME: throw an exception instead
     }
 
     *result = time;

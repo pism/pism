@@ -60,8 +60,7 @@ public:
   void set_sea_level_elevation(double new_sea_level)
   { sea_level = new_sea_level; }
 
-  virtual PetscErrorCode update(bool fast,
-                                IceModelVec2S &melange_back_pressure) = 0;
+  virtual void update(bool fast, IceModelVec2S &melange_back_pressure) = 0;
 
   // interface to the data provided by the stress balance object:
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -86,10 +85,10 @@ public:
   virtual PetscErrorCode compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                              IceModelVec2 &result);
 
-  virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2V &velocity,
-                                                          IceModelVec2S &tauc,
-                                                          IceModelVec2Int &mask,
-                                                          IceModelVec2S &result);
+  virtual void compute_basal_frictional_heating(IceModelVec2V &velocity,
+                                                IceModelVec2S &tauc,
+                                                IceModelVec2Int &mask,
+                                                IceModelVec2S &result);
   // helpers:
 
   //! \brief Extends the computational grid (vertically).
@@ -180,7 +179,7 @@ public:
   ZeroSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
   virtual ~ZeroSliding();
   
-  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/);
 
@@ -198,7 +197,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(IceGrid &g, EnthalpyConverter &e, const Config &conf);
   virtual ~PrescribedSliding();
-  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
   virtual PetscErrorCode init(Vars &vars);
 };
 

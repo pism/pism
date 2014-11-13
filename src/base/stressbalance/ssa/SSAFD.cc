@@ -30,6 +30,21 @@ namespace pism {
 
 using namespace mask;
 
+SSAFD::ZeroPivot::ZeroPivot()
+  : RuntimeError("SSAFD solver failure: zero pivot detected") {
+  // empty
+}
+
+SSAFD::KSPFailure::KSPFailure(const char* reason)
+  : RuntimeError(std::string("SSAFD KSP (linear solver) failed: ") + reason){
+  // empty
+}
+
+SSAFD::PicardFailure::PicardFailure(const std::string &message)
+  : RuntimeError("SSAFD Picard iterations failed: " + message) {
+  // empty
+}
+
 SSA* SSAFDFactory(IceGrid &g, EnthalpyConverter &ec, const Config &c) {
   return new SSAFD(g,ec,c);
 }
@@ -55,27 +70,21 @@ PetscErrorCode SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;
   PC pc;
 
-  ierr = KSPSetType(m_KSP, KSPGMRES);
-  PISM_PETSC_CHK(ierr, "KSPSetType");
+  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
 #else
-  ierr = KSPSetOperators(m_KSP, m_A, m_A);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
 #endif
 
   // Get the PC from the KSP solver:
-  ierr = KSPGetPC(m_KSP, &pc);
-  PISM_PETSC_CHK(ierr, "KSPGetPC");
+  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
 
   // Set the PC type:
-  ierr = PCSetType(pc, PCBJACOBI);
-  PISM_PETSC_CHK(ierr, "PCSetType");
+  ierr = PCSetType(pc, PCBJACOBI); CHKERRQ(ierr);
 
   // Process options:
-  ierr = KSPSetFromOptions(m_KSP);
-  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
+  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
 
   return 0;
 }
@@ -87,27 +96,21 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   // Set parameters equivalent to
   // -ksp_type gmres -ksp_norm_type unpreconditioned -ksp_pc_side right -pc_type asm -sub_pc_type lu
 
-  ierr = KSPSetType(m_KSP, KSPGMRES);
-  PISM_PETSC_CHK(ierr, "KSPSetType");
+  ierr = KSPSetType(m_KSP, KSPGMRES); CHKERRQ(ierr);
 #if PETSC_VERSION_LT(3,5,0)
-  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  ierr = KSPSetOperators(m_KSP, m_A, m_A, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
 #else
-  ierr = KSPSetOperators(m_KSP, m_A, m_A);
-  PISM_PETSC_CHK(ierr, "KSPSetOperators");
+  ierr = KSPSetOperators(m_KSP, m_A, m_A); CHKERRQ(ierr);
 #endif
     
   // Switch to using the "unpreconditioned" norm.
-  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED);
-  PISM_PETSC_CHK(ierr, "KSPSetNormType");
+  ierr = KSPSetNormType(m_KSP, KSP_NORM_UNPRECONDITIONED); CHKERRQ(ierr);
 
   // Switch to "right" preconditioning.
-  ierr = KSPSetPCSide(m_KSP, PC_RIGHT);
-  PISM_PETSC_CHK(ierr, "KSPSetPCSide");
+  ierr = KSPSetPCSide(m_KSP, PC_RIGHT); CHKERRQ(ierr);
 
   // Get the PC from the KSP solver:
-  ierr = KSPGetPC(m_KSP, &pc);
-  PISM_PETSC_CHK(ierr, "KSPGetPC");
+  ierr = KSPGetPC(m_KSP, &pc); CHKERRQ(ierr);
   
   // Set the PC type:
   ierr = PCSetType(pc, PCASM); CHKERRQ(ierr);
@@ -117,19 +120,16 @@ PetscErrorCode SSAFD::pc_setup_asm() {
   ierr = PCSetUp(pc); CHKERRQ(ierr);
   ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp); CHKERRQ(ierr);
 
-  ierr = KSPSetType(*sub_ksp, KSPPREONLY);
-  PISM_PETSC_CHK(ierr, "KSPSetType");
+  ierr = KSPSetType(*sub_ksp, KSPPREONLY); CHKERRQ(ierr);
 
   // Set the PC of the sub-KSP to "LU".
-  ierr = KSPGetPC(*sub_ksp, &sub_pc);
-  PISM_PETSC_CHK(ierr, "KSPGetPC");
+  ierr = KSPGetPC(*sub_ksp, &sub_pc); CHKERRQ(ierr);
 
   ierr = PCSetType(sub_pc, PCLU); CHKERRQ(ierr);
     
   // Let the user override all this:
   // Process options:
-  ierr = KSPSetFromOptions(m_KSP);
-  PISM_PETSC_CHK(ierr, "KSPSetFromOptions");
+  ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
 
   return 0;
 }
@@ -144,59 +144,38 @@ linear systems
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 PetscErrorCode SSAFD::allocate_fd() {
-  PetscErrorCode ierr;
 
-  fracture_density = NULL;
-  m_melange_back_pressure = NULL;
+  m_b.create(grid, "right_hand_side", WITHOUT_GHOSTS);
 
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = DMCreateMatrix(*m_da, MATAIJ, &m_A); CHKERRQ(ierr);
-#else
-  ierr = DMSetMatType(*m_da, MATAIJ); CHKERRQ(ierr);
-  ierr = DMCreateMatrix(*m_da, &m_A); CHKERRQ(ierr);
-#endif
-
-  ierr = KSPCreate(grid.com, &m_KSP);
-  PISM_PETSC_CHK(ierr, "KSPCreate");
-  ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
-  PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
-
-  // Use non-zero initial guess (i.e. SSA velocities from the last
-  // solve() call).
-  ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE);
-  PISM_PETSC_CHK(ierr, "KSPSetInitialGuessNonzero");
-
-  ierr = m_b.create(grid, "right_hand_side", WITHOUT_GHOSTS); CHKERRQ(ierr);
-
-  ierr = m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = m_velocity_old.set_attrs("internal",
-                                  "old SSA velocity field; used for re-trying with a different epsilon",
-                                  "m s-1", ""); CHKERRQ(ierr);
+  m_velocity_old.create(grid, "velocity_old", WITH_GHOSTS);
+  m_velocity_old.set_attrs("internal",
+                           "old SSA velocity field; used for re-trying with a different epsilon",
+                           "m s-1", "");
   
   const double power = 1.0 / flow_law->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
-  ierr = hardness.create(grid, "hardness", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = hardness.set_attrs("diagnostic",
-                            "vertically-averaged ice hardness",
-                            unitstr, ""); CHKERRQ(ierr);
+  hardness.create(grid, "hardness", WITHOUT_GHOSTS);
+  hardness.set_attrs("diagnostic",
+                     "vertically-averaged ice hardness",
+                     unitstr, "");
 
-  ierr = nuH.create(grid, "nuH", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = nuH.set_attrs("internal",
-                       "ice thickness times effective viscosity",
-                       "Pa s m", ""); CHKERRQ(ierr);
+  nuH.create(grid, "nuH", WITH_GHOSTS);
+  nuH.set_attrs("internal",
+                "ice thickness times effective viscosity",
+                "Pa s m", "");
 
-  ierr = nuH_old.create(grid, "nuH_old", WITH_GHOSTS); CHKERRQ(ierr);
-  ierr = nuH_old.set_attrs("internal",
-                           "ice thickness times effective viscosity (before an update)",
-                           "Pa s m", ""); CHKERRQ(ierr);
+  nuH_old.create(grid, "nuH_old", WITH_GHOSTS);
+  nuH_old.set_attrs("internal",
+                    "ice thickness times effective viscosity (before an update)",
+                    "Pa s m", "");
 
-  ierr = m_work.create(grid, "m_work", WITH_GHOSTS,
-                       2, /* stencil width */
-                       6  /* dof */); CHKERRQ(ierr);
-  ierr = m_work.set_attrs("internal",
-                          "temporary storage used to compute nuH",
-                          "", ""); CHKERRQ(ierr);
+  m_work.create(grid, "m_work", WITH_GHOSTS,
+                2, /* stencil width */
+                6  /* dof */);
+  m_work.set_attrs("internal",
+                   "temporary storage used to compute nuH",
+                   "", "");
 
   m_scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
@@ -206,6 +185,30 @@ PetscErrorCode SSAFD::allocate_fd() {
   nuh_viewer = NULL;
 
   dump_system_matlab = false;
+
+  fracture_density = NULL;
+  m_melange_back_pressure = NULL;
+  
+  // PETSc objects and settings
+  {
+    PetscErrorCode ierr;
+#if PETSC_VERSION_LT(3,5,0)
+    ierr = DMCreateMatrix(*m_da, MATAIJ, &m_A); CHKERRQ(ierr);
+#else
+    ierr = DMSetMatType(*m_da, MATAIJ); CHKERRQ(ierr);
+    ierr = DMCreateMatrix(*m_da, &m_A); CHKERRQ(ierr);
+#endif
+
+    ierr = KSPCreate(grid.com, &m_KSP);
+    PISM_PETSC_CHK(ierr, "KSPCreate");
+    ierr = KSPSetOptionsPrefix(m_KSP, "ssafd_");
+    PISM_PETSC_CHK(ierr, "KSPSetOptionsPrefix");
+
+    // Use non-zero initial guess (i.e. SSA velocities from the last
+    // solve() call).
+    ierr = KSPSetInitialGuessNonzero(m_KSP, PETSC_TRUE);
+    PISM_PETSC_CHK(ierr, "KSPSetInitialGuessNonzero");
+  }
 
   return 0;
 }
@@ -240,8 +243,7 @@ PetscErrorCode SSAFD::init(Vars &vars) {
   ierr = verbPrintf(2,grid.com,
                     "  [using the KSP-based finite difference implementation]\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "SSAFD options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
+  // options
   {
     bool flag;
     ierr = OptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
@@ -249,8 +251,6 @@ PetscErrorCode SSAFD::init(Vars &vars) {
     ierr = OptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer",
                             view_nuh); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (config.get_flag("calving_front_stress_boundary_condition")) {
     ierr = verbPrintf(2,grid.com,
@@ -275,14 +275,10 @@ PetscErrorCode SSAFD::init(Vars &vars) {
   return 0;
 }
 
-PetscErrorCode SSAFD::update(bool fast, IceModelVec2S& melange_back_pressure) {
-  PetscErrorCode ierr;
-
+void SSAFD::update(bool fast, IceModelVec2S& melange_back_pressure) {
   m_melange_back_pressure = &melange_back_pressure;
 
-  ierr = SSA::update(fast, melange_back_pressure); CHKERRQ(ierr);
-
-  return 0;
+  SSA::update(fast, melange_back_pressure);
 }
 
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the
@@ -820,8 +816,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   int zero_pivot_flag_global = 0;
   MPI_Allreduce(&zero_pivot_flag, &zero_pivot_flag_global, 1, MPI_INT, MPI_MAX, grid.com);
   if (zero_pivot_flag_global != 0) {
-    fprintf(stderr, "PISM ERROR: zero pivot detected.\n");
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw ZeroPivot();
   }
 
   return 0;
@@ -883,74 +878,109 @@ but it may be worthwhile.  Note the user can already do `-pc_type asm
 
 FIXME: update this doxygen comment
 */
-PetscErrorCode SSAFD::solve() {
-  PetscErrorCode ierr;
+void SSAFD::solve() {
 
   // Store away old SSA velocity (it might be needed in case a solver
   // fails).
-  ierr = m_velocity.copy_to(m_velocity_old); CHKERRQ(ierr);
+  m_velocity.copy_to(m_velocity_old);
 
+  // These computations do not depend on the solution, so they need to
+  // be done once.
   {
-    // These computations do not depend on the solution, so they need
-    // to be done once.
-    ierr = assemble_rhs(); CHKERRQ(ierr);
-    ierr = compute_hardav_staggered(); CHKERRQ(ierr);
+    assemble_rhs();
+    compute_hardav_staggered();
   }
 
-  // Try with default settings:
-  {
-    if (m_default_pc_failure_count < m_default_pc_failure_max_count) {
-      ierr = pc_setup_bjacobi(); CHKERRQ(ierr);
+  for (unsigned int k = 0; k < 3; ++k) {
+    try {
+      if (k == 0) {
+        // default strategy
+        picard_iteration(config.get("epsilon_ssa"), 1.0);
+
+        break;
+      } else if (k == 1) {
+        // try underrelaxing the iteration
+        const double underrelax = config.get("ssafd_nuH_iter_failure_underrelaxation");
+        verbPrintf(1, grid.com,
+                   "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
+                   underrelax);
+        picard_iteration(config.get("epsilon_ssa"), underrelax);
+
+        break;
+      } else if (k == 2) {
+        // try over-regularization
+        picard_strategy_regularization();
+
+        break;
+      } else {
+        // if we reached this, then all strategies above failed
+        write_system_petsc("all_strategies_failed");
+        throw RuntimeError("all SSAFD strategies failed");
+      }
+    } catch (PicardFailure) {
+      // proceed to the next strategy
     }
-
-    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
-                            config.get("ssafd_relative_convergence"),
-                            config.get("epsilon_ssa"),
-                            1.0);
-  }
-
-  if (ierr == 1) {
-    // if KSP diverged (i.e. linear solver failure) then try different linear solver
-    ierr = strategy_2_asm();
-  }
-
-  if (ierr == 2) {
-    // if effective viscosity (i.e. outer) iteration failure then try underrelaxing the iteration
-    const double underrelax = config.get("ssafd_nuH_iter_failure_underrelaxation");
-    ierr = verbPrintf(1, grid.com,
-                      "  re-trying with effective viscosity under-relaxation (parameter = %.2f) ...\n",
-                      underrelax); CHKERRQ(ierr);
-    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
-                            config.get("ssafd_relative_convergence"),
-                            config.get("epsilon_ssa"),
-                            underrelax);
-  }
-
-  if (ierr != 0) {
-    // try again the old strategy ... it never worked that well ...
-    m_default_pc_failure_count += 1;
-    ierr = strategy_1_regularization();
-  }
-
-  if (ierr != 0) {
-    PetscPrintf(grid.com,
-                "PISM ERROR: all SSAFD strategies failed.\n");
-    write_system_petsc("allstrategiesfailed");
-    return ierr;                // FIXME: return code to indicate success/failure
   }
 
   if (dump_system_matlab) {
-    ierr = write_system_matlab(""); CHKERRQ(ierr);
+    write_system_matlab("");
   }
-  
+
+  // Post-process velocities if the user asked for it:
   if (config.get_flag("brutal_sliding")) {
     const double brutal_sliding_scaleFactor = config.get("brutal_sliding_scale");
-    ierr = m_velocity.scale(brutal_sliding_scaleFactor); CHKERRQ(ierr);
+    m_velocity.scale(brutal_sliding_scaleFactor);
 
-    ierr = m_velocity.update_ghosts(); CHKERRQ(ierr);
+    m_velocity.update_ghosts();
   }
+}
 
-  return 0;
+void SSAFD::picard_iteration(double nuH_regularization,
+                             double nuH_iter_failure_underrelax) {
+  if (m_default_pc_failure_count < m_default_pc_failure_max_count) {
+    // Give BJACOBI another shot if we haven't tried it enough yet
+
+    try {
+
+      PetscErrorCode ierr = pc_setup_bjacobi();
+      if (ierr != 0) {
+        throw RuntimeError("SSAFD::pc_setup_bjacobi() failed");
+      }
+      picard_manager(nuH_regularization,
+                     nuH_iter_failure_underrelax);
+
+    }
+    catch (KSPFailure) {
+
+      m_default_pc_failure_count += 1;
+
+      verbPrintf(1, grid.com,
+                 "  re-trying using the Additive Schwarz preconditioner...\n");
+
+      PetscErrorCode ierr = pc_setup_asm();
+      if (ierr != 0) {
+        throw RuntimeError("SSAFD::pc_setup_asm() failed");
+      }
+
+  
+      m_velocity.copy_from(m_velocity_old);
+
+      picard_manager(nuH_regularization,
+                     nuH_iter_failure_underrelax);
+
+    }
+
+  } else {
+    // otherwise use ASM
+
+    PetscErrorCode ierr = pc_setup_asm();
+    if (ierr != 0) {
+      throw RuntimeError("SSAFD::pc_setup_asm() failed");
+    }
+    picard_manager(nuH_regularization,
+                   nuH_iter_failure_underrelax);
+
+  }
 }
 
 //! \brief Manages the Picard iteration loop.
@@ -960,32 +990,32 @@ PetscErrorCode SSAFD::solve() {
  * Picard iteration failed to converge.
  *
  */
-PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
-                                       double ssa_relative_tolerance,
-                                       double nuH_regularization,
-                                       double nuH_iter_failure_underrelax) {
+void SSAFD::picard_manager(double nuH_regularization,
+                           double nuH_iter_failure_underrelax) {
   PetscErrorCode ierr;
   double   nuH_norm, nuH_norm_change;
   PetscInt    ksp_iterations, ksp_iterations_total = 0, outer_iterations;
   KSPConvergedReason  reason;
 
+  unsigned int max_iterations = static_cast<int>(config.get("max_iterations_ssafd"));
+  double ssa_relative_tolerance = config.get("ssafd_relative_convergence");
   char tempstr[100] = "";
   bool verbose = getVerbosityLevel() >= 2,
     very_verbose = getVerbosityLevel() > 2;
 
   // set the initial guess:
-  ierr = m_velocity.copy_to(m_velocity_global); CHKERRQ(ierr);
+  m_velocity.copy_to(m_velocity_global);
 
   stdout_ssa.clear();
 
   bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   if (use_cfbc == true) {
-    ierr = compute_nuH_staggered_cfbc(nuH, nuH_regularization); CHKERRQ(ierr);
+    compute_nuH_staggered_cfbc(nuH, nuH_regularization);
   } else {
-    ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+    compute_nuH_staggered(nuH, nuH_regularization);
   }
-  ierr = update_nuH_viewers(); CHKERRQ(ierr);
+  update_nuH_viewers();
 
   // outer loop
   for (unsigned int k = 0; k < max_iterations; ++k) {
@@ -996,10 +1026,10 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     }
 
     // in preparation of measuring change of effective viscosity:
-    ierr = nuH.copy_to(nuH_old); CHKERRQ(ierr);
+    nuH.copy_to(nuH_old);
 
     // assemble (or re-assemble) matrix, which depends on updated viscosity
-    ierr = assemble_matrix(true, m_A); CHKERRQ(ierr);
+    assemble_matrix(true, m_A);
 
     if (very_verbose) {
       
@@ -1012,10 +1042,10 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     PISM_PETSC_CHK(ierr, "KSPSetOperators");
 #else
     ierr = KSPSetOperators(m_KSP, m_A, m_A);
-    PISM_PETSC_CHK(ierr, "KSPSetOperators");
+    PISM_PETSC_CHK(ierr, "KSPSetOperator");
 #endif
     ierr = KSPSolve(m_KSP, m_b.get_vec(), m_velocity_global.get_vec());
-    PISM_PETSC_CHK(ierr, "KSPSolve"); // SOLVE
+    PISM_PETSC_CHK(ierr, "KSPSolve");
 
     // Check if diverged; report to standard out about iteration
     ierr = KSPGetConvergedReason(m_KSP, &reason);
@@ -1023,15 +1053,15 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 
     if (reason < 0) {
       // KSP diverged
-      ierr = verbPrintf(1, grid.com,
-                        "PISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
-                        reason, KSPConvergedReasons[reason]); CHKERRQ(ierr);
+      verbPrintf(1, grid.com,
+                 "PISM WARNING:  KSPSolve() reports 'diverged'; reason = %d = '%s'\n",
+                 reason, KSPConvergedReasons[reason]);
 
-      ierr = write_system_petsc("kspdivergederror"); CHKERRQ(ierr);
+      write_system_petsc("kspdivergederror");
 
       // Tell the caller that we failed. (The caller might try again,
       // though.)
-      return 1;                 // FIXME: return code to indicate success/failure
+      throw KSPFailure(KSPConvergedReasons[reason]);
     }
 
     // report on KSP success; the "inner" iteration is done
@@ -1047,21 +1077,22 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     // Communicate so that we have stencil width for evaluation of effective
     // viscosity on next "outer" iteration (and geometry etc. if done):
     // Note that copy_from() updates ghosts of m_velocity.
-    ierr = m_velocity_global.copy_to(m_velocity); CHKERRQ(ierr);
+    m_velocity_global.copy_to(m_velocity);
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc == true) {
-      ierr = compute_nuH_staggered_cfbc(nuH, nuH_regularization); CHKERRQ(ierr);
+      compute_nuH_staggered_cfbc(nuH, nuH_regularization);
     } else {
-      ierr = compute_nuH_staggered(nuH, nuH_regularization); CHKERRQ(ierr);
+      compute_nuH_staggered(nuH, nuH_regularization);
     }
-    if (nuH_iter_failure_underrelax != 1.0) {
-      ierr = nuH.scale(nuH_iter_failure_underrelax); CHKERRQ(ierr);
-      ierr = nuH.add(1.0 - nuH_iter_failure_underrelax, nuH_old); CHKERRQ(ierr);
-    }
-    ierr = compute_nuH_norm(nuH_norm, nuH_norm_change); CHKERRQ(ierr);
 
-    ierr = update_nuH_viewers(); CHKERRQ(ierr);
+    if (nuH_iter_failure_underrelax != 1.0) {
+      nuH.scale(nuH_iter_failure_underrelax);
+      nuH.add(1.0 - nuH_iter_failure_underrelax, nuH_old);
+    }
+    compute_nuH_norm(nuH_norm, nuH_norm_change);
+
+    update_nuH_viewers();
 
     if (very_verbose) {
       snprintf(tempstr, 100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
@@ -1071,7 +1102,7 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
 
       // assume that high verbosity shows interest in immediate
       // feedback about SSA iterations
-      ierr = verbPrintf(2, grid.com, stdout_ssa.c_str()); CHKERRQ(ierr);
+      verbPrintf(2, grid.com, stdout_ssa.c_str());
 
       stdout_ssa.clear();
     }
@@ -1079,7 +1110,6 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
     outer_iterations = k + 1;
 
     if (nuH_norm == 0 || nuH_norm_change / nuH_norm < ssa_relative_tolerance) {
-      
       goto done;
     }
     
@@ -1088,12 +1118,13 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
   // If we're here, it means that we exceeded max_iterations and still
   // failed.
 
-  ierr = verbPrintf(1, grid.com,
-                    "PISM WARNING: Effective viscosity not converged after %d outer iterations\n"
-                    "  with nuH_regularization=%8.2e.\n",
-                    max_iterations, nuH_regularization); CHKERRQ(ierr);
+  char buffer[TEMPORARY_STRING_LENGTH];
+  snprintf(buffer, sizeof(buffer),
+           "effective viscosity not converged after %d iterations\n"
+           "with nuH_regularization=%8.2e.",
+           max_iterations, nuH_regularization);
 
-  return 2;                     // FIXME: return code to indicate success/failure
+  throw PicardFailure(buffer);
 
  done:
 
@@ -1111,15 +1142,12 @@ PetscErrorCode SSAFD::picard_iteration(unsigned int max_iterations,
   }
 
   if (verbose) {
-    
     stdout_ssa = "  SSA: " + stdout_ssa;
   }
-
-  return 0;
 }
 
 //! Old SSAFD recovery strategy: increase the SSA regularization parameter.
-PetscErrorCode SSAFD::strategy_1_regularization() {
+PetscErrorCode SSAFD::picard_strategy_regularization() {
   PetscErrorCode ierr;
   // this has no units; epsilon goes up by this ratio when previous value failed
   const double DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
@@ -1127,10 +1155,8 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
   unsigned int k = 0, max_tries = 5;
 
   if (nuH_regularization <= 0.0) {
-      ierr = verbPrintf(1, grid.com,
-                        "PISM WARNING: will not attempt over-regularization of nuH\n"
-                        "  because nuH_regularization == 0.0.\n"); CHKERRQ(ierr);
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw PicardFailure("will not attempt over-regularization of nuH\n"
+                        "because nuH_regularization == 0.0.");
   }
   
   while (k < max_tries) {
@@ -1141,43 +1167,22 @@ PetscErrorCode SSAFD::strategy_1_regularization() {
 
     nuH_regularization *= DEFAULT_EPSILON_MULTIPLIER_SSA;
 
-
-    ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
-                            config.get("ssafd_relative_convergence"),
-                            nuH_regularization,
-                            1.0);
-    if (ierr == 0) {
-      
+    try {
+      // 1.0 is the under-relaxation parameter
+      picard_iteration(config.get("epsilon_ssa"), 1.0);
+      // if this call succeeded, stop over-regularizing
       break;
     }
+    catch (PicardFailure) {
+      k += 1;
 
-    k += 1;
-
-    if (ierr != 0 && k == max_tries) {
-      return ierr;              // FIXME: return code to indicate success/failure
+      if (k == max_tries) {
+        throw PicardFailure("exceeded the max. number of nuH over-regularization attempts");
+      }
     }
   }
 
   return 0;
-}
-
-//! New SSAFD strategy: switch to direct solves on sub-domains.
-PetscErrorCode SSAFD::strategy_2_asm() {
-  PetscErrorCode ierr;
-
-  ierr = pc_setup_asm(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(1, grid.com,
-                    "  re-trying using the Additive Schwarz preconditioner...\n"); CHKERRQ(ierr);
-  
-  ierr = m_velocity.copy_from(m_velocity_old); CHKERRQ(ierr);
-
-  ierr = picard_iteration(static_cast<int>(config.get("max_iterations_ssafd")),
-                          config.get("ssafd_relative_convergence"),
-                          config.get("epsilon_ssa"),
-                          1.0);
-
-  return ierr;                  // FIXME: return code to indicate success/failure
 }
 
 //! \brief Compute the norm of nu H and the change in nu H.
@@ -1720,13 +1725,10 @@ PetscErrorCode SSAFD::write_system_petsc(const std::string &namepart) {
                     CHKERRQ(ierr);
   PetscViewer viewer;
   ierr = PetscViewerBinaryOpen(grid.com, filename.c_str(), FILE_MODE_WRITE,
-                               &viewer);
-  PISM_PETSC_CHK(ierr, "PetscViewerBinaryOpen");
+                               &viewer); CHKERRQ(ierr);
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
-  ierr = VecView(m_b.get_vec(), viewer);
-  PISM_PETSC_CHK(ierr, "VecView");
-  ierr = PetscViewerDestroy(&viewer);
-  PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
+  ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1753,14 +1755,10 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
   ierr = verbPrintf(2, grid.com,
                     "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
                     file_name.c_str()); CHKERRQ(ierr);
-  ierr = PetscViewerCreate(grid.com, &viewer);
-  PISM_PETSC_CHK(ierr, "PetscViewerCreate");
-  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII);
-  PISM_PETSC_CHK(ierr, "PetscViewerSetType");
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
-  PISM_PETSC_CHK(ierr, "PetscViewerSetFormat");
-  ierr = PetscViewerFileSetName(viewer, file_name.c_str());
-  PISM_PETSC_CHK(ierr, "PetscViewerFileSetName");
+  ierr = PetscViewerCreate(grid.com, &viewer); CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSCVIEWERASCII); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB); CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name.c_str()); CHKERRQ(ierr);
 
   // get the command which started the run
   std::string cmdstr = pism_args_string();
@@ -1778,43 +1776,30 @@ PetscErrorCode SSAFD::write_system_matlab(const std::string &namepart) {
     "%% Also writes i-offsetvalues of vertically-integrated viscosity\n"
     "%% (nuH_0 = nu * H), and j-offset version of same thing (nuH_1 = nu * H);\n"
     "%% these are on the staggered grid.\n",
-                                cmdstr.c_str());
-  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+                                cmdstr.c_str()); CHKERRQ(ierr);
 
-  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");
-  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
-  ierr = PetscObjectSetName((PetscObject) m_A,"A");
-  PISM_PETSC_CHK(ierr, "PetscObjectSetName");
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n"); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) m_A,"A"); CHKERRQ(ierr);
   ierr = MatView(m_A, viewer); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");
-  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n"); CHKERRQ(ierr);
 
-  ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs");
-  PISM_PETSC_CHK(ierr, "PetscObjectSetName");
-  ierr = VecView(m_b.get_vec(), viewer);
-  PISM_PETSC_CHK(ierr, "VecView");
-  ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv");
-  PISM_PETSC_CHK(ierr, "PetscObjectSetName");
-  ierr = VecView(m_velocity_global.get_vec(), viewer);
-  PISM_PETSC_CHK(ierr, "VecView");
+  ierr = PetscObjectSetName((PetscObject) m_b.get_vec(), "rhs"); CHKERRQ(ierr);
+  ierr = VecView(m_b.get_vec(), viewer); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) m_velocity_global.get_vec(), "uv"); CHKERRQ(ierr);
+  ierr = VecView(m_velocity_global.get_vec(), viewer); CHKERRQ(ierr);
 
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",
                                 grid.convert(grid.time->current(), "seconds", "years"));
-  
-  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
             "x=%12.3f + (0:%d)*%12.3f;\n"
             "y=%12.3f + (0:%d)*%12.3f;\n",
-                                -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy);
-  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
-  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");
-  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
+                                -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n"); CHKERRQ(ierr);
 
-  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");
-  PISM_PETSC_CHK(ierr, "PetscViewerASCIIPrintf");
-  ierr = PetscViewerDestroy(&viewer);
-  PISM_PETSC_CHK(ierr, "PetscViewerDestroy");
+  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n"); CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   return 0;
 }

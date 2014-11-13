@@ -169,25 +169,14 @@ PetscErrorCode SSA::deallocate() {
 
 
 //! \brief Update the SSA solution.
-PetscErrorCode SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
-  PetscErrorCode ierr;
-
-  if (fast) {
-    return 0;
-  }
-
+void SSA::update(bool fast, IceModelVec2S &melange_back_pressure) {
   (void) melange_back_pressure;
 
-  ierr = solve();
-  if (ierr != 0) {
-    PetscPrintf(grid.com, "PISM ERROR: SSA solver failed.\n");
-    return ierr;                // FIXME: return code to indicate success/failure
+  if (not fast) {
+    solve();
+    compute_basal_frictional_heating(m_velocity, *tauc, *mask,
+                                     basal_frictional_heating);
   }
-
-  ierr = compute_basal_frictional_heating(m_velocity, *tauc, *mask,
-                                          basal_frictional_heating); CHKERRQ(ierr);
-  
-  return 0;
 }
 
 //! \brief Compute the gravitational driving stress.

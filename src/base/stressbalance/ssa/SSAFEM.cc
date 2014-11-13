@@ -165,22 +165,19 @@ PetscErrorCode SSAFEM::setFromOptions() {
 //! methods, SSAFEM::solve() and SSAFEM::solve_nocache().  The only difference
 //! is that SSAFEM::solve() recomputes the cached values of the coefficients at
 //! quadrature points before calling SSAFEM::solve_nocache().
-PetscErrorCode SSAFEM::solve() {
-  PetscErrorCode ierr;
+void SSAFEM::solve() {
 
   // Set up the system to solve (store coefficient data at the quadrature points):
-  ierr = cacheQuadPtValues(); CHKERRQ(ierr);
+  cacheQuadPtValues();
 
   TerminationReason::Ptr reason;
-  ierr = solve_nocache(reason); CHKERRQ(ierr);
+  solve_nocache(reason);
   if (reason->failed()) {
     throw RuntimeError::formatted("SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
   } else if (getVerbosityLevel() > 2) {
     stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
   }
-
-  return 0;
 }
 
 PetscErrorCode SSAFEM::solve(TerminationReason::Ptr &reason) {

@@ -22,6 +22,8 @@
 #include "SSA.hh"
 #include <petscksp.h>
 
+#include "error_handling.hh"
+
 namespace pism {
 
 //! PISM's SSA solver: the finite difference implementation.
@@ -34,7 +36,7 @@ public:
 
   virtual PetscErrorCode init(Vars &vars);
 
-  virtual PetscErrorCode update(bool fast, IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
@@ -47,16 +49,15 @@ protected:
 
   virtual PetscErrorCode pc_setup_asm();
   
-  virtual PetscErrorCode solve();
+  virtual void solve();
 
-  virtual PetscErrorCode picard_iteration(unsigned int max_iterations,
-                                          double ssa_relative_tolerance,
-                                          double nuH_regularization,
-                                          double nuH_iter_failure_underrelax);
+  virtual void picard_iteration(double nuH_regularization,
+                                double nuH_iter_failure_underrelax);
 
-  virtual PetscErrorCode strategy_1_regularization();
+  virtual void picard_manager(double nuH_regularization,
+                              double nuH_iter_failure_underrelax);
 
-  virtual PetscErrorCode strategy_2_asm();
+  virtual PetscErrorCode picard_strategy_regularization();
 
   virtual PetscErrorCode compute_hardav_staggered();
 
@@ -105,6 +106,21 @@ protected:
   int nuh_viewer_size;
 
   bool dump_system_matlab;
+
+  class ZeroPivot : public RuntimeError {
+  public:
+    ZeroPivot();
+  };
+  
+  class KSPFailure : public RuntimeError {
+  public:
+    KSPFailure(const char* reason);
+  };
+
+  class PicardFailure : public RuntimeError {
+  public:
+    PicardFailure(const std::string &message);
+  };
 };
 
 //! Constructs a new SSAFD

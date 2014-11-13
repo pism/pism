@@ -117,19 +117,13 @@ PetscErrorCode ZeroSliding::write_variables(const std::set<std::string> &/*vars*
 
 
 //! \brief Update the trivial shallow stress balance object.
-PetscErrorCode ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
-  PetscErrorCode ierr;
-  if (fast) {
-    return 0;
-  }
-
+void ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   (void) melange_back_pressure;
 
-  ierr = m_velocity.set(0.0); CHKERRQ(ierr);
-
-  ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+  if (not fast) {
+    m_velocity.set(0.0);
+    basal_frictional_heating.set(0.0);
+  }
 }
 
 //! \brief Compute the basal frictional heating.
@@ -141,10 +135,10 @@ PetscErrorCode ZeroSliding::update(bool fast, IceModelVec2S &melange_back_pressu
   \param[in] mask (used to determine if floating or grounded)
   \param[out] result
  */
-PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVec2V &velocity,
-                                                                      IceModelVec2S &tauc,
-                                                                      IceModelVec2Int &mask,
-                                                                      IceModelVec2S &result) {
+void ShallowStressBalance::compute_basal_frictional_heating(IceModelVec2V &velocity,
+                                                            IceModelVec2S &tauc,
+                                                            IceModelVec2Int &mask,
+                                                            IceModelVec2S &result) {
   MaskQuery m(mask);
 
   IceModelVec::AccessList list;
@@ -166,8 +160,6 @@ PetscErrorCode ShallowStressBalance::compute_basal_frictional_heating(IceModelVe
       result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
     }
   }
-
-  return 0;
 }
 
 
@@ -582,16 +574,11 @@ PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 
-PetscErrorCode PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
-  PetscErrorCode ierr;
-  if (fast == true) {
-    return 0;
-  }
-
+void PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) {
   (void) melange_back_pressure;
-
-  ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);
-  return 0;
+  if (not fast) {
+    basal_frictional_heating.set(0.0);
+  }
 }
 
 PetscErrorCode PrescribedSliding::init(Vars &vars) {

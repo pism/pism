@@ -172,7 +172,7 @@ PetscErrorCode SSATestCase::run()
   ierr = verbPrintf(2,grid.com,"* Solving the SSA stress balance ...\n"); CHKERRQ(ierr);
 
   bool fast = false;
-  ierr = ssa->update(fast, melange_back_pressure); CHKERRQ(ierr);
+  ssa->update(fast, melange_back_pressure);
 
   return 0;
 }
