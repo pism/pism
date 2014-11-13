@@ -46,7 +46,7 @@ namespace pism {
 PISMFEvoR::PISMFEvoR(IceGrid &g, const Config &conf, EnthalpyConverter *EC,
                      StressBalance *stress_balance)
   : Component_TS(g, conf), m_stress_balance(stress_balance), m_EC(EC),
-    m_packing_dimensions(std::vector<unsigned int>(3, 5)),
+    m_packing_dimensions(std::vector<unsigned int>(3, 8)),
     m_d_iso(m_packing_dimensions, 0.0)
 {
  
@@ -134,9 +134,9 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       assert(grid.x.front() <= m_p_x[i] && m_p_x[i] <= grid.x.back());
       assert(grid.y.front() <= m_p_y[i] && m_p_y[i] <= grid.y.back());
 
-      ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P); CHKERRQ(ierr);
-      ierr = evaluate_at_point(*tauxz3, m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
-      ierr = evaluate_at_point(*tauyz3, m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
+      ierr = evaluate_at_point(*pressure3, m_p_x[i], m_p_y[i], m_p_z[i], P);    CHKERRQ(ierr);
+      ierr = evaluate_at_point(*tauxz3,    m_p_x[i], m_p_y[i], m_p_z[i], txz);  CHKERRQ(ierr);
+      ierr = evaluate_at_point(*tauyz3,    m_p_x[i], m_p_y[i], m_p_z[i], tyz);  CHKERRQ(ierr);
 
       // Make sure that the pressure is positive. (Zero pressure
       // probably means that the current particle exited the ice blob.
@@ -157,54 +157,25 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       ierr = m_EC->getAbsTemp(E, P, T); CHKERRQ(ierr);
       
       std::vector<double> bulkEdot(9, 0.0);
-      
       std::vector<double> bulkM(81, 0.0);
       
-      if (i == 5) {
-        m_distributions[i].saveDistribution();
-        
-        std::cout << "\n Passed Parameters! \n"
-                  << "   i: " << i << "\n"
-                  << "   T: " << T << "\n"
-                  << " m_t: " << m_t << "\n"
-                  << "m_dt: " << m_dt << "\n"
-                  << " n_m: " << m_n_migration_recrystallizations[i] << "\n"
-                  << " n_p: " << m_n_polygonization_recrystallizations[i] << "\n"
-                  << "stress:" << std::endl;
-        FEvoR::tensorDisplay(stress,3,3);
-        std::cout << "bulkEdot:" << std::endl;
-        FEvoR::tensorDisplay(bulkEdot,3,3);
-      }
       // http://en.wikipedia.org/wiki/Step_in_Time
       bulkM = m_distributions[i].stepInTime(T, stress, m_t, m_dt,
                                     m_n_migration_recrystallizations[i],
                                     m_n_polygonization_recrystallizations[i],
                                     bulkEdot);
       
-      if (i == 5)
-        m_distributions[i].saveDistribution();
-      
       std::vector<double> bulkEdot_iso(9, 0.0);
       std::vector<double> bulkM_iso(81, 0.0);
       bulkM_iso = m_d_iso.stepInTime(T, stress, m_t, m_dt, bulkEdot_iso);
       
-      if (i == 5) {
-        std::cout << "bulkEdot:" << std::endl;
-        FEvoR::tensorDisplay(bulkEdot,3,3);
-        std::cout << "bulkEdot_iso:" << std::endl;
-        FEvoR::tensorDisplay(bulkEdot_iso,3,3);
-      }
-      
       if (bulkEdot_iso[2] != 0.0) {
-        m_p_e[i] = abs(bulkEdot[2] / bulkEdot_iso[2]);
+        m_p_e[i] = std::abs(bulkEdot[2] / bulkEdot_iso[2]);
       } else {
         // If a particle is outside the ice blob, then pressure == 0
         // and bulkEdot_iso == 0, so we need this special case.
         m_p_e[i] = 1.0;
       }
-      
-      if (i == 5)
-        std::cout << "E before bounds:" << m_p_e[i] << std::endl;
       
       // some bounds for the enhancement factor -- in shear only
       if (m_p_e[i] < 1.0) {
@@ -213,10 +184,6 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
         m_p_e[i] = 10.0;
         // upper bound.
       }
-      
-      if (i == 5)
-        std::cout << "E after bounds:" << m_p_e[i] << std::endl;
-      
       
     } // end of the for-loop over particles
 
@@ -551,9 +518,9 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
 
   ierr = verbPrintf(2, grid.com,
                     "  Setting initial distribution parameters...\n"); CHKERRQ(ierr);
-
-
-  unsigned int n_particles = (grid.Mz-1)*(grid.Mx-1);  
+  
+  unsigned int n_particles = (unsigned int)config.get("fevor_n_particles");
+  assert( n_particles == (grid.Mz-1)*(grid.Mx-1) );
   
   // Initialize distributions
   assert(m_packing_dimensions.size() == 3);
@@ -571,6 +538,10 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
   for (unsigned int zz = 0; zz < grid.Mz-1; ++zz) {
     for (unsigned int xx = 0; xx < grid.Mx-1; ++xx) {
       unsigned int i = xx + zz*(grid.Mx-1);
+      unsigned int invZ = grid.Mz-zz-1;
+      
+      m_distributions[i].generateWatsonAxes(w_i*double(invZ)); 
+        // increase fabric strength with depth
       
       m_p_x[i] = grid.x[xx];
       m_p_y[i] = 0.0;

@@ -12,9 +12,9 @@ Lx         = 50e3                       # 50 km
 Mx         = 201
 # topg_slope = -0.08748866352             # 5 degrees
 topg_slope = 0                          # zero degrees (we prescribe the surface gradient)
-thk_0      = 2e2                        # 200 meters
+thk_0      = 5e2                        # 500 meters
 climatic_mass_balance_0 = 0             # kg m-2 s-1
-ice_surface_temp_0      = -10           # Celsius
+ice_surface_temp_0      = 243.15           # Kelvin
 
 nc = netCDF4.Dataset("fevor-slab-in.nc", 'w')
 nc.createDimension('x', Mx)
@@ -34,6 +34,6 @@ thk.units = "m"
 climatic_mass_balance[:] = climatic_mass_balance_0;
 climatic_mass_balance.units = "kg m-2 s-1"
 ice_surface_temp[:] = ice_surface_temp_0;
-ice_surface_temp.units = "Celsius"
+ice_surface_temp.units = "Kelvin"
 
 nc.close()

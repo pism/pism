@@ -18,7 +18,7 @@ nTimes = size(eFactLoad, 4);
 
 if (watch_eFact)
     for ii = 1:nTimes
-        for jj = nYmid %1:2:nY
+        for jj = nYmid
             contourf( squeeze(eFactLoad(:,jj,:,ii)))
             title(['Y = ',num2str(jj), ', t_i = ', num2str(ii)])
             caxis([0,10])
