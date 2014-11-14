@@ -173,15 +173,4 @@ std::set<std::string> Vars::keys() const {
   return result;
 }
 
-//! Debugging: checks if IceModelVecs in the dictionary have NANs.
-void Vars::check_for_nan() const {
-  std::set<std::string> names = keys();
-
-  std::set<std::string>::iterator i = names.begin();
-  while (i != names.end()) {
-    get_internal(*i)->has_nan();
-    ++i;
-  }
-}
-
 } // end of namespace pism

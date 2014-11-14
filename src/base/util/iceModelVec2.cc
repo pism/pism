@@ -414,48 +414,6 @@ PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) const {
   return 0;
 }
 
-
-//! Checks if the current IceModelVec2S has NANs and reports if it does.
-/*! Up to a fixed number of messages are printed at stdout.  Returns the full
- count of NANs (which is a nonzero) on this rank. */
-PetscErrorCode IceModelVec2S::has_nan() const {
-  PetscErrorCode ierr;
-  const int max_print_this_rank=10;
-  int retval=0;
-
-  IceModelVec::AccessList list(*this);
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (gsl_isnan((*this)(i,j))) {
-      retval++;
-      if (retval <= max_print_this_rank) {
-        ierr = PetscSynchronizedPrintf(grid->com, 
-                                       "IceModelVec2S %s: NAN (or uninitialized) at i = %d, j = %d on rank = %d\n",
-                                       m_name.c_str(), i, j, grid->rank);
-        PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
-      }
-    }
-  }
-
-  if (retval > 0) {
-    ierr = PetscSynchronizedPrintf(grid->com, 
-       "IceModelVec2S %s: detected %d NANs (or uninitialized) on rank = %d\n",
-                                   m_name.c_str(), retval, grid->rank);
-    PISM_PETSC_CHK(ierr, "PetscSynchronizedPrintf");
-  }
-
-#if PETSC_VERSION_LT(3,5,0)
-  ierr = PetscSynchronizedFlush(grid->com);
-  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
-#else
-  ierr = PetscSynchronizedFlush(grid->com, NULL);
-  PISM_PETSC_CHK(ierr, "PetscSynchronizedFlush");
-#endif
-  return retval;                // FIXME: return code to indicate success/failure
-}
-
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
 double IceModelVec2S::diff_x(int i, int j) const {

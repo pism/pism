@@ -806,22 +806,6 @@ PetscErrorCode  IceModelVec::set(const double c) {
   return 0;
 }
 
-//! Checks if the current IceModelVec has NANs and reports if it does.
-/*! Both prints and error message at stdout and returns nonzero. */
-PetscErrorCode IceModelVec::has_nan() const {
-  PetscErrorCode ierr;
-  double tmp;
-
-  ierr = norm(NORM_INFINITY, tmp); CHKERRQ(ierr);
-
-  if (gsl_isnan(tmp)) {
-    PetscPrintf(grid->com, "IceModelVec %s has uninitialized grid points (or NANs)\n", m_name.c_str());
-    return 1;                   // FIXME: return code to indicate success/failure
-  }
-
-  return 0;
-}
-
 void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   double ghost_width = 0;
   if (m_has_ghosts) {

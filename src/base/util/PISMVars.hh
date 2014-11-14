@@ -47,7 +47,6 @@ public:
   IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
-  void check_for_nan() const;
 private:
   IceModelVec* get_internal(const std::string &name) const;
   std::map<std::string, IceModelVec*> variables,

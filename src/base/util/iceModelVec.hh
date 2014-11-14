@@ -194,7 +194,6 @@ public:
   PetscErrorCode copy_from(const IceModelVec &source);
   Vec get_vec();
   PISMDM::Ptr get_dm() const;
-  virtual PetscErrorCode  has_nan() const;
   virtual PetscErrorCode  set_name(const std::string &name, int component = 0);
   virtual std::string name() const;
   virtual PetscErrorCode  set_glaciological_units(const std::string &units);
@@ -400,7 +399,6 @@ public:
   virtual double diff_y_stagN(int i, int j) const;
   virtual double diff_x_p(int i, int j) const;
   virtual double diff_y_p(int i, int j) const;
-  virtual PetscErrorCode has_nan() const;
 
   //! Provides access (both read and write) to the internal double array.
   /*!
@@ -678,7 +676,6 @@ protected:
   virtual PetscErrorCode allocate(IceGrid &mygrid, const std::string &my_short_name,
                                   IceModelVecKind ghostedp, const std::vector<double> &levels,
                                   unsigned int stencil_width = 1);
-  virtual PetscErrorCode has_nan() const;
 };
 
 

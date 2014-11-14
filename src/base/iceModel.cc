@@ -833,10 +833,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   // end the flag line
   stdout_flags += " " + m_adaptive_timestep_reason;
 
-#if (PISM_DEBUG==1)
-  variables.check_for_nan();
-#endif
-
   return 0;
 }
 
