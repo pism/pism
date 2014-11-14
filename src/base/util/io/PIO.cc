@@ -342,6 +342,7 @@ unsigned int PIO::inq_nrecords() const {
     }
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records in file " + inq_filename());
+    throw;
   }
   return 0;                     // will never happen
 }

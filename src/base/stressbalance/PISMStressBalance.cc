@@ -125,6 +125,7 @@ PetscErrorCode StressBalance::update(bool fast, double sea_level,
   }
   catch (RuntimeError &e) {
     e.add_context("updating the stress balance");
+    throw;
   }
 
   return 0;

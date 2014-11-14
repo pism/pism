@@ -256,6 +256,7 @@ PetscErrorCode IceModel::init_extras() {
     grid.time->parse_times(times, extra_times);    
   } catch (RuntimeError &e) {
     e.add_context("parsing the -extra_times argument");
+    throw;
   }
 
   if (extra_times.size() == 0) {
