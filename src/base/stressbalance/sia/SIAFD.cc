@@ -789,21 +789,6 @@ PetscErrorCode SIAFD::compute_diffusivity_staggered(IceModelVec2Stag &D_stag) {
   return 0;
 }
 
-//! \brief Extend the grid vertically.
-PetscErrorCode SIAFD::extend_the_grid(int old_Mz) {
-  PetscErrorCode ierr;
-
-  ierr = SSB_Modifier::extend_the_grid(old_Mz); CHKERRQ(ierr);
-
-  ierr = delta[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = delta[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-
-  ierr = work_3d[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = work_3d[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-
-  return 0;
-}
-
 //! \brief Compute I.
 /*!
  * This computes

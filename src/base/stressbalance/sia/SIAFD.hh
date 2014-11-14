@@ -63,9 +63,6 @@ public:
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 
-  //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int old_Mz);
-
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);

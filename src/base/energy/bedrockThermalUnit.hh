@@ -20,28 +20,11 @@
 #define _PISMBEDTHERMALUNIT_H_
 
 #include "PISMComponent.hh"
-#include "iceModelVec.hh"
+#include "iceModelVec3Custom.hh"
 
 namespace pism {
 
 class Vars;
-
-//! Class for a 3d DA-based Vec for BedThermalUnit.
-class IceModelVec3BTU : public IceModelVec3D {
-public:
-  IceModelVec3BTU() : Lbz(-1.0) {}
-  virtual ~IceModelVec3BTU() {}
-
-  virtual PetscErrorCode create(IceGrid &mygrid, const std::string &my_short_name, bool local,
-                                int myMbz, double myLbz, int stencil_width = 1);
-                                
-  PetscErrorCode get_layer_depth(double &depth); //!< Return -Lbz value.
-  PetscErrorCode get_spacing(double &dzb);
-private:
-  double Lbz;
-  bool good_init();
-};
-
 
 //! Given the temperature of the top of the bedrock, for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
 /*!
@@ -92,7 +75,7 @@ private:
   method uses second-order differencing to compute the values of \f$G_0\f$.
 
   If `n_levels` <= 1 then this object becomes very simplified: there is no internal
-  state in IceModelVec3BTU temp.  The update() and allocate() methods are null,
+  state in IceModelVec3 temp.  The update() and allocate() methods are null,
   and the get_upward_geothermal_flux() method does nothing other than to copy the
   field \f$G\f$ = `bheatflx` into `result`.
 
@@ -125,7 +108,7 @@ protected:
   PetscErrorCode allocate();
 
 
-  IceModelVec3BTU temp;
+  IceModelVec3Custom temp;
   //!< storage for bedrock thermal layer temperature; part of state;
   //!< units K; equally-spaced layers; This IceModelVec is only
   //!< created if Mbz > 1.
@@ -136,8 +119,8 @@ protected:
     bed_k,        //!< bedrock thermal conductivity
     bed_D;        //!< diffusivity of the heat flow within the bedrock layer
   
-  unsigned int Mbz;             //!< number of vertical levels within the bedrock
-  double Lbz;                   //!< thickness of the bedrock layer, in meters
+  unsigned int m_Mbz;             //!< number of vertical levels within the bedrock
+  double m_Lbz;                   //!< thickness of the bedrock layer, in meters
   std::string m_input_file;             //!< non-empty if "-i" was set
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached

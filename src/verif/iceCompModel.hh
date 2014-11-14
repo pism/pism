@@ -31,7 +31,7 @@ public:
     : BedThermalUnit(g, conf) { testname = test; bedrock_is_ice = bii; }
   virtual ~BTU_Verification() {}
 
-  virtual PetscErrorCode get_temp(IceModelVec3BTU* &result);
+  virtual PetscErrorCode get_temp(IceModelVec3Custom* &result);
 protected:
   virtual PetscErrorCode bootstrap();
   int testname, bedrock_is_ice;
