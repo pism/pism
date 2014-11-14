@@ -56,7 +56,8 @@ void RuntimeError::add_context(const char format[], ...) {
   vsnprintf(buffer, sizeof(buffer), format, argp);
   va_end(argp);
 
-  this->add_context(buffer);
+  // convert to std::string to avoid recursion
+  this->add_context(std::string(buffer));
 }
 
 std::vector<std::string> RuntimeError::get_context() const {
