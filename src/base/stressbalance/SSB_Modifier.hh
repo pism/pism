@@ -56,9 +56,6 @@ public:
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
   { result = &strain_heating; return 0; }
 
-  //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int old_Mz);
-
   virtual PetscErrorCode stdout_report(std::string &result)
   { result = ""; return 0; }
 

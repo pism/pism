@@ -105,8 +105,6 @@ IceGrid::IceGrid(MPI_Comm c, const Config &conf)
   Mz  = static_cast<int>(config.get("grid_Mz"));
 
   Nx = Ny = 0;                  // will be set to a correct value in allocate()
-  initial_Mz = 0;               // will be set to a correct value in
-                                // IceModel::check_maximum_thickness()
 
   Mz_fine = 0;
 

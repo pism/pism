@@ -58,8 +58,6 @@ pism_test (pismr_regridding_variable_order test_09.sh)
 
 pism_test (pismr_regridding_processor_independence test_10.sh)
 
-pism_test (automatic_vertical_grid_extension test_11.sh)
-
 pism_test (SIA_mass_conservation test_12.sh)
 
 pism_test (temperature_continuity_base_polythermal temp_continuity.py)

@@ -87,9 +87,6 @@ public:
                                                           IceModelVec2S &result);
   // helpers:
 
-  //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int /*old_Mz*/)
-  { return 0; }
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(std::string &result)
   { result = ""; return 0; }
