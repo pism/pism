@@ -689,9 +689,11 @@ PetscErrorCode IceModel::init_snapshots() {
     return 0;
   }
 
-  ierr = grid.time->parse_times(tmp, snapshot_times);
-  if (ierr != 0) {
-    throw RuntimeError("parsing the -save_times argument failed.");
+  try {
+    grid.time->parse_times(tmp, snapshot_times);    
+  } catch (RuntimeError &e) {
+    e.add_context("parsing the -save_times argument");
+    throw;
   }
 
   if (snapshot_times.size() == 0) {

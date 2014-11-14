@@ -61,7 +61,6 @@ NetCDF file because there is no effect on it, but there is an indication at `std
 Signal `SIGUSR2` makes PISM flush time-series, without saving model state.
  */
 int IceModel::endOfTimeStepHook() {
-  PetscErrorCode ierr;
   
   if (pism_signal == SIGTERM) {
     verbPrintf(1, grid.com, 
@@ -71,7 +70,9 @@ int IceModel::endOfTimeStepHook() {
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at time=%s.",
              grid.time->date().c_str());
     stampHistory(str);
-    return 1;                   // FIXME: return code to indicate success/failure
+    // Tell the caller that the user requested an early termination of
+    // the run.
+    return 1;
   }
   
   if (pism_signal == SIGUSR1) {
@@ -85,7 +86,7 @@ int IceModel::endOfTimeStepHook() {
     dumpToFile(file_name);
 
     // flush all the time-series buffers:
-    ierr = flush_timeseries(); CHKERRQ(ierr); 
+    flush_timeseries();
   }
 
   if (pism_signal == SIGUSR2) {
@@ -94,7 +95,7 @@ int IceModel::endOfTimeStepHook() {
     pism_signal = 0;
 
     // flush all the time-series buffers:
-    ierr = flush_timeseries(); CHKERRQ(ierr);
+    flush_timeseries();
   }
 
   return 0;

@@ -147,41 +147,38 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) {
   return units;
 }
 
-PetscErrorCode Time::process_ys(double &result, bool &flag) {
-  PetscErrorCode ierr;
-  result = m_config.get("start_year");
-
-  ierr = OptionsReal("-ys", "Start year", result, flag); CHKERRQ(ierr);
-
-  result = years_to_seconds(result);
-
-  return 0;
+void Time::process_ys(double &result, bool &flag) {
+  
+  OptionsReal("-ys", "Start year", result, flag);
+  if (flag) {
+    result = years_to_seconds(result);
+  } else {
+    result = m_config.get("start_year");
+  }
 }
 
-PetscErrorCode Time::process_y(double &result, bool &flag) {
-  PetscErrorCode ierr;
-  result = m_config.get("run_length_years");
+void Time::process_y(double &result, bool &flag) {
 
-  ierr = OptionsReal("-y", "Run length, in years", result, flag); CHKERRQ(ierr);
-
-  result = years_to_seconds(result);
-
-  return 0;
+  OptionsReal("-y", "Run length, in years", result, flag);
+  if (flag) {
+    result = years_to_seconds(result);
+  } else {
+    result = m_config.get("run_length_years");  
+  }
 }
 
-PetscErrorCode Time::process_ye(double &result, bool &flag) {
-  PetscErrorCode ierr;
+void Time::process_ye(double &result, bool &flag) {
+
+  OptionsReal("-ye", "End year", result, flag);
+if (flag) {
+  result = years_to_seconds(result);
+ } else {
   result = m_config.get("start_year") + m_config.get("run_length_years");
-
-  ierr = OptionsReal("-ye", "End year", result, flag); CHKERRQ(ierr);
-
-  result = years_to_seconds(result);
-
-  return 0;
+ }
 }
 
-PetscErrorCode Time::init() {
-  PetscErrorCode ierr;
+void Time::init() {
+
   bool y_set, ys_set, ye_set;
   double y_seconds, ys_seconds, ye_seconds;
 
@@ -190,15 +187,11 @@ PetscErrorCode Time::init() {
   // override all this by using settings from -time_file, so that is
   // fine, too.
 
-  ierr = PetscOptionsBegin(m_com, "", "PISM model time options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = process_y(y_seconds, y_set); CHKERRQ(ierr);
-    ierr = process_ys(ys_seconds, ys_set); CHKERRQ(ierr);
-    ierr = process_ye(ye_seconds, ye_set); CHKERRQ(ierr);
+    process_y(y_seconds, y_set);
+    process_ys(ys_seconds, ys_set);
+    process_ye(ye_seconds, ye_set);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (ys_set && ye_set && y_set) {
     throw RuntimeError("all of -y, -ys, -ye are set.");
@@ -227,8 +220,6 @@ PetscErrorCode Time::init() {
   } else {
     m_run_end = increment_date(m_run_start, (int)m_config.get("run_length_years"));
   }
-
-  return 0;
 }
 
 std::string Time::date(double T) {
@@ -289,44 +280,36 @@ double Time::increment_date(double T, int years) {
   return T + years_to_seconds(years);
 }
 
-PetscErrorCode Time::parse_times(const std::string &spec,
-                                     std::vector<double> &result) {
+void Time::parse_times(const std::string &spec,
+                       std::vector<double> &result) {
 
   if (spec.find(',') != std::string::npos) {
     // a list will always contain a comma because at least two numbers are
     // needed to specify reporting intervals
-
-    return parse_list(spec, result);
+    parse_list(spec, result);
 
   } else {
     // it must be a range specification
-    return parse_range(spec, result);
+    parse_range(spec, result);
   }
 
-  return 0;
 }
 
-PetscErrorCode Time::parse_list(const std::string &spec, std::vector<double> &result) {
-  std::vector<std::string> parts;
+void Time::parse_list(const std::string &spec, std::vector<double> &result) {
   std::istringstream arg(spec);
   std::string tmp;
 
-  while(getline(arg, tmp, ',')) {
-    parts.push_back(tmp);
-  }
-
   result.clear();
-  for (unsigned int k = 0; k < parts.size(); ++k) {
-    double d;
-    int errcode = parse_date(parts[k], &d);
-    if (errcode != 0) {
-      return 1;                 // FIXME: return code to indicate success/failure
+  while(getline(arg, tmp, ',')) {
+    try {
+      double d;
+      parse_date(tmp, &d);
+      result.push_back(d);
+    } catch (RuntimeError &e) {
+      e.add_context("parsing a list of dates");
+      throw;
     }
-
-    result.push_back(d);
   }
-
-  return 0;
 }
 
 /**
@@ -340,7 +323,7 @@ PetscErrorCode Time::parse_list(const std::string &spec, std::vector<double> &re
  *
  * @return 0 on success, 1 otherwise
  */
-int Time::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
+void Time::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
 
   // check if it is a keyword
   if (spec == "hourly") {
@@ -348,7 +331,7 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
     if (result) {
       *result = 3600;
     }
-    return 0;
+    return;
   }
 
   if (spec == "daily") {
@@ -356,7 +339,7 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
     if (result) {
       *result = 86400;
     }
-    return 0;
+    return;
   }
 
   if (spec == "monthly" || spec == "yearly") {
@@ -364,7 +347,7 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
     if (result) {
       *result = 0;
     }
-    return 0;
+    return;
   }
 
   Unit seconds(m_time_units.get_system(), "seconds"),
@@ -373,10 +356,8 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
 
   try {
     tmp = Unit(m_time_units.get_system(), spec);
-  }
-  catch (RuntimeError &e) {
-    std::string message = "processing interval length " + spec;
-    e.add_context(message);
+  } catch (RuntimeError &e) {
+    e.add_context("processing interval length " + spec);
     throw;
   }
 
@@ -404,22 +385,17 @@ int Time::parse_interval_length(const std::string &spec, std::string &keyword, d
     }
 
   } else {
-    PetscPrintf(m_com, "PISM ERROR: invalid interval length: '%s'\n",
-                spec.c_str());
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw RuntimeError::formatted("interval length '%s' is invalid", spec.c_str());
   }
-
-  return 0;
 }
 
 
-PetscErrorCode Time::parse_range(const std::string &spec, std::vector<double> &result) {
+void Time::parse_range(const std::string &spec, std::vector<double> &result) {
   double
     time_start   = m_run_start,
     time_end     = m_run_end,
     delta        = 0;
   std::string keyword = "simple";
-  int    errcode;
 
   if (spec == "hourly") {
     delta = 3600;
@@ -429,70 +405,47 @@ PetscErrorCode Time::parse_range(const std::string &spec, std::vector<double> &r
     keyword = spec;
     delta   = 0;
   } else {
-    std::istringstream  arg(spec);
+
+    std::istringstream arg(spec);
     std::vector<std::string> parts;
-    std::string         tmp;
+    std::string tmp;
 
     while(getline(arg, tmp, ':')) {
       parts.push_back(tmp);
     }
 
     if (parts.size() == 1) {
-      errcode = parse_interval_length(parts[0], keyword, &delta);
-      if (errcode != 0) {
-        return 1;               // FIXME: return code to indicate success/failure
-      }
+      parse_interval_length(parts[0], keyword, &delta);
     } else if (parts.size() == 3) {
-      errcode = parse_date(parts[0], &time_start);
-      if (errcode != 0) {
-        return 1;               // FIXME: return code to indicate success/failure
-      }
-      errcode = parse_interval_length(parts[1], keyword, &delta);
-      if (errcode != 0) {
-        return 1;               // FIXME: return code to indicate success/failure
-      }
-      errcode = parse_date(parts[2], &time_end);
-      if (errcode != 0) {
-        return 1;               // FIXME: return code to indicate success/failure
-      }
+      parse_date(parts[0], &time_start);
+      parse_interval_length(parts[1], keyword, &delta);
+      parse_date(parts[2], &time_end);
     } else {
-      PetscPrintf(m_com,
-                  "PISM ERROR: A time range must consist of exactly 3 parts, separated by colons. (Got '%s'.)\n",
-                  spec.c_str());
-      return 1;                 // FIXME: return code to indicate success/failure
+      throw RuntimeError::formatted("a time range must consist of exactly 3 parts separated by colons (got '%s').",
+                                    spec.c_str());
     }
   }
 
-  return compute_times(time_start, delta, time_end, keyword, result);
+  compute_times(time_start, delta, time_end, keyword, result);
 }
 
 
-PetscErrorCode Time::parse_date(const std::string &spec, double *result) {
-  PetscErrorCode ierr;
-  double d;
-  char *endptr;
+void Time::parse_date(const std::string &spec, double *result) {
 
   if (spec.empty() == true) {
-    ierr = PetscPrintf(m_com,
-                       "PISM ERROR: got an empty string '%s'.\n",
-                       spec.c_str());
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw RuntimeError("got an empty date specification");
   }
 
-  d = strtod(spec.c_str(), &endptr);
+  char *endptr = NULL;
+  double d = strtod(spec.c_str(), &endptr);
   if (*endptr != '\0') {
-    ierr = PetscPrintf(m_com, "PISM ERROR: '%s' is not a number.\n",
-                       spec.c_str());
-    PISM_PETSC_CHK(ierr, "PetscPrintf");
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw RuntimeError::formatted("date specification '%s' is invalid ('%s' is not an number)",
+                                  spec.c_str(), spec.c_str());
   }
 
   if (result) {
     *result = years_to_seconds(d);
   }
-
-  return 0;
 }
 
 
@@ -506,18 +459,17 @@ PetscErrorCode Time::parse_date(const std::string &spec, double *result) {
  * @param[in] time_end end of the interval, in seconds
  * @param[out] result list of model times
  *
- * @return 0 on success, 1 otherwise
  */
-PetscErrorCode Time::compute_times_simple(double time_start, double delta, double time_end,
-                                              std::vector<double> &result) {
+void Time::compute_times_simple(double time_start, double delta, double time_end,
+                                std::vector<double> &result) {
   if (time_start >= time_end) {
-    PetscPrintf(m_com, "PISM ERROR: a >= b in time range a:dt:b.\n");
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw RuntimeError::formatted("a >= b in time range a:dt:b (got %f:%f:%f)",
+                                  time_start, delta, time_end);
   }
 
   if (delta <= 0) {
-    PetscPrintf(m_com, "PISM ERROR: dt <= 0 in time range a:dt:b.\n");
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw RuntimeError::formatted("dt <= 0 in time range a:dt:b (got %f:%f:%f)",
+                                  time_start, delta, time_end);
   }
 
   int k = 0;
@@ -531,24 +483,21 @@ PetscErrorCode Time::compute_times_simple(double time_start, double delta, doubl
     k += 1;
     t = time_start + k * delta;
   } while (t <= time_end);
-
-  return 0;
 }
 
-PetscErrorCode Time::compute_times(double time_start, double delta, double time_end,
-                                       const std::string &keyword,
-                                       std::vector<double> &result) {
+void Time::compute_times(double time_start, double delta, double time_end,
+                         const std::string &keyword,
+                         std::vector<double> &result) {
   if (keyword == "yearly") {
     delta = years_to_seconds(1.0);
   } else if (keyword == "monthly") {
     delta = years_to_seconds(1.0/12.0);
   } else if (keyword != "simple") {
-    PetscPrintf(m_com, "PISM ERROR: Unknown time range keyword: %s.\n",
-                keyword.c_str());
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw RuntimeError::formatted("unknown time range keyword: %s",
+                                  keyword.c_str());
   }
 
-  return compute_times_simple(time_start, delta, time_end, result);
+  compute_times_simple(time_start, delta, time_end, result);
 }
 
 double Time::convert_time_interval(double T, const std::string &units) {

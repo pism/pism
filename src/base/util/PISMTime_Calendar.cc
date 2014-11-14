@@ -64,17 +64,17 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
 
   std::string ref_date = m_config.get_string("reference_date");
 
-  int errcode = parse_date(ref_date, NULL);
-  if (errcode != 0) {
-    throw RuntimeError::formatted("reference date %s is invalid.", ref_date.c_str());
+  try {
+    parse_date(ref_date, NULL);
+  } catch (RuntimeError &e) {
+    e.add_context("validating the reference date");
+    throw;
   }
 
   try {
     m_time_units = Unit(m_time_units.get_system(), "seconds since " + ref_date);
-  }
-  catch (RuntimeError &e) {
-    std::string message = "setting time units";
-    e.add_context(message);
+  } catch (RuntimeError &e) {
+    e.add_context("setting time units");
     throw;
   }
 
@@ -87,88 +87,86 @@ Time_Calendar::Time_Calendar(MPI_Comm c, const Config &conf,
 Time_Calendar::~Time_Calendar() {
 }
 
-PetscErrorCode Time_Calendar::process_ys(double &result, bool &flag) {
-  PetscErrorCode ierr;
-  std::string tmp;
-  result = m_config.get("start_year", "years", "seconds");
+void Time_Calendar::process_ys(double &result, bool &flag) {
 
-  ierr = OptionsString("-ys", "Start date", tmp, flag); CHKERRQ(ierr);
+  std::string tmp;
+  OptionsString("-ys", "Start date", tmp, flag);
 
   if (flag) {
-    ierr = parse_date(tmp, &result);
-    if (ierr != 0) {
-      throw RuntimeError("processing -ys option failed.");
+    try {
+      parse_date(tmp, &result);
+    } catch (RuntimeError &e) {
+      e.add_context("processing the -ys option");
+      throw;
     }
+  } else {
+    result = m_config.get("start_year", "years", "seconds");
   }
-
-  return 0;
 }
 
-PetscErrorCode Time_Calendar::process_y(double &result, bool &flag) {
-  PetscErrorCode ierr;
+void Time_Calendar::process_y(double &result, bool &flag) {
+
   int tmp;
-  result = m_config.get("run_length_years", "years", "seconds");
-
-  ierr = OptionsInt("-y", "Run length, in years (integer)", tmp, flag); CHKERRQ(ierr);
+  OptionsInt("-y", "Run length, in years (integer)", tmp, flag);
 
   if (flag) {
-    result = years_to_seconds(tmp);
-  }
-
-  return 0;
-}
-
-
-PetscErrorCode Time_Calendar::process_ye(double &result, bool &flag) {
-  PetscErrorCode ierr;
-  std::string tmp;
-  result = (m_config.get("start_year", "years", "seconds") +
-            m_config.get("run_length_years", "years", "seconds"));
-
-  ierr = OptionsString("-ye", "Start date", tmp, flag); CHKERRQ(ierr);
-
-  if (flag) {
-    ierr = parse_date(tmp, &result);
-    if (ierr != 0) {
-      throw RuntimeError::formatted("processing -ye option failed.");
+    if (tmp < 0) {
+      throw RuntimeError::formatted("-y %d is not allowed (run length can't be negative)",
+                                    tmp);
     }
+    result = years_to_seconds(tmp);
+  } else {
+    result = m_config.get("run_length_years", "years", "seconds");
   }
-
-  return 0;
 }
 
 
-PetscErrorCode Time_Calendar::init() {
-  PetscErrorCode ierr;
+void Time_Calendar::process_ye(double &result, bool &flag) {
+
+  std::string tmp;
+  OptionsString("-ye", "Start date", tmp, flag);
+
+  if (flag) {
+    try {
+      parse_date(tmp, &result);
+    } catch (RuntimeError &e) {
+      e.add_context("processing the -ye option");
+      throw;
+    }
+  } else {
+    result = (m_config.get("start_year", "years", "seconds") +
+              m_config.get("run_length_years", "years", "seconds"));
+  }
+}
+
+
+void Time_Calendar::init() {
+
+  Time::init();
+
   std::string time_file;
   bool flag;
+  OptionsString("-time_file", "Reads time information from a file",
+                time_file, flag);
 
-  ierr = Time::init(); CHKERRQ(ierr);
+  if (flag) {
+    verbPrintf(2, m_com,
+               "* Setting time from '%s'...\n",
+               time_file.c_str());
 
-  ierr = OptionsString("-time_file", "Reads time information from a file",
-                           time_file, flag); CHKERRQ(ierr);
+    ignore_option(m_com, "-y");
+    ignore_option(m_com, "-ys");
+    ignore_option(m_com, "-ye");
 
-  if (flag == true) {
-    ierr = verbPrintf(2, m_com,
-                      "* Setting time from '%s'...\n",
-                      time_file.c_str()); CHKERRQ(ierr);
-
-    ierr = ignore_option(m_com, "-y"); CHKERRQ(ierr);
-    ierr = ignore_option(m_com, "-ys"); CHKERRQ(ierr);
-    ierr = ignore_option(m_com, "-ye"); CHKERRQ(ierr);
-
-    ierr = init_from_file(time_file); CHKERRQ(ierr);
+    init_from_file(time_file);
   }
-
-  return 0;
 }
 
 //! \brief Sets the time from a NetCDF with forcing data.
 /*!
  * This allows running PISM for the duration of the available forcing.
  */
-PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
-  PetscErrorCode ierr;
+void Time_Calendar::init_from_file(const std::string &filename) {
   int rank = 0;
   std::vector<double> time, time_bounds;
   std::string time_units, time_bounds_name, new_calendar,
@@ -178,7 +176,7 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   NCTimeseries time_axis(time_name, time_name, m_unit_system);
   time_axis.set_units(m_time_units.format());
 
-  ierr = MPI_Comm_rank(m_com, &rank); CHKERRQ(ierr);
+  MPI_Comm_rank(m_com, &rank);
   PIO nc(m_com, "netcdf3", m_unit_system); // OK to use netcdf3
 
   nc.open(filename, PISM_READONLY);
@@ -247,8 +245,6 @@ PetscErrorCode Time_Calendar::init_from_file(const std::string &filename) {
   m_time_in_seconds = m_run_start;
 
   nc.close();
-
-  return 0;
 }
 
 double Time_Calendar::mod(double time, unsigned int) {
@@ -376,7 +372,7 @@ double Time_Calendar::increment_date(double T, int years) {
  *
  * @return 0 on success, 1 otherwise
  */
-PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *result) {
+void Time_Calendar::parse_date(const std::string &input, double *result) {
   int errcode, dummy;
   calcalcs_cal *cal = NULL;
   std::vector<int> numbers;
@@ -388,10 +384,12 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
   std::istringstream arg(spec);
 
   if (spec.empty() == true) {
-    goto failure; // FIXME: throw an exception instead
+    throw RuntimeError("got an empty date specification");
   }
 
-  // ignore negative years
+  // If the string starts with "-" then the year is negative. This
+  // would confuse the code below, which treats "-" as a separator, so
+  // we remember that the year is negative and remove "-".
   if (spec[0] == '-') {
     year_is_negative = true;
     spec.substr(1);
@@ -401,14 +399,16 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
 
     // an empty part in the date specification (corresponds to "--")
     if (tmp.empty() == true) {
-      goto failure; // FIXME: throw an exception instead
+      throw RuntimeError::formatted("date specification '%s' is invalid (can't have two '-' in a row)",
+                                    spec.c_str());
     }
 
     // check if strtol can parse it:
     char *endptr = NULL;
     long int n = strtol(tmp.c_str(), &endptr, 10);
     if (*endptr != '\0') {
-      goto failure; // FIXME: throw an exception instead
+      throw RuntimeError::formatted("date specification '%s' is invalid ('%s' is not an integer)",
+                                    spec.c_str(), tmp.c_str());
     }
 
     // FIXME: this may overflow!
@@ -417,7 +417,8 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
 
   // wrong number of parts in the YYYY-MM-DD date:
   if (numbers.size() != 3) {
-    goto failure; // FIXME: throw an exception instead
+    throw RuntimeError::formatted("date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
+                                  spec.c_str(), numbers.size());
   }
 
   if (year_is_negative) {
@@ -425,46 +426,35 @@ PetscErrorCode Time_Calendar::parse_date(const std::string &input, double *resul
   }
 
   cal = ccs_init_calendar(m_calendar_string.c_str());
-  assert(cal != NULL);
+  if (cal == NULL) {
+    throw RuntimeError::formatted("calendar string '%s' is invalid", m_calendar_string.c_str());
+  }
+
   errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
   ccs_free_calendar(cal);
+  if (errcode != 0) {
+    throw RuntimeError::formatted("date %s is invalid in the %s calendar",
+                                  spec.c_str(), m_calendar_string.c_str());
+  }
 
+  // result is the *output* argument. If it is not NULL, then the user
+  // asked us to convert a date to seconds since the reference time.
   if (result != NULL) {
-
-    if (errcode != 0) {
-      PetscPrintf(m_com, "PISM ERROR: date %s is invalid in the %s calendar\n",
-                  spec.c_str(), m_calendar_string.c_str());
-      goto failure; // FIXME: throw an exception instead
-    }
-
     double time;
     errcode = utInvCalendar2_cal(numbers[0], numbers[1], numbers[2], 0, 0, 0.0,
                                  m_time_units.get(), &time, m_calendar_string.c_str());
     if (errcode != 0) {
-      goto failure; // FIXME: throw an exception instead
+      throw RuntimeError::formatted("cannot convert '%s' to '%s'",
+                                    spec.c_str(), m_time_units.format().c_str());
     }
 
     *result = time;
   }
-
-
-  return 0;
-
- failure:
-  PetscPrintf(m_com, "PISM ERROR: invalid date: '%s'\n",
-              spec.c_str());
-
-  return 1;                     // FIXME: return code to indicate success/failure
 }
 
-int Time_Calendar::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
+void Time_Calendar::parse_interval_length(const std::string &spec, std::string &keyword, double *result) {
 
-  int ierr;
-
-  ierr = Time::parse_interval_length(spec, keyword, result);
-  if (ierr != 0) {
-    return 1;                   // FIXME: return code to indicate success/failure
-  }
+  Time::parse_interval_length(spec, keyword, result);
 
   // This is called *only* if the 'spec' is *not* one of "monthly",
   // "yearly", "daily", "hourly", so we don't need to worry about
@@ -472,16 +462,13 @@ int Time_Calendar::parse_interval_length(const std::string &spec, std::string &k
 
   // do not allow intervals specified in terms of "fuzzy" units
   if (spec.find("year") != std::string::npos || spec.find("month") != std::string::npos) {
-    PetscPrintf(m_com, "PISM ERROR: interval length '%s' with the calendar '%s' is not supported.\n",
-                spec.c_str(), m_calendar_string.c_str());
-    return 1;                   // FIXME: return code to indicate success/failure
+    throw RuntimeError::formatted("interval length '%s' with the calendar '%s' is not supported",
+                                  spec.c_str(), m_calendar_string.c_str());
   }
-
-  return 0;
 }
 
 
-PetscErrorCode Time_Calendar::compute_times_monthly(std::vector<double> &result) {
+void Time_Calendar::compute_times_monthly(std::vector<double> &result) {
   int errcode;
 
   int year, month, day, hour, minute;
@@ -520,11 +507,9 @@ PetscErrorCode Time_Calendar::compute_times_monthly(std::vector<double> &result)
     }
 
   }
-
-  return 0;
 }
 
-PetscErrorCode Time_Calendar::compute_times_yearly(std::vector<double> &result) {
+void Time_Calendar::compute_times_yearly(std::vector<double> &result) {
   int errcode;
 
   int year, month, day, hour, minute;
@@ -557,27 +542,20 @@ PetscErrorCode Time_Calendar::compute_times_yearly(std::vector<double> &result) 
 
     year  += 1;
   }
-
-  return 0;
 }
 
-PetscErrorCode Time_Calendar::compute_times(double time_start, double delta, double time_end,
-                                                const std::string &keyword,
-                                                std::vector<double> &result) {
+void Time_Calendar::compute_times(double time_start, double delta, double time_end,
+                                  const std::string &keyword,
+                                  std::vector<double> &result) {
   if (keyword == "simple") {
-    return compute_times_simple(time_start, delta, time_end, result);
+    compute_times_simple(time_start, delta, time_end, result);
+  } else if (keyword == "monthly") {
+    compute_times_monthly(result);
+  } else if (keyword == "yearly") {
+    compute_times_yearly(result);
+  } else {
+    throw RuntimeError::formatted("'%s' reporting is not implemented", keyword.c_str());  
   }
-
-  if (keyword == "monthly") {
-    return compute_times_monthly(result);
-  }
-
-  if (keyword == "yearly") {
-    return compute_times_yearly(result);
-  }
-
-  throw RuntimeError::formatted("'%s' reporting is not implemented", keyword.c_str());
-  return 0;
 }
 
 } // end of namespace pism

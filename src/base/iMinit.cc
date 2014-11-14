@@ -147,7 +147,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     }
   }
 
-  ierr =  grid.time->init(); CHKERRQ(ierr);
+  grid.time->init();
 
   // Grid dimensions should not be deduced from a bootstrapping file, so we
   // check if these options are set and stop if they are not.

@@ -89,7 +89,6 @@ PetscErrorCode IceCompModel::createVecs() {
 }
 
 PetscErrorCode IceCompModel::set_grid_defaults() {
-  PetscErrorCode ierr;
 
   // This sets the defaults for each test; command-line options can override this.
 
@@ -144,7 +143,7 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     throw RuntimeError("desired test not implemented\n");
   }
 
-  ierr =  grid.time->init(); CHKERRQ(ierr);
+  grid.time->init();
 
   return 0;
 }

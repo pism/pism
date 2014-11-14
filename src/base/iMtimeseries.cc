@@ -72,9 +72,11 @@ PetscErrorCode IceModel::init_timeseries() {
 
   save_ts = true;
 
-  ierr = grid.time->parse_times(times, ts_times);
-  if (ierr != 0) {
-    throw RuntimeError("parsing the -ts_times argument failed.");
+  try {
+    grid.time->parse_times(times, ts_times);  
+  } catch (RuntimeError &e) {
+    e.add_context("parsing the -ts_times argument");
+    throw;
   }
 
   if (ts_times.size() == 0) {
@@ -250,10 +252,12 @@ PetscErrorCode IceModel::init_extras() {
     return 0;
   }
 
-  ierr = grid.time->parse_times(times, extra_times);
-  if (ierr != 0) {
-    throw RuntimeError::formatted("parsing -extra_times %s failed.", times.c_str());
+  try {
+    grid.time->parse_times(times, extra_times);    
+  } catch (RuntimeError &e) {
+    e.add_context("parsing the -extra_times argument");
   }
+
   if (extra_times.size() == 0) {
     throw RuntimeError("no argument for -extra_times option.");
   }

@@ -32,9 +32,9 @@ public:
                 const UnitSystem &units_system);
   virtual ~Time_Calendar();
 
-  virtual PetscErrorCode init();
+  virtual void init();
 
-  virtual PetscErrorCode init_from_file(const std::string &filename);
+  virtual void init_from_file(const std::string &filename);
 
   virtual double mod(double time, unsigned int);
 
@@ -69,22 +69,22 @@ public:
   virtual double increment_date(double T, int years);
 
 protected:
-  virtual PetscErrorCode compute_times(double time_start, double delta, double time_end,
-                                       const std::string &keyword,
-                                       std::vector<double> &result);
+  virtual void compute_times(double time_start, double delta, double time_end,
+                             const std::string &keyword,
+                             std::vector<double> &result);
 
-  virtual PetscErrorCode process_ys(double &result, bool &flag);
-  virtual PetscErrorCode process_y(double &result, bool &flag);
-  virtual PetscErrorCode process_ye(double &result, bool &flag);
+  virtual void process_ys(double &result, bool &flag);
+  virtual void process_y(double &result, bool &flag);
+  virtual void process_ye(double &result, bool &flag);
 
-  virtual PetscErrorCode parse_date(const std::string &spec, double *result);
+  virtual void parse_date(const std::string &spec, double *result);
 
-  virtual PetscErrorCode parse_interval_length(const std::string &spec,
-                                               std::string &keyword, double *result);
+  virtual void parse_interval_length(const std::string &spec,
+                                     std::string &keyword, double *result);
 
-  PetscErrorCode compute_times_monthly(std::vector<double> &result);
+  void compute_times_monthly(std::vector<double> &result);
 
-  PetscErrorCode compute_times_yearly(std::vector<double> &result);
+  void compute_times_yearly(std::vector<double> &result);
 private:
   // Hide copy constructor / assignment operator.
   Time_Calendar(Time_Calendar const &);

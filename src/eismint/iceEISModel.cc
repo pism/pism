@@ -65,7 +65,7 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
   grid.Ly = 750e3;
   grid.Lz = 4e3;  // depend on auto-expansion to handle bigger thickness
 
-  PetscErrorCode ierr = grid.time->init(); CHKERRQ(ierr);
+  grid.time->init();
 
   return 0;
 }
