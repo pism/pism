@@ -19,8 +19,8 @@ ${1%/}/FEvoRslab.py
 
 flowline.py -o pism-in.nc --expand -d y fevor-slab-in.nc
 
-${2%/}/pismr -n 1 -surface given -boot_file pism-in.nc -periodicity xy \
- -Mx ${gridMx} -My ${gridMx} -Lx 50.05 -Ly 50.5 -Mz ${gridMz} -Lz 1000 -y 200 \
+${2%/}/pismr -surface given -boot_file pism-in.nc -periodicity xy \
+ -Mx ${gridMx} -My ${gridMx} -Lx 50.05 -Ly 50.5 -Mz ${gridMz} -Lz 1000 -y 150 \
  -bed_smoother_range 0 -z_spacing equal \
  -stress_balance sia_fevor \
  -sia_fevor_use_constant_slope -sia_fevor_surface_slope_degrees -3 \
