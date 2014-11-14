@@ -9,7 +9,7 @@ from numpy import linspace, minimum, maximum, abs
 import netCDF4
 
 Lx         = 50e3                       # 50 km
-Mx         = 201
+Mx         = 3
 # topg_slope = -0.08748866352             # 5 degrees
 topg_slope = 0                          # zero degrees (we prescribe the surface gradient)
 thk_0      = 5e2                        # 500 meters
