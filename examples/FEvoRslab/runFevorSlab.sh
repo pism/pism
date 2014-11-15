@@ -24,6 +24,7 @@ ${2%/}/pismr -surface given -boot_file pism-in.nc -periodicity xy \
  -bed_smoother_range 0 -z_spacing equal \
  -stress_balance sia_fevor \
  -sia_fevor_use_constant_slope -sia_fevor_surface_slope_degrees -3 \
+ -extra_file ex.nc -extra_times 50 -extra_vars distributions,enhancement_factor,thk,velbar,velbase,velsurf \
  -fevor_n_particles ${nP} \
  -o pism-out.nc
 
