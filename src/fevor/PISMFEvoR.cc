@@ -536,7 +536,7 @@ PetscErrorCode PISMFEvoR::set_initial_distribution_parameters() {
   m_p_e.resize(n_particles);
   
   for (unsigned int zz = 0; zz < grid.Mz-1; ++zz) {
-    for (unsigned int xx = 0; xx < grid.Mx-1; ++xx) {
+    for (unsigned int xx = 0; xx < (unsigned int)grid.Mx-1; ++xx) {
       unsigned int i = xx + zz*(grid.Mx-1);
       unsigned int invZ = grid.Mz-zz-1;
       
