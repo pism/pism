@@ -79,6 +79,8 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
 
   bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
 
+  const bool adjust_diffusivity_near_domain_boundaries = false;
+
   // some flow laws use grain size, and even need age to update grain size
   if (compute_grain_size_using_age && (!config.get_flag("do_age"))) {
     PetscPrintf(grid.com,
@@ -210,8 +212,10 @@ PetscErrorCode SIAFD_FEvoR::compute_diffusive_flux(IceModelVec2Stag &h_x, IceMod
       // this adjustment lets us avoid taking very small time-steps
       // because of the possible thickness and bed elevation
       // "discontinuities" at the boundary.)
-      if (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)
+      if (adjust_diffusivity_near_domain_boundaries && 
+          (i < 0 || i >= grid.Mx-1 || j < 0 || j >= grid.My-1)) {
         Dfoffset = 0.0;
+      }
 
       my_D_max = PetscMax(my_D_max, Dfoffset);
 
