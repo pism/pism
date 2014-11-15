@@ -142,7 +142,7 @@ PetscErrorCode PISMFEvoR::update(double t, double dt) {
       // probably means that the current particle exited the ice blob.
       // This is a failure of the PISMFEvoR logic: such particles need
       // to be discarded and replaced by new ones *within* the ice.)
-      assert(P > 0.0);
+      assert(P >= 0.0);
 
       /* Indexing: {0, 1, 2,
        *            3, 4, 5,
