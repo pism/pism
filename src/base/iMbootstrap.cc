@@ -316,7 +316,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
                      ? "quartic guess sans smb" : "mass balance for velocity estimate"));
   CHKERRQ(ierr);
 
-  std::vector<double> T(grid.Mz);
   const bool do_cold = config.get_flag("do_cold_ice_methods"),
              usesmb  = config.get_string("bootstrapping_temperature_heuristic") == "smb";
   const double
@@ -358,6 +357,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
       Ts = ice_surface_temp(i,j),
       gg = geothermal_flux(i,j);
     const unsigned int ks = grid.kBelowHeight(HH);
+
+    double *T = NULL;
+    ierr = result->getInternalColumn(i, j, &T); CHKERRQ(ierr);
 
     // within ice
     if (usesmb == true) { // method 1:  includes surface mass balance in estimate
@@ -404,8 +406,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
         ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
       }
     }
-
-    ierr = result->setInternalColumn(i,j,&T[0]); CHKERRQ(ierr);
 
   }
 
