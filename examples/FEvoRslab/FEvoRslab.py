@@ -12,7 +12,7 @@ Lx         = 50e3                       # 50 km
 Mx         = 3
 # topg_slope = -0.08748866352             # 5 degrees
 topg_slope = 0                          # zero degrees (we prescribe the surface gradient)
-thk_0      = 5e2                        # 500 meters
+thk_0      = 510.0                        # 500 meters (plus some extra to avoid matching grid spacing)
 climatic_mass_balance_0 = 0             # kg m-2 s-1
 ice_surface_temp_0      = 243.15           # Kelvin
 
