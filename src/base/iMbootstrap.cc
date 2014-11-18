@@ -394,8 +394,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
     }
 
     // above ice
-    for (unsigned int k = ks; k < grid.Mz; k++)
-      T[k] = ice_surface_temp(i,j);
+    for (unsigned int k = ks; k < grid.Mz; k++) {
+      T[k] = Ts;
+    }
 
     // convert to enthalpy if that's what we are calculating
     if (do_cold == false) {
