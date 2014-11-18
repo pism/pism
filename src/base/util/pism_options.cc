@@ -920,8 +920,8 @@ PetscErrorCode set_config_from_options(MPI_Comm com, Config &config) {
   // SIAFD_FEvoR options
   ierr = config.flag_from_option("sia_fevor_use_constant_slope",
                                  "sia_fevor_use_constant_slope"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("sia_fevor_surface_slope_degrees",
-                                   "sia_fevor_surface_slope_degrees"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("sia_fevor_bed_slope_degrees",
+                                   "sia_fevor_bed_slope_degrees"); CHKERRQ(ierr);
 
   // PISMFEvoR options
   ierr = config.scalar_from_option("fevor_n_particles", "fevor_n_particles"); CHKERRQ(ierr);

@@ -52,7 +52,7 @@ PetscErrorCode SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
   PetscErrorCode ierr;
 
   if (config.get_flag("sia_fevor_use_constant_slope")) {
-    double slope = (config.get("sia_fevor_surface_slope_degrees") / 180.0) * M_PI;
+    double slope = (config.get("sia_fevor_bed_slope_degrees") / 180.0) * M_PI;
 
     // We compute the surface slope using the fact that we are
     // modeling grounded ice, so surface = bed + thickness and
