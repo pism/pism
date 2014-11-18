@@ -40,6 +40,7 @@ add_library (pismboundary
   ./util/PCFactory.cc
   ./surface/PSTemperatureIndex_Old.cc
   ./surface/localMassBalance_old.cc
+  ./surface/PS_FEvoR.cc
   ./surface/PS_EISMINTII.cc
   )
 target_link_libraries (pismboundary pismutil)

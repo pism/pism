@@ -65,6 +65,7 @@
 #include "PSConstantPIK.hh"
 #include "PSForceThickness.hh"
 #include "PSCache.hh"
+#include "PS_FEvoR.hh"
 
 namespace pism {
 
@@ -109,6 +110,7 @@ void PSFactory::add_standard_types() {
   add_model<PSTemperatureIndex_Old>("pdd_old");
   add_model<PSConstantPIK>("pik");
   add_model<PSSimple>("simple");
+  add_model<PS_FEvoR>("fevor");
   set_default("given");
 
   add_modifier<PSAnomaly>("anomaly");
