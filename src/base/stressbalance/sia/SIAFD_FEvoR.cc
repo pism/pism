@@ -54,8 +54,45 @@ PetscErrorCode SIAFD_FEvoR::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
   if (config.get_flag("sia_fevor_use_constant_slope")) {
     double slope = (config.get("sia_fevor_surface_slope_degrees") / 180.0) * M_PI;
 
-    ierr = h_x.set(slope); CHKERRQ(ierr);
-    ierr = h_y.set(0.0); CHKERRQ(ierr);
+    // We compute the surface slope using the fact that we are
+    // modeling grounded ice, so surface = bed + thickness and
+    // surface' = bed' + thickness'.
+
+    const double dx = grid.dx, dy = grid.dy;  // convenience
+
+    IceModelVec2S &H = *thickness;
+
+    IceModelVec::AccessList list;
+    list.add(h_x);
+    list.add(h_y);
+    list.add(H);
+
+    // h_x and h_y have to have ghosts
+    assert(h_x.get_stencil_width() >= 1);
+    assert(h_y.get_stencil_width() >= 1);
+    // bed elevation needs more ghosts
+    assert(H.get_stencil_width() >= 2);
+
+    for (PointsWithGhosts p(grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // I-offset
+      h_x(i, j, 0) = (H(i + 1, j) - H(i, j)) / dx;
+      h_y(i, j, 0) = (+ H(i + 1, j + 1) + H(i, j + 1)
+                      - H(i + 1, j - 1) - H(i, j - 1)) / (4.0*dy);
+      // J-offset
+      h_y(i, j, 1) = (H(i, j + 1) - H(i, j)) / dy;
+      h_x(i, j, 1) = (+ H(i + 1, j + 1) + H(i + 1, j)
+                      - H(i - 1, j + 1) - H(i - 1, j)) / (4.0*dx);
+
+      // add constant bed slope in the X direction
+      h_x(i, j, 0) += slope;
+      h_x(i, j, 1) += slope;
+      // slope in the Y direction is zero (this is here to make it
+      // extra clear)
+      h_y(i, j, 0) += 0.0;
+      h_y(i, j, 1) += 0.0;
+    }
   } else {
     ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
   }
