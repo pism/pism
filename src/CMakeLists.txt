@@ -196,8 +196,7 @@ add_executable (pismr pismr.cc)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
-  eismint/iceEISModel.cc
-  eismint/PS_EISMINTII.cc)
+  eismint/iceEISModel.cc)
 
 # All of the following are linked against pismbase
 foreach (EXEC pismr pisms)

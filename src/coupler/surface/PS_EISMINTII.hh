@@ -45,7 +45,7 @@ public:
   PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype);
   PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-private:
+protected:
   IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
   PetscErrorCode allocate();
   PetscErrorCode initialize_using_formulas();
