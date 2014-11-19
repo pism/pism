@@ -218,8 +218,6 @@ public:
 
   unsigned int Mz; //!< number of grid points in z-direction in the ice
 
-  unsigned int initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
-
   Time *time;               //!< The time management object (hides calendar computations)
 
   //! @brief Check if a point `(i,j)` is in the strip of `stripwidth`

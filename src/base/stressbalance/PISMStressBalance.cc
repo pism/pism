@@ -183,20 +183,6 @@ PetscErrorCode StressBalance::compute_2D_stresses(IceModelVec2V &velocity,
   return 0;
 }
 
-//! \brief Extend the grid vertically.
-PetscErrorCode StressBalance::extend_the_grid(int old_Mz) {
-  PetscErrorCode ierr;
-
-  ierr = m_w.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = m_strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-
-  ierr = m_stress_balance->extend_the_grid(old_Mz); CHKERRQ(ierr);
-
-  ierr = m_modifier->extend_the_grid(old_Mz); CHKERRQ(ierr);
-
-  return 0;
-}
-
 //! Compute vertical velocity using incompressibility of the ice.
 /*!
 The vertical velocity \f$w(x,y,z,t)\f$ is the velocity *relative to the

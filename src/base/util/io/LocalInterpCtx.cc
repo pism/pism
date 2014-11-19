@@ -127,9 +127,11 @@ LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
   a_len = count[X] * count[Y] * std::max(count[Z], 1u);
-  int my_a_len = a_len, max_a_len = a_len;
-  MPI_Reduce(&my_a_len, &max_a_len, 1, MPI_INT, MPI_MAX, 0, com);
-  a_len = max_a_len;
+  int my_a_len = a_len, mpi_a_len = a_len;
+  // MPI_Reduce takes a pointer to int and a_len is an unsigned int,
+  // so we create a copy with the type int.
+  MPI_Reduce(&my_a_len, &(mpi_a_len), 1, MPI_INT, MPI_MAX, 0, com);
+  a_len = (unsigned int)mpi_a_len;
   PetscMalloc(a_len * sizeof(double), &(a));
   // FIXME: we need error checking here
 

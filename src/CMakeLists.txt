@@ -45,7 +45,7 @@ set(PISMUTIL_SRC
   base/util/iceModelVec2T.cc
   base/util/iceModelVec2V.cc
   base/util/iceModelVec3.cc
-  base/util/IceModelVec3Custom.cc
+  base/util/iceModelVec3Custom.cc
   base/util/io/LocalInterpCtx.cc
   base/util/io/PIO.cc
   base/util/io/PISMNC3File.cc
@@ -197,8 +197,7 @@ add_executable (pismr pismr.cc)
 
 # Simplified geometry
 add_executable (pisms pisms.cc
-  eismint/iceEISModel.cc
-  eismint/PS_EISMINTII.cc)
+  eismint/iceEISModel.cc)
 
 # All of the following are linked against pismbase
 foreach (EXEC pismr pisms)

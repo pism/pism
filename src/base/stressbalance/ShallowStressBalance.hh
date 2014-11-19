@@ -45,11 +45,11 @@ public:
 
   virtual PetscErrorCode init(Vars &vars) {
     variables = &vars;
-    return 0; }
+    return 0;
+  }
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
-                                                 IceModelVec2V &velocities)
-  {
+                                                 IceModelVec2V &velocities) {
     m_vel_bc = &velocities;
     bc_locations = &locations;
     return 0;
@@ -57,8 +57,9 @@ public:
 
   //! \brief Set the sea level used to check for floatation. (Units: meters,
   //! relative to the geoid.)
-  void set_sea_level_elevation(double new_sea_level)
-  { sea_level = new_sea_level; }
+  void set_sea_level_elevation(double new_sea_level) {
+    sea_level = new_sea_level;
+  }
 
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure) = 0;
 
@@ -91,10 +92,6 @@ public:
                                                 IceModelVec2S &result);
   // helpers:
 
-  //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int /*old_Mz*/) {
-    return 0;
-  }
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(std::string &result) {
     result = "";

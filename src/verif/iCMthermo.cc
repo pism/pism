@@ -339,7 +339,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   double    FF;
   Tex = new double[grid.Mz];
 
-  IceModelVec3BTU *bedrock_temp;
+  IceModelVec3Custom *bedrock_temp;
 
   BTU_Verification *my_btu = dynamic_cast<BTU_Verification*>(btu);
   if (my_btu == NULL) {
@@ -719,7 +719,7 @@ PetscErrorCode IceCompModel::initTestsKO() {
   return 0;
 }
 
-PetscErrorCode BTU_Verification::get_temp(IceModelVec3BTU* &result) {
+PetscErrorCode BTU_Verification::get_temp(IceModelVec3Custom* &result) {
   result = &temp;
   return 0;
 }
@@ -727,11 +727,11 @@ PetscErrorCode BTU_Verification::get_temp(IceModelVec3BTU* &result) {
 PetscErrorCode BTU_Verification::bootstrap() {
   PetscErrorCode ierr;
 
-  if (Mbz < 2) {
+  if (m_Mbz < 2) {
     return 0;
   }
 
-  std::vector<double> Tbcol(Mbz),
+  std::vector<double> Tbcol(m_Mbz),
     zlevels = temp.get_levels();
   double dum1, dum2, dum3, dum4;
   double FF;
@@ -739,7 +739,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
   // evaluate exact solution in a column; all columns are the same
   switch (testname) {
     case 'K':
-      for (unsigned int k=0; k<Mbz; k++) {
+      for (unsigned int k = 0; k < m_Mbz; k++) {
         if (exactK(grid.time->current(), zlevels[k], &Tbcol[k], &FF,
                    (bedrock_is_ice==PETSC_TRUE))) {
           throw RuntimeError::formatted("exactK() reports that level %9.7f is below B0 = -1000.0 m",
@@ -748,7 +748,7 @@ PetscErrorCode BTU_Verification::bootstrap() {
       }
       break;
     case 'O':
-      for (unsigned int k=0; k<Mbz; k++) {
+      for (unsigned int k = 0; k < m_Mbz; k++) {
         ierr = exactO(zlevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
       }
       break;

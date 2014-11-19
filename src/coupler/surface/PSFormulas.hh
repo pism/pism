@@ -15,45 +15,40 @@
  * You should have received a copy of the GNU General Public License
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-*/
+ */
 
-#ifndef _PS_EISMINTII_H_
-#define _PS_EISMINTII_H_
+#ifndef _PSFORMULAS_H_
+#define _PSFORMULAS_H_
 
 #include "PISMSurface.hh"
 #include "iceModelVec.hh"
 
 namespace pism {
 
-/** EISMINT II climate inputs.
+/** Base class for surface models that compute climate inputs using
+ * formulas.
  *
- * This class should be removed together with the pisms executable
- * (once I get to that).
+ * Used by PS_EISMINTII and PSVerification. 
  */
-class PS_EISMINTII : public SurfaceModel {
+class PSFormulas : public SurfaceModel {
 public:
-  PS_EISMINTII(IceGrid &g, const Config &conf, int experiment);
-  ~PS_EISMINTII();
+  PSFormulas(IceGrid &g, const Config &conf);
+  ~PSFormulas();
 
   // the interface:
-  PetscErrorCode init(Vars &vars);
   void attach_atmosphere_model(AtmosphereModel *input);
   PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  PetscErrorCode update(PetscReal t, PetscReal dt);
   void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
   PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
                                   IO_Type nctype);
   PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
-private:
+protected:
   IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
   PetscErrorCode allocate();
-  PetscErrorCode initialize_using_formulas();
-  int m_experiment;
-  double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;
 };
 
 
 } // end of namespace pism
 
-#endif /* _PS_EISMINTII_H_ */
+#endif /* _PSFORMULAS_H_ */

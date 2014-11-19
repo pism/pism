@@ -92,6 +92,7 @@ protected:
 
   virtual int get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const;
 
+  using NCFile::put_att_double_impl;
   virtual int put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
 
   virtual int put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;

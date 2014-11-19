@@ -49,7 +49,7 @@ PetscErrorCode BTU_Test::bootstrap() {
   PetscErrorCode ierr;
 
   // fill exact bedrock temperature from Test K at time ys
-  if (Mbz > 1) {
+  if (m_Mbz > 1) {
     std::vector<double> zlevels = temp.get_levels();
 
     IceModelVec::AccessList list(temp);
@@ -58,7 +58,7 @@ PetscErrorCode BTU_Test::bootstrap() {
       const int i = p.i(), j = p.j();
 
       ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-      for (unsigned int k=0; k < Mbz; k++) {
+      for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF; // Test K:  use Tb[k], ignore FF
         ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);

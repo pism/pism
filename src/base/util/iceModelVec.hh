@@ -707,10 +707,6 @@ public:
   PetscErrorCode  getHorSlice(Vec &gslice, double z) const; // used in iMmatlab.cc
   PetscErrorCode  getHorSlice(IceModelVec2S &gslice, double z) const;
   PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, const IceModelVec2S &myH) const;
-  PetscErrorCode  extend_vertically(int old_Mz, double fill_value);
-  PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
-protected:
-  virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };
 
 } // end of namespace pism

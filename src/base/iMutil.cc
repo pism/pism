@@ -213,140 +213,15 @@ PetscErrorCode  IceModel::stampHistory(const std::string &str) {
  */
 PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;
-  double H_min, H_max, dz_top;
-  std::vector<double> new_zlevels;
-  const int old_Mz = grid.Mz;
-  int N = 0;                    // the number of new levels
+  double H_min, H_max;
 
   ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
   if (grid.Lz >= H_max) {
     return 0;
   }
 
-  if (grid.initial_Mz == 0) {
-    grid.initial_Mz = grid.Mz;
-  } else if (grid.Mz > grid.initial_Mz * 2) {
-    throw RuntimeError::formatted("Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)\n"
-                                  "AND the grid has twice the initial number of vertical levels (%d) already.",
-                                  H_max, grid.Lz, grid.initial_Mz);
-  }
-
-  // So, we need to extend the grid. We find dz at the top of the grid,
-  // create new zlevels and zblevels, then extend all the IceModelVec3s.
-
-  // Find the vertical grid spacing at the top of the grid:
-  dz_top = grid.Lz - grid.zlevels[old_Mz - 2];
-
-  // Find the number of new levels:
-  while (grid.Lz + N * dz_top <= H_max) {
-    N++;
-  }
-  // This makes sure that we always have *exactly* two levels strictly above the ice:
-  if (grid.Lz + N * dz_top > H_max) {
-    N += 1;
-  } else {
-    N += 2;
-  }
-
-  if (H_max - grid.Lz > 1000) {
-    throw RuntimeError::formatted("Max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)\n"
-                                  "Extending PISM's vertical grid would require adding %d new levels totaling %7.4f m.",
-                                  H_max, grid.Lz, N, N * dz_top);
-  }
-
-  ierr = verbPrintf(2, grid.com,
-                    "\n"
-                    "PISM WARNING: max ice thickness (%7.4f m) is greater than the computational box height (%7.4f m)...\n"
-                    "              Adding %d new grid levels %7.4f m apart...\n",
-                    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
-
-  // Create new zlevels and zblevels:
-  new_zlevels = grid.zlevels;
-
-  // Fill the new levels:
-  for (int j = 0; j < N; j++) {
-    new_zlevels.push_back(grid.Lz + dz_top * (j + 1));
-  }
-
-  ierr = grid.set_vertical_levels(new_zlevels); CHKERRQ(ierr);
-
-  // Done with the grid. Now we need to extend IceModelVec3s.
-
-  // We use surface temperatures to extend T3. We get them from the
-  // SurfaceModel.
-
-  if (surface != NULL) {
-    ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
-    ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
-  } else {
-    throw RuntimeError("PISM ERROR: surface == NULL");
-  }
-
-  // for extending the variables Enth3 and vWork3d vertically, put into
-  //   vWork2d[0] the enthalpy of the air
-  double p_air = EC->getPressureFromDepth(0.0);
-
-  IceModelVec::AccessList list;
-  list.add(liqfrac_surface);
-  list.add(vWork2d[0]);
-  list.add(ice_surface_temp);
-  for (Points p(grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    vWork2d[0](i,j) = EC->getEnthPermissive(ice_surface_temp(i,j), liqfrac_surface(i,j), p_air);
-  }
-
-  // Model state 3D vectors:
-  ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
-
-  // Work 3D vectors:
-  ierr = vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-
-  if (config.get_flag("do_cold_ice_methods")) {
-    ierr = T3.extend_vertically(old_Mz, ice_surface_temp); CHKERRQ(ierr);
-  }
-
-  // deal with 3D age conditionally
-  if (config.get_flag("do_age")) {
-    ierr = tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  }
-
-  // Ask the stress balance module to extend its 3D fields:
-  ierr = stress_balance->extend_the_grid(old_Mz); CHKERRQ(ierr); 
-  
-  ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
-
-  // Now update z levels used for diagnostic quantities:
-  std::map<std::string,Diagnostic*>::iterator j = diagnostics.begin();
-  while (j != diagnostics.end()) {
-    if (j->second != NULL) {
-      (j->second)->set_zlevels(grid.zlevels);
-    }
-    ++j;
-  }
-
-  if (save_snapshots && (not split_snapshots)) {
-    char tmp[20];
-    snprintf(tmp, 20, "%d", grid.Mz);
-    
-    snapshots_filename = pism_filename_add_suffix(snapshots_filename, "-Mz", tmp);
-    snapshots_file_is_ready = false;
-
-    ierr = verbPrintf(2, grid.com,
-                      "NOTE: Further snapshots will be saved to '%s'...\n",
-                      snapshots_filename.c_str()); CHKERRQ(ierr);
-  }
-
-  if (save_extra && (not split_extra)) {
-    char tmp[20];
-    snprintf(tmp, 20, "%d", grid.Mz);
-
-    extra_filename = pism_filename_add_suffix(extra_filename, "-Mz", tmp);
-    extra_file_is_ready = false;
-
-    ierr = verbPrintf(2, grid.com,
-                      "NOTE: Further spatially-variable time-series will be saved to '%s'...\n",
-                      extra_filename.c_str()); CHKERRQ(ierr);
-  }
+  throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height of the computational box (%7.4f m).",
+                                H_max, grid.Lz);
 
   return 0;
 }

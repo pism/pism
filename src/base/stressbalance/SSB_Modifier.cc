@@ -54,16 +54,6 @@ PetscErrorCode SSB_Modifier::allocate() {
   return 0;
 }
 
-PetscErrorCode SSB_Modifier::extend_the_grid(int old_Mz) {
-  PetscErrorCode ierr;
-
-  ierr =     u.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr =     v.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-  ierr = strain_heating.extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
-
-  return 0;
-}
-
 PetscErrorCode ConstantInColumn::init(Vars &vars) {
   PetscErrorCode ierr;
 

@@ -20,34 +20,24 @@
 #ifndef _PSVERIFICATION_H_
 #define _PSVERIFICATION_H_
 
-#include "PISMSurface.hh"
-#include "iceModelVec.hh"
+#include "PSFormulas.hh"
 
 namespace pism {
 
 class EnthalpyConverter;
 
 //! Climate inputs for verification tests.
-class PSVerification : public SurfaceModel {
+class PSVerification : public PSFormulas {
 public:
   PSVerification(IceGrid &g, const Config &conf, EnthalpyConverter *EC, int test);
   ~PSVerification();
 
   // the interface:
   PetscErrorCode init(Vars &vars);
-  void attach_atmosphere_model(AtmosphereModel *input);
-  PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   PetscErrorCode update(PetscReal t, PetscReal dt);
-  void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                  IO_Type nctype);
-  PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 private:
   int m_testname;
-  IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
   EnthalpyConverter *m_EC;
-  PetscErrorCode allocate_PSVerification();
   PetscErrorCode update_ABCDEH(double t);
   PetscErrorCode update_FG(double t);
   PetscErrorCode update_KO();

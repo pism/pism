@@ -111,9 +111,6 @@ public:
   //! \brief Produce a report string for the standard output.
   virtual PetscErrorCode stdout_report(std::string &result);
 
-  //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(int old_Mz);
-
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 

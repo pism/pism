@@ -27,32 +27,8 @@
 namespace pism {
 
 PS_EISMINTII::PS_EISMINTII(IceGrid &g, const Config &conf, int experiment)
-  : SurfaceModel(g, conf), m_experiment(experiment) {
-  PetscErrorCode ierr = allocate();
-  if (ierr != 0) {
-    throw std::runtime_error("PS_EISMINTII allocation failed");
-  }
-}
-
-PetscErrorCode PS_EISMINTII::allocate() {
-  PetscErrorCode ierr;
-
-  ierr = m_climatic_mass_balance.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.set_attrs("internal",
-                                           "ice-equivalent surface mass balance (accumulation/ablation) rate",
-                                           "kg m-2 s-1",
-                                           "land_ice_surface_specific_mass_balance_flux"); CHKERRQ(ierr);
-  ierr = m_climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
-  m_climatic_mass_balance.write_in_glaciological_units = true;
-  m_climatic_mass_balance.metadata().set_string("comment", "positive values correspond to ice gain");
-
-  // annual mean air temperature at "ice surface", at level below all
-  // firn processes (e.g. "10 m" or ice temperatures)
-  ierr = m_ice_surface_temp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_ice_surface_temp.set_attrs("internal",
-                                      "annual average ice surface temperature, below firn processes",
-                                      "K", ""); CHKERRQ(ierr);
-  return 0;
+  : PSFormulas(g, conf), m_experiment(experiment) {
+  // empty
 }
 
 PS_EISMINTII::~PS_EISMINTII() {
@@ -175,61 +151,11 @@ PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
   return 0;
 }
 
-void PS_EISMINTII::attach_atmosphere_model(AtmosphereModel *input) {
-  delete input;
-}
-
-PetscErrorCode PS_EISMINTII::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = m_climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PS_EISMINTII::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = m_ice_surface_temp.copy_to(result); CHKERRQ(ierr);
-  return 0;
-}
-
 PetscErrorCode PS_EISMINTII::update(PetscReal t, PetscReal dt) {
   (void) t;
   (void) dt;
 
   // do nothing (but an implementation is required)
-
-  return 0;
-}
-
-void PS_EISMINTII::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
-  (void) keyword;
-
-  result.insert(m_climatic_mass_balance.metadata().get_name());
-  result.insert(m_ice_surface_temp.metadata().get_name());
-}
-
-PetscErrorCode PS_EISMINTII::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                             IO_Type nctype) {
-  PetscErrorCode ierr;
-
-  if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
-    ierr = m_climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
-  }
-
-  if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
-    ierr = m_ice_surface_temp.define(nc, nctype); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-PetscErrorCode PS_EISMINTII::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
-  if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
-    ierr = m_climatic_mass_balance.write(nc); CHKERRQ(ierr);
-  }
-
-  if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
-    ierr = m_ice_surface_temp.write(nc); CHKERRQ(ierr);
-  }
 
   return 0;
 }
