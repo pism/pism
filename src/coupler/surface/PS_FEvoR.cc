@@ -18,14 +18,12 @@
  */
 
 #include "PS_FEvoR.hh"
-#include "PISMAtmosphere.hh"
 #include "PISMConfig.hh"
-#include "pism_options.hh"
 
 namespace pism {
 
 PS_FEvoR::PS_FEvoR(IceGrid &g, const Config &conf)
-  : PS_EISMINTII(g, conf, (int)'A') {
+  : PSFormulas(g, conf) {
   // empty
 }
 
@@ -47,6 +45,15 @@ PetscErrorCode PS_FEvoR::init(Vars &vars) {
 
   // convert from [m/s] to [kg m-2 s-1]
   ierr = m_climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PS_FEvoR::update(PetscReal t, PetscReal dt) {
+  (void) t;
+  (void) dt;
+
+  // do nothing (but an implementation is required)
 
   return 0;
 }

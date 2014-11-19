@@ -20,19 +20,20 @@
 #ifndef _PS_FEvoR_H_
 #define _PS_FEvoR_H_
 
-#include "PS_EISMINTII.hh"
+#include "PSFormulas.hh"
 
 namespace pism {
 
 /** PISM-FEvoR climate inputs.
  *
  */
-class PS_FEvoR : public PS_EISMINTII {
+class PS_FEvoR : public PSFormulas {
 public:
   PS_FEvoR(IceGrid &g, const Config &conf);
   virtual ~PS_FEvoR();
   // the interface:
   PetscErrorCode init(Vars &vars);
+  PetscErrorCode update(PetscReal t, PetscReal dt);
 };
 
 

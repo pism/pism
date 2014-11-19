@@ -18,7 +18,6 @@
  */
 
 #include "PS_EISMINTII.hh"
-#include "PISMAtmosphere.hh"
 #include "PISMConfig.hh"
 #include "pism_options.hh"
 
