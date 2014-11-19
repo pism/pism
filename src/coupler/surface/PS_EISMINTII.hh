@@ -20,7 +20,7 @@
 #ifndef _PS_EISMINTII_H_
 #define _PS_EISMINTII_H_
 
-#include "PISMSurface.hh"
+#include "PSFormulas.hh"
 #include "iceModelVec.hh"
 
 namespace pism {
@@ -30,29 +30,19 @@ namespace pism {
  * This class should be removed together with the pisms executable
  * (once I get to that).
  */
-class PS_EISMINTII : public SurfaceModel {
+class PS_EISMINTII : public PSFormulas {
 public:
   PS_EISMINTII(IceGrid &g, const Config &conf, int experiment);
   ~PS_EISMINTII();
 
   // the interface:
   PetscErrorCode init(Vars &vars);
-  void attach_atmosphere_model(AtmosphereModel *input);
-  PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   PetscErrorCode update(PetscReal t, PetscReal dt);
-  void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                  IO_Type nctype);
-  PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
-  IceModelVec2S m_climatic_mass_balance, m_ice_surface_temp;
-  PetscErrorCode allocate();
   PetscErrorCode initialize_using_formulas();
   int m_experiment;
   double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;
 };
-
 
 } // end of namespace pism
 
