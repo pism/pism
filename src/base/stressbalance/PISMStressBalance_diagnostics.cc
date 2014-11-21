@@ -31,7 +31,8 @@ void StressBalance::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
   dict["bfrict"]   = new PSB_bfrict(this, grid, *m_variables);
 
   dict["velbar_mag"]     = new PSB_velbar_mag(this,     grid, *m_variables);
-  dict["flux_mag"]     = new PSB_flux_mag(this,     grid, *m_variables);
+  dict["flux"]           = new PSB_flux(this, grid, *m_variables);
+  dict["flux_mag"]       = new PSB_flux_mag(this,     grid, *m_variables);
   dict["velbase_mag"]    = new PSB_velbase_mag(this,    grid, *m_variables);
   dict["velsurf_mag"]    = new PSB_velsurf_mag(this,    grid, *m_variables);
 
@@ -189,6 +190,68 @@ PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
   return 0;
 }
 
+
+PSB_flux::PSB_flux(StressBalance *m, IceGrid &g, Vars &my_vars)
+  : Diag<StressBalance>(m, g, my_vars) {
+
+  dof = 2;
+  vars.resize(dof, NCSpatialVariable(g.get_unit_system()));
+
+  // set metadata:
+  vars[0].init_2d("uflux", grid);
+  vars[1].init_2d("vflux", grid);
+
+  set_attrs("Vertically integrated horizontal flux of ice in the X direction",
+            "",                 // no CF standard name
+            "m2 s-1", "m2 year-1", 0);
+  set_attrs("Vertically integrated horizontal flux of ice in the Y direction",
+            "",                 // no CF standard name
+            "m2 s-1", "m2 year-1", 1);
+}
+
+
+PetscErrorCode PSB_flux::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  IceModelVec2S *thickness;
+  IceModelVec2V *result;
+
+  // get the thickness
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) {
+    SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  }
+
+  // Compute the vertically-averaged horizontal ice velocity:
+  PSB_velbar velbar(model, grid, variables);
+  IceModelVec *tmp;
+  ierr = velbar.compute(tmp); CHKERRQ(ierr);
+  result = dynamic_cast<IceModelVec2V*>(tmp);
+  if (result == NULL) {
+    SETERRQ(grid.com, 1, "dynamic cast failure: PSB_velbar::compute did not return IceModelVec2V");
+  }
+  // NB: the call above allocates memory
+
+  // override metadata set by velbar computation
+  result->metadata(0) = vars[0];
+  result->metadata(1) = vars[1];
+
+  IceModelVec::AccessList list;
+  list.add(*thickness);
+  list.add(*result);
+
+  for (Points p(grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    int ks = grid.kBelowHeight((*thickness)(i,j));
+
+    // PSB_velbar uses grid.zlevels[ks], so we should too.
+    (*result)(i,j) *= grid.zlevels[ks];
+  }
+  
+  output = result;
+  return 0;
+}
+
+
 PSB_flux_mag::PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   : Diag<StressBalance>(m, g, my_vars) {
 
@@ -210,7 +273,7 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
 
-  // Compute the vertically-average horizontal ice velocity:
+  // Compute the vertically-averaged horizontal ice velocity:
   PSB_velbar_mag velbar_mag(model, grid, variables);
   ierr = velbar_mag.compute(tmp); CHKERRQ(ierr);
   // NB: the call above allocates memory

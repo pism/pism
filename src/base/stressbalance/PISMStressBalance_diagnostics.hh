@@ -41,6 +41,15 @@ public:
   PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Computes uflux and vflux, components of vertically-integrated horizontal
+//! flux of ice.
+class PSB_flux : public Diag<StressBalance>
+{
+public:
+  PSB_flux(StressBalance *m, IceGrid &g, Vars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
 //! \brief Computes flux_mag, the magnitude of vertically-integrated horizontal
 //! flux of ice.
 class PSB_flux_mag : public Diag<StressBalance>
