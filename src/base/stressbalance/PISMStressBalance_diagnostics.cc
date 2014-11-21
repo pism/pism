@@ -80,67 +80,47 @@ PSB_velbar::PSB_velbar(StressBalance *m, IceGrid &g, Vars &my_vars)
 
 PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-
-  IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S *thickness;
   IceModelVec2V *result;
-  double *u_ij, *v_ij;
-  double icefree_thickness = grid.config.get("mask_icefree_thickness_standard");
 
-  result = new IceModelVec2V;
-  ierr = result->create(grid, "bar", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  result->metadata() = vars[0];
+  // get the thickness
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) {
+    SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+  }
+
+  // Compute the vertically-integrated horizontal ice flux:
+  PSB_flux flux(model, grid, variables);
+  IceModelVec *tmp;
+  ierr = flux.compute(tmp); CHKERRQ(ierr);
+  result = dynamic_cast<IceModelVec2V*>(tmp);
+  if (result == NULL) {
+    SETERRQ(grid.com, 1, "dynamic cast failure: PSB_flux::compute did not return IceModelVec2V");
+  }
+  // NB: the call above allocates memory
+
+  // Override metadata set by the flux computation
+  result->metadata(0) = vars[0];
   result->metadata(1) = vars[1];
 
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
-
   IceModelVec::AccessList list;
-  list.add(*u3);
-  list.add(*v3);
   list.add(*thickness);
   list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
+    double thk = (*thickness)(i,j);
 
-    double u_sum = 0, v_sum = 0,
-      thk = (*thickness)(i,j);
-    int ks = grid.kBelowHeight(thk);
-
-    // an "ice-free" cell:
-    if (thk < icefree_thickness) {
-      (*result)(i,j).u = 0;
-      (*result)(i,j).v = 0;
-      continue;
+    // Ice flux is masked already, but we need to check for division
+    // by zero anyway.
+    if (thk > 0.0) {
+      (*result)(i,j) /= thk;
+    } else {
+      (*result)(i,j).u = 0.0;
+      (*result)(i,j).v = 0.0;
     }
-
-    // an ice-filled cell:
-    ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
-    ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
-
-    if (thk <= grid.zlevels[1]) {
-      (*result)(i,j).u = u_ij[0];
-      (*result)(i,j).v = v_ij[0];
-      continue;
-    }
-
-    for (int k = 1; k <= ks; ++k) {
-      u_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (u_ij[k] + u_ij[k-1]);
-      v_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (v_ij[k] + v_ij[k-1]);
-    }
-
-    // Finish the trapezoidal rule integration (times 1/2) and turn this
-    // integral into a vertical average. Note that we ignore the ice between
-    // zlevels[ks] and the surface, so in order to have a true average we
-    // divide by zlevels[ks] and not thk.
-    (*result)(i,j).u = 0.5 * u_sum / grid.zlevels[ks];
-    (*result)(i,j).v = 0.5 * v_sum / grid.zlevels[ks];
   }
-
-
+  
   output = result;
   return 0;
 }
@@ -209,44 +189,73 @@ PSB_flux::PSB_flux(StressBalance *m, IceGrid &g, Vars &my_vars)
             "m2 s-1", "m2 year-1", 1);
 }
 
-
 PetscErrorCode PSB_flux::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
+
+  IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S *thickness;
   IceModelVec2V *result;
+  double *u_ij, *v_ij;
+  double icefree_thickness = grid.config.get("mask_icefree_thickness_standard");
 
-  // get the thickness
-  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
-  if (thickness == NULL) {
-    SETERRQ(grid.com, 1, "land_ice_thickness is not available");
-  }
-
-  // Compute the vertically-averaged horizontal ice velocity:
-  PSB_velbar velbar(model, grid, variables);
-  IceModelVec *tmp;
-  ierr = velbar.compute(tmp); CHKERRQ(ierr);
-  result = dynamic_cast<IceModelVec2V*>(tmp);
-  if (result == NULL) {
-    SETERRQ(grid.com, 1, "dynamic cast failure: PSB_velbar::compute did not return IceModelVec2V");
-  }
-  // NB: the call above allocates memory
-
-  // override metadata set by velbar computation
+  result = new IceModelVec2V;
+  ierr = result->create(grid, "flux", WITHOUT_GHOSTS); CHKERRQ(ierr);
   result->metadata(0) = vars[0];
   result->metadata(1) = vars[1];
 
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(grid.com, 1, "land_ice_thickness is not available");
+
+  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+
   IceModelVec::AccessList list;
+  list.add(*u3);
+  list.add(*v3);
   list.add(*thickness);
   list.add(*result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    int ks = grid.kBelowHeight((*thickness)(i,j));
 
-    // PSB_velbar uses grid.zlevels[ks], so we should too.
-    (*result)(i,j) *= grid.zlevels[ks];
+    double u_sum = 0, v_sum = 0,
+      thk = (*thickness)(i,j);
+    int ks = grid.kBelowHeight(thk);
+
+    // an "ice-free" cell:
+    if (thk < icefree_thickness) {
+      (*result)(i,j).u = 0;
+      (*result)(i,j).v = 0;
+      continue;
+    }
+
+    // an ice-filled cell:
+    ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
+    ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+
+    if (thk <= grid.zlevels[1]) {
+      (*result)(i,j).u = u_ij[0];
+      (*result)(i,j).v = v_ij[0];
+      continue;
+    }
+
+    for (int k = 1; k <= ks; ++k) {
+      u_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (u_ij[k] + u_ij[k-1]);
+      v_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (v_ij[k] + v_ij[k-1]);
+    }
+
+    // Finish the trapezoidal rule integration (multiply by 1/2).
+    (*result)(i,j).u = 0.5 * u_sum;
+    (*result)(i,j).v = 0.5 * v_sum;
+
+    // The top surface of the ice is not aligned with the grid, so
+    // we have at most dz meters of ice above grid.zlevels[ks].
+    // Assume that its velocity is (u_ij[ks], v_ij[ks]) and add its
+    // contribution.
+    (*result)(i,j).u += u_ij[ks] * (thk - grid.zlevels[ks]);
+    (*result)(i,j).v += v_ij[ks] * (thk - grid.zlevels[ks]);
   }
-  
+
+
   output = result;
   return 0;
 }
