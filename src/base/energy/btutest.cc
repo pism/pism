@@ -42,11 +42,10 @@ public:
     : BedThermalUnit(g, conf) {}
   virtual ~BTU_Test() {}
   /** Initialize the bedrock temperature field at the beginning of the run. */
-  virtual PetscErrorCode bootstrap();
+  virtual void bootstrap();
 };
 
-PetscErrorCode BTU_Test::bootstrap() {
-  PetscErrorCode ierr;
+void BTU_Test::bootstrap() {
 
   // fill exact bedrock temperature from Test K at time ys
   if (m_Mbz > 1) {
@@ -57,16 +56,14 @@ PetscErrorCode BTU_Test::bootstrap() {
     for (Points p(grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+      temp.getInternalColumn(i,j,&Tb);
       for (unsigned int k=0; k < m_Mbz; k++) {
         const double z = zlevels[k];
         double FF; // Test K:  use Tb[k], ignore FF
-        ierr = exactK(grid.time->start(), z, &Tb[k], &FF, 0); CHKERRQ(ierr);
+        exactK(grid.time->start(), z, &Tb[k], &FF, 0);
       }
     }
   }
-
-  return 0;
 }
 
 
@@ -215,8 +212,8 @@ int main(int argc, char *argv[]) {
     BTU_Test btu(grid, config);
 
     bool bootstrapping_needed = true; // we know it's true
-    ierr = btu.init(variables, bootstrapping_needed); CHKERRQ(ierr);
-    ierr = btu.bootstrap();
+    btu.init(variables, bootstrapping_needed);
+    btu.bootstrap();
 
     double dt_seconds = unit_system.convert(dt_years, "years", "seconds");
 
@@ -229,14 +226,14 @@ int main(int argc, char *argv[]) {
                       dt_years, unit_system.convert(dt_seconds, "seconds", "years")); CHKERRQ(ierr);
     double max_dt;
     bool restrict_dt;
-    ierr = btu.max_timestep(0.0, max_dt, restrict_dt); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com,
-        "  BedThermalUnit reports max timestep of %.4f years ...\n",
-                      unit_system.convert(max_dt, "seconds", "years")); CHKERRQ(ierr);
+    btu.max_timestep(0.0, max_dt, restrict_dt);
+    verbPrintf(2,com,
+               "  BedThermalUnit reports max timestep of %.4f years ...\n",
+               unit_system.convert(max_dt, "seconds", "years"));
 
 
     // actually do the time-stepping
-    ierr = verbPrintf(2,com,"  running ...\n  "); CHKERRQ(ierr);
+    verbPrintf(2,com,"  running ...\n");
     for (int n = 0; n < N; n++) {
       const double time = grid.time->start() + dt_seconds * (double)n;  // time at start of time-step
 
@@ -252,25 +249,25 @@ int main(int argc, char *argv[]) {
       // we are not communicating anything, which is fine
 
       // update the temperature inside the thermal layer using bedtoptemp
-      ierr = btu.update(time, dt_seconds); CHKERRQ(ierr);
-      ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
+      btu.update(time, dt_seconds);
+      verbPrintf(2,com,".");
     }
 
-    ierr = verbPrintf(2,com,"\n  done ...\n"); CHKERRQ(ierr);
+    verbPrintf(2,com,"\n  done ...\n");
 
     // compute final output heat flux G_0 at z=0; reuse ghf for this purpose
-    ierr = ghf->set_name("bheatflx0"); CHKERRQ(ierr);
-    ierr = ghf->set_attrs("",
-                       "upward geothermal flux at ice/bedrock interface",
-                       "W m-2", ""); CHKERRQ(ierr);
-    ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
+    ghf->set_name("bheatflx0");
+    ghf->set_attrs("",
+                   "upward geothermal flux at ice/bedrock interface",
+                   "W m-2", "");
+    btu.get_upward_geothermal_flux(*ghf);
 
     // get, and tell stdout, the correct answer from Test K
     double TT, FF; // Test K:  use FF, ignore TT
-    ierr = exactK(grid.time->end(), 0.0, &TT, &FF, 0); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com,
-        "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
-                      grid.time->end_date().c_str(), FF); CHKERRQ(ierr);
+    exactK(grid.time->end(), 0.0, &TT, &FF, 0);
+    verbPrintf(2,com,
+               "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
+               grid.time->end_date().c_str(), FF);
 
     // compute numerical error
     double maxghferr, avghferr;
@@ -302,16 +299,16 @@ int main(int argc, char *argv[]) {
                  grid.time->CF_units_string());
     pio.append_time(time_name, grid.time->end());
 
-    ierr = btu.define_variables(vars, pio, PISM_DOUBLE); CHKERRQ(ierr);
-    ierr = btu.write_variables(vars, pio); CHKERRQ(ierr);
+    btu.define_variables(vars, pio, PISM_DOUBLE);
+    btu.write_variables(vars, pio);
 
-    ierr = bedtoptemp->write(pio); CHKERRQ(ierr);
-    ierr = ghf->write(pio); CHKERRQ(ierr);
+    bedtoptemp->write(pio);
+    ghf->write(pio);
 
     pio.close();
 
-    ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);
+    doneWithIceInfo(variables);
+    verbPrintf(2,com, "done.\n");
   }
   catch (...) {
     handle_fatal_errors(com);

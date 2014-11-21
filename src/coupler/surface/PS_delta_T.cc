@@ -64,25 +64,21 @@ PetscErrorCode PS_delta_T::allocate_PS_delta_T() {
   return 0;
 }
 
-PetscErrorCode PS_delta_T::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PS_delta_T::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  input_model->init(vars);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing ice-surface temperature forcing using scalar offsets...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing ice-surface temperature forcing using scalar offsets...\n");
 
-  ierr = init_internal(); CHKERRQ(ierr);
-
-  return 0;
+  init_internal();
 }
 
-PetscErrorCode PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
-  ierr = offset_data(result); CHKERRQ(ierr);
-  return 0;
+void PS_delta_T::ice_surface_temperature(IceModelVec2S &result) {
+  input_model->ice_surface_temperature(result);
+  offset_data(result);
 }
 
 void PS_delta_T::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -94,53 +90,47 @@ void PS_delta_T::add_vars_to_output(const std::string &keyword, std::set<std::st
   }
 }
 
-PetscErrorCode PS_delta_T::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
+void PS_delta_T::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
+    ice_surface_temp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.define(nc, nctype, true); CHKERRQ(ierr);
+    climatic_mass_balance.define(nc, nctype, true);
   }
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  input_model->define_variables(vars, nc, nctype);
 }
 
-PetscErrorCode PS_delta_T::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PS_delta_T::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
-    ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
+    ice_surface_temperature(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("ice_surface_temp");
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
-    ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
+    ice_surface_mass_flux(tmp);
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("climatic_mass_balance");
   }
 
-  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  input_model->write_variables(vars, nc);
 }
 
 } // end of namespace pism

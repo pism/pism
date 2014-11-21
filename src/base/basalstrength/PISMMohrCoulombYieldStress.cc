@@ -139,9 +139,8 @@ This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
+void MohrCoulombYieldStress::init(Vars &vars)
 {
-  PetscErrorCode ierr;
   bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set,
     tauc_to_phi_set;
   std::string filename;
@@ -173,40 +172,36 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
     }
   }
 
-  ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n");
 
   m_bed_topography = vars.get_2d_scalar("bedrock_altitude");
   m_mask = vars.get_2d_mask("mask");
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till yield stress model", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsIsSet("-plastic_phi", plastic_phi_set); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-topg_to_phi",
-                            "Turn on, and specify, the till friction angle parameterization based on bedrock elevation (topg)",
-                            topg_to_phi_set); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
-                            bootstrap); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-tauc_to_phi", 
-                            "Turn on, and specify, the till friction angle computation which uses basal yield stress (tauc) and the rest of the model state",
-                            tauc_to_phi_set); CHKERRQ(ierr);
+    OptionsIsSet("-plastic_phi", plastic_phi_set);
+    OptionsIsSet("-topg_to_phi",
+                 "Turn on, and specify, the till friction angle parameterization based on bedrock elevation (topg)",
+                 topg_to_phi_set);
+    OptionsIsSet("-i", "PISM input file", i_set);
+    OptionsIsSet("-boot_file", "PISM bootstrapping file",
+                 bootstrap);
+    OptionsIsSet("-tauc_to_phi", 
+                 "Turn on, and specify, the till friction angle computation which uses basal yield stress (tauc) and the rest of the model state",
+                 tauc_to_phi_set);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // Get the till friction angle from the the context and ignore options that
   // would be used to set it otherwise.
   IceModelVec2S *till_phi_input = vars.get_2d_scalar("tillphi");
   if (till_phi_input != NULL) {
-    ierr = m_till_phi.copy_from(*till_phi_input); CHKERRQ(ierr);
+    m_till_phi.copy_from(*till_phi_input);
 
-    ierr = ignore_option(grid.com, "-plastic_phi"); CHKERRQ(ierr);
-    ierr = ignore_option(grid.com, "-topg_to_phi"); CHKERRQ(ierr);
+    ignore_option(grid.com, "-plastic_phi");
+    ignore_option(grid.com, "-topg_to_phi");
 
     // We do not allow re-gridding in this case.
 
-    return 0;
+    return;
   }
 
   if (topg_to_phi_set && plastic_phi_set) {
@@ -215,16 +210,15 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
 
   if (plastic_phi_set) {
 
-    ierr = m_till_phi.set(config.get("default_till_phi")); CHKERRQ(ierr);
+    m_till_phi.set(config.get("default_till_phi"));
 
   } else if (topg_to_phi_set) {
 
-    ierr = verbPrintf(2, grid.com,
-                      "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
-    CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "  option -topg_to_phi seen; creating tillphi map from bed elev ...\n");
 
     if (i_set || bootstrap) {
-      ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+      find_pism_input(filename, bootstrap, start);
 
       PIO nc(grid.com, "guess_mode", grid.get_unit_system());
 
@@ -233,49 +227,49 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
       nc.close();
 
       if (tillphi_present) {
-        ierr = verbPrintf(2, grid.com,
-                          "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
-                          "              present in the input file '%s'!\n",
-                          m_till_phi.metadata().get_string("short_name").c_str(), filename.c_str()); CHKERRQ(ierr);
+        verbPrintf(2, grid.com,
+                   "PISM WARNING: -topg_to_phi computation will override the '%s' field\n"
+                   "              present in the input file '%s'!\n",
+                   m_till_phi.metadata().get_string("short_name").c_str(), filename.c_str());
       }
     }
 
     // note option -topg_to_phi will be read again to get comma separated array of parameters
-    ierr = topg_to_phi(); CHKERRQ(ierr);
+    topg_to_phi();
 
   } else if (i_set || bootstrap) {
 
-    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    find_pism_input(filename, bootstrap, start);
 
     if (i_set) {
-      ierr = m_till_phi.read(filename, start); CHKERRQ(ierr);
+      m_till_phi.read(filename, start);
     } else {
-      ierr = m_till_phi.regrid(filename, OPTIONAL,
-                                 config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
+      m_till_phi.regrid(filename, OPTIONAL,
+                        config.get("bootstrapping_tillphi_value_no_var"));
     }
   }
 
   // regrid if requested, regardless of how initialized
-  ierr = regrid("MohrCoulombYieldStress", &m_till_phi); CHKERRQ(ierr);
+  regrid("MohrCoulombYieldStress", &m_till_phi);
 
   if (tauc_to_phi_set) {
     std::string tauc_to_phi_file;
     bool flag;
-    ierr = OptionsString("-tauc_to_phi", "Specifies the file tauc will be read from",
-                             tauc_to_phi_file, flag, true); CHKERRQ(ierr);
+    OptionsString("-tauc_to_phi", "Specifies the file tauc will be read from",
+                  tauc_to_phi_file, flag, true);
 
     if (tauc_to_phi_file.empty() == false) {
       // "-tauc_to_phi filename.nc" is given
-      ierr = m_tauc.regrid(tauc_to_phi_file, CRITICAL); CHKERRQ(ierr);
+      m_tauc.regrid(tauc_to_phi_file, CRITICAL);
     } else {
       // "-tauc_to_phi" is given (without a file name); assume that tauc has to
       // be present in an input file
-      ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+      find_pism_input(filename, bootstrap, start);
 
       if (bootstrap == false) {
-        ierr = m_tauc.read(filename, start); CHKERRQ(ierr);
+        m_tauc.read(filename, start);
       } else {
-        ierr = m_tauc.regrid(filename, CRITICAL); CHKERRQ(ierr);
+        m_tauc.regrid(filename, CRITICAL);
       }
     }
 
@@ -292,19 +286,16 @@ PetscErrorCode MohrCoulombYieldStress::init(Vars &vars)
     // Now tauc_to_phi() will correct till_phi at all locations where grounded
     // ice is present:
 
-    ierr = verbPrintf(2, grid.com, "  Computing till friction angle (tillphi) as a function of the yield stress (tauc)...\n"); 
-    CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "  Computing till friction angle (tillphi) as a function of the yield stress (tauc)...\n");
 
-    ierr = tauc_to_phi(); CHKERRQ(ierr);
+    tauc_to_phi();
 
   } else {
-    ierr = m_tauc.set(0.0); CHKERRQ(ierr);
+    m_tauc.set(0.0);
   }
 
   // ensure that update() computes tauc at the beginning of the run:
   m_t = m_dt = GSL_NAN;
-
-  return 0;
 }
 
 
@@ -313,20 +304,18 @@ void MohrCoulombYieldStress::add_vars_to_output(const std::string &/*keyword*/, 
 }
 
 
-PetscErrorCode MohrCoulombYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void MohrCoulombYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
   if (set_contains(vars, "tillphi")) {
-    PetscErrorCode ierr = m_till_phi.define(nc, nctype); CHKERRQ(ierr);
+    m_till_phi.define(nc, nctype);
   }
-  return 0;
 }
 
 
-PetscErrorCode MohrCoulombYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void MohrCoulombYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tillphi")) {
-    PetscErrorCode ierr = m_till_phi.write(nc); CHKERRQ(ierr);
+    m_till_phi.write(nc);
   }
-  return 0;
 }
 
 
@@ -362,12 +351,11 @@ that is, the water amount is the sum @f$ W+W_{til} @f$.  This only works
 if @f$ W @f$ is present, that is, if `hydrology` points to a
 RoutingHydrology (or derived class thereof).
  */
-PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void MohrCoulombYieldStress::update(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
-    return 0;
+    return;
   }
 
   m_t = my_t; m_dt = my_dt;
@@ -387,11 +375,11 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
 
   RoutingHydrology* hydrowithtransport = dynamic_cast<RoutingHydrology*>(m_hydrology);
   if (m_hydrology) {
-    ierr = m_hydrology->till_water_thickness(m_tillwat); CHKERRQ(ierr);
-    ierr = m_hydrology->overburden_pressure(m_Po); CHKERRQ(ierr);
+    m_hydrology->till_water_thickness(m_tillwat);
+    m_hydrology->overburden_pressure(m_Po);
     if (addtransportable == true) {
         assert(hydrowithtransport != NULL);
-        ierr = hydrowithtransport->subglacial_water_thickness(m_bwat); CHKERRQ(ierr);
+        hydrowithtransport->subglacial_water_thickness(m_bwat);
     }
   }
 
@@ -434,14 +422,12 @@ PetscErrorCode MohrCoulombYieldStress::update(double my_t, double my_dt) {
     }
   }
 
-  ierr = m_tauc.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  m_tauc.update_ghosts();
 }
 
 
-PetscErrorCode MohrCoulombYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  return m_tauc.copy_to(result);
+void MohrCoulombYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
+  m_tauc.copy_to(result);
 }
 
 
@@ -461,10 +447,9 @@ where \f$\phi_{\text{min}}=\f$`phi_min`, \f$\phi_{\text{max}}=\f$`phi_max`,
 
 The default values are vaguely suitable for Antarctica.  See src/pism_config.cdl.
 */
-PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
-  PetscErrorCode ierr;
+void MohrCoulombYieldStress::topg_to_phi() {
   bool  topg_to_phi_set;
-  ierr = OptionsIsSet("-topg_to_phi", topg_to_phi_set);  CHKERRQ(ierr);
+  OptionsIsSet("-topg_to_phi", topg_to_phi_set);
   assert(topg_to_phi_set == true);
 
   double phi_min  = config.get("till_topg_to_phi_phi_min"),
@@ -480,14 +465,14 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
     throw RuntimeError("invalid -topg_to_phi arguments: topg_min < topg_max is required");
   }
 
-  ierr = verbPrintf(2, grid.com,
-                    "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-                    "            /  %5.2f                                 for   topg < %.f\n"
-                    "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-                    "            \\  %5.2f                                 for   %.f < topg\n",
-                    phi_min, topg_min,
-                    phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
-                    phi_max, topg_max); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
+             "            /  %5.2f                                 for   topg < %.f\n"
+             "      phi = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+             "            \\  %5.2f                                 for   %.f < topg\n",
+             phi_min, topg_min,
+             phi_min, topg_min, phi_max - phi_min, topg_max - topg_min, topg_min, topg_max,
+             phi_max, topg_max);
 
   double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
@@ -510,14 +495,11 @@ PetscErrorCode MohrCoulombYieldStress::topg_to_phi() {
 
   // communicate ghosts so that the tauc computation can be performed locally
   // (including ghosts of tauc, that is)
-  ierr = m_till_phi.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  m_till_phi.update_ghosts();
 }
 
 
-PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
-  PetscErrorCode ierr;
+void MohrCoulombYieldStress::tauc_to_phi() {
   const double c0 = config.get("till_cohesion"),
     N0            = config.get("till_reference_effective_pressure"),
     e0overCc      = config.get("till_reference_void_ratio")/ config.get("till_compressibility_coefficient"),
@@ -526,8 +508,8 @@ PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
 
   assert(m_hydrology != NULL);
 
-  ierr = m_hydrology->till_water_thickness(m_tillwat); CHKERRQ(ierr);
-  ierr = m_hydrology->overburden_pressure(m_Po); CHKERRQ(ierr);
+  m_hydrology->till_water_thickness(m_tillwat);
+  m_hydrology->overburden_pressure(m_Po);
 
   IceModelVec::AccessList list;
   list.add(*m_mask);
@@ -559,8 +541,6 @@ PetscErrorCode MohrCoulombYieldStress::tauc_to_phi() {
       m_till_phi(i, j) = 180.0/M_PI * atan((m_tauc(i, j) - c0) / Ntil);
     }
   }
-
-  return 0;
 }
 
 } // end of namespace pism

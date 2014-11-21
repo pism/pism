@@ -34,17 +34,15 @@ PSElevation::PSElevation(IceGrid &g, const Config &conf)
   // empty
 }
 
-PetscErrorCode PSElevation::init(Vars &vars) {
+void PSElevation::init(Vars &vars) {
   PetscErrorCode ierr;
   PetscBool T_is_set, m_is_set, m_limits_set;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n");
 
-  ierr = PetscOptionsBegin(grid.com, "", "Elevation-dependent surface model options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     PetscInt T_param_number = 4;
     double T_array[4] = {-5, 0, 1325, 1350};
@@ -86,23 +84,21 @@ PetscErrorCode PSElevation::init(Vars &vars) {
     }
 
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
-  ierr = verbPrintf(3, grid.com,
-                    "     temperature at %.0f m a.s.l. = %.2f deg C\n"
-                    "     temperature at %.0f m a.s.l. = %.2f deg C\n"
-                    "     mass balance below %.0f m a.s.l. = %.2f m/year\n"
-                    "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
-                    "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
-                    "     mass balance above %.0f m a.s.l. = %.2f m/year\n"
-                    "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
-                    z_T_min, T_min, z_T_max, T_max, z_m_min,
-                    grid.convert(m_limit_min, "m s-1", "m year-1"),
-                    z_m_min, m_min, z_m_max,
-                    grid.convert(m_max, "m s-1", "m year-1"),
-                    z_m_max,
-                    grid.convert(m_limit_max, "m s-1", "m year-1"), z_ELA); CHKERRQ(ierr);
+  verbPrintf(3, grid.com,
+             "     temperature at %.0f m a.s.l. = %.2f deg C\n"
+             "     temperature at %.0f m a.s.l. = %.2f deg C\n"
+             "     mass balance below %.0f m a.s.l. = %.2f m/year\n"
+             "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
+             "     mass balance at  %.0f m a.s.l. = %.2f m/year\n"
+             "     mass balance above %.0f m a.s.l. = %.2f m/year\n"
+             "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
+             z_T_min, T_min, z_T_max, T_max, z_m_min,
+             grid.convert(m_limit_min, "m s-1", "m year-1"),
+             z_m_min, m_min, z_m_max,
+             grid.convert(m_max, "m s-1", "m year-1"),
+             z_m_max,
+             grid.convert(m_limit_max, "m s-1", "m year-1"), z_ELA);
 
   // get access to ice upper surface elevation
   usurf = vars.get_2d_scalar("surface_altitude");
@@ -114,47 +110,44 @@ PetscErrorCode PSElevation::init(Vars &vars) {
                                    "surface mass balance (accumulation/ablation) rate");
   climatic_mass_balance.set_string("standard_name",
                                    "land_ice_surface_specific_mass_balance_flux");
-  ierr = climatic_mass_balance.set_units("kg m-2 s-1"); CHKERRQ(ierr);
-  ierr = climatic_mass_balance.set_glaciological_units("kg m-2 year-1"); CHKERRQ(ierr);
+  climatic_mass_balance.set_units("kg m-2 s-1");
+  climatic_mass_balance.set_glaciological_units("kg m-2 year-1");
 
   ice_surface_temp.set_string("pism_intent", "diagnostic");
   ice_surface_temp.set_string("long_name",
                               "ice temperature at the ice surface");
-  ierr = ice_surface_temp.set_units("K"); CHKERRQ(ierr);
+  ice_surface_temp.set_units("K");
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
-  ierr = verbPrintf(2, grid.com, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n"); CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com,
-                    "      ice temperature at the ice surface (T = ice_surface_temp) is piecewise-linear function\n"
-                    "        of surface altitude (usurf):\n"
-                    "                 /  %2.2f K                            for            usurf < %.f m\n"
-                    "            T = |   %5.2f K + %5.3f * (usurf - %.f m) for   %.f m < usurf < %.f m\n"
-                    "                 \\  %5.2f K                            for   %.f m < usurf\n",
-                    T_min, z_T_min,
-                    T_min, (T_max-T_min)/(z_T_max-z_T_min), z_T_min, z_T_min, z_T_max,
-                    T_max, z_T_max); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
+  verbPrintf(2, grid.com,
+             "      ice temperature at the ice surface (T = ice_surface_temp) is piecewise-linear function\n"
+             "        of surface altitude (usurf):\n"
+             "                 /  %2.2f K                            for            usurf < %.f m\n"
+             "            T = |   %5.2f K + %5.3f * (usurf - %.f m) for   %.f m < usurf < %.f m\n"
+             "                 \\  %5.2f K                            for   %.f m < usurf\n",
+             T_min, z_T_min,
+             T_min, (T_max-T_min)/(z_T_max-z_T_min), z_T_min, z_T_min, z_T_max,
+             T_max, z_T_max);
 
   // parameterizing the ice surface mass balance 'climatic_mass_balance'
-  ierr = verbPrintf(2, grid.com, "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n");
 
   if (m_limits_set) {
-    ierr = verbPrintf(2, grid.com, "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n"); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n");
   }
 
-  ierr = verbPrintf(2, grid.com,
-                    "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
-                    "        of surface altitue (usurf):\n"
-                    "                  /  %5.2f m/year                       for          usurf < %3.f m\n"
-                    "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
-                    "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
-                    "                   \\ %5.2f m/year                       for %3.f m < usurf\n",
-                    grid.convert(m_limit_min, "m s-1", "m year-1"), z_m_min,
-                    grid.convert(-m_min, "m s-1", "m year-1")/(z_ELA - z_m_min), z_ELA, z_m_min, z_ELA,
-                    grid.convert(m_max, "m s-1", "m year-1")/(z_m_max - z_ELA), z_ELA, z_ELA, z_m_max,
-                    grid.convert(m_limit_max, "m s-1", "m year-1"), z_m_max); CHKERRQ(ierr);
-
-
-  return 0;
+  verbPrintf(2, grid.com,
+             "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
+             "        of surface altitue (usurf):\n"
+             "                  /  %5.2f m/year                       for          usurf < %3.f m\n"
+             "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
+             "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
+             "                   \\ %5.2f m/year                       for %3.f m < usurf\n",
+             grid.convert(m_limit_min, "m s-1", "m year-1"), z_m_min,
+             grid.convert(-m_min, "m s-1", "m year-1")/(z_ELA - z_m_min), z_ELA, z_m_min, z_ELA,
+             grid.convert(m_max, "m s-1", "m year-1")/(z_m_max - z_ELA), z_ELA, z_ELA, z_m_max,
+             grid.convert(m_limit_max, "m s-1", "m year-1"), z_m_max);
 }
 
 void PSElevation::attach_atmosphere_model(AtmosphereModel *input)
@@ -167,16 +160,14 @@ void PSElevation::get_diagnostics(std::map<std::string, Diagnostic*> &/*dict*/,
   // empty
 }
 
-PetscErrorCode PSElevation::update(double my_t, double my_dt)
+void PSElevation::update(double my_t, double my_dt)
 {
   m_t = my_t;
   m_dt = my_dt;
-  return 0;
 }
 
 
-PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+void PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   double dabdz = -m_min/(z_ELA - z_m_min);
   double dacdz = m_max/(z_m_max - z_ELA);
 
@@ -205,12 +196,10 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   }
 
   // convert from m/s ice equivalent to kg m-2 s-1:
-  ierr = result.scale(config.get("ice_density")); CHKERRQ(ierr);
-
-  return 0;
+  result.scale(config.get("ice_density"));
 }
 
-PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
+void PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   IceModelVec::AccessList list;
   list.add(result);
   list.add(*usurf);
@@ -232,8 +221,6 @@ PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
       throw RuntimeError("PSElevation::ice_surface_temperature: HOW DID I GET HERE?");
     }
   }
-
-  return 0;
 }
 
 void PSElevation::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -243,46 +230,38 @@ void PSElevation::add_vars_to_output(const std::string &keyword, std::set<std::s
   }
 }
 
-PetscErrorCode PSElevation::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
-
-  ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+void PSElevation::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
+  SurfaceModel::define_variables(vars, nc, nctype);
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
+    ice_surface_temp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.define(nc, nctype, true); CHKERRQ(ierr);
+    climatic_mass_balance.define(nc, nctype, true);
   }
-
-  return 0;
 }
 
-PetscErrorCode PSElevation::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
+void PSElevation::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
-    ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
+    ice_surface_temperature(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
-    ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
+    ice_surface_mass_flux(tmp);
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
   }
-
-  return 0;
 }
 
 } // end of namespace pism

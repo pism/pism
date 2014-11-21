@@ -21,23 +21,19 @@
 
 namespace pism {
 
-PetscErrorCode SIAFD_Regional::init(Vars &vars) {
-  PetscErrorCode ierr;
+void SIAFD_Regional::init(Vars &vars) {
 
-  ierr = SIAFD::init(vars); CHKERRQ(ierr);
+  SIAFD::init(vars);
 
-  ierr = verbPrintf(2,grid.com,"  using the regional version of the SIA solver...\n"); CHKERRQ(ierr);
+  verbPrintf(2,grid.com,"  using the regional version of the SIA solver...\n");
 
   no_model_mask = vars.get_2d_mask("no_model_mask");
   usurfstore    = vars.get_2d_scalar("usurfstore");
-
-  return 0;
 }
 
-PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode ierr;
+void SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
-  ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+  SIAFD::compute_surface_gradient(h_x, h_y);
 
   IceModelVec2Int &nmm = *no_model_mask;
   IceModelVec2S &hst = *usurfstore; // convenience
@@ -99,8 +95,6 @@ PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, I
     }
 
   }
-
-  return 0;
 }
 
 SSAFD_Regional::SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c)
@@ -112,29 +106,24 @@ SSAFD_Regional::~SSAFD_Regional() {
   // empty
 }
 
-PetscErrorCode SSAFD_Regional::init(Vars &vars) {
-  PetscErrorCode ierr;
+void SSAFD_Regional::init(Vars &vars) {
 
-  ierr = SSAFD::init(vars); CHKERRQ(ierr);
+  SSAFD::init(vars);
 
-  ierr = verbPrintf(2,grid.com,"  using the regional version of the SSA solver...\n"); CHKERRQ(ierr);
+  verbPrintf(2,grid.com,"  using the regional version of the SSA solver...\n");
 
   if (config.get_flag("ssa_dirichlet_bc")) {
-    ierr = verbPrintf(2,grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n"); 
-    CHKERRQ(ierr);
+    verbPrintf(2,grid.com,"  using stored SSA velocities as Dirichlet B.C. in the no_model_strip...\n");
   }
 
   no_model_mask = vars.get_2d_mask("no_model_mask");
   usurfstore    = vars.get_2d_scalar("usurfstore");
   thkstore      = vars.get_2d_scalar("thkstore");
-
-  return 0;
 }
 
-PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
-  PetscErrorCode ierr;
+void SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
 
-  ierr = SSAFD::compute_driving_stress(result); CHKERRQ(ierr);
+  SSAFD::compute_driving_stress(result);
 
   IceModelVec2Int &nmm = *no_model_mask;
 
@@ -168,31 +157,24 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
       }
     }
   }
-
-  return 0;
 }
 
-PetscErrorCode RegionalDefaultYieldStress::init(Vars &vars) {
-  PetscErrorCode ierr;
+void RegionalDefaultYieldStress::init(Vars &vars) {
   int v = getVerbosityLevel(); // turn off second, redundant init message
-  ierr = setVerbosityLevel(1); CHKERRQ(ierr);
-  ierr = MohrCoulombYieldStress::init(vars); CHKERRQ(ierr);
-  ierr = setVerbosityLevel(v); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,
-    "  using the regional version with strong till in no_model_mask==1 area ...\n");
-    CHKERRQ(ierr);
+  setVerbosityLevel(1);
+  MohrCoulombYieldStress::init(vars);
+  setVerbosityLevel(v);
+  verbPrintf(2,grid.com,
+             "  using the regional version with strong till in no_model_mask==1 area ...\n");
 
   no_model_mask = vars.get_2d_mask("no_model_mask");
-
-  return 0;
 }
 
 
-PetscErrorCode RegionalDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+void RegionalDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
   
   // do whatever you normally do
-  ierr = MohrCoulombYieldStress::basal_material_yield_stress(result); CHKERRQ(ierr);
+  MohrCoulombYieldStress::basal_material_yield_stress(result);
 
   // now set result=tauc to a big value in no_model_strip
   IceModelVec::AccessList list;
@@ -206,7 +188,6 @@ PetscErrorCode RegionalDefaultYieldStress::basal_material_yield_stress(IceModelV
       result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
     }
   }
-  return 0;
 }
 
 

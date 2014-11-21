@@ -58,7 +58,7 @@ public:
 
   }
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype)
+  virtual void define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype)
   {
     std::set<std::string> vars = vars_input;
     PetscErrorCode ierr;
@@ -73,31 +73,25 @@ public:
     }
 
     if (Model::input_model != NULL) {
-      ierr = Model::input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+      Model::input_model->define_variables(vars, nc, nctype);
     }
-
-    return 0;
   }
 
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc)
-  {
-    PetscErrorCode ierr;
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc) {
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
 
       if (set_contains(vars, k->first)) {
-        ierr = (k->second)->write(nc); CHKERRQ(ierr);
+        (k->second)->write(nc);
       }
 
       ++k;
     }
 
     if (Model::input_model != NULL) {
-      ierr = Model::input_model->write_variables(vars, nc); CHKERRQ(ierr);
+      Model::input_model->write_variables(vars, nc);
     }
-
-    return 0;
   }
 
 protected:
@@ -107,9 +101,8 @@ protected:
   unsigned int bc_period;       // in (integer) years
   double bc_reference_time;  // in seconds
 
-  PetscErrorCode process_options()
+  void process_options()
   {
-    PetscErrorCode ierr;
     bool bc_file_set, bc_period_set, bc_ref_year_set;
 
     int bc_period_years = 0,
@@ -118,34 +111,31 @@ protected:
     bc_period = 0;
     bc_reference_time = 0;
 
-    ierr = PetscOptionsBegin(Model::grid.com, "", "Climate forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = OptionsString(option_prefix + "_file",
-                               "Specifies a file with boundary conditions",
-                               filename, bc_file_set); CHKERRQ(ierr);
-      ierr = OptionsInt(option_prefix + "_period",
-                            "Specifies the length of the climate data period (in years)",
-                            bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = OptionsInt(option_prefix + "_reference_year",
-                            "Boundary condition reference year",
-                            bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
+      OptionsString(option_prefix + "_file",
+                    "Specifies a file with boundary conditions",
+                    filename, bc_file_set);
+      OptionsInt(option_prefix + "_period",
+                 "Specifies the length of the climate data period (in years)",
+                 bc_period_years, bc_period_set);
+      OptionsInt(option_prefix + "_reference_year",
+                 "Boundary condition reference year",
+                 bc_reference_year, bc_ref_year_set);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
       // find PISM input file to read data from:
       bool do_regrid; int start;   // will be ignored
-      ierr = Model::find_pism_input(filename, do_regrid, start); CHKERRQ(ierr);
+      Model::find_pism_input(filename, do_regrid, start);
 
-      ierr = verbPrintf(2, Model::grid.com,
-                        "  - Option %s_file is not set. Trying the input file '%s'...\n",
-                        option_prefix.c_str(), filename.c_str());
-      CHKERRQ(ierr);
+      verbPrintf(2, Model::grid.com,
+                 "  - Option %s_file is not set. Trying the input file '%s'...\n",
+                 option_prefix.c_str(), filename.c_str());
 
     } else {
-      ierr = verbPrintf(2, Model::grid.com,
-                        "  - Reading boundary conditions from '%s'...\n",
-                        filename.c_str()); CHKERRQ(ierr);
+      verbPrintf(2, Model::grid.com,
+                 "  - Reading boundary conditions from '%s'...\n",
+                 filename.c_str());
     }
 
     if (bc_ref_year_set) {
@@ -157,11 +147,9 @@ protected:
     } else {
       bc_period = 0;
     }
-
-    return 0;
   }
 
-  PetscErrorCode set_vec_parameters(std::map<std::string, std::string> standard_names)
+  void set_vec_parameters(std::map<std::string, std::string> standard_names)
   {
     unsigned int buffer_size = (unsigned int) Model::config.get("climate_forcing_buffer_size");
 
@@ -196,37 +184,31 @@ protected:
     }
 
     nc.close();
-
-    return 0;
   }
 
-  virtual PetscErrorCode update_internal(double my_t, double my_dt)
+  virtual void update_internal(double my_t, double my_dt)
   {
-    PetscErrorCode ierr;
-
     // "Periodize" the climate:
     my_t = Model::grid.time->mod(my_t - bc_reference_time, bc_period);
 
     if ((fabs(my_t - Model::m_t) < 1e-12) &&
         (fabs(my_dt - Model::m_dt) < 1e-12)) {
-      return 0;
+      return;
     }
 
     Model::m_t  = my_t;
     Model::m_dt = my_dt;
 
     if (Model::input_model != NULL) {
-      ierr = Model::input_model->update(Model::m_t, Model::m_dt); CHKERRQ(ierr);
+      Model::input_model->update(Model::m_t, Model::m_dt);
     }
 
     std::map<std::string, IceModelVec2T*>::iterator k = m_fields.begin();
     while(k != m_fields.end()) {
-      ierr = (k->second)->update(Model::m_t, Model::m_dt); CHKERRQ(ierr);
+      (k->second)->update(Model::m_t, Model::m_dt);
 
       ++k;
     }
-
-    return 0;
   }
 };
 

@@ -60,30 +60,20 @@ void BedDef::add_vars_to_output(const std::string &/*keyword*/, std::set<std::st
   result.insert("topg_initial");
 }
 
-PetscErrorCode BedDef::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void BedDef::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
-  PetscErrorCode ierr;
-
   if (set_contains(vars, "topg_initial")) {
-    ierr = topg_initial.define(nc, nctype); CHKERRQ(ierr);
+    topg_initial.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
+void BedDef::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "topg_initial")) {
-    ierr = topg_initial.write(nc); CHKERRQ(ierr);
+    topg_initial.write(nc);
   }
-
-  return 0;
 }
 
-PetscErrorCode BedDef::init(Vars &vars) {
-  PetscErrorCode ierr;
-
+void BedDef::init(Vars &vars) {
   t_beddef_last = grid.time->start();
 
   thk    = vars.get_2d_scalar("land_ice_thickness");
@@ -91,20 +81,14 @@ PetscErrorCode BedDef::init(Vars &vars) {
   uplift = vars.get_2d_scalar("tendency_of_bedrock_altitude");
 
   // Save the bed elevation at the beginning of the run:
-  ierr = topg_initial.copy_from(*topg); CHKERRQ(ierr);
-
-  return 0;
+  topg_initial.copy_from(*topg);
 }
 
 //! Compute bed uplift (dt_beddef is in seconds).
-PetscErrorCode BedDef::compute_uplift(double dt_beddef) {
-  PetscErrorCode ierr;
-
-  ierr = topg->add(-1, topg_last, *uplift); CHKERRQ(ierr);
+void BedDef::compute_uplift(double dt_beddef) {
+  topg->add(-1, topg_last, *uplift);
   //! uplift = (topg - topg_last) / dt
-  ierr = uplift->scale(1.0 / dt_beddef); CHKERRQ(ierr); 
-
-  return 0;
+  uplift->scale(1.0 / dt_beddef);
 }
 
 } // end of namespace pism

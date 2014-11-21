@@ -87,55 +87,50 @@ PetscErrorCode PBLingleClark::deallocate() {
 }
 
 //! Initialize the Lingle-Clark bed deformation model using uplift.
-PetscErrorCode PBLingleClark::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PBLingleClark::init(Vars &vars) {
+  BedDef::init(vars);
 
-  ierr = BedDef::init(vars); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the Lingle-Clark bed deformation model...\n");
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the Lingle-Clark bed deformation model...\n"); CHKERRQ(ierr);
+  correct_topg();
 
-  ierr = correct_topg(); CHKERRQ(ierr);
+  topg->copy_to(topg_last);
 
-  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
-
-  ierr = thk->put_on_proc0(Hstartp0); CHKERRQ(ierr);
-  ierr = topg->put_on_proc0(bedstartp0); CHKERRQ(ierr);
-  ierr = uplift->put_on_proc0(upliftp0); CHKERRQ(ierr);
+  thk->put_on_proc0(Hstartp0);
+  topg->put_on_proc0(bedstartp0);
+  uplift->put_on_proc0(upliftp0);
 
   if (grid.rank == 0) {
-    ierr = bdLC.init(); CHKERRQ(ierr);
-    ierr = bdLC.uplift_init(); CHKERRQ(ierr);
+    bdLC.init();
+    bdLC.uplift_init();
   }
-
-  return 0;
 }
 
-PetscErrorCode PBLingleClark::correct_topg() {
-  PetscErrorCode ierr;
+void PBLingleClark::correct_topg() {
   bool use_special_regrid_semantics, regrid_file_set, boot_file_set,
     topg_exists, topg_initial_exists, regrid_vars_set;
   std::string boot_filename, regrid_filename;
   PIO nc(grid, "guess_mode");
 
-  ierr = OptionsIsSet("-regrid_bed_special",
-                          "Correct topg when switching to a different grid",
-                          use_special_regrid_semantics); CHKERRQ(ierr);
+  OptionsIsSet("-regrid_bed_special",
+               "Correct topg when switching to a different grid",
+               use_special_regrid_semantics);
 
   // Stop if topg correction was not requiested.
   if (not use_special_regrid_semantics) {
-    return 0;
+    return;
   }
 
-  ierr = OptionsString("-regrid_file", "Specifies the name of a file to regrid from",
-                           regrid_filename, regrid_file_set); CHKERRQ(ierr);
+  OptionsString("-regrid_file", "Specifies the name of a file to regrid from",
+                regrid_filename, regrid_file_set);
 
-  ierr = OptionsString("-boot_file", "Specifies the name of the file to bootstrap from",
-                           boot_filename, boot_file_set); CHKERRQ(ierr);
+  OptionsString("-boot_file", "Specifies the name of the file to bootstrap from",
+                boot_filename, boot_file_set);
 
   // Stop if it was requested, but we're not bootstrapping *and* regridding.
   if (not (regrid_file_set && boot_file_set)) {
-    return 0;
+    return;
   }
 
   nc.open(regrid_filename, PISM_READONLY);
@@ -146,61 +141,60 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
   // Stop if the regridding file does not have both topg and topg_initial.
   if (!(topg_initial_exists && topg_exists)) {
-    return 0;
+    return;
   }
 
   // Stop if the user asked to regrid topg (in this case no correction is necessary).
   std::set<std::string> regrid_vars;
-  ierr = OptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
-                              regrid_vars, regrid_vars_set); CHKERRQ(ierr);
+  OptionsStringSet("-regrid_vars", "Specifies regridding variables", "",
+                   regrid_vars, regrid_vars_set);
 
   if (regrid_vars_set) {
     if (set_contains(regrid_vars, "topg")) {
-      ierr = verbPrintf(2, grid.com,
-                        "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr);
-      return 0;
+      verbPrintf(2, grid.com,
+                 "  Bed elevation correction requested, but -regrid_vars contains topg...\n");
+      return;
     }
   }
 
-  ierr = verbPrintf(2, grid.com,
-                    "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
-                    "  of the bed deformation from '%s'...\n",
-                    boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "  Correcting topg from the bootstrapping file '%s' by adding the effect\n"
+             "  of the bed deformation from '%s'...\n",
+             boot_filename.c_str(), regrid_filename.c_str());
 
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
   const unsigned int WIDE_STENCIL = config.get("grid_max_stencil_width");
-  ierr = topg_tmp.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
-                            "m", "bedrock_altitude"); CHKERRQ(ierr);
+  topg_tmp.create(grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
+  topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
+                     "m", "bedrock_altitude");
 
   // Get topg and topg_initial from the regridding file.
-  ierr = topg_initial.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
-  ierr =     topg_tmp.regrid(regrid_filename, CRITICAL); CHKERRQ(ierr);
+  topg_initial.regrid(regrid_filename, CRITICAL);
+  topg_tmp.regrid(regrid_filename, CRITICAL);
 
   // After bootstrapping, topg contains the bed elevation field from
   // -boot_file.
 
-  ierr = topg_tmp.add(-1.0, topg_initial); CHKERRQ(ierr);
+  topg_tmp.add(-1.0, topg_initial);
   // Now topg_tmp contains the change in bed elevation computed during the run
   // that produced -regrid_file.
 
   // Apply this change to topg from -boot_file:
-  ierr = topg->add(1.0, topg_tmp); CHKERRQ(ierr);
+  topg->add(1.0, topg_tmp);
 
   // Store the corrected topg as the new "topg_initial".
-  ierr = topg->copy_to(topg_initial); CHKERRQ(ierr);
+  topg->copy_to(topg_initial);
 
-  return 0;
+  return;
 }
 
 
 //! Update the Lingle-Clark bed deformation model.
-PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void PBLingleClark::update(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t)   < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
-    return 0;
+    return;
   }
 
   m_t  = my_t;
@@ -213,30 +207,27 @@ PetscErrorCode PBLingleClark::update(double my_t, double my_dt) {
   if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < grid.time->end()) ||
       dt_beddef < 1e-12) {
-    return 0;
+    return;
   }
 
   t_beddef_last = t_final;
 
-  ierr = thk->put_on_proc0(Hp0); CHKERRQ(ierr);
-  ierr = topg->put_on_proc0(bedp0); CHKERRQ(ierr);
+  thk->put_on_proc0(Hp0);
+  topg->put_on_proc0(bedp0);
 
   if (grid.rank == 0) {  // only processor zero does the step
-    ierr = bdLC.step(dt_beddef, // time step, in seconds
-                     t_final - grid.time->start()); // time since the start of the run, in seconds
-    CHKERRQ(ierr);
+    bdLC.step(dt_beddef, // time step, in seconds
+              t_final - grid.time->start()); // time since the start of the run, in seconds
   }
 
-  ierr = topg->get_from_proc0(bedp0); CHKERRQ(ierr);
+  topg->get_from_proc0(bedp0);
 
   //! Finally, we need to update bed uplift and topg_last.
-  ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);
-  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+  compute_uplift(dt_beddef);
+  topg->copy_to(topg_last);
 
   //! Increment the topg state counter. SIAFD relies on this!
   topg->inc_state_counter();
-
-  return 0;
 }
 
 } // end of namespace pism

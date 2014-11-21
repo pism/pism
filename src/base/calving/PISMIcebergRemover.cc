@@ -38,9 +38,8 @@ IcebergRemover::~IcebergRemover() {
   PetscErrorCode ierr = deallocate(); CHKERRCONTINUE(ierr);
 }
 
-PetscErrorCode IcebergRemover::init(Vars &vars) {
+void IcebergRemover::init(Vars &vars) {
   m_bcflag = vars.get_2d_mask("bcflag");
-  return 0;
 }
 
 /**
@@ -49,7 +48,7 @@ PetscErrorCode IcebergRemover::init(Vars &vars) {
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
+void IcebergRemover::update(IceModelVec2Int &pism_mask,
                                       IceModelVec2S &ice_thickness) {
   PetscErrorCode ierr;
   const int
@@ -60,7 +59,7 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
   // prepare the mask that will be handed to the connected component
   // labeling code:
   {
-    ierr = m_iceberg_mask.set(0.0); CHKERRQ(ierr);
+    m_iceberg_mask.set(0.0);
 
     IceModelVec::AccessList list;
     list.add(pism_mask);
@@ -93,7 +92,7 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
 
   // identify icebergs using serial code on processor 0:
   {
-    ierr = m_iceberg_mask.put_on_proc0(m_mask_p0); CHKERRQ(ierr);
+    m_iceberg_mask.put_on_proc0(m_mask_p0);
 
     if (grid.rank == 0) {
       double *mask;
@@ -106,7 +105,7 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
       PISM_PETSC_CHK(ierr, "VecRestoreArray");
     }
 
-    ierr = m_iceberg_mask.get_from_proc0(m_mask_p0); CHKERRQ(ierr);
+    m_iceberg_mask.get_from_proc0(m_mask_p0);
   }
 
   // correct ice thickness and the cell type mask using the resulting
@@ -145,17 +144,14 @@ PetscErrorCode IcebergRemover::update(IceModelVec2Int &pism_mask,
 
   // update ghosts of the mask and the ice thickness (then surface
   // elevation can be updated redundantly)
-  ierr = pism_mask.update_ghosts(); CHKERRQ(ierr);
-  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  pism_mask.update_ghosts();
+  ice_thickness.update_ghosts();
 }
 
 PetscErrorCode IcebergRemover::allocate() {
-  PetscErrorCode ierr;
 
-  ierr = m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = m_iceberg_mask.allocate_proc0_copy(m_mask_p0); CHKERRQ(ierr);
+  m_iceberg_mask.create(grid, "iceberg_mask", WITHOUT_GHOSTS);
+  m_iceberg_mask.allocate_proc0_copy(m_mask_p0);
 
   return 0;
 }
@@ -172,15 +168,13 @@ void IcebergRemover::add_vars_to_output(const std::string &, std::set<std::strin
   // empty
 }
 
-PetscErrorCode IcebergRemover::define_variables(const std::set<std::string> &, const PIO &,
+void IcebergRemover::define_variables(const std::set<std::string> &, const PIO &,
                                                 IO_Type) {
   // empty
-  return 0;
 }
 
-PetscErrorCode IcebergRemover::write_variables(const std::set<std::string> &, const PIO&) {
+void IcebergRemover::write_variables(const std::set<std::string> &, const PIO&) {
   // empty
-  return 0;
 }
 
 } // end of namespace pism

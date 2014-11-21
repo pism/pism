@@ -30,10 +30,10 @@ public:
   PACosineYearlyCycle(IceGrid &g, const Config &conf);
   virtual ~PACosineYearlyCycle();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+  virtual void init(Vars &vars);
+  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void update(double my_t, double my_dt);
+  virtual void temp_snapshot(IceModelVec2S &result);
 protected:
   Timeseries *A;                 // amplitude scaling
 };

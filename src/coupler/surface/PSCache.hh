@@ -30,18 +30,18 @@ public:
   PSCache(IceGrid &g, const Config &conf, SurfaceModel* in);
   virtual ~PSCache();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
-  virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
-  virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
+  virtual void init(Vars &vars);
+  virtual void update(double my_t, double my_dt);
+  virtual void ice_surface_mass_flux(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
+  virtual void ice_surface_liquid_water_fraction(IceModelVec2S &result);
+  virtual void mass_held_in_surface_layer(IceModelVec2S &result);
+  virtual void surface_layer_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
-  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict);
+  virtual void max_timestep(double t, double &dt, bool &restrict);
 protected:
   IceModelVec2S m_mass_flux, m_temperature, m_liquid_water_fraction,
     m_mass_held_in_surface_layer, m_surface_layer_thickness;

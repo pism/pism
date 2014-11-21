@@ -55,43 +55,33 @@ PetscErrorCode POConstant::allocate_POConstant() {
   return 0;
 }
 
-PetscErrorCode POConstant::init(Vars &vars) {
-  PetscErrorCode ierr;
+void POConstant::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   if (!config.get_flag("is_dry_simulation")) {
-    ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n");
   }
 
-  ierr = PetscOptionsBegin(grid.com, "", "Ocean model", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-
-  ierr = OptionsReal("-shelf_base_melt_rate",
-                          "Specifies a sub shelf ice-equivalent melt rate in meters/year",
-                          mymeltrate, meltrate_set); CHKERRQ(ierr);
-
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
+  OptionsReal("-shelf_base_melt_rate",
+              "Specifies a sub shelf ice-equivalent melt rate in meters/year",
+              mymeltrate, meltrate_set);
 
   if (meltrate_set) {
-    ierr = verbPrintf(2, grid.com,
-                      "    - option '-shelf_base_melt_rate' seen, "
-                      "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
-                      mymeltrate); CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "    - option '-shelf_base_melt_rate' seen, "
+               "setting basal sub shelf basal melt rate to %.2f m/year ... \n",
+               mymeltrate);
   }
 
   ice_thickness = vars.get_2d_scalar("land_ice_thickness");
-
-  return 0;
 }
 
-PetscErrorCode POConstant::sea_level_elevation(double &result) {
+void POConstant::sea_level_elevation(double &result) {
   result = sea_level;
-  return 0;
 }
 
-PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
+void POConstant::shelf_base_temperature(IceModelVec2S &result) {
   const double T0 = config.get("water_melting_point_temperature"), // K
     beta_CC       = config.get("beta_CC"),
     g             = config.get("standard_gravity"),
@@ -106,14 +96,11 @@ PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
     // temp is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
-
-  return 0;
 }
 
 //! @brief Computes mass flux in [kg m-2 s-1], from assumption that
 //! basal heat flux rate converts to mass flux.
-PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+void POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   double
     L           = config.get("water_latent_heat_fusion"),
     ice_density = config.get("ice_density"),
@@ -133,9 +120,7 @@ PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   // convert to [kg m-2 s-1] = [m s-1] * [kg m-3]
   meltrate = meltrate * ice_density;
 
-  ierr = result.set(meltrate); CHKERRQ(ierr);
-
-  return 0;
+  result.set(meltrate);
 }
 
 void POConstant::add_vars_to_output(const std::string&, std::set<std::string> &result) {
@@ -143,47 +128,41 @@ void POConstant::add_vars_to_output(const std::string&, std::set<std::string> &r
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode POConstant::define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                            IO_Type nctype) {
-  PetscErrorCode ierr;
+void POConstant::define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                  IO_Type nctype) {
 
   if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.define(nc, nctype, true); CHKERRQ(ierr);
+    shelfbtemp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.define(nc, nctype, true); CHKERRQ(ierr);
+    shelfbmassflux.define(nc, nctype, true);
   }
-
-  return 0;
 }
 
-PetscErrorCode POConstant::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
+void POConstant::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbtemp;
-    ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    shelf_base_temperature(tmp);
+    tmp.write(nc);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbmassflux;
     tmp.write_in_glaciological_units = true;
-    ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    shelf_base_mass_flux(tmp);
+    tmp.write(nc);
   }
-
-  return 0;
 }
 
 } // end of namespace pism

@@ -33,8 +33,7 @@ namespace pism {
 /*!
 Most viewers are updated by this routine, but some other are updated elsewhere.
  */
-PetscErrorCode IceModel::update_viewers() {
-  PetscErrorCode ierr;
+void IceModel::update_viewers() {
   std::set<std::string>::iterator i;
 
   unsigned int viewer_size = (unsigned int)config.get("viewer_size");
@@ -50,7 +49,7 @@ PetscErrorCode IceModel::update_viewers() {
       Diagnostic *diag = diagnostics[*i];
 
       if (diag) {
-        ierr = diag->compute(v); CHKERRQ(ierr);
+        diag->compute(v);
       } else {
         v = NULL;
       }
@@ -72,7 +71,7 @@ PetscErrorCode IceModel::update_viewers() {
       PetscViewer viewer = viewers[name];
 
       if (viewer == NULL) {
-        ierr = grid.create_viewer(viewer_size, name, viewer); CHKERRQ(ierr);
+        grid.create_viewer(viewer_size, name, viewer);
         viewers[name] = viewer;
       }
 
@@ -81,7 +80,7 @@ PetscErrorCode IceModel::update_viewers() {
         throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
       }
 
-      ierr = v2d->view(viewer, NULL); CHKERRQ(ierr);
+      v2d->view(viewer, NULL);
 
     } else if (v->get_ndof() == 2) { // vector fields
       std::string name_1 = v->metadata().get_string("short_name"),
@@ -90,12 +89,12 @@ PetscErrorCode IceModel::update_viewers() {
         v2 = viewers[name_2];
 
       if (v1 == NULL) {
-        ierr = grid.create_viewer(viewer_size, name_1, v1); CHKERRQ(ierr);
+        grid.create_viewer(viewer_size, name_1, v1);
         viewers[name_1] = v1;
       }
 
       if (v2 == NULL) {
-        ierr = grid.create_viewer(viewer_size, name_2, v2); CHKERRQ(ierr);
+        grid.create_viewer(viewer_size, name_2, v2);
         viewers[name_2] = v2;
       }
 
@@ -104,27 +103,20 @@ PetscErrorCode IceModel::update_viewers() {
         throw RuntimeError("get_ndims() returns GRID_2D but dynamic_cast gives a NULL");
       }
 
-      ierr = v2d->view(v1, v2); CHKERRQ(ierr);
+      v2d->view(v1, v2);
     }
 
     if (de_allocate) {
       delete v;
     }
   }
-
-  return 0;
 }
 
 //! Initialize run-time diagnostic viewers.
-PetscErrorCode IceModel::init_viewers() {
+void IceModel::init_viewers() {
   PetscErrorCode ierr;
   PetscBool flag;
   char tmp[TEMPORARY_STRING_LENGTH];
-
-  ierr = PetscOptionsBegin(grid.com, NULL,
-                           "Options controlling run-time diagnostic viewers",
-                           NULL);
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
 
   PetscInt viewer_size = (int)config.get("viewer_size");
   ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
@@ -147,12 +139,6 @@ PetscErrorCode IceModel::init_viewers() {
       map_viewers.insert(var_name);
     }
   }
-
-  // Done with the options.
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
-
-  return 0;
 }
 
 

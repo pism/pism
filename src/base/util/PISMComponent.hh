@@ -105,12 +105,12 @@ public:
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype) = 0;
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                IO_Type nctype) = 0;
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc) = 0;
+  virtual void write_variables(const std::set<std::string> &vars, const PIO& nc) = 0;
 
   //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -121,7 +121,7 @@ public:
   }
 
 protected:
-  virtual PetscErrorCode find_pism_input(std::string &filename, bool &regrid, int &start);
+  virtual void find_pism_input(std::string &filename, bool &regrid, int &start);
   IceGrid &grid;
   const Config &config;
 
@@ -130,7 +130,7 @@ protected:
       `-regrid_vars`.
   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
-  virtual PetscErrorCode regrid(const std::string &module_name, IceModelVec *variable,
+  virtual void regrid(const std::string &module_name, IceModelVec *variable,
                                 RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 };
 
@@ -148,12 +148,11 @@ public:
 
   //! \brief Reports the maximum time-step the model can take at t. Sets
   //! dt to -1 if any time-step is OK.
-  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict)
+  virtual void max_timestep(double t, double &dt, bool &restrict)
   {
     (void)t;
     dt = -1;
     restrict = false;
-    return 0;
   }
 
   //! Update the *state* of a component, if necessary.
@@ -198,7 +197,7 @@ public:
    *
    * @return 0 on success
    */
-  virtual PetscErrorCode update(double t, double dt) = 0;
+  virtual void update(double t, double dt) = 0;
 
 protected:
   double m_t,                   //!< Last time used as an argument for the update() method.
@@ -233,21 +232,19 @@ public:
     }
   }
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+      input_model->define_variables(vars, nc, nctype);
     }
-    return 0;
   }
 
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc)
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
+      input_model->write_variables(vars, nc);
     }
-    return 0;
   }
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -258,25 +255,23 @@ public:
     }
   }
 
-  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict)
+  virtual void max_timestep(double my_t, double &my_dt, bool &restrict)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+      input_model->max_timestep(my_t, my_dt, restrict);
     } else {
       my_dt    = -1;
       restrict = false;
     }
-    return 0;
   }
 
-  virtual PetscErrorCode update(double my_t, double my_dt)
+  virtual void update(double my_t, double my_dt)
   {
     Model::m_t = my_t;
     Model::m_dt = my_dt;
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->update(my_t, my_dt); CHKERRQ(ierr);
+      input_model->update(my_t, my_dt);
     }
-    return 0;
   }
 
 protected:

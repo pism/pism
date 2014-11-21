@@ -22,46 +22,39 @@
 
 namespace pism {
 
-PetscErrorCode ConstantYieldStress::init(Vars &/*vars*/) {
-  PetscErrorCode ierr;
+void ConstantYieldStress::init(Vars &/*vars*/) {
   bool i_set, bootstrap, tauc_set;
   double constant_tauc = config.get("default_tauc");
   std::string filename;
   int start;
 
-  ierr = verbPrintf(2, grid.com, "* Initializing the constant basal yield stress model...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "* Initializing the constant basal yield stress model...\n");
 
-  ierr = PetscOptionsBegin(grid.com, "", "ConstantYieldStress options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsIsSet("-i", "PISM input file", i_set); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
-                            bootstrap); CHKERRQ(ierr);
-    ierr = OptionsReal("-tauc", "set basal yield stress to a constant (units of Pa)",
-                           constant_tauc, tauc_set); CHKERRQ(ierr);
+    OptionsIsSet("-i", "PISM input file", i_set);
+    OptionsIsSet("-boot_file", "PISM bootstrapping file",
+                 bootstrap);
+    OptionsReal("-tauc", "set basal yield stress to a constant (units of Pa)",
+                constant_tauc, tauc_set);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   // if -tauc was set we just use that value
   if (tauc_set) {
-    ierr = tauc.set(constant_tauc); CHKERRQ(ierr);
+    tauc.set(constant_tauc);
   } else if (i_set || bootstrap) {
-    ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+    find_pism_input(filename, bootstrap, start);
 
     if (i_set) {
-      ierr = tauc.read(filename, start); CHKERRQ(ierr);
+      tauc.read(filename, start);
     } else {
-      ierr = tauc.regrid(filename, OPTIONAL,
-                         config.get("default_tauc")); CHKERRQ(ierr);
+      tauc.regrid(filename, OPTIONAL,
+                  config.get("default_tauc"));
     }
   } else {
-    ierr = tauc.set(config.get("default_tauc")); CHKERRQ(ierr);
+    tauc.set(config.get("default_tauc"));
   }
 
-  ierr = regrid("ConstantYieldStress", &tauc); CHKERRQ(ierr);
-
-  return 0;
+  regrid("ConstantYieldStress", &tauc);
 }
 
 
@@ -70,42 +63,37 @@ void ConstantYieldStress::add_vars_to_output(const std::string &/*keyword*/, std
 }
 
 
-PetscErrorCode ConstantYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void ConstantYieldStress::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                          IO_Type nctype) {
   if (set_contains(vars, "tauc")) {
-    PetscErrorCode ierr = tauc.define(nc, nctype); CHKERRQ(ierr);
+    tauc.define(nc, nctype);
   }
-  return 0;
 }
 
 
-PetscErrorCode ConstantYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void ConstantYieldStress::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "tauc")) {
-    PetscErrorCode ierr = tauc.write(nc); CHKERRQ(ierr);
+    tauc.write(nc);
   }
-  return 0;
 }
 
 
-PetscErrorCode ConstantYieldStress::update(double my_t, double my_dt) {
+void ConstantYieldStress::update(double my_t, double my_dt) {
   m_t = my_t; m_dt = my_dt;
-  return 0;
 }
 
 
-PetscErrorCode ConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
-  PetscErrorCode ierr = tauc.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void ConstantYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
+  tauc.copy_to(result);
 }
 
 PetscErrorCode ConstantYieldStress::allocate() {
   PetscErrorCode ierr;
-
   ierr = tauc.create(grid, "tauc", WITH_GHOSTS, config.get("grid_max_stencil_width")); CHKERRQ(ierr);
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  ierr = tauc.set_attrs("model_state", 
-                        "yield stress for basal till (plastic or pseudo-plastic model)",
-                        "Pa", ""); CHKERRQ(ierr);
+  tauc.set_attrs("model_state", 
+                 "yield stress for basal till (plastic or pseudo-plastic model)",
+                 "Pa", "");
   return 0;
 }
 

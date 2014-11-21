@@ -36,7 +36,7 @@ namespace pism {
 
 
 //! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
-PetscErrorCode IceModel::excessToFromBasalMeltLayer(
+void IceModel::excessToFromBasalMeltLayer(
                 const double rho, const double c, const double L,
                 const double z, const double dz,
                 double *Texcess, double *bwat) {
@@ -76,7 +76,6 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
     }
     // note: if *bwat == 0 and Texcess < 0.0 then Texcess unmolested; temp will go down
   }
-  return 0;
 }
 
 
@@ -131,7 +130,7 @@ This method should be kept because it is worth having alternative physics, and
   the column minus the bulge maximum (15 K) if it is below that level.  The number of
   times this occurs is reported as a "BPbulge" percentage.
   */
-PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
+void IceModel::temperatureStep(double* vertSacrCount, double* bulgeCount) {
   PetscErrorCode  ierr;
 
   // set up fine grid in ice
@@ -139,7 +138,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   std::vector<double> &fzlev = grid.zlevels_fine;
 
   bool viewOneColumn;
-  ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  OptionsIsSet("-view_sys", viewOneColumn);
 
   const double
     ice_density        = config.get("ice_density"),
@@ -160,24 +159,24 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
   // now get map-plane fields, starting with coupler fields
   assert(surface != NULL);
-  ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
+  surface->ice_surface_temperature(ice_surface_temp);
 
   assert(ocean != NULL);
-  ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
+  ocean->shelf_base_temperature(shelfbtemp);
 
   IceModelVec2S &G0 = vWork2d[0];
-  ierr = G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", ""); CHKERRQ(ierr);
+  G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", "");
   ierr = G0.set_glaciological_units("mW m-2");
 
   assert(btu != NULL);
-  ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
+  btu->get_upward_geothermal_flux(G0);
 
   IceModelVec2S &bwatcurr = vWork2d[1];
-  ierr = bwatcurr.set_attrs("internal", "current amount of basal water", "m", ""); CHKERRQ(ierr);
+  bwatcurr.set_attrs("internal", "current amount of basal water", "m", "");
   ierr = bwatcurr.set_glaciological_units("m");
 
   assert(subglacial_hydrology != NULL);
-  ierr = subglacial_hydrology->subglacial_water_thickness(bwatcurr); CHKERRQ(ierr);
+  subglacial_hydrology->subglacial_water_thickness(bwatcurr);
 
   IceModelVec::AccessList list;
   list.add(ice_surface_temp);
@@ -191,11 +190,11 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
 
   IceModelVec2S *Rb;            // basal frictional heating
   assert(stress_balance != NULL);
-  ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
+  stress_balance->get_basal_frictional_heating(Rb);
 
   IceModelVec3 *u3, *v3, *w3, *strain_heating3;
-  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
-  ierr = stress_balance->get_volumetric_strain_heating(strain_heating3); CHKERRQ(ierr);
+  stress_balance->get_3d_velocity(u3, v3, w3);
+  stress_balance->get_volumetric_strain_heating(strain_heating3);
 
   tempSystemCtx system(grid.Mz_fine, "temperature",
                        grid.dx, grid.dy, fdz, dt_TempAge,
@@ -327,7 +326,7 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
     }
 
     // transfer column into vWork3d; communication later
-    ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
+    vWork3d.setValColumnPL(i,j,Tnew);
 
     // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
     if (mask.ocean(i,j)) {
@@ -344,8 +343,6 @@ PetscErrorCode IceModel::temperatureStep(double* vertSacrCount, double* bulgeCou
   if (myLowTempCount > maxLowTempCount) {
     throw RuntimeError::formatted("too many low temps: %d", myLowTempCount);
   }
-
-  return 0;
 }
 
 

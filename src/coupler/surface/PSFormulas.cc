@@ -60,14 +60,12 @@ void PSFormulas::attach_atmosphere_model(AtmosphereModel *input) {
   delete input;
 }
 
-PetscErrorCode PSFormulas::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = m_climatic_mass_balance.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSFormulas::ice_surface_mass_flux(IceModelVec2S &result) {
+  m_climatic_mass_balance.copy_to(result);
 }
 
-PetscErrorCode PSFormulas::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = m_ice_surface_temp.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSFormulas::ice_surface_temperature(IceModelVec2S &result) {
+  m_ice_surface_temp.copy_to(result);
 }
 
 void PSFormulas::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -77,33 +75,27 @@ void PSFormulas::add_vars_to_output(const std::string &keyword, std::set<std::st
   result.insert(m_ice_surface_temp.metadata().get_name());
 }
 
-PetscErrorCode PSFormulas::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void PSFormulas::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                              IO_Type nctype) {
-  PetscErrorCode ierr;
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
-    ierr = m_climatic_mass_balance.define(nc, nctype); CHKERRQ(ierr);
+    m_climatic_mass_balance.define(nc, nctype);
   }
 
   if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
-    ierr = m_ice_surface_temp.define(nc, nctype); CHKERRQ(ierr);
+    m_ice_surface_temp.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode PSFormulas::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
+void PSFormulas::write_variables(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, m_climatic_mass_balance.metadata().get_name())) {
-    ierr = m_climatic_mass_balance.write(nc); CHKERRQ(ierr);
+    m_climatic_mass_balance.write(nc);
   }
 
   if (set_contains(vars, m_ice_surface_temp.metadata().get_name())) {
-    ierr = m_ice_surface_temp.write(nc); CHKERRQ(ierr);
+    m_ice_surface_temp.write(nc);
   }
-
-  return 0;
 }
 
 } // end of namespace pism

@@ -36,8 +36,7 @@ PACosineYearlyCycle::~PACosineYearlyCycle() {
   }
 }
 
-PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PACosineYearlyCycle::init(Vars &vars) {
   bool input_file_flag, scaling_flag;
   std::string input_file, scaling_file;
 
@@ -45,36 +44,30 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
 
   m_variables = &vars;
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
-  CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the 'cosine yearly cycle' atmosphere model (-atmosphere yearly_cycle)...\n");
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling '-atmosphere yearly_cycle'",
-                           "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsString("-atmosphere_yearly_cycle_file",
-                             "PACosineYearlyCycle input file name",
-                             input_file, input_file_flag); CHKERRQ(ierr);
-    ierr = OptionsString("-atmosphere_yearly_cycle_scaling_file",
-                             "PACosineYearlyCycle amplitude scaling input file name",
-                             scaling_file, scaling_flag); CHKERRQ(ierr);
+    OptionsString("-atmosphere_yearly_cycle_file",
+                  "PACosineYearlyCycle input file name",
+                  input_file, input_file_flag);
+    OptionsString("-atmosphere_yearly_cycle_scaling_file",
+                  "PACosineYearlyCycle amplitude scaling input file name",
+                  scaling_file, scaling_flag);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (input_file_flag == false) {
     throw RuntimeError("Please specify an '-atmosphere yearly_cycle' input file\n"
                        "using the -atmosphere_yearly_cycle_file option.");
   }
 
-  ierr = verbPrintf(2, grid.com,
-                    "  Reading mean annual air temperature, mean July air temperature, and\n"
-                    "  precipitation fields from '%s'...\n", input_file.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "  Reading mean annual air temperature, mean July air temperature, and\n"
+             "  precipitation fields from '%s'...\n", input_file.c_str());
 
-  ierr = m_air_temp_mean_annual.regrid(input_file, CRITICAL); CHKERRQ(ierr);
-  ierr = m_air_temp_mean_july.regrid(input_file, CRITICAL); CHKERRQ(ierr);
-  ierr = m_precipitation.regrid(input_file, CRITICAL); CHKERRQ(ierr);
+  m_air_temp_mean_annual.regrid(input_file, CRITICAL);
+  m_air_temp_mean_july.regrid(input_file, CRITICAL);
+  m_precipitation.regrid(input_file, CRITICAL);
 
   if (scaling_flag) {
 
@@ -86,14 +79,14 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
       A->get_dimension_metadata().set_units(grid.time->units_string());
     }
 
-    ierr = verbPrintf(2, grid.com,
-                      "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
-                      scaling_file.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "  Reading cosine yearly cycle amplitude scaling from '%s'...\n",
+               scaling_file.c_str());
 
     PIO nc(grid, "netcdf3");    // OK to use netcdf3
     nc.open(scaling_file, PISM_READONLY);
     {
-      ierr = A->read(nc, grid.time); CHKERRQ(ierr);
+      A->read(nc, grid.time);
     }
     nc.close();
 
@@ -103,18 +96,15 @@ PetscErrorCode PACosineYearlyCycle::init(Vars &vars) {
     }
     A = NULL;
   }
-
-  return 0;
 }
 
 
-PetscErrorCode PACosineYearlyCycle::update(double my_t, double my_dt) {
+void PACosineYearlyCycle::update(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
-  return 0;
 }
 
-PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
+void PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   const double
     julyday_fraction = grid.time->day_of_the_year_to_day_fraction(m_snow_temp_july_day),
     T                = grid.time->year_fraction(m_t + 0.5 * m_dt) - julyday_fraction,
@@ -134,22 +124,17 @@ PetscErrorCode PACosineYearlyCycle::temp_snapshot(IceModelVec2S &result) {
     const int i = p.i(), j = p.j();
     result(i,j) = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_july(i,j) - m_air_temp_mean_annual(i,j)) * scaling * cos_T;
   }
-
-  return 0;
 }
 
-PetscErrorCode PACosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
-  PetscErrorCode ierr;
+void PACosineYearlyCycle::init_timeseries(const std::vector<double> &ts) {
 
-  ierr = PAYearlyCycle::init_timeseries(ts); CHKERRQ(ierr);
+  PAYearlyCycle::init_timeseries(ts);
 
   if (A != NULL) {
     for (unsigned int k = 0; k < ts.size(); ++k) {
       m_cosine_cycle[k] *= (*A)(ts[k]);
     }
   }
-
-  return 0;
 }
 
 } // end of namespace pism

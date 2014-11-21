@@ -89,19 +89,19 @@ public:
 
   virtual ~BedThermalUnit() { }
 
-  virtual PetscErrorCode init(Vars &vars, bool &bootstrapping_needed);
+  virtual void init(Vars &vars, bool &bootstrapping_needed);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
-  virtual PetscErrorCode max_timestep(double /*my_t*/, double &my_dt, bool &restrict);
+  virtual void max_timestep(double /*my_t*/, double &my_dt, bool &restrict);
 
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual void update(double my_t, double my_dt);
 
-  virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
+  virtual void get_upward_geothermal_flux(IceModelVec2S &result);
 
-  virtual PetscErrorCode bootstrap();
+  virtual void bootstrap();
 
   double get_vertical_spacing();
 protected:

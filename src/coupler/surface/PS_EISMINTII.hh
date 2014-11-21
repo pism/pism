@@ -36,10 +36,10 @@ public:
   ~PS_EISMINTII();
 
   // the interface:
-  PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(PetscReal t, PetscReal dt);
+  void init(Vars &vars);
+  void update(PetscReal t, PetscReal dt);
 protected:
-  PetscErrorCode initialize_using_formulas();
+  void initialize_using_formulas();
   int m_experiment;
   double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;
 };

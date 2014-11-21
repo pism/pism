@@ -38,18 +38,18 @@ public:
   }
   virtual ~ConstantYieldStress() {}
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual void update(double my_t, double my_dt);
 
-  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
+  virtual void basal_material_yield_stress(IceModelVec2S &result);
 protected:
   IceModelVec2S tauc;
 private:

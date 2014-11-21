@@ -136,7 +136,7 @@ PetscErrorCode IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zeta, Termi
   PetscErrorCode ierr;
   ierr = this->set_design(zeta); CHKERRQ(ierr);
 
-  ierr = this->solve_nocache(reason); CHKERRQ(ierr);
+  this->solve_nocache(reason);
 
   return 0;
 }
@@ -145,18 +145,17 @@ PetscErrorCode IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zeta, Termi
 /* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
 of the residual is returned in \a RHS.*/
 PetscErrorCode IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
-  PetscErrorCode ierr;
 
   Vector2 **u_a, **rhs_a;
 
-  ierr = u.get_array(u_a); CHKERRQ(ierr);
-  ierr = RHS.get_array(rhs_a); CHKERRQ(ierr);
+  u.get_array(u_a);
+  RHS.get_array(rhs_a);
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
+  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
 
-  ierr = u.end_access(); CHKERRQ(ierr);
-  ierr = RHS.end_access(); CHKERRQ(ierr);
+  u.end_access();
+  RHS.end_access();
 
   return 0;
 }
@@ -169,14 +168,14 @@ PetscErrorCode IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec
 
   Vector2 **u_a, **rhs_a;
 
-  ierr = u.get_array(u_a); CHKERRQ(ierr);
+  u.get_array(u_a);
   ierr = DMDAVecGetArray(*m_da, RHS, &rhs_a); CHKERRQ(ierr);
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a); CHKERRQ(ierr);
+  this->compute_local_function(info, const_cast<const Vector2 **>(u_a), rhs_a);
 
   ierr = DMDAVecRestoreArray(*m_da, RHS, &rhs_a); CHKERRQ(ierr);
-  ierr = u.end_access(); CHKERRQ(ierr);
+  u.end_access();
 
   return 0;
 }
@@ -190,16 +189,15 @@ to this method.
   @param[out] J computed state Jacobian.
 */
 PetscErrorCode IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
-  PetscErrorCode ierr;
 
   Vector2 **u_a;
-  ierr = u.get_array(u_a); CHKERRQ(ierr);
+  u.get_array(u_a);
 
   DMDALocalInfo *info = NULL;
-  ierr = this->compute_local_jacobian(info,
-                                      const_cast<const Vector2 **>(u_a), Jac); CHKERRQ(ierr);
+  this->compute_local_jacobian(info,
+                               const_cast<const Vector2 **>(u_a), Jac);
 
-  ierr = u.end_access(); CHKERRQ(ierr);
+  u.end_access();
 
   return 0;
 }
@@ -210,11 +208,10 @@ PetscErrorCode IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &
 */
 PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
                                                                IceModelVec2V &du) {
-  PetscErrorCode ierr;
   Vector2 **du_a;
-  ierr = du.get_array(du_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design(u, dzeta, du_a);
-  ierr = du.end_access(); CHKERRQ(ierr);
+  du.get_array(du_a);
+  this->apply_jacobian_design(u, dzeta, du_a);
+  du.end_access();
   return 0;
 }
 
@@ -227,7 +224,7 @@ PetscErrorCode IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   PetscErrorCode ierr;
   Vector2 **du_a;
   ierr = DMDAVecGetArray(*m_da, du, &du_a); CHKERRQ(ierr);
-  ierr = this->apply_jacobian_design(u, dzeta, du_a);
+  this->apply_jacobian_design(u, dzeta, du_a);
   ierr = DMDAVecRestoreArray(*m_da, du, &du_a); CHKERRQ(ierr);
   return 0;
 }

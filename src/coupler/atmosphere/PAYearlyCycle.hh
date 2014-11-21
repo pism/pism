@@ -33,23 +33,23 @@ public:
   PAYearlyCycle(IceGrid &g, const Config &conf);
   virtual ~PAYearlyCycle();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   //! This method implements the parameterization.
-  virtual PetscErrorCode update(double my_t, double my_dt) = 0;
-  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+  virtual void update(double my_t, double my_dt) = 0;
+  virtual void mean_precipitation(IceModelVec2S &result);
+  virtual void mean_annual_temp(IceModelVec2S &result);
+  virtual void begin_pointwise_access();
+  virtual void end_pointwise_access();
+  virtual void temp_snapshot(IceModelVec2S &result);
 
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
-  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &result);
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &result);
+  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void temp_time_series(int i, int j, std::vector<double> &result);
+  virtual void precip_time_series(int i, int j, std::vector<double> &result);
 protected:
-  PetscErrorCode init_internal(const std::string &input_filename, bool regrid,
+  void init_internal(const std::string &input_filename, bool regrid,
                                unsigned int start);
   Vars *m_variables;
   double m_snow_temp_july_day;

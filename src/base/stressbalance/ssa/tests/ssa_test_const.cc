@@ -150,7 +150,7 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
   ierr = bed.update_ghosts(); CHKERRQ(ierr);
   ierr = surface.update_ghosts(); CHKERRQ(ierr);
 
-  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
+  ssa->set_boundary_conditions(bc_mask, vel_bc); 
 
   return 0;
 }
@@ -184,9 +184,9 @@ int main(int argc, char *argv[]) {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
-    ierr = setVerbosityLevel(5); CHKERRQ(ierr);
+    setVerbosityLevel(5);
 
     PetscBool usage_set, help_set;
     ierr = PetscOptionsHasName(NULL, "-usage", &usage_set);
@@ -217,21 +217,21 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      ierr = OptionsInt("-Mx", "Number of grid points in the X direction", 
-                                                      Mx, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-My", "Number of grid points in the Y direction", 
-                                                      My, flag); CHKERRQ(ierr);
+      OptionsInt("-Mx", "Number of grid points in the X direction", 
+                 Mx, flag);
+      OptionsInt("-My", "Number of grid points in the Y direction", 
+                 My, flag);
 
-      ierr = OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
-                         ssa_choices, driver, driver, flag); CHKERRQ(ierr);
+      OptionsList("-ssa_method", "Algorithm for computing the SSA solution",
+                  ssa_choices, driver, driver, flag);
              
-      ierr = OptionsReal("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
-                                                  basal_q, flag); CHKERRQ(ierr);                                                      
-      ierr = OptionsString("-o", "Set the output file name", 
-                                              output_file, flag); CHKERRQ(ierr);
+      OptionsReal("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
+                  basal_q, flag);                                                      
+      OptionsString("-o", "Set the output file name", 
+                    output_file, flag);
 
-      ierr = OptionsInt("-verbose", "Verbosity level",
-                            my_verbosity_level, flag); CHKERRQ(ierr);
+      OptionsInt("-verbose", "Verbosity level",
+                 my_verbosity_level, flag);
       if (flag) {
         setVerbosityLevel(my_verbosity_level);
       }
@@ -250,10 +250,10 @@ int main(int argc, char *argv[]) {
     }
 
     SSATestCaseConst testcase(com,config,basal_q);
-    ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
-    ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report("const"); CHKERRQ(ierr);
-    ierr = testcase.write(output_file); CHKERRQ(ierr);
+    testcase.init(Mx,My,ssafactory);
+    testcase.run();
+    testcase.report("const");
+    testcase.write(output_file);
   }
   catch (...) {
     handle_fatal_errors(com);

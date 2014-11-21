@@ -36,14 +36,14 @@ namespace pism {
 
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-PetscErrorCode IceModel::additionalAtStartTimestep() {
-  return 0;
+void IceModel::additionalAtStartTimestep() {
+  // empty
 }
 
 
 //! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-PetscErrorCode IceModel::additionalAtEndTimestep() {
-  return 0;
+void IceModel::additionalAtEndTimestep() {
+  // empty
 }
 
 //! Catch signals -USR1, -USR2 and -TERM.
@@ -103,22 +103,19 @@ int IceModel::endOfTimeStepHook() {
 
 
 //! Build a history string from the command which invoked PISM.
-PetscErrorCode  IceModel::stampHistoryCommand() {
-  PetscErrorCode ierr;
+void  IceModel::stampHistoryCommand() {
   
   char startstr[TEMPORARY_STRING_LENGTH];
 
   snprintf(startstr, sizeof(startstr), 
            "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
-  ierr = stampHistory(std::string(startstr)); CHKERRQ(ierr);
+  stampHistory(std::string(startstr));
 
   global_attributes.set_string("history",
                                pism_args_string() + global_attributes.get_string("history"));
-
-  return 0;
 }
 
-PetscErrorCode IceModel::update_run_stats() {
+void IceModel::update_run_stats() {
   PetscErrorCode ierr;
 
   MPI_Datatype mpi_type;
@@ -128,7 +125,7 @@ PetscErrorCode IceModel::update_run_stats() {
   // timing stats
   PetscLogDouble current_time, my_current_time;
   double wall_clock_hours, proc_hours, mypph;
-  ierr = GetTime(&my_current_time); CHKERRQ(ierr);
+  GetTime(&my_current_time);
   MPI_Allreduce(&my_current_time, &current_time, 1, mpi_type, MPI_MAX, grid.com);
 
   wall_clock_hours = (current_time - start_time) / 3600.0;
@@ -169,16 +166,13 @@ PetscErrorCode IceModel::update_run_stats() {
   run_stats.set_double("Href_to_H_flux_cumulative", Href_to_H_flux_cumulative);
   run_stats.set_double("H_to_Href_flux_cumulative", H_to_Href_flux_cumulative);
   run_stats.set_double("discharge_flux_cumulative", discharge_flux_cumulative);
-
-  return 0;
 }
 
 //! Build the particular history string associated to the end of a PISM run,
 //! including a minimal performance assessment.
-PetscErrorCode  IceModel::stampHistoryEnd() {
-  PetscErrorCode ierr;
+void  IceModel::stampHistoryEnd() {
 
-  ierr = update_run_stats(); CHKERRQ(ierr);
+  update_run_stats();
 
   // build and put string into global attribute "history"
   char str[TEMPORARY_STRING_LENGTH];
@@ -190,47 +184,41 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
            run_stats.get_double("model_years_per_processor_hour"),
            run_stats.get_double("PETSc_MFlops"));
 
-  ierr = stampHistory(str); CHKERRQ(ierr);
-
-  return 0;
+  stampHistory(str);
 }
 
 
 //! Get time and user/host name and add it to the given string.
-PetscErrorCode  IceModel::stampHistory(const std::string &str) {
+void  IceModel::stampHistory(const std::string &str) {
 
   std::string history = pism_username_prefix(grid.com) + (str + "\n");
 
   global_attributes.set_string("history",
                                history + global_attributes.get_string("history"));
   
-  return 0;
 }
 
 //! Check if the thickness of the ice is too large and extend the grid if necessary.
 /*!
   Extends the grid such that the new one has 2 (two) levels above the ice.
  */
-PetscErrorCode IceModel::check_maximum_thickness() {
-  PetscErrorCode  ierr;
+void IceModel::check_maximum_thickness() {
   double H_min, H_max;
 
-  ierr = ice_thickness.range(H_min, H_max); CHKERRQ(ierr);
+  ice_thickness.range(H_min, H_max);
   if (grid.Lz >= H_max) {
-    return 0;
+    return;
   }
 
   throw RuntimeError::formatted("Max ice thickness (%7.4f m) exceeds the height of the computational box (%7.4f m).",
                                 H_max, grid.Lz);
-
-  return 0;
 }
 
 
 //! Allows derived classes to extend their own IceModelVec3's in vertical.
 /*! Base class version does absolutely nothing. */
-PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
-  return 0;
+void IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
+  // empty
 }
 
 } // end of namespace pism

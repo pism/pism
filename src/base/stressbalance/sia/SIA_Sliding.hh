@@ -36,7 +36,7 @@ public:
 
   virtual ~SIA_Sliding();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
@@ -45,25 +45,24 @@ public:
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+  virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                           IO_Type /*nctype*/) {
-    return 0;
   }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
-    return 0;
+  virtual void write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
   }
 
+private:
+  PetscErrorCode allocate();
 protected:
-  virtual PetscErrorCode allocate();
 
-  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscErrorCode surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
-  virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual double basalVelocitySIA(double /*x*/, double /*y*/,
                                   double H, double T,

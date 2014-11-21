@@ -156,10 +156,10 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 
   // Allocate the actual SSA solver.
   ssa = ssafactory(grid, *enthalpyconverter, config);
-  ierr = ssa->init(vars); CHKERRQ(ierr); // vars was setup preivouisly with buildSSACoefficients
+  ssa->init(vars); // vars was setup preivouisly with buildSSACoefficients
 
   // Allow the subclass to setup the coefficients.
-  ierr = initializeSSACoefficients(); CHKERRQ(ierr);
+  initializeSSACoefficients();
 
   return 0;
 }
@@ -167,9 +167,8 @@ PetscErrorCode SSATestCase::init(int Mx, int My, SSAFactory ssafactory)
 //! Solve the SSA
 PetscErrorCode SSATestCase::run()
 {
-  PetscErrorCode ierr;
   // Solve (fast==true means "no update"):
-  ierr = verbPrintf(2,grid.com,"* Solving the SSA stress balance ...\n"); CHKERRQ(ierr);
+  verbPrintf(2,grid.com,"* Solving the SSA stress balance ...\n");
 
   bool fast = false;
   ssa->update(fast, melange_back_pressure);
@@ -179,11 +178,10 @@ PetscErrorCode SSATestCase::run()
 
 //! Report on the generated solution
 PetscErrorCode SSATestCase::report(const std::string &testname) {
-  PetscErrorCode  ierr;
     
   std::string ssa_stdout;
-  ierr = ssa->stdout_report(ssa_stdout); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,ssa_stdout.c_str()); CHKERRQ(ierr);
+  ssa->stdout_report(ssa_stdout);
+  verbPrintf(3,grid.com,ssa_stdout.c_str());
   
   double maxvecerr = 0.0, avvecerr = 0.0, 
     avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
@@ -192,15 +190,15 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
 
   if (config.get_flag("do_pseudo_plastic_till") &&
       config.get("pseudo_plastic_q") != 1.0) {
-    ierr = verbPrintf(1,grid.com, 
-                    "WARNING: numerical errors not valid for pseudo-plastic till\n"); CHKERRQ(ierr);
+    verbPrintf(1,grid.com, 
+               "WARNING: numerical errors not valid for pseudo-plastic till\n");
   }
-  ierr = verbPrintf(1,grid.com, 
-                    "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
+  verbPrintf(1,grid.com, 
+             "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
 
   IceModelVec2V *vel_ssa;
-  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
+  ssa->get_2D_advective_velocity(vel_ssa);
 
   IceModelVec::AccessList list;
   list.add(*vel_ssa);
@@ -230,38 +228,37 @@ PetscErrorCode SSATestCase::report(const std::string &testname) {
   }
 
 
-  ierr = GlobalMax(grid.com, &exactvelmax,  &gexactvelmax); CHKERRQ(ierr);
-  ierr = GlobalMax(grid.com, &maxuerr,  &gmaxuerr); CHKERRQ(ierr);
-  ierr = GlobalMax(grid.com, &maxverr,  &gmaxverr); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &avuerr,  &gavuerr); CHKERRQ(ierr);
+  GlobalMax(grid.com, &exactvelmax,  &gexactvelmax);
+  GlobalMax(grid.com, &maxuerr,  &gmaxuerr);
+  GlobalMax(grid.com, &maxverr,  &gmaxverr);
+  GlobalSum(grid.com, &avuerr,  &gavuerr);
   gavuerr = gavuerr/(grid.Mx*grid.My);
-  ierr = GlobalSum(grid.com, &avverr,  &gavverr); CHKERRQ(ierr);
+  GlobalSum(grid.com, &avverr,  &gavverr);
   gavverr = gavverr/(grid.Mx*grid.My);
-  ierr = GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &avvecerr,  &gavvecerr); CHKERRQ(ierr);
+  GlobalMax(grid.com, &maxvecerr,  &gmaxvecerr);
+  GlobalSum(grid.com, &avvecerr,  &gavvecerr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
-  ierr = verbPrintf(1,grid.com, 
-                    "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
-  CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, 
-                    "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
-                    grid.convert(gmaxvecerr, "m/second", "m/year"),
-                    (gavvecerr/gexactvelmax)*100.0,
-                    grid.convert(gmaxuerr, "m/second", "m/year"),
-                    grid.convert(gmaxverr, "m/second", "m/year"),
-                    grid.convert(gavuerr, "m/second", "m/year"),
-                    grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
+  verbPrintf(1,grid.com, 
+             "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
+  verbPrintf(1,grid.com, 
+             "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
+             grid.convert(gmaxvecerr, "m/second", "m/year"),
+             (gavvecerr/gexactvelmax)*100.0,
+             grid.convert(gmaxuerr, "m/second", "m/year"),
+             grid.convert(gmaxverr, "m/second", "m/year"),
+             grid.convert(gavuerr, "m/second", "m/year"),
+             grid.convert(gavverr, "m/second", "m/year"));
 
-  ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
+  verbPrintf(1,grid.com, "NUM ERRORS DONE\n");
 
-  ierr = report_netcdf(testname,
-                       grid.convert(gmaxvecerr, "m/second", "m/year"),
-                       (gavvecerr/gexactvelmax)*100.0,
-                       grid.convert(gmaxuerr, "m/second", "m/year"),
-                       grid.convert(gmaxverr, "m/second", "m/year"),
-                       grid.convert(gavuerr, "m/second", "m/year"),
-                       grid.convert(gavverr, "m/second", "m/year")); CHKERRQ(ierr);
+  report_netcdf(testname,
+                grid.convert(gmaxvecerr, "m/second", "m/year"),
+                (gavvecerr/gexactvelmax)*100.0,
+                grid.convert(gmaxuerr, "m/second", "m/year"),
+                grid.convert(gmaxverr, "m/second", "m/year"),
+                grid.convert(gavuerr, "m/second", "m/year"),
+                grid.convert(gavverr, "m/second", "m/year"));
 
   return 0;
 }
@@ -273,15 +270,14 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
                                           double max_v,
                                           double avg_u,
                                           double avg_v) {
-  PetscErrorCode ierr;
   NCTimeseries err("N", "N", grid.get_unit_system());
   unsigned int start;
   std::string filename;
   bool flag, append;
   NCVariable global_attributes("PISM_GLOBAL", grid.get_unit_system());
 
-  ierr = OptionsString("-report_file", "NetCDF error report file",
-                           filename, flag); CHKERRQ(ierr);
+  OptionsString("-report_file", "NetCDF error report file",
+                filename, flag);
 
   if (flag == false) {
     return 0;
@@ -289,11 +285,10 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
 
   err.set_units("1");
 
-  ierr = verbPrintf(2, grid.com, "Also writing errors to '%s'...\n", filename.c_str());
-  CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "Also writing errors to '%s'...\n", filename.c_str());
 
-  ierr = OptionsIsSet("-append", "Append the NetCDF error report",
-                          append); CHKERRQ(ierr);
+  OptionsIsSet("-append", "Append the NetCDF error report",
+               append);
 
   IO_Mode mode = PISM_READWRITE;
   if (append == false) {
@@ -314,7 +309,7 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
 
   // Always write grid parameters:
   err.set_name("dx");
-  ierr = err.set_units("meters"); CHKERRQ(ierr);
+  err.set_units("meters");
   nc.write_timeseries(err, (size_t)start, grid.dx);
   err.set_name("dy");
   nc.write_timeseries(err, (size_t)start, grid.dy);
@@ -326,37 +321,37 @@ PetscErrorCode SSATestCase::report_netcdf(const std::string &testname,
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("max_velocity");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_units("m/year");
   err.set_string("long_name", "maximum ice velocity magnitude error");
   nc.write_timeseries(err, (size_t)start, max_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("relative_velocity");
-  ierr = err.set_units("percent"); CHKERRQ(ierr);
+  err.set_units("percent");
   err.set_string("long_name", "relative ice velocity magnitude error");
   nc.write_timeseries(err, (size_t)start, rel_vector);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("maximum_u");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_units("m/year");
   err.set_string("long_name", "maximum error in the X-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, max_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("maximum_v");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_units("m/year");
   err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, max_v);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("average_u");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_units("m/year");
   err.set_string("long_name", "average error in the X-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, avg_u);
 
   err.clear_all_strings(); err.clear_all_doubles(); err.set_units("1");
   err.set_name("average_v");
-  ierr = err.set_units("m/year"); CHKERRQ(ierr);
+  err.set_units("m/year");
   err.set_string("long_name", "average error in the Y-component of the ice velocity");
   nc.write_timeseries(err, (size_t)start, avg_v);
 
@@ -376,7 +371,6 @@ PetscErrorCode SSATestCase::exactSolution(int /*i*/, int /*j*/,
 //! Save the computation and data to a file.
 PetscErrorCode SSATestCase::write(const std::string &filename)
 {
-  PetscErrorCode ierr;
 
   // Write results to an output file:
   PIO pio(grid, grid.config.get_string("output_format"));
@@ -386,27 +380,27 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
                grid.time->CF_units_string());
   pio.append_time(config.get_string("time_dimension_name"), 0.0);
 
-  ierr = surface.write(pio); CHKERRQ(ierr);
-  ierr = thickness.write(pio); CHKERRQ(ierr);
-  ierr = bc_mask.write(pio); CHKERRQ(ierr);
-  ierr = tauc.write(pio); CHKERRQ(ierr);
-  ierr = bed.write(pio); CHKERRQ(ierr);
-  ierr = enthalpy.write(pio); CHKERRQ(ierr);
-  ierr = vel_bc.write(pio); CHKERRQ(ierr);
+  surface.write(pio);
+  thickness.write(pio);
+  bc_mask.write(pio);
+  tauc.write(pio);
+  bed.write(pio);
+  enthalpy.write(pio);
+  vel_bc.write(pio);
 
   IceModelVec2V *vel_ssa;
-  ierr = ssa->get_2D_advective_velocity(vel_ssa); CHKERRQ(ierr);
-  ierr = vel_ssa->write(pio); CHKERRQ(ierr);
+  ssa->get_2D_advective_velocity(vel_ssa);
+  vel_ssa->write(pio);
 
   IceModelVec2V exact;
-  ierr = exact.create(grid, "_exact", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = exact.set_attrs("diagnostic", 
-            "X-component of the SSA exact solution", 
-            "m s-1", "", 0); CHKERRQ(ierr);
-  ierr = exact.set_attrs("diagnostic", 
-            "Y-component of the SSA exact solution", 
-            "m s-1", "", 1); CHKERRQ(ierr);
-  ierr = exact.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  exact.create(grid, "_exact", WITHOUT_GHOSTS);
+  exact.set_attrs("diagnostic", 
+                  "X-component of the SSA exact solution", 
+                  "m s-1", "", 0);
+  exact.set_attrs("diagnostic", 
+                  "Y-component of the SSA exact solution", 
+                  "m s-1", "", 1);
+  exact.set_glaciological_units("m year-1");
   exact.write_in_glaciological_units = true;
 
   IceModelVec::AccessList list(exact);
@@ -416,7 +410,7 @@ PetscErrorCode SSATestCase::write(const std::string &filename)
     exactSolution(i, j, grid.x[i], grid.y[j],
                   &(exact(i,j).u), &(exact(i,j).v));
   }
-  ierr = exact.write(pio); CHKERRQ(ierr);
+  exact.write(pio);
 
   pio.close();
   return 0;
@@ -428,7 +422,6 @@ half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
 PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx, 
 				 double Ly, int Mx, int My, Periodicity p)
 {
-  PetscErrorCode ierr;
   
   grid.Lx = Lx;
   grid.Ly = Ly;
@@ -437,9 +430,9 @@ PetscErrorCode init_shallow_grid(IceGrid &grid, double Lx,
   
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
-  ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
-  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-  ierr = grid.allocate(); CHKERRQ(ierr);
+  grid.compute_vertical_levels();
+  grid.compute_horizontal_spacing();
+  grid.allocate();
 
   return 0;
 }

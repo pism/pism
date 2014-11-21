@@ -98,17 +98,17 @@ int main(int argc, char *argv[]) {
     // run derived class for compensatory source SIA solutions
     // (i.e. compensatory accumulation or compensatory heating)
     IceCompModel m(g, config, overrides, testname[0]);
-    ierr = m.setExecName("pismv"); CHKERRQ(ierr);
+    m.setExecName("pismv");
 
-    ierr = m.init(); CHKERRQ(ierr);
+    m.init();
 
-    ierr = m.run(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
+    m.run();
+    verbPrintf(2,com, "done with run\n");
 
-    ierr = m.reportErrors();  CHKERRQ(ierr);
+    m.reportErrors();
 
     // provide a default output file name if no -o option is given.
-    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+    m.writeFiles("unnamed.nc");
   }
   catch (...) {
     handle_fatal_errors(com);

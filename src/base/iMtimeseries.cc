@@ -31,29 +31,24 @@
 namespace pism {
 
 //! Initializes the code writing scalar time-series.
-PetscErrorCode IceModel::init_timeseries() {
-  PetscErrorCode ierr;
+void IceModel::init_timeseries() {
   bool ts_file_set, ts_times_set, ts_vars_set;
   std::string times, vars;
   bool append;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling scalar diagnostic time-series", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsString("-ts_file", "Specifies the time-series output file name",
-                             ts_filename, ts_file_set); CHKERRQ(ierr);
+    OptionsString("-ts_file", "Specifies the time-series output file name",
+                  ts_filename, ts_file_set);
 
-    ierr = OptionsString("-ts_times", "Specifies a MATLAB-style range or a list of requested times",
-                             times, ts_times_set); CHKERRQ(ierr);
+    OptionsString("-ts_times", "Specifies a MATLAB-style range or a list of requested times",
+                  times, ts_times_set);
 
-    ierr = OptionsString("-ts_vars", "Specifies a comma-separated list of veriables to save",
-                             vars, ts_vars_set); CHKERRQ(ierr);
+    OptionsString("-ts_vars", "Specifies a comma-separated list of veriables to save",
+                  vars, ts_vars_set);
 
     // default behavior is to move the file aside if it exists already; option allows appending
-    ierr = OptionsIsSet("-ts_append", append); CHKERRQ(ierr);
+    OptionsIsSet("-ts_append", append);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   IO_Mode mode = PISM_READWRITE;
   if (append == false) {
@@ -67,7 +62,7 @@ PetscErrorCode IceModel::init_timeseries() {
   // If neither -ts_filename nor -ts_times is set, we're done.
   if (!ts_file_set && !ts_times_set) {
     save_ts = false;
-    return 0;
+    return;
   }
 
   save_ts = true;
@@ -83,17 +78,17 @@ PetscErrorCode IceModel::init_timeseries() {
     throw RuntimeError("no argument for -ts_times option.");
   }
 
-  ierr = verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
-                    ts_filename.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
+             ts_filename.c_str());
 
-  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "times requested: %s\n", times.c_str());
 
   current_ts = 0;
 
 
   std::string var_name;
   if (ts_vars_set) {
-    ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str());
     std::istringstream arg(vars);
 
     while (getline(arg, var_name, ',')) {
@@ -125,14 +120,14 @@ PetscErrorCode IceModel::init_timeseries() {
       }
 
       if (current_ts > 0) {
-        ierr = verbPrintf(2, grid.com,
-                          "skipping times before the last record in %s (at %s)\n",
-                          ts_filename.c_str(), grid.time->date(time_max).c_str()); CHKERRQ(ierr);
+        verbPrintf(2, grid.com,
+                   "skipping times before the last record in %s (at %s)\n",
+                   ts_filename.c_str(), grid.time->date(time_max).c_str());
       }
     }
   }
 
-  ierr = write_metadata(nc, false, false); CHKERRQ(ierr);
+  write_metadata(nc, false, false);
 
   nc.close();
 
@@ -140,7 +135,7 @@ PetscErrorCode IceModel::init_timeseries() {
   // set the output file:
   std::map<std::string,TSDiagnostic*>::iterator j = ts_diagnostics.begin();
   while (j != ts_diagnostics.end()) {
-    ierr = (j->second)->init(ts_filename); CHKERRQ(ierr);
+    (j->second)->init(ts_filename);
     ++j;
   }
 
@@ -151,7 +146,7 @@ PetscErrorCode IceModel::init_timeseries() {
 
   if (ts_times.size() == current_ts) {
     save_ts = false;
-    return 0;
+    return;
   }
 
   // discard requested times before the beginning of the run
@@ -162,34 +157,31 @@ PetscErrorCode IceModel::init_timeseries() {
 
   ts_times = tmp;
   current_ts = 0;
-
-  return 0;
 }
 
 //! Write time-series.
-PetscErrorCode IceModel::write_timeseries() {
-  PetscErrorCode ierr;
+void IceModel::write_timeseries() {
 
   // return if no time-series requested
   if (!save_ts) {
-     return 0;
+     return;
   }
 
   // return if wrote all the records already
   if (current_ts == ts_times.size()) {
-    return 0;
+    return;
   }
 
   // return if did not yet reach the time we need to save at
   if (ts_times[current_ts] > grid.time->current()) {
-    return 0;
+    return;
   }
 
   for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
     TSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
-      ierr = diag->update(grid.time->current() - dt, grid.time->current()); CHKERRQ(ierr);
+      diag->update(grid.time->current() - dt, grid.time->current());
     }
   }
 
@@ -207,41 +199,34 @@ PetscErrorCode IceModel::write_timeseries() {
       TSDiagnostic *diag = ts_diagnostics[*j];
 
       if (diag != NULL) {
-        ierr = diag->save(ts_times[current_ts - 1], ts_times[current_ts]); CHKERRQ(ierr);
+        diag->save(ts_times[current_ts - 1], ts_times[current_ts]);
       }
     }
   }
-
-  return 0;
 }
 
 
 //! Initialize the code saving spatially-variable diagnostic quantities.
-PetscErrorCode IceModel::init_extras() {
-  PetscErrorCode ierr;
+void IceModel::init_extras() {
   bool split, extra_times_set, extra_file_set, extra_vars_set;
   std::string times, vars;
 
   last_extra = 0;               // will be set in write_extras()
   next_extra = 0;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling 2D and 3D diagnostic output", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsString("-extra_file", "Specifies the output file",
-                             extra_filename, extra_file_set); CHKERRQ(ierr);
+    OptionsString("-extra_file", "Specifies the output file",
+                  extra_filename, extra_file_set);
 
-    ierr = OptionsString("-extra_times", "Specifies times to save at",
-                             times, extra_times_set); CHKERRQ(ierr);
+    OptionsString("-extra_times", "Specifies times to save at",
+                  times, extra_times_set);
 
-    ierr = OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
-                             vars, extra_vars_set); CHKERRQ(ierr);
+    OptionsString("-extra_vars", "Specifies a comma-separated list of variables to save",
+                  vars, extra_vars_set);
 
-    ierr = OptionsIsSet("-extra_split", "Specifies whether to save to separate files",
-                            split); CHKERRQ(ierr);
+    OptionsIsSet("-extra_split", "Specifies whether to save to separate files",
+                 split);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (extra_file_set ^ extra_times_set) {
     throw RuntimeError("you need to specify both -extra_file and -extra_times to save spatial time-series.");
@@ -249,7 +234,7 @@ PetscErrorCode IceModel::init_extras() {
 
   if (!extra_file_set && !extra_times_set) {
     save_extra = false;
-    return 0;
+    return;
   }
 
   try {
@@ -264,7 +249,7 @@ PetscErrorCode IceModel::init_extras() {
   }
 
   bool append;
-  ierr = OptionsIsSet("-extra_append", append); CHKERRQ(ierr);
+  OptionsIsSet("-extra_append", append);
 
   if (append == true && split == true) {
     throw RuntimeError("both -extra_split and -extra_append are set.");
@@ -287,9 +272,9 @@ PetscErrorCode IceModel::init_extras() {
       }
 
       if (next_extra > 0) {
-        ierr = verbPrintf(2, grid.com,
-                          "skipping times before the last record in %s (at %s)\n",
-                          extra_filename.c_str(), grid.time->date(time_max).c_str()); CHKERRQ(ierr);
+        verbPrintf(2, grid.com,
+                   "skipping times before the last record in %s (at %s)\n",
+                   extra_filename.c_str(), grid.time->date(time_max).c_str());
       }
 
       // discard requested times before the beginning of the run
@@ -311,31 +296,29 @@ PetscErrorCode IceModel::init_extras() {
   if (split) {
     split_extra = true;
   } else if (!ends_with(extra_filename, ".nc")) {
-    ierr = verbPrintf(2, grid.com,
-                      "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
-                      extra_filename.c_str());
-    CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "PISM WARNING: spatial time-series file name '%s' does not have the '.nc' suffix!\n",
+               extra_filename.c_str());
   }
 
   if (split) {
-    ierr = verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
-                      extra_filename.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "saving spatial time-series to '%s+year.nc'; ",
+               extra_filename.c_str());
   } else {
-    ierr = verbPrintf(2, grid.com, "saving spatial time-series to '%s'; ",
-                      extra_filename.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "saving spatial time-series to '%s'; ",
+               extra_filename.c_str());
   }
 
-  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "times requested: %s\n", times.c_str());
 
   if (extra_times.size() > 500) {
-    ierr = verbPrintf(2, grid.com,
-                      "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
-    CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "PISM WARNING: more than 500 times requested. This might fill your hard-drive!\n");
   }
 
   std::string var_name;
   if (extra_vars_set) {
-    ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str());
     std::istringstream arg(vars);
 
     while (getline(arg, var_name, ',')) {
@@ -343,8 +326,8 @@ PetscErrorCode IceModel::init_extras() {
     }
 
   } else {
-    ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
-                      " Writing model_state, mapping and climate_steady variables...\n"); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
+               " Writing model_state, mapping and climate_steady variables...\n");
 
     std::set<std::string> vars_set = variables.keys();
 
@@ -370,16 +353,13 @@ PetscErrorCode IceModel::init_extras() {
   } // end of the else clause after "if (extra_vars_set)"
 
   if (extra_vars.size() == 0) {
-    ierr = verbPrintf(2, grid.com, 
-       "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n"); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, 
+               "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n");
   }
-
-  return 0;
 }
 
 //! Write spatially-variable diagnostic quantities.
-PetscErrorCode IceModel::write_extras() {
-  PetscErrorCode ierr;
+void IceModel::write_extras() {
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
                                  // value is never used, because saving_after
                                  // is only used if save_now == true, and in
@@ -389,7 +369,7 @@ PetscErrorCode IceModel::write_extras() {
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
   if (!save_extra) {
-    return 0;
+    return;
   }
 
   // do we need to save *now*?
@@ -410,7 +390,7 @@ PetscErrorCode IceModel::write_extras() {
 
     saving_after = extra_times[current_extra];
   } else {
-    return 0;
+    return;
   }
 
   if (current_extra == 0) {
@@ -424,7 +404,7 @@ PetscErrorCode IceModel::write_extras() {
       Diagnostic *diag = diagnostics[*j];
 
       if (diag != NULL) {
-        ierr = diag->update_cumulative(); CHKERRQ(ierr);
+        diag->update_cumulative();
       }
       ++j;
     }
@@ -433,7 +413,7 @@ PetscErrorCode IceModel::write_extras() {
     // the time init_extras() is calles).
     last_extra = grid.time->current();
 
-    return 0;
+    return;
   }
 
   if (saving_after < grid.time->start()) {
@@ -447,7 +427,7 @@ PetscErrorCode IceModel::write_extras() {
     //   more record than necessary.
     //
     // This check makes sure that this never happens.
-    return 0;
+    return;
   }
 
   if (split_extra) {
@@ -458,16 +438,15 @@ PetscErrorCode IceModel::write_extras() {
     strncpy(filename, extra_filename.c_str(), PETSC_MAX_PATH_LEN);
   }
 
-  ierr = verbPrintf(3, grid.com, 
-                    "\nsaving spatial time-series to %s at %s\n\n",
-                    filename, grid.time->date().c_str());
-  CHKERRQ(ierr);
+  verbPrintf(3, grid.com, 
+             "\nsaving spatial time-series to %s at %s\n\n",
+             filename, grid.time->date().c_str());
 
   // find out how much time passed since the beginning of the run
   double wall_clock_hours;
   if (grid.rank == 0) {
     PetscLogDouble current_time;
-    ierr = GetTime(&current_time); CHKERRQ(ierr);
+    GetTime(&current_time);
     wall_clock_hours = (current_time - start_time) / 3600.0;
   }
 
@@ -478,7 +457,7 @@ PetscErrorCode IceModel::write_extras() {
   if (extra_file_is_ready == false) {
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append = false;
-    ierr = OptionsIsSet("-extra_append", append); CHKERRQ(ierr);
+    OptionsIsSet("-extra_append", append);
 
     IO_Mode mode = PISM_READWRITE;
     if (append == false) {
@@ -493,7 +472,7 @@ PetscErrorCode IceModel::write_extras() {
     nc.put_att_text(config.get_string("time_dimension_name"),
                     "bounds", "time_bounds");
 
-    ierr = write_metadata(nc, true, false); CHKERRQ(ierr);
+    write_metadata(nc, true, false);
 
     extra_file_is_ready = true;
   } else {
@@ -517,34 +496,32 @@ PetscErrorCode IceModel::write_extras() {
 
   nc.write_timeseries(timestamp, time_start, wall_clock_hours);
 
-  ierr = write_variables(nc, extra_vars, PISM_FLOAT);  CHKERRQ(ierr);
+  write_variables(nc, extra_vars, PISM_FLOAT);
 
   nc.close();
 
   // flush time-series buffers
-  ierr = flush_timeseries(); CHKERRQ(ierr);
+  flush_timeseries();
 
   last_extra = current_time;
-
-  return 0;
 }
 
 //! Computes the maximum time-step we can take and still hit all the requested years.
 /*!
   Sets restrict to 'false' if any time-step is OK.
  */
-PetscErrorCode IceModel::extras_max_timestep(double my_t, double& my_dt, bool &restrict) {
+void IceModel::extras_max_timestep(double my_t, double& my_dt, bool &restrict) {
 
   if (!save_extra) {
     my_dt = -1;
     restrict = false;
-    return 0;
+    return;
   }
 
   if (config.get_flag("extras_force_output_times") == false) {
     my_dt = -1;
     restrict = false;
-    return 0;
+    return;
   }
 
   std::vector<double>::iterator j;
@@ -553,7 +530,7 @@ PetscErrorCode IceModel::extras_max_timestep(double my_t, double& my_dt, bool &r
   if (j == extra_times.end()) {
     my_dt = -1;
     restrict = false;
-    return 0;
+    return;
   }
 
   my_dt = *j - my_t;
@@ -570,27 +547,25 @@ PetscErrorCode IceModel::extras_max_timestep(double my_t, double& my_dt, bool &r
       restrict = false;
     }
   }
-
-  return 0;
 }
 
 //! Computes the maximum time-step we can take and still hit all the requested years.
 /*!
   Sets restrict to 'false' if any time-step is OK.
  */
-PetscErrorCode IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restrict) {
+void IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restrict) {
 
   if (!save_ts) {
     my_dt = -1;
     restrict = false;
-    return 0;
+    return;
   }
 
   // make sure that we hit the left endpoint of the first report interval
   if (my_t < ts_times[0]) {
     my_dt = ts_times[0] - my_t;
     restrict = true;
-    return 0;
+    return;
   }
 
   bool force_times;
@@ -599,7 +574,7 @@ PetscErrorCode IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restr
   if (!force_times) {
     my_dt = -1;
     restrict = false;
-    return 0;
+    return;
   }
 
   std::vector<double>::iterator j;
@@ -608,28 +583,23 @@ PetscErrorCode IceModel::ts_max_timestep(double my_t, double& my_dt, bool &restr
   if (j == ts_times.end()) {
     my_dt = -1;
     restrict = false;
-    return 0;
+    return;
   }
 
   my_dt = *j - my_t;
   restrict = true;
-
-  return 0;
 }
 
 //! Flush scalar time-series.
-PetscErrorCode IceModel::flush_timeseries() {
-  PetscErrorCode ierr;
+void IceModel::flush_timeseries() {
   // flush all the time-series buffers:
   for (std::set<std::string>::iterator j = ts_vars.begin(); j != ts_vars.end(); ++j) {
     TSDiagnostic *diag = ts_diagnostics[*j];
 
     if (diag != NULL) {
-      ierr = diag->flush(); CHKERRQ(ierr);
+      diag->flush();
     }
   }
-
-  return 0;
 }
 
 } // end of namespace pism

@@ -55,14 +55,13 @@ SSA::~SSA() {
 
 
 //! \brief Initialize a generic regular-grid SSA solver.
-PetscErrorCode SSA::init(Vars &vars) {
-  PetscErrorCode ierr;
+void SSA::init(Vars &vars) {
 
-  ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
+  ShallowStressBalance::init(vars);
 
-  ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com,
-                    "  [using the %s flow law]\n", flow_law->name().c_str()); CHKERRQ(ierr);
+  verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n");
+  verbPrintf(2, grid.com,
+             "  [using the %s flow law]\n", flow_law->name().c_str());
   
   if (config.get_flag("sub_groundingline")) {
     gl_mask = vars.get_2d_scalar("gl_mask");
@@ -86,15 +85,15 @@ PetscErrorCode SSA::init(Vars &vars) {
   // and read the initial guess (unless asked not to).
   bool i_set;
   std::string filename;
-  ierr = OptionsString("-i", "PISM input file",
-                           filename, i_set); CHKERRQ(ierr);
+  OptionsString("-i", "PISM input file",
+                filename, i_set);
 
   if (i_set) {
     bool dont_read_initial_guess, u_ssa_found, v_ssa_found;
     unsigned int start;
     PIO nc(grid, "guess_mode");
 
-    ierr = OptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
+    OptionsIsSet("-dontreadSSAvels", dont_read_initial_guess);
 
     nc.open(filename, PISM_READONLY);
     u_ssa_found = nc.inq_var("u_ssa");
@@ -103,43 +102,40 @@ PetscErrorCode SSA::init(Vars &vars) {
     nc.close();
 
     if (u_ssa_found && v_ssa_found && (not dont_read_initial_guess)) {
-      ierr = verbPrintf(3,grid.com,"Reading u_ssa and v_ssa...\n"); CHKERRQ(ierr);
+      verbPrintf(3,grid.com,"Reading u_ssa and v_ssa...\n");
 
-      ierr = m_velocity.read(filename, start); CHKERRQ(ierr);
+      m_velocity.read(filename, start);
     }
 
   } else {
-    ierr = m_velocity.set(0.0); CHKERRQ(ierr); // default initial guess
+    m_velocity.set(0.0); // default initial guess
   }
 
   if (config.get_flag("ssa_dirichlet_bc")) {
     bc_locations = vars.get_2d_mask("bcflag");
     m_vel_bc = vars.get_2d_vector("vel_ssa_bc");
   }
-
-  return 0;
 }
 
 //! \brief Allocate objects which any SSA solver would use.
 PetscErrorCode SSA::allocate() {
-  PetscErrorCode ierr;
 
-  ierr = taud.create(grid, "taud", WITHOUT_GHOSTS); CHKERRQ(ierr);
-  ierr = taud.set_attrs("diagnostic",
-                        "X-component of the driving shear stress at the base of ice",
-                        "Pa", "", 0); CHKERRQ(ierr);
-  ierr = taud.set_attrs("diagnostic",
-                        "Y-component of the driving shear stress at the base of ice",
-                        "Pa", "", 1); CHKERRQ(ierr);
+  taud.create(grid, "taud", WITHOUT_GHOSTS);
+  taud.set_attrs("diagnostic",
+                 "X-component of the driving shear stress at the base of ice",
+                 "Pa", "", 0);
+  taud.set_attrs("diagnostic",
+                 "Y-component of the driving shear stress at the base of ice",
+                 "Pa", "", 1);
 
 
   // override velocity metadata
   std::vector<std::string> long_names;
   long_names.push_back("SSA model ice velocity in the X direction");
   long_names.push_back("SSA model ice velocity in the Y direction");
-  ierr = m_velocity.rename("_ssa",long_names,""); CHKERRQ(ierr);
+  m_velocity.rename("_ssa",long_names,"");
 
-  ierr = m_velocity_global.create(grid, "bar", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  m_velocity_global.create(grid, "bar", WITHOUT_GHOSTS);
 
   m_da = m_velocity_global.get_dm();
 
@@ -147,10 +143,10 @@ PetscErrorCode SSA::allocate() {
     IceFlowLawFactory ice_factory(grid.com, "ssa_", config, &EC);
     ice_factory.removeType(ICE_GOLDSBY_KOHLSTEDT);
 
-    ierr = ice_factory.setType(config.get_string("ssa_flow_law")); CHKERRQ(ierr);
+    ice_factory.setType(config.get_string("ssa_flow_law"));
 
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ierr = ice_factory.create(&flow_law); CHKERRQ(ierr);
+    ice_factory.setFromOptions();
+    ice_factory.create(&flow_law);
   }
 
   return 0;
@@ -192,7 +188,7 @@ surface gradient. When the thickness at a grid point is very small (below \c
 minThickEtaTransform in the procedure), the formula is slightly modified to
 give a lower driving stress. The transformation is not used in floating ice.
  */
-PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
+void SSA::compute_driving_stress(IceModelVec2V &result) {
   IceModelVec2S &thk = *thickness; // to improve readability (below)
 
   const double n = flow_law->exponent(), // frequently n = 3
@@ -334,21 +330,16 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
       result(i,j).v = - pressure * h_y;
     } // end of "(pressure > 0)"
   }
-
-  return 0;
 }
 
-PetscErrorCode SSA::stdout_report(std::string &result) {
+void SSA::stdout_report(std::string &result) {
   result = stdout_ssa;
-  return 0;
 }
 
 
 //! \brief Set the initial guess of the SSA velocity.
-PetscErrorCode SSA::set_initial_guess(IceModelVec2V &guess) {
-  PetscErrorCode ierr;
-  ierr = m_velocity.copy_from(guess); CHKERRQ(ierr);
-  return 0;
+void SSA::set_initial_guess(IceModelVec2V &guess) {
+  m_velocity.copy_from(guess);
 }
 
 
@@ -357,25 +348,19 @@ void SSA::add_vars_to_output(const std::string &/*keyword*/, std::set<std::strin
 }
 
 
-PetscErrorCode SSA::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
+void SSA::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "vel_ssa")) {
-    ierr = m_velocity.define(nc, nctype); CHKERRQ(ierr);
+    m_velocity.define(nc, nctype);
   }
-
-  return 0;
 }
 
 
-PetscErrorCode SSA::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
+void SSA::write_variables(const std::set<std::string> &vars, const PIO &nc) {
 
   if (set_contains(vars, "vel_ssa")) {
-    ierr = m_velocity.write(nc); CHKERRQ(ierr);
+    m_velocity.write(nc);
   }
-
-  return 0;
 }
 
 void SSA::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
@@ -414,18 +399,16 @@ SSA_taud::SSA_taud(SSA *m, IceGrid &g, Vars &my_vars)
   }
 }
 
-PetscErrorCode SSA_taud::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SSA_taud::compute(IceModelVec* &output) {
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "result", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
-  ierr = model->compute_driving_stress(*result); CHKERRQ(ierr);
+  model->compute_driving_stress(*result);
 
   output = result;
-  return 0;
 }
 
 SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars)
@@ -440,19 +423,18 @@ SSA_taud_mag::SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars)
                      "this is the magnitude of the driving stress used by the SSA solver");
 }
 
-PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SSA_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taud_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "taud_mag", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
   SSA_taud diag(model, grid, variables);
 
-  ierr = diag.compute(tmp);
+  diag.compute(tmp);
 
   IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
   if (taud == NULL) {
@@ -460,12 +442,11 @@ PetscErrorCode SSA_taud_mag::compute(IceModelVec* &output) {
     throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
   }
 
-  ierr = taud->magnitude(*result); CHKERRQ(ierr);
+  taud->magnitude(*result);
 
   delete tmp;
 
   output = result;
-  return 0;
 }
 
 

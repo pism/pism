@@ -30,22 +30,22 @@ public:
   POGivenTH(IceGrid &g, const Config &conf);
   virtual ~POGivenTH();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual void init(Vars &vars);
+  virtual void update(double my_t, double my_dt);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars,
+  virtual void define_variables(const std::set<std::string> &vars,
                                           const PIO &nc, IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
 
-  virtual PetscErrorCode sea_level_elevation(double &result);
+  virtual void sea_level_elevation(double &result);
 
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
+  virtual void shelf_base_temperature(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux(IceModelVec2S &result);
 
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
+  virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 
   class POGivenTHConstants {
   public:
@@ -80,32 +80,32 @@ private:
   IceModelVec2S *ice_thickness;
   IceModelVec2T *theta_ocean, *salinity_ocean;
 
-  PetscErrorCode pointwise_update(const POGivenTHConstants &constants,
+  void pointwise_update(const POGivenTHConstants &constants,
                                   double sea_water_salinity,
                                   double sea_water_potential_temperature,
                                   double ice_thickness,
                                   double *shelf_base_temperature_out,
                                   double *shelf_base_melt_rate_out);
 
-  PetscErrorCode subshelf_salinity(const POGivenTHConstants &constants,
+  void subshelf_salinity(const POGivenTHConstants &constants,
                                    double sea_water_salinity,
                                    double sea_water_potential_temperature,
                                    double ice_thickness,
                                    double *shelf_base_salinity);
 
-  PetscErrorCode subshelf_salinity_melt(const POGivenTHConstants &constants,
+  void subshelf_salinity_melt(const POGivenTHConstants &constants,
                                         double sea_water_salinity,
                                         double sea_water_potential_temperature,
                                         double ice_thickness,
                                         double *shelf_base_salinity);
 
-  PetscErrorCode subshelf_salinity_freeze_on(const POGivenTHConstants &constants,
+  void subshelf_salinity_freeze_on(const POGivenTHConstants &constants,
                                              double sea_water_salinity,
                                              double sea_water_potential_temperature,
                                              double ice_thickness,
                                              double *shelf_base_salinity);
 
-  PetscErrorCode subshelf_salinity_diffusion_only(const POGivenTHConstants &constants,
+  void subshelf_salinity_diffusion_only(const POGivenTHConstants &constants,
                                                   double sea_water_salinity,
                                                   double sea_water_potential_temperature,
                                                   double ice_thickness,

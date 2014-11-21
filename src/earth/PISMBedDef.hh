@@ -32,15 +32,15 @@ class BedDef : public Component_TS {
 public:
   BedDef(IceGrid &g, const Config &conf);
   virtual ~BedDef() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt) = 0;
+  virtual void init(Vars &vars);
+  virtual void update(double my_t, double my_dt) = 0;
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                IO_Type nctype);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
-  PetscErrorCode compute_uplift(double dt_beddef);
+  void compute_uplift(double dt_beddef);
   double t_beddef_last;         //!< last bed deformation update year
 
   IceModelVec2S topg_initial;
@@ -55,8 +55,8 @@ class PBPointwiseIsostasy : public BedDef {
 public:
   PBPointwiseIsostasy(IceGrid &g, const Config &conf); 
   virtual ~PBPointwiseIsostasy() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual void init(Vars &vars);
+  virtual void update(double my_t, double my_dt);
 protected:
   PetscErrorCode allocate();
   IceModelVec2S thk_last;       //!< last ice thickness

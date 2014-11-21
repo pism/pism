@@ -66,14 +66,13 @@ public:
   //! \brief Update a cumulative quantity needed to compute a rate of change.
   //! So far we there is only one such quantity: the rate of change of the ice
   //! thickness.
-  virtual PetscErrorCode update_cumulative()
+  virtual void update_cumulative()
   {
-    return 0;
   }
 
   //! \brief Compute a diagnostic quantity and return a pointer to a newly-allocated
   //! IceModelVec. NB: The caller needs to de-allocate it.
-  virtual PetscErrorCode compute(IceModelVec* &result) = 0;
+  virtual void compute(IceModelVec* &result) = 0;
 
   //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
   virtual int get_nvars() {
@@ -103,15 +102,11 @@ public:
   }
 
   //! Define NetCDF variables corresponding to a diagnostic quantity.
-  virtual PetscErrorCode define(const PIO &nc)
+  virtual void define(const PIO &nc)
   {
-    PetscErrorCode ierr;
-
     for (int j = 0; j < dof; ++j) {
-      ierr = vars[j].define(nc, output_datatype, true); CHKERRQ(ierr);
+      vars[j].define(nc, output_datatype, true);
     }
-
-    return 0;
   }
 
   //! \brief A method for setting common variable attributes.
@@ -171,29 +166,24 @@ public:
     delete ts;
   }
 
-  virtual PetscErrorCode update(double a, double b) = 0;
+  virtual void update(double a, double b) = 0;
 
-  virtual PetscErrorCode save(double a, double b) {
+  virtual void save(double a, double b) {
     if (ts) {
-      return ts->interp(a, b);
+      ts->interp(a, b);
     }
-
-    return 0;
   }
 
-  virtual PetscErrorCode flush() {
+  virtual void flush() {
     if (ts) {
-      return ts->flush();
+      ts->flush();
     }
-
-    return 0;
   }
 
-  virtual PetscErrorCode init(std::string filename) {
+  virtual void init(std::string filename) {
     if (ts) {
-      return ts->init(filename);
+      ts->init(filename);
     }
-    return 0;
   }
 
   virtual std::string get_string(std::string name) {

@@ -35,6 +35,7 @@ class PScalarForcing : public Mod
 public:
   PScalarForcing(IceGrid &g, const Config &conf, Model* in)
     : Mod(g, conf, in), input(in) {}
+
   virtual ~PScalarForcing()
   {
     if (offset) {
@@ -42,19 +43,17 @@ public:
     }
   }
 
-  virtual PetscErrorCode update(double my_t, double my_dt)
+  virtual void update(double my_t, double my_dt)
   {
     Mod::m_t  = Mod::grid.time->mod(my_t - bc_reference_time, bc_period);
     Mod::m_dt = my_dt;
 
-    PetscErrorCode ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
-    return 0;
+    Mod::input_model->update(my_t, my_dt);
   }
 
 protected:
-  virtual PetscErrorCode init_internal()
+  virtual void init_internal()
   {
-    PetscErrorCode ierr;
     bool file_set, bc_period_set, bc_ref_year_set;
 
     IceGrid &g = Mod::grid;
@@ -62,16 +61,14 @@ protected:
     double bc_period_years = 0,
       bc_reference_year = 0;
 
-    ierr = PetscOptionsBegin(g.com, "", "Scalar forcing options", ""); CHKERRQ(ierr);
     {
-      ierr = OptionsString(option_prefix + "_file", "Specifies a file with scalar offsets",
-                               filename, file_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_period", "Specifies the length of the climate data period",
-                             bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_reference_year", "Boundary condition reference year",
-                             bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
+      OptionsString(option_prefix + "_file", "Specifies a file with scalar offsets",
+                    filename, file_set);
+      OptionsReal(option_prefix + "_period", "Specifies the length of the climate data period",
+                  bc_period_years, bc_period_set);
+      OptionsReal(option_prefix + "_reference_year", "Boundary condition reference year",
+                  bc_reference_year, bc_ref_year_set);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (file_set == false) {
       throw RuntimeError::formatted("command-line option %s_file is required.",
@@ -91,31 +88,26 @@ protected:
     }
 
 
-    ierr = verbPrintf(2, g.com,
-                      "  reading %s data from forcing file %s...\n",
-                      offset->short_name.c_str(), filename.c_str());
-    CHKERRQ(ierr);
+    verbPrintf(2, g.com,
+               "  reading %s data from forcing file %s...\n",
+               offset->short_name.c_str(), filename.c_str());
+
     PIO nc(g.com, "netcdf3", g.get_unit_system());
     nc.open(filename, PISM_READONLY);
     {
-      ierr = offset->read(nc, g.time); CHKERRQ(ierr);
+      offset->read(nc, g.time);
     }
     nc.close();
-
-
-    return 0;
   }
 
   //! Apply offset as an offset
-  PetscErrorCode offset_data(IceModelVec2S &result) {
-    PetscErrorCode ierr = result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
-    return 0;
+  void offset_data(IceModelVec2S &result) {
+    result.shift((*offset)(Mod::m_t + 0.5*Mod::m_dt));
   }
 
   //! Apply offset as a scaling factor
-  PetscErrorCode scale_data(IceModelVec2S &result) {
-    PetscErrorCode ierr = result.scale((*offset)(Mod::m_t + 0.5*Mod::m_dt)); CHKERRQ(ierr);
-    return 0;
+  void scale_data(IceModelVec2S &result) {
+    result.scale((*offset)(Mod::m_t + 0.5*Mod::m_dt));
   }
 
   Model *input;

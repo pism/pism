@@ -34,15 +34,15 @@ public:
 
   virtual void attach_atmosphere_model(AtmosphereModel *input);
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual void init(Vars &vars);
+  virtual void update(double my_t, double my_dt);
 
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
+  virtual void ice_surface_mass_flux(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
 protected:
   IceModelVec2T *climatic_mass_balance, *ice_surface_temp;
 private:
-  virtual PetscErrorCode allocate_PSGivenClimate();
+  PetscErrorCode allocate_PSGivenClimate();
 };
 
 } // end of namespace pism

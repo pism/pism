@@ -62,25 +62,21 @@ PA_paleo_precip::~PA_paleo_precip()
   // empty
 }
 
-PetscErrorCode PA_paleo_precip::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PA_paleo_precip::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  input_model->init(vars);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing paleo-precipitation correction using temperature offsets...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing paleo-precipitation correction using temperature offsets...\n");
 
-  ierr = init_internal(); CHKERRQ(ierr);
-
-  return 0;
+  init_internal();
 }
 
-PetscErrorCode PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
-  PetscErrorCode ierr;
+void PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
 
-  ierr = PAModifier::init_timeseries(ts); CHKERRQ(ierr);
+  PAModifier::init_timeseries(ts);
 
   size_t N = ts.size();
 
@@ -88,24 +84,19 @@ PetscErrorCode PA_paleo_precip::init_timeseries(const std::vector<double> &ts) {
   for (unsigned int k = 0; k < N; ++k) {
     m_scaling_values[k] = exp(m_precipexpfactor * (*offset)(m_ts_times[k]));
   }
-
-  return 0;
 }
 
-PetscErrorCode PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr = input_model->mean_precipitation(result);
-  ierr = result.scale(exp(m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt))); CHKERRQ(ierr);
-  return 0;
+void PA_paleo_precip::mean_precipitation(IceModelVec2S &result) {
+  input_model->mean_precipitation(result);
+  result.scale(exp(m_precipexpfactor * (*offset)(m_t + 0.5 * m_dt)));
 }
 
-PetscErrorCode PA_paleo_precip::precip_time_series(int i, int j, std::vector<double> &result) {
-  PetscErrorCode ierr = input_model->precip_time_series(i, j, result); CHKERRQ(ierr);
+void PA_paleo_precip::precip_time_series(int i, int j, std::vector<double> &result) {
+  input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
     result[k] *= m_scaling_values[k];
   }
-
-  return 0;
 }
 
 void PA_paleo_precip::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -118,59 +109,53 @@ void PA_paleo_precip::add_vars_to_output(const std::string &keyword, std::set<st
 }
 
 
-PetscErrorCode PA_paleo_precip::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+void PA_paleo_precip::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
                                             IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.define(nc, nctype, false); CHKERRQ(ierr);
+    air_temp.define(nc, nctype, false);
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.define(nc, nctype, true); CHKERRQ(ierr);
+    precipitation.define(nc, nctype, true);
     vars.erase("precipitation");
   }
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  input_model->define_variables(vars, nc, nctype);
 }
 
 
-PetscErrorCode PA_paleo_precip::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PA_paleo_precip::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "air_temp", WITHOUT_GHOSTS);
     tmp.metadata() = air_temp;
 
-    ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
+    mean_annual_temp(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("air_temp");
   }
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "precipitation", WITHOUT_GHOSTS);
     tmp.metadata() = precipitation;
 
-    ierr = mean_precipitation(tmp); CHKERRQ(ierr);
+    mean_precipitation(tmp);
 
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("precipitation");
   }
 
-  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  input_model->write_variables(vars, nc);
 }
 
 } // end of namespace pism

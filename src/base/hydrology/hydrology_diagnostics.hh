@@ -45,7 +45,7 @@ class Hydrology_bwat : public Diag<Hydrology>
 {
 public:
   Hydrology_bwat(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 
@@ -54,7 +54,7 @@ class Hydrology_bwp : public Diag<Hydrology>
 {
 public:
   Hydrology_bwp(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 
@@ -63,7 +63,7 @@ class Hydrology_bwprel : public Diag<Hydrology>
 {
 public:
   Hydrology_bwprel(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 
@@ -72,7 +72,7 @@ class Hydrology_effbwp : public Diag<Hydrology>
 {
 public:
   Hydrology_effbwp(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 
@@ -81,7 +81,7 @@ class Hydrology_hydrobmelt : public Diag<Hydrology>
 {
 public:
   Hydrology_hydrobmelt(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 
@@ -90,7 +90,7 @@ class Hydrology_hydroinput : public Diag<Hydrology>
 {
 public:
   Hydrology_hydroinput(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 
@@ -99,7 +99,7 @@ class Hydrology_wallmelt : public Diag<Hydrology>
 {
 public:
   Hydrology_wallmelt(Hydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 
@@ -109,7 +109,7 @@ class RoutingHydrology_bwatvel : public Diag<RoutingHydrology>
 {
 public:
   RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 //! \brief Reports the values of velbase_mag seen by the Hydrology model.
@@ -118,7 +118,7 @@ class DistributedHydrology_hydrovelbase_mag : public Diag<DistributedHydrology>
 {
 public:
   DistributedHydrology_hydrovelbase_mag(DistributedHydrology *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 } // end of namespace pism

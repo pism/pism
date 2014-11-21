@@ -30,19 +30,19 @@ public:
   PA_frac_P(IceGrid &g, const Config &conf, AtmosphereModel* in);
   virtual ~PA_frac_P();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
+  virtual void init(Vars &vars);
+  virtual void init_timeseries(const std::vector<double> &ts);
 
-  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
+  virtual void mean_precipitation(IceModelVec2S &result);
 
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series(int i, int j, std::vector<double> &values);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
 protected:
   NCSpatialVariable air_temp, precipitation;

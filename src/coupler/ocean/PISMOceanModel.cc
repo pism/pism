@@ -30,10 +30,8 @@ namespace pism {
  *
  * @return 0 on success
  */
-PetscErrorCode OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = result.set(0.0); CHKERRQ(ierr);
-  return 0;
+void OceanModel::melange_back_pressure_fraction(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
 } // end of namespace pism

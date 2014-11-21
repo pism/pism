@@ -66,16 +66,16 @@ int main(int argc, char *argv[]) {
     IceGrid g(com, config);
     IceEISModel m(g, config, overrides);
 
-    ierr = m.setExecName("pisms"); CHKERRQ(ierr);
+    m.setExecName("pisms");
 
-    ierr = m.init(); CHKERRQ(ierr);
+    m.init();
 
-    ierr = m.run(); CHKERRQ(ierr);
+    m.run();
 
-    ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
+    verbPrintf(2,com, "... done with run \n");
 
     // provide a default output file name if no -o option is given.
-    ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+    m.writeFiles("unnamed.nc");
   }
   catch (...) {
     handle_fatal_errors(com);

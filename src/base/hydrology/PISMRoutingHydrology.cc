@@ -94,56 +94,43 @@ PetscErrorCode RoutingHydrology::allocate() {
 }
 
 
-PetscErrorCode RoutingHydrology::init(Vars &vars) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(2, grid.com,
-    "* Initializing the routing subglacial hydrology model ...\n"); CHKERRQ(ierr);
+void RoutingHydrology::init(Vars &vars) {
+  verbPrintf(2, grid.com,
+             "* Initializing the routing subglacial hydrology model ...\n");
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool stripset;
-  ierr = PetscOptionsBegin(grid.com, "",
-                           "Options controlling the 'routing' subglacial hydrology model", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsIsSet("-report_mass_accounting",
-      "Report to stdout on mass accounting in hydrology models",
-                            report_mass_accounting); CHKERRQ(ierr);
+    OptionsIsSet("-report_mass_accounting",
+                 "Report to stdout on mass accounting in hydrology models",
+                 report_mass_accounting);
 
     stripwidth = grid.convert(stripwidth, "m", "km");
-    ierr = OptionsReal("-hydrology_null_strip",
-                           "set the width, in km, of the strip around the edge"
-                           " of the computational domain in which hydrology is inactivated",
-                           stripwidth, stripset); CHKERRQ(ierr);
+    OptionsReal("-hydrology_null_strip",
+                "set the width, in km, of the strip around the edge"
+                " of the computational domain in which hydrology is inactivated",
+                stripwidth, stripset);
     if (stripset) {
       stripwidth = grid.convert(stripwidth, "km", "m");
     }
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
-  ierr = Hydrology::init(vars); CHKERRQ(ierr);
+  Hydrology::init(vars);
 
-  ierr = init_bwat(vars); CHKERRQ(ierr);
-  return 0;
+  init_bwat(vars);
 }
 
 
-PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
-  PetscErrorCode ierr;
+void RoutingHydrology::init_bwat(Vars &vars) {
 
   // initialize water layer thickness from the context if present,
   //   otherwise from -i or -boot_file, otherwise with constant value
   bool i, bootstrap;
-  ierr = PetscOptionsBegin(grid.com, "",
-                           "Options for initializing bwat in the 'routing' subglacial hydrology model", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsIsSet("-i", "PISM input file", i); CHKERRQ(ierr);
-    ierr = OptionsIsSet("-boot_file", "PISM bootstrapping file",
-                            bootstrap); CHKERRQ(ierr);
+    OptionsIsSet("-i", "PISM input file", i);
+    OptionsIsSet("-boot_file", "PISM bootstrapping file",
+                 bootstrap);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   const PetscReal bwatdefault = config.get("bootstrapping_bwat_value_no_var");
   IceModelVec2S *W_input = NULL;
@@ -151,37 +138,36 @@ PetscErrorCode RoutingHydrology::init_bwat(Vars &vars) {
     // FIXME: this is not an "exceptional" situation...
     // a variable called "bwat" is already in context
     W_input = vars.get_2d_scalar("bwat");
-    ierr = W.copy_from(*W_input); CHKERRQ(ierr);
+    W.copy_from(*W_input);
   } catch (RuntimeError) {
     if (i || bootstrap) {
       std::string filename;
       int start;
-      ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
+      find_pism_input(filename, bootstrap, start);
       if (i) {
         PIO nc(grid, "guess_mode");
         nc.open(filename, PISM_READONLY);
         bool bwat_exists = nc.inq_var("bwat");
         if (bwat_exists == true) {
-          ierr = W.read(filename, start); CHKERRQ(ierr);
+          W.read(filename, start);
         } else {
-          ierr = verbPrintf(2, grid.com,
-                            "PISM WARNING: bwat for hydrology model not found in '%s'."
-                            "  Setting it to %.2f ...\n",
-                            filename.c_str(), bwatdefault); CHKERRQ(ierr);
-          ierr = W.set(bwatdefault); CHKERRQ(ierr);
+          verbPrintf(2, grid.com,
+                     "PISM WARNING: bwat for hydrology model not found in '%s'."
+                     "  Setting it to %.2f ...\n",
+                     filename.c_str(), bwatdefault);
+          W.set(bwatdefault);
         }
         nc.close();
       } else {
-        ierr = W.regrid(filename, OPTIONAL, bwatdefault); CHKERRQ(ierr);
+        W.regrid(filename, OPTIONAL, bwatdefault);
       }
     } else { // not sure if this case can be reached, but ...
-      ierr = W.set(bwatdefault); CHKERRQ(ierr);
+      W.set(bwatdefault);
     }
   }
 
   // however we initialized it, we could be asked to regrid from file
-  ierr = regrid("RoutingHydrology", &W); CHKERRQ(ierr);
-  return 0;
+  regrid("RoutingHydrology", &W);
 }
 
 
@@ -191,24 +177,20 @@ void RoutingHydrology::add_vars_to_output(const std::string &keyword, std::set<s
 }
 
 
-PetscErrorCode RoutingHydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void RoutingHydrology::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                  IO_Type nctype) {
-  PetscErrorCode ierr;
-  ierr = Hydrology::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  Hydrology::define_variables(vars, nc, nctype);
   if (set_contains(vars, "bwat")) {
-    ierr = W.define(nc, nctype); CHKERRQ(ierr);
+    W.define(nc, nctype);
   }
-  return 0;
 }
 
 
-PetscErrorCode RoutingHydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-  ierr = Hydrology::write_variables(vars, nc); CHKERRQ(ierr);
+void RoutingHydrology::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+  Hydrology::write_variables(vars, nc);
   if (set_contains(vars, "bwat")) {
-    ierr = W.write(nc); CHKERRQ(ierr);
+    W.write(nc);
   }
-  return 0;
 }
 
 
@@ -227,7 +209,7 @@ void RoutingHydrology::get_diagnostics(std::map<std::string, Diagnostic*> &dict,
 
 
 //! Check thk >= 0 and fails with message if not satisfied.
-PetscErrorCode RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
+void RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S &waterthk) {
   IceModelVec::AccessList list;
   list.add(waterthk);
 
@@ -240,7 +222,6 @@ PetscErrorCode RoutingHydrology::check_water_thickness_nonnegative(IceModelVec2S
                                     waterthk(i,j),i,j);
     }
   }
-  return 0;
 }
 
 
@@ -258,11 +239,10 @@ the boundary removals.
 
 This method does no reporting at stdout; the calling routine can do that.
  */
-PetscErrorCode RoutingHydrology::boundary_mass_changes(
+void RoutingHydrology::boundary_mass_changes(
             IceModelVec2S &newthk,
             double &icefreelost, double &oceanlost,
             double &negativegain, double &nullstriplost) {
-  PetscErrorCode ierr;
   double fresh_water_density = config.get("fresh_water_density");
   double my_icefreelost = 0.0, my_oceanlost = 0.0, my_negativegain = 0.0;
   MaskQuery M(*mask);
@@ -291,13 +271,13 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
   }
 
   // make global over all proc domains (i.e. whole glacier/ice sheet)
-  ierr = GlobalSum(grid.com, &my_icefreelost,  &icefreelost); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &my_oceanlost,  &oceanlost); CHKERRQ(ierr);
-  ierr = GlobalSum(grid.com, &my_negativegain,  &negativegain); CHKERRQ(ierr);
+  GlobalSum(grid.com, &my_icefreelost,  &icefreelost);
+  GlobalSum(grid.com, &my_oceanlost,  &oceanlost);
+  GlobalSum(grid.com, &my_negativegain,  &negativegain);
 
   if (stripwidth <= 0.0) {
     nullstriplost = 0.0;
-    return 0;
+    return;
   }
 
   double my_nullstriplost = 0.0;
@@ -311,23 +291,19 @@ PetscErrorCode RoutingHydrology::boundary_mass_changes(
     }
   }
 
-  ierr = GlobalSum(grid.com, &my_nullstriplost,  &nullstriplost); CHKERRQ(ierr);
-
-  return 0;
+  GlobalSum(grid.com, &my_nullstriplost,  &nullstriplost);
 }
 
 
 //! Copies the W variable, the modeled transportable water layer thickness.
-PetscErrorCode RoutingHydrology::subglacial_water_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr = W.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void RoutingHydrology::subglacial_water_thickness(IceModelVec2S &result) {
+  W.copy_to(result);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water, because this is the model.
-PetscErrorCode RoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
-  return 0;
+void RoutingHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+  overburden_pressure(result);
 }
 
 
@@ -336,19 +312,18 @@ PetscErrorCode RoutingHydrology::subglacial_water_pressure(IceModelVec2S &result
 Computes \f$\psi = P + \rho_w g (b + W)\f$ except where floating, where \f$\psi = P_o\f$.
 Calls subglacial_water_pressure() method to get water pressure.
  */
-PetscErrorCode RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+void RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &result) {
 
   const double
     rg = config.get("fresh_water_density") * config.get("standard_gravity");
 
-  ierr = subglacial_water_pressure(result); CHKERRQ(ierr);
-  ierr = result.add(rg, (*bed)); CHKERRQ(ierr); // result  <-- P + rhow g b
-  ierr = result.add(rg, W); CHKERRQ(ierr);      // result  <-- result + rhow g (b + W)
+  subglacial_water_pressure(result);
+  result.add(rg, (*bed)); // result  <-- P + rhow g b
+  result.add(rg, W);      // result  <-- result + rhow g (b + W)
 
   // now mask: psi = P_o if ocean
   MaskQuery M(*mask);
-  ierr = overburden_pressure(Pover); CHKERRQ(ierr);
+  overburden_pressure(Pover);
 
   IceModelVec::AccessList list;
   list.add(Pover);
@@ -362,14 +337,13 @@ PetscErrorCode RoutingHydrology::subglacial_hydraulic_potential(IceModelVec2S &r
       result(i,j) = Pover(i,j);
     }
   }
-  return 0;
 }
 
 
 //! Average the regular grid water thickness to values at the center of cell edges.
 /*! Uses mask values to avoid averaging using water thickness values from
 either ice-free or floating areas. */
-PetscErrorCode RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
+void RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &result) {
   MaskQuery M(*mask);
 
   IceModelVec::AccessList list;
@@ -409,7 +383,6 @@ PetscErrorCode RoutingHydrology::water_thickness_staggered(IceModelVec2Stag &res
       }
     }
   }
-  return 0;
 }
 
 
@@ -424,9 +397,8 @@ stencil of width 1.
 
 Also returns the maximum over all staggered points of \f$ K W \f$.
  */
-PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
+void RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result,
                                                         double &maxKW) {
-  PetscErrorCode ierr;
   const double
     k     = config.get("hydrology_hydraulic_conductivity"),
     alpha = config.get("hydrology_thickness_power_in_flux"),
@@ -442,9 +414,9 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result
   // the squared norm of the gradient of the simplified hydrolic potential
   // temporarily in "result"
   if (beta != 2.0) {
-    ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // yes, it updates ghosts
-    ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
-    ierr = R.update_ghosts(); CHKERRQ(ierr);
+    subglacial_water_pressure(R);  // yes, it updates ghosts
+    R.add(rg, (*bed)); // R  <-- P + rhow g b
+    R.update_ghosts();
 
     list.add(R);
     for (Points p(grid); p; p.next()) {
@@ -482,9 +454,7 @@ PetscErrorCode RoutingHydrology::conductivity_staggered(IceModelVec2Stag &result
     }
   }
 
-  ierr = GlobalMax(grid.com, &mymaxKW,  &maxKW); CHKERRQ(ierr);
-
-  return 0;
+  GlobalMax(grid.com, &mymaxKW,  &maxKW);
 }
 
 
@@ -501,8 +471,7 @@ staggered-versus-regular change.
 
 At the current state of the code, this is a diagnostic calculation only.
  */
-PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+void RoutingHydrology::wall_melt(IceModelVec2S &result) {
 
   const double
     k     = config.get("hydrology_hydraulic_conductivity"),
@@ -519,9 +488,9 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
     throw RuntimeError::formatted("alpha = %f < 1 which is not allowed", alpha);
   }
 
-  ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // yes, it updates ghosts
-  ierr = R.add(rg, (*bed)); CHKERRQ(ierr); // R  <-- P + rhow g b
-  ierr = R.update_ghosts(); CHKERRQ(ierr);
+  subglacial_water_pressure(R);  // yes, it updates ghosts
+  R.add(rg, (*bed)); // R  <-- P + rhow g b
+  R.update_ghosts();
 
   IceModelVec::AccessList list;
   list.add(R);
@@ -552,8 +521,6 @@ PetscErrorCode RoutingHydrology::wall_melt(IceModelVec2S &result) {
       result(i,j) = 0.0;
     }
   }
-
-  return 0;
 }
 
 
@@ -577,12 +544,11 @@ have valid ghosts.
 
 Calls subglacial_water_pressure() method to get water pressure.
  */
-PetscErrorCode RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
-  PetscErrorCode ierr;
+void RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
   const double  rg = config.get("standard_gravity") * config.get("fresh_water_density");
   double dbdx, dbdy, dPdx, dPdy;
 
-  ierr = subglacial_water_pressure(R); CHKERRQ(ierr);  // R=P; yes, it updates ghosts
+  subglacial_water_pressure(R);  // R=P; yes, it updates ghosts
 
   IceModelVec::AccessList list;
   list.add(R);
@@ -618,7 +584,6 @@ PetscErrorCode RoutingHydrology::velocity_staggered(IceModelVec2Stag &result) {
       result(i,j,1) = 0.0;
     }
   }
-  return 0;
 }
 
 
@@ -628,7 +593,7 @@ The field W must have valid ghost values, but V does not need them.
 
 FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
  */
-PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
+void RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
   IceModelVec::AccessList list;
   list.add(W);
   list.add(V);
@@ -642,23 +607,21 @@ PetscErrorCode RoutingHydrology::advective_fluxes(IceModelVec2Stag &result) {
     result(i,j,0) = (V(i,j,0) >= 0.0) ? V(i,j,0) * W(i,j) :  V(i,j,0) * W(i+1,j);
     result(i,j,1) = (V(i,j,1) >= 0.0) ? V(i,j,1) * W(i,j) :  V(i,j,1) * W(i,  j+1);
   }
-  return 0;
 }
 
 
 //! Compute the adaptive time step for evolution of W.
-PetscErrorCode RoutingHydrology::adaptive_for_W_evolution(
+void RoutingHydrology::adaptive_for_W_evolution(
                   double t_current, double t_end, double maxKW,
                   double &dt_result,
                   double &maxV_result, double &maxD_result,
                   double &dtCFL_result, double &dtDIFFW_result) {
-  PetscErrorCode ierr;
   const double
     dtmax = config.get("hydrology_maximum_time_step_years",
                        "years", "seconds"),
     rg    = config.get("standard_gravity") * config.get("fresh_water_density");
   double tmp[2];
-  ierr = V.absmaxcomponents(tmp); CHKERRQ(ierr); // V could be zero if P is constant and bed is flat
+  V.absmaxcomponents(tmp); // V could be zero if P is constant and bed is flat
   maxV_result = sqrt(tmp[0]*tmp[0] + tmp[1]*tmp[1]);
   maxD_result = rg * maxKW;
   dtCFL_result = 0.5 / (tmp[0]/grid.dx + tmp[1]/grid.dy); // FIXME: is regularization needed?
@@ -668,7 +631,6 @@ PetscErrorCode RoutingHydrology::adaptive_for_W_evolution(
   dt_result = PetscMin(t_end - t_current, dtmax);
   dt_result = PetscMin(dt_result, dtCFL_result);
   dt_result = PetscMin(dt_result, dtDIFFW_result);
-  return 0;
 }
 
 
@@ -687,7 +649,7 @@ RoutingHydrology model; (3) does not check mask because the boundary_mass_change
 call addresses that.  Otherwise this is the same physical model with the
 same configurable parameters.
  */
-PetscErrorCode RoutingHydrology::raw_update_Wtil(double hdt) {
+void RoutingHydrology::raw_update_Wtil(double hdt) {
   const double tillwat_max = config.get("hydrology_tillwat_max"),
                C           = config.get("hydrology_tillwat_decay_rate");
 
@@ -702,12 +664,11 @@ PetscErrorCode RoutingHydrology::raw_update_Wtil(double hdt) {
     Wtilnew(i,j) = Wtil(i,j) + hdt * (total_input(i,j) - C);
     Wtilnew(i,j) = PetscMin(PetscMax(0.0, Wtilnew(i,j)), tillwat_max);
   }
-  return 0;
 }
 
 
 //! The computation of Wnew, called by update().
-PetscErrorCode RoutingHydrology::raw_update_W(double hdt) {
+void RoutingHydrology::raw_update_W(double hdt) {
   const double
     wux  = 1.0 / (grid.dx * grid.dx),
     wuy  = 1.0 / (grid.dy * grid.dy),
@@ -738,8 +699,6 @@ PetscErrorCode RoutingHydrology::raw_update_W(double hdt) {
     Wnew(i,j) = W(i,j) - Wtilnew(i,j) + Wtil(i,j)
       + hdt * (- divadflux + diffW + total_input(i,j));
   }
-
-  return 0;
 }
 
 
@@ -752,14 +711,13 @@ own shorter time steps, perhaps hours to weeks.
 For updating W = `bwat`, calls raw_update_W().  For updating Wtil = `tillwat`,
 calls raw_update_Wtil().
  */
-PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
-  PetscErrorCode ierr;
+void RoutingHydrology::update(double icet, double icedt) {
 
   // if asked for the identical time interval versus last time, then
   //   do nothing; otherwise assume that [my_t,my_t+my_dt] is the time
   //   interval on which we are solving
   if ((fabs(icet - m_t) < 1e-12) && (fabs(icedt - m_dt) < 1e-12)) {
-    return 0;
+    return;
   }
   // update Component times: t = current time, t+dt = target time
   m_t = icet;
@@ -771,7 +729,7 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
   }
 
   // make sure W has valid ghosts before starting hydrology steps
-  ierr = W.update_ghosts(); CHKERRQ(ierr);
+  W.update_ghosts();
 
   MaskQuery M(*mask);
   double ht = m_t, hdt, // hydrology model time and time step
@@ -784,67 +742,66 @@ PetscErrorCode RoutingHydrology::update(double icet, double icedt) {
     hydrocount++;
 
 #if (PISM_DEBUG==1)
-    ierr = check_water_thickness_nonnegative(W); CHKERRQ(ierr);
-    ierr = check_Wtil_bounds(); CHKERRQ(ierr);
+    check_water_thickness_nonnegative(W);
+    check_Wtil_bounds();
 #endif
 
-    ierr = water_thickness_staggered(Wstag); CHKERRQ(ierr);
-    ierr = Wstag.update_ghosts(); CHKERRQ(ierr);
+    water_thickness_staggered(Wstag);
+    Wstag.update_ghosts();
 
-    ierr = conductivity_staggered(Kstag,maxKW); CHKERRQ(ierr);
-    ierr = Kstag.update_ghosts(); CHKERRQ(ierr);
+    conductivity_staggered(Kstag,maxKW);
+    Kstag.update_ghosts();
 
-    ierr = velocity_staggered(V); CHKERRQ(ierr);
+    velocity_staggered(V);
 
     // to get Qstag, W needs valid ghosts
-    ierr = advective_fluxes(Qstag); CHKERRQ(ierr);
-    ierr = Qstag.update_ghosts(); CHKERRQ(ierr);
+    advective_fluxes(Qstag);
+    Qstag.update_ghosts();
 
-    ierr = adaptive_for_W_evolution(ht, m_t+m_dt, maxKW,
-                                    hdt, maxV, maxD, dtCFL, dtDIFFW); CHKERRQ(ierr);
+    adaptive_for_W_evolution(ht, m_t+m_dt, maxKW,
+                             hdt, maxV, maxD, dtCFL, dtDIFFW);
 
     if ((inputtobed != NULL) || (hydrocount==1)) {
-      ierr = get_input_rate(ht,hdt,total_input); CHKERRQ(ierr);
+      get_input_rate(ht,hdt,total_input);
     }
 
     // update Wtilnew from Wtil
-    ierr = raw_update_Wtil(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    raw_update_Wtil(hdt);
+    boundary_mass_changes(Wtilnew, delta_icefree, delta_ocean,
+                          delta_neggain, delta_nullstrip);
     icefreelost  += delta_icefree;
     oceanlost    += delta_ocean;
     negativegain += delta_neggain;
     nullstriplost+= delta_nullstrip;
 
     // update Wnew from W, Wtil, Wtilnew, Wstag, Qstag, total_input
-    ierr = raw_update_W(hdt); CHKERRQ(ierr);
-    ierr = boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
-                                 delta_neggain, delta_nullstrip); CHKERRQ(ierr);
+    raw_update_W(hdt);
+    boundary_mass_changes(Wnew, delta_icefree, delta_ocean,
+                          delta_neggain, delta_nullstrip);
     icefreelost  += delta_icefree;
     oceanlost    += delta_ocean;
     negativegain += delta_neggain;
     nullstriplost+= delta_nullstrip;
 
     // transfer new into old
-    ierr = Wnew.update_ghosts(W); CHKERRQ(ierr);
-    ierr = Wtilnew.copy_to(Wtil); CHKERRQ(ierr);
+    Wnew.update_ghosts(W);
+    Wtilnew.copy_to(Wtil);
 
     ht += hdt;
   } // end of hydrology model time-stepping loop
 
   if (report_mass_accounting) {
-    ierr = verbPrintf(2, grid.com,
-                      " 'routing' hydrology summary:\n"
-                      "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
-                      "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
-                      "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
-                      "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
-                      hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
-                      maxV, maxD,
-                      icefreelost, oceanlost,
-                      negativegain, nullstriplost); CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               " 'routing' hydrology summary:\n"
+               "     %d hydrology sub-steps with average dt = %.6f years = %.2f s\n"
+               "        (max |V| = %.2e m s-1; max D = %.2e m^2 s-1)\n"
+               "     ice free land loss = %.3e kg, ocean loss = %.3e kg\n"
+               "     negative bmelt gain = %.3e kg, null strip loss = %.3e kg\n",
+               hydrocount, grid.convert(m_dt/hydrocount, "seconds", "years"), m_dt/hydrocount,
+               maxV, maxD,
+               icefreelost, oceanlost,
+               negativegain, nullstriplost);
   }
-  return 0;
 }
 
 
@@ -863,19 +820,17 @@ RoutingHydrology_bwatvel::RoutingHydrology_bwatvel(RoutingHydrology *m, IceGrid 
 }
 
 
-PetscErrorCode RoutingHydrology_bwatvel::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void RoutingHydrology_bwatvel::compute(IceModelVec* &output) {
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "bwatvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "bwatvel", WITHOUT_GHOSTS);
   result->metadata(0) = vars[0];
   result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
 
-  ierr = model->velocity_staggered(*result); CHKERRQ(ierr);
+  model->velocity_staggered(*result);
 
   output = result;
-  return 0;
 }
 
 } // end of namespace pism

@@ -34,17 +34,18 @@ public:
   SSAFD(IceGrid &g, EnthalpyConverter &e, const Config &c);
   virtual ~SSAFD();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
-protected:
+private:
   virtual PetscErrorCode allocate_fd();
 
   virtual PetscErrorCode deallocate_fd();
 
+protected:
   virtual PetscErrorCode pc_setup_bjacobi();
 
   virtual PetscErrorCode pc_setup_asm();
@@ -57,35 +58,35 @@ protected:
   virtual void picard_manager(double nuH_regularization,
                               double nuH_iter_failure_underrelax);
 
-  virtual PetscErrorCode picard_strategy_regularization();
+  virtual void picard_strategy_regularization();
 
-  virtual PetscErrorCode compute_hardav_staggered();
+  virtual void compute_hardav_staggered();
 
-  virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
+  virtual void compute_nuH_staggered(IceModelVec2Stag &result,
                                                double epsilon);
 
-  virtual PetscErrorCode compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
+  virtual void compute_nuH_staggered_cfbc(IceModelVec2Stag &result,
                                                     double nuH_regularization);
 
-  virtual PetscErrorCode compute_nuH_norm(double &norm,
+  virtual void compute_nuH_norm(double &norm,
                                           double &norm_change);
 
-  virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
+  virtual void assemble_matrix(bool include_basal_shear, Mat A);
 
-  virtual PetscErrorCode assemble_rhs();
+  virtual void assemble_rhs();
 
-  virtual PetscErrorCode write_system_petsc(const std::string &namepart);
+  virtual void write_system_petsc(const std::string &namepart);
 
   virtual PetscErrorCode write_system_matlab(const std::string &namepart);
 
-  virtual PetscErrorCode update_nuH_viewers();
+  virtual void update_nuH_viewers();
 
-  virtual PetscErrorCode set_diagonal_matrix_entry(Mat A, int i, int j,
+  virtual void set_diagonal_matrix_entry(Mat A, int i, int j,
                                                    double value);
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
-  virtual PetscErrorCode fracture_induced_softening();
+  virtual void fracture_induced_softening();
 
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
@@ -132,7 +133,7 @@ class SSAFD_nuH : public Diag<SSAFD>
 {
 public:
   SSAFD_nuH(SSAFD *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 } // end of namespace pism

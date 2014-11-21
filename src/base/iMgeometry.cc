@@ -49,20 +49,17 @@ using namespace mask;
   Also calls the code which removes icebergs, to avoid stress balance
   solver problems associated to not-attached-to-grounded ice.
 */
-PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
-  PetscErrorCode ierr;
+void IceModel::updateSurfaceElevationAndMask() {
 
-  ierr = update_mask(bed_topography, ice_thickness, vMask); CHKERRQ(ierr);
-  ierr = update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation); CHKERRQ(ierr);
+  update_mask(bed_topography, ice_thickness, vMask);
+  update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
 
   if (config.get_flag("kill_icebergs") && iceberg_remover != NULL) {
-    ierr = iceberg_remover->update(vMask, ice_thickness); CHKERRQ(ierr);
+    iceberg_remover->update(vMask, ice_thickness);
     // the call above modifies ice thickness and updates the mask
     // accordingly
-    ierr = update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation); CHKERRQ(ierr);
+    update_surface_elevation(bed_topography, ice_thickness, ice_surface_elevation);
   }
-
-  return 0;
 }
 
 /**
@@ -75,14 +72,13 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
  *
  * @return 0 on success.
  */
-PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
+void IceModel::update_mask(IceModelVec2S &bed,
                                      IceModelVec2S &thickness,
                                      IceModelVec2Int &result) {
-  PetscErrorCode ierr;
   double sea_level;
 
   assert(ocean != NULL);
-  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  ocean->sea_level_elevation(sea_level);
 
   GeometryCalculator gc(sea_level, config);
 
@@ -99,8 +95,6 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
 
     result(i, j) = gc.mask(bed(i, j), thickness(i, j));
   }
-
-  return 0;
 }
 
 /**
@@ -116,14 +110,13 @@ PetscErrorCode IceModel::update_mask(IceModelVec2S &bed,
  *
  * @return 0 on success.
  */
-PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
+void IceModel::update_surface_elevation(IceModelVec2S &bed,
                                                   IceModelVec2S &thickness,
                                                   IceModelVec2S &result) {
-  PetscErrorCode ierr;
   double sea_level;
 
   assert(ocean != NULL);
-  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  ocean->sea_level_elevation(sea_level);
 
   GeometryCalculator gc(sea_level, config);
 
@@ -145,8 +138,6 @@ PetscErrorCode IceModel::update_surface_elevation(IceModelVec2S &bed,
     }
     result(i, j) = gc.surface(bed(i, j), thickness(i, j));
   }
-
-  return 0;
 }
 
 //! \brief Adjust ice flow through interfaces of the cell i,j.
@@ -497,8 +488,7 @@ balance contribution (to reduce clutter). Please see the commit 26330a7 and
 earlier. (CK)
 
 */
-PetscErrorCode IceModel::massContExplicitStep() {
-  PetscErrorCode ierr;
+void IceModel::massContExplicitStep() {
 
   double
     // totals over the processor's domain:
@@ -533,18 +523,18 @@ PetscErrorCode IceModel::massContExplicitStep() {
     meter_per_s_to_kg_per_m2 = dt * ice_density;
 
   assert(surface != NULL);
-  ierr = surface->ice_surface_mass_flux(climatic_mass_balance); CHKERRQ(ierr);
+  surface->ice_surface_mass_flux(climatic_mass_balance);
 
   IceModelVec2S &vHnew = vWork2d[0];
-  ierr = ice_thickness.copy_to(vHnew); CHKERRQ(ierr);
+  ice_thickness.copy_to(vHnew);
 
   IceModelVec2S &H_residual = vWork2d[1];
 
   IceModelVec2Stag *Qdiff;
-  ierr = stress_balance->get_diffusive_flux(Qdiff); CHKERRQ(ierr);
+  stress_balance->get_diffusive_flux(Qdiff);
 
   IceModelVec2V *vel_advective;
-  ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
+  stress_balance->get_2D_advective_velocity(vel_advective);
 
   IceModelVec::AccessList list;
   list.add(cell_area);
@@ -568,7 +558,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       list.add(H_residual);
       // FIXME: next line causes mass loss if max_loopcount in redistResiduals()
       //        was not sufficient to zero-out H_residual already
-      ierr = H_residual.set(0.0); CHKERRQ(ierr);
+      H_residual.set(0.0);
     }
   }
   const bool dirichlet_bc = config.get_flag("ssa_dirichlet_bc");
@@ -657,9 +647,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
         H_to_Href_flux = -(divQ_SSA + divQ_SIA) * dt;
         vHref(i, j) += H_to_Href_flux;
         if (vHref(i, j) < 0) {
-          ierr = verbPrintf(3, grid.com,
-                            "PISM WARNING: negative Href at (%d,%d)\n",
-                            i, j); CHKERRQ(ierr);
+          verbPrintf(3, grid.com,
+                     "PISM WARNING: negative Href at (%d,%d)\n",
+                     i, j);
 
           // Note: this adds mass!
           nonneg_rule_flux += vHref(i, j);
@@ -785,7 +775,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
                            proc_Href_to_H_flux,
                            proc_H_to_Href_flux};
     double tmp_global[8];
-    ierr = GlobalSum(grid.com, tmp_local, tmp_global, 8); CHKERRQ(ierr);
+    GlobalSum(grid.com, tmp_local, tmp_global, 8);
 
     proc_grounded_basal_ice_flux = tmp_global[0];
     proc_nonneg_rule_flux        = tmp_global[1];
@@ -807,18 +797,16 @@ PetscErrorCode IceModel::massContExplicitStep() {
   }
 
   // finally copy vHnew into ice_thickness and communicate ghosted values
-  ierr = vHnew.update_ghosts(ice_thickness); CHKERRQ(ierr);
+  vHnew.update_ghosts(ice_thickness);
 
   // distribute residual ice mass if desired
   if (do_redist) {
-    ierr = residual_redistribution(H_residual); CHKERRQ(ierr);
+    residual_redistribution(H_residual);
   }
 
   // Check if the ice thickness exceeded the height of the computational box
   // and extend the grid if necessary:
-  ierr = check_maximum_thickness(); CHKERRQ(ierr);
-
-  return 0;
+  check_maximum_thickness();
 }
 
 /**
@@ -900,8 +888,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
    FIXME: sometimes alpha<0 (slightly below flotation) even though the
    mask says grounded
  */
-PetscErrorCode IceModel::update_floatation_mask() {
-  PetscErrorCode ierr;
+void IceModel::update_floatation_mask() {
 
   MaskQuery mask(vMask);
 
@@ -912,11 +899,11 @@ PetscErrorCode IceModel::update_floatation_mask() {
     sea_level     = 0.0;
 
   assert(ocean != NULL);
-  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  ocean->sea_level_elevation(sea_level);
 
-  ierr = gl_mask.set(0.0);   CHKERRQ(ierr);
-  ierr = gl_mask_x.set(0.0); CHKERRQ(ierr);
-  ierr = gl_mask_y.set(0.0); CHKERRQ(ierr);
+  gl_mask.set(0.0);
+  gl_mask_x.set(0.0);
+  gl_mask_y.set(0.0);
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -1056,8 +1043,6 @@ PetscErrorCode IceModel::update_floatation_mask() {
       gl_mask(i,j)   = 1.0 - gl_mask_fl_x * gl_mask_fl_y;
     }
   }
-
-  return 0;
 }
 
 } // end of namespace pism

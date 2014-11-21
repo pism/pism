@@ -45,20 +45,18 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("valid_max", 1);
 }
 
-PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   IceModelVec2S *result, *surface;
 
   surface = variables.get_2d_scalar("surface_altitude");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "schoofs_theta", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "schoofs_theta", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  ierr = model->bed_smoother->get_theta(*surface, result); CHKERRQ(ierr);
+  model->bed_smoother->get_theta(*surface, result);
 
   output = result;
-  return 0;
 }
 
 
@@ -71,18 +69,16 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
             "", "m", "m", 0);
 }
 
-PetscErrorCode SIAFD_topgsmooth::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SIAFD_topgsmooth::compute(IceModelVec* &output) {
   IceModelVec2S *result;
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "topgsmooth", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "topgsmooth", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  ierr = result->copy_from(model->bed_smoother->get_smoothed_bed()); CHKERRQ(ierr);
+  result->copy_from(model->bed_smoother->get_smoothed_bed());
 
   output = result;
-  return 0;
 }
 
 SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
@@ -94,8 +90,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, Vars &my_vars)
             "", "m", "m", 0);
 }
 
-PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SIAFD_thksmooth::compute(IceModelVec* &output) {
   IceModelVec2S *result, *surface, *thickness;
   IceModelVec2Int *mask;
 
@@ -104,14 +99,13 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   mask      = variables.get_2d_mask("mask");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "thksmooth", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "thksmooth", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  ierr = model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
-                                               result); CHKERRQ(ierr);
+  model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
+                                        result);
 
   output = result;
-  return 0;
 }
 
 
@@ -126,18 +120,16 @@ SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, Vars &my_vars)
             "m2 s-1", "m2 s-1", 0);
 }
 
-PetscErrorCode SIAFD_diffusivity::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SIAFD_diffusivity::compute(IceModelVec* &output) {
   IceModelVec2S *result;
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "diffusivity", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "diffusivity", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  ierr = model->compute_diffusivity(*result); CHKERRQ(ierr);
+  model->compute_diffusivity(*result);
 
   output = result;
-  return 0;
 }
 
 SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, Vars &my_vars)
@@ -155,20 +147,18 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(SIAFD *m, IceGrid &g, V
             "m2 s-1", "m2 s-1", 1);
 }
 
-PetscErrorCode SIAFD_diffusivity_staggered::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SIAFD_diffusivity_staggered::compute(IceModelVec* &output) {
   IceModelVec2Stag *result;
 
   result = new IceModelVec2Stag;
-  ierr = result->create(grid, "diffusivity", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "diffusivity", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
 
-  ierr = model->compute_diffusivity_staggered(*result); CHKERRQ(ierr);
+  model->compute_diffusivity_staggered(*result);
 
   output = result;
-  return 0;
 }
 
 SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars)
@@ -186,22 +176,20 @@ SIAFD_h_x::SIAFD_h_x(SIAFD *m, IceGrid &g, Vars &my_vars)
             "", "", 1);
 }
 
-PetscErrorCode SIAFD_h_x::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SIAFD_h_x::compute(IceModelVec* &output) {
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "h_x", WITH_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "h_x", WITH_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
 
-  ierr = model->compute_surface_gradient(model->work_2d_stag[0],
-                                         model->work_2d_stag[1]); CHKERRQ(ierr);
+  model->compute_surface_gradient(model->work_2d_stag[0],
+                                  model->work_2d_stag[1]);
 
-  ierr = result->copy_from(model->work_2d_stag[0]); CHKERRQ(ierr);
+  result->copy_from(model->work_2d_stag[0]);
 
   output = result;
-  return 0;
 }
 
 SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars)
@@ -219,22 +207,20 @@ SIAFD_h_y::SIAFD_h_y(SIAFD *m, IceGrid &g, Vars &my_vars)
             "", "", 1);
 }
 
-PetscErrorCode SIAFD_h_y::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SIAFD_h_y::compute(IceModelVec* &output) {
 
   IceModelVec2Stag *result = new IceModelVec2Stag;
-  ierr = result->create(grid, "h_y", WITH_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "h_y", WITH_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
   result->write_in_glaciological_units = true;
 
-  ierr = model->compute_surface_gradient(model->work_2d_stag[0],
-                                         model->work_2d_stag[1]); CHKERRQ(ierr);
+  model->compute_surface_gradient(model->work_2d_stag[0],
+                                  model->work_2d_stag[1]);
 
-  ierr = result->copy_from(model->work_2d_stag[1]); CHKERRQ(ierr);
+  result->copy_from(model->work_2d_stag[1]);
 
   output = result;
-  return 0;
 }
 
 } // end of namespace pism

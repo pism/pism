@@ -40,48 +40,40 @@ public:
   }
   virtual ~SSB_Modifier() {}
 
-  virtual PetscErrorCode init(Vars &vars) {
+  virtual void init(Vars &vars) {
     variables = &vars;
-    return 0;
   }
 
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast) = 0;
+  virtual void update(IceModelVec2V *vel_input, bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result) {
+  virtual void get_diffusive_flux(IceModelVec2Stag* &result) {
     result = &diffusive_flux;
-    return 0;
   }
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(double &result) {
+  virtual void get_max_diffusivity(double &result) {
     result = D_max;
-    return 0;
   }
 
-  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result,
+  virtual void get_horizontal_3d_velocity(IceModelVec3* &u_result,
                                                     IceModelVec3* &v_result) {
     u_result = &u;
     v_result = &v;
-    return 0;
   }
 
-  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result) {
+  virtual void get_volumetric_strain_heating(IceModelVec3* &result) {
     result = &strain_heating;
-    return 0;
   }
 
-  virtual PetscErrorCode stdout_report(std::string &result) {
+  virtual void stdout_report(std::string &result) {
     result = "";
-    return 0;
   }
 
   IceFlowLaw* get_flow_law() {
     return flow_law;
   }
 protected:
-  virtual PetscErrorCode allocate();
-
   IceFlowLaw *flow_law;
   EnthalpyConverter &EC;
   double D_max;
@@ -89,6 +81,8 @@ protected:
   IceModelVec3 u, v, strain_heating;
 
   Vars *variables;
+private:
+  PetscErrorCode allocate();
 };
 
 
@@ -99,23 +93,23 @@ public:
   ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c);
   virtual ~ConstantInColumn();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
+  virtual void update(IceModelVec2V *vel_input, bool fast);
   virtual void add_vars_to_output(const std::string &/*keyword*/, std::set<std::string> &/*result*/) {
   }
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+  virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                           IO_Type /*nctype*/) {
-    return 0;
+    // empty
   }
 
   //! Writes requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
-    return 0;
+  virtual void write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
+    // empty
   }
 
 };

@@ -32,12 +32,9 @@ FloatKill::~FloatKill() {
   // empty
 }
 
-PetscErrorCode FloatKill::init(Vars &/*vars*/) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 'calving at the grounding line' mechanism...\n");
-  CHKERRQ(ierr);
-  return 0;
+void FloatKill::init(Vars &/*vars*/) {
+  verbPrintf(2, grid.com,
+             "* Initializing the 'calving at the grounding line' mechanism...\n");
 }
 
 /**
@@ -49,8 +46,7 @@ PetscErrorCode FloatKill::init(Vars &/*vars*/) {
  *
  * @return 0 on success
  */
-PetscErrorCode FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
+void FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_thickness) {
   MaskQuery M(pism_mask);
 
   IceModelVec::AccessList list;
@@ -65,10 +61,8 @@ PetscErrorCode FloatKill::update(IceModelVec2Int &pism_mask, IceModelVec2S &ice_
     }
   }
 
-  ierr = pism_mask.update_ghosts();     CHKERRQ(ierr);
-  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  pism_mask.update_ghosts();
+  ice_thickness.update_ghosts();
 }
 
 void FloatKill::add_vars_to_output(const std::string &/*keyword*/,
@@ -76,15 +70,13 @@ void FloatKill::add_vars_to_output(const std::string &/*keyword*/,
   // empty
 }
 
-PetscErrorCode FloatKill::define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+void FloatKill::define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                                IO_Type /*nctype*/) {
   // empty
-  return 0;
 }
 
-PetscErrorCode FloatKill::write_variables(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
+void FloatKill::write_variables(const std::set<std::string> &/*vars*/, const PIO& /*nc*/) {
   // empty
-  return 0;
 }
 
 } // end of namespace pism

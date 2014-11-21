@@ -34,7 +34,7 @@ namespace pism {
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
 */
-PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
+void Component::find_pism_input(std::string &filename, bool &do_regrid, int &start) {
   PetscErrorCode ierr;
   PetscBool i_set, boot_file_set;
 
@@ -69,8 +69,6 @@ PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid
     do_regrid = false;
     start = last_record;
   }
-
-  return 0;
 }
 
 /**
@@ -90,39 +88,32 @@ PetscErrorCode Component::find_pism_input(std::string &filename, bool &do_regrid
  *
  * @return 0 on success
  */
-PetscErrorCode Component::regrid(const std::string &module_name, IceModelVec *variable,
-                                     RegriddingFlag flag) {
-  PetscErrorCode ierr;
+void Component::regrid(const std::string &module_name, IceModelVec *variable,
+                       RegriddingFlag flag) {
   bool file_set, vars_set;
   std::set<std::string> vars;
   std::string file, title = module_name + std::string(" regridding options");
 
   assert(variable != NULL);
 
-  ierr = PetscOptionsBegin(grid.com, "", title.c_str(), "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsString("-regrid_file", "regridding file name", file, file_set); CHKERRQ(ierr);
-    ierr = OptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
-                                "", vars, vars_set); CHKERRQ(ierr);
+    OptionsString("-regrid_file", "regridding file name", file, file_set);
+    OptionsStringSet("-regrid_vars", "comma-separated list of regridding variables",
+                     "", vars, vars_set);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (file_set == false) {
-    return 0;
+    return;
   }
 
   NCSpatialVariable &m = variable->metadata();
 
   if ((vars_set == true && set_contains(vars, m.get_string("short_name")) == true) ||
       (vars_set == false && flag == REGRID_WITHOUT_REGRID_VARS)) {
-    ierr = verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
-                      m.get_string("short_name").c_str(), file.c_str()); CHKERRQ(ierr);
-    ierr = variable->regrid(file, CRITICAL); CHKERRQ(ierr);
+    verbPrintf(2, grid.com, "  regridding '%s' from file '%s' ...\n",
+               m.get_string("short_name").c_str(), file.c_str());
+    variable->regrid(file, CRITICAL);
   }
-
-  return 0;
 }
 
 } // end of namespace pism

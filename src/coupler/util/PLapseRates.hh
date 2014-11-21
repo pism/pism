@@ -45,10 +45,8 @@ public:
 
   virtual ~PLapseRates() {}
 
-  virtual PetscErrorCode update(double my_t, double my_dt)
+  virtual void update(double my_t, double my_dt)
   {
-    PetscErrorCode ierr;
-
     // a convenience
     double &t = Mod::m_t;
     double &dt = Mod::m_dt;
@@ -58,30 +56,27 @@ public:
 
     if ((fabs(my_t - t) < 1e-12) &&
         (fabs(my_dt - dt) < 1e-12)) {
-      return 0;
+      return;
     }
 
     t  = my_t;
     dt = my_dt;
 
     // NB! Input model uses original t and dt
-    ierr = Mod::input_model->update(my_t, my_dt); CHKERRQ(ierr);
+    Mod::input_model->update(my_t, my_dt);
 
-    ierr = reference_surface.update(t, dt); CHKERRQ(ierr);
+    reference_surface.update(t, dt);
 
-    ierr = reference_surface.interp(t + 0.5*dt); CHKERRQ(ierr);
-
-    return 0;
+    reference_surface.interp(t + 0.5*dt);
   }
 
-  virtual PetscErrorCode max_timestep(double t, double &dt, bool &restrict) {
-    PetscErrorCode ierr;
+  virtual void max_timestep(double t, double &dt, bool &restrict) {
     double max_dt = -1;
 
     // "Periodize" the climate:
     t = Mod::grid.time->mod(t - bc_reference_time, bc_period);
 
-    ierr = Mod::input_model->max_timestep(t, dt, restrict); CHKERRQ(ierr);
+    Mod::input_model->max_timestep(t, dt, restrict);
 
     max_dt = reference_surface.max_timestep(t);
 
@@ -98,8 +93,6 @@ public:
     } else {
       restrict = false;
     }
-
-    return 0;
   }
 
 protected:
@@ -110,9 +103,8 @@ protected:
     temp_lapse_rate;
   std::string option_prefix;
 
-  virtual PetscErrorCode init_internal(Vars &vars)
+  virtual void init_internal(Vars &vars)
   {
-    PetscErrorCode ierr;
     std::string filename;
     bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
@@ -121,22 +113,20 @@ protected:
     double bc_period_years = 0,
       bc_reference_year = 0;
 
-    ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
     {
-      ierr = OptionsString(option_prefix + "_file",
-                               "Specifies a file with top-surface boundary conditions",
-                               filename, bc_file_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_period",
-                             "Specifies the length of the climate data period",
-                             bc_period_years, bc_period_set); CHKERRQ(ierr);
-      ierr = OptionsReal(option_prefix + "_reference_year",
-                             "Boundary condition reference year",
-                             bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-      ierr = OptionsReal("-temp_lapse_rate",
-                             "Elevation lapse rate for the temperature, in K per km",
-                             temp_lapse_rate, temp_lapse_rate_set); CHKERRQ(ierr);
+      OptionsString(option_prefix + "_file",
+                    "Specifies a file with top-surface boundary conditions",
+                    filename, bc_file_set);
+      OptionsReal(option_prefix + "_period",
+                  "Specifies the length of the climate data period",
+                  bc_period_years, bc_period_set);
+      OptionsReal(option_prefix + "_reference_year",
+                  "Boundary condition reference year",
+                  bc_reference_year, bc_ref_year_set);
+      OptionsReal("-temp_lapse_rate",
+                  "Elevation lapse rate for the temperature, in K per km",
+                  temp_lapse_rate, temp_lapse_rate_set);
     }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     if (bc_file_set == false) {
       throw RuntimeError::formatted("command-line option %s_file is required.",
@@ -177,29 +167,27 @@ protected:
       }
 
       reference_surface.set_n_records(ref_surface_n_records);
-      ierr = reference_surface.create(g, "usurf", false); CHKERRQ(ierr);
-      ierr = reference_surface.set_attrs("climate_forcing",
-                                         "reference surface for lapse rate corrections",
-                                         "m", "surface_altitude"); CHKERRQ(ierr);
+      reference_surface.create(g, "usurf", false);
+      reference_surface.set_attrs("climate_forcing",
+                                  "reference surface for lapse rate corrections",
+                                  "m", "surface_altitude");
       reference_surface.set_n_evaluations_per_year((unsigned int)Mod::config.get("climate_forcing_evaluations_per_year"));
     }
 
-    ierr = verbPrintf(2, g.com,
-                      "    reading reference surface elevation from %s ...\n",
-                      filename.c_str()); CHKERRQ(ierr);
+    verbPrintf(2, g.com,
+               "    reading reference surface elevation from %s ...\n",
+               filename.c_str());
 
-    ierr = reference_surface.init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+    reference_surface.init(filename, bc_period, bc_reference_time);
 
     surface = vars.get_2d_scalar("surface_altitude");
     thk     = vars.get_2d_scalar("land_ice_thickness");
-
-    return 0;
   }
 
-  PetscErrorCode lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
+  void lapse_rate_correction(IceModelVec2S &result, double lapse_rate)
   {
     if (PetscAbs(lapse_rate) < 1e-12) {
-      return 0;
+      return;
     }
 
     IceModelVec::AccessList list;
@@ -216,8 +204,6 @@ protected:
         result(i,j) -= correction;
       }
     }
-
-    return 0;
   }
 };
 

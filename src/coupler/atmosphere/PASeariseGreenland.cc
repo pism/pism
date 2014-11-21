@@ -44,69 +44,57 @@ PA_SeaRISE_Greenland::PA_SeaRISE_Greenland(IceGrid &g, const Config &conf)
 PA_SeaRISE_Greenland::~PA_SeaRISE_Greenland() {
 }
 
-PetscErrorCode PA_SeaRISE_Greenland::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PA_SeaRISE_Greenland::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
-                    "  air temperature parameterization and using stored time-independent precipitation...\n");
-  CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing SeaRISE-Greenland atmosphere model based on the Fausto et al (2009)\n"
+             "  air temperature parameterization and using stored time-independent precipitation...\n");
 
   m_reference =
     "R. S. Fausto, A. P. Ahlstrom, D. V. As, C. E. Boggild, and S. J. Johnsen, 2009. "
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
 
   bool precip_file_set = false;
-  ierr = PetscOptionsBegin(grid.com, "",
-                           "-atmosphere searise_greenland options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
     std::string option_prefix = "-atmosphere_searise_greenland";
-    ierr = OptionsString(option_prefix + "_file",
-                             "Specifies a file with boundary conditions",
-                             m_precip_filename, precip_file_set); CHKERRQ(ierr);
+    OptionsString(option_prefix + "_file",
+                  "Specifies a file with boundary conditions",
+                  m_precip_filename, precip_file_set);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (precip_file_set == true) {
     m_variables = &vars;
 
-    ierr = verbPrintf(2, grid.com,
-                      "  * Option '-atmosphere_searise_greenland %s' is set...\n",
-                      m_precip_filename.c_str());
-    CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "  * Option '-atmosphere_searise_greenland %s' is set...\n",
+               m_precip_filename.c_str());
 
-    ierr = PAYearlyCycle::init_internal(m_precip_filename,
-                                        true, /* do regrid */
-                                        0 /* start (irrelevant) */); CHKERRQ(ierr);
+    PAYearlyCycle::init_internal(m_precip_filename,
+                                 true, /* do regrid */
+                                 0 /* start (irrelevant) */);
   } else {
-    ierr = PAYearlyCycle::init(vars); CHKERRQ(ierr);
+    PAYearlyCycle::init(vars);
   }
 
   // initialize pointers to fields the parameterization depends on:
   m_surfelev = vars.get_2d_scalar("surface_altitude");
   m_lat      = vars.get_2d_scalar("latitude");
   m_lon      = vars.get_2d_scalar("longitude");
-
-  return 0;
 }
 
-PetscErrorCode PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> &result) {
+void PA_SeaRISE_Greenland::precip_time_series(int i, int j, std::vector<double> &result) {
 
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = m_precipitation(i,j);
   }
-
-  return 0;
 }
 
 //! \brief Updates mean annual and mean July near-surface air temperatures.
 //! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
-PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
+void PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
 
   if (m_lat->metadata().has_attribute("missing_at_bootstrap")) {
     throw RuntimeError("latitude variable was missing at bootstrap;\n"
@@ -120,7 +108,7 @@ PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
 
   if ((fabs(my_t - m_t) < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
-    return 0;
+    return;
   }
 
   m_t  = my_t;
@@ -150,8 +138,6 @@ PetscErrorCode PA_SeaRISE_Greenland::update(double my_t, double my_dt) {
     m_air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
     m_air_temp_mean_july(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
   }
-
-  return 0;
 }
 
 } // end of namespace pism

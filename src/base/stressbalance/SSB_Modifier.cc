@@ -54,12 +54,9 @@ PetscErrorCode SSB_Modifier::allocate() {
   return 0;
 }
 
-PetscErrorCode ConstantInColumn::init(Vars &vars) {
-  PetscErrorCode ierr;
+void ConstantInColumn::init(Vars &vars) {
 
-  ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
-
-  return 0;
+  SSB_Modifier::init(vars);
 }
 
 ConstantInColumn::ConstantInColumn(IceGrid &g, EnthalpyConverter &e, const Config &c)
@@ -91,11 +88,10 @@ ConstantInColumn::~ConstantInColumn()
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
-  PetscErrorCode ierr;
+void ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
 
   if (fast) {
-    return 0;
+    return;
   }
 
   // horizontal velocity and its maximum:
@@ -107,19 +103,17 @@ PetscErrorCode ConstantInColumn::update(IceModelVec2V *vel_input, bool fast) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
-    ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
+    u.setColumn(i,j, (*vel_input)(i,j).u);
+    v.setColumn(i,j, (*vel_input)(i,j).v);
   }
 
   // Communicate to get ghosts (needed to compute w):
-  ierr = u.update_ghosts(); CHKERRQ(ierr);
-  ierr = v.update_ghosts(); CHKERRQ(ierr);
+  u.update_ghosts();
+  v.update_ghosts();
 
   // diffusive flux and maximum diffusivity
-  ierr = diffusive_flux.set(0.0); CHKERRQ(ierr);
+  diffusive_flux.set(0.0);
   D_max = 0.0;
-
-  return 0;
 }
 
 } // end of namespace pism

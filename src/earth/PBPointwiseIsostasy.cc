@@ -44,26 +44,22 @@ PetscErrorCode PBPointwiseIsostasy::allocate() {
   return 0;
 }
 
-PetscErrorCode PBPointwiseIsostasy::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PBPointwiseIsostasy::init(Vars &vars) {
 
-  ierr = BedDef::init(vars); CHKERRQ(ierr);
+  BedDef::init(vars);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the pointwise isostasy bed deformation model...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the pointwise isostasy bed deformation model...\n");
 
-  ierr = thk->copy_to(thk_last);   CHKERRQ(ierr);
-  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
-
-  return 0;
+  thk->copy_to(thk_last);
+  topg->copy_to(topg_last);
 }
 
 //! Updates the pointwise isostasy model.
-PetscErrorCode PBPointwiseIsostasy::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void PBPointwiseIsostasy::update(double my_t, double my_dt) {
   if ((fabs(my_t - m_t)   < 1e-12) &&
       (fabs(my_dt - m_dt) < 1e-12)) {
-    return 0;
+    return;
   }
 
   m_t  = my_t;
@@ -76,7 +72,7 @@ PetscErrorCode PBPointwiseIsostasy::update(double my_t, double my_dt) {
   if ((dt_beddef < config.get("bed_def_interval_years", "years", "seconds") &&
        t_final < grid.time->end()) ||
       dt_beddef < 1e-12) {
-    return 0;
+    return;
   }
 
   t_beddef_last = t_final;
@@ -88,21 +84,19 @@ PetscErrorCode PBPointwiseIsostasy::update(double my_t, double my_dt) {
   //! Our goal: topg = topg_last - f*(thk - thk_last)
 
   //! Step 1: topg = topg_last - f*thk
-  ierr = topg_last.add(-f, *thk, *topg); CHKERRQ(ierr);
+  topg_last.add(-f, *thk, *topg);
   //! Step 2: topg = topg + f*thk_last = (topg_last - f*thk) + f*thk_last = topg_last - f*(thk - thk_last)
-  ierr = topg->add(f, thk_last); CHKERRQ(ierr);
+  topg->add(f, thk_last);
   //! This code is written this way to avoid allocating temp. storage for (thk - thk_last).
 
   //! Finally, we need to update bed uplift, topg_last and thk_last.
-  ierr = compute_uplift(dt_beddef); CHKERRQ(ierr);
+  compute_uplift(dt_beddef);
 
-  ierr =  thk->copy_to(thk_last);  CHKERRQ(ierr);
-  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
+  thk->copy_to(thk_last);
+  topg->copy_to(topg_last);
 
   //! Increment the topg state counter. SIAFD relies on this!
   topg->inc_state_counter();
-
-  return 0;
 }
 
 } // end of namespace pism

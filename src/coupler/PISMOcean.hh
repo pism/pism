@@ -33,12 +33,12 @@ public:
     : Component_TS(g, conf), sea_level(0) {}
   virtual ~OceanModel() {};
 
-  virtual PetscErrorCode init(Vars &vars) = 0;
+  virtual void init(Vars &vars) = 0;
 
-  virtual PetscErrorCode sea_level_elevation(double &result) = 0;
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
+  virtual void sea_level_elevation(double &result) = 0;
+  virtual void shelf_base_temperature(IceModelVec2S &result) = 0;
+  virtual void shelf_base_mass_flux(IceModelVec2S &result) = 0;
+  virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 protected:
   double sea_level;
 };

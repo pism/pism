@@ -75,25 +75,20 @@ PSCache::~PSCache() {
 }
 
 
-PetscErrorCode PSCache::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PSCache::init(Vars &vars) {
   int update_interval = m_update_interval_years;
   bool flag;
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  input_model->init(vars);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 'caching' surface model modifier...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the 'caching' surface model modifier...\n");
 
-  ierr = PetscOptionsBegin(grid.com, "", "-surface ...,cache options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsInt("-surface_cache_update_interval",
-                      "Interval (in years) between surface model updates",
-                      update_interval, flag); CHKERRQ(ierr);
+    OptionsInt("-surface_cache_update_interval",
+               "Interval (in years) between surface model updates",
+               update_interval, flag);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (update_interval <= 0) {
     throw RuntimeError::formatted("-surface_cache_update_interval has to be strictly positive.");
@@ -101,13 +96,9 @@ PetscErrorCode PSCache::init(Vars &vars) {
 
   m_update_interval_years = update_interval;
   m_next_update_time = grid.time->current();
-
-  return 0;
 }
 
-PetscErrorCode PSCache::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
-
+void PSCache::update(double my_t, double my_dt) {
   // ignore my_dt and always use 1 year long time-steps when updating
   // an input model
   (void) my_dt;
@@ -121,22 +112,20 @@ PetscErrorCode PSCache::update(double my_t, double my_dt) {
 
     assert(update_dt > 0.0);
 
-    ierr = input_model->update(my_t, update_dt); CHKERRQ(ierr);
+    input_model->update(my_t, update_dt);
 
     m_next_update_time = grid.time->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
-    ierr = input_model->ice_surface_mass_flux(m_mass_flux);                         CHKERRQ(ierr);
-    ierr = input_model->ice_surface_temperature(m_temperature);                     CHKERRQ(ierr);
-    ierr = input_model->ice_surface_liquid_water_fraction(m_liquid_water_fraction); CHKERRQ(ierr);
-    ierr = input_model->mass_held_in_surface_layer(m_mass_held_in_surface_layer);   CHKERRQ(ierr);
-    ierr = input_model->surface_layer_thickness(m_surface_layer_thickness);         CHKERRQ(ierr);
+    input_model->ice_surface_mass_flux(m_mass_flux);
+    input_model->ice_surface_temperature(m_temperature);
+    input_model->ice_surface_liquid_water_fraction(m_liquid_water_fraction);
+    input_model->mass_held_in_surface_layer(m_mass_held_in_surface_layer);
+    input_model->surface_layer_thickness(m_surface_layer_thickness);
   }
-
-  return 0;
 }
 
-PetscErrorCode PSCache::max_timestep(double t, double &dt, bool &restrict) {
+void PSCache::max_timestep(double t, double &dt, bool &restrict) {
   dt       = m_next_update_time - t;
   restrict = true;
 
@@ -154,111 +143,93 @@ PetscErrorCode PSCache::max_timestep(double t, double &dt, bool &restrict) {
   double input_model_dt = 0.0;
   assert(input_model != NULL);
 
-  PetscErrorCode ierr = input_model->max_timestep(t, input_model_dt, input_restrict); CHKERRQ(ierr);
+  input_model->max_timestep(t, input_model_dt, input_restrict);
   if (input_restrict == true) {
     dt = std::min(input_model_dt, dt);
   }
-
-  return 0;
 }
 
-PetscErrorCode PSCache::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_mass_flux.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSCache::ice_surface_mass_flux(IceModelVec2S &result) {
+  m_mass_flux.copy_to(result);
 }
 
-PetscErrorCode PSCache::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_temperature.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSCache::ice_surface_temperature(IceModelVec2S &result) {
+  m_temperature.copy_to(result);
 }
 
-PetscErrorCode PSCache::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_liquid_water_fraction.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSCache::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+  m_liquid_water_fraction.copy_to(result);
 }
 
-PetscErrorCode PSCache::mass_held_in_surface_layer(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_mass_held_in_surface_layer.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSCache::mass_held_in_surface_layer(IceModelVec2S &result) {
+  m_mass_held_in_surface_layer.copy_to(result);
 }
 
-PetscErrorCode PSCache::surface_layer_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_surface_layer_thickness.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PSCache::surface_layer_thickness(IceModelVec2S &result) {
+  m_surface_layer_thickness.copy_to(result);
 }
 
 
-PetscErrorCode PSCache::define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype) {
+void PSCache::define_variables(const std::set<std::string> &vars_input, const PIO &nc, IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
-    ierr = m_mass_flux.define(nc, nctype); CHKERRQ(ierr);
+    m_mass_flux.define(nc, nctype);
     vars.erase(m_mass_flux.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_temperature.metadata().get_string("short_name"))) {
-    ierr = m_temperature.define(nc, nctype); CHKERRQ(ierr);
+    m_temperature.define(nc, nctype);
     vars.erase(m_temperature.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_liquid_water_fraction.metadata().get_string("short_name"))) {
-    ierr = m_liquid_water_fraction.define(nc, nctype); CHKERRQ(ierr);
+    m_liquid_water_fraction.define(nc, nctype);
     vars.erase(m_liquid_water_fraction.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_mass_held_in_surface_layer.metadata().get_string("short_name"))) {
-    ierr = m_mass_held_in_surface_layer.define(nc, nctype); CHKERRQ(ierr);
+    m_mass_held_in_surface_layer.define(nc, nctype);
     vars.erase(m_mass_held_in_surface_layer.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_surface_layer_thickness.metadata().get_string("short_name"))) {
-    ierr = m_surface_layer_thickness.define(nc, nctype); CHKERRQ(ierr);
+    m_surface_layer_thickness.define(nc, nctype);
     vars.erase(m_surface_layer_thickness.metadata().get_string("short_name"));
   }
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  input_model->define_variables(vars, nc, nctype);
 }
 
-PetscErrorCode PSCache::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSCache::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, m_mass_flux.metadata().get_string("short_name"))) {
-    ierr = m_mass_flux.write(nc); CHKERRQ(ierr);
+    m_mass_flux.write(nc);
     vars.erase(m_mass_flux.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_temperature.metadata().get_string("short_name"))) {
-    ierr = m_temperature.write(nc); CHKERRQ(ierr);
+    m_temperature.write(nc);
     vars.erase(m_temperature.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_liquid_water_fraction.metadata().get_string("short_name"))) {
-    ierr = m_liquid_water_fraction.write(nc); CHKERRQ(ierr);
+    m_liquid_water_fraction.write(nc);
     vars.erase(m_liquid_water_fraction.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_mass_held_in_surface_layer.metadata().get_string("short_name"))) {
-    ierr = m_mass_held_in_surface_layer.write(nc); CHKERRQ(ierr);
+    m_mass_held_in_surface_layer.write(nc);
     vars.erase(m_mass_held_in_surface_layer.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_surface_layer_thickness.metadata().get_string("short_name"))) {
-    ierr = m_surface_layer_thickness.write(nc); CHKERRQ(ierr);
+    m_surface_layer_thickness.write(nc);
     vars.erase(m_surface_layer_thickness.metadata().get_string("short_name"));
   }
 
-  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  input_model->write_variables(vars, nc);
 }
 
 } // end of namespace pism

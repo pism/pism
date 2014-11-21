@@ -42,12 +42,11 @@ Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect
 `CFLmaxdt`.
  */
-PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
-  PetscErrorCode ierr = 0;
+void IceModel::max_timestep_cfl_3d(double &dt_result) {
   double maxtimestep = config.get("maximum_time_step_years", "years", "seconds");
 
   IceModelVec3 *u3 = NULL, *v3 = NULL, *w3 = NULL;
-  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  stress_balance->get_3d_velocity(u3, v3, w3);
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -66,9 +65,9 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
 
     if (mask.icy(i, j)) {
       const int ks = grid.kBelowHeight(ice_thickness(i, j));
-      ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
-      ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
-      ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
+      u3->getInternalColumn(i, j, &u);
+      v3->getInternalColumn(i, j, &v);
+      w3->getInternalColumn(i, j, &w);
       for (int k = 0; k <= ks; ++k) {
         const double
           absu = PetscAbs(u[k]),
@@ -85,13 +84,11 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   }
 
 
-  ierr = GlobalMax(grid.com, &maxu,  &gmaxu); CHKERRQ(ierr);
-  ierr = GlobalMax(grid.com, &maxv,  &gmaxv); CHKERRQ(ierr);
-  ierr = GlobalMax(grid.com, &maxw,  &gmaxw); CHKERRQ(ierr);
+  GlobalMax(grid.com, &maxu,  &gmaxu);
+  GlobalMax(grid.com, &maxv,  &gmaxv);
+  GlobalMax(grid.com, &maxw,  &gmaxw);
 
-  ierr = GlobalMin(grid.com, &maxtimestep,  &dt_result); CHKERRQ(ierr);
-
-  return 0;
+  GlobalMin(grid.com, &maxtimestep,  &dt_result);
 }
 
 
@@ -105,14 +102,13 @@ PetscErrorCode IceModel::max_timestep_cfl_3d(double &dt_result) {
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
  */
-PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
-  PetscErrorCode ierr;
+void IceModel::max_timestep_cfl_2d(double &dt_result) {
   double maxtimestep = config.get("maximum_time_step_years", "years", "seconds");
 
   MaskQuery mask(vMask);
 
   IceModelVec2V *vel_advective;
-  ierr = stress_balance->get_2D_advective_velocity(vel_advective); CHKERRQ(ierr);
+  stress_balance->get_2D_advective_velocity(vel_advective);
   IceModelVec2V &vel = *vel_advective; // a shortcut
 
   IceModelVec::AccessList list;
@@ -129,8 +125,7 @@ PetscErrorCode IceModel::max_timestep_cfl_2d(double &dt_result) {
     }
   }
 
-  ierr = GlobalMin(grid.com, &maxtimestep,  &dt_result); CHKERRQ(ierr);
-  return 0;
+  GlobalMin(grid.com, &maxtimestep,  &dt_result);
 }
 
 
@@ -144,9 +139,9 @@ dx^2/maxD (if dx=dy).
 
 Reference: [\ref MortonMayers] pp 62--63.
  */
-PetscErrorCode IceModel::max_timestep_diffusivity(double &dt_result) {
+void IceModel::max_timestep_diffusivity(double &dt_result) {
   double D_max = 0.0;
-  PetscErrorCode ierr = stress_balance->get_max_diffusivity(D_max); CHKERRQ(ierr);
+  stress_balance->get_max_diffusivity(D_max);
 
   if (D_max > 0.0) {
     const double
@@ -157,8 +152,6 @@ PetscErrorCode IceModel::max_timestep_diffusivity(double &dt_result) {
   } else {
     dt_result = config.get("maximum_time_step_years", "years", "seconds");
   }
-
-  return 0;
 }
 
 /** @brief Compute the skip counter using "long" (usually determined
@@ -202,8 +195,7 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
 @param[out] dt_result computed maximum time step
 @param[in,out] skip_counter_result time-step skipping counter
  */
-PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
-  PetscErrorCode ierr;
+void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result) {
 
   const bool updateAtDepth = (skipCountDown == 0);
   const double time_to_end = grid.time->end() - grid.time->current();
@@ -235,7 +227,7 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
   //! Always apply the time-step restriction from the
   //! -ts_{times,file,vars} mechanism (the user asked for it).
   double ts_dt = 0.0;
-  ierr = ts_max_timestep(current_time, ts_dt, restrict_dt); CHKERRQ(ierr);
+  ts_max_timestep(current_time, ts_dt, restrict_dt);
   if (restrict_dt) {
     dt_restrictions["-ts_... reporting"] = ts_dt;
   }
@@ -243,7 +235,7 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
   //! Always apply the time-step restriction from the
   //! -extra_{times,file,vars} mechanism (the user asked for it).
   double extras_dt = 0.0;
-  ierr = extras_max_timestep(current_time, extras_dt, restrict_dt); CHKERRQ(ierr);
+  extras_max_timestep(current_time, extras_dt, restrict_dt);
   if (restrict_dt) {
     dt_restrictions["-extra_... reporting"] = extras_dt;
   }
@@ -258,26 +250,26 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
     // restrictions.
 
     double surface_dt = 0.0;
-    ierr = surface->max_timestep(current_time, surface_dt, restrict_dt); CHKERRQ(ierr);
+    surface->max_timestep(current_time, surface_dt, restrict_dt);
     if (restrict_dt)  {
       dt_restrictions["surface"] = surface_dt;
     }
 
     double ocean_dt = 0.0;
-    ierr = ocean->max_timestep(current_time, ocean_dt, restrict_dt); CHKERRQ(ierr);
+    ocean->max_timestep(current_time, ocean_dt, restrict_dt);
     if (restrict_dt) {
       dt_restrictions["ocean"] = ocean_dt;
     }
 
     double hydrology_dt = 0.0;
-    ierr = subglacial_hydrology->max_timestep(current_time, hydrology_dt, restrict_dt); CHKERRQ(ierr);
+    subglacial_hydrology->max_timestep(current_time, hydrology_dt, restrict_dt);
     if (restrict_dt) {
       dt_restrictions["hydrology"] = hydrology_dt;
     }
 
     if (btu != NULL) {
       double btu_dt = 0.0;
-      ierr = btu->max_timestep(current_time, btu_dt, restrict_dt); CHKERRQ(ierr);
+      btu->max_timestep(current_time, btu_dt, restrict_dt);
       if (restrict_dt) {
         dt_restrictions["BTU"] = btu_dt;
       }
@@ -285,7 +277,7 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
 
     if (eigen_calving != NULL) {
       double eigencalving_dt = 0.0;
-      ierr = eigen_calving->max_timestep(current_time, eigencalving_dt, restrict_dt); CHKERRQ(ierr);
+      eigen_calving->max_timestep(current_time, eigencalving_dt, restrict_dt);
       if (restrict_dt) {
         dt_restrictions["eigencalving"] = eigencalving_dt;
       }
@@ -294,19 +286,19 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
     if (config.get_flag("do_energy") == true) {
       if (updateAtDepth == true) {
         // this call sets CFLmaxdt
-        ierr = max_timestep_cfl_3d(CFLmaxdt); CHKERRQ(ierr);
+        max_timestep_cfl_3d(CFLmaxdt);
       }
       dt_restrictions["3D CFL"] = CFLmaxdt;
     }
 
     if (config.get_flag("do_mass_conserve")) {
       // this call sets CFLmaxdt2D
-      ierr = max_timestep_cfl_2d(CFLmaxdt2D); CHKERRQ(ierr);
+      max_timestep_cfl_2d(CFLmaxdt2D);
 
       dt_restrictions["2D CFL"] = CFLmaxdt2D;
 
       double max_dt_diffusivity = 0.0;
-      ierr = max_timestep_diffusivity(max_dt_diffusivity); CHKERRQ(ierr);
+      max_timestep_diffusivity(max_dt_diffusivity);
       dt_restrictions["diffusivity"] = max_dt_diffusivity;
     }
   }
@@ -388,8 +380,6 @@ PetscErrorCode IceModel::max_timestep(double &dt_result, unsigned int &skip_coun
       skip_counter_result > 1) {
     skip_counter_result = 1;
   }
-
-  return 0;
 }
 
 
@@ -403,8 +393,7 @@ violations on that same fine grid. (FIXME: should we actually use the fine grid?
 Communication is needed to determine total CFL violation count over entire grid.
 It is handled by temperatureAgeStep(), not here.
 */
-PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
-  PetscErrorCode  ierr;
+void IceModel::countCFLViolations(double* CFLviol) {
 
   const double
     CFL_x = grid.dx / dt_TempAge,
@@ -412,7 +401,7 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
 
   double *u, *v;
   IceModelVec3 *u3, *v3, *dummy;
-  ierr = stress_balance->get_3d_velocity(u3, v3, dummy); CHKERRQ(ierr);
+  stress_balance->get_3d_velocity(u3, v3, dummy);
 
   IceModelVec::AccessList list;
   list.add(ice_thickness);
@@ -424,8 +413,8 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
 
     const int  fks = grid.kBelowHeight(ice_thickness(i,j));
 
-    ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
-    ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
+    u3->getInternalColumn(i,j,&u);
+    v3->getInternalColumn(i,j,&v);
 
     // check horizontal CFL conditions at each point
     for (int k=0; k<=fks; k++) {
@@ -437,9 +426,6 @@ PetscErrorCode IceModel::countCFLViolations(double* CFLviol) {
       }
     }
   }
-
-
-  return 0;
 }
 
 } // end of namespace pism

@@ -78,8 +78,7 @@ PSB_velbar::PSB_velbar(StressBalance *m, IceGrid &g, Vars &my_vars)
             "m s-1", "m year-1", 1);
 }
 
-PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_velbar::compute(IceModelVec* &output) {
 
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
@@ -88,11 +87,11 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
   double icefree_thickness = grid.config.get("mask_icefree_thickness_standard");
 
   result = new IceModelVec2V;
-  ierr = result->create(grid, "bar", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "bar", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   IceModelVec::AccessList list;
   list.add(*u3);
@@ -115,8 +114,8 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
     }
 
     // an ice-filled cell:
-    ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
-    ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+    u3->getInternalColumn(i, j, &u_ij);
+    v3->getInternalColumn(i, j, &v_ij);
 
     if (thk <= grid.zlevels[1]) {
       (*result)(i,j).u = u_ij[0];
@@ -139,7 +138,6 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 PSB_velbar_mag::PSB_velbar_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -155,7 +153,7 @@ PSB_velbar_mag::PSB_velbar_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("valid_min", 0.0);
 }
 
-PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
+void PSB_velbar_mag::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec *tmp;
   IceModelVec2V *velbar_vec;
@@ -168,7 +166,7 @@ PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
 
   // compute vertically-averaged horizontal velocity:
   PSB_velbar velbar(model, grid, variables);
-  ierr = velbar.compute(tmp); CHKERRQ(ierr);
+  velbar.compute(tmp);
 
   velbar_vec = dynamic_cast<IceModelVec2V*>(tmp);
   if (velbar_vec == NULL) {
@@ -176,14 +174,13 @@ PetscErrorCode PSB_velbar_mag::compute(IceModelVec* &output) {
   }
 
   // compute its magnitude:
-  ierr = velbar_vec->magnitude(*result); CHKERRQ(ierr);
+  velbar_vec->magnitude(*result);
 
   // mask out ice-free areas:
-  ierr = result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
+  result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s"));
 
   delete tmp;
   output = result;
-  return 0;
 }
 
 PSB_flux_mag::PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -198,15 +195,14 @@ PSB_flux_mag::PSB_flux_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("valid_min", 0.0);
 }
 
-PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_flux_mag::compute(IceModelVec* &output) {
   IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness"),
     *result = NULL;
   IceModelVec *tmp = NULL;
 
   // Compute the vertically-average horizontal ice velocity:
   PSB_velbar_mag velbar_mag(model, grid, variables);
-  ierr = velbar_mag.compute(tmp); CHKERRQ(ierr);
+  velbar_mag.compute(tmp);
   // NB: the call above allocates memory
 
   result = dynamic_cast<IceModelVec2S*>(tmp);
@@ -225,12 +221,11 @@ PetscErrorCode PSB_flux_mag::compute(IceModelVec* &output) {
   }
 
 
-  ierr = result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
+  result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s"));
 
   result->metadata() = vars[0];
 
   output = result;
-  return 0;
 }
 
 PSB_velbase_mag::PSB_velbase_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -245,31 +240,29 @@ PSB_velbase_mag::PSB_velbase_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("valid_min", 0.0);
 }
 
-PetscErrorCode PSB_velbase_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_velbase_mag::compute(IceModelVec* &output) {
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S tmp, *result, *thickness;
 
-  ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  tmp.create(grid, "tmp", WITHOUT_GHOSTS);
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "velbase_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "velbase_mag", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   thickness = variables.get_2d_scalar("land_ice_thickness");
 
-  ierr = u3->getHorSlice(*result, 0.0); CHKERRQ(ierr); // result = u_{z=0}
-  ierr = v3->getHorSlice(tmp, 0.0); CHKERRQ(ierr);    // tmp = v_{z=0}
+  u3->getHorSlice(*result, 0.0); // result = u_{z=0}
+  v3->getHorSlice(tmp, 0.0);    // tmp = v_{z=0}
 
-  ierr = result->set_to_magnitude(*result, tmp); CHKERRQ(ierr);
+  result->set_to_magnitude(*result, tmp);
 
   // mask out ice-free areas
-  ierr = result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
+  result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s"));
 
   output = result;
-  return 0;
 }
 
 PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -283,32 +276,30 @@ PSB_velsurf_mag::PSB_velsurf_mag(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("valid_min",  0.0);
 }
 
-PetscErrorCode PSB_velsurf_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_velsurf_mag::compute(IceModelVec* &output) {
 
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S tmp, *result, *thickness;
 
-  ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  tmp.create(grid, "tmp", WITHOUT_GHOSTS);
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "velsurf_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "velsurf_mag", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   thickness = variables.get_2d_scalar("land_ice_thickness");
 
-  ierr = u3->getSurfaceValues(*result, *thickness); CHKERRQ(ierr);
-  ierr = v3->getSurfaceValues(tmp, *thickness); CHKERRQ(ierr);
+  u3->getSurfaceValues(*result, *thickness);
+  v3->getSurfaceValues(tmp, *thickness);
 
-  ierr = result->set_to_magnitude(*result, tmp); CHKERRQ(ierr);
+  result->set_to_magnitude(*result, tmp);
 
   // mask out ice-free areas
-  ierr = result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s")); CHKERRQ(ierr);
+  result->mask_by(*thickness, grid.config.get("fill_value", "m/year", "m/s"));
 
   output = result;
-  return 0;
 }
 
 
@@ -335,29 +326,28 @@ PSB_velsurf::PSB_velsurf(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[1].set_double("_FillValue", grid.config.get("fill_value", "m/year", "m/s"));
 }
 
-PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_velsurf::compute(IceModelVec* &output) {
   IceModelVec2V *result;
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S *thickness, tmp;
   double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2V;
-  ierr = result->create(grid, "surf", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "surf", WITHOUT_GHOSTS);
   result->metadata(0) = vars[0];
   result->metadata(1) = vars[1];
 
-  ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  tmp.create(grid, "tmp", WITHOUT_GHOSTS);
 
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   thickness = variables.get_2d_scalar("land_ice_thickness");
 
-  ierr = u3->getSurfaceValues(tmp, *thickness); CHKERRQ(ierr);
-  ierr = result->set_component(0, tmp); CHKERRQ(ierr);
+  u3->getSurfaceValues(tmp, *thickness);
+  result->set_component(0, tmp);
 
-  ierr = v3->getSurfaceValues(tmp, *thickness); CHKERRQ(ierr);
-  ierr = result->set_component(1, tmp); CHKERRQ(ierr);
+  v3->getSurfaceValues(tmp, *thickness);
+  result->set_component(1, tmp);
 
   IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
@@ -378,7 +368,6 @@ PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 PSB_wvel::PSB_wvel(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -393,15 +382,14 @@ PSB_wvel::PSB_wvel(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("valid_max", grid.convert(1e6, "m/year", "m/second"));
 }
 
-PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_wvel::compute(IceModelVec* &output) {
   IceModelVec3 *result, *u3, *v3, *w3;
   IceModelVec2S *bed, *uplift, *thickness;
   IceModelVec2Int *mask;
   double *u, *v, *w, *res;
 
   result = new IceModelVec3;
-  ierr = result->create(grid, "wvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "wvel", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   mask      = variables.get_2d_mask("mask");
@@ -409,7 +397,7 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   uplift    = variables.get_2d_scalar("tendency_of_bedrock_altitude");
   thickness = variables.get_2d_scalar("land_ice_thickness");
 
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   IceModelVec::AccessList list;
   list.add(*thickness);
@@ -430,10 +418,10 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
-    ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
-    ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
-    ierr = result->getInternalColumn(i, j, &res); CHKERRQ(ierr);
+    u3->getInternalColumn(i, j, &u);
+    v3->getInternalColumn(i, j, &v);
+    w3->getInternalColumn(i, j, &w);
+    result->getInternalColumn(i, j, &res);
 
     int ks = grid.kBelowHeight((*thickness)(i,j));
 
@@ -462,7 +450,6 @@ PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
   }
 
   output = result;
-  return 0;
 }
 
 PSB_wvelsurf::PSB_wvelsurf(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -478,20 +465,19 @@ PSB_wvelsurf::PSB_wvelsurf(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("_FillValue", grid.config.get("fill_value", "m/year", "m/s"));
 }
 
-PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_wvelsurf::compute(IceModelVec* &output) {
   IceModelVec *tmp;
   IceModelVec3 *w3;
   IceModelVec2S *result, *thickness;
   double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "wvelsurf", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "wvelsurf", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   PSB_wvel wvel(model, grid, variables);
 
-  ierr = wvel.compute(tmp); CHKERRQ(ierr);
+  wvel.compute(tmp);
 
   w3 = dynamic_cast<IceModelVec3*>(tmp);
   if (tmp == NULL) {
@@ -500,7 +486,7 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
 
   thickness = variables.get_2d_scalar("land_ice_thickness");
 
-  ierr = w3->getSurfaceValues(*result, *thickness); CHKERRQ(ierr);
+  w3->getSurfaceValues(*result, *thickness);
 
   IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
@@ -521,7 +507,6 @@ PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
 
   delete tmp;
   output = result;
-  return 0;
 }
 
 PSB_wvelbase::PSB_wvelbase(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -537,27 +522,26 @@ PSB_wvelbase::PSB_wvelbase(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[0].set_double("_FillValue", grid.config.get("fill_value", "m/year", "m/s"));
 }
 
-PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_wvelbase::compute(IceModelVec* &output) {
   IceModelVec *tmp;
   IceModelVec3 *w3;
   IceModelVec2S *result;
   double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2S;
-  ierr = result->create(grid, "wvelbase", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "wvelbase", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   PSB_wvel wvel(model, grid, variables);
 
-  ierr = wvel.compute(tmp); CHKERRQ(ierr);
+  wvel.compute(tmp);
 
   w3 = dynamic_cast<IceModelVec3*>(tmp);
   if (tmp == NULL) {
     throw RuntimeError("dynamic_cast failure");
   }
 
-  ierr = w3->getHorSlice(*result, 0.0); CHKERRQ(ierr);
+  w3->getHorSlice(*result, 0.0);
 
   IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
@@ -578,7 +562,6 @@ PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
 
   delete tmp;
   output = result;
-  return 0;
 }
 
 PSB_velbase::PSB_velbase(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -604,27 +587,26 @@ PSB_velbase::PSB_velbase(StressBalance *m, IceGrid &g, Vars &my_vars)
   vars[1].set_double("_FillValue", grid.config.get("fill_value", "m/year", "m/s"));
 }
 
-PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_velbase::compute(IceModelVec* &output) {
   IceModelVec2V *result;
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S tmp;            // will be de-allocated automatically
   double fill_value = grid.config.get("fill_value", "m/year", "m/s");
 
   result = new IceModelVec2V;
-  ierr = result->create(grid, "base", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "base", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
-  ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  tmp.create(grid, "tmp", WITHOUT_GHOSTS);
 
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
-  ierr = u3->getHorSlice(tmp, 0.0); CHKERRQ(ierr);
-  ierr = result->set_component(0, tmp); CHKERRQ(ierr);
+  u3->getHorSlice(tmp, 0.0);
+  result->set_component(0, tmp);
 
-  ierr = v3->getHorSlice(tmp, 0.0); CHKERRQ(ierr);
-  ierr = result->set_component(1, tmp); CHKERRQ(ierr);
+  v3->getHorSlice(tmp, 0.0);
+  result->set_component(1, tmp);
 
   IceModelVec2Int *mask = variables.get_2d_mask("mask");
 
@@ -645,7 +627,6 @@ PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 
@@ -659,20 +640,18 @@ PSB_bfrict::PSB_bfrict(StressBalance *m, IceGrid &g, Vars &my_vars)
             "W m-2", "W m-2", 0);
 }
 
-PetscErrorCode PSB_bfrict::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_bfrict::compute(IceModelVec* &output) {
 
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bfrict", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "bfrict", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   IceModelVec2S *bfrict;
-  ierr = model->get_basal_frictional_heating(bfrict); CHKERRQ(ierr);
+  model->get_basal_frictional_heating(bfrict);
 
-  ierr = bfrict->copy_to(*result); CHKERRQ(ierr);
+  bfrict->copy_to(*result);
 
   output = result;
-  return 0;
 }
 
 
@@ -686,17 +665,16 @@ PSB_uvel::PSB_uvel(StressBalance *m, IceGrid &g, Vars &my_vars)
             "m s-1", "m year-1", 0);
 }
 
-PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_uvel::compute(IceModelVec* &output) {
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "uvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "uvel", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModelVec3 *u3, *v3, *w3;
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   IceModelVec::AccessList list;
   list.add(*u3);
@@ -709,8 +687,8 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
 
     int ks = grid.kBelowHeight((*thickness)(i,j));
 
-    ierr = u3->getInternalColumn(i,j,&u_ij); CHKERRQ(ierr);
-    ierr = result->getInternalColumn(i,j,&u_out_ij); CHKERRQ(ierr);
+    u3->getInternalColumn(i,j,&u_ij);
+    result->getInternalColumn(i,j,&u_out_ij);
 
     // in the ice:
     for (int k = 0; k <= ks ; k++) {
@@ -724,7 +702,6 @@ PetscErrorCode PSB_uvel::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 PSB_vvel::PSB_vvel(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -737,17 +714,16 @@ PSB_vvel::PSB_vvel(StressBalance *m, IceGrid &g, Vars &my_vars)
             "m s-1", "m year-1", 0);
 }
 
-PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_vvel::compute(IceModelVec* &output) {
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "vvel", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "vvel", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModelVec3 *u3, *v3, *w3;
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   IceModelVec::AccessList list;
   list.add(*v3);
@@ -760,8 +736,8 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
 
     int ks = grid.kBelowHeight((*thickness)(i,j));
 
-    ierr = v3->getInternalColumn(i,j,&v_ij); CHKERRQ(ierr);
-    ierr = result->getInternalColumn(i,j,&v_out_ij); CHKERRQ(ierr);
+    v3->getInternalColumn(i,j,&v_ij);
+    result->getInternalColumn(i,j,&v_out_ij);
 
     // in the ice:
     for (int k = 0; k <= ks ; k++) {
@@ -775,7 +751,6 @@ PetscErrorCode PSB_vvel::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 PSB_wvel_rel::PSB_wvel_rel(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -788,17 +763,16 @@ PSB_wvel_rel::PSB_wvel_rel(StressBalance *m, IceGrid &g, Vars &my_vars)
             "m s-1", "m year-1", 0);
 }
 
-PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_wvel_rel::compute(IceModelVec* &output) {
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "wvel_rel", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "wvel_rel", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
 
   IceModelVec3 *u3, *v3, *w3;
-  ierr = model->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  model->get_3d_velocity(u3, v3, w3);
 
   IceModelVec::AccessList list;
   list.add(*w3);
@@ -811,8 +785,8 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
 
     int ks = grid.kBelowHeight((*thickness)(i,j));
 
-    ierr = w3->getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
-    ierr = result->getInternalColumn(i,j,&w_out_ij); CHKERRQ(ierr);
+    w3->getInternalColumn(i,j,&w_ij);
+    result->getInternalColumn(i,j,&w_out_ij);
 
     // in the ice:
     for (int k = 0; k <= ks ; k++) {
@@ -826,7 +800,6 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 
@@ -840,21 +813,19 @@ PSB_strainheat::PSB_strainheat(StressBalance *m, IceGrid &g, Vars &my_vars)
             "W m-3", "mW m-3", 0);
 }
 
-PetscErrorCode PSB_strainheat::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_strainheat::compute(IceModelVec* &output) {
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "strainheat", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "strainheat", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec3 *tmp;
-  ierr = model->get_volumetric_strain_heating(tmp); CHKERRQ(ierr);
+  model->get_volumetric_strain_heating(tmp);
 
-  ierr = tmp->copy_to(*result); CHKERRQ(ierr);
+  tmp->copy_to(*result);
 
   output = result;
-  return 0;
 }
 
 PSB_strain_rates::PSB_strain_rates(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -871,37 +842,35 @@ PSB_strain_rates::PSB_strain_rates(StressBalance *m, IceGrid &g, Vars &my_vars)
             "", "s-1", "s-1", 1);
 }
 
-PetscErrorCode PSB_strain_rates::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_strain_rates::compute(IceModelVec* &output) {
   IceModelVec2 *result;
   IceModelVec *velbar;
   IceModelVec2Int *mask;
   PSB_velbar diag(model, grid, variables);
 
   result = new IceModelVec2;
-  ierr = result->create(grid, "strain_rates", WITHOUT_GHOSTS, 1, 2); CHKERRQ(ierr);
+  result->create(grid, "strain_rates", WITHOUT_GHOSTS, 1, 2);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
   mask = variables.get_2d_mask("mask");
 
-  ierr = diag.compute(velbar); CHKERRQ(ierr);
+  diag.compute(velbar);
   IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
   if (v_tmp == NULL) {
     throw RuntimeError("velbar is expected to be an IceModelVec2V");
   }
 
   IceModelVec2V velbar_with_ghosts;
-  ierr = velbar_with_ghosts.create(grid, "velbar", WITH_GHOSTS); CHKERRQ(ierr);
+  velbar_with_ghosts.create(grid, "velbar", WITH_GHOSTS);
 
   // copy_from communicates ghosts
-  ierr = velbar_with_ghosts.copy_from(*v_tmp); CHKERRQ(ierr);
+  velbar_with_ghosts.copy_from(*v_tmp);
 
-  ierr = model->compute_2D_principal_strain_rates(velbar_with_ghosts, *mask, *result); CHKERRQ(ierr);
+  model->compute_2D_principal_strain_rates(velbar_with_ghosts, *mask, *result);
 
   delete velbar;
   output = result;
-  return 0;
 }
 
 PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -919,38 +888,35 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(StressBalance *m, IceGrid &g, V
 
 }
 
-PetscErrorCode PSB_deviatoric_stresses::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_deviatoric_stresses::compute(IceModelVec* &output) {
   IceModelVec2 *result;
   IceModelVec *velbar;
   IceModelVec2Int *mask;
   PSB_velbar diag(model, grid, variables);
 
   result = new IceModelVec2;
-  ierr = result->create(grid, "deviatoric_stresses", WITHOUT_GHOSTS, 1, 3); CHKERRQ(ierr);
+  result->create(grid, "deviatoric_stresses", WITHOUT_GHOSTS, 1, 3);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
   result->metadata(2) = vars[2];
 
   mask = variables.get_2d_mask("mask");
 
-  ierr = diag.compute(velbar); CHKERRQ(ierr);
+  diag.compute(velbar);
   IceModelVec2V *v_tmp = dynamic_cast<IceModelVec2V*>(velbar);
   if (v_tmp == NULL) {
     throw RuntimeError("velbar is expected to be an IceModelVec2V");
   }
 
   IceModelVec2V velbar_with_ghosts;
-  ierr = velbar_with_ghosts.create(grid, "velbar", WITH_GHOSTS); CHKERRQ(ierr);
+  velbar_with_ghosts.create(grid, "velbar", WITH_GHOSTS);
 
   // copy_from communicates ghosts
-  ierr = velbar_with_ghosts.copy_from(*v_tmp); CHKERRQ(ierr);
+  velbar_with_ghosts.copy_from(*v_tmp);
 
-  ierr = model->compute_2D_stresses(velbar_with_ghosts, *mask, *result); CHKERRQ(ierr);
+  model->compute_2D_stresses(velbar_with_ghosts, *mask, *result);
 
   output = result;
-
-  return 0;
 }
 
 PSB_pressure::PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars)
@@ -963,11 +929,10 @@ PSB_pressure::PSB_pressure(StressBalance *m, IceGrid &g, Vars &my_vars)
             "Pa", "Pa", 0);
 }
 
-PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_pressure::compute(IceModelVec* &output) {
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "pressure", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   IceModelVec2S *thickness = variables.get_2d_scalar("land_ice_thickness");
@@ -983,7 +948,7 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
     const int i = p.i(), j = p.j();
 
     unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
-    ierr = result->getInternalColumn(i,j,&P_out_ij); CHKERRQ(ierr);
+    result->getInternalColumn(i,j,&P_out_ij);
     const double H = (*thickness)(i,j);
     // within the ice:
     for (unsigned int k = 0; k <= ks; ++k) {
@@ -997,8 +962,6 @@ PetscErrorCode PSB_pressure::compute(IceModelVec* &output) {
 
 
   output = result;
-
-  return 0;
 }
 
 
@@ -1019,11 +982,10 @@ PSB_tauxz::PSB_tauxz(StressBalance *m, IceGrid &g, Vars &my_vars)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauyz
  */
-PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_tauxz::compute(IceModelVec* &output) {
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "tauxz", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "tauxz", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   IceModelVec2S *thickness, *surface;
@@ -1044,7 +1006,7 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
 
 
     unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
-    ierr = result->getInternalColumn(i,j,&tauxz_out_ij); CHKERRQ(ierr);
+    result->getInternalColumn(i,j,&tauxz_out_ij);
     const double H    = (*thickness)(i,j),
       dhdx = surface->diff_x_p(i,j);
     // within the ice:
@@ -1060,7 +1022,6 @@ PetscErrorCode PSB_tauxz::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 
@@ -1081,11 +1042,10 @@ PSB_tauyz::PSB_tauyz(StressBalance *m, IceGrid &g, Vars &my_vars)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauxz
  */
-PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void PSB_tauyz::compute(IceModelVec* &output) {
 
   IceModelVec3 *result = new IceModelVec3;
-  ierr = result->create(grid, "tauyz", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "tauyz", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
 
   IceModelVec2S *thickness, *surface;
@@ -1106,7 +1066,7 @@ PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
 
 
     unsigned int ks = grid.kBelowHeight((*thickness)(i,j));
-    ierr = result->getInternalColumn(i,j,&tauyz_out_ij); CHKERRQ(ierr);
+    result->getInternalColumn(i,j,&tauyz_out_ij);
     const double H    = (*thickness)(i,j),
       dhdy = surface->diff_y_p(i,j);
     // within the ice:
@@ -1122,7 +1082,6 @@ PetscErrorCode PSB_tauyz::compute(IceModelVec* &output) {
 
 
   output = result;
-  return 0;
 }
 
 

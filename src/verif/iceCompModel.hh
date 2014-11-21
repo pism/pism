@@ -31,9 +31,9 @@ public:
     : BedThermalUnit(g, conf) { testname = test; bedrock_is_ice = bii; }
   virtual ~BTU_Verification() {}
 
-  virtual PetscErrorCode get_temp(IceModelVec3Custom* &result);
+  virtual void get_temp(IceModelVec3Custom* &result);
 protected:
-  virtual PetscErrorCode bootstrap();
+  virtual void bootstrap();
   int testname, bedrock_is_ice;
 };
 
@@ -44,81 +44,81 @@ public:
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
-  virtual PetscErrorCode set_grid_defaults();     // called by IceModel::grid_setup()
-  virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode allocate_bedrock_thermal_unit();
-  virtual PetscErrorCode allocate_bed_deformation();
-  virtual PetscErrorCode allocate_enthalpy_converter();
-  virtual PetscErrorCode allocate_couplers();
-  virtual PetscErrorCode set_vars_from_options(); // called by IceModel::model_state_setup()
+  virtual void set_grid_defaults();     // called by IceModel::grid_setup()
+  virtual void setFromOptions();
+  virtual void createVecs();
+  virtual void allocate_stressbalance();
+  virtual void allocate_bedrock_thermal_unit();
+  virtual void allocate_bed_deformation();
+  virtual void allocate_enthalpy_converter();
+  virtual void allocate_couplers();
+  virtual void set_vars_from_options(); // called by IceModel::model_state_setup()
 
-  PetscErrorCode reportErrors();
+  void reportErrors();
 
 protected:
   // related to all (or most) tests
   PetscBool   exactOnly;
   int          testname;
-  virtual PetscErrorCode additionalAtStartTimestep();
-  virtual PetscErrorCode additionalAtEndTimestep();
+  virtual void additionalAtStartTimestep();
+  virtual void additionalAtEndTimestep();
   // all tests except K
-  PetscErrorCode computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
+  void computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
                                        double &volerr, double &areaerr,
                                        double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
                                        double &centerHerr);
-  virtual PetscErrorCode summary(bool tempAndAge);
+  virtual void summary(bool tempAndAge);
 
   // related to tests A B C D E H
-  PetscErrorCode initTestABCDEH();
-  PetscErrorCode fillSolnTestABCDH();  // only used with exactOnly == PETSC_TRUE
+  void initTestABCDEH();
+  void fillSolnTestABCDH();  // only used with exactOnly == PETSC_TRUE
   
   // related to test E
-  PetscErrorCode fillSolnTestE();  // only used with exactOnly == PETSC_TRUE
+  void fillSolnTestE();  // only used with exactOnly == PETSC_TRUE
 
   // test E only
-  PetscErrorCode computeBasalVelocityErrors(double &exactmaxspeed,
+  void computeBasalVelocityErrors(double &exactmaxspeed,
                                             double &gmaxvecerr, double &gavvecerr,
                                             double &gmaxuberr, double &gmaxvberr);
 
-  PetscErrorCode reset_thickness_tests_AE();
+  void reset_thickness_tests_AE();
 
   // related to test L
   IceModelVec2S   vHexactL;
-  PetscErrorCode initTestL();
-  PetscErrorCode fillSolnTestL();  // only used with exactOnly == PETSC_TRUE
+  void initTestL();
+  void fillSolnTestL();  // only used with exactOnly == PETSC_TRUE
 
   // related to tests F G; see iCMthermo.cc
-  virtual PetscErrorCode temperatureStep(double* vertSacrCount, double* bulgeCount);
-  PetscErrorCode initTestFG();
-  PetscErrorCode getCompSourcesTestFG();
-  PetscErrorCode fillSolnTestFG();  // only used with exactOnly == PETSC_TRUE
+  virtual void temperatureStep(double* vertSacrCount, double* bulgeCount);
+  void initTestFG();
+  void getCompSourcesTestFG();
+  void fillSolnTestFG();  // only used with exactOnly == PETSC_TRUE
   // tests F and G
-  PetscErrorCode computeTemperatureErrors(double &gmaxTerr, double &gavTerr);
+  void computeTemperatureErrors(double &gmaxTerr, double &gavTerr);
   // tests F and G
-  PetscErrorCode computeBasalTemperatureErrors(double &gmaxTerr, double &gavTerr, double &centerTerr);
+  void computeBasalTemperatureErrors(double &gmaxTerr, double &gavTerr, double &centerTerr);
   // tests F and G
-  PetscErrorCode compute_strain_heating_errors(double &gmax_strain_heating_err, double &gav_strain_heating_err);
+  void compute_strain_heating_errors(double &gmax_strain_heating_err, double &gav_strain_heating_err);
 
   // tests F and G
-  PetscErrorCode computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
+  void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
   
   IceModelVec3   strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
-  PetscErrorCode initTestsKO();
-  PetscErrorCode fillTemperatureSolnTestsKO();  // used in initialzation
+  void initTestsKO();
+  void fillTemperatureSolnTestsKO();  // used in initialzation
   //   and with exactOnly == PETSC_TRUE
-  PetscErrorCode fillBasalMeltRateSolnTestO();  // used only with exactOnly == PETSC_TRUE
+  void fillBasalMeltRateSolnTestO();  // used only with exactOnly == PETSC_TRUE
  // tests K and O only
-  PetscErrorCode computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
+  void computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
                                                     double &gmaxTberr, double &gavTberr);
   // test O only
-  PetscErrorCode computeBasalMeltRateErrors(double &gmaxbmelterr, double &gminbmelterr);
+  void computeBasalMeltRateErrors(double &gmaxbmelterr, double &gminbmelterr);
 
   // using Van der Veen's exact solution to test CFBC and the part-grid code
-  PetscErrorCode test_V_init();
+  void test_V_init();
 
   static const double secpera;
 

@@ -222,16 +222,16 @@ setValColumn..() interpolate back and forth between this fine grid and
 the storage grid.  The storage grid may or may not be equally-spaced.  See
 ageSystemCtx::solveThisColumn() for the actual method.
  */
-PetscErrorCode IceModel::ageStep() {
+void IceModel::ageStep() {
   PetscErrorCode  ierr;
 
   std::vector<double> x(grid.Mz_fine);   // space for solution
 
   bool viewOneColumn;
-  ierr = OptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  OptionsIsSet("-view_sys", viewOneColumn);
 
   IceModelVec3 *u3, *v3, *w3;
-  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  stress_balance->get_3d_velocity(u3, v3, w3);
 
   ageSystemCtx system(grid.Mz_fine, "age",
                       grid.dx, grid.dy, grid.dz_fine, dt_TempAge,
@@ -252,12 +252,12 @@ PetscErrorCode IceModel::ageStep() {
 
     if (system.ks() == 0) {
       // if no ice, set the entire column to zero age
-      ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
+      vWork3d.setColumn(i,j,0.0);
     } else {
       // general case: solve advection PDE
 
       // solve the system for this column; call checks that params set
-      ierr = system.solveThisColumn(x); CHKERRQ(ierr);
+      system.solveThisColumn(x);
 
       if (viewOneColumn && (i == id && j == jd)) {
         ierr = PetscPrintf(PETSC_COMM_SELF,
@@ -269,13 +269,11 @@ PetscErrorCode IceModel::ageStep() {
       }
 
       // put solution in IceModelVec3
-      ierr = vWork3d.setValColumnPL(i, j, x); CHKERRQ(ierr);
+      vWork3d.setValColumnPL(i, j, x);
     }
   }
 
-  ierr = vWork3d.update_ghosts(tau3); CHKERRQ(ierr);
-
-  return 0;
+  vWork3d.update_ghosts(tau3);
 }
 
 

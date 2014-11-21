@@ -150,26 +150,23 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   virtual void update(bool fast, IceModelVec2S &melange_back_pressure);
 
-  virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
+  virtual void set_initial_guess(IceModelVec2V &guess);
 
-  virtual PetscErrorCode stdout_report(std::string &result);
+  virtual void stdout_report(std::string &result);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
+  virtual void compute_driving_stress(IceModelVec2V &taud);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 protected:
-  virtual PetscErrorCode allocate();
-
-  virtual PetscErrorCode deallocate();
 
   virtual void solve() = 0;
 
@@ -189,6 +186,9 @@ protected:
 
   // profiling
   int event_ssa;
+private:
+  PetscErrorCode allocate();
+  PetscErrorCode deallocate();
 };
 
 
@@ -198,7 +198,7 @@ class SSA_taud_mag : public Diag<SSA>
 {
 public:
   SSA_taud_mag(SSA *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 //! @brief Computes the driving shear stress at the base of ice
@@ -210,7 +210,7 @@ class SSA_taud : public Diag<SSA>
 {
 public:
   SSA_taud(SSA *m, IceGrid &g, Vars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
+  virtual void compute(IceModelVec* &result);
 };
 
 } // end of namespace pism

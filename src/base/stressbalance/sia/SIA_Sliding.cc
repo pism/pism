@@ -69,10 +69,9 @@ SIA_Sliding::~SIA_Sliding()
   }
 }
 
-PetscErrorCode SIA_Sliding::init(Vars &vars) {
-  PetscErrorCode ierr;
+void SIA_Sliding::init(Vars &vars) {
 
-  ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
+  ShallowStressBalance::init(vars);
 
   standard_gravity = config.get("standard_gravity");
   verification_mode = config.get_flag("sia_sliding_verification_mode");
@@ -86,8 +85,6 @@ PetscErrorCode SIA_Sliding::init(Vars &vars) {
   surface   = vars.get_2d_scalar("surface_altitude");
   bed       = vars.get_2d_scalar("bedrock_altitude");
   enthalpy  = vars.get_3d_scalar("enthalpy");
-
-  return 0;
 }
 
 //! Compute the basal sliding and frictional heating if (where) SIA sliding rule is used.
@@ -250,33 +247,30 @@ double SIA_Sliding::basalVelocitySIA(double xIN, double yIN,
   }
 }
 
-PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
-  PetscErrorCode  ierr;
+void SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
 
   const std::string method = config.get_string("surface_gradient_method");
 
   if (method == "eta") {
 
-    ierr = surface_gradient_eta(h_x, h_y); CHKERRQ(ierr);
+    surface_gradient_eta(h_x, h_y);
 
   } else if (method == "haseloff") {
 
-    ierr = surface_gradient_haseloff(h_x, h_y); CHKERRQ(ierr);
+    surface_gradient_haseloff(h_x, h_y);
 
   } else if (method == "mahaffy") {
 
-    ierr = surface_gradient_mahaffy(h_x, h_y); CHKERRQ(ierr);
+    surface_gradient_mahaffy(h_x, h_y);
 
   } else {
     throw RuntimeError::formatted("value of surface_gradient_method, option -gradient %s, is not valid",
                                   method.c_str());
   }
-
-  return 0;
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double n = flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -347,8 +341,6 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
       }
     }
   }
-
-  return 0;
 }
 
 //! \brief Compute the ice surface gradient using Marianne Haseloff's approach.
@@ -356,7 +348,7 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
  * Deals correctly with adjacent ice-free points with bed elevations which are
  * above the surface of the ice
  */
-PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double Hicefree = 0.0;  // standard for ice-free, in Haseloff
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
@@ -479,14 +471,11 @@ PetscErrorCode SIA_Sliding::surface_gradient_haseloff(IceModelVec2Stag &h_x, Ice
 
     }
   }     // o
-
-
-  return 0;
 }
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double dx = grid.dx, dy = grid.dy;  // convenience
 
   IceModelVec2S &h = *surface;
@@ -515,9 +504,6 @@ PetscErrorCode SIA_Sliding::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceM
       }
     }
   }
-
-
-  return 0;
 }
 
 } // end of namespace pism

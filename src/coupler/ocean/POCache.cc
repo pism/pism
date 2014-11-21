@@ -69,25 +69,20 @@ POCache::~POCache() {
 }
 
 
-PetscErrorCode POCache::init(Vars &vars) {
-  PetscErrorCode ierr;
+void POCache::init(Vars &vars) {
   int update_interval = m_update_interval_years;
   bool flag;
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  input_model->init(vars);
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 'caching' ocean model modifier...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the 'caching' ocean model modifier...\n");
 
-  ierr = PetscOptionsBegin(grid.com, "", "-ocean ...,cache options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsInt("-ocean_cache_update_interval",
-                          "Interval (in years) between ocean model updates",
-                          update_interval, flag); CHKERRQ(ierr);
+    OptionsInt("-ocean_cache_update_interval",
+               "Interval (in years) between ocean model updates",
+               update_interval, flag);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (update_interval <= 0) {
     throw RuntimeError("-ocean_cache_update_interval has to be strictly positive.");
@@ -95,13 +90,9 @@ PetscErrorCode POCache::init(Vars &vars) {
 
   m_update_interval_years = update_interval;
   m_next_update_time = grid.time->current();
-
-  return 0;
 }
 
-PetscErrorCode POCache::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
-
+void POCache::update(double my_t, double my_dt) {
   // ignore my_dt and always use 1 year long time-steps when updating
   // an input model
   (void) my_dt;
@@ -115,95 +106,80 @@ PetscErrorCode POCache::update(double my_t, double my_dt) {
 
     assert(update_dt > 0.0);
 
-    ierr = input_model->update(my_t, update_dt); CHKERRQ(ierr);
+    input_model->update(my_t, update_dt);
 
     m_next_update_time = grid.time->increment_date(m_next_update_time,
                                                    m_update_interval_years);
 
-    ierr = input_model->sea_level_elevation(m_sea_level);                 CHKERRQ(ierr); 
-    ierr = input_model->shelf_base_temperature(m_shelf_base_temperature); CHKERRQ(ierr); 
-    ierr = input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);     CHKERRQ(ierr); 
-    ierr = input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction); CHKERRQ(ierr);
+    input_model->sea_level_elevation(m_sea_level);
+    input_model->shelf_base_temperature(m_shelf_base_temperature);
+    input_model->shelf_base_mass_flux(m_shelf_base_mass_flux);
+    input_model->melange_back_pressure_fraction(m_melange_back_pressure_fraction);
   }
-
-  return 0;
 }
 
 
-PetscErrorCode POCache::sea_level_elevation(double &result) {
+void POCache::sea_level_elevation(double &result) {
   result = m_sea_level;
-  return 0;
 }
 
-PetscErrorCode POCache::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_shelf_base_temperature.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void POCache::shelf_base_temperature(IceModelVec2S &result) {
+  m_shelf_base_temperature.copy_to(result);
 }
 
-PetscErrorCode POCache::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_shelf_base_mass_flux.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void POCache::shelf_base_mass_flux(IceModelVec2S &result) {
+  m_shelf_base_mass_flux.copy_to(result);
 }
 
-PetscErrorCode POCache::melange_back_pressure_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = m_melange_back_pressure_fraction.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void POCache::melange_back_pressure_fraction(IceModelVec2S &result) {
+  m_melange_back_pressure_fraction.copy_to(result);
 }
 
 
-PetscErrorCode POCache::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+void POCache::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
                                          IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
-    ierr = m_shelf_base_mass_flux.define(nc, nctype); CHKERRQ(ierr);
+    m_shelf_base_mass_flux.define(nc, nctype);
     vars.erase(m_shelf_base_mass_flux.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_shelf_base_temperature.metadata().get_string("short_name"))) {
-    ierr = m_shelf_base_temperature.define(nc, nctype); CHKERRQ(ierr);
+    m_shelf_base_temperature.define(nc, nctype);
     vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_melange_back_pressure_fraction.metadata().get_string("short_name"))) {
-    ierr = m_melange_back_pressure_fraction.define(nc, nctype); CHKERRQ(ierr);
+    m_melange_back_pressure_fraction.define(nc, nctype);
     vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
   }
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  input_model->define_variables(vars, nc, nctype);
 }
 
-PetscErrorCode POCache::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void POCache::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, m_shelf_base_mass_flux.metadata().get_string("short_name"))) {
-    ierr = m_shelf_base_mass_flux.write(nc); CHKERRQ(ierr);
+    m_shelf_base_mass_flux.write(nc);
     vars.erase(m_shelf_base_mass_flux.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_shelf_base_temperature.metadata().get_string("short_name"))) {
-    ierr = m_shelf_base_temperature.write(nc); CHKERRQ(ierr);
+    m_shelf_base_temperature.write(nc);
     vars.erase(m_shelf_base_temperature.metadata().get_string("short_name"));
   }
 
   if (set_contains(vars, m_melange_back_pressure_fraction.metadata().get_string("short_name"))) {
-    ierr = m_melange_back_pressure_fraction.write(nc); CHKERRQ(ierr);
+    m_melange_back_pressure_fraction.write(nc);
     vars.erase(m_melange_back_pressure_fraction.metadata().get_string("short_name"));
   }
 
-  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  input_model->write_variables(vars, nc);
 }
 
-PetscErrorCode POCache::max_timestep(double t, double &dt, bool &restrict) {
+void POCache::max_timestep(double t, double &dt, bool &restrict) {
   dt       = m_next_update_time - t;
   restrict = true;
 
@@ -221,12 +197,10 @@ PetscErrorCode POCache::max_timestep(double t, double &dt, bool &restrict) {
   double input_model_dt = 0.0;
   assert(input_model != NULL);
 
-  PetscErrorCode ierr = input_model->max_timestep(t, input_model_dt, input_restrict); CHKERRQ(ierr);
+  input_model->max_timestep(t, input_model_dt, input_restrict);
   if (input_restrict == true) {
     dt = std::min(input_model_dt, dt);
   }
-
-  return 0;
 }
 
 } // end of namespace pism

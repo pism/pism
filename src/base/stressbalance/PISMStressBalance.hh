@@ -44,11 +44,11 @@ class StressBalance : public Component
 {
 public:
   StressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                    const Config &config);
+                const Config &config);
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   //! \brief Adds more variable names to result (to respect -o_size and
   //! -save_size).
@@ -59,57 +59,57 @@ public:
 
   //! Defines requested fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
-                                          IO_Type /*nctype*/);
+  virtual void define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+                                IO_Type /*nctype*/);
 
   //! Writes requested fields to a file.
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   //! \brief Set the vertically-averaged ice velocity boundary condition.
   /*!
    * Does not affect the SIA computation.
    */
-  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
-                                                 IceModelVec2V &velocities);
+  virtual void set_boundary_conditions(IceModelVec2Int &locations,
+                                       IceModelVec2V &velocities);
 
-  virtual PetscErrorCode set_basal_melt_rate(IceModelVec2S *bmr);
+  virtual void set_basal_melt_rate(IceModelVec2S *bmr);
 
   //! \brief Update all the fields if fast == false, only update diffusive flux
   //! and max. diffusivity otherwise.
-  virtual PetscErrorCode update(bool fast, double sea_level,
-                                IceModelVec2S &melange_back_pressure);
+  virtual void update(bool fast, double sea_level,
+                      IceModelVec2S &melange_back_pressure);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  virtual PetscErrorCode get_2D_advective_velocity(IceModelVec2V* &result);
+  virtual void get_2D_advective_velocity(IceModelVec2V* &result);
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result);
+  virtual void get_diffusive_flux(IceModelVec2Stag* &result);
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(double &D);
+  virtual void get_max_diffusivity(double &D);
 
   // for the energy/age time step:
 
   //! \brief Get the 3D velocity (for the energy/age time-stepping).
-  virtual PetscErrorCode get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w);
+  virtual void get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w);
 
   //! \brief Get the basal frictional heating (for the energy time-stepping).
-  virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result);
+  virtual void get_basal_frictional_heating(IceModelVec2S* &result);
 
-  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result);
+  virtual void get_volumetric_strain_heating(IceModelVec3* &result);
 
   // for the calving, etc.:
 
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
-  virtual PetscErrorCode compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                                           IceModelVec2 &result);
+  virtual void compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
+                                                 IceModelVec2 &result);
 
   //! \brief Get the components of the 2D deviatoric stress tensor.
-  virtual PetscErrorCode compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
-                                             IceModelVec2 &result);
+  virtual void compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
+                                   IceModelVec2 &result);
 
   //! \brief Produce a report string for the standard output.
-  virtual PetscErrorCode stdout_report(std::string &result);
+  virtual void stdout_report(std::string &result);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
@@ -125,9 +125,9 @@ public:
   }
 protected:
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
-                                                   IceModelVec2S *bmr, IceModelVec3 &result);
-  virtual PetscErrorCode compute_volumetric_strain_heating();
+  virtual void compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
+                                         IceModelVec2S *bmr, IceModelVec3 &result);
+  virtual void compute_volumetric_strain_heating();
 
   Vars *m_variables;
 

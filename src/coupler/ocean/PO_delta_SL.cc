@@ -62,29 +62,24 @@ PetscErrorCode PO_delta_SL::allocate_PO_delta_SL() {
   return 0;
 }
 
-PetscErrorCode PO_delta_SL::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PO_delta_SL::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  input_model->init(vars);
 
-  ierr = verbPrintf(2, grid.com, "* Initializing sea level forcing...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "* Initializing sea level forcing...\n");
 
-  ierr = init_internal(); CHKERRQ(ierr);
-
-  return 0;
+  init_internal();
 }
 
 
-PetscErrorCode PO_delta_SL::sea_level_elevation(double &result) {
-  PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
+void PO_delta_SL::sea_level_elevation(double &result) {
+  input_model->sea_level_elevation(result);
 
   if (offset) {
     result += (*offset)(m_t + 0.5*m_dt);
   }
-
-  return 0;
 }
 
 void PO_delta_SL::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -94,57 +89,51 @@ void PO_delta_SL::add_vars_to_output(const std::string &keyword, std::set<std::s
   result.insert("shelfbmassflux");
 }
 
-PetscErrorCode PO_delta_SL::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
+void PO_delta_SL::define_variables(const std::set<std::string> &vars_input, const PIO &nc,
                                              IO_Type nctype) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.define(nc, nctype, true); CHKERRQ(ierr);
+    shelfbtemp.define(nc, nctype, true);
     vars.erase("shelfbtemp");
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.define(nc, nctype, true); CHKERRQ(ierr);
+    shelfbmassflux.define(nc, nctype, true);
     vars.erase("shelfbmassflux");
   }
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  input_model->define_variables(vars, nc, nctype);
 }
 
-PetscErrorCode PO_delta_SL::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PO_delta_SL::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbtemp;
-    ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    shelf_base_temperature(tmp);
+    tmp.write(nc);
     vars.erase("shelfbtemp");
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbmassflux;
     tmp.write_in_glaciological_units = true;
-    ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    shelf_base_mass_flux(tmp);
+    tmp.write(nc);
     vars.erase("shelfbmassflux");
   }
 
-  ierr = input_model->write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  input_model->write_variables(vars, nc);
 }
 
 } // end of namespace pism

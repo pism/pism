@@ -95,7 +95,7 @@ public:
   Hydrology(IceGrid &g, const Config &conf);
   virtual ~Hydrology();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
@@ -104,23 +104,23 @@ public:
 
   // in the base class these only add/define/write tillwat
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   // all Hydrology models have a Wtil state variable, which this returns
-  virtual PetscErrorCode till_water_thickness(IceModelVec2S &result);
+  virtual void till_water_thickness(IceModelVec2S &result);
 
   // this diagnostic method returns the standard shallow approximation
-  virtual PetscErrorCode overburden_pressure(IceModelVec2S &result);
+  virtual void overburden_pressure(IceModelVec2S &result);
 
   // this diagnostic method returns zero in the base class
-  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
+  virtual void wall_melt(IceModelVec2S &result);
 
   // these methods MUST be implemented in the derived class
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result) = 0;
-  virtual PetscErrorCode update(double icet, double icedt) = 0;
+  virtual void subglacial_water_thickness(IceModelVec2S &result) = 0;
+  virtual void subglacial_water_pressure(IceModelVec2S &result) = 0;
+  virtual void update(double icet, double icedt) = 0;
 
 protected:
   // this model's state
@@ -143,9 +143,9 @@ protected:
 
   Vars *variables;
 
-  virtual PetscErrorCode get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
+  virtual void get_input_rate(double hydro_t, double hydro_dt, IceModelVec2S &result);
 
-  virtual PetscErrorCode check_Wtil_bounds();
+  virtual void check_Wtil_bounds();
 };
 
 
@@ -166,16 +166,16 @@ public:
   NullTransportHydrology(IceGrid &g, const Config &conf);
   virtual ~NullTransportHydrology();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   //! Sets result to 0.
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+  virtual void subglacial_water_thickness(IceModelVec2S &result);
 
   //! Returns the overburden pressure in hope it is harmless.
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result);
 
   //! Solves an implicit step of a highly-simplified ODE.
-  virtual PetscErrorCode update(double icet, double icedt);
+  virtual void update(double icet, double icedt);
 };
 
 
@@ -242,23 +242,23 @@ public:
   RoutingHydrology(IceGrid &g, const Config &conf);
   virtual ~RoutingHydrology();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
   virtual void get_diagnostics(std::map<std::string, Diagnostic*> &dict,
                                std::map<std::string, TSDiagnostic*> &ts_dict);
 
-  virtual PetscErrorCode wall_melt(IceModelVec2S &result);
+  virtual void wall_melt(IceModelVec2S &result);
 
-  virtual PetscErrorCode subglacial_water_thickness(IceModelVec2S &result);
+  virtual void subglacial_water_thickness(IceModelVec2S &result);
 
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result);
 
-  virtual PetscErrorCode update(double icet, double icedt);
+  virtual void update(double icet, double icedt);
 
 protected:
   // this model's state
@@ -277,34 +277,34 @@ protected:
   // if negative then the strip mechanism is inactive inactive
 
   PetscErrorCode allocate();
-  virtual PetscErrorCode init_bwat(Vars &vars);
+  virtual void init_bwat(Vars &vars);
 
   // when we update the water amounts, careful mass accounting at the
   // boundary is needed; we update the new thickness variable, typically a
   // temporary during the update
   bool report_mass_accounting;
-  virtual PetscErrorCode boundary_mass_changes(IceModelVec2S &newthk,
+  virtual void boundary_mass_changes(IceModelVec2S &newthk,
                                                double &icefreelost, double &oceanlost,
                                                double &negativegain, double &nullstriplost);
 
-  virtual PetscErrorCode check_water_thickness_nonnegative(IceModelVec2S &thk);
+  virtual void check_water_thickness_nonnegative(IceModelVec2S &thk);
 
-  virtual PetscErrorCode water_thickness_staggered(IceModelVec2Stag &result);
-  virtual PetscErrorCode subglacial_hydraulic_potential(IceModelVec2S &result);
+  virtual void water_thickness_staggered(IceModelVec2Stag &result);
+  virtual void subglacial_hydraulic_potential(IceModelVec2S &result);
 
-  virtual PetscErrorCode conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
-  virtual PetscErrorCode velocity_staggered(IceModelVec2Stag &result);
+  virtual void conductivity_staggered(IceModelVec2Stag &result, double &maxKW);
+  virtual void velocity_staggered(IceModelVec2Stag &result);
   friend class RoutingHydrology_bwatvel;  // needed because bwatvel diagnostic needs protected velocity_staggered()
-  virtual PetscErrorCode advective_fluxes(IceModelVec2Stag &result);
+  virtual void advective_fluxes(IceModelVec2Stag &result);
 
-  virtual PetscErrorCode adaptive_for_W_evolution(
+  virtual void adaptive_for_W_evolution(
                                                   double t_current, double t_end, double maxKW,
                                                   double &dt_result,
                                                   double &maxV_result, double &maxD_result,
                                                   double &dtCFL_result, double &dtDIFFW_result);
 
-  PetscErrorCode raw_update_W(double hdt);
-  PetscErrorCode raw_update_Wtil(double hdt);
+  void raw_update_W(double hdt);
+  void raw_update_Wtil(double hdt);
 };
 
 
@@ -327,7 +327,7 @@ public:
   DistributedHydrology(IceGrid &g, const Config &conf, StressBalance *sb);
   virtual ~DistributedHydrology();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
@@ -335,13 +335,13 @@ public:
                                std::map<std::string, TSDiagnostic*> &ts_dict);
   friend class DistributedHydrology_hydrovelbase_mag;
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 
-  virtual PetscErrorCode update(double icet, double icedt);
+  virtual void update(double icet, double icedt);
 
-  virtual PetscErrorCode subglacial_water_pressure(IceModelVec2S &result);
+  virtual void subglacial_water_pressure(IceModelVec2S &result);
 
 protected:
   // this model's state, in addition to what is in RoutingHydrology
@@ -356,18 +356,17 @@ protected:
   StressBalance* stressbalance;
 
   PetscErrorCode allocate_pressure();
-  virtual PetscErrorCode init_bwp(Vars &vars);
+  virtual void init_bwp(Vars &vars);
 
-  virtual PetscErrorCode check_P_bounds(bool enforce_upper);
+  virtual void check_P_bounds(bool enforce_upper);
 
-  virtual PetscErrorCode update_velbase_mag(IceModelVec2S &result);
-  virtual PetscErrorCode P_from_W_steady(IceModelVec2S &result);
+  virtual void update_velbase_mag(IceModelVec2S &result);
+  virtual void P_from_W_steady(IceModelVec2S &result);
 
-  virtual PetscErrorCode adaptive_for_WandP_evolution(
-                                                      double t_current, double t_end, double maxKW,
-                                                      double &dt_result,
-                                                      double &maxV_result, double &maxD_result,
-                                                      double &PtoCFLratio);
+  virtual void adaptive_for_WandP_evolution(double t_current, double t_end, double maxKW,
+                                            double &dt_result,
+                                            double &maxV_result, double &maxD_result,
+                                            double &PtoCFLratio);
 };
 
 } // end of namespace pism

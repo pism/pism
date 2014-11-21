@@ -60,44 +60,36 @@ PetscErrorCode PSSimple::allocate_PSSimple() {
 }
 
 
-PetscErrorCode PSSimple::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PSSimple::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
-  ierr = atmosphere->init(vars); CHKERRQ(ierr);
+  atmosphere->init(vars);
 
-  ierr = verbPrintf(2, grid.com,
-     "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
-     "  It passes atmospheric state directly to upper ice fluid surface:\n"
-     "    surface mass balance          := precipitation,\n"
-     "    ice upper surface temperature := 2m air temperature.\n");
-     CHKERRQ(ierr);
- 
-  return 0;
+  verbPrintf(2, grid.com,
+             "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
+             "  It passes atmospheric state directly to upper ice fluid surface:\n"
+             "    surface mass balance          := precipitation,\n"
+             "    ice upper surface temperature := 2m air temperature.\n");
 }
 
-PetscErrorCode PSSimple::update(double my_t, double my_dt)
-{
+void PSSimple::update(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
   if (atmosphere) {
-    PetscErrorCode ierr = atmosphere->update(my_t, my_dt); CHKERRQ(ierr);
+    atmosphere->update(my_t, my_dt);
   }
-  return 0;
 }
 
 
-PetscErrorCode PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = atmosphere->mean_precipitation(result); CHKERRQ(ierr);
-  ierr = result.scale(config.get("ice_density")); // convert from m/s ice equivalent to kg m-2 s-1
-  return 0;
+void PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
+  atmosphere->mean_precipitation(result);
+  result.scale(config.get("ice_density"));
 }
 
-PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
-  return 0;
+void PSSimple::ice_surface_temperature(IceModelVec2S &result) {
+  atmosphere->mean_annual_temp(result);
 }
 
 void PSSimple::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -109,53 +101,47 @@ void PSSimple::add_vars_to_output(const std::string &keyword, std::set<std::stri
   }
 }
 
-PetscErrorCode PSSimple::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
+void PSSimple::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
 
   if (set_contains(vars, "ice_surface_temp")) {
-    ierr = ice_surface_temp.define(nc, nctype, true); CHKERRQ(ierr);
+    ice_surface_temp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
-    ierr = climatic_mass_balance.define(nc, nctype, true); CHKERRQ(ierr);
+    climatic_mass_balance.define(nc, nctype, true);
   }
 
-  ierr = SurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
-
-  return 0;
+  SurfaceModel::define_variables(vars, nc, nctype);
 }
 
-PetscErrorCode PSSimple::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
+void PSSimple::write_variables(const std::set<std::string> &vars_input, const PIO &nc) {
   std::set<std::string> vars = vars_input;
-  PetscErrorCode ierr;
 
   if (set_contains(vars, "ice_surface_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "ice_surface_temp", WITHOUT_GHOSTS);
     tmp.metadata() = ice_surface_temp;
 
-    ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
+    ice_surface_temperature(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("ice_surface_temp");
   }
 
   if (set_contains(vars, "climatic_mass_balance")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "climatic_mass_balance", WITHOUT_GHOSTS);
     tmp.metadata() = climatic_mass_balance;
 
-    ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
+    ice_surface_mass_flux(tmp);
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
 
     vars.erase("climatic_mass_balance");
   }
 
-  ierr = SurfaceModel::write_variables(vars, nc); CHKERRQ(ierr);
-
-  return 0;
+  SurfaceModel::write_variables(vars, nc);
 }
 
 } // end of namespace pism

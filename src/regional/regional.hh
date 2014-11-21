@@ -37,8 +37,8 @@ public:
   SIAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c)
     : SIAFD(g, e, c) {}
   virtual ~SIAFD_Regional() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual void init(Vars &vars);
+  virtual void compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 protected:
   IceModelVec2Int *no_model_mask;
   IceModelVec2S   *usurfstore;   
@@ -51,8 +51,8 @@ class SSAFD_Regional : public SSAFD
 public:
   SSAFD_Regional(IceGrid &g, EnthalpyConverter &e, const Config &c);
   virtual ~SSAFD_Regional();
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
+  virtual void init(Vars &vars);
+  virtual void compute_driving_stress(IceModelVec2V &taud);
 protected:
   IceModelVec2Int *no_model_mask;    
   IceModelVec2S   *usurfstore, *thkstore;
@@ -64,8 +64,8 @@ public:
   RegionalDefaultYieldStress(IceGrid &g, const Config &conf, Hydrology *hydro)
     : MohrCoulombYieldStress(g, conf, hydro) {}
   virtual ~RegionalDefaultYieldStress() {}
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
+  virtual void init(Vars &vars);
+  virtual void basal_material_yield_stress(IceModelVec2S &result);
 protected:
   IceModelVec2Int *no_model_mask;
 };

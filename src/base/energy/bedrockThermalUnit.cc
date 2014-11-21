@@ -140,8 +140,7 @@ PetscErrorCode BedThermalUnit::allocate() {
 
 
 //! \brief Initialize the bedrock thermal unit.
-PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
-  PetscErrorCode ierr;
+void BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
   grid_info g;
 
   // first assume that we don't need to bootstrap
@@ -152,8 +151,8 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2,grid.com,
-      "* Initializing the bedrock thermal unit... setting constants...\n"); CHKERRQ(ierr);
+  verbPrintf(2,grid.com,
+             "* Initializing the bedrock thermal unit... setting constants...\n");
 
   // Get pointers to fields owned by IceModel.
   bedtoptemp = vars.get_2d_scalar("bedtoptemp");
@@ -161,10 +160,9 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
 
   // If we're using a minimal model, then we're done:
   if (!temp.was_created()) {
-    ierr = verbPrintf(2,grid.com,
-      "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
-      CHKERRQ(ierr);
-      return 0;
+    verbPrintf(2,grid.com,
+               "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
+    return;
   }
 
   if (m_input_file.empty() == false) {
@@ -175,21 +173,19 @@ PetscErrorCode BedThermalUnit::init(Vars &vars, bool &bootstrapping_needed) {
 
     if (exists) {
       const unsigned int last_record = nc.inq_nrecords("litho_temp", "") - 1;
-      ierr = temp.read(m_input_file, last_record); CHKERRQ(ierr);
+      temp.read(m_input_file, last_record);
     }
 
     nc.close();
   }
 
   if (temp.was_created() == true) {
-    ierr = regrid("BedThermalUnit", &temp, REGRID_WITHOUT_REGRID_VARS); CHKERRQ(ierr);
+    regrid("BedThermalUnit", &temp, REGRID_WITHOUT_REGRID_VARS);
   }
 
   if (temp.get_state_counter() == temp_revision) {
     bootstrapping_needed = true;
   }
-
-  return 0;
 }
 
 /** Returns the vertical spacing used by the bedrock grid.
@@ -212,25 +208,21 @@ void BedThermalUnit::add_vars_to_output(const std::string &/*keyword*/, std::set
   }
 }
 
-PetscErrorCode BedThermalUnit::define_variables(const std::set<std::string> &vars,
+void BedThermalUnit::define_variables(const std::set<std::string> &vars,
                                                 const PIO &nc, IO_Type nctype) {
   if (temp.was_created()) {
-    PetscErrorCode ierr;
     if (set_contains(vars, temp.metadata().get_string("short_name"))) {
-      ierr = temp.define(nc, nctype); CHKERRQ(ierr);
+      temp.define(nc, nctype);
     }
   }
-  return 0;
 }
 
-PetscErrorCode BedThermalUnit::write_variables(const std::set<std::string> &vars, const PIO &nc) {
+void BedThermalUnit::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (temp.was_created()) {
-    PetscErrorCode ierr;
     if (set_contains(vars, temp.metadata().get_string("short_name"))) {
-      ierr = temp.write(nc); CHKERRQ(ierr); 
+      temp.write(nc); 
     }
   }
-  return 0;
 }
 
 
@@ -249,7 +241,7 @@ This is a formula for the maximum stable timestep.  For more, see [\ref MortonMa
 
 The above describes the general case where Mbz > 1.
  */
-PetscErrorCode BedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
+void BedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool &restrict) {
 
   if (temp.was_created()) {
     double dzb = this->get_vertical_spacing();
@@ -259,7 +251,6 @@ PetscErrorCode BedThermalUnit::max_timestep(double /*my_t*/, double &my_dt, bool
     my_dt = 0;
     restrict = false;
   }
-  return 0;
 }
 
 
@@ -275,18 +266,17 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 
 FIXME:  now a trapezoid rule could be used
 */
-PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
-  PetscErrorCode ierr;
+void BedThermalUnit::update(double my_t, double my_dt) {
 
   if (temp.was_created() == false) {
-    return 0;  // in this case we are up to date
+    return;  // in this case we are up to date
   }
 
   // as a derived class of Component_TS, has t,dt members which keep track
   // of last update time-interval; so we do some checks ...
   // CHECK: has the desired time-interval already been dealt with?
   if ((fabs(my_t - m_t) < 1e-12) && (fabs(my_dt - m_dt) < 1e-12)) {
-    return 0;
+    return;
   }
 
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
@@ -316,7 +306,7 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
   // CHECK: is desired time-step too long?
   double my_max_dt;
   bool restrict_dt;
-  ierr = max_timestep(my_t, my_max_dt, restrict_dt); CHKERRQ(ierr);
+  max_timestep(my_t, my_max_dt, restrict_dt);
   if (restrict_dt && my_max_dt < my_dt) {
      throw RuntimeError("BedThermalUnit::update() thinks you asked for too big a timestep.");
   }
@@ -334,7 +324,7 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
 #if (PISM_DEBUG==1)
   for (unsigned int k = 0; k < m_Mbz; k++) { // working upward from base
     const double  z = - m_Lbz + (double)k * dzb;
-    ierr = temp.isLegalLevel(z); CHKERRQ(ierr);
+    temp.isLegalLevel(z);
   }
 #endif
 
@@ -351,7 +341,7 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = temp.getInternalColumn(i,j,&Tbold); CHKERRQ(ierr); // Tbold actually points into temp memory
+    temp.getInternalColumn(i,j,&Tbold); // Tbold actually points into temp memory
     Tbold[k0] = (*bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
     const double Tbold_negone = Tbold[1] + 2 * (*ghf)(i,j) * dzb / bed_k;
@@ -361,10 +351,8 @@ PetscErrorCode BedThermalUnit::update(double my_t, double my_dt) {
     }
     Tbnew[k0] = (*bedtoptemp)(i,j);
 
-    ierr = temp.setInternalColumn(i,j,&Tbnew[0]); CHKERRQ(ierr); // copy from Tbnew into temp memory
+    temp.setInternalColumn(i,j,&Tbnew[0]); // copy from Tbnew into temp memory
   }
-
-  return 0;
 }
 
 
@@ -379,12 +367,11 @@ The above expression only makes sense when `Mbz` = `temp.n_levels` >= 3.
 When `Mbz` = 2 we use first-order differencing.  When temp was not created,
 the `Mbz` <= 1 cases, we return the stored geothermal flux.
  */
-PetscErrorCode BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
+void BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
 
   if (!temp.was_created()) {
     result.copy_from(*ghf);
-    return 0;
+    return;
   }
 
   double dzb = this->get_vertical_spacing();
@@ -399,28 +386,24 @@ PetscErrorCode BedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result)
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+    temp.getInternalColumn(i,j,&Tb);
     if (m_Mbz >= 3) {
       result(i,j) = - bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
     } else {
       result(i,j) = - bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
     }
   }
-
-  return 0;
 }
 
-PetscErrorCode BedThermalUnit::bootstrap() {
-  PetscErrorCode ierr;
+void BedThermalUnit::bootstrap() {
 
   if (m_Mbz < 2) {
-    return 0;
+    return;
   }
 
-  ierr = verbPrintf(2,grid.com,
-                    "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
-                    "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
-  CHKERRQ(ierr);
+  verbPrintf(2,grid.com,
+             "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
+             "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
 
   double* Tb;
   double dzb = this->get_vertical_spacing();
@@ -433,7 +416,7 @@ PetscErrorCode BedThermalUnit::bootstrap() {
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr); // Tb points into temp memory
+    temp.getInternalColumn(i,j,&Tb); // Tb points into temp memory
     Tb[k0] = (*bedtoptemp)(i,j);
     for (int k = k0-1; k >= 0; k--) {
       Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / bed_k;
@@ -441,8 +424,6 @@ PetscErrorCode BedThermalUnit::bootstrap() {
   }
 
   temp.inc_state_counter();     // mark as modified
-
-  return 0;
 }
 
 

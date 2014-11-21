@@ -59,42 +59,37 @@ PetscErrorCode POConstantPIK::allocate_POConstantPIK() {
   return 0;
 }
 
-PetscErrorCode POConstantPIK::init(Vars &vars) {
-  PetscErrorCode ierr;
+void POConstantPIK::init(Vars &vars) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the constant (PIK) ocean model...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the constant (PIK) ocean model...\n");
 
   ice_thickness = vars.get_2d_scalar("land_ice_thickness");
 
   double meltfactor_pik = meltfactor;
   bool meltfactorSet = false;
 
-  ierr = OptionsReal("-meltfactor_pik",
-                     "Use as a melt factor as in sub-shelf-melting parameterization of [@ref Martinetal2011]",
-                     meltfactor_pik, meltfactorSet); CHKERRQ(ierr);
+  OptionsReal("-meltfactor_pik",
+              "Use as a melt factor as in sub-shelf-melting parameterization of [@ref Martinetal2011]",
+              meltfactor_pik, meltfactorSet);
 
   if (meltfactorSet) {
     meltfactor = meltfactor_pik;
   }
-
-  return 0;
 }
 
-PetscErrorCode POConstantPIK::update(double my_t, double my_dt) {
+void POConstantPIK::update(double my_t, double my_dt) {
   m_t = my_t;
   m_dt = my_dt;
-  return 0;
 }
 
-PetscErrorCode POConstantPIK::sea_level_elevation(double &result) {
+void POConstantPIK::sea_level_elevation(double &result) {
   result = sea_level;
-  return 0;
 }
 
-PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
+void POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
   const double
     T0          = config.get("water_melting_point_temperature"), // K
     beta_CC     = config.get("beta_CC"),
@@ -110,15 +105,13 @@ PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
     // temp is set to melting point at depth
     result(i,j) = T0 - beta_CC * pressure;
   }
-
-  return 0;
 }
 
 //! \brief Computes mass flux in [kg m-2 s-1].
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
+void POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   const double
     L                 = config.get("water_latent_heat_fusion"),
     sea_water_density = config.get("sea_water_density"),
@@ -159,8 +152,6 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
     // convert from [m s-1] to [kg m-2 s-1]:
     result(i,j) *= ice_density;
   }
-
-  return 0;
 }
 
 void POConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -170,47 +161,40 @@ void POConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std:
   }
 }
 
-PetscErrorCode POConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void POConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                                IO_Type nctype) {
-  PetscErrorCode ierr;
-
   if (set_contains(vars, "shelfbtemp")) {
-    ierr = shelfbtemp.define(nc, nctype, true); CHKERRQ(ierr);
+    shelfbtemp.define(nc, nctype, true);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
-    ierr = shelfbmassflux.define(nc, nctype, true); CHKERRQ(ierr);
+    shelfbmassflux.define(nc, nctype, true);
   }
-
-  return 0;
 }
 
-PetscErrorCode POConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
+void POConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   IceModelVec2S tmp;
 
   if (set_contains(vars, "shelfbtemp")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbtemp;
-    ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    shelf_base_temperature(tmp);
+    tmp.write(nc);
   }
 
   if (set_contains(vars, "shelfbmassflux")) {
     if (!tmp.was_created()) {
-      ierr = tmp.create(grid, "tmp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+      tmp.create(grid, "tmp", WITHOUT_GHOSTS);
     }
 
     tmp.metadata() = shelfbmassflux;
     tmp.write_in_glaciological_units = true;
-    ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    shelf_base_mass_flux(tmp);
+    tmp.write(nc);
   }
-
-  return 0;
 }
 
 } // end of namespace pism

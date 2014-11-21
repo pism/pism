@@ -42,16 +42,15 @@ static double triangle_area(double *A, double *B, double *C) {
                   PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
 }
 
-PetscErrorCode IceModel::compute_cell_areas() {
-  PetscErrorCode ierr;
+void IceModel::compute_cell_areas() {
   projPJ pism, lonlat, geocent;
 
   if (config.get_flag("correct_cell_areas") == false ||
       global_attributes.has_attribute("proj4") == false) {
 
-    ierr = cell_area.set(grid.dx * grid.dy); CHKERRQ(ierr);
+    cell_area.set(grid.dx * grid.dy);
 
-    return 0;
+    return;
   }
 
   std::string proj_string = global_attributes.get_string("proj4");
@@ -74,9 +73,9 @@ PetscErrorCode IceModel::compute_cell_areas() {
                                   proj_string.c_str());
   }
 
-  ierr = verbPrintf(2,grid.com,
-                    "* Computing cell areas, latitude and longitude\n"
-                    "  using projection parameters...\n"); CHKERRQ(ierr);
+  verbPrintf(2,grid.com,
+             "* Computing cell areas, latitude and longitude\n"
+             "  using projection parameters...\n");
 
 // Cell layout:
 // (nw)        (ne)
@@ -133,17 +132,15 @@ PetscErrorCode IceModel::compute_cell_areas() {
   pj_free(pism);
   pj_free(lonlat);
   pj_free(geocent);
-
-  return 0;
 }
 
 #elif (PISM_USE_PROJ4==0)      // no proj.4
 
-PetscErrorCode IceModel::compute_cell_areas() {
+void IceModel::compute_cell_areas() {
   PetscErrorCode ierr;
 
   // proj.4 was not found; use uncorrected areas.
-  ierr = cell_area.set(grid.dx * grid.dy); CHKERRQ(ierr);
+  cell_area.set(grid.dx * grid.dy);
 
   return 0;
 }

@@ -43,8 +43,7 @@ namespace pism {
   Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
   do_cold_ice_methods == true.
 */
-PetscErrorCode IceModel::energyStep() {
-  PetscErrorCode  ierr;
+void IceModel::energyStep() {
 
   double  myCFLviolcount = 0.0,   // these are counts but they are type "double"
     myVertSacrCount = 0.0,  //   because that type works with GlobalSum()
@@ -52,53 +51,52 @@ PetscErrorCode IceModel::energyStep() {
   double gVertSacrCount, gBulgeCount;
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
-  ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
+  countCFLViolations(&myCFLviolcount);
 
   // operator-splitting occurs here (ice and bedrock energy updates are split):
   //   tell BedThermalUnit* btu that we have an ice base temp; it will return
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
-  ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+  get_bed_top_temp(bedtoptemp);
 
   grid.profiling.begin("BTU");
-  ierr = btu->update(t_TempAge, dt_TempAge); CHKERRQ(ierr);  // has ptr to bedtoptemp
+  btu->update(t_TempAge, dt_TempAge);  // has ptr to bedtoptemp
   grid.profiling.end("BTU");
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
     grid.profiling.begin("temp step");
-    ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);
+    temperatureStep(&myVertSacrCount,&myBulgeCount);
     grid.profiling.end("temp step");
 
-    ierr = vWork3d.update_ghosts(T3); CHKERRQ(ierr);
+    vWork3d.update_ghosts(T3);
 
     // compute_enthalpy_cold() updates ghosts of Enth3 using
     // update_ghosts(). Is not optimized because this
     // (do_cold_ice_methods) is a rare case.
-    ierr = compute_enthalpy_cold(T3, Enth3);  CHKERRQ(ierr);
+    compute_enthalpy_cold(T3, Enth3);
 
   } else {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     double myLiquifiedVol = 0.0, gLiquifiedVol;
 
     grid.profiling.begin("enth step");
-    ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
-    CHKERRQ(ierr);
+    enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
     grid.profiling.end("enth step");
 
-    ierr = vWork3d.update_ghosts(Enth3); CHKERRQ(ierr);
+    vWork3d.update_ghosts(Enth3);
 
-    ierr = GlobalSum(grid.com, &myLiquifiedVol,  &gLiquifiedVol); CHKERRQ(ierr);
+    GlobalSum(grid.com, &myLiquifiedVol,  &gLiquifiedVol);
     if (gLiquifiedVol > 0.0) {
-      ierr = verbPrintf(1,grid.com,
-                        "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
-                        gLiquifiedVol / 1.0e9); CHKERRQ(ierr);
+      verbPrintf(1,grid.com,
+                 "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
+                 gLiquifiedVol / 1.0e9);
     }
   }
 
-  ierr = GlobalSum(grid.com, &myCFLviolcount,  &CFLviolcount); CHKERRQ(ierr);
+  GlobalSum(grid.com, &myCFLviolcount,  &CFLviolcount);
 
-  ierr = GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount); CHKERRQ(ierr);
+  GlobalSum(grid.com, &myVertSacrCount,  &gVertSacrCount);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const double bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const double BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
@@ -110,15 +108,13 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
-  ierr = GlobalSum(grid.com, &myBulgeCount,  &gBulgeCount); CHKERRQ(ierr);
+  GlobalSum(grid.com, &myBulgeCount,  &gBulgeCount);
   if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
                              //    frequently it is identically zero
     char tempstr[50] = "";
     snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)));
     stdout_flags = tempstr + stdout_flags;
   }
-
-  return 0;
 }
 
 //! @brief Combine basal melt rate in grounded and floating areas.
@@ -133,11 +129,10 @@ PetscErrorCode IceModel::energyStep() {
  * The sub shelf mass flux provided by an ocean model is in [kg m-2
  * s-1], so we divide by the ice density to convert to [m/s].
  */
-PetscErrorCode IceModel::combine_basal_melt_rate() {
-  PetscErrorCode ierr;
+void IceModel::combine_basal_melt_rate() {
 
   assert(ocean != NULL);
-  ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+  ocean->shelf_base_mass_flux(shelfbmassflux);
 
   const bool sub_gl = config.get_flag("sub_groundingline");
 
@@ -173,14 +168,11 @@ PetscErrorCode IceModel::combine_basal_melt_rate() {
     }
     basal_melt_rate(i,j) = lambda * M_grounded + (1.0 - lambda) * M_shelf_base;
   }
-
-  return 0;
 }
 
 //! \brief Extract from enthalpy field (Enth3) the temperature which the top of
 //! the bedrock thermal layer will see.
-PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
-  PetscErrorCode  ierr;
+void IceModel::get_bed_top_temp(IceModelVec2S &result) {
   double sea_level = 0,
     T0 = config.get("water_melting_point_temperature"),
     beta_CC_grad_sea_water = (config.get("beta_CC") * config.get("sea_water_density") *
@@ -188,13 +180,13 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   // will need coupler fields in ice-free land and
   assert(surface != NULL);
-  ierr = surface->ice_surface_temperature(ice_surface_temp); CHKERRQ(ierr);
+  surface->ice_surface_temperature(ice_surface_temp);
 
   assert(ocean != NULL);
-  ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  ocean->sea_level_elevation(sea_level);
 
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
-  ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+  Enth3.getHorSlice(result, 0.0);
 
   MaskQuery mask(vMask);
 
@@ -218,8 +210,6 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
       result(i,j) = T0 - (sea_level - bed_topography(i,j)) * beta_CC_grad_sea_water;
     }
   }
-
-  return 0;
 }
 
 

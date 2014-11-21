@@ -33,16 +33,16 @@ public:
   ~PSVerification();
 
   // the interface:
-  PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(PetscReal t, PetscReal dt);
+  void init(Vars &vars);
+  void update(PetscReal t, PetscReal dt);
 private:
   int m_testname;
   EnthalpyConverter *m_EC;
-  PetscErrorCode update_ABCDEH(double t);
-  PetscErrorCode update_FG(double t);
-  PetscErrorCode update_KO();
-  PetscErrorCode update_L();
-  PetscErrorCode update_V();
+  void update_ABCDEH(double t);
+  void update_FG(double t);
+  void update_KO();
+  void update_L();
+  void update_V();
 
   // FIXME: get rid of code duplication (these constants are defined
   // both here and in IceCompModel).

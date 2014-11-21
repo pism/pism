@@ -64,52 +64,38 @@ PetscErrorCode PAConstantPIK::allocate_PAConstantPIK() {
   return 0;
 }
 
-PetscErrorCode PAConstantPIK::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = precipitation.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PAConstantPIK::mean_precipitation(IceModelVec2S &result) {
+  precipitation.copy_to(result);
 }
 
-PetscErrorCode PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = air_temp.copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PAConstantPIK::mean_annual_temp(IceModelVec2S &result) {
+  air_temp.copy_to(result);
 }
 
-PetscErrorCode PAConstantPIK::begin_pointwise_access() {
-  PetscErrorCode ierr;
-  ierr = precipitation.begin_access(); CHKERRQ(ierr);
-  ierr = air_temp.begin_access(); CHKERRQ(ierr);
-  return 0;
+void PAConstantPIK::begin_pointwise_access() {
+  precipitation.begin_access();
+  air_temp.begin_access();
 }
 
-PetscErrorCode PAConstantPIK::end_pointwise_access() {
-  PetscErrorCode ierr;
-  ierr = precipitation.end_access(); CHKERRQ(ierr);
-  ierr = air_temp.end_access(); CHKERRQ(ierr);
-  return 0;
+void PAConstantPIK::end_pointwise_access() {
+  precipitation.end_access();
+  air_temp.end_access();
 }
 
-PetscErrorCode PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
+void PAConstantPIK::temp_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = air_temp(i,j);
   }
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
+void PAConstantPIK::precip_time_series(int i, int j, std::vector<double> &result) {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     result[k] = precipitation(i,j);
   }
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = mean_annual_temp(result); CHKERRQ(ierr);
-
-  return 0;
+void PAConstantPIK::temp_snapshot(IceModelVec2S &result) {
+  mean_annual_temp(result);
 }
 
 void PAConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {
@@ -121,82 +107,71 @@ void PAConstantPIK::add_vars_to_output(const std::string &keyword, std::set<std:
   }
 }
 
-PetscErrorCode PAConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
+void PAConstantPIK::define_variables(const std::set<std::string> &vars, const PIO &nc,
                                             IO_Type nctype) {
-  PetscErrorCode ierr;
-
   if (set_contains(vars, "air_temp_snapshot")) {
-    ierr = air_temp_snapshot.define(nc, nctype, false); CHKERRQ(ierr);
+    air_temp_snapshot.define(nc, nctype, false);
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.define(nc, nctype); CHKERRQ(ierr);
+    precipitation.define(nc, nctype);
   }
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.define(nc, nctype); CHKERRQ(ierr);
+    air_temp.define(nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
+void PAConstantPIK::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (set_contains(vars, "air_temp_snapshot")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp_snapshot", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "air_temp_snapshot", WITHOUT_GHOSTS);
     tmp.metadata() = air_temp_snapshot;
 
-    ierr = temp_snapshot(tmp); CHKERRQ(ierr);
+    temp_snapshot(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
   }
 
   if (set_contains(vars, "precipitation")) {
-    ierr = precipitation.write(nc); CHKERRQ(ierr);
+    precipitation.write(nc);
   }
 
   if (set_contains(vars, "air_temp")) {
-    ierr = air_temp.write(nc); CHKERRQ(ierr);
+    air_temp.write(nc);
   }
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PAConstantPIK::init(Vars &vars) {
   bool do_regrid = false;
   int start = -1;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-     "* Initializing the constant-in-time atmosphere model PAConstantPIK.\n"
-     "  It reads a precipitation field directly from the file and holds it constant.\n"
-     "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the constant-in-time atmosphere model PAConstantPIK.\n"
+             "  It reads a precipitation field directly from the file and holds it constant.\n"
+             "  Near-surface air temperature is parameterized as in Martin et al. 2011, Eqn. 2.0.2.\n");
 
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, do_regrid, start); CHKERRQ(ierr);
+  find_pism_input(input_file, do_regrid, start);
 
   // read snow precipitation rate and air_temps from file
-  ierr = verbPrintf(2, grid.com,
-                    "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-                    "    from %s ... \n",
-                    input_file.c_str()); CHKERRQ(ierr); 
+  verbPrintf(2, grid.com,
+             "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+             "    from %s ... \n",
+             input_file.c_str());
   if (do_regrid) {
-    ierr = precipitation.regrid(input_file, CRITICAL); CHKERRQ(ierr); // fails if not found!
+    precipitation.regrid(input_file, CRITICAL);
   } else {
-    ierr = precipitation.read(input_file, start); CHKERRQ(ierr); // fails if not found!
+    precipitation.read(input_file, start); // fails if not found!
   }
 
   usurf = vars.get_2d_scalar("surface_altitude");
   lat   = vars.get_2d_scalar("latitude");
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::update(double, double) {
+void PAConstantPIK::update(double, double) {
   // Compute near-surface air temperature using a latitude- and
   // elevation-dependent parameterization:
 
@@ -209,13 +184,10 @@ PetscErrorCode PAConstantPIK::update(double, double) {
 
     air_temp(i, j) = 273.15 + 30 - 0.0075 * (*usurf)(i,j) - 0.68775 * (*lat)(i,j)*(-1.0) ;
   }
-
-  return 0;
 }
 
-PetscErrorCode PAConstantPIK::init_timeseries(const std::vector<double> &ts) {
+void PAConstantPIK::init_timeseries(const std::vector<double> &ts) {
   m_ts_times = ts;
-  return 0;
 }
 
 

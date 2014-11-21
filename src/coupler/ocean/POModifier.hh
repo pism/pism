@@ -30,28 +30,24 @@ public:
     : Modifier<OceanModel>(g, conf, in) {}
   virtual ~POModifier() {}
 
-  virtual PetscErrorCode sea_level_elevation(double &result)
+  virtual void sea_level_elevation(double &result)
   {
-    PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
-    return 0;
+    input_model->sea_level_elevation(result);
   }
 
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result)
+  virtual void shelf_base_temperature(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->shelf_base_temperature(result); CHKERRQ(ierr);
-    return 0;
+    input_model->shelf_base_temperature(result);
   }
 
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result)
+  virtual void shelf_base_mass_flux(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
-    return 0;
+    input_model->shelf_base_mass_flux(result);
   }
 
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result)
+  virtual void melange_back_pressure_fraction(IceModelVec2S &result)
   {
-    PetscErrorCode ierr = input_model->melange_back_pressure_fraction(result); CHKERRQ(ierr);
-    return 0;
+    input_model->melange_back_pressure_fraction(result);
   }
 };
 

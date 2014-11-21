@@ -30,22 +30,22 @@ class EigenCalving : public Component
 {
 public:
   EigenCalving(IceGrid &g, const Config &conf,
-                   StressBalance *stress_balance);
+               StressBalance *stress_balance);
   virtual ~EigenCalving();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double dt,
-                                IceModelVec2Int &pism_mask,
-                                IceModelVec2S &Href,
-                                IceModelVec2S &ice_thickness);
+  virtual void init(Vars &vars);
+  virtual void update(double dt,
+                      IceModelVec2Int &pism_mask,
+                      IceModelVec2S &Href,
+                      IceModelVec2S &ice_thickness);
 
-  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
+  virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
 
   // empty methods that we're required to implement:
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
-                                          IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
+                                IO_Type nctype);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
 protected:
   IceModelVec2 m_strain_rates;
   IceModelVec2S m_thk_loss;
@@ -55,9 +55,9 @@ protected:
   double m_K;
   bool m_restrict_timestep;
 
-  PetscErrorCode update_strain_rates();
-  PetscErrorCode remove_narrow_tongues(IceModelVec2Int &pism_mask,
-                                       IceModelVec2S &ice_thickness);
+  void update_strain_rates();
+  void remove_narrow_tongues(IceModelVec2Int &pism_mask,
+                             IceModelVec2S &ice_thickness);
 };
 
 

@@ -45,10 +45,10 @@ PetscErrorCode POGiven::allocate_POGiven() {
   m_fields["shelfbtemp"]     = shelfbtemp;
   m_fields["shelfbmassflux"] = shelfbmassflux;
 
-  ierr = process_options(); CHKERRQ(ierr);
+  process_options();
 
   std::map<std::string, std::string> standard_names;
-  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
+  set_vec_parameters(standard_names);
 
   ierr = shelfbtemp->create(grid, "shelfbtemp", false); CHKERRQ(ierr);
   ierr = shelfbmassflux->create(grid, "shelfbmassflux", false); CHKERRQ(ierr);
@@ -65,54 +65,45 @@ PetscErrorCode POGiven::allocate_POGiven() {
   return 0;
 }
 
-PetscErrorCode POGiven::init(Vars &) {
-  PetscErrorCode ierr;
+void POGiven::init(Vars &) {
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the ocean model reading base of the shelf temperature\n"
-                    "  and sub-shelf mass flux from a file...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the ocean model reading base of the shelf temperature\n"
+             "  and sub-shelf mass flux from a file...\n");
 
-  ierr = shelfbtemp->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = shelfbmassflux->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  shelfbtemp->init(filename, bc_period, bc_reference_time);
+  shelfbmassflux->init(filename, bc_period, bc_reference_time);
 
   // read time-independent data right away:
   if (shelfbtemp->get_n_records() == 1 && shelfbmassflux->get_n_records() == 1) {
-    ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
+    update(grid.time->current(), 0); // dt is irrelevant
   }
-
-  return 0;
 }
 
-PetscErrorCode POGiven::update(double my_t, double my_dt) {
-  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
+void POGiven::update(double my_t, double my_dt) {
+  update_internal(my_t, my_dt);
 
-  ierr = shelfbmassflux->average(m_t, m_dt); CHKERRQ(ierr);
-  ierr = shelfbtemp->average(m_t, m_dt); CHKERRQ(ierr);
-
-  return 0;
+  shelfbmassflux->average(m_t, m_dt);
+  shelfbtemp->average(m_t, m_dt);
 }
 
-PetscErrorCode POGiven::sea_level_elevation(double &result) {
+void POGiven::sea_level_elevation(double &result) {
   result = sea_level;
-  return 0;
 }
 
-PetscErrorCode POGiven::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbtemp->copy_to(result); CHKERRQ(ierr);
-  return 0;
+void POGiven::shelf_base_temperature(IceModelVec2S &result) {
+  shelfbtemp->copy_to(result);
 }
 
 
-PetscErrorCode POGiven::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr = shelfbmassflux->copy_to(result); CHKERRQ(ierr);
-  return 0;
+void POGiven::shelf_base_mass_flux(IceModelVec2S &result) {
+  shelfbmassflux->copy_to(result);
 }
 
-PetscErrorCode POGiven::melange_back_pressure_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
-  return 0;
+void POGiven::melange_back_pressure_fraction(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
 } // end of namespace pism

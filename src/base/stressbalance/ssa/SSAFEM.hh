@@ -92,31 +92,30 @@ public:
 
   virtual ~SSAFEM();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
-  virtual PetscErrorCode cacheQuadPtValues();
+  virtual void cacheQuadPtValues();
 
+private:
+  PetscErrorCode allocate_fem();
+  PetscErrorCode deallocate_fem();
 protected:
 
-  virtual PetscErrorCode PointwiseNuHAndBeta(const SSACoefficients &,
+  virtual void PointwiseNuHAndBeta(const SSACoefficients &,
                                              const Vector2 &, const double[],
                                              double *,double *,double *,double *);
 
-  virtual PetscErrorCode allocate_fem();
+  virtual void compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
 
-  virtual PetscErrorCode deallocate_fem();
-
-  virtual PetscErrorCode compute_local_function(DMDALocalInfo *info, const Vector2 **xg, Vector2 **yg);
-
-  virtual PetscErrorCode compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
+  virtual void compute_local_jacobian(DMDALocalInfo *info, const Vector2 **xg, Mat J);
 
   virtual void solve();
 
-  virtual PetscErrorCode solve(TerminationReason::Ptr &reason);
+  virtual void solve(TerminationReason::Ptr &reason);
 
-  virtual PetscErrorCode solve_nocache(TerminationReason::Ptr &reason);
+  virtual void solve_nocache(TerminationReason::Ptr &reason);
   
-  virtual PetscErrorCode setFromOptions();
+  virtual void setFromOptions();
 
 
   // objects used internally
@@ -136,9 +135,9 @@ protected:
   FEDOFMap m_dofmap;
 
 private:
-  PetscErrorCode monitor_jacobian(Mat Jac);
-  PetscErrorCode monitor_function(const Vector2 **velocity_global,
-                                  Vector2 **residual_global);
+  void monitor_jacobian(Mat Jac);
+  void monitor_function(const Vector2 **velocity_global,
+                        Vector2 **residual_global);
 };
 
 

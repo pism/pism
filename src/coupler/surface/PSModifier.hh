@@ -47,44 +47,39 @@ public:
     }
   }
 
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result)
+  virtual void ice_surface_mass_flux(IceModelVec2S &result)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
+      input_model->ice_surface_mass_flux(result);
     }
-    return 0;
   }
 
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result)
+  virtual void ice_surface_temperature(IceModelVec2S &result)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
+      input_model->ice_surface_temperature(result);
     }
-    return 0;
   }
 
-  virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result)
+  virtual void ice_surface_liquid_water_fraction(IceModelVec2S &result)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->ice_surface_liquid_water_fraction(result); CHKERRQ(ierr);
+      input_model->ice_surface_liquid_water_fraction(result);
     }
-    return 0;
   }
 
-  virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result)
+  virtual void mass_held_in_surface_layer(IceModelVec2S &result)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->mass_held_in_surface_layer(result); CHKERRQ(ierr);
+      input_model->mass_held_in_surface_layer(result);
     }
-    return 0;
   }
 
-  virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result)
+  virtual void surface_layer_thickness(IceModelVec2S &result)
   {
     if (input_model != NULL) {
-      PetscErrorCode ierr = input_model->surface_layer_thickness(result); CHKERRQ(ierr);
+      input_model->surface_layer_thickness(result);
     }
-    return 0;
   }
 };
 

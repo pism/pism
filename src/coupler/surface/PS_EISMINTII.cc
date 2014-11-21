@@ -35,18 +35,14 @@ PS_EISMINTII::~PS_EISMINTII() {
   // empty
 }
 
-PetscErrorCode PS_EISMINTII::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PS_EISMINTII::init(Vars &vars) {
 
   (void) vars;
 
-  ierr = PetscOptionsBegin(grid.com, "", "EISMINT II climate input options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
-
-  ierr = verbPrintf(2, grid.com, 
-                    "setting parameters for surface mass balance"
-                    " and temperature in EISMINT II experiment %c ... \n", 
-                    m_experiment); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, 
+             "setting parameters for surface mass balance"
+             " and temperature in EISMINT II experiment %c ... \n", 
+             m_experiment);
 
   // EISMINT II specified values for parameters
   m_S_b = grid.convert(1.0e-2 * 1e-3, "1/year", "1/s"); // Grad of accum rate change
@@ -78,7 +74,7 @@ PetscErrorCode PS_EISMINTII::init(Vars &vars) {
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
   bool option_set = false;
-  ierr = OptionsReal("-Tmin", "T min, Kelvin", m_T_min, option_set); CHKERRQ(ierr);
+  OptionsReal("-Tmin", "T min, Kelvin", m_T_min, option_set);
 
   double
     myMmax = grid.convert(m_M_max, "m/s",        "m/year"),
@@ -86,40 +82,34 @@ PetscErrorCode PS_EISMINTII::init(Vars &vars) {
     myST   = grid.convert(m_S_T,   "K/m",        "K/km"),
     myRel  = grid.convert(m_R_el,  "m",          "km");
 
-  ierr = OptionsReal("-Mmax", "Maximum accumulation, m/year",
-                         myMmax, option_set); CHKERRQ(ierr);
+  OptionsReal("-Mmax", "Maximum accumulation, m/year",
+              myMmax, option_set);
   if (option_set) {
     m_M_max = grid.convert(myMmax, "m/year", "m/second");
   }
 
-  ierr = OptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
-                         mySb, option_set); CHKERRQ(ierr);
+  OptionsReal("-Sb", "radial gradient of accumulation rate, (m/year)/km",
+              mySb, option_set);
   if (option_set) {
     m_S_b = grid.convert(mySb, "m/year/km", "m/second/m");
   }
 
-  ierr = OptionsReal("-ST", "radial gradient of surface temperature, K/km",
-                         myST, option_set); CHKERRQ(ierr);
+  OptionsReal("-ST", "radial gradient of surface temperature, K/km",
+              myST, option_set);
   if (option_set) {
     m_S_T = grid.convert(myST, "K/km", "K/m");
   }
 
-  ierr = OptionsReal("-Rel", "radial distance to equilibrium line, km",
-                         myRel, option_set); CHKERRQ(ierr);
+  OptionsReal("-Rel", "radial distance to equilibrium line, km",
+              myRel, option_set);
   if (option_set) {
     m_R_el = grid.convert(myRel, "km", "m");
   }
 
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
-
-  ierr = initialize_using_formulas(); CHKERRQ(ierr);
-
-  return 0;
+  initialize_using_formulas();
 }
 
-PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
-  PetscErrorCode ierr;
+void PS_EISMINTII::initialize_using_formulas() {
 
   PetscScalar cx = grid.Lx, cy = grid.Ly;
   if (m_experiment == 'E') {
@@ -146,18 +136,14 @@ PetscErrorCode PS_EISMINTII::initialize_using_formulas() {
   }
 
   // convert from [m/s] to [kg m-2 s-1]
-  ierr = m_climatic_mass_balance.scale(config.get("ice_density")); CHKERRQ(ierr);
-
-  return 0;
+  m_climatic_mass_balance.scale(config.get("ice_density"));
 }
 
-PetscErrorCode PS_EISMINTII::update(PetscReal t, PetscReal dt) {
+void PS_EISMINTII::update(PetscReal t, PetscReal dt) {
   (void) t;
   (void) dt;
 
   // do nothing (but an implementation is required)
-
-  return 0;
 }
 
 } // end of namespace pism

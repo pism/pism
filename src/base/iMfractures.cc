@@ -30,7 +30,7 @@ namespace pism {
 
 //! \file iMfractures.cc implementing calculation of fracture density with PIK options -fractures.
 
-PetscErrorCode IceModel::calculateFractureDensity() {
+void IceModel::calculateFractureDensity() {
   const double dx = grid.dx, dy = grid.dy, Mx = grid.Mx, My = grid.My;
   PetscErrorCode ierr;
 
@@ -40,9 +40,9 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
   // get SSA velocities and related strain rates and stresses
   IceModelVec2V *ssa_velocity;
-  ierr = stress_balance->get_2D_advective_velocity(ssa_velocity); CHKERRQ(ierr);
-  ierr = stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates);
-  ierr = stress_balance->compute_2D_stresses(*ssa_velocity, vMask, deviatoric_stresses);
+  stress_balance->get_2D_advective_velocity(ssa_velocity);
+  stress_balance->compute_2D_principal_strain_rates(*ssa_velocity, vMask, strain_rates);
+  stress_balance->compute_2D_stresses(*ssa_velocity, vMask, deviatoric_stresses);
 
   IceModelVec::AccessList list;
   list.add(*ssa_velocity);
@@ -51,7 +51,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
 
   list.add(ice_thickness);
   list.add(vFD);
-  ierr = vFD.copy_to(vFDnew); CHKERRQ(ierr);
+  vFD.copy_to(vFDnew);
   list.add(vFDnew);
   list.add(vMask);
 
@@ -68,7 +68,7 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     list.add(vFE);
     list.add(vFT);
     list.add(vFA);
-    ierr = vFA.copy_to(vFAnew); CHKERRQ(ierr);
+    vFA.copy_to(vFAnew);
     list.add(vFAnew);
   }
 
@@ -110,10 +110,10 @@ PetscErrorCode IceModel::calculateFractureDensity() {
     gammaheal     = inarrayf[2],
     healThreshold = inarrayf[3];
 
-  ierr = verbPrintf(3, grid.com,
-                    "PISM-PIK INFO: fracture density is found with parameters:\n"
-                    " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
-                    gamma, initThreshold, gammaheal, healThreshold, soft_residual); CHKERRQ(ierr);
+  verbPrintf(3, grid.com,
+             "PISM-PIK INFO: fracture density is found with parameters:\n"
+             " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
+             gamma, initThreshold, gammaheal, healThreshold, soft_residual);
 
   PetscBool do_fracground;
   ierr = PetscOptionsHasName(NULL,"-do_frac_on_grounded",&do_fracground);
@@ -371,12 +371,10 @@ PetscErrorCode IceModel::calculateFractureDensity() {
   }
 
   if (write_fd) {
-    ierr = vFAnew.update_ghosts(vFA); CHKERRQ(ierr);
+    vFAnew.update_ghosts(vFA);
   }
 
-  ierr = vFDnew.update_ghosts(vFD); CHKERRQ(ierr);
-
-  return 0;
+  vFDnew.update_ghosts(vFD);
 }
 
 } // end of namespace pism

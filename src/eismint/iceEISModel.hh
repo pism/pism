@@ -34,16 +34,16 @@ namespace pism {
 class IceEISModel : public IceModel {
 public:
   IceEISModel(IceGrid &g, Config &config, Config &overrides);
-  virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode allocate_stressbalance();
-  virtual PetscErrorCode allocate_couplers();
-  virtual PetscErrorCode set_grid_defaults();
+  virtual void setFromOptions();
+  virtual void set_vars_from_options();
+  virtual void allocate_stressbalance();
+  virtual void allocate_couplers();
+  virtual void set_grid_defaults();
 protected:
   char m_experiment;
 
-  virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
-  virtual PetscErrorCode generateMoundTopography();   // for experiments K,L
+  virtual void generateTroughTopography();  // for experiments I,J
+  virtual void generateMoundTopography();   // for experiments K,L
 };
 
 } // end of namespace pism

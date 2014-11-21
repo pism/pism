@@ -49,10 +49,10 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
   m_fields["precipitation"] = precipitation;
   m_fields["air_temp"]      = air_temp;
 
-  ierr = process_options(); CHKERRQ(ierr);
+  process_options();
 
   std::map<std::string, std::string> standard_names;
-  ierr = set_vec_parameters(standard_names); CHKERRQ(ierr);
+  set_vec_parameters(standard_names);
 
   ierr = air_temp->create(grid, "air_temp", false); CHKERRQ(ierr);
   ierr = precipitation->create(grid, "precipitation", false); CHKERRQ(ierr);
@@ -67,96 +67,78 @@ PetscErrorCode PAGivenClimate::allocate_PAGivenClimate() {
   return 0;
 }
 
-PetscErrorCode PAGivenClimate::init(Vars &) {
-  PetscErrorCode ierr;
-
+void PAGivenClimate::init(Vars &) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the atmosphere model reading near-surface air temperature\n"
-                    "  and ice-equivalent precipitation from a file...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the atmosphere model reading near-surface air temperature\n"
+             "  and ice-equivalent precipitation from a file...\n");
 
   if (air_temp == NULL || precipitation == NULL) {
-    ierr = allocate_PAGivenClimate(); CHKERRQ(ierr);
+    allocate_PAGivenClimate();
   }
 
-  ierr = air_temp->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
-  ierr = precipitation->init(filename, bc_period, bc_reference_time); CHKERRQ(ierr);
+  air_temp->init(filename, bc_period, bc_reference_time);
+  precipitation->init(filename, bc_period, bc_reference_time);
 
   // read time-independent data right away:
   if (air_temp->get_n_records() == 1 && precipitation->get_n_records() == 1) {
-    ierr = update(grid.time->current(), 0); CHKERRQ(ierr); // dt is irrelevant
+    update(grid.time->current(), 0); // dt is irrelevant
   }
-
-  return 0;
 }
 
-PetscErrorCode PAGivenClimate::update(double my_t, double my_dt) {
-  PetscErrorCode ierr = update_internal(my_t, my_dt); CHKERRQ(ierr);
+void PAGivenClimate::update(double my_t, double my_dt) {
+  update_internal(my_t, my_dt);
 
   // compute mean precipitation
-  ierr = precipitation->average(m_t, m_dt); CHKERRQ(ierr);
+  precipitation->average(m_t, m_dt);
 
   // Average so that the mean_annual_temp() may be reported correctly (at least
   // in the "-surface pdd" case).
-  ierr = air_temp->average(m_t, m_dt); CHKERRQ(ierr);
-
-  return 0;
+  air_temp->average(m_t, m_dt);
 }
 
-PetscErrorCode PAGivenClimate::mean_precipitation(IceModelVec2S &result) {
-  PetscErrorCode ierr = precipitation->copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PAGivenClimate::mean_precipitation(IceModelVec2S &result) {
+  precipitation->copy_to(result);
 }
 
-PetscErrorCode PAGivenClimate::mean_annual_temp(IceModelVec2S &result) {
-  PetscErrorCode ierr = air_temp->copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PAGivenClimate::mean_annual_temp(IceModelVec2S &result) {
+  air_temp->copy_to(result);
 }
 
-PetscErrorCode PAGivenClimate::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr = air_temp->copy_to(result); CHKERRQ(ierr);
-  return 0;
+void PAGivenClimate::temp_snapshot(IceModelVec2S &result) {
+  air_temp->copy_to(result);
 }
 
-PetscErrorCode PAGivenClimate::begin_pointwise_access() {
-  PetscErrorCode ierr = air_temp->begin_access(); CHKERRQ(ierr);
-  ierr = precipitation->begin_access(); CHKERRQ(ierr);
-  return 0;
+void PAGivenClimate::begin_pointwise_access() {
+
+  air_temp->begin_access();
+  precipitation->begin_access();
 }
 
-PetscErrorCode PAGivenClimate::end_pointwise_access() {
-  PetscErrorCode ierr = air_temp->end_access(); CHKERRQ(ierr);
-  ierr = precipitation->end_access(); CHKERRQ(ierr);
-  return 0;
+void PAGivenClimate::end_pointwise_access() {
+
+  air_temp->end_access();
+  precipitation->end_access();
 }
 
-PetscErrorCode PAGivenClimate::temp_time_series(int i, int j, std::vector<double> &result) {
-  PetscErrorCode ierr;
+void PAGivenClimate::temp_time_series(int i, int j, std::vector<double> &result) {
 
-  ierr = air_temp->interp(i, j, result); CHKERRQ(ierr);
-
-  return 0;
+  air_temp->interp(i, j, result);
 }
 
-PetscErrorCode PAGivenClimate::precip_time_series(int i, int j, std::vector<double> &result) {
-  PetscErrorCode ierr;
+void PAGivenClimate::precip_time_series(int i, int j, std::vector<double> &result) {
 
-  ierr = precipitation->interp(i, j, result); CHKERRQ(ierr);
-
-  return 0;
+  precipitation->interp(i, j, result);
 }
 
-PetscErrorCode PAGivenClimate::init_timeseries(const std::vector<double> &ts) {
-  PetscErrorCode ierr;
+void PAGivenClimate::init_timeseries(const std::vector<double> &ts) {
 
-  ierr = air_temp->init_interpolation(ts); CHKERRQ(ierr);
+  air_temp->init_interpolation(ts);
 
-  ierr = precipitation->init_interpolation(ts); CHKERRQ(ierr);
+  precipitation->init_interpolation(ts);
 
   m_ts_times = ts;
-  
-  return 0;
 }
 
 

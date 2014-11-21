@@ -447,26 +447,26 @@ int main(int argc, char *argv[]) {
                          &enthalpy); CHKERRQ(ierr);
 
     // Allocate the SIA solver:
-    ierr = stress_balance.init(vars); CHKERRQ(ierr);
+    stress_balance.init(vars);
 
     IceModelVec2S melange_back_pressure;
-    ierr = melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS); CHKERRQ(ierr);
-    ierr = melange_back_pressure.set_attrs("boundary_condition",
-                                           "melange back pressure fraction", "", ""); CHKERRQ(ierr);
-    ierr = melange_back_pressure.set(0.0); CHKERRQ(ierr);
+    melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
+    melange_back_pressure.set_attrs("boundary_condition",
+                                    "melange back pressure fraction", "", "");
+    melange_back_pressure.set(0.0);
 
     // Solve (fast==true means "no 3D update and no strain heating computation"):
     bool fast = false;
-    ierr = stress_balance.update(fast, 0.0, melange_back_pressure); CHKERRQ(ierr);
+    stress_balance.update(fast, 0.0, melange_back_pressure);
 
     // Report errors relative to the exact solution:
     IceModelVec3 *u_sia, *v_sia, *w_sia, *sigma;
-    ierr = stress_balance.get_3d_velocity(u_sia, v_sia, w_sia); CHKERRQ(ierr);
+    stress_balance.get_3d_velocity(u_sia, v_sia, w_sia);
 
-    ierr = stress_balance.get_volumetric_strain_heating(sigma); CHKERRQ(ierr);
+    stress_balance.get_volumetric_strain_heating(sigma);
 
-    ierr = reportErrors(config, grid,
-                        &ice_thickness, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);
+    reportErrors(config, grid,
+                 &ice_thickness, u_sia, v_sia, w_sia, sigma);
 
     // Write results to an output file:
     PIO pio(grid, "guess_mode");
@@ -478,15 +478,15 @@ int main(int argc, char *argv[]) {
     pio.append_time(config.get_string("time_dimension_name"), 0.0);
     pio.close();
 
-    ierr = ice_surface_elevation.write(output_file); CHKERRQ(ierr);
-    ierr = ice_thickness.write(output_file); CHKERRQ(ierr);
-    ierr = vMask.write(output_file); CHKERRQ(ierr);
-    ierr = bed_topography.write(output_file); CHKERRQ(ierr);
-    // ierr = enthalpy.write(output_file); CHKERRQ(ierr);
-    ierr = u_sia->write(output_file); CHKERRQ(ierr);
-    ierr = v_sia->write(output_file); CHKERRQ(ierr);
-    ierr = w_sia->write(output_file); CHKERRQ(ierr);
-    ierr = sigma->write(output_file); CHKERRQ(ierr);
+    ice_surface_elevation.write(output_file);
+    ice_thickness.write(output_file);
+    vMask.write(output_file);
+    bed_topography.write(output_file);
+    
+    u_sia->write(output_file);
+    v_sia->write(output_file);
+    w_sia->write(output_file);
+    sigma->write(output_file);
   }
   catch (...) {
     handle_fatal_errors(com);

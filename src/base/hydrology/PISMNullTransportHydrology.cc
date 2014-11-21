@@ -30,26 +30,22 @@ NullTransportHydrology::NullTransportHydrology(IceGrid &g, const Config &conf)
 NullTransportHydrology::~NullTransportHydrology() {
 }
 
-PetscErrorCode NullTransportHydrology::init(Vars &vars) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(2, grid.com,
-    "* Initializing the null-transport (till only) subglacial hydrology model ...\n"); CHKERRQ(ierr);
-  ierr = Hydrology::init(vars); CHKERRQ(ierr);
-  return 0;
+void NullTransportHydrology::init(Vars &vars) {
+  verbPrintf(2, grid.com,
+             "* Initializing the null-transport (till only) subglacial hydrology model ...\n");
+  Hydrology::init(vars);
 }
 
 
 //! Set the transportable subglacial water thickness to zero; there is no tranport.
-PetscErrorCode NullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr = result.set(0.0); CHKERRQ(ierr);
-  return 0;
+void NullTransportHydrology::subglacial_water_thickness(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
 
 //! Returns the (trivial) overburden pressure as the pressure of the non-existent transportable water, because this is the least harmful output if this is misused.
-PetscErrorCode NullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
-  PetscErrorCode ierr = overburden_pressure(result); CHKERRQ(ierr);
-  return 0;
+void NullTransportHydrology::subglacial_water_pressure(IceModelVec2S &result) {
+  overburden_pressure(result);
 }
 
 
@@ -70,17 +66,15 @@ NullTransportHydrology model does not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
+void NullTransportHydrology::update(double icet, double icedt) {
   // if asked for the identical time interval as last time, then do nothing
   if ((fabs(icet - m_t) < 1e-6) && (fabs(icedt - m_dt) < 1e-6)) {
-    return 0;
+    return;
   }
   m_t = icet;
   m_dt = icedt;
 
-  PetscErrorCode ierr;
-
-  ierr = get_input_rate(icet,icedt,total_input); CHKERRQ(ierr);
+  get_input_rate(icet,icedt,total_input);
 
   const double tillwat_max = config.get("hydrology_tillwat_max"),
                C           = config.get("hydrology_tillwat_decay_rate");
@@ -105,7 +99,6 @@ PetscErrorCode NullTransportHydrology::update(double icet, double icedt) {
       Wtil(i,j) = PetscMin(PetscMax(0.0, Wtil(i,j)), tillwat_max);
     }
   }
-  return 0;
 }
 
 

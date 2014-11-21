@@ -83,7 +83,6 @@ protected:
 };
 
 PetscErrorCode SSATestCaseCFBC::write_nuH(const std::string &filename) {
-  PetscErrorCode ierr;
 
   SSAFD *ssafd = dynamic_cast<SSAFD*>(ssa);
   if (ssafd == NULL) {
@@ -93,9 +92,9 @@ PetscErrorCode SSATestCaseCFBC::write_nuH(const std::string &filename) {
   SSAFD_nuH nuH(ssafd, grid, vars);
 
   IceModelVec* result;
-  ierr = nuH.compute(result); CHKERRQ(ierr);
+  nuH.compute(result);
 
-  ierr = result->write(filename); CHKERRQ(ierr);
+  result->write(filename);
 
   delete result;
 
@@ -128,14 +127,13 @@ PetscErrorCode SSATestCaseCFBC::initializeSSAModel()
 
 PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
 {
-  PetscErrorCode ierr;
 
-  ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant
-  ierr = bed.set(-1000.0); CHKERRQ(ierr); // assures shelf is floating
+  tauc.set(0.0);    // irrelevant
+  bed.set(-1000.0); // assures shelf is floating
 
 
   double enth0  = enthalpyconverter->getEnth(273.15, 0.01, 0.0); // 0.01 water fraction
-  ierr = enthalpy.set(enth0); CHKERRQ(ierr);
+  enthalpy.set(enth0);
 
   IceModelVec::AccessList list;
   list.add(thickness);
@@ -175,17 +173,17 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
 
 
   // communicate what we have set
-  ierr = surface.update_ghosts(); CHKERRQ(ierr);
+  surface.update_ghosts();
 
-  ierr = thickness.update_ghosts(); CHKERRQ(ierr);
+  thickness.update_ghosts();
 
-  ierr = bc_mask.update_ghosts(); CHKERRQ(ierr);
+  bc_mask.update_ghosts();
 
-  ierr = ice_mask.update_ghosts(); CHKERRQ(ierr);
+  ice_mask.update_ghosts();
 
-  ierr = vel_bc.update_ghosts(); CHKERRQ(ierr);
+  vel_bc.update_ghosts();
 
-  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr);
+  ssa->set_boundary_conditions(bc_mask, vel_bc);
 
   return 0;
 }
@@ -219,9 +217,9 @@ int main(int argc, char *argv[]) {
     UnitSystem unit_system;
     Config config(com, "pism_config", unit_system),
       overrides(com, "pism_overrides", unit_system);
-    ierr = init_config(com, config, overrides); CHKERRQ(ierr);
+    init_config(com, config, overrides);
 
-    ierr = setVerbosityLevel(5); CHKERRQ(ierr);
+    setVerbosityLevel(5);
 
     PetscBool usage_set, help_set;
     ierr = PetscOptionsHasName(NULL, "-usage", &usage_set);
@@ -246,14 +244,14 @@ int main(int argc, char *argv[]) {
     {
       bool flag;
       int my_verbosity_level;
-      ierr = OptionsInt("-Mx", "Number of grid points in the X direction",
-                                                      Mx, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-My", "Number of grid points in the Y direction",
-                                                      My, flag); CHKERRQ(ierr);
-      ierr = OptionsString("-o", "Set the output file name",
-                                              output_file, flag); CHKERRQ(ierr);
-      ierr = OptionsInt("-verbose", "Verbosity level",
-                            my_verbosity_level, flag); CHKERRQ(ierr);
+      OptionsInt("-Mx", "Number of grid points in the X direction",
+                 Mx, flag);
+      OptionsInt("-My", "Number of grid points in the Y direction",
+                 My, flag);
+      OptionsString("-o", "Set the output file name",
+                    output_file, flag);
+      OptionsInt("-verbose", "Verbosity level",
+                 my_verbosity_level, flag);
       if (flag) {
         setVerbosityLevel(my_verbosity_level);
       }
@@ -264,11 +262,11 @@ int main(int argc, char *argv[]) {
     SSAFactory ssafactory = SSAFDFactory;
 
     SSATestCaseCFBC testcase(com, config);
-    ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
-    ierr = testcase.run(); CHKERRQ(ierr);
-    ierr = testcase.report("V"); CHKERRQ(ierr);
+    testcase.init(Mx,My,ssafactory);
+    testcase.run();
+    testcase.report("V");
     ierr = testcase.write(output_file);
-    ierr = testcase.write_nuH(output_file); CHKERRQ(ierr);
+    testcase.write_nuH(output_file);
   }
   catch (...) {
     handle_fatal_errors(com);

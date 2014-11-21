@@ -39,25 +39,25 @@ public:
   PAWeatherStation(IceGrid &g, const Config &conf);
   virtual ~PAWeatherStation();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
-  virtual PetscErrorCode update(double t, double dt);
-  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
+  virtual void update(double t, double dt);
+  virtual void mean_precipitation(IceModelVec2S &result);
+  virtual void mean_annual_temp(IceModelVec2S &result);
 
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
-  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &values);
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+  virtual void begin_pointwise_access();
+  virtual void end_pointwise_access();
+  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void temp_time_series(int i, int j, std::vector<double> &values);
+  virtual void temp_snapshot(IceModelVec2S &result);
 
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
 
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO& nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO& nc);
 
 protected:
   Timeseries m_precipitation, m_air_temperature;

@@ -32,10 +32,10 @@ public:
   PBLingleClark(IceGrid &g, const Config &conf);
   virtual ~PBLingleClark();
 
-  PetscErrorCode init(Vars &vars);
-  PetscErrorCode update(double my_t, double my_dt);
+  void init(Vars &vars);
+  void update(double my_t, double my_dt);
 protected:
-  PetscErrorCode correct_topg();
+  void correct_topg();
   PetscErrorCode allocate();
   PetscErrorCode deallocate();
   // Vecs on processor 0:

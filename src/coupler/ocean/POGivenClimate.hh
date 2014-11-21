@@ -30,14 +30,14 @@ public:
   POGiven(IceGrid &g, const Config &conf);
   virtual ~POGiven();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual void init(Vars &vars);
+  virtual void update(double my_t, double my_dt);
 
-  virtual PetscErrorCode sea_level_elevation(double &result);
+  virtual void sea_level_elevation(double &result);
 
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode melange_back_pressure_fraction(IceModelVec2S &result);
+  virtual void shelf_base_temperature(IceModelVec2S &result);
+  virtual void shelf_base_mass_flux(IceModelVec2S &result);
+  virtual void melange_back_pressure_fraction(IceModelVec2S &result);
 protected:
   IceModelVec2T *shelfbtemp, *shelfbmassflux;
 private:

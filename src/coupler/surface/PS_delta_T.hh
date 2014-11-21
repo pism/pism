@@ -36,13 +36,13 @@ public:
   PS_delta_T(IceGrid &g, const Config &conf, SurfaceModel* in);
   virtual ~PS_delta_T();
 
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
 
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
 
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc,
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc,
                                           IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
 protected:
   NCSpatialVariable climatic_mass_balance, //!< climatic mass balance attributes

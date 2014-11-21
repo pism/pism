@@ -67,88 +67,74 @@ PAWeatherStation::~PAWeatherStation() {
   // empty
 }
 
-PetscErrorCode PAWeatherStation::init(Vars &vars) {
-  PetscErrorCode ierr;
+void PAWeatherStation::init(Vars &vars) {
 
   (void)vars;
 
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the constant-in-space atmosphere model\n"
-                    "  for use with scalar data from one weather station\n"
-                    "  combined with lapse rate corrections...\n"); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "* Initializing the constant-in-space atmosphere model\n"
+             "  for use with scalar data from one weather station\n"
+             "  combined with lapse rate corrections...\n");
 
   std::string filename,
     option = "-atmosphere_one_station_file";
   bool bc_file_set = false;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Climate forcing options", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
   {
-    ierr = OptionsString(option,
-                         "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.",
-                         filename, bc_file_set); CHKERRQ(ierr);
+    OptionsString(option,
+                  "Specifies a file containing scalar time-series 'precipitation' and 'air_temp'.",
+                  filename, bc_file_set);
   }
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
 
   if (bc_file_set == false) {
     throw RuntimeError::formatted("Command-line option %s is required.", option.c_str());
   }
 
-  ierr = verbPrintf(2, grid.com,
-                    "  - Reading air temperature and precipitation from '%s'...\n",
-                    filename.c_str()); CHKERRQ(ierr);
+  verbPrintf(2, grid.com,
+             "  - Reading air temperature and precipitation from '%s'...\n",
+             filename.c_str());
 
   PIO nc(grid.com, "netcdf3", grid.get_unit_system());
   nc.open(filename, PISM_READONLY);
   {
-    ierr = m_precipitation.read(nc, grid.time); CHKERRQ(ierr);
-    ierr = m_air_temperature.read(nc, grid.time); CHKERRQ(ierr);
+    m_precipitation.read(nc, grid.time);
+    m_air_temperature.read(nc, grid.time);
   }
   nc.close();
-
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::update(double t, double dt) {
+void PAWeatherStation::update(double t, double dt) {
   m_t = t;
   m_dt = dt;
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::mean_precipitation(IceModelVec2S &result) {
+void PAWeatherStation::mean_precipitation(IceModelVec2S &result) {
   const double one_week = 7 * 24 * 60 * 60;
 
   unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
 
-  PetscErrorCode ierr = result.set(m_precipitation.average(m_t, m_dt, N)); CHKERRQ(ierr);
-
-  return 0;
+  result.set(m_precipitation.average(m_t, m_dt, N));
 }
 
-PetscErrorCode PAWeatherStation::mean_annual_temp(IceModelVec2S &result) {
+void PAWeatherStation::mean_annual_temp(IceModelVec2S &result) {
   const double one_week = 7 * 24 * 60 * 60;
 
   unsigned int N = (unsigned int)(ceil(m_dt / one_week)); // one point per week
 
-  PetscErrorCode ierr = result.set(m_air_temperature.average(m_t, m_dt, N)); CHKERRQ(ierr);
-
-  return 0;
+  result.set(m_air_temperature.average(m_t, m_dt, N));
 }
 
-PetscErrorCode PAWeatherStation::begin_pointwise_access() {
+void PAWeatherStation::begin_pointwise_access() {
   // empty
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::end_pointwise_access() {
+void PAWeatherStation::end_pointwise_access() {
   // empty
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::init_timeseries(const std::vector<double> &ts) {
+void PAWeatherStation::init_timeseries(const std::vector<double> &ts) {
   size_t N = ts.size();
 
   m_precip_values.resize(N);
@@ -158,31 +144,26 @@ PetscErrorCode PAWeatherStation::init_timeseries(const std::vector<double> &ts) 
     m_precip_values[k]   = m_precipitation(ts[k]);
     m_air_temp_values[k] = m_air_temperature(ts[k]);
   }
-
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::precip_time_series(int i, int j,
+void PAWeatherStation::precip_time_series(int i, int j,
                                                     std::vector<double> &result) {
   (void)i;
   (void)j;
 
   result = m_precip_values;
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::temp_time_series(int i, int j,
+void PAWeatherStation::temp_time_series(int i, int j,
                                                   std::vector<double> &result) {
   (void)i;
   (void)j;
 
   result = m_air_temp_values;
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::temp_snapshot(IceModelVec2S &result) {
-  PetscErrorCode ierr = result.set(m_air_temperature(m_t + 0.5*m_dt)); CHKERRQ(ierr);
-  return 0;
+void PAWeatherStation::temp_snapshot(IceModelVec2S &result) {
+  result.set(m_air_temperature(m_t + 0.5*m_dt));
 }
 
 void PAWeatherStation::add_vars_to_output(const std::string &keyword,
@@ -193,49 +174,42 @@ void PAWeatherStation::add_vars_to_output(const std::string &keyword,
   }
 }
 
-PetscErrorCode PAWeatherStation::define_variables(const std::set<std::string> &vars,
+void PAWeatherStation::define_variables(const std::set<std::string> &vars,
                                                   const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
-
   if (set_contains(vars, "air_temp")) {
     // don't write using glaciological units
-    ierr = m_air_temp_metadata.define(nc, nctype, false); CHKERRQ(ierr);
+    m_air_temp_metadata.define(nc, nctype, false);
   }
 
   if (set_contains(vars, "precipitation")) {
     // do write using glaciological units
-    ierr = m_precip_metadata.define(nc, nctype, true); CHKERRQ(ierr);
+    m_precip_metadata.define(nc, nctype, true);
   }
-
-  return 0;
 }
 
-PetscErrorCode PAWeatherStation::write_variables(const std::set<std::string> &vars,
-                                                 const PIO &nc) {
-  PetscErrorCode ierr;
+void PAWeatherStation::write_variables(const std::set<std::string> &vars,
+                                       const PIO &nc) {
 
   if (set_contains(vars, "air_temp")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "air_temp", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "air_temp", WITHOUT_GHOSTS);
     tmp.metadata() = m_air_temp_metadata;
 
-    ierr = mean_annual_temp(tmp); CHKERRQ(ierr);
+    mean_annual_temp(tmp);
 
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
   }
 
   if (set_contains(vars, "precipitation")) {
     IceModelVec2S tmp;
-    ierr = tmp.create(grid, "precipitation", WITHOUT_GHOSTS); CHKERRQ(ierr);
+    tmp.create(grid, "precipitation", WITHOUT_GHOSTS);
     tmp.metadata() = m_precip_metadata;
 
-    ierr = mean_precipitation(tmp); CHKERRQ(ierr);
+    mean_precipitation(tmp);
 
     tmp.write_in_glaciological_units = true;
-    ierr = tmp.write(nc); CHKERRQ(ierr);
+    tmp.write(nc);
   }
-
-  return 0;
 }
 
 } // end of namespace pism

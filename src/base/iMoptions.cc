@@ -38,23 +38,16 @@
 namespace pism {
 
 //! Read some runtime (command line) options and alter the corresponding parameters or flags as appropriate.
-PetscErrorCode  IceModel::setFromOptions() {
-  PetscErrorCode ierr;
+void  IceModel::setFromOptions() {
   bool flag;
 
-  ierr = verbPrintf(3, grid.com,
-                    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
+  verbPrintf(3, grid.com,
+             "Processing physics-related command-line options...\n");
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options overriding config flags and parameters", "");
-  PISM_PETSC_CHK(ierr, "PetscOptionsBegin");
+  set_config_from_options(config);
 
-  ierr = set_config_from_options(config); CHKERRQ(ierr);
-
-  ierr = OptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
-  ierr = OptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
-
-  ierr = PetscOptionsEnd();
-  PISM_PETSC_CHK(ierr, "PetscOptionsEnd");
+  OptionsInt("-id", "Specifies the sounding row", id, flag);
+  OptionsInt("-jd", "Specifies the sounding column", jd, flag);
 
   // Set global attributes using the config database:
   global_attributes.set_string("title", config.get_string("run_title"));
@@ -69,17 +62,17 @@ PetscErrorCode  IceModel::setFromOptions() {
   
   if (config.get_flag("do_mass_conserve") == false &&
       config.get_flag("do_skip")) {
-    ierr = verbPrintf(2, grid.com,
-      "PISM WARNING: Both -skip and -no_mass are set.\n"
-      "              -skip only makes sense in runs updating ice geometry.\n"); CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "PISM WARNING: Both -skip and -no_mass are set.\n"
+               "              -skip only makes sense in runs updating ice geometry.\n");
   }
 
   if (config.get_string("calving_methods").find("thickness_calving") != std::string::npos &&
       config.get_flag("part_grid") == false) {
-    ierr = verbPrintf(2, grid.com,
-      "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
-      "              without application of partially filled grid cell scheme (-part_grid)\n"
-      "              may lead to (incorrect) non-moving ice shelf front.\n"); CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "PISM WARNING: Calving at certain terminal ice thickness (-calving thickness_calving)\n"
+               "              without application of partially filled grid cell scheme (-part_grid)\n"
+               "              may lead to (incorrect) non-moving ice shelf front.\n");
   }
 
 
@@ -87,21 +80,18 @@ PetscErrorCode  IceModel::setFromOptions() {
   // enhancement factor is coupled to the age of the ice with
   // e = 1 (A < 11'000 years), e = 3 otherwise
   if (config.get_flag("e_age_coupling")) {
-    ierr = verbPrintf(2, grid.com,
-                      "  setting age-dependent enhancement factor: "
-                      "e=1 if A<11'000 years, e=3 otherwise\n"); CHKERRQ(ierr);
+    verbPrintf(2, grid.com,
+               "  setting age-dependent enhancement factor: "
+               "e=1 if A<11'000 years, e=3 otherwise\n");
 
   }
-
-  return 0;
 }
 
 //! Set the output file size using a command-line option.
-PetscErrorCode IceModel::output_size_from_option(const std::string &option,
+void IceModel::output_size_from_option(const std::string &option,
                                                  const std::string &description,
                                                  const std::string &default_value,
                                                  std::set<std::string> &result) {
-  PetscErrorCode ierr;
 
   std::set<std::string> choices;
   std::string keyword;
@@ -111,21 +101,19 @@ PetscErrorCode IceModel::output_size_from_option(const std::string &option,
   choices.insert("small");
   choices.insert("medium");
   choices.insert("big");
-  ierr = OptionsList(option, description, choices,
-                     default_value, keyword, flag); CHKERRQ(ierr);
+  OptionsList(option, description, choices,
+              default_value, keyword, flag);
 
-  ierr = set_output_size(keyword, result); CHKERRQ(ierr);
-
-  return 0;
+  set_output_size(keyword, result);
 }
 
 //! Assembles a list of variables corresponding to an output file size.
-PetscErrorCode IceModel::set_output_size(const std::string &keyword,
+void IceModel::set_output_size(const std::string &keyword,
                                          std::set<std::string> &result) {
   result.clear();
 
   if (keyword == "none") {
-    return 0;
+    return;
   }
 
   // Add all the model-state variables:
@@ -225,8 +213,6 @@ PetscErrorCode IceModel::set_output_size(const std::string &keyword,
   if (surface != NULL) {
     surface->add_vars_to_output(keyword, result);
   }
-
-  return 0;
 }
 
 

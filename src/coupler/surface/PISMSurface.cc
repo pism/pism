@@ -54,15 +54,11 @@ void SurfaceModel::attach_atmosphere_model(AtmosphereModel *input) {
   atmosphere = input;
 }
 
-PetscErrorCode SurfaceModel::init(Vars &vars) {
-  PetscErrorCode ierr;
-
+void SurfaceModel::init(Vars &vars) {
   m_t = m_dt = GSL_NAN;  // every re-init restarts the clock
 
   assert(atmosphere != NULL);
-  ierr = atmosphere->init(vars); CHKERRQ(ierr);
-
-  return 0;
+  atmosphere->init(vars);
 }
 
 //! \brief Returns mass held in the surface layer.
@@ -70,12 +66,8 @@ PetscErrorCode SurfaceModel::init(Vars &vars) {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-PetscErrorCode SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = result.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+void SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
 //! \brief Returns thickness of the surface layer. Used to compute surface
@@ -85,57 +77,37 @@ PetscErrorCode SurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-PetscErrorCode SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = result.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+void SurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
 //! \brief Returns the liquid water fraction of the ice at the top ice surface.
 /*!
  * Most PISM surface models return 0.
  */
-PetscErrorCode SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = result.set(0.0); CHKERRQ(ierr);
-
-  return 0;
+void SurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
+  result.set(0.0);
 }
 
-PetscErrorCode SurfaceModel::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
-  PetscErrorCode ierr;
-
+void SurfaceModel::define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype) {
   if (atmosphere != NULL) {
-    ierr = atmosphere->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    atmosphere->define_variables(vars, nc, nctype);
   }
-
-  return 0;
 }
 
-PetscErrorCode SurfaceModel::write_variables(const std::set<std::string> &vars, const PIO &nc) {
-  PetscErrorCode ierr;
-
+void SurfaceModel::write_variables(const std::set<std::string> &vars, const PIO &nc) {
   if (atmosphere != NULL) {
-    ierr = atmosphere->write_variables(vars, nc); CHKERRQ(ierr);
+    atmosphere->write_variables(vars, nc);
   }
-
-  return 0;
 }
 
-PetscErrorCode SurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
-  PetscErrorCode ierr;
-
+void SurfaceModel::max_timestep(double my_t, double &my_dt, bool &restrict) {
   if (atmosphere != NULL) {
-    ierr = atmosphere->max_timestep(my_t, my_dt, restrict); CHKERRQ(ierr);
+    atmosphere->max_timestep(my_t, my_dt, restrict);
   } else {
     my_dt = -1;
     restrict = false;
   }
-
-  return 0;
 }
 
 void SurfaceModel::add_vars_to_output(const std::string &keyword, std::set<std::string> &result) {

@@ -106,13 +106,11 @@ void ZeroSliding::add_vars_to_output(const std::string &/*keyword*/, std::set<st
   // empty
 }
 
-PetscErrorCode ZeroSliding::define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
+void ZeroSliding::define_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/,
                                              IO_Type /*nctype*/) {
-  return 0;
 }
 
-PetscErrorCode ZeroSliding::write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
-  return 0;
+void ZeroSliding::write_variables(const std::set<std::string> &/*vars*/, const PIO &/*nc*/) {
 }
 
 
@@ -180,7 +178,7 @@ Note: strain rates will be derived from SSA velocities, using ghosts when
 necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
-PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
+void ShallowStressBalance::compute_2D_principal_strain_rates(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                                        IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
 
@@ -258,14 +256,11 @@ PetscErrorCode ShallowStressBalance::compute_2D_principal_strain_rates(IceModelV
     result(i,j,1) = A - q; // q >= 0 so e1 >= e2
 
   }
-
-
-  return 0;
 }
 
 //! \brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
-PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
+void ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity, IceModelVec2Int &mask,
                                                          IceModelVec2 &result) {
   double    dx = grid.dx, dy = grid.dy;
 
@@ -350,9 +345,6 @@ PetscErrorCode ShallowStressBalance::compute_2D_stresses(IceModelVec2V &velocity
     result(i,j,2) = 0.5*nu*(u_y+v_x);
 
   }
-
-
-  return 0;
 }
 
 SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
@@ -380,12 +372,11 @@ SSB_taud::SSB_taud(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
  * implementation intentionally does not use the eta-transformation or special
  * cases at ice margins.
  */
-PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SSB_taud::compute(IceModelVec* &output) {
   IceModelVec2S *thickness, *surface;
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "result", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
@@ -414,7 +405,6 @@ PetscErrorCode SSB_taud::compute(IceModelVec* &output) {
   }
 
   output = result;
-  return 0;
 }
 
 SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
@@ -429,19 +419,18 @@ SSB_taud_mag::SSB_taud_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
                      "this field is purely diagnostic (not used by the model)");
 }
 
-PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SSB_taud_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taud_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "taud_mag", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
   SSB_taud diag(model, grid, variables);
 
-  ierr = diag.compute(tmp);
+  diag.compute(tmp);
 
   IceModelVec2V *taud = dynamic_cast<IceModelVec2V*>(tmp);
   if (taud == NULL) {
@@ -449,12 +438,11 @@ PetscErrorCode SSB_taud_mag::compute(IceModelVec* &output) {
     throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
   }
 
-  ierr = taud->magnitude(*result); CHKERRQ(ierr);
+  taud->magnitude(*result);
 
   delete tmp;
 
   output = result;
-  return 0;
 }
 
 SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
@@ -477,16 +465,15 @@ SSB_taub::SSB_taub(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
 }
 
 
-PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SSB_taub::compute(IceModelVec* &output) {
 
   IceModelVec2V *result = new IceModelVec2V;
-  ierr = result->create(grid, "result", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "result", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->metadata(1) = vars[1];
 
   IceModelVec2V *velocity;
-  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
+  model->get_2D_advective_velocity(velocity);
 
   IceModelVec2V &vel = *velocity;
   IceModelVec2S *tauc = variables.get_2d_scalar("tauc");
@@ -515,8 +502,6 @@ PetscErrorCode SSB_taub::compute(IceModelVec* &output) {
   }
 
   output = result;
-
-  return 0;
 }
 
 SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
@@ -531,19 +516,18 @@ SSB_taub_mag::SSB_taub_mag(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
                      "this field is purely diagnostic (not used by the model)");
 }
 
-PetscErrorCode SSB_taub_mag::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SSB_taub_mag::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "taub_mag", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "taub_mag", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
   IceModelVec* tmp;
   SSB_taub diag(model, grid, variables);
 
-  ierr = diag.compute(tmp);
+  diag.compute(tmp);
 
   IceModelVec2V *taub = dynamic_cast<IceModelVec2V*>(tmp);
   if (taub == NULL) {
@@ -551,12 +535,11 @@ PetscErrorCode SSB_taub_mag::compute(IceModelVec* &output) {
     throw RuntimeError("expected an IceModelVec2V, but dynamic_cast failed");
   }
 
-  ierr = taub->magnitude(*result); CHKERRQ(ierr);
+  taub->magnitude(*result);
 
   delete tmp;
 
   output = result;
-  return 0;
 }
 
 /**
@@ -581,21 +564,18 @@ void PrescribedSliding::update(bool fast, IceModelVec2S &melange_back_pressure) 
   }
 }
 
-PetscErrorCode PrescribedSliding::init(Vars &vars) {
-  PetscErrorCode ierr;
-  ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
+void PrescribedSliding::init(Vars &vars) {
+  ShallowStressBalance::init(vars);
 
   bool flag;
   std::string input_filename;
-  ierr = OptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
-                           input_filename, flag); CHKERRQ(ierr);
+  OptionsString("-prescribed_sliding_file", "name of the file to read velocity fields from",
+                input_filename, flag);
   if (flag == false) {
     throw RuntimeError("option -prescribed_sliding_file is required.");
   }
 
-  ierr = m_velocity.regrid(input_filename, CRITICAL); CHKERRQ(ierr);
-
-  return 0;
+  m_velocity.regrid(input_filename, CRITICAL);
 }
 
 SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
@@ -606,12 +586,11 @@ SSB_beta::SSB_beta(ShallowStressBalance *m, IceGrid &g, Vars &my_vars)
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }
 
-PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
+void SSB_beta::compute(IceModelVec* &output) {
 
   // Allocate memory:
   IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "beta", WITHOUT_GHOSTS); CHKERRQ(ierr);
+  result->create(grid, "beta", WITHOUT_GHOSTS);
   result->metadata() = vars[0];
   result->write_in_glaciological_units = true;
 
@@ -620,7 +599,7 @@ PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->get_sliding_law();
 
   IceModelVec2V *velocity;
-  ierr = model->get_2D_advective_velocity(velocity); CHKERRQ(ierr);
+  model->get_2D_advective_velocity(velocity);
   IceModelVec2V &vel = *velocity;
 
   IceModelVec::AccessList list;
@@ -634,7 +613,6 @@ PetscErrorCode SSB_beta::compute(IceModelVec* &output) {
   }
 
   output = result;
-  return 0;
 }
 
 } // end of namespace pism

@@ -49,16 +49,16 @@ class PSTemperatureIndex_Old : public SurfaceModel {
 public:
   PSTemperatureIndex_Old(IceGrid &g, const Config &conf);
   virtual ~PSTemperatureIndex_Old();
-  virtual PetscErrorCode update(PetscReal my_t, PetscReal my_dt);
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
+  virtual void update(PetscReal my_t, PetscReal my_dt);
+  virtual void init(Vars &vars);
+  virtual void max_timestep(PetscReal my_t, PetscReal &my_dt, bool &restrict);
+  virtual void ice_surface_mass_flux(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);  
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 protected:
-  virtual PetscErrorCode update_internal(PetscReal my_t, PetscReal my_dt);
+  virtual void update_internal(PetscReal my_t, PetscReal my_dt);
   LocalMassBalance_Old *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject_Old *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff

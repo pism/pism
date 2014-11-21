@@ -32,14 +32,14 @@ public:
   PSForceThickness(IceGrid &g, const Config &conf, SurfaceModel *input);
 
   virtual ~PSForceThickness();
-  virtual PetscErrorCode init(Vars &vars);
+  virtual void init(Vars &vars);
   virtual void attach_atmosphere_model(AtmosphereModel *input);
-  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode max_timestep(double my_t, double &my_dt, bool &restrict);
+  virtual void ice_surface_mass_flux(IceModelVec2S &result);
+  virtual void ice_surface_temperature(IceModelVec2S &result);
+  virtual void max_timestep(double my_t, double &my_dt, bool &restrict);
   virtual void add_vars_to_output(const std::string &keyword, std::set<std::string> &result);
-  virtual PetscErrorCode define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
-  virtual PetscErrorCode write_variables(const std::set<std::string> &vars, const PIO &nc);
+  virtual void define_variables(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  virtual void write_variables(const std::set<std::string> &vars, const PIO &nc);
 private:
   std::string m_input_file;
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;

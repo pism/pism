@@ -38,13 +38,10 @@ CalvingAtThickness::~CalvingAtThickness() {
 }
 
 
-PetscErrorCode CalvingAtThickness::init(Vars &/*vars*/) {
-  PetscErrorCode ierr;
-  ierr = verbPrintf(2, grid.com,
-                    "* Initializing the 'calving at a threshold thickness' mechanism...\n"
-                    "  thickness threshold: %3.3f meters\n", m_calving_threshold); CHKERRQ(ierr);
-
-  return 0;
+void CalvingAtThickness::init(Vars &/*vars*/) {
+  verbPrintf(2, grid.com,
+             "* Initializing the 'calving at a threshold thickness' mechanism...\n"
+             "  thickness threshold: %3.3f meters\n", m_calving_threshold);
 }
 
 /**
@@ -57,13 +54,12 @@ PetscErrorCode CalvingAtThickness::init(Vars &/*vars*/) {
  *
  * @return 0 on success
  */
-PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
+void CalvingAtThickness::update(IceModelVec2Int &pism_mask,
                                               IceModelVec2S &ice_thickness) {
-  PetscErrorCode ierr;
   MaskQuery M(m_old_mask);
 
   // this call fills ghosts of m_old_mask
-  ierr = pism_mask.copy_to(m_old_mask); CHKERRQ(ierr);
+  pism_mask.copy_to(m_old_mask);
 
   IceModelVec::AccessList list;
   list.add(pism_mask);
@@ -81,10 +77,8 @@ PetscErrorCode CalvingAtThickness::update(IceModelVec2Int &pism_mask,
     }
   }
 
-  ierr = pism_mask.update_ghosts();     CHKERRQ(ierr);
-  ierr = ice_thickness.update_ghosts(); CHKERRQ(ierr);
-
-  return 0;
+  pism_mask.update_ghosts();
+  ice_thickness.update_ghosts();
 }
 
 
@@ -93,17 +87,15 @@ void CalvingAtThickness::add_vars_to_output(const std::string &/*keyword*/,
   // empty
 }
 
-PetscErrorCode CalvingAtThickness::define_variables(const std::set<std::string> &/*vars*/,
+void CalvingAtThickness::define_variables(const std::set<std::string> &/*vars*/,
                                                         const PIO &/*nc*/,
                                                         IO_Type /*nctype*/) {
   // empty
-  return 0;
 }
 
-PetscErrorCode CalvingAtThickness::write_variables(const std::set<std::string> &/*vars*/,
+void CalvingAtThickness::write_variables(const std::set<std::string> &/*vars*/,
                                                        const PIO& /*nc*/) {
   // empty
-  return 0;
 }
 
 

@@ -78,23 +78,23 @@ int main(int argc, char *argv[]) {
     IceGrid g(com, config);
     IceModel m(g, config, overrides);
 
-    ierr = m.setExecName("pismr"); CHKERRQ(ierr);
+    m.setExecName("pismr");
 
-    ierr = m.init(); CHKERRQ(ierr);
+    m.init();
 
     bool print_list_and_stop = false;
-    ierr = OptionsIsSet("-list_diagnostics",
-                        "List available diagnostic quantities and stop",
-                        print_list_and_stop); CHKERRQ(ierr);
+    OptionsIsSet("-list_diagnostics",
+                 "List available diagnostic quantities and stop",
+                 print_list_and_stop);
 
     if (print_list_and_stop) {
-      ierr = m.list_diagnostics(); CHKERRQ(ierr);
+      m.list_diagnostics();
     } else {
-      ierr = m.run(); CHKERRQ(ierr);
+      m.run();
 
-      ierr = verbPrintf(2,com, "... done with run\n"); CHKERRQ(ierr);
+      verbPrintf(2,com, "... done with run\n");
       // provide a default output file name if no -o option is given.
-      ierr = m.writeFiles("unnamed.nc"); CHKERRQ(ierr);
+      m.writeFiles("unnamed.nc");
     }
   }
   catch (...) {

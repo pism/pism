@@ -30,19 +30,19 @@ public:
   PAGivenClimate(IceGrid &g, const Config &conf);
   virtual ~PAGivenClimate();
 
-  virtual PetscErrorCode init(Vars &vars);
-  virtual PetscErrorCode update(double my_t, double my_dt);
+  virtual void init(Vars &vars);
+  virtual void update(double my_t, double my_dt);
 
-  virtual PetscErrorCode mean_precipitation(IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
-  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
+  virtual void mean_precipitation(IceModelVec2S &result);
+  virtual void mean_annual_temp(IceModelVec2S &result); 
+  virtual void temp_snapshot(IceModelVec2S &result);
 
-  virtual PetscErrorCode begin_pointwise_access();
-  virtual PetscErrorCode end_pointwise_access();
+  virtual void begin_pointwise_access();
+  virtual void end_pointwise_access();
 
-  virtual PetscErrorCode init_timeseries(const std::vector<double> &ts);
-  virtual PetscErrorCode temp_time_series(int i, int j, std::vector<double> &values);
-  virtual PetscErrorCode precip_time_series(int i, int j, std::vector<double> &values);
+  virtual void init_timeseries(const std::vector<double> &ts);
+  virtual void temp_time_series(int i, int j, std::vector<double> &values);
+  virtual void precip_time_series(int i, int j, std::vector<double> &values);
 protected:
   IceModelVec2T *precipitation, *air_temp;
 private:
