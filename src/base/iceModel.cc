@@ -951,6 +951,8 @@ explanations of their intended uses.
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;
 
+  grid.profiling.begin("initialization");
+
   ierr = PetscOptionsBegin(grid.com, "", "PISM options", ""); CHKERRQ(ierr);
 
   // Build PISM with -DPISM_WAIT_FOR_GDB=1 and run with -wait_for_gdb to
@@ -1009,6 +1011,9 @@ PetscErrorCode IceModel::init() {
     MPI_Allreduce(&my_start_time, &start_time, 1, mpi_type, MPI_MAX, grid.com);
 
   }
+
+  grid.profiling.end("initialization");
+
   return 0;
 }
 
